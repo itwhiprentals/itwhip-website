@@ -1,10 +1,16 @@
 // app/layout.tsx
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
-import Script from 'next/script'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
+
+// Viewport configuration (separated from metadata)
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+}
 
 export const metadata: Metadata = {
   title: 'ItWhip - Beat Airport Surge Pricing | Independent Driver Platform',
@@ -18,7 +24,7 @@ export const metadata: Metadata = {
     siteName: 'ItWhip',
     images: [
       {
-        url: 'https://itwhip.com/og-image.jpg', // We'll create this
+        url: 'https://itwhip.com/og-image.jpg',
         width: 1200,
         height: 630,
         alt: 'ItWhip - Independent Driver Platform',
@@ -61,24 +67,11 @@ export const metadata: Metadata = {
     ],
   },
   
-  // Verification tags (add these when you set up)
-  // verification: {
-  //   google: 'your-google-verification-code',
-  //   yandex: 'your-yandex-verification-code',
-  // },
-  
   // App-specific
   applicationName: 'ItWhip',
   referrer: 'origin-when-cross-origin',
   category: 'transportation',
   classification: 'Transportation',
-  
-  // Viewport and mobile
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 5,
-  },
   
   // Robots
   robots: {
