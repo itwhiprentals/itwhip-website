@@ -16,6 +16,11 @@ export const metadata: Metadata = {
   title: 'ItWhip - Beat Airport Surge Pricing | Independent Driver Platform',
   description: 'Connect with independent drivers at Phoenix Sky Harbor. Save 30-40% vs surge pricing. Real-time flight tracking, surge predictions, and guaranteed fair rates.',
   
+  // Google Search Console Verification
+  verification: {
+    google: 'googleff176c9f88b44f07',
+  },
+  
   // Open Graph for Facebook, LinkedIn, etc.
   openGraph: {
     title: 'ItWhip - Your Flight. Your Price. Your Driver.',
