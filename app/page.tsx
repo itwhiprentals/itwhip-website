@@ -1,19 +1,37 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react'
+import dynamic from 'next/dynamic'
 import Header from './components/Header'
 import LiveTicker from './components/LiveTicker'
 import Footer from './components/Footer'
 import Modals from './components/Modals'
+
+// Critical components loaded immediately
 import {
   HeroSection,
   CompareSection,
   DriveSection,
-  HowItWorksSection,
-  FlightIntelligenceSection,
-  SurgePredictionSection,
-  GroupCoordinationSection
+  HowItWorksSection
 } from './components/Sections'
+
+// Lazy load heavy sections for better performance
+const FlightIntelligenceSection = lazy(() => 
+  import('./components/Sections').then(mod => ({ 
+    default: mod.FlightIntelligenceSection 
+  }))
+)
+const SurgePredictionSection = lazy(() => 
+  import('./components/Sections').then(mod => ({ 
+    default: mod.SurgePredictionSection 
+  }))
+)
+const GroupCoordinationSection = lazy(() => 
+  import('./components/Sections').then(mod => ({ 
+    default: mod.GroupCoordinationSection 
+  }))
+)
+
 import { 
   initialFlightPredictions,
   initialTrafficRoutes,
@@ -37,6 +55,15 @@ import type {
   DynamicPrices
 } from './types'
 
+// Loading fallback component
+const SectionLoader = () => (
+  <div className="flex justify-center items-center py-20">
+    <div className="animate-pulse text-gray-500 dark:text-gray-400">
+      Loading section...
+    </div>
+  </div>
+)
+
 export default function HomePage() {
   // Core state
   const [isLoading, setIsLoading] = useState(false)
@@ -44,13 +71,19 @@ export default function HomePage() {
   const [isDarkMode, setIsDarkMode] = useState(true)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   
+  // Visibility state for lazy loading
+  const [visibleSections, setVisibleSections] = useState({
+    flight: false,
+    surge: false,
+    group: false
+  })
+  
   // Live data state
-  const [liveTickerItems, setLiveTickerItems] = useState<LiveTickerItem[]>([])
   const [currentTickerIndex, setCurrentTickerIndex] = useState(0)
-  const [flightPredictions, setFlightPredictions] = useState<FlightPrediction[]>(initialFlightPredictions)
-  const [trafficRoutes, setTrafficRoutes] = useState<TrafficRoute[]>(initialTrafficRoutes)
+  const [flightPredictions] = useState<FlightPrediction[]>(initialFlightPredictions)
+  const [trafficRoutes] = useState<TrafficRoute[]>(initialTrafficRoutes)
   const [surgePredictions, setSurgePredictions] = useState<SurgePrediction[]>([])
-  const [driversPositioned, setDriversPositioned] = useState<DriverPosition[]>(initialDriversPositioned)
+  const [driversPositioned] = useState<DriverPosition[]>(initialDriversPositioned)
   const [currentUberSurge, setCurrentUberSurge] = useState(1.0)
   const [nextSurgeTime, setNextSurgeTime] = useState<Date | null>(null)
   const [totalSavings, setTotalSavings] = useState(47892)
@@ -58,26 +91,54 @@ export default function HomePage() {
   
   // UI state
   const [showAppModal, setShowAppModal] = useState(false)
-  const [searchFocused, setSearchFocused] = useState(false)
   
-  // Dynamic pricing state
-  const [dynamicPrices, setDynamicPrices] = useState<DynamicPrices>({
-    itwhip: 29,
-    competitorMin: 45,
-    competitorMax: 67,
-    savings: 25
-  })
-
   // Group coordination state
   const [groupMembers] = useState<GroupMember[]>(initialGroupMembers)
 
-  // Dark mode effect - FIXED with proper client-side checks
+  // Memoized dynamic pricing to prevent recalculation
+  const dynamicPrices = useMemo<DynamicPrices>(() => 
+    calculateDynamicPrice(currentUberSurge), 
+    [currentUberSurge]
+  )
+
+  // Memoized ticker items to prevent recreation on every render
+  const liveTickerItems = useMemo<LiveTickerItem[]>(() => [
+    {
+      id: '1',
+      type: 'surge',
+      message: `SURGE ALERT: ${currentUberSurge}x active at airport | Independent drivers: $${dynamicPrices.itwhip} (Save ~$${dynamicPrices.savings})`,
+      severity: 'critical',
+      timestamp: new Date()
+    },
+    {
+      id: '2',
+      type: 'flight',
+      message: `Market surge detected: Typical fare $${dynamicPrices.competitorMin}-${dynamicPrices.competitorMax} | Platform rate: $${dynamicPrices.itwhip}`,
+      severity: 'warning',
+      timestamp: new Date()
+    },
+    {
+      id: '3',
+      type: 'traffic',
+      message: 'I-10 ACCIDENT | Smart routing active - avoiding delays',
+      severity: 'warning',
+      timestamp: new Date()
+    },
+    {
+      id: '4',
+      type: 'weather',
+      message: `Peak pricing detected | Others surging to ${currentUberSurge}x | Independent drivers stay fair at $${dynamicPrices.itwhip}`,
+      severity: 'critical',
+      timestamp: new Date()
+    }
+  ], [currentUberSurge, dynamicPrices])
+
+  // Dark mode setup with error handling
   useEffect(() => {
     try {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
       setIsDarkMode(mediaQuery.matches)
       
-      // Only access localStorage on client side
       if (typeof window !== 'undefined' && window.localStorage) {
         const savedTheme = localStorage.getItem('theme')
         if (savedTheme) {
@@ -97,12 +158,11 @@ export default function HomePage() {
       return () => mediaQuery.removeEventListener('change', handler)
     } catch (error) {
       console.error('Error setting up dark mode:', error)
-      // Default to dark mode if there's an error
       setIsDarkMode(true)
     }
   }, [])
 
-  // Apply theme class to document
+  // Apply theme class
   useEffect(() => {
     if (typeof document !== 'undefined') {
       if (isDarkMode) {
@@ -113,12 +173,11 @@ export default function HomePage() {
     }
   }, [isDarkMode])
 
-  // Toggle theme - FIXED with localStorage safety
-  const toggleTheme = () => {
+  // Memoized toggle theme
+  const toggleTheme = useCallback(() => {
     const newTheme = !isDarkMode
     setIsDarkMode(newTheme)
     
-    // Only save to localStorage if available
     if (typeof window !== 'undefined' && window.localStorage) {
       try {
         localStorage.setItem('theme', newTheme ? 'dark' : 'light')
@@ -126,9 +185,9 @@ export default function HomePage() {
         console.error('Error saving theme:', error)
       }
     }
-  }
+  }, [isDarkMode])
 
-  // Calculate time until surge
+  // Optimized time until surge calculation
   const timeUntilSurge = useMemo(() => {
     if (!nextSurgeTime) return 'Calculating...'
     const diff = nextSurgeTime.getTime() - currentTime.getTime()
@@ -142,7 +201,7 @@ export default function HomePage() {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`
   }, [currentTime, nextSurgeTime])
 
-  // Initialize all data and intervals - FIXED with error handling
+  // Optimized initialization with reduced intervals
   useEffect(() => {
     try {
       // Generate initial surge predictions
@@ -163,24 +222,21 @@ export default function HomePage() {
         setNextSurgeTime(nextSurgeDate)
       }
 
-      // Update current time
+      // OPTIMIZED: Update time only every 10 seconds when visible
       const timeInterval = setInterval(() => {
-        setCurrentTime(new Date())
-      }, 1000)
+        if (document.visibilityState === 'visible') {
+          setCurrentTime(new Date())
+        }
+      }, 10000) // Reduced from 1 second to 10 seconds
 
       // Update ticker
       const tickerInterval = setInterval(() => {
         setCurrentTickerIndex(prev => (prev + 1) % 4)
       }, 5000)
 
-      // Regenerate surge predictions
-      const surgeInterval = setInterval(() => {
-        const newPredictions = generateSurgePredictions()
-        setSurgePredictions(newPredictions)
-      }, 300000) // Every 5 minutes
-
-      // Simulate surge changes
-      const surgeSimulation = setInterval(() => {
+      // OPTIMIZED: Single combined interval for all updates
+      const dataUpdateInterval = setInterval(() => {
+        // Update surge
         const hour = new Date().getHours()
         let baseSurge = 1.0
         
@@ -191,86 +247,68 @@ export default function HomePage() {
         }
         
         setCurrentUberSurge(Math.round(baseSurge * 10) / 10)
-      }, 30000) // Every 30 seconds
-
-      // Update stats
-      const statsInterval = setInterval(() => {
-        setFlightsTracked(prev => prev + Math.floor(Math.random() * 3))
-        setTotalSavings(prev => prev + Math.floor(Math.random() * 100))
-      }, 10000) // Every 10 seconds
-
-      // Set loading to false after a short delay to ensure everything is ready
-      setTimeout(() => {
-        setIsLoading(false)
-      }, 100)
+        
+        // Update stats
+        setFlightsTracked(prev => prev + Math.floor(Math.random() * 5))
+        setTotalSavings(prev => prev + Math.floor(Math.random() * 150))
+        
+        // Update surge predictions occasionally
+        if (Math.random() > 0.9) {
+          const newPredictions = generateSurgePredictions()
+          setSurgePredictions(newPredictions)
+        }
+      }, 30000) // Single interval for all updates
 
       // Cleanup
       return () => {
         clearInterval(timeInterval)
         clearInterval(tickerInterval)
-        clearInterval(surgeInterval)
-        clearInterval(surgeSimulation)
-        clearInterval(statsInterval)
+        clearInterval(dataUpdateInterval)
       }
     } catch (error) {
       console.error('Error initializing app:', error)
-      // Still set loading to false so user sees something
-      setIsLoading(false)
     }
   }, [])
 
-  // Update dynamic pricing when surge changes
+  // Intersection Observer for lazy loading sections
   useEffect(() => {
-    const prices = calculateDynamicPrice(currentUberSurge)
-    setDynamicPrices(prices)
-  }, [currentUberSurge])
-
-  // Update ticker items when prices change
-  useEffect(() => {
-    const updatedTickers: LiveTickerItem[] = [
-      {
-        id: '1',
-        type: 'surge',
-        message: `SURGE ALERT: ${currentUberSurge}x active at airport | Independent drivers: $${dynamicPrices.itwhip} (Save ~$${dynamicPrices.savings})`,
-        severity: 'critical',
-        timestamp: new Date()
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const sectionId = entry.target.getAttribute('data-section')
+            if (sectionId) {
+              setVisibleSections(prev => ({
+                ...prev,
+                [sectionId]: true
+              }))
+            }
+          }
+        })
       },
-      {
-        id: '2',
-        type: 'flight',
-        message: `Market surge detected: Typical fare $${dynamicPrices.competitorMin}-${dynamicPrices.competitorMax} | Platform rate: $${dynamicPrices.itwhip}`,
-        severity: 'warning',
-        timestamp: new Date()
-      },
-      {
-        id: '3',
-        type: 'traffic',
-        message: 'I-10 ACCIDENT | Smart routing active - avoiding delays',
-        severity: 'warning',
-        timestamp: new Date()
-      },
-      {
-        id: '4',
-        type: 'weather',
-        message: `Peak pricing detected | Others surging to ${currentUberSurge}x | Independent drivers stay fair at $${dynamicPrices.itwhip}`,
-        severity: 'critical',
-        timestamp: new Date()
+      { 
+        rootMargin: '100px',
+        threshold: 0.1 
       }
-    ]
-    
-    setLiveTickerItems(updatedTickers)
-  }, [dynamicPrices, currentUberSurge])
+    )
 
-  // Handlers
-  const handleSearchClick = () => {
+    // Observe section placeholders
+    const placeholders = document.querySelectorAll('[data-section]')
+    placeholders.forEach(el => observer.observe(el))
+
+    return () => observer.disconnect()
+  }, [])
+
+  // Memoized handlers
+  const handleSearchClick = useCallback(() => {
     setShowAppModal(true)
-  }
+  }, [])
 
-  const handleGetAppClick = () => {
+  const handleGetAppClick = useCallback(() => {
     window.open('https://testflight.apple.com/join/ygzsQbNf', '_blank')
-  }
+  }, [])
 
-  // Loading state
+  // Loading state (removed since we set it to false initially)
   if (isLoading) {
     return (
       <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center">
@@ -301,6 +339,7 @@ export default function HomePage() {
         currentTime={currentTime}
       />
 
+      {/* Critical above-the-fold sections loaded immediately */}
       <HeroSection
         handleSearchClick={handleSearchClick}
         flightsTracked={flightsTracked}
@@ -319,20 +358,39 @@ export default function HomePage() {
 
       <HowItWorksSection />
 
-      <FlightIntelligenceSection
-        flightPredictions={flightPredictions}
-        trafficRoutes={trafficRoutes}
-        dynamicPrices={dynamicPrices}
-      />
+      {/* Lazy loaded sections - only load when user scrolls near them */}
+      <div data-section="flight" className="min-h-[100px]">
+        {visibleSections.flight && (
+          <Suspense fallback={<SectionLoader />}>
+            <FlightIntelligenceSection
+              flightPredictions={flightPredictions}
+              trafficRoutes={trafficRoutes}
+              dynamicPrices={dynamicPrices}
+            />
+          </Suspense>
+        )}
+      </div>
 
-      <SurgePredictionSection
-        surgePredictions={surgePredictions}
-      />
+      <div data-section="surge" className="min-h-[100px]">
+        {visibleSections.surge && (
+          <Suspense fallback={<SectionLoader />}>
+            <SurgePredictionSection
+              surgePredictions={surgePredictions}
+            />
+          </Suspense>
+        )}
+      </div>
 
-      <GroupCoordinationSection
-        groupMembers={groupMembers}
-        handleSearchClick={handleSearchClick}
-      />
+      <div data-section="group" className="min-h-[100px]">
+        {visibleSections.group && (
+          <Suspense fallback={<SectionLoader />}>
+            <GroupCoordinationSection
+              groupMembers={groupMembers}
+              handleSearchClick={handleSearchClick}
+            />
+          </Suspense>
+        )}
+      </div>
 
       <Footer
         handleSearchClick={handleSearchClick}
@@ -351,16 +409,25 @@ export default function HomePage() {
           <div className="flex items-center space-x-2 md:space-x-4">
             <div className="flex items-center space-x-1">
               <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse"></div>
-              <span className="text-xs md:text-sm font-bold text-white">SURGE: {currentUberSurge}x</span>
+              <span className="text-xs md:text-sm font-bold text-white">
+                SURGE: {currentUberSurge}x
+              </span>
             </div>
-            <span className="text-xs md:text-sm text-blue-100 hidden sm:block">Next: {timeUntilSurge}</span>
+            <span className="text-xs md:text-sm text-blue-100 hidden sm:block">
+              Next: {timeUntilSurge}
+            </span>
           </div>
           <button 
             onClick={handleSearchClick}
             className="px-4 md:px-6 py-1.5 md:py-2 bg-white text-blue-600 rounded-lg font-bold hover:bg-gray-100 transition text-xs md:text-sm shadow-lg flex items-center space-x-2"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+              <path 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                strokeWidth={2} 
+                d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" 
+              />
             </svg>
             <span>View Options</span>
           </button>
