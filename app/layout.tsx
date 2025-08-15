@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   
   // Google Search Console Verification
   verification: {
-    google: 'BHWkhY02dx7jq6OPC5fLJXDEL7_PaiyguPwn2GnnpLw',  // Updated with correct code
+    google: 'BHWkhY02dx7jq6OPC5fLJXDEL7_PaiyguPwn2GnnpLw',
   },
   
   // Open Graph for Facebook, LinkedIn, etc.
