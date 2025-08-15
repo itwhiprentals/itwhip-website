@@ -39,7 +39,7 @@ import type {
 
 export default function HomePage() {
   // Core state
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [currentTime, setCurrentTime] = useState(new Date())
   const [isDarkMode, setIsDarkMode] = useState(true)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -71,40 +71,61 @@ export default function HomePage() {
   // Group coordination state
   const [groupMembers] = useState<GroupMember[]>(initialGroupMembers)
 
-  // Dark mode effect
+  // Dark mode effect - FIXED with proper client-side checks
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-    setIsDarkMode(mediaQuery.matches)
-    
-    const savedTheme = localStorage.getItem('theme')
-    if (savedTheme) {
-      setIsDarkMode(savedTheme === 'dark')
-    }
-    
-    const handler = (e: MediaQueryListEvent) => {
-      if (!localStorage.getItem('theme')) {
-        setIsDarkMode(e.matches)
+    try {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+      setIsDarkMode(mediaQuery.matches)
+      
+      // Only access localStorage on client side
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const savedTheme = localStorage.getItem('theme')
+        if (savedTheme) {
+          setIsDarkMode(savedTheme === 'dark')
+        }
       }
+      
+      const handler = (e: MediaQueryListEvent) => {
+        if (typeof window !== 'undefined' && window.localStorage) {
+          if (!localStorage.getItem('theme')) {
+            setIsDarkMode(e.matches)
+          }
+        }
+      }
+      
+      mediaQuery.addEventListener('change', handler)
+      return () => mediaQuery.removeEventListener('change', handler)
+    } catch (error) {
+      console.error('Error setting up dark mode:', error)
+      // Default to dark mode if there's an error
+      setIsDarkMode(true)
     }
-    
-    mediaQuery.addEventListener('change', handler)
-    return () => mediaQuery.removeEventListener('change', handler)
   }, [])
 
   // Apply theme class to document
   useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
+    if (typeof document !== 'undefined') {
+      if (isDarkMode) {
+        document.documentElement.classList.add('dark')
+      } else {
+        document.documentElement.classList.remove('dark')
+      }
     }
   }, [isDarkMode])
 
-  // Toggle theme
+  // Toggle theme - FIXED with localStorage safety
   const toggleTheme = () => {
     const newTheme = !isDarkMode
     setIsDarkMode(newTheme)
-    localStorage.setItem('theme', newTheme ? 'dark' : 'light')
+    
+    // Only save to localStorage if available
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        localStorage.setItem('theme', newTheme ? 'dark' : 'light')
+      } catch (error) {
+        console.error('Error saving theme:', error)
+      }
+    }
   }
 
   // Calculate time until surge
@@ -121,71 +142,80 @@ export default function HomePage() {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`
   }, [currentTime, nextSurgeTime])
 
-  // Initialize all data and intervals
+  // Initialize all data and intervals - FIXED with error handling
   useEffect(() => {
-    // Generate initial surge predictions
-    const predictions = generateSurgePredictions()
-    setSurgePredictions(predictions)
-    
-    // Set next surge time
-    const nextSurge = predictions.find(p => p.multiplier > 1.5)
-    if (nextSurge) {
-      const [time, period] = nextSurge.time.split(' ')
-      const [hours, minutes] = time.split(':')
-      const nextSurgeDate = new Date()
-      let hour = parseInt(hours)
-      if (period === 'PM' && hour !== 12) hour += 12
-      if (period === 'AM' && hour === 12) hour = 0
-      nextSurgeDate.setHours(hour)
-      nextSurgeDate.setMinutes(parseInt(minutes))
-      setNextSurgeTime(nextSurgeDate)
-    }
-
-    // Update current time
-    const timeInterval = setInterval(() => {
-      setCurrentTime(new Date())
-    }, 1000)
-
-    // Update ticker
-    const tickerInterval = setInterval(() => {
-      setCurrentTickerIndex(prev => (prev + 1) % 4)
-    }, 5000)
-
-    // Regenerate surge predictions
-    const surgeInterval = setInterval(() => {
-      const newPredictions = generateSurgePredictions()
-      setSurgePredictions(newPredictions)
-    }, 300000) // Every 5 minutes
-
-    // Simulate surge changes
-    const surgeSimulation = setInterval(() => {
-      const hour = new Date().getHours()
-      let baseSurge = 1.0
+    try {
+      // Generate initial surge predictions
+      const predictions = generateSurgePredictions()
+      setSurgePredictions(predictions)
       
-      if ((hour >= 15 && hour <= 18) || (hour >= 6 && hour <= 9)) {
-        baseSurge = 2.0 + Math.random() * 1.5
-      } else if (hour >= 12 && hour <= 14) {
-        baseSurge = 1.3 + Math.random() * 0.7
+      // Set next surge time
+      const nextSurge = predictions.find(p => p.multiplier > 1.5)
+      if (nextSurge) {
+        const [time, period] = nextSurge.time.split(' ')
+        const [hours, minutes] = time.split(':')
+        const nextSurgeDate = new Date()
+        let hour = parseInt(hours)
+        if (period === 'PM' && hour !== 12) hour += 12
+        if (period === 'AM' && hour === 12) hour = 0
+        nextSurgeDate.setHours(hour)
+        nextSurgeDate.setMinutes(parseInt(minutes))
+        setNextSurgeTime(nextSurgeDate)
       }
-      
-      setCurrentUberSurge(Math.round(baseSurge * 10) / 10)
-    }, 30000) // Every 30 seconds
 
-    // Update stats
-    const statsInterval = setInterval(() => {
-      setFlightsTracked(prev => prev + Math.floor(Math.random() * 3))
-      setTotalSavings(prev => prev + Math.floor(Math.random() * 100))
-    }, 10000) // Every 10 seconds
+      // Update current time
+      const timeInterval = setInterval(() => {
+        setCurrentTime(new Date())
+      }, 1000)
 
-    setIsLoading(false)
+      // Update ticker
+      const tickerInterval = setInterval(() => {
+        setCurrentTickerIndex(prev => (prev + 1) % 4)
+      }, 5000)
 
-    // Cleanup
-    return () => {
-      clearInterval(timeInterval)
-      clearInterval(tickerInterval)
-      clearInterval(surgeInterval)
-      clearInterval(surgeSimulation)
-      clearInterval(statsInterval)
+      // Regenerate surge predictions
+      const surgeInterval = setInterval(() => {
+        const newPredictions = generateSurgePredictions()
+        setSurgePredictions(newPredictions)
+      }, 300000) // Every 5 minutes
+
+      // Simulate surge changes
+      const surgeSimulation = setInterval(() => {
+        const hour = new Date().getHours()
+        let baseSurge = 1.0
+        
+        if ((hour >= 15 && hour <= 18) || (hour >= 6 && hour <= 9)) {
+          baseSurge = 2.0 + Math.random() * 1.5
+        } else if (hour >= 12 && hour <= 14) {
+          baseSurge = 1.3 + Math.random() * 0.7
+        }
+        
+        setCurrentUberSurge(Math.round(baseSurge * 10) / 10)
+      }, 30000) // Every 30 seconds
+
+      // Update stats
+      const statsInterval = setInterval(() => {
+        setFlightsTracked(prev => prev + Math.floor(Math.random() * 3))
+        setTotalSavings(prev => prev + Math.floor(Math.random() * 100))
+      }, 10000) // Every 10 seconds
+
+      // Set loading to false after a short delay to ensure everything is ready
+      setTimeout(() => {
+        setIsLoading(false)
+      }, 100)
+
+      // Cleanup
+      return () => {
+        clearInterval(timeInterval)
+        clearInterval(tickerInterval)
+        clearInterval(surgeInterval)
+        clearInterval(surgeSimulation)
+        clearInterval(statsInterval)
+      }
+    } catch (error) {
+      console.error('Error initializing app:', error)
+      // Still set loading to false so user sees something
+      setIsLoading(false)
     }
   }, [])
 
