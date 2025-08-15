@@ -21,7 +21,6 @@ import {
   IoLogoTwitter,
   IoLogoInstagram,
   IoLogoLinkedin,
-  IoPersonCircleOutline,
   IoLogInOutline,
   IoRocketOutline
 } from 'react-icons/io5'
@@ -212,7 +211,7 @@ export default function MobileMenu({
                         onClick={handleNavClick}
                         className={`
                           block px-12 py-2.5 text-sm transition-colors
-                          ${item.highlight 
+                          ${'highlight' in item && item.highlight 
                             ? 'text-blue-600 dark:text-blue-400 font-medium' 
                             : 'text-gray-700 dark:text-gray-300'
                           }
@@ -220,7 +219,7 @@ export default function MobileMenu({
                         `}
                       >
                         {item.label}
-                        {item.highlight && (
+                        {'highlight' in item && item.highlight && (
                           <span className="ml-2 text-xs text-green-600 dark:text-green-400">
                             • 23 spots left
                           </span>
@@ -269,7 +268,7 @@ export default function MobileMenu({
           <div className="p-4 border-t border-gray-200 dark:border-gray-800">
             <div className="space-y-3">
               <a
-                href="tel:+1234567890"
+                href="tel:+16025550100"
                 className="flex items-center space-x-3 text-sm text-gray-600 dark:text-gray-400 
                   hover:text-gray-900 dark:hover:text-white transition-colors"
               >
