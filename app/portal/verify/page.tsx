@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 import { 
   IoCheckmarkCircle,
   IoTimeOutline,
@@ -16,7 +17,7 @@ import {
 } from 'react-icons/io5'
 import { arizonaHotels, getHotelByCode, generateMetrics } from '@/app/data/hotel-database'
 
-export default function PortalVerify() {
+function PortalVerifyContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const gdsCode = searchParams.get('code') || 'UNKNOWN'
@@ -370,5 +371,19 @@ export default function PortalVerify() {
         }
       `}</style>
     </div>
+  )
+}
+export default function PortalVerifyPage() {
+  return (
+    <Suspense fallback={
+      <div className='min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center'>
+        <div className='text-center'>
+          <div className='w-8 h-8 border-2 border-amber-600 border-t-transparent rounded-full animate-spin mx-auto mb-4'></div>
+          <p className='text-gray-600 dark:text-gray-400'>Verifying property...</p>
+        </div>
+      </div>
+    }>
+      <PortalVerifyContent />
+    </Suspense>
   )
 }
