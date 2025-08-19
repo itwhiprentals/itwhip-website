@@ -20,7 +20,6 @@ import {
   IoGlobeOutline,
   IoConstructOutline,
   IoKeyOutline,
-  IoFingerprintOutline,
   IoMenuOutline,
   IoCloseOutline
 } from 'react-icons/io5'
@@ -396,7 +395,7 @@ export default function LegalPage() {
               {/* Terms Acceptance */}
               <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 rounded-lg p-6 shadow-lg">
                 <div className="text-center">
-                  <IoFingerprintOutline className="w-12 h-12 text-blue-600 mx-auto mb-4" />
+                  <IoLockClosedOutline className="w-12 h-12 text-blue-600 mx-auto mb-4" />
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
                     Terms Acceptance Required
                   </h2>
