@@ -13,7 +13,9 @@ import {
   IoPhonePortraitOutline,
   IoLocationOutline,
   IoWarningOutline,
-  IoCheckmarkCircle
+  IoCheckmarkCircle,
+  IoBusinessOutline,
+  IoCarSportOutline
 } from 'react-icons/io5'
 
 export const metadata: Metadata = {
