@@ -12,8 +12,6 @@ import {
   IoCarOutline,
   IoPricetagOutline,
   IoBusinessOutline,
-  IoLogoApple,
-  IoLogoGooglePlaystore,
   IoCallOutline,
   IoMailOutline,
   IoLocationOutline,
@@ -22,10 +20,18 @@ import {
   IoLogoInstagram,
   IoLogoLinkedin,
   IoLogInOutline,
-  IoRocketOutline
+  IoCarSportOutline,
+  IoCodeSlashOutline,
+  IoArrowBackOutline,
+  IoArrowForwardOutline
 } from 'react-icons/io5'
-import type { MobileMenuProps } from '../types'
-import { socialLinks } from '../utils/constants'
+
+interface MobileMenuProps {
+  isOpen: boolean
+  onClose: () => void
+  handleGetAppClick?: () => void
+  handleSearchClick?: () => void
+}
 
 // Mobile navigation structure
 const mobileNavItems = [
@@ -36,7 +42,20 @@ const mobileNavItems = [
       { label: 'How It Works', href: '/how-it-works' },
       { label: 'Flight Tracker', href: '/flights' },
       { label: 'Group Rides', href: '/group-rides' },
-      { label: 'Corporate Accounts', href: '/corporate' }
+      { label: 'Corporate Accounts', href: '/corporate' },
+      { label: 'Private Club', href: '/private-club' }
+    ]
+  },
+  {
+    label: 'Technology',
+    icon: <IoCodeSlashOutline className="w-5 h-5" />,
+    items: [
+      { label: 'Developer APIs', href: '/developers' },
+      { label: 'Instant Ride SDK™', href: '/sdk', highlight: true },
+      { label: 'Integration Partners', href: '/integrations' },
+      { label: 'Hotel Solutions', href: '/hotel-solutions' },
+      { label: 'Hotel Portal', href: '/hotel-portal' },
+      { label: 'GDS Documentation', href: '/gds' }
     ]
   },
   {
@@ -51,21 +70,13 @@ const mobileNavItems = [
     ]
   },
   {
-    label: 'Pricing',
-    icon: <IoPricetagOutline className="w-5 h-5" />,
-    items: [
-      { label: 'Pricing Calculator', href: '/pricing' },
-      { label: 'Compare Services', href: '/compare' },
-      { label: 'No Surge Guarantee', href: '/no-surge' }
-    ]
-  },
-  {
     label: 'Company',
     icon: <IoBusinessOutline className="w-5 h-5" />,
     items: [
       { label: 'About Us', href: '/about' },
-      { label: 'Safety', href: '/safety' },
-      { label: 'Support', href: '/support' },
+      { label: 'Careers', href: '/careers', badge: '12 open' },
+      { label: 'Press', href: '/press' },
+      { label: 'Investors', href: '/investors' },
       { label: 'Contact', href: '/contact' }
     ]
   }
@@ -78,6 +89,15 @@ export default function MobileMenu({
   handleSearchClick
 }: MobileMenuProps) {
   const [expandedSection, setExpandedSection] = useState<string | null>(null)
+  const [currentView, setCurrentView] = useState<'rider' | 'hotel'>('rider')
+  
+  // Load saved view on mount
+  useEffect(() => {
+    const savedView = localStorage.getItem('currentView') as 'rider' | 'hotel'
+    if (savedView) {
+      setCurrentView(savedView)
+    }
+  }, [])
   
   // Prevent body scroll when menu is open
   useEffect(() => {
@@ -103,10 +123,22 @@ export default function MobileMenu({
     setExpandedSection(null)
   }
 
+  // Toggle between views
+  const toggleView = () => {
+    const newView = currentView === 'rider' ? 'hotel' : 'rider'
+    setCurrentView(newView)
+    localStorage.setItem('currentView', newView)
+    // Trigger a custom event that your main page can listen to
+    window.dispatchEvent(new CustomEvent('viewChange', { detail: newView }))
+    onClose()
+    // Optional: reload page to ensure view changes
+    window.location.reload()
+  }
+
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 md:hidden">
+    <div className="fixed inset-0 z-50 lg:hidden">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
@@ -136,11 +168,54 @@ export default function MobileMenu({
 
         {/* Scrollable Content */}
         <div className="overflow-y-auto h-[calc(100%-80px)]">
+          
+          {/* VIEW TOGGLE - CLEAN SWITCH */}
+          <div className="p-4 border-b border-gray-200 dark:border-gray-800">
+            <div className="flex items-center justify-center">
+              <div className="relative flex items-center bg-gray-100 dark:bg-gray-800 rounded-full p-1">
+                {/* Background slider */}
+                <div 
+                  className={`absolute h-8 w-24 bg-gradient-to-r rounded-full transition-transform duration-300 ${
+                    currentView === 'rider' 
+                      ? 'from-blue-500 to-blue-600 translate-x-0' 
+                      : 'from-amber-500 to-amber-600 translate-x-[104px]'
+                  }`} 
+                />
+                
+                {/* Rider Button */}
+                <button
+                  onClick={() => toggleView()}
+                  className={`relative z-10 flex items-center justify-center w-28 py-2 rounded-full transition-colors text-sm font-medium ${
+                    currentView === 'rider' 
+                      ? 'text-white' 
+                      : 'text-gray-600 dark:text-gray-400'
+                  }`}
+                >
+                  <IoArrowBackOutline className="w-3 h-3 mr-1" />
+                  Riders
+                </button>
+                
+                {/* Hotel Button */}
+                <button
+                  onClick={() => toggleView()}
+                  className={`relative z-10 flex items-center justify-center w-28 py-2 rounded-full transition-colors text-sm font-medium ${
+                    currentView === 'hotel' 
+                      ? 'text-white' 
+                      : 'text-gray-600 dark:text-gray-400'
+                  }`}
+                >
+                  Hotels
+                  <IoArrowForwardOutline className="w-3 h-3 ml-1" />
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* Quick Actions */}
           <div className="p-4 space-y-3 border-b border-gray-200 dark:border-gray-800">
             <button
               onClick={() => {
-                handleSearchClick()
+                if (handleSearchClick) handleSearchClick()
                 handleNavClick()
               }}
               className="w-full flex items-center justify-between px-4 py-3 
@@ -151,24 +226,6 @@ export default function MobileMenu({
                 <span className="font-medium">Sign In / Sign Up</span>
               </div>
               <IoChevronForwardOutline className="w-5 h-5" />
-            </button>
-            
-            <button
-              onClick={() => {
-                handleGetAppClick()
-                handleNavClick()
-              }}
-              className="w-full flex items-center justify-between px-4 py-3 
-                bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white 
-                rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-            >
-              <div className="flex items-center space-x-3">
-                <IoRocketOutline className="w-5 h-5" />
-                <span className="font-medium">Get the App</span>
-              </div>
-              <span className="text-xs bg-green-500 text-white px-2 py-1 rounded-full">
-                BETA
-              </span>
             </button>
           </div>
 
@@ -218,12 +275,19 @@ export default function MobileMenu({
                           hover:bg-gray-100 dark:hover:bg-gray-800
                         `}
                       >
-                        {item.label}
-                        {'highlight' in item && item.highlight && (
-                          <span className="ml-2 text-xs text-green-600 dark:text-green-400">
-                            • 23 spots left
-                          </span>
-                        )}
+                        <span className="flex items-center justify-between">
+                          {item.label}
+                          {'highlight' in item && item.highlight && (
+                            <span className="text-xs bg-amber-500 text-white px-2 py-0.5 rounded-full">
+                              NEW
+                            </span>
+                          )}
+                          {'badge' in item && item.badge && (
+                            <span className="text-xs text-green-600 dark:text-green-400">
+                              {item.badge}
+                            </span>
+                          )}
+                        </span>
                       </Link>
                     ))}
                   </div>
@@ -232,40 +296,11 @@ export default function MobileMenu({
             ))}
           </div>
 
-          {/* App Download Section */}
-          <div className="p-4 border-t border-gray-200 dark:border-gray-800">
-            <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-              Download ItWhip App
-            </div>
-            <div className="space-y-2">
-              <button
-                onClick={() => {
-                  window.open('https://testflight.apple.com/join/ygzsQbNf', '_blank')
-                  handleNavClick()
-                }}
-                className="w-full flex items-center justify-center space-x-2 
-                  bg-black dark:bg-white text-white dark:text-black 
-                  px-4 py-2.5 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 
-                  transition-colors"
-              >
-                <IoLogoApple className="w-5 h-5" />
-                <span className="font-medium">Download for iOS</span>
-              </button>
-              
-              <button
-                disabled
-                className="w-full flex items-center justify-center space-x-2 
-                  bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 
-                  px-4 py-2.5 rounded-lg cursor-not-allowed opacity-50"
-              >
-                <IoLogoGooglePlaystore className="w-5 h-5" />
-                <span className="font-medium">Android Coming Soon</span>
-              </button>
-            </div>
-          </div>
-
           {/* Contact Info */}
           <div className="p-4 border-t border-gray-200 dark:border-gray-800">
+            <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+              Contact Us
+            </div>
             <div className="space-y-3">
               <a
                 href="tel:+16025550100"
@@ -294,9 +329,12 @@ export default function MobileMenu({
 
           {/* Social Links */}
           <div className="p-4 border-t border-gray-200 dark:border-gray-800">
+            <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 text-center">
+              Follow Us
+            </div>
             <div className="flex items-center justify-center space-x-4">
               <a
-                href={socialLinks.facebook}
+                href="https://facebook.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 
@@ -306,7 +344,7 @@ export default function MobileMenu({
                 <IoLogoFacebook className="w-6 h-6" />
               </a>
               <a
-                href={socialLinks.twitter}
+                href="https://twitter.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 
@@ -316,7 +354,7 @@ export default function MobileMenu({
                 <IoLogoTwitter className="w-6 h-6" />
               </a>
               <a
-                href={socialLinks.instagram}
+                href="https://instagram.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 
@@ -326,7 +364,7 @@ export default function MobileMenu({
                 <IoLogoInstagram className="w-6 h-6" />
               </a>
               <a
-                href={socialLinks.linkedin}
+                href="https://linkedin.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 
@@ -339,8 +377,9 @@ export default function MobileMenu({
           </div>
 
           {/* Footer */}
-          <div className="p-4 text-center text-xs text-gray-500 dark:text-gray-500">
-            © 2024 ItWhip. All rights reserved.
+          <div className="p-4 text-center text-xs text-gray-500 dark:text-gray-500 border-t border-gray-200 dark:border-gray-800">
+            <p>© 2019-2025 ItWhip Technologies, Inc.</p>
+            <p className="mt-1">All rights reserved.</p>
           </div>
         </div>
       </div>

@@ -13,18 +13,18 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title: 'ItWhip - Beat Airport Surge Pricing | Independent Driver Platform',
-  description: 'Connect with independent drivers at Phoenix Sky Harbor. Save 30-40% vs surge pricing. Real-time flight tracking, surge predictions, and guaranteed fair rates.',
+  title: 'ItWhip - Luxury Rides Without Surge | Hotels Earn From Every Ride',
+  description: 'Phoenix premium transportation network. Riders save 60% vs surge pricing. Hotels earn $300K/year from guest rides. Zero investment required.',
   
-  // Google Search Console Verification
+  // Google Search Console Verification - KEEP THIS
   verification: {
     google: 'BHWkhY02dx7jq6OPC5fLJXDEL7_PaiyguPwn2GnnpLw',
   },
   
   // Open Graph for Facebook, LinkedIn, etc.
   openGraph: {
-    title: 'ItWhip - Your Flight. Your Price. Your Driver.',
-    description: 'Beat airport surge pricing with independent drivers. Save 30-40% guaranteed. Real-time flight tracking and surge predictions for Phoenix Sky Harbor.',
+    title: 'ItWhip - Skip The Surge | Turn Rides Into Revenue',
+    description: 'Phoenix\'s premium ride network. Luxury vehicles at fixed prices for riders. $300K annual revenue for hotels. Join 127 partners already earning.',
     url: 'https://itwhip.com',
     siteName: 'ItWhip',
     images: [
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
         url: 'https://itwhip.com/og-image.jpg',
         width: 1200,
         height: 630,
-        alt: 'ItWhip - Independent Driver Platform',
+        alt: 'ItWhip - Phoenix Premium Transportation Network',
       }
     ],
     locale: 'en_US',
@@ -42,25 +42,25 @@ export const metadata: Metadata = {
   // Twitter Card
   twitter: {
     card: 'summary_large_image',
-    title: 'ItWhip - Beat Airport Surge Pricing',
-    description: 'Save 30-40% on airport rides. Connect with independent drivers.',
+    title: 'ItWhip - No Surge. Just Luxury.',
+    description: 'Fixed prices on premium rides. Hotels earn 30% commission. Phoenix Sky Harbor to anywhere.',
     images: ['https://itwhip.com/og-image.jpg'],
     creator: '@itwhip',
     site: '@itwhip',
   },
   
-  // Additional meta tags
-  keywords: 'airport rides, Phoenix Sky Harbor, surge pricing, independent drivers, rideshare alternative, airport transportation, PHX airport',
-  authors: [{ name: 'ItWhip' }],
-  creator: 'ItWhip',
-  publisher: 'ItWhip',
+  // Additional meta tags - Updated for dual audience
+  keywords: 'hotel transportation revenue, luxury airport rides Phoenix, no surge pricing, hotel shuttle alternative, Sky Harbor transportation, premium rides Phoenix, hotel guest transportation, rideshare for hotels',
+  authors: [{ name: 'ItWhip Technologies' }],
+  creator: 'ItWhip Technologies',
+  publisher: 'ItWhip Technologies',
   formatDetection: {
     email: false,
     address: false,
     telephone: false,
   },
   
-  // Favicon and app icons
+  // Favicon and app icons - KEEP THESE
   icons: {
     icon: [
       { url: '/favicon.ico' },
@@ -76,9 +76,9 @@ export const metadata: Metadata = {
   applicationName: 'ItWhip',
   referrer: 'origin-when-cross-origin',
   category: 'transportation',
-  classification: 'Transportation',
+  classification: 'Transportation Technology',
   
-  // Robots
+  // Robots - KEEP FOR SEO
   robots: {
     index: true,
     follow: true,
@@ -98,23 +98,23 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         {/* Additional meta tags that Next.js doesn't handle automatically */}
         <meta name="theme-color" content="#2563eb" />
         <link rel="canonical" href="https://itwhip.com" />
         
-        {/* Structured data for search engines */}
+        {/* Updated structured data for both audiences */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               '@context': 'https://schema.org',
               '@type': 'Organization',
-              name: 'ItWhip',
+              name: 'ItWhip Technologies',
               url: 'https://itwhip.com',
               logo: 'https://itwhip.com/logo.png',
-              description: 'Independent driver platform for Phoenix Sky Harbor Airport',
+              description: 'Premium transportation network connecting luxury drivers with riders and hotels in Phoenix',
               address: {
                 '@type': 'PostalAddress',
                 addressLocality: 'Phoenix',
@@ -130,13 +130,65 @@ export default function RootLayout({
               areaServed: {
                 '@type': 'City',
                 name: 'Phoenix, Arizona'
+              },
+              offers: [
+                {
+                  '@type': 'Offer',
+                  name: 'Luxury Rides',
+                  description: 'Fixed-price luxury transportation with no surge pricing',
+                  category: 'Transportation Service'
+                },
+                {
+                  '@type': 'Offer',
+                  name: 'Hotel Revenue Program',
+                  description: 'Hotels earn 30% commission on guest rides',
+                  category: 'B2B Service'
+                }
+              ]
+            })
+          }}
+        />
+        
+        {/* Additional schema for Hotel Industry */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'Service',
+              name: 'Hotel Transportation Revenue Program',
+              provider: {
+                '@type': 'Organization',
+                name: 'ItWhip Technologies'
+              },
+              description: 'Transform shuttle costs into revenue. Hotels earn 30% commission on every guest ride.',
+              areaServed: 'Phoenix, Arizona',
+              hasOfferCatalog: {
+                '@type': 'OfferCatalog',
+                name: 'Hotel Partnership Programs',
+                itemListElement: [
+                  {
+                    '@type': 'Offer',
+                    name: 'Revenue Share Program',
+                    description: '30% commission on all guest rides'
+                  },
+                  {
+                    '@type': 'Offer',
+                    name: 'Zero Investment',
+                    description: 'No upfront costs or vehicle purchases'
+                  }
+                ]
               }
             })
           }}
         />
+        
+        {/* Google Analytics or other tracking scripts can go here */}
       </head>
-      <body className={inter.className}>
+      <body className={`${inter.className} antialiased`}>
         {children}
+        
+        {/* You can add any persistent scripts or components here */}
       </body>
     </html>
   )
