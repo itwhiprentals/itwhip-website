@@ -28,14 +28,21 @@ import {
   IoExpand,
   IoContract,
   IoInformationCircleOutline,
-  IoFlashOutline
+  IoFlashOutline,
+  IoLayersOutline,
+  IoCloudOutline,
+  IoAnalyticsOutline,
+  IoLeafOutline,
+  IoGlobeOutline,
+  IoServerOutline,
+  IoRocketOutline
 } from 'react-icons/io5'
 
 interface Question {
   id: string
   question: string
   answer: string
-  category: 'availability' | 'payment' | 'guest' | 'integration' | 'vip' | 'insurance'
+  category: 'platform' | 'availability' | 'payment' | 'guest' | 'integration' | 'compliance' | 'vip' | 'insurance'
   icon: React.ReactNode
   highlights?: string[]
   priority?: 'high' | 'medium' | 'low'
@@ -56,131 +63,183 @@ export default function ObjectionCrusher() {
 
   const questions: Question[] = [
     {
-      id: 'driver-availability',
-      question: "How can you guarantee drivers will always be available?",
-      answer: "Our Instant Ride™ technology uses predictive AI that analyzes flight data, hotel occupancy, and historical patterns to pre-position drivers 47 minutes before demand. We maintain a network of 847+ drivers in Phoenix alone, with surge-protected rates that ensure availability even during peak times. Unlike Uber/Lyft, our drivers are dedicated to hotel pickups with guaranteed earnings, so they prioritize your guests. We also have overflow agreements with three backup fleets.",
+      id: 'platform-superiority',
+      question: "Why choose ItWhip over existing solutions or building our own?",
+      answer: "ItWhip is the hospitality industry's first complete guest journey platform - think Stripe for hotel operations. We've unified transportation, reservations, compliance, and revenue optimization into one system. You couldn't build this for less than $5M and 3 years. We handle everything: facilitating transportation through our verified partner network, generating new revenue streams (average $67K/month), automating compliance tracking, and providing real-time analytics. Our 'Try Us Certified' security standard means we're so confident, we invite hackers to test us publicly. Hotels using ItWhip see 23% more direct bookings, eliminate transportation complaints, and turn a cost center into a profit center.",
+      category: 'platform',
+      icon: <IoRocketOutline className="w-5 h-5" />,
+      highlights: ['Complete platform solution', '$67K/month revenue', 'Try Us Certified security', 'Impossible to replicate'],
+      priority: 'high',
+      readTime: '2 min'
+    },
+    {
+      id: 'try-us-certification',
+      question: "What is 'Try Us Certified' and why is it better than traditional compliance?",
+      answer: "We created our own security standard because we exceed what traditional certifications measure. 'Try Us Certified' is live, transparent security verification. Instead of paying $50K for a SOC 2 audit that's outdated in months, we publicly display our security metrics: 1,847 penetration attempts, 0 successful breaches. Every hotel gets a public security page showing their protection status. We invite ethical hackers to test our defenses with bounties up to $10,000. Your compliance dashboard shows real-time protection of guest data, payment processing, and operational systems. This isn't compliance theater - it's actual security you can verify yourself. Traditional certifications check boxes; we stop breaches.",
+      category: 'compliance',
+      icon: <IoShieldCheckmarkOutline className="w-5 h-5" />,
+      highlights: ['Live security metrics', 'Public verification', '$10K bug bounties', 'Real protection not theater'],
+      priority: 'high',
+      readTime: '2 min'
+    },
+    {
+      id: 'transportation-coverage',
+      question: "How do you ensure transportation is always available for our guests?",
+      answer: "Our platform connects with multiple transportation sources through our proprietary Partner Network Protocol. We aggregate availability from verified operators, rideshare platforms, and premium services into one unified pool. Our AI predicts demand 47 minutes in advance using your reservation data and arrival patterns. The system automatically adjusts supply through surge protection protocols and preferential partnerships. We maintain redundancy through multiple provider types, ensuring coverage even during peak events. Real result: 99.7% availability rate with average pickup time under 4 minutes. No single point of failure, always multiple options.",
       category: 'availability',
       icon: <IoCarOutline className="w-5 h-5" />,
-      highlights: ['847+ drivers', '47-minute prediction', 'Surge protection', 'Backup fleets'],
+      highlights: ['99.7% availability', 'Multi-source coverage', '47-min prediction', 'Under 4-min pickup'],
       priority: 'high',
       readTime: '2 min'
     },
     {
-      id: 'payment-reliability',
-      question: "How do we know we'll get paid reliably?",
-      answer: "Payment is automatic and guaranteed. Every ride generates instant commission credited to your account, with weekly automated ACH transfers to your bank. Our system integrates with your PMS for automatic room charging, eliminating payment friction. We're backed by $50M in funding, maintain SOC 2 compliance, and carry a $100M insurance policy. You can track every penny in real-time through your dashboard, with detailed reports for accounting. No invoicing, no chasing payments - just automatic revenue.",
+      id: 'revenue-generation',
+      question: "How exactly does a hotel make money from transportation?",
+      answer: "Simple: every ride booked through your platform generates commission. Here's the math: Your 250 rooms at 80% occupancy = 200 occupied rooms daily. 30% need transportation = 60 rides/day. Average fare $45 x 30% commission = $13.50 per ride. 60 rides x $13.50 x 30 days = $24,300/month minimum. But it gets better - you're also saving money by eliminating shuttle operations ($15K/month), reducing front desk time on transportation issues (10 hours/week), and avoiding surge pricing for VIP guests. Total financial impact: typically $67K/month in new revenue plus eliminated costs. ROI in 42 days.",
       category: 'payment',
       icon: <IoCashOutline className="w-5 h-5" />,
-      highlights: ['Weekly ACH transfers', 'PMS integration', 'SOC 2 compliant', '$100M insurance'],
+      highlights: ['$24K+ monthly revenue', 'Eliminate shuttle costs', '42-day ROI', 'Automatic commission'],
       priority: 'high',
       readTime: '2 min'
     },
     {
-      id: 'guest-complaints',
-      question: "What happens when a guest complains about a driver or ride?",
-      answer: "We handle 100% of guest service issues through our 24/7 support team, so your staff never deals with transportation complaints. Every issue is resolved within 15 minutes, with automatic compensation protocols: full refund for any delay over 10 minutes, immediate backup driver dispatch if needed, and direct communication with your guest. Our driver rating system (4.8+ required) and continuous training ensure issues are rare. You get full visibility through your dashboard but zero responsibility for resolution.",
-      category: 'guest',
-      icon: <IoPersonOutline className="w-5 h-5" />,
-      highlights: ['24/7 support', '15-minute resolution', 'Automatic compensation', '4.8+ driver rating'],
+      id: 'legal-compliance',
+      question: "How does ItWhip handle regulatory and legal compliance?",
+      answer: "We've built compliance into the platform's DNA. Our system automatically tracks and reports everything required by law: transportation accessibility (ADA), data privacy (GDPR/CCPA), financial records (SOX if applicable), and operational metrics. But here's what matters: you're legally protected because partner operators carry their own insurance and liability. You're facilitating, not providing transportation. Our legal structure ensures complete separation between your hotel and any transportation liability. Every transaction is logged, encrypted, and audit-ready. When regulations change, our platform updates automatically. You focus on hospitality; we handle compliance.",
+      category: 'compliance',
+      icon: <IoDocumentTextOutline className="w-5 h-5" />,
+      highlights: ['Automatic compliance', 'Zero liability', 'Audit-ready', 'Auto-updates for new laws'],
       priority: 'high',
       readTime: '2 min'
     },
     {
-      id: 'integration-complexity',
-      question: "How complex is the integration with our existing systems?",
-      answer: "Integration takes 15 minutes, not months. We support all major PMS systems (Opera, Amadeus, Sabre, etc.) with pre-built connectors. Three options: REST API (5 lines of code), JavaScript SDK (npm install), or no-code widget (copy-paste HTML). Your IT team gets a dedicated integration engineer, sandbox environment for testing, and 24/7 technical support. Most hotels go live the same day they sign up. No hardware, no training, no disruption to operations.",
+      id: 'integration-simplicity',
+      question: "How difficult is it to integrate with our existing systems?",
+      answer: "15-minute integration, seriously. We've pre-built connections for every major hotel system - your PMS, channel manager, booking engine, and payment processor. Three ways to integrate: API (for your tech team), JavaScript widget (copy-paste), or managed integration (we do it for you). No hardware, no infrastructure changes, no staff training. Your existing systems remain untouched; we simply add a layer that unifies everything. Most hotels go live the same day they sign up. We handle all the complex backend connections - you just see one simple dashboard. If you can copy and paste, you can integrate ItWhip.",
       category: 'integration',
       icon: <IoConstructOutline className="w-5 h-5" />,
-      highlights: ['15-minute setup', 'All PMS systems', 'No hardware needed', 'Same-day launch'],
+      highlights: ['15-minute setup', 'No hardware needed', 'Works with any PMS', 'Same-day launch'],
       priority: 'high',
       readTime: '1 min'
     },
     {
-      id: 'vip-handling',
-      question: "How do you handle our VIP and executive guests?",
-      answer: "VIP handling is automated and sophisticated. Your PMS flags trigger our Executive Protocol: premium vehicles only (Audi, BMW, Mercedes), senior drivers (5+ years, 4.9+ rating), priority dispatch (pre-arrival positioning), and white-glove service standards. VIPs get a dedicated support line, ability to request specific drivers, and detailed trip reports for their assistants. The hotel dashboard shows VIP rides separately for special attention. Many hotels report this feature alone justifies the entire platform.",
-      category: 'vip',
-      icon: <IoStarOutline className="w-5 h-5" />,
-      highlights: ['Premium vehicles', 'Senior drivers only', 'Pre-arrival positioning', 'Dedicated support'],
-      priority: 'medium',
-      readTime: '2 min'
-    },
-    {
-      id: 'insurance-coverage',
-      question: "What about insurance and liability coverage?",
-      answer: "You have ZERO liability exposure. Every ride is covered by our $100M commercial policy with zero deductible to hotels. This includes general liability, auto liability, excess umbrella, cyber liability, and errors & omissions. Your hotel is named as additional insured at no cost. Compare this to shuttle operations where YOU carry all liability - nuclear verdicts averaging $10M+. We handle all claims, litigation, and regulatory compliance. Your legal team will love this: complete indemnification, hold harmless agreement, and waiver of subrogation.",
-      category: 'insurance',
-      icon: <IoShieldCheckmarkOutline className="w-5 h-5" />,
-      highlights: ['$100M coverage', 'Zero hotel liability', 'Additional insured status', 'Complete indemnification'],
-      priority: 'high',
-      readTime: '2 min'
-    },
-    {
-      id: 'surge-pricing',
-      question: "What about surge pricing during busy periods?",
-      answer: "We NEVER surge price. Ever. Your guests pay the same rate at 3 AM on New Year's Eve as they do on a Tuesday afternoon. This is possible because our predictive positioning eliminates supply-demand imbalances. While Uber might charge 5x surge ($150 for a $30 ride), we maintain flat rates. This price protection is built into our contracts and system - it's impossible for surge pricing to occur. Your guests save an average of $89 per airport trip compared to surge periods.",
-      category: 'availability',
-      icon: <IoInfiniteOutline className="w-5 h-5" />,
-      highlights: ['Zero surge ever', 'Flat rates 24/7', 'Saves $89/trip', 'Contract guaranteed'],
-      priority: 'high',
-      readTime: '1 min'
-    },
-    {
-      id: 'driver-quality',
-      question: "How do you ensure driver quality and professionalism?",
-      answer: "Our driver standards exceed any competitor. Requirements: 5+ years experience, 4.8+ rating maintenance, background checks (criminal, DMV, drug), hospitality training certification, professional appearance standards, and vehicle inspections every 30 days. Drivers earn 40% more with us, attracting the best professionals. Real-time monitoring tracks speed, routes, and guest interactions. One complaint below standards = retraining. Two = removal. Your brand is protected by the industry's highest driver standards.",
+      id: 'guest-experience',
+      question: "What happens when a guest has an issue with transportation?",
+      answer: "Three-layer resolution system ensures your staff never deals with transportation problems. Layer 1: Partner operators handle their own customer service. Layer 2: Our 24/7 support team coordinates resolution. Layer 3: Automated backup protocols trigger instantly. Guest calls support? They reach our team, not yours. Driver late? System automatically dispatches backup. Payment issue? Resolved without hotel involvement. Your dashboard shows everything for transparency, but you have zero operational burden. Average resolution time: 3 minutes. Guest satisfaction rate: 94%. Your front desk focuses on hospitality, not transportation headaches.",
       category: 'guest',
       icon: <IoPersonOutline className="w-5 h-5" />,
-      highlights: ['5+ years required', 'Hospitality certified', 'Background checked', 'Real-time monitoring'],
+      highlights: ['24/7 support team', '3-minute resolution', 'Zero hotel burden', '94% satisfaction'],
+      priority: 'high',
+      readTime: '2 min'
+    },
+    {
+      id: 'vip-treatment',
+      question: "How does the platform handle VIP and special needs guests?",
+      answer: "VIP handling is automated and sophisticated. Your PMS flags trigger our Premium Guest Protocol: platform prioritizes luxury vehicle operators, ensures senior driver assignment (5+ years experience), guarantees pre-arrival positioning, and enables white-glove service standards. VIPs can save preferred operators, access priority support, and receive detailed trip summaries. Special needs? Platform connects with ADA-compliant operators, ensures wheelchair accessibility, and tracks accommodation requirements. Everything logged for compliance. The beauty: it's automatic. Flag a guest as VIP in your PMS, and the platform handles everything else. No manual coordination needed.",
+      category: 'vip',
+      icon: <IoStarOutline className="w-5 h-5" />,
+      highlights: ['Automatic VIP detection', 'Luxury vehicles', 'ADA compliant', 'Zero manual work'],
       priority: 'medium',
       readTime: '2 min'
     },
     {
-      id: 'booking-integration',
-      question: "Does this interfere with our direct booking strategy?",
-      answer: "It enhances it. ItWhip is YOUR platform, white-labeled with your brand. When guests book direct on your website, they see included premium transportation - a $150+ value that OTAs can't match. This drives direct bookings up 23% on average. The transportation booking widget embeds in your booking flow, increasing conversion 18%. You can even create package deals: 'Book 2 nights, get airport transfers free.' OTAs hate us because we make direct booking more attractive than their channels.",
+      id: 'surge-protection',
+      question: "How do you protect guests from surge pricing?",
+      answer: "Multi-strategy surge defense system. First, our predictive AI prevents surge by pre-positioning supply before demand spikes. Second, we aggregate multiple sources - when one surges, others might not. Third, our volume partnerships include surge cap agreements. Fourth, for VIPs and special events, we lock in flat rates in advance. Result: guests save average $89 per airport trip during typical surge periods. While standard platforms might show 5x surge, our system finds alternatives at normal rates. The platform transparently shows all options with real-time pricing. You decide the guest experience you want to provide.",
+      category: 'availability',
+      icon: <IoInfiniteOutline className="w-5 h-5" />,
+      highlights: ['Predictive prevention', 'Multi-source options', 'Save $89 average', 'VIP flat rates'],
+      priority: 'high',
+      readTime: '1 min'
+    },
+    {
+      id: 'operator-quality',
+      question: "How do you ensure quality from transportation providers?",
+      answer: "Strict platform admission standards. Every operator must provide proof of commercial insurance, pass comprehensive background checks, maintain 4.8+ ratings, and complete hospitality service training. Our Quality Assurance System monitors every ride through automated feedback loops, real-time performance tracking, and mystery rider audits. Operators below standards get one warning, then removal. We only work with the top 20% of available operators. Your brand is protected by standards higher than luxury hotels require for their own staff. Quality isn't hoped for; it's enforced through technology.",
+      category: 'guest',
+      icon: <IoPersonOutline className="w-5 h-5" />,
+      highlights: ['Top 20% only', '4.8+ required', 'Mystery audits', 'One warning policy'],
+      priority: 'medium',
+      readTime: '2 min'
+    },
+    {
+      id: 'data-ownership',
+      question: "Who owns and controls our guest data?",
+      answer: "You own 100% of your data, period. ItWhip operates as a data processor, not owner. Every guest record, transaction detail, and analytics insight belongs to your hotel. Export everything anytime in standard formats. We never sell, share, or monetize your data. Our infrastructure provides military-grade encryption, isolated data storage, and complete audit trails. Use the insights for your marketing, operations, and strategic decisions. This is YOUR business intelligence powering YOUR competitive advantage. We're just the technology layer that makes it possible.",
+      category: 'platform',
+      icon: <IoAnalyticsOutline className="w-5 h-5" />,
+      highlights: ['100% your data', 'Export anytime', 'Never shared', 'Military encryption'],
+      priority: 'medium',
+      readTime: '1 min'
+    },
+    {
+      id: 'insurance-liability',
+      question: "What about insurance and liability protection?",
+      answer: "Complete liability separation protects your hotel. Transportation providers maintain their own commercial insurance (minimum $1M required). Our platform carries comprehensive technology insurance covering data breaches, system failures, and operational errors. But here's the key: your hotel has ZERO transportation liability because you're not providing transportation - you're facilitating connections through our platform. This legal structure has been tested and proven. Compare this to hotel shuttles where YOU carry all liability, facing potential nuclear verdicts averaging $31M. With ItWhip, transportation liability stays with the operators, not your hotel.",
+      category: 'insurance',
+      icon: <IoShieldCheckmarkOutline className="w-5 h-5" />,
+      highlights: ['Zero hotel liability', 'Operators insured', 'Legal separation', 'Nuclear verdict protection'],
+      priority: 'high',
+      readTime: '2 min'
+    },
+    {
+      id: 'booking-enhancement',
+      question: "How does this help with direct bookings vs OTAs?",
+      answer: "Transportation becomes your secret weapon against OTAs. Add 'Free Airport Transfer' or 'Includes Premium Rides' to your direct booking site - something OTAs can't match. Our white-label integration means it appears as YOUR service. Result: 23% average increase in direct bookings. Create exclusive packages: 'Park & Fly', 'Romance Package with Private Car', 'Business Traveler Bundle'. The transportation component adds $150+ perceived value at minimal cost. Guests book direct to get the transportation benefit. You save 15-25% OTA commissions AND earn transportation revenue. Double win against OTA dominance.",
       category: 'integration',
       icon: <IoBusinessOutline className="w-5 h-5" />,
-      highlights: ['White-label option', '+23% direct bookings', 'Embedded widget', 'Package creation'],
+      highlights: ['+23% direct bookings', 'OTA differentiation', 'Package creation', 'Save commissions'],
       priority: 'medium',
       readTime: '2 min'
     },
     {
-      id: 'weather-events',
-      question: "What happens during extreme weather or emergency events?",
-      answer: "Our Emergency Response Protocol activates automatically during severe conditions. Extended fleet activation brings 3x normal drivers online. Hazard pay ensures availability without surge pricing. Four-wheel drive vehicle priority for snow/flooding. Direct coordination with emergency services and airports. Your hotel gets priority routing and dedicated dispatch. During Phoenix's last major storm, we maintained 2.3-minute average pickup times while Uber showed 'No Cars Available.' Your guests are never stranded.",
-      category: 'availability',
-      icon: <IoThunderstormOutline className="w-5 h-5" />,
-      highlights: ['3x driver activation', 'No surge pricing', '4WD priority', 'Emergency coordination'],
-      priority: 'low',
-      readTime: '2 min'
-    },
-    {
-      id: 'contract-terms',
-      question: "What if we want to cancel or change services?",
-      answer: "Complete flexibility, always. Month-to-month terms with 30-day cancellation notice. No penalties, no fees, no minimums. Pause service for renovations or low season. Adjust commission rates based on volume. Add/remove features instantly. Change integration methods anytime. This isn't a vendor lock-in - it's a partnership. Most hotels never leave because they're earning $67,000/month, but you always have the option. We earn your business every single day.",
+      id: 'contract-flexibility',
+      question: "What if we need to modify or cancel the service?",
+      answer: "No lock-in, ever. Month-to-month terms with 30-day notice for any changes. No setup fees, no cancellation penalties, no minimums. Pause during renovations, scale down in off-season, upgrade for events - complete flexibility. Add or remove features instantly through your dashboard. While most hotels never leave (they're earning $67K/month), you maintain complete control. We earn your business through value, not contracts. This isn't vendor lock-in; it's a partnership that works because it works, not because you're stuck.",
       category: 'payment',
       icon: <IoDocumentTextOutline className="w-5 h-5" />,
-      highlights: ['Month-to-month', '30-day cancellation', 'No penalties', 'Pause anytime'],
+      highlights: ['Month-to-month', 'No penalties', 'Pause anytime', 'Full flexibility'],
       priority: 'high',
       readTime: '1 min'
     },
     {
-      id: 'competitor-advantage',
-      question: "What stops our competitors from using this too?",
-      answer: "Geographic exclusivity for early adopters. We limit hotels per zone to maintain service quality. First movers get preferred status: locked-in commission rates (competitors pay more later), priority driver allocation, exclusive territory rights, and custom feature development input. Once we hit capacity in Phoenix (only 3 spots left), new hotels go on a waiting list. Your competitive advantage is protected by our growth limits. Lock out your competition now.",
+      id: 'competitive-moat',
+      question: "What stops our competitors from copying this advantage?",
+      answer: "First-mover advantages create lasting competitive moats. Early adopters get locked-in preferential rates, priority access to new features, and input on platform development. But here's the real moat: data accumulation. Every day you're building transportation intelligence your competitors don't have. You know guest patterns, optimal pricing, and demand cycles. By the time competitors join, you've optimized operations they're just starting. Plus, market density controls mean once we reach capacity in your area, competitors join waiting lists. Your early move blocks their access.",
       category: 'vip',
       icon: <IoWarningOutline className="w-5 h-5" />,
-      highlights: ['Geographic exclusivity', 'Locked-in rates', 'Only 3 spots left', 'Competition lock-out'],
+      highlights: ['First-mover advantage', 'Data accumulation', 'Market protection', 'Competitor blocking'],
       priority: 'high',
       readTime: '1 min'
+    },
+    {
+      id: 'platform-reliability',
+      question: "How reliable is the ItWhip platform infrastructure?",
+      answer: "Enterprise-grade infrastructure with 99.99% uptime SLA. Built on distributed cloud architecture with automatic failover, real-time backups, and elastic scaling. Our platform handles millions of transactions daily across hundreds of hotels. 24/7 monitoring by our Network Operations team. Response times under 200ms globally. But don't trust our words - check our public status page showing real-time performance. Our 'Try Us Certified' security means we're so confident, we invite anyone to test our systems. 1,847 attempted breaches, zero successful. That's the reliability your hotel operations demand.",
+      category: 'platform',
+      icon: <IoServerOutline className="w-5 h-5" />,
+      highlights: ['99.99% uptime', 'Under 200ms response', '24/7 monitoring', 'Public status page'],
+      priority: 'medium',
+      readTime: '1 min'
+    },
+    {
+      id: 'emergency-weather',
+      question: "What happens during extreme weather or emergency events?",
+      answer: "Emergency protocols activate automatically. Our system monitors weather patterns and event schedules, triggering Enhanced Coverage Mode when needed. All partner operators receive alerts about increased demand. The platform prioritizes hotels based on need, connects with operators equipped for conditions (4WD vehicles for snow, high-clearance for flooding), and maintains surge protection even during emergencies. Historical proof: during Phoenix's last major storm, our partner hotels maintained 91% service availability while others showed 'no cars available'. Your guests aren't stranded when they need transportation most.",
+      category: 'availability',
+      icon: <IoThunderstormOutline className="w-5 h-5" />,
+      highlights: ['Auto emergency mode', 'Weather monitoring', '91% storm availability', 'Surge protection maintained'],
+      priority: 'low',
+      readTime: '2 min'
     }
   ]
 
   const categories = [
     { id: 'all', label: 'All Questions', icon: <IoHelpCircleOutline className="w-5 h-5" />, count: questions.length },
-    { id: 'availability', label: 'Driver Availability', icon: <IoCarOutline className="w-5 h-5" />, count: questions.filter(q => q.category === 'availability').length },
-    { id: 'payment', label: 'Payment & Terms', icon: <IoCashOutline className="w-5 h-5" />, count: questions.filter(q => q.category === 'payment').length },
+    { id: 'platform', label: 'Platform Power', icon: <IoLayersOutline className="w-5 h-5" />, count: questions.filter(q => q.category === 'platform').length },
+    { id: 'availability', label: 'Service Coverage', icon: <IoCarOutline className="w-5 h-5" />, count: questions.filter(q => q.category === 'availability').length },
+    { id: 'compliance', label: 'Try Us Certified', icon: <IoShieldCheckmarkOutline className="w-5 h-5" />, count: questions.filter(q => q.category === 'compliance').length },
+    { id: 'payment', label: 'Revenue & Terms', icon: <IoCashOutline className="w-5 h-5" />, count: questions.filter(q => q.category === 'payment').length },
     { id: 'guest', label: 'Guest Experience', icon: <IoPersonOutline className="w-5 h-5" />, count: questions.filter(q => q.category === 'guest').length },
     { id: 'integration', label: 'Integration', icon: <IoConstructOutline className="w-5 h-5" />, count: questions.filter(q => q.category === 'integration').length },
     { id: 'vip', label: 'VIP & Special', icon: <IoStarOutline className="w-5 h-5" />, count: questions.filter(q => q.category === 'vip').length },
@@ -227,17 +286,19 @@ export default function ObjectionCrusher() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-8 sm:mb-12">
-          <div className="inline-flex items-center space-x-2 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 px-4 sm:px-6 py-2 sm:py-3 rounded-full mb-4 sm:mb-6 border border-red-300 dark:border-red-800">
-            <IoWarningOutline className="w-5 sm:w-6 h-5 sm:h-6" />
-            <span className="text-xs sm:text-sm font-bold uppercase tracking-wider">Objection Crusher</span>
+          <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full mb-4 sm:mb-6 shadow-lg">
+            <IoShieldCheckmarkOutline className="w-5 sm:w-6 h-5 sm:h-6" />
+            <span className="text-xs sm:text-sm font-bold uppercase tracking-wider">Try Us Certified™</span>
           </div>
           
           <h2 className="text-2xl sm:text-3xl md:text-5xl font-black text-slate-900 dark:text-white mb-3 sm:mb-4">
-            The <span className="text-red-600">Hard Questions</span> Hotels Ask
+            The <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Platform</span> That Owns Its Space
           </h2>
           <p className="text-base sm:text-xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto px-2">
-            Your concerns are valid. 
-            <span className="block mt-1 sm:inline sm:mt-0">Here are detailed answers to the questions that keep hotel executives up at night.</span>
+            We built the Stripe of hospitality. One platform, total control.
+            <span className="block mt-2 text-sm sm:text-base">
+              <strong>1,847 hackers tried to break us. 0 succeeded. Try us.</strong>
+            </span>
           </p>
         </div>
 
@@ -270,6 +331,28 @@ export default function ObjectionCrusher() {
           </div>
         </div>
 
+        {/* Security Metrics Bar */}
+        <div className="mb-6 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg p-4 text-white">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+            <div>
+              <div className="text-2xl sm:text-3xl font-bold">1,847</div>
+              <div className="text-xs sm:text-sm opacity-90">Breach Attempts</div>
+            </div>
+            <div>
+              <div className="text-2xl sm:text-3xl font-bold">0</div>
+              <div className="text-xs sm:text-sm opacity-90">Successful</div>
+            </div>
+            <div>
+              <div className="text-2xl sm:text-3xl font-bold">99.99%</div>
+              <div className="text-xs sm:text-sm opacity-90">Uptime</div>
+            </div>
+            <div>
+              <div className="text-2xl sm:text-3xl font-bold">$10K</div>
+              <div className="text-xs sm:text-sm opacity-90">Bug Bounty</div>
+            </div>
+          </div>
+        </div>
+
         {/* Quick Actions Bar - Mobile */}
         <div className="sm:hidden mb-4 flex items-center justify-between">
           <button
@@ -293,7 +376,7 @@ export default function ObjectionCrusher() {
                 onClick={() => setActiveCategory(cat.id)}
                 className={`px-3 sm:px-4 py-2 rounded-lg font-semibold transition-all flex items-center space-x-2 whitespace-nowrap text-sm sm:text-base ${
                   activeCategory === cat.id
-                    ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg'
+                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
                     : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-blue-400'
                 }`}
               >
@@ -310,11 +393,11 @@ export default function ObjectionCrusher() {
 
         {/* Priority Indicator - Mobile Only */}
         {!searchTerm && activeCategory === 'all' && (
-          <div className="sm:hidden mb-4 bg-amber-100 dark:bg-amber-900/20 rounded-lg p-3 border border-amber-300 dark:border-amber-800">
+          <div className="sm:hidden mb-4 bg-gradient-to-r from-amber-100 to-orange-100 dark:from-amber-900/20 dark:to-orange-900/20 rounded-lg p-3 border border-amber-300 dark:border-amber-800">
             <div className="flex items-start space-x-2">
               <IoFlashOutline className="w-4 h-4 text-amber-600 mt-0.5" />
               <p className="text-xs text-amber-800 dark:text-amber-200">
-                <strong>Most Asked:</strong> Questions marked with high priority are addressed first
+                <strong>Most Critical:</strong> High priority questions address your biggest concerns first
               </p>
             </div>
           </div>
@@ -328,7 +411,7 @@ export default function ObjectionCrusher() {
               {highPriorityQuestions.length > 0 && (
                 <>
                   <h3 className="text-sm font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-3">
-                    Most Important
+                    Critical Questions
                   </h3>
                   {highPriorityQuestions.map((q) => (
                     <QuestionCard key={q.id} question={q} expanded={expandedQuestions.has(q.id)} onToggle={toggleQuestion} isClient={isClient} />
@@ -338,7 +421,7 @@ export default function ObjectionCrusher() {
               {otherQuestions.length > 0 && (
                 <>
                   <h3 className="text-sm font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-3 mt-6">
-                    Additional Questions
+                    Additional Details
                   </h3>
                   {otherQuestions.map((q) => (
                     <QuestionCard key={q.id} question={q} expanded={expandedQuestions.has(q.id)} onToggle={toggleQuestion} isClient={isClient} />
@@ -367,29 +450,49 @@ export default function ObjectionCrusher() {
           </div>
         )}
 
-        {/* Bottom CTA - Mobile Optimized */}
+        {/* Bottom CTA - The Challenge */}
         <div className="mt-8 sm:mt-12 text-center">
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-6 sm:p-8 text-white">
-            <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">Still Have Questions?</h3>
-            <p className="text-base sm:text-lg mb-4 sm:mb-6 opacity-90">
-              Get answers from our hotel success team. 
-              <span className="block mt-1 sm:inline sm:mt-0">Real humans who understand your business.</span>
-            </p>
+          <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-xl p-6 sm:p-8 text-white">
+            <div className="mb-6">
+              <IoShieldCheckmarkOutline className="w-16 h-16 mx-auto mb-4 text-green-400" />
+              <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">The Try Us Challenge</h3>
+              <p className="text-base sm:text-lg mb-4 sm:mb-6 opacity-90">
+                We don't hide behind expensive certifications.
+                <span className="block mt-2 font-bold text-green-400">Our security is so good, we dare you to break it.</span>
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6 text-center">
+                <div className="bg-white/10 rounded-lg p-3">
+                  <div className="text-lg font-bold">$10,000</div>
+                  <div className="text-xs opacity-75">Critical Bug</div>
+                </div>
+                <div className="bg-white/10 rounded-lg p-3">
+                  <div className="text-lg font-bold">$5,000</div>
+                  <div className="text-xs opacity-75">High Severity</div>
+                </div>
+                <div className="bg-white/10 rounded-lg p-3">
+                  <div className="text-lg font-bold">$1,000</div>
+                  <div className="text-xs opacity-75">Medium</div>
+                </div>
+                <div className="bg-white/10 rounded-lg p-3">
+                  <div className="text-lg font-bold">$500</div>
+                  <div className="text-xs opacity-75">Low</div>
+                </div>
+              </div>
+            </div>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
               <a
-                href="/demo"
-                className="inline-flex items-center justify-center space-x-2 px-5 sm:px-6 py-3 bg-white text-blue-600 rounded-lg font-bold hover:bg-slate-100 transition-all"
+                href="/security"
+                className="inline-flex items-center justify-center space-x-2 px-5 sm:px-6 py-3 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600 transition-all shadow-lg"
               >
-                <IoCallOutline className="w-5 h-5" />
-                <span>Schedule 15-Min Call</span>
+                <IoLockClosedOutline className="w-5 h-5" />
+                <span>Test Our Security</span>
               </a>
               <a
                 href="/portal/login"
-                className="inline-flex items-center justify-center space-x-2 px-5 sm:px-6 py-3 bg-blue-800 text-white rounded-lg font-bold hover:bg-blue-900 transition-all"
+                className="inline-flex items-center justify-center space-x-2 px-5 sm:px-6 py-3 bg-white text-slate-900 rounded-lg font-bold hover:bg-slate-100 transition-all shadow-lg"
               >
                 <IoBusinessOutline className="w-5 h-5" />
-                <span className="hidden sm:inline">Check Your Hotel Status</span>
-                <span className="sm:hidden">Check Status</span>
+                <span>Start Earning $67K/mo</span>
               </a>
             </div>
           </div>
@@ -413,8 +516,10 @@ function QuestionCard({
 }) {
   return (
     <div
-      className={`bg-white dark:bg-slate-800 rounded-lg sm:rounded-xl shadow-md sm:shadow-lg overflow-hidden border border-slate-200 dark:border-slate-700 transition-all duration-300 hover:shadow-xl ${
-        question.priority === 'high' ? 'ring-2 ring-amber-400 ring-opacity-50' : ''
+      className={`bg-white dark:bg-slate-800 rounded-lg sm:rounded-xl shadow-md sm:shadow-lg overflow-hidden border transition-all duration-300 hover:shadow-xl ${
+        question.priority === 'high' 
+          ? 'border-gradient-to-r from-amber-400 to-orange-400 ring-2 ring-amber-400 ring-opacity-30' 
+          : 'border-slate-200 dark:border-slate-700'
       }`}
     >
       <button
@@ -434,7 +539,7 @@ function QuestionCard({
               {question.priority === 'high' && (
                 <span className="text-xs text-amber-600 font-medium flex items-center">
                   <IoFlashOutline className="w-3 h-3 mr-1" />
-                  Most Asked
+                  Critical
                 </span>
               )}
               {question.readTime && (
@@ -475,7 +580,7 @@ function QuestionCard({
                 {question.highlights.map((highlight, idx) => (
                   <div
                     key={idx}
-                    className={`inline-flex items-center space-x-1 px-2 sm:px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-full text-xs sm:text-sm font-medium ${
+                    className={`inline-flex items-center space-x-1 px-2 sm:px-3 py-1 bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 text-green-800 dark:text-green-400 rounded-full text-xs sm:text-sm font-medium ${
                       isClient ? 'animate-fade-in' : ''
                     }`}
                     style={{ animationDelay: `${idx * 100}ms` }}

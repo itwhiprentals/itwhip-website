@@ -1,0 +1,1121 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"  // Use PostgreSQL in production
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// USER & AUTHENTICATION MODELS
+// ============================================================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String?   @unique
+  name          String?
+  role          UserRole  @default(ANONYMOUS)
+  
+  // Authentication
+  passwordHash  String?
+  emailVerified Boolean   @default(false)
+  phoneVerified Boolean   @default(false)
+  
+  // Profile
+  jobTitle      String?
+  phone         String?
+  avatar        String?
+  
+  // Relationships
+  hotelId       String?
+  hotel         Hotel?    @relation(fields: [hotelId], references: [id])
+  
+  // Rental relationships
+  rentalHost    RentalHost?
+  rentalBookings RentalBooking[] @relation("RenterBookings")
+  
+  // Security
+  sessions      Session[]
+  apiKeys       ApiKey[]
+  loginAttempts LoginAttempt[]
+  auditLogs     AuditLog[]
+  
+  // Timestamps
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastActive    DateTime?
+  
+  @@index([email])
+  @@index([hotelId])
+  @@index([role])
+}
+
+model Session {
+  id           String    @id @default(cuid())
+  userId       String?
+  user         User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Session data
+  token        String    @unique
+  refreshToken String?   @unique
+  tokenFamily  String?   // For refresh token rotation
+  
+  // Device info
+  ipAddress    String
+  userAgent    String
+  deviceId     String?
+  fingerprint  String?
+  
+  // Validity
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  
+  createdAt    DateTime  @default(now())
+  lastActivity DateTime  @default(now())
+  
+  @@index([token])
+  @@index([refreshToken])
+  @@index([userId])
+}
+
+model ApiKey {
+  id          String    @id @default(cuid())
+  key         String    @unique // Hashed
+  name        String
+  
+  // Owner
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hotelId     String?
+  hotel       Hotel?    @relation(fields: [hotelId], references: [id])
+  
+  // Permissions - CHANGED FROM ARRAY TO STRING (JSON)
+  permissions String    // JSON array of permissions
+  tier        CertificationTier?
+  
+  // Rate limiting
+  rateLimit   Int       @default(1000)
+  rateWindow  String    @default("hour")
+  
+  // Usage tracking
+  lastUsed    DateTime?
+  usageCount  Int       @default(0)
+  
+  // Status
+  active      Boolean   @default(true)
+  expiresAt   DateTime?
+  
+  createdAt   DateTime  @default(now())
+  
+  @@index([key])
+  @@index([hotelId])
+}
+
+// ============================================================================
+// HOTEL MODELS
+// ============================================================================
+
+model Hotel {
+  id          String    @id @default(cuid())
+  gdsCode     String    @unique
+  name        String
+  
+  // Property details
+  type        PropertyType
+  size        HotelSize
+  rooms       Int
+  stars       Int?
+  chain       String?
+  
+  // Location
+  address     String
+  city        String
+  state       String
+  zip         String
+  country     String
+  latitude    Float?
+  longitude   Float?
+  
+  // Platform status
+  claimed     Boolean   @default(false)
+  claimedBy   String?   // Email of claimer
+  claimedAt   DateTime?
+  
+  certified   Boolean   @default(false)
+  certificationTier CertificationTier?
+  certifiedAt DateTime?
+  certificationExpiry DateTime?
+  
+  active      Boolean   @default(true)
+  
+  // Relationships
+  users       User[]
+  bookings    Booking[]
+  rides       Ride[]
+  revenue     Revenue[]
+  metrics     HotelMetrics[]
+  apiKeys     ApiKey[]
+  
+  // Integration
+  pmsType     String?
+  pmsConnected Boolean  @default(false)
+  channelManager String?
+  
+  // Metadata - CHANGED FROM ARRAYS TO STRINGS (JSON)
+  amenities   String?   // JSON array
+  images      String?   // JSON array of URLs
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@index([gdsCode])
+  @@index([city, state])
+  @@index([certified])
+}
+
+model HotelMetrics {
+  id          String    @id @default(cuid())
+  hotelId     String
+  hotel       Hotel     @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  
+  // Period
+  period      MetricPeriod
+  startDate   DateTime
+  endDate     DateTime
+  
+  // Occupancy
+  occupancyRate Float
+  roomsOccupied Int
+  roomsAvailable Int
+  
+  // Revenue
+  roomRevenue Float
+  rideRevenue Float
+  totalRevenue Float
+  
+  // Rides
+  totalRides  Int
+  completedRides Int
+  cancelledRides Int
+  averageRideValue Float
+  
+  // Bookings
+  totalBookings Int
+  directBookings Int
+  otaBookings Int
+  averageStayDays Float
+  cancellationRate Float
+  
+  // Ratings
+  guestRating Float?
+  rideRating  Float?
+  
+  calculatedAt DateTime @default(now())
+  
+  @@unique([hotelId, period, startDate])
+  @@index([hotelId])
+}
+
+// ============================================================================
+// BOOKING MODELS
+// ============================================================================
+
+model Booking {
+  id              String    @id @default(cuid())
+  confirmationNumber String @unique
+  
+  // Hotel
+  hotelId         String
+  hotel           Hotel     @relation(fields: [hotelId], references: [id])
+  
+  // Guest
+  guestId         String
+  guest           Guest     @relation(fields: [guestId], references: [id])
+  
+  // Dates
+  checkIn         DateTime
+  checkOut        DateTime
+  nights          Int
+  
+  // Room
+  roomType        String
+  roomNumber      String?
+  roomRate        Float
+  
+  // Source & Status
+  source          BookingSource
+  status          BookingStatus
+  
+  // Financial
+  roomCharges     Float
+  taxes           Float
+  fees            Float
+  totalAmount     Float
+  currency        String    @default("USD")
+  
+  // Transportation
+  airportPickup   Boolean   @default(false)
+  airportDropoff  Boolean   @default(false)
+  ridesIncluded   Int       @default(0)
+  ridesUsed       Int       @default(0)
+  
+  // Relationships
+  rides           Ride[]
+  
+  // Management
+  canModify       Boolean   @default(true)
+  canCancel       Boolean   @default(true)
+  notes           String?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@index([hotelId])
+  @@index([guestId])
+  @@index([confirmationNumber])
+  @@index([status])
+}
+
+model Guest {
+  id          String    @id @default(cuid())
+  firstName   String
+  lastName    String
+  email       String?
+  phone       String?
+  country     String?
+  
+  // Preferences (JSON)
+  preferences String?   // JSON object
+  
+  // History
+  totalStays  Int       @default(0)
+  totalSpent  Float     @default(0)
+  lastStay    DateTime?
+  
+  // Relationships
+  bookings    Booking[]
+  rides       Ride[]
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@index([email])
+}
+
+// ============================================================================
+// RIDE MODELS
+// ============================================================================
+
+model Ride {
+  id          String    @id @default(cuid())
+  
+  // Associations
+  hotelId     String
+  hotel       Hotel     @relation(fields: [hotelId], references: [id])
+  bookingId   String?
+  booking     Booking?  @relation(fields: [bookingId], references: [id])
+  guestId     String?
+  guest       Guest?    @relation(fields: [guestId], references: [id])
+  driverId    String?
+  driver      Driver?   @relation(fields: [driverId], references: [id])
+  
+  // Locations
+  pickupAddress String
+  pickupLat    Float?
+  pickupLng    Float?
+  pickupTime   DateTime
+  pickupType   String   // hotel, airport, location
+  
+  dropoffAddress String
+  dropoffLat   Float?
+  dropoffLng   Float?
+  dropoffTime  DateTime?
+  dropoffType  String   // hotel, airport, location
+  
+  // Status
+  status      RideStatus
+  isGhost     Boolean   @default(false) // For fake rides
+  
+  // Pricing
+  basePrice   Float
+  distancePrice Float
+  timePrice   Float
+  surgeMultiplier Float @default(1.0)
+  totalPrice  Float
+  currency    String    @default("USD")
+  
+  // Commission
+  hotelCommission Float  // 30% typically
+  driverEarnings Float   // 70% typically
+  platformFee Float      @default(0)
+  
+  // Tracking
+  trackingUrl String?
+  distance    Float?     // Miles
+  duration    Int?       // Minutes
+  
+  // Ghost ride data (for FOMO)
+  ghostData   String?    // JSON object
+  
+  requestedAt DateTime  @default(now())
+  completedAt DateTime?
+  
+  @@index([hotelId])
+  @@index([status])
+  @@index([isGhost])
+}
+
+model Driver {
+  id          String    @id @default(cuid())
+  name        String
+  email       String    @unique
+  phone       String
+  photo       String?
+  
+  // Ratings
+  rating      Float     @default(5.0)
+  totalTrips  Int       @default(0)
+  
+  // Vehicle
+  vehicleMake String
+  vehicleModel String
+  vehicleYear Int
+  vehicleColor String
+  vehiclePlate String
+  vehicleType String    // sedan, suv, luxury, van
+  
+  // Status
+  available   Boolean   @default(true)
+  verified    Boolean   @default(false)
+  active      Boolean   @default(true)
+  
+  // Location
+  lastLat     Float?
+  lastLng     Float?
+  lastUpdate  DateTime?
+  
+  // Relationships
+  rides       Ride[]
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@index([email])
+  @@index([available])
+}
+
+// ============================================================================
+// CAR RENTAL MODELS
+// ============================================================================
+
+model RentalHost {
+  id                String   @id @default(cuid())
+  userId           String?   @unique
+  email            String    @unique
+  name             String
+  phone            String
+  profilePhoto     String?
+  bio              String?
+  
+  // Verification
+  isVerified       Boolean   @default(false)
+  verifiedAt       DateTime?
+  verificationLevel String?  // "phone", "id", "in-person"
+  
+  // Performance metrics
+  responseTime     Int?      // Average in minutes
+  responseRate     Float?    // Percentage
+  acceptanceRate   Float?    // Percentage
+  totalTrips       Int       @default(0)
+  rating           Float     @default(5.0)
+  
+  // Location
+  city             String
+  state            String
+  zipCode          String?
+  
+  // Status
+  active           Boolean   @default(true)
+  joinedAt         DateTime  @default(now())
+  
+  // Relations
+  user             User?     @relation(fields: [userId], references: [id])
+  cars             RentalCar[]
+  bookings         RentalBooking[]
+  reviews          RentalReview[]
+  payouts          RentalPayout[]
+  
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  
+  @@index([email])
+  @@index([city, state])
+}
+
+model RentalCar {
+  id               String    @id @default(cuid())
+  hostId           String
+  source           String    @default("p2p") // "p2p", "amadeus", "partner"
+  externalId       String?   // Amadeus or partner ID
+  
+  // Car Details
+  make             String
+  model            String
+  year             Int
+  trim             String?
+  color            String
+  licensePlate     String?   // Partial for privacy
+  vin              String?   // Last 4 digits only
+  
+  // Specifications
+  carType          String    // "economy", "compact", "midsize", "fullsize", "suv", "luxury", "convertible", "minivan"
+  seats            Int
+  doors            Int
+  transmission     String    // "automatic", "manual"
+  fuelType         String    // "gas", "electric", "hybrid", "diesel"
+  mpgCity          Int?      
+  mpgHighway       Int?
+  currentMileage   Int?      
+  
+  // Pricing (daily rates)
+  dailyRate        Float
+  weeklyRate       Float?    // Optional weekly rate
+  monthlyRate      Float?    // Optional monthly rate
+  deliveryFee      Float     @default(35)
+  
+  // Discounts
+  weeklyDiscount   Float?    @default(0.15) // 15% off
+  monthlyDiscount  Float?    @default(0.30) // 30% off
+  
+  // Features (JSON array)
+  features         String    // ["Bluetooth", "Backup Camera", "Apple CarPlay", "USB Charger"]
+  
+  // Location
+  address          String
+  city             String
+  state            String
+  zipCode          String
+  latitude         Float?
+  longitude        Float?
+  
+  // Pickup options
+  airportPickup    Boolean   @default(false)
+  hotelDelivery    Boolean   @default(true)
+  homeDelivery     Boolean   @default(false)
+  
+  // Availability settings
+  isActive         Boolean   @default(true)
+  instantBook      Boolean   @default(true)
+  advanceNotice    Int       @default(2) // Hours needed
+  minTripDuration  Int       @default(1) // Days
+  maxTripDuration  Int       @default(30) // Days
+  
+  // Rules & Guidelines (JSON)
+  rules            String?   // ["No smoking", "Return with same fuel", "Pet friendly with fee"]
+  
+  // Insurance
+  insuranceIncluded Boolean  @default(false)
+  insuranceDaily   Float     @default(25)
+  
+  // Stats
+  totalTrips       Int       @default(0)
+  rating           Float     @default(5.0)
+  
+  // Relations
+  host             RentalHost @relation(fields: [hostId], references: [id])
+  photos           RentalCarPhoto[]
+  bookings         RentalBooking[]
+  availability     RentalAvailability[]
+  reviews          RentalReview[]
+  
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  
+  @@index([hostId])
+  @@index([city, state])
+  @@index([carType])
+  @@index([isActive, instantBook])
+}
+
+model RentalCarPhoto {
+  id               String    @id @default(cuid())
+  carId            String
+  url              String    // Firebase Storage URL
+  caption          String?
+  isHero           Boolean   @default(false)
+  order            Int       @default(0)
+  
+  car              RentalCar @relation(fields: [carId], references: [id], onDelete: Cascade)
+  
+  createdAt        DateTime  @default(now())
+  
+  @@index([carId])
+}
+
+model RentalAvailability {
+  id               String    @id @default(cuid())
+  carId            String
+  date             DateTime  @db.Date
+  isAvailable      Boolean   @default(true)
+  customPrice      Float?    // Override daily rate
+  note             String?
+  
+  car              RentalCar @relation(fields: [carId], references: [id], onDelete: Cascade)
+  
+  @@unique([carId, date])
+  @@index([carId, date, isAvailable])
+}
+
+model RentalBooking {
+  id               String    @id @default(cuid())
+  bookingCode      String    @unique @default(cuid()) // RENT-2024-XXXX
+  
+  // Parties
+  carId            String
+  hostId           String
+  renterId         String    // User ID
+  
+  // Associated hotel booking (if any)
+  hotelBookingId   String?
+  
+  // Dates
+  startDate        DateTime
+  endDate          DateTime
+  startTime        String    // "10:00 AM"
+  endTime          String    // "10:00 AM"
+  
+  // Pickup/Delivery
+  pickupLocation   String
+  pickupType       String    // "host", "airport", "hotel", "delivery"
+  deliveryAddress  String?
+  returnLocation   String?
+  
+  // Pricing
+  dailyRate        Float
+  numberOfDays     Int
+  subtotal         Float
+  deliveryFee      Float     @default(0)
+  insuranceFee     Float     @default(0)
+  serviceFee       Float
+  taxes            Float
+  totalAmount      Float
+  depositAmount    Float     @default(500)
+  
+  // Status
+  status           RentalBookingStatus @default(PENDING)
+  paymentStatus    String    // "pending", "paid", "refunded"
+  paymentIntentId  String?   // Stripe
+  
+  // Verification
+  licenseVerified  Boolean   @default(false)
+  licenseNumber    String?
+  licenseState     String?
+  licenseExpiry    DateTime?
+  licensePhotoUrl  String?   // Firebase Storage
+  selfieVerified   Boolean   @default(false)
+  selfiePhotoUrl   String?   // Firebase Storage
+  
+  // Check-in/out
+  actualStartTime  DateTime?
+  actualEndTime    DateTime?
+  startMileage     Int?
+  endMileage       Int?
+  fuelLevelStart   String?   // "Full", "3/4", "1/2", "1/4"
+  fuelLevelEnd     String?
+  
+  // Extras (JSON)
+  extras           String?   // ["GPS", "Child Seat", "Toll Pass"]
+  notes            String?
+  
+  // Relations
+  car              RentalCar @relation(fields: [carId], references: [id])
+  host             RentalHost @relation(fields: [hostId], references: [id])
+  renter           User @relation("RenterBookings", fields: [renterId], references: [id])
+  messages         RentalMessage[]
+  review           RentalReview?
+  
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  
+  @@index([renterId])
+  @@index([carId])
+  @@index([hostId])
+  @@index([status])
+  @@index([startDate, endDate])
+}
+
+model RentalMessage {
+  id               String    @id @default(cuid())
+  bookingId        String
+  senderId         String
+  senderType       String    // "renter", "host", "support"
+  message          String
+  isRead           Boolean   @default(false)
+  
+  booking          RentalBooking @relation(fields: [bookingId], references: [id])
+  
+  createdAt        DateTime  @default(now())
+  
+  @@index([bookingId])
+}
+
+model RentalReview {
+  id               String    @id @default(cuid())
+  bookingId        String    @unique
+  carId            String
+  hostId           String
+  renterId         String
+  
+  rating           Int       // 1-5
+  cleanliness      Int?      // 1-5
+  accuracy        Int?      // 1-5
+  communication    Int?      // 1-5
+  convenience      Int?      // 1-5
+  value            Int?      // 1-5
+  
+  comment          String?
+  hostResponse     String?
+  
+  booking          RentalBooking @relation(fields: [bookingId], references: [id])
+  car              RentalCar @relation(fields: [carId], references: [id])
+  host             RentalHost @relation(fields: [hostId], references: [id])
+  
+  createdAt        DateTime  @default(now())
+  
+  @@index([carId])
+  @@index([hostId])
+}
+
+model RentalPayout {
+  id               String    @id @default(cuid())
+  hostId           String
+  amount           Float
+  currency         String    @default("USD")
+  status           String    // "pending", "processing", "completed", "failed"
+  
+  // Period
+  startDate        DateTime
+  endDate          DateTime
+  
+  // Breakdown
+  bookingCount     Int
+  grossEarnings    Float
+  platformFee      Float     // Your 15-20% commission
+  processingFee    Float
+  netPayout        Float
+  
+  // Payment details
+  paymentMethod    String?   // "bank", "paypal", "stripe"
+  paymentDetails   String?   // JSON with account info (encrypted)
+  transactionId    String?
+  
+  host             RentalHost @relation(fields: [hostId], references: [id])
+  
+  createdAt        DateTime  @default(now())
+  processedAt      DateTime?
+  
+  @@index([hostId])
+  @@index([status])
+}
+
+// For caching Amadeus car results
+model AmadeusCarCache {
+  id               String    @id @default(cuid())
+  location         String
+  searchDate       DateTime
+  carData          String    // JSON - Full Amadeus response
+  expiresAt        DateTime
+  
+  @@index([location, searchDate])
+  @@index([expiresAt])
+}
+
+// ============================================================================
+// REVENUE MODELS
+// ============================================================================
+
+model Revenue {
+  id          String    @id @default(cuid())
+  hotelId     String
+  hotel       Hotel     @relation(fields: [hotelId], references: [id])
+  
+  // Period
+  period      RevenuePeriod
+  startDate   DateTime
+  endDate     DateTime
+  
+  // Ride revenue
+  rideCount   Int
+  rideGross   Float
+  rideCommission Float
+  platformFee Float
+  rideNet     Float
+  
+  // Booking revenue
+  bookingCount Int
+  bookingValue Float
+  savedCommission Float  // vs OTAs
+  
+  // Totals
+  totalRevenue Float
+  currency    String    @default("USD")
+  
+  // Payout
+  status      RevenueStatus
+  availableBalance Float
+  pendingBalance Float
+  
+  calculatedAt DateTime @default(now())
+  
+  @@unique([hotelId, period, startDate])
+  @@index([hotelId])
+  @@index([status])
+}
+
+model Transaction {
+  id          String    @id @default(cuid())
+  hotelId     String
+  
+  // Type
+  type        TransactionType
+  category    String    // ride, booking, withdrawal, fee
+  
+  // Amount
+  amount      Float
+  currency    String    @default("USD")
+  
+  // References
+  rideId      String?
+  bookingId   String?
+  
+  // Status
+  status      TransactionStatus
+  
+  description String
+  metadata    String?   // JSON
+  
+  createdAt   DateTime  @default(now())
+  processedAt DateTime?
+  
+  @@index([hotelId])
+  @@index([type])
+  @@index([status])
+}
+
+// ============================================================================
+// SECURITY & AUDIT MODELS
+// ============================================================================
+
+model AuditLog {
+  id          String    @id @default(cuid())
+  
+  // Event
+  category    AuditCategory
+  eventType   String
+  severity    ThreatSeverity
+  
+  // Actor
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id])
+  hotelId     String?
+  ipAddress   String
+  userAgent   String
+  
+  // Action
+  action      String    // create, read, update, delete
+  resource    String    // booking, ride, hotel, etc
+  resourceId  String?
+  
+  // Details
+  details     String?   // JSON
+  changes     String?   // JSON with before/after
+  
+  // Compliance
+  gdpr        Boolean   @default(false)
+  ccpa        Boolean   @default(false)
+  pci         Boolean   @default(false)
+  
+  // Integrity
+  hash        String    // SHA-256 of entry
+  previousHash String?  // Chain entries
+  
+  timestamp   DateTime  @default(now())
+  
+  @@index([userId])
+  @@index([hotelId])
+  @@index([category])
+  @@index([timestamp])
+}
+
+model SecurityEvent {
+  id          String    @id @default(cuid())
+  type        String
+  severity    ThreatSeverity
+  
+  // Source
+  sourceIp    String
+  userAgent   String
+  country     String?
+  city        String?
+  
+  // Target
+  targetResource String?
+  targetId    String?
+  
+  // Details
+  message     String
+  details     String?   // JSON
+  stackTrace  String?
+  
+  // Response
+  action      String    // allow, block, challenge
+  blocked     Boolean   @default(false)
+  
+  timestamp   DateTime  @default(now())
+  
+  @@index([type])
+  @@index([severity])
+  @@index([sourceIp])
+  @@index([timestamp])
+}
+
+model Threat {
+  id          String    @id @default(cuid())
+  type        AttackType
+  severity    ThreatSeverity
+  status      ThreatStatus
+  
+  // Source
+  sourceIp    String
+  sourceIps   String?   // JSON array for distributed attacks - CHANGED FROM ARRAY
+  country     String?
+  asn         String?
+  reputation  Int?
+  
+  // Attack details
+  method      String
+  target      String
+  payload     String?   // Sanitized
+  attempts    Int
+  
+  // Detection
+  detectionMethod String // signature, anomaly, ml
+  confidence  Float     // 0-100
+  rules       String?   // JSON array of rules triggered - CHANGED FROM ARRAY
+  
+  // Mitigation
+  automated   Boolean
+  actions     String?   // JSON array of actions taken - CHANGED FROM ARRAY
+  blockedUntil DateTime?
+  
+  firstSeen   DateTime
+  lastSeen    DateTime
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@index([type])
+  @@index([severity])
+  @@index([status])
+  @@index([sourceIp])
+}
+
+model RateLimit {
+  id          String    @id @default(cuid())
+  identifier  String    @unique // IP, userId, apiKey
+  
+  // Limits
+  tier        String
+  requests    Int
+  window      Int       // Seconds
+  
+  // Current usage
+  currentRequests Int   @default(0)
+  windowStart DateTime
+  
+  // Status
+  exceeded    Boolean   @default(false)
+  banned      Boolean   @default(false)
+  bannedUntil DateTime?
+  
+  updatedAt   DateTime  @updatedAt
+  
+  @@index([identifier])
+  @@index([exceeded])
+}
+
+model LoginAttempt {
+  id          String    @id @default(cuid())
+  identifier  String    // Email or GDS code
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id])
+  
+  ipAddress   String
+  userAgent   String
+  
+  success     Boolean
+  reason      String?
+  
+  timestamp   DateTime  @default(now())
+  
+  @@index([identifier])
+  @@index([ipAddress])
+  @@index([success])
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum UserRole {
+  ANONYMOUS
+  CLAIMED
+  STARTER
+  BUSINESS
+  ENTERPRISE
+  ADMIN
+}
+
+enum CertificationTier {
+  NONE
+  TU_3_C
+  TU_2_B
+  TU_1_A
+}
+
+enum PropertyType {
+  HOTEL
+  RESORT
+  MOTEL
+  BNB
+  BOUTIQUE
+  CHAIN
+  INDEPENDENT
+}
+
+enum HotelSize {
+  SMALL
+  MEDIUM
+  LARGE
+  ENTERPRISE
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CHECKED_IN
+  CHECKED_OUT
+  CANCELLED
+  NO_SHOW
+}
+
+enum BookingSource {
+  DIRECT
+  EXPEDIA
+  BOOKING_COM
+  AIRBNB
+  AMADEUS
+  SABRE
+  WEBSITE
+  PHONE
+  WALK_IN
+}
+
+enum RideStatus {
+  REQUESTED
+  SEARCHING
+  DRIVER_ASSIGNED
+  DRIVER_ARRIVED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  GHOST
+}
+
+enum RentalBookingStatus {
+  PENDING
+  CONFIRMED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum RevenueStatus {
+  PENDING
+  AVAILABLE
+  PROCESSING
+  WITHDRAWN
+  HELD
+}
+
+enum TransactionType {
+  RIDE_COMMISSION
+  BOOKING
+  WITHDRAWAL
+  FEE
+  REFUND
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum ThreatSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ThreatStatus {
+  DETECTED
+  INVESTIGATING
+  MITIGATED
+  BLOCKED
+  RESOLVED
+  FALSE_POSITIVE
+}
+
+enum AuditCategory {
+  AUTHENTICATION
+  AUTHORIZATION
+  DATA_ACCESS
+  DATA_MODIFICATION
+  CONFIGURATION
+  SECURITY
+  COMPLIANCE
+  FINANCIAL
+}
+
+enum AttackType {
+  BRUTE_FORCE
+  DICTIONARY
+  SQL_INJECTION
+  XSS
+  CSRF
+  DDOS
+  MAN_IN_MIDDLE
+  SESSION_HIJACK
+  CREDENTIAL_STUFFING
+  BOT
+}
+
+enum MetricPeriod {
+  DAY
+  WEEK
+  MONTH
+  YEAR
+}
+
+enum RevenuePeriod {
+  DAY
+  WEEK
+  MONTH
+  TOTAL
+}

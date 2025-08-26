@@ -27,9 +27,9 @@ export default function Footer() {
     <footer className="bg-gray-100 dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800">
       {/* Main Footer Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-6 md:gap-8 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-7 gap-4 md:gap-6 mb-8">
           {/* Company Info */}
-          <div className="col-span-2">
+          <div className="col-span-2 md:col-span-2">
             <div className="flex items-center space-x-2 mb-4">
               <IoCarOutline className="w-6 h-6 text-blue-600" />
               <h3 className="text-lg font-bold text-gray-900 dark:text-white">
@@ -83,11 +83,11 @@ export default function Footer() {
           </div>
           
           {/* Platform Links */}
-          <div>
+          <div className="md:col-span-1">
             <h4 className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white mb-3">
               Platform
             </h4>
-            <ul className="space-y-2">
+            <ul className="space-y-1.5">
               <li>
                 <Link href="/how-it-works" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
                   How It Works
@@ -116,12 +116,12 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Technology Section - THE TRAP DOOR */}
-          <div>
+          {/* Technology Section */}
+          <div className="md:col-span-1">
             <h4 className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white mb-3">
               Technology
             </h4>
-            <ul className="space-y-2">
+            <ul className="space-y-1.5">
               <li>
                 <Link href="/developers" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
                   Developer APIs
@@ -155,13 +155,58 @@ export default function Footer() {
               </li>
             </ul>
           </div>
+
+          {/* Security & Compliance Section - NEW PROFESSIONAL DESIGN */}
+          <div className="md:col-span-1">
+            <h4 className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white mb-3">
+              Security & Compliance
+            </h4>
+            <ul className="space-y-1.5">
+              <li>
+                <Link href="/security/certification" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors flex items-center">
+                  TU-1-A Certification
+                  <span className="ml-1 text-[10px] bg-purple-500/20 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded">CERTIFIED</span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/security/compliance" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors flex items-center">
+                  Compliance Portal
+                  <span className="ml-1 text-[10px] bg-blue-500/20 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded">NEW</span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/security/intelligence" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors flex items-center">
+                  Threat Intelligence
+                  <span className="ml-1 text-[10px] bg-green-500/20 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded animate-pulse">LIVE</span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/security/bounty" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors flex items-center">
+                  Bug Bounty Program
+                  <span className="ml-1 text-[10px] bg-amber-500/20 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded">UPDATED</span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/security/status" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors flex items-center">
+                  Security Status
+                  <span className="ml-1 text-[10px] bg-green-500/20 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded animate-pulse">LIVE</span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/security/reports" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors flex items-center">
+                  Transparency Reports
+                  <span className="ml-1 text-[10px] bg-blue-500/20 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded">NEW</span>
+                </Link>
+              </li>
+            </ul>
+          </div>
           
           {/* Drivers Links */}
-          <div>
+          <div className="md:col-span-1">
             <h4 className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white mb-3">
               Drivers
             </h4>
-            <ul className="space-y-2">
+            <ul className="space-y-1.5">
               <li>
                 <Link href="/drive" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
                   Become a Driver
@@ -186,11 +231,11 @@ export default function Footer() {
           </div>
           
           {/* Company Links */}
-          <div>
+          <div className="md:col-span-1">
             <h4 className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white mb-3">
               Company
             </h4>
-            <ul className="space-y-2">
+            <ul className="space-y-1.5">
               <li>
                 <Link href="/about" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
                   About Us
@@ -242,7 +287,7 @@ export default function Footer() {
           </div>
         </div>
         
-        {/* App Download Section - Updated Design */}
+        {/* App Download Section */}
         <div className="border-t border-gray-200 dark:border-gray-800 pt-8 mb-8">
           <div className="flex flex-col md:flex-row items-center justify-between">
             <div className="mb-4 md:mb-0">
@@ -291,9 +336,9 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Trust Badges */}
+        {/* Trust Badges - UPDATED WITH TU-1-A */}
         <div className="border-t border-gray-200 dark:border-gray-800 pt-8 mb-8">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-4 text-center">
             <div className="flex flex-col items-center space-y-2">
               <IoShieldCheckmarkOutline className="w-8 h-8 text-green-600" />
               <div className="text-xs text-gray-600 dark:text-gray-400">
@@ -329,6 +374,14 @@ export default function Footer() {
                 <div>Successfully Completed</div>
               </div>
             </div>
+            {/* UPDATED SECURITY BADGE - Professional */}
+            <div className="flex flex-col items-center space-y-2">
+              <IoShieldCheckmarkOutline className="w-8 h-8 text-indigo-600" />
+              <div className="text-xs text-gray-600 dark:text-gray-400">
+                <div className="font-semibold text-indigo-600">TU-1-A</div>
+                <div>Certified Platform</div>
+              </div>
+            </div>
           </div>
         </div>
         
@@ -353,6 +406,9 @@ export default function Footer() {
                 <Link href="/legal" className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
                   Legal
                 </Link>
+                <Link href="/security" className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
+                  Security
+                </Link>
               </div>
             </div>
             
@@ -369,12 +425,13 @@ export default function Footer() {
             </div>
           </div>
           
-          {/* Platform Disclaimer */}
+          {/* Platform Disclaimer - UPDATED WITH TU-1-A */}
           <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
             <p className="text-xs text-blue-800 dark:text-blue-300 text-center">
               <strong>Platform Notice:</strong> ItWhip is a technology platform and GDS integration provider established in 2019. 
               We connect travelers with independent luxury transportation providers and integrated hotel partners. 
               All drivers maintain their own permits, licenses, and insurance. Hotel partnerships subject to tier requirements.
+              Platform maintains TU-1-A certification, exceeding industry security standards.
             </p>
           </div>
         </div>

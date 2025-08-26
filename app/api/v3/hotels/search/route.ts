@@ -2,6 +2,7 @@
 
 import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
+import { cacheGet, cacheSet } from '@/app/lib/cache/redis'
 
 // Types for hotel data
 interface Hotel {
@@ -352,58 +353,122 @@ function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: numbe
   return R * c
 }
 
+// Generate cache key from search parameters
+function generateCacheKey(params: any, authenticated: boolean): string {
+  // Create a deterministic key from search params
+  const keyParts = [
+    'hotels:search',
+    authenticated ? 'auth' : 'public',
+    params.query || 'all',
+    params.city || 'any',
+    params.status || 'any',
+    params.brand || 'any',
+    `rooms:${params.minRooms}-${params.maxRooms}`,
+    `loc:${params.lat},${params.lng}`,
+    `radius:${params.radius}`,
+    `sort:${params.sortBy}`,
+    `page:${params.offset}-${params.limit}`
+  ]
+  
+  return keyParts.join(':')
+}
+
 export async function GET(request: Request) {
+  const startTime = Date.now()
+  
   try {
     // Check authentication for detailed data
     const authenticated = await isAuthenticated(request)
     
     // Parse query parameters
     const url = new URL(request.url)
-    const query = url.searchParams.get('q')?.toLowerCase() || ''
-    const city = url.searchParams.get('city')?.toLowerCase()
-    const status = url.searchParams.get('status')
-    const brand = url.searchParams.get('brand')?.toLowerCase()
-    const minRooms = parseInt(url.searchParams.get('minRooms') || '0')
-    const maxRooms = parseInt(url.searchParams.get('maxRooms') || '9999')
-    const lat = parseFloat(url.searchParams.get('lat') || '33.4484')
-    const lng = parseFloat(url.searchParams.get('lng') || '-112.0740')
-    const radius = parseFloat(url.searchParams.get('radius') || '50')
-    const limit = parseInt(url.searchParams.get('limit') || '20')
-    const offset = parseInt(url.searchParams.get('offset') || '0')
-    const sortBy = url.searchParams.get('sortBy') || 'revenue'
+    const searchParams = {
+      query: url.searchParams.get('q')?.toLowerCase() || '',
+      city: url.searchParams.get('city')?.toLowerCase(),
+      status: url.searchParams.get('status'),
+      brand: url.searchParams.get('brand')?.toLowerCase(),
+      minRooms: parseInt(url.searchParams.get('minRooms') || '0'),
+      maxRooms: parseInt(url.searchParams.get('maxRooms') || '9999'),
+      lat: parseFloat(url.searchParams.get('lat') || '33.4484'),
+      lng: parseFloat(url.searchParams.get('lng') || '-112.0740'),
+      radius: parseFloat(url.searchParams.get('radius') || '50'),
+      limit: parseInt(url.searchParams.get('limit') || '20'),
+      offset: parseInt(url.searchParams.get('offset') || '0'),
+      sortBy: url.searchParams.get('sortBy') || 'revenue'
+    }
+    
+    // Generate cache key
+    const cacheKey = generateCacheKey(searchParams, authenticated)
+    
+    // Try to get from cache
+    let cached = null
+    let cacheHit = false
+    
+    try {
+      cached = await cacheGet(cacheKey)
+      if (cached) {
+        cacheHit = true
+        console.log(`Cache HIT for hotels search: ${cacheKey}`)
+      }
+    } catch (error) {
+      // Cache might not be configured, continue without it
+      console.log('Cache not available for hotels search')
+    }
+    
+    // If we have cached data, return it immediately
+    if (cached && cacheHit) {
+      const responseTime = Date.now() - startTime
+      
+      return NextResponse.json(cached, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': authenticated ? 'private, max-age=60' : 'public, max-age=300',
+          'X-Cache': 'HIT',
+          'X-Cache-TTL': authenticated ? '60s' : '300s',
+          'X-Response-Time': `${responseTime}ms`,
+          'X-Total-Count': String((cached as any).pagination?.total || 0),
+          'X-Result-Count': String((cached as any).hotels?.length || 0),
+          'Access-Control-Allow-Origin': '*'
+        }
+      })
+    }
+    
+    // Not cached - perform the search
+    console.log('Cache MISS for hotels search, generating fresh results')
     
     // Filter hotels
     let filteredHotels = HOTELS_DATABASE.filter(hotel => {
       // Text search
-      if (query && !hotel.name.toLowerCase().includes(query) && 
-          !hotel.brand.toLowerCase().includes(query) &&
-          !hotel.city.toLowerCase().includes(query)) {
+      if (searchParams.query && !hotel.name.toLowerCase().includes(searchParams.query) && 
+          !hotel.brand.toLowerCase().includes(searchParams.query) &&
+          !hotel.city.toLowerCase().includes(searchParams.query)) {
         return false
       }
       
       // City filter
-      if (city && !hotel.city.toLowerCase().includes(city)) {
+      if (searchParams.city && !hotel.city.toLowerCase().includes(searchParams.city)) {
         return false
       }
       
       // Status filter
-      if (status && hotel.status !== status) {
+      if (searchParams.status && hotel.status !== searchParams.status) {
         return false
       }
       
       // Brand filter
-      if (brand && !hotel.brand.toLowerCase().includes(brand)) {
+      if (searchParams.brand && !hotel.brand.toLowerCase().includes(searchParams.brand)) {
         return false
       }
       
       // Room count filter
-      if (hotel.rooms < minRooms || hotel.rooms > maxRooms) {
+      if (hotel.rooms < searchParams.minRooms || hotel.rooms > searchParams.maxRooms) {
         return false
       }
       
       // Distance filter
-      const distance = calculateDistance(lat, lng, hotel.lat, hotel.lng)
-      if (distance > radius) {
+      const distance = calculateDistance(searchParams.lat, searchParams.lng, hotel.lat, hotel.lng)
+      if (distance > searchParams.radius) {
         return false
       }
       
@@ -413,12 +478,12 @@ export async function GET(request: Request) {
     // Add distance to each hotel
     filteredHotels = filteredHotels.map(hotel => ({
       ...hotel,
-      distance: parseFloat(calculateDistance(lat, lng, hotel.lat, hotel.lng).toFixed(1))
+      distance: parseFloat(calculateDistance(searchParams.lat, searchParams.lng, hotel.lat, hotel.lng).toFixed(1))
     }))
     
     // Sort hotels
     filteredHotels.sort((a, b) => {
-      switch (sortBy) {
+      switch (searchParams.sortBy) {
         case 'revenue':
           return b.monthlyRevenuePotential - a.monthlyRevenuePotential
         case 'distance':
@@ -433,7 +498,7 @@ export async function GET(request: Request) {
     })
     
     // Apply pagination
-    const paginatedHotels = filteredHotels.slice(offset, offset + limit)
+    const paginatedHotels = filteredHotels.slice(searchParams.offset, searchParams.offset + searchParams.limit)
     
     // Remove sensitive data if not authenticated
     const sanitizedHotels = paginatedHotels.map(hotel => {
@@ -471,20 +536,22 @@ export async function GET(request: Request) {
     const response = {
       success: true,
       query: {
-        search: query || null,
-        city,
-        status,
-        brand,
-        roomRange: minRooms > 0 || maxRooms < 9999 ? `${minRooms}-${maxRooms}` : null,
-        location: { lat, lng },
-        radius,
-        sortBy
+        search: searchParams.query || null,
+        city: searchParams.city,
+        status: searchParams.status,
+        brand: searchParams.brand,
+        roomRange: searchParams.minRooms > 0 || searchParams.maxRooms < 9999 
+          ? `${searchParams.minRooms}-${searchParams.maxRooms}` 
+          : null,
+        location: { lat: searchParams.lat, lng: searchParams.lng },
+        radius: searchParams.radius,
+        sortBy: searchParams.sortBy
       },
       pagination: {
-        limit,
-        offset,
+        limit: searchParams.limit,
+        offset: searchParams.offset,
         total: filteredHotels.length,
-        hasMore: offset + limit < filteredHotels.length
+        hasMore: searchParams.offset + searchParams.limit < filteredHotels.length
       },
       stats,
       hotels: sanitizedHotels,
@@ -501,15 +568,32 @@ export async function GET(request: Request) {
         generated: new Date().toISOString(),
         dataSource: 'itwhip-hotel-network',
         lastUpdated: new Date(Date.now() - 3600000).toISOString(),
-        authenticated
+        authenticated,
+        cached: false,
+        responseTime: Date.now() - startTime
       }
     }
+    
+    // Cache the response
+    try {
+      // Cache for different durations based on authentication
+      const cacheTTL = authenticated ? 60 : 300 // 1 minute for auth, 5 minutes for public
+      await cacheSet(cacheKey, response, cacheTTL)
+      console.log(`Cached hotels search results for ${cacheTTL}s`)
+    } catch (error) {
+      // Cache might not be available, continue without caching
+      console.log('Could not cache hotels search results')
+    }
+    
+    const responseTime = Date.now() - startTime
     
     return NextResponse.json(response, {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': authenticated ? 'private, max-age=300' : 'public, max-age=3600',
+        'Cache-Control': authenticated ? 'private, max-age=60' : 'public, max-age=300',
+        'X-Cache': 'MISS',
+        'X-Response-Time': `${responseTime}ms`,
         'X-Total-Count': String(filteredHotels.length),
         'X-Result-Count': String(paginatedHotels.length),
         'Access-Control-Allow-Origin': '*'
@@ -519,14 +603,24 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error('Hotel search error:', error)
     
+    const responseTime = Date.now() - startTime
+    
     return NextResponse.json(
       {
         success: false,
         error: 'Internal Server Error',
         message: 'Failed to search hotels',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        cached: false,
+        responseTime
       },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: {
+          'X-Cache': 'ERROR',
+          'X-Response-Time': `${responseTime}ms`
+        }
+      }
     )
   }
 }
