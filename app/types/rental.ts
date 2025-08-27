@@ -10,7 +10,7 @@ import {
     RentalReview,
     User,
     RentalBookingStatus
-  } from '@prisma/client'
+  } from '@/app/lib/dal/types'
   
   // ============================================================================
   // ENUMS & CONSTANTS

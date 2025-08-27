@@ -2,7 +2,7 @@
 // Helper functions for the rental system
 
 import { format, differenceInDays, addDays, parseISO, isAfter, isBefore } from 'date-fns'
-import { RentalCar, RentalBooking, RentalAvailability } from '@prisma/client'
+import { RentalCar, RentalBooking, RentalAvailability } from '@/app/lib/dal/types'
 
 // ============================================================================
 // DATE & TIME UTILITIES

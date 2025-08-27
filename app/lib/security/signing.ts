@@ -4,7 +4,7 @@
  */
 
 import { createHmac, randomBytes, createHash } from 'crypto'
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@/app/lib/dal/types'
 import type { RequestSignature } from '@/app/types/security'
 
 // Initialize Prisma

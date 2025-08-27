@@ -145,6 +145,45 @@ interface AuditLogEntry {
 }
 
 // ============================================================================
+// SECURITY EVENT CREATION - NEW EXPORT FOR ALERT SYSTEM
+// ============================================================================
+
+/**
+ * Create a security event - Used by the alert system
+ * This function is specifically for the alert.ts integration
+ */
+export async function createSecurityEvent(event: {
+  type: string
+  severity: ThreatSeverity | string
+  sourceIp: string
+  userAgent: string
+  message: string
+  details?: any
+  action: string
+  blocked: boolean
+  userId?: string
+}): Promise<void> {
+  try {
+    // Map to audit security event
+    await auditSecurityEvent(
+      event.type as SecurityEventType,
+      event.severity as ThreatSeverity,
+      event.sourceIp,
+      'security_alert',
+      {
+        message: event.message,
+        details: event.details,
+        userId: event.userId
+      },
+      event.blocked
+    )
+  } catch (error) {
+    console.error('Failed to create security event from alert:', error)
+    // Don't throw to avoid disrupting the alert system
+  }
+}
+
+// ============================================================================
 // AUDIT LOGGING CORE
 // ============================================================================
 

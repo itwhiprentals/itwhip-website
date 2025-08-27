@@ -21,7 +21,7 @@ import {
   IoPersonOutline,
   IoVerifiedOutline
 } from 'react-icons/io5'
-import type { RentalHost } from '@prisma/client'
+import type { RentalHost } from '@/app/lib/dal/types'
 
 interface HostProfileProps {
   host: RentalHost & {

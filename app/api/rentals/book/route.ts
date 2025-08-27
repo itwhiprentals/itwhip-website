@@ -1,9 +1,9 @@
 // app/api/rentals/book/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/app/lib/database/prisma'
+import prisma from '@/app/lib/database/prisma'
 import { getServerSession } from 'next-auth/next'
 import { z } from 'zod'
-import { RentalBookingStatus } from '@prisma/client'
+import { RentalBookingStatus } from '@/app/lib/dal/types'
 import { sendBookingConfirmation, sendHostNotification } from '@/app/lib/email'
 import { calculatePricing } from '@/app/(guest)/rentals/lib/pricing'
 import { checkAvailability } from '@/app/(guest)/rentals/lib/rental-utils'

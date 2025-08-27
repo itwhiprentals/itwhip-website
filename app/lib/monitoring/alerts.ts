@@ -886,6 +886,6 @@ export function getActiveAlerts(): Alert[] {
   return alertManager.getActiveAlerts()
 }
 
-export { alertManager, AlertManager, AlertSeverity, AlertType, AlertStatus, AlertChannel }
-
+// Export the manager and types
+export { alertManager, AlertManager }
 export default alertManager

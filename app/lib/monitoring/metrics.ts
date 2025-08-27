@@ -700,6 +700,7 @@ export function startTimer(
   return metricsCollector.startTimer(name, tags)
 }
 
-export { metricsCollector, MetricsCollector, SystemMetrics, MetricType, MetricUnit }
+// Export without MetricType and MetricUnit since they're already exported at the top
+export { metricsCollector, MetricsCollector, SystemMetrics }
 
 export default metricsCollector

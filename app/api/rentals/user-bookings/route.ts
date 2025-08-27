@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { verifyJWT } from '@/lib/auth/jwt'
-import type { RentalBookingStatus } from '@prisma/client'
+import type { RentalBookingStatus } from '@/app/lib/dal/types'
 
 // GET /api/rentals/user-bookings - Get user's rental bookings
 export async function GET(request: NextRequest) {

@@ -5,7 +5,7 @@
 
 import jwt from 'jsonwebtoken'
 import { randomBytes, createHash } from 'crypto'
-import { PrismaClient } from '@prisma/client'
+import prisma from '@/app/lib/database/prisma'
 import type { 
   User,
   UserRole,
@@ -17,9 +17,6 @@ import type {
   TokenValidation,
   AuthResponse
 } from '@/app/types/auth'
-
-// Initialize Prisma
-const prisma = new PrismaClient()
 
 // ============================================================================
 // CONFIGURATION

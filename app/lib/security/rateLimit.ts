@@ -3,17 +3,13 @@
  * Implements tier-based throttling, burst protection, and auto-banning
  */
 
-import { PrismaClient } from '@prisma/client'
+import prisma from '@/app/lib/database/prisma'
 import { createHash } from 'crypto'
+import { UserRole, CertificationTier } from '@/app/lib/dal/types'
 import type {
-  UserRole,
-  CertificationTier,
   RateLimitStatus
 } from '@/app/types/auth'
 import type { RateLimitConfig } from '@/app/types/security'
-
-// Initialize Prisma
-const prisma = new PrismaClient()
 
 // ============================================================================
 // CONFIGURATION

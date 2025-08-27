@@ -2,8 +2,8 @@
 // Role-Based Access Control with 6 roles, 24 permissions, and certification tiers
 // Implements progressive access model: Anonymous → Admin
 
-import { UserRole, CertificationTier } from '@prisma/client'
-import type { User, Hotel } from '@prisma/client'
+import { UserRole, CertificationTier } from '@/app/lib/dal/types'
+import type { User, Hotel } from '@/app/lib/dal/types'
 
 // ============================================================================
 // PERMISSION DEFINITIONS

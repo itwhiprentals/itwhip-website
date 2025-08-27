@@ -4,7 +4,7 @@
  */
 
 import { randomBytes, createHash, createHmac } from 'crypto'
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@/app/lib/dal/types'
 import type {
   User,
   UserRole,

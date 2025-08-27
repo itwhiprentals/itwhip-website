@@ -2,7 +2,7 @@
 // AI-powered anomaly detection system for identifying and blocking threats
 // Detects SQL injection, XSS, DDoS, credential stuffing, and behavioral anomalies
 
-import { AttackType, ThreatSeverity, ThreatStatus } from '@prisma/client'
+import { AttackType, ThreatSeverity, ThreatStatus } from '@/app/lib/dal/types'
 import prisma from '@/app/lib/database/prisma'
 import crypto from 'crypto'
 
@@ -687,7 +687,4 @@ export class AnomalyDetector {
 // EXPORTS
 // ============================================================================
 
-export default AnomalyDetector.getInstance()
-
-// Export types
-export { AttackType, ThreatSeverity, ThreatStatus } from '@prisma/client'
+export default AnomalyDetector
