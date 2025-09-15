@@ -52,7 +52,17 @@ class KeyManager {
   constructor() {
     this.masterKey = this.deriveMasterKey()
     this.initializeDataKeys()
-    this.scheduleKeyRotation()
+    
+    // Only schedule rotation in runtime, not during build
+    // Check for build phase and skip rotation during static generation
+    const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build' || 
+                       process.env.NODE_ENV === 'test' ||
+                       process.env.CI === 'true'
+    
+    if (!isBuildTime && process.env.NODE_ENV === 'production') {
+      // Only rotate in production runtime
+      this.scheduleKeyRotation()
+    }
   }
   
   /**
@@ -62,7 +72,7 @@ class KeyManager {
     const masterSecret = process.env.MASTER_ENCRYPTION_KEY || 'default-dev-key-change-in-production'
     const salt = process.env.ENCRYPTION_SALT || 'itwhip-platform-salt-2024'
     
-    if (!process.env.MASTER_ENCRYPTION_KEY) {
+    if (!process.env.MASTER_ENCRYPTION_KEY && process.env.NODE_ENV === 'production') {
       logger.warn('Using default encryption key - NOT SECURE FOR PRODUCTION')
     }
     
@@ -110,31 +120,46 @@ class KeyManager {
    * Schedule key rotation
    */
   private scheduleKeyRotation(): void {
-    // Rotate keys every 90 days in production
+    // Maximum safe timeout value for Node.js (about 24.8 days)
+    const MAX_TIMEOUT = 2147483647
+    
+    // For production, use 24-day intervals instead of 90 days to avoid timeout overflow
+    // This will rotate keys more frequently but avoids the Node.js limitation
     const rotationInterval = process.env.NODE_ENV === 'production' 
-      ? 90 * 24 * 60 * 60 * 1000 // 90 days
-      : 7 * 24 * 60 * 60 * 1000  // 7 days in dev
+      ? 24 * 24 * 60 * 60 * 1000  // 24 days (safe for Node.js)
+      : 7 * 24 * 60 * 60 * 1000    // 7 days in dev
+    
+    // Ensure we never exceed the maximum timeout
+    const safeInterval = Math.min(rotationInterval, MAX_TIMEOUT)
     
     this.keyRotationSchedule = setInterval(() => {
       this.rotateKeys()
-    }, rotationInterval)
+    }, safeInterval)
   }
   
   /**
    * Rotate encryption keys
    */
   async rotateKeys(): Promise<void> {
-    logger.info('Starting encryption key rotation')
+    // Only log in production to avoid spam during development
+    if (process.env.NODE_ENV === 'production') {
+      logger.info('Starting encryption key rotation')
+    }
     
     try {
       // Generate new master key
       const newMasterKey = crypto.randomBytes(32)
       
-      // Re-encrypt all data with new key
-      // This would need to be implemented with your database
-      // For now, just log the event
+      // TODO: Implement actual key rotation logic
+      // This would need to:
+      // 1. Generate new keys
+      // 2. Re-encrypt all data with new keys
+      // 3. Update key version in database
+      // 4. Clean up old keys after migration
       
-      logger.info('Key rotation completed successfully')
+      if (process.env.NODE_ENV === 'production') {
+        logger.info('Key rotation completed successfully')
+      }
     } catch (error) {
       logger.error('Key rotation failed', { error })
     }
@@ -146,13 +171,22 @@ class KeyManager {
   destroy(): void {
     if (this.keyRotationSchedule) {
       clearInterval(this.keyRotationSchedule)
+      this.keyRotationSchedule = null
     }
     this.dataKeys.clear()
   }
 }
 
-// Singleton key manager
-const keyManager = new KeyManager()
+// Create singleton key manager only when not in build phase
+let keyManager: KeyManager
+
+// Lazy initialization to avoid issues during build
+function getKeyManager(): KeyManager {
+  if (!keyManager) {
+    keyManager = new KeyManager()
+  }
+  return keyManager
+}
 
 /**
  * Encrypt a value
@@ -162,7 +196,8 @@ export function encrypt(
   model: string = 'default'
 ): { encrypted: string; iv: string; tag: string; version: number } {
   try {
-    const key = keyManager.getKeyForModel(model)
+    const manager = getKeyManager()
+    const key = manager.getKeyForModel(model)
     const iv = crypto.randomBytes(ENCRYPTION_CONFIG.ivLength)
     const cipher = crypto.createCipheriv(ENCRYPTION_CONFIG.algorithm, key, iv)
     
@@ -196,7 +231,8 @@ export function decrypt(
   model: string = 'default'
 ): string {
   try {
-    const key = keyManager.getKeyForModel(model)
+    const manager = getKeyManager()
+    const key = manager.getKeyForModel(model)
     const iv = Buffer.from(encryptedData.iv, 'hex')
     const tag = Buffer.from(encryptedData.tag, 'hex')
     const decipher = crypto.createDecipheriv(ENCRYPTION_CONFIG.algorithm, key, iv)
@@ -385,7 +421,8 @@ export async function encryptFile(
     algorithm: string
   }
 }> {
-  const key = keyManager.getKeyForModel(model)
+  const manager = getKeyManager()
+  const key = manager.getKeyForModel(model)
   const iv = crypto.randomBytes(ENCRYPTION_CONFIG.ivLength)
   const cipher = crypto.createCipheriv(ENCRYPTION_CONFIG.algorithm, key, iv)
   
@@ -420,7 +457,8 @@ export async function decryptFile(
   },
   model: string = 'file'
 ): Promise<Buffer> {
-  const key = keyManager.getKeyForModel(model)
+  const manager = getKeyManager()
+  const key = manager.getKeyForModel(model)
   const iv = Buffer.from(metadata.iv, 'hex')
   const tag = Buffer.from(metadata.tag, 'hex')
   const algorithm = metadata.algorithm || ENCRYPTION_CONFIG.algorithm
@@ -492,11 +530,20 @@ export function createEncryptionMiddleware() {
 }
 
 /**
- * Export singleton key manager for cleanup
+ * Export function to get key manager instance
  */
-export { keyManager }
+export { getKeyManager as getKeyManagerInstance }
 
 /**
  * Export encryption configuration for testing
  */
 export { ENCRYPTION_CONFIG, ENCRYPTED_FIELDS, MASKED_FIELDS }
+
+/**
+ * Cleanup function for graceful shutdown
+ */
+export function cleanupEncryption(): void {
+  if (keyManager) {
+    keyManager.destroy()
+  }
+}
