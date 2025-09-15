@@ -1,0 +1,926 @@
+// app/api/rentals/book/route-backup.ts
+import { NextRequest, NextResponse } from 'next/server'
+import prisma from '@/app/lib/database/prisma'
+import { z } from 'zod'
+import { RentalBookingStatus } from '@/app/lib/dal/types'
+import { sendBookingConfirmation, sendHostNotification, sendPendingReviewEmail, sendFraudAlertEmail } from '@/app/lib/email'
+import { calculatePricing } from '@/app/(guest)/rentals/lib/pricing'
+import { checkAvailability } from '@/app/(guest)/rentals/lib/rental-utils'
+import { addHours } from 'date-fns'
+import { extractIpAddress } from '@/app/utils/ip-lookup'
+
+// Validation schema for booking request - Updated with fraud data
+const bookingSchema = z.object({
+  carId: z.string(),
+  
+  // Guest information (required for non-authenticated users)
+  guestEmail: z.string().email(),
+  guestPhone: z.string(),
+  guestName: z.string(),
+  
+  // Dates and times
+  startDate: z.string().transform(str => new Date(str)),
+  endDate: z.string().transform(str => new Date(str)),
+  startTime: z.string(),
+  endTime: z.string(),
+  
+  // Pickup details
+  pickupType: z.enum(['host', 'airport', 'hotel', 'delivery']),
+  pickupLocation: z.string(),
+  deliveryAddress: z.string().optional(),
+  returnLocation: z.string().optional(),
+  
+  // Extras and insurance
+  extras: z.array(z.string()).optional(),
+  insurance: z.enum(['none', 'basic', 'premium']),
+  
+  // Driver verification info
+  driverInfo: z.object({
+    licenseNumber: z.string(),
+    licenseState: z.string(),
+    licenseExpiry: z.string(),
+    dateOfBirth: z.string(),
+    licensePhotoUrl: z.string().optional(),
+    insurancePhotoUrl: z.string().optional(),
+    selfiePhotoUrl: z.string().optional(),
+  }),
+  
+  // Payment (only for Amadeus cars, P2P waits for approval)
+  paymentIntentId: z.string().optional(),
+  notes: z.string().optional(),
+  
+  // Fraud detection data from client
+  fraudData: z.object({
+    deviceFingerprint: z.string(),
+    sessionData: z.any().optional(),
+    botSignals: z.array(z.string()).optional()
+  }).optional()
+})
+
+export async function POST(request: NextRequest) {
+  try {
+    // Parse and validate request body
+    const body = await request.json()
+    const validationResult = bookingSchema.safeParse(body)
+
+    if (!validationResult.success) {
+      return NextResponse.json(
+        { error: 'Invalid booking data', details: validationResult.error.flatten() },
+        { status: 400 }
+      )
+    }
+
+    const bookingData = validationResult.data
+
+    // Get car details with host information to determine booking path
+    const car = await prisma.rentalCar.findUnique({
+      where: { id: bookingData.carId },
+      include: {
+        host: true,
+        bookings: {
+          where: {
+            OR: [
+              { status: RentalBookingStatus.CONFIRMED },
+              { status: RentalBookingStatus.ACTIVE }
+            ],
+            AND: [
+              { endDate: { gte: bookingData.startDate } },
+              { startDate: { lte: bookingData.endDate } }
+            ]
+          }
+        }
+      }
+    })
+
+    if (!car) {
+      return NextResponse.json(
+        { error: 'Car not found' },
+        { status: 404 }
+      )
+    }
+
+    if (!car.isActive) {
+      return NextResponse.json(
+        { error: 'Car is not available' },
+        { status: 400 }
+      )
+    }
+
+    // Check availability
+    const isAvailable = await checkAvailability(
+      bookingData.carId,
+      bookingData.startDate,
+      bookingData.endDate
+    )
+
+    if (!isAvailable) {
+      return NextResponse.json(
+        { error: 'Car is not available for selected dates' },
+        { status: 400 }
+      )
+    }
+
+    // Calculate pricing
+    const pricing = calculatePricing({
+      dailyRate: car.dailyRate,
+      startDate: bookingData.startDate,
+      endDate: bookingData.endDate,
+      extras: bookingData.extras || [],
+      insurance: bookingData.insurance,
+      deliveryType: bookingData.pickupType,
+      driverAge: calculateAge(bookingData.driverInfo.dateOfBirth)
+    })
+
+    // ========== SIMPLIFIED FRAUD DETECTION ==========
+    
+    // Extract IP address from headers
+    const ipAddress = extractIpAddress(request.headers)
+    const userAgent = request.headers.get('user-agent') || 'unknown'
+    
+    // Get client fraud data or use defaults
+    const clientFraudData = bookingData.fraudData || {
+      deviceFingerprint: 'unknown',
+      sessionData: {},
+      botSignals: []
+    }
+    
+    // Simple risk scoring based on available data
+    let riskScore = 0
+    let riskFlags: string[] = []
+    
+    // Check for development/testing environment
+    const isDevelopment = process.env.NODE_ENV === 'development' || 
+                         process.env.SKIP_FRAUD_CHECK === 'true' ||
+                         ipAddress === '127.0.0.1' || 
+                         ipAddress.startsWith('192.168.') ||
+                         ipAddress.startsWith('10.')
+    
+    if (isDevelopment) {
+      // Minimal risk for development
+      riskScore = 0
+      riskFlags = ['development_environment']
+    } else {
+      // Basic risk checks
+      if (clientFraudData.botSignals && clientFraudData.botSignals.length > 0) {
+        riskScore += 50
+        riskFlags.push(...clientFraudData.botSignals)
+      }
+      
+      if (clientFraudData.deviceFingerprint === 'unknown') {
+        riskScore += 20
+        riskFlags.push('no_device_fingerprint')
+      }
+      
+      // Check session data if available
+      if (clientFraudData.sessionData) {
+        const sessionDuration = clientFraudData.sessionData.duration || 0
+        if (sessionDuration < 30000) { // Less than 30 seconds
+          riskScore += 15
+          riskFlags.push('short_session')
+        }
+        
+        const interactions = clientFraudData.sessionData.totalInteractions || 0
+        if (interactions < 5) {
+          riskScore += 10
+          riskFlags.push('low_interaction')
+        }
+      }
+      
+      // High-value booking check
+      if (pricing.total > 1000) {
+        riskScore += 10
+        riskFlags.push('high_value_booking')
+      }
+      
+      // Last-minute booking check
+      const daysUntilStart = Math.floor(
+        (bookingData.startDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+      )
+      if (daysUntilStart < 1) {
+        riskScore += 15
+        riskFlags.push('last_minute_booking')
+      }
+    }
+    
+    // Determine risk level
+    let riskLevel: 'low' | 'medium' | 'high' | 'critical'
+    if (riskScore >= 70) riskLevel = 'critical'
+    else if (riskScore >= 50) riskLevel = 'high'
+    else if (riskScore >= 30) riskLevel = 'medium'
+    else riskLevel = 'low'
+    
+    const requiresManualReview = riskScore >= 60
+    const shouldBlock = riskScore >= 85 && !isDevelopment
+    
+    // Log fraud check results
+    console.log('Fraud Check Results:', {
+      riskScore,
+      riskLevel,
+      shouldBlock,
+      requiresManualReview,
+      flags: riskFlags,
+      isDevelopment
+    })
+    
+    // Block only if truly high risk and not in development
+    if (shouldBlock) {
+      await prisma.activityLog.create({
+        data: {
+          action: 'booking_blocked',
+          entityType: 'RentalBooking',
+          entityId: bookingData.carId,
+          metadata: {
+            guestEmail: bookingData.guestEmail,
+            riskScore,
+            flags: riskFlags,
+            reason: 'High fraud risk detected'
+          },
+          ipAddress
+        }
+      })
+      
+      return NextResponse.json(
+        { 
+          error: 'Booking cannot be processed',
+          message: 'Your booking cannot be completed at this time. Please contact support if you believe this is an error.',
+          code: 'FRAUD_BLOCK'
+        },
+        { status: 403 }
+      )
+    }
+    
+    // ========== END FRAUD DETECTION ==========
+
+    // Generate booking code
+    const bookingCode = generateBookingCode()
+
+    // Determine booking flow based on car source AND fraud risk
+    const isP2P = car.source === 'p2p'
+    const requiresReview = requiresManualReview && !isDevelopment
+    
+    // Create the booking in a transaction
+    const booking = await prisma.$transaction(async (tx) => {
+      // Create the booking with appropriate status
+      const newBooking = await tx.rentalBooking.create({
+        data: {
+          bookingCode,
+          carId: bookingData.carId,
+          hostId: car.hostId,
+          
+          // Guest information (no renterId for guest bookings)
+          guestEmail: bookingData.guestEmail,
+          guestPhone: bookingData.guestPhone,
+          guestName: bookingData.guestName,
+          
+          // Dates
+          startDate: bookingData.startDate,
+          endDate: bookingData.endDate,
+          startTime: bookingData.startTime,
+          endTime: bookingData.endTime,
+          
+          // Pickup
+          pickupLocation: bookingData.pickupLocation,
+          pickupType: bookingData.pickupType,
+          deliveryAddress: bookingData.deliveryAddress,
+          returnLocation: bookingData.returnLocation || bookingData.pickupLocation,
+          
+          // Pricing
+          dailyRate: car.dailyRate,
+          numberOfDays: pricing.days,
+          subtotal: pricing.subtotal,
+          deliveryFee: pricing.deliveryFee,
+          insuranceFee: pricing.insuranceFee,
+          serviceFee: pricing.serviceFee,
+          taxes: pricing.taxes,
+          totalAmount: pricing.total,
+          depositAmount: pricing.deposit,
+          
+          // Status based on car source AND fraud risk
+          status: (isP2P || requiresReview) ? RentalBookingStatus.PENDING : RentalBookingStatus.CONFIRMED,
+          paymentStatus: (isP2P || requiresReview) ? 'pending' : 'paid',
+          paymentIntentId: (isP2P || requiresReview) ? null : bookingData.paymentIntentId,
+          
+          // Verification info
+          licenseVerified: (isP2P || requiresReview) ? false : true,
+          licenseNumber: bookingData.driverInfo.licenseNumber,
+          licenseState: bookingData.driverInfo.licenseState,
+          licenseExpiry: new Date(bookingData.driverInfo.licenseExpiry),
+          licensePhotoUrl: bookingData.driverInfo.licensePhotoUrl,
+          insurancePhotoUrl: bookingData.driverInfo.insurancePhotoUrl,
+          selfieVerified: (isP2P || requiresReview) ? false : true,
+          selfiePhotoUrl: bookingData.driverInfo.selfiePhotoUrl,
+          dateOfBirth: new Date(bookingData.driverInfo.dateOfBirth),
+          
+          // Verification status
+          verificationStatus: requiresReview ? 'fraud_review' : (isP2P ? 'submitted' : 'approved'),
+          documentsSubmittedAt: (isP2P || requiresReview) ? new Date() : null,
+          flaggedForReview: requiresReview,
+          
+          // SIMPLIFIED FRAUD DATA
+          deviceFingerprint: clientFraudData.deviceFingerprint,
+          sessionId: clientFraudData.sessionData?.sessionId || 'no-session',
+          sessionStartedAt: clientFraudData.sessionData?.startTime ? 
+            new Date(clientFraudData.sessionData.startTime) : new Date(),
+          sessionDuration: clientFraudData.sessionData?.duration || 0,
+          bookingIpAddress: ipAddress,
+          bookingUserAgent: userAgent,
+          riskScore,
+          riskFlags: JSON.stringify(riskFlags),
+          riskNotes: requiresReview ? `Flagged for review: ${riskLevel} risk` : null,
+          emailDomain: bookingData.guestEmail.split('@')[1],
+          formCompletionTime: clientFraudData.sessionData?.duration || 0,
+          copyPasteUsed: clientFraudData.sessionData?.copyPasteUsed || false,
+          mouseEventsRecorded: (clientFraudData.sessionData?.totalInteractions || 0) > 0,
+          emailVerified: false,
+          phoneVerified: false,
+          
+          extras: bookingData.extras ? JSON.stringify(bookingData.extras) : null,
+          notes: bookingData.notes
+        },
+        include: {
+          car: {
+            include: {
+              photos: true,
+              host: true
+            }
+          },
+          host: true
+        }
+      })
+
+      // Store fraud indicators if any
+      if (riskFlags.length > 0 && !isDevelopment) {
+        await tx.fraudIndicator.createMany({
+          data: riskFlags.map(flag => ({
+            bookingId: newBooking.id,
+            indicator: flag,
+            severity: riskScore >= 70 ? 'HIGH' : 
+                     riskScore >= 50 ? 'MEDIUM' : 'LOW',
+            confidence: 0.8,
+            source: 'system'
+          }))
+        })
+      }
+
+      // Store session data if available
+      if (clientFraudData.sessionData && clientFraudData.sessionData.sessionId) {
+        // Check if session already exists
+        const existingSession = await tx.bookingSession.findUnique({
+          where: { sessionId: clientFraudData.sessionData.sessionId }
+        })
+        
+        if (!existingSession) {
+          // Create new session entry
+          await tx.bookingSession.create({
+            data: {
+              bookingId: newBooking.id,
+              sessionId: clientFraudData.sessionData.sessionId,
+              duration: clientFraudData.sessionData.duration || 0,
+              abandoned: false,
+              completedAt: new Date(),
+              pageViews: JSON.stringify(clientFraudData.sessionData.pageViews || []),
+              clickCount: clientFraudData.sessionData.totalInteractions || 0,
+              validationErrors: clientFraudData.sessionData.validationErrors || 0
+            }
+          })
+        } else {
+          // Update existing session with new booking
+          await tx.bookingSession.update({
+            where: { sessionId: clientFraudData.sessionData.sessionId },
+            data: {
+              bookingId: newBooking.id,
+              completedAt: new Date(),
+              abandoned: false,
+              duration: clientFraudData.sessionData.duration || existingSession.duration
+            }
+          })
+        }
+      }
+
+      // Create guest access token for tracking
+      const accessToken = await tx.guestAccessToken.create({
+        data: {
+          bookingId: newBooking.id,
+          email: bookingData.guestEmail,
+          expiresAt: addHours(new Date(), 72) // 3 days to access booking
+        }
+      })
+
+      // For confirmed bookings (not P2P and not flagged), update statistics and block availability
+      if (!isP2P && !requiresReview) {
+        // Update car statistics
+        await tx.rentalCar.update({
+          where: { id: bookingData.carId },
+          data: {
+            totalTrips: { increment: 1 }
+          }
+        })
+
+        // Create availability blocks for booked dates
+        const dates = []
+        const currentDate = new Date(bookingData.startDate)
+        const endDate = new Date(bookingData.endDate)
+
+        while (currentDate <= endDate) {
+          dates.push(new Date(currentDate))
+          currentDate.setDate(currentDate.getDate() + 1)
+        }
+
+        await tx.rentalAvailability.createMany({
+          data: dates.map(date => ({
+            carId: bookingData.carId,
+            date,
+            isAvailable: false,
+            note: `Booked - ${bookingCode}`
+          })),
+          skipDuplicates: true
+        })
+      }
+
+      // Log the booking activity
+      await tx.activityLog.create({
+        data: {
+          action: requiresReview ? 'booking_flagged' : 'booking_created',
+          entityType: 'RentalBooking',
+          entityId: newBooking.id,
+          metadata: {
+            bookingCode,
+            riskScore,
+            riskLevel,
+            flagged: requiresReview
+          },
+          ipAddress
+        }
+      })
+
+      return { booking: newBooking, token: accessToken.token }
+    })
+
+    // Send appropriate emails based on status
+    if (requiresReview) {
+      // FRAUD REVIEW: Send special review email to guest
+      sendPendingReviewEmail({
+        guestEmail: booking.booking.guestEmail,
+        guestName: booking.booking.guestName,
+        bookingCode: booking.booking.bookingCode,
+        carMake: booking.booking.car.make,
+        carModel: booking.booking.car.model,
+        carImage: booking.booking.car.photos?.[0]?.url || '',
+        startDate: booking.booking.startDate.toISOString(),
+        endDate: booking.booking.endDate.toISOString(),
+        pickupLocation: booking.booking.pickupLocation,
+        totalAmount: booking.booking.totalAmount.toFixed(2),
+        documentsSubmittedAt: new Date().toISOString(),
+        estimatedReviewTime: 'within 1 hour',
+        trackingUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/rentals/dashboard/guest/${booking.token}`,
+        accessToken: booking.token
+      }).catch(error => {
+        console.error('Error sending review email:', error)
+      })
+    } else if (isP2P) {
+      // P2P: Send pending review email to guest
+      sendPendingReviewEmail({
+        guestEmail: booking.booking.guestEmail,
+        guestName: booking.booking.guestName,
+        bookingCode: booking.booking.bookingCode,
+        carMake: booking.booking.car.make,
+        carModel: booking.booking.car.model,
+        carImage: booking.booking.car.photos?.[0]?.url || '',
+        startDate: booking.booking.startDate.toISOString(),
+        endDate: booking.booking.endDate.toISOString(),
+        pickupLocation: booking.booking.pickupLocation,
+        totalAmount: booking.booking.totalAmount.toFixed(2),
+        documentsSubmittedAt: new Date().toISOString(),
+        estimatedReviewTime: '2-4 hours',
+        trackingUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/rentals/dashboard/guest/${booking.token}`,
+        accessToken: booking.token
+      }).catch(error => {
+        console.error('Error sending pending review email:', error)
+      })
+    } else {
+      // Amadeus: Send immediate confirmation
+      Promise.all([
+        sendBookingConfirmation({
+          ...booking.booking,
+          accessToken: booking.token
+        })
+      ]).catch(error => {
+        console.error('Error sending booking emails:', error)
+      })
+    }
+
+    // Return booking details with appropriate message and status code
+    const responseStatus = requiresReview ? 202 : 201
+    
+    return NextResponse.json({
+      success: true,
+      bookingType: isP2P ? 'p2p' : 'traditional',
+      status: requiresReview ? 'fraud_review' : (isP2P ? 'pending_review' : 'confirmed'),
+      riskAssessment: {
+        score: riskScore,
+        level: riskLevel
+      },
+      message: requiresReview 
+        ? 'Your booking is under review for security verification. We\'ll notify you within 1 hour.'
+        : (isP2P 
+          ? 'Your booking is under review. We\'ll notify you within 2-4 hours.'
+          : 'Your booking is confirmed!'),
+      booking: {
+        id: booking.booking.id,
+        bookingCode: booking.booking.bookingCode,
+        accessToken: booking.token,
+        car: {
+          make: booking.booking.car.make,
+          model: booking.booking.car.model,
+          year: booking.booking.car.year,
+          photos: booking.booking.car.photos
+        },
+        host: (isP2P || requiresReview) ? null : {
+          name: booking.booking.host.name,
+          phone: booking.booking.host.phone
+        },
+        dates: {
+          start: booking.booking.startDate,
+          end: booking.booking.endDate,
+          startTime: booking.booking.startTime,
+          endTime: booking.booking.endTime
+        },
+        pickup: {
+          type: booking.booking.pickupType,
+          location: booking.booking.pickupLocation,
+          deliveryAddress: booking.booking.deliveryAddress
+        },
+        pricing: {
+          subtotal: booking.booking.subtotal,
+          deliveryFee: booking.booking.deliveryFee,
+          insuranceFee: booking.booking.insuranceFee,
+          serviceFee: booking.booking.serviceFee,
+          taxes: booking.booking.taxes,
+          total: booking.booking.totalAmount,
+          deposit: booking.booking.depositAmount
+        },
+        status: booking.booking.status,
+        paymentStatus: booking.booking.paymentStatus
+      }
+    }, { status: responseStatus })
+
+  } catch (error) {
+    console.error('Booking creation error:', error)
+    
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Validation error', details: error.errors },
+        { status: 400 }
+      )
+    }
+
+    return NextResponse.json(
+      { error: 'Failed to create booking' },
+      { status: 500 }
+    )
+  }
+}
+
+// GET - Retrieve booking details (supports guest access via token) - ENHANCED VERSION
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const bookingId = searchParams.get('id')
+    const bookingCode = searchParams.get('code')
+    const accessToken = searchParams.get('token')
+
+    if (!bookingId && !bookingCode && !accessToken) {
+      return NextResponse.json(
+        { error: 'Booking ID, code, or access token required' },
+        { status: 400 }
+      )
+    }
+
+    // If using access token, verify it first
+    if (accessToken) {
+      const token = await prisma.guestAccessToken.findUnique({
+        where: { token: accessToken },
+        include: {
+          booking: {
+            include: {
+              car: {
+                include: {
+                  photos: true,
+                  host: true
+                }
+              },
+              host: true,
+              messages: {
+                orderBy: { createdAt: 'desc' }
+              },
+              fraudIndicators: true
+            }
+          }
+        }
+      })
+
+      if (!token || token.expiresAt < new Date()) {
+        return NextResponse.json(
+          { error: 'Invalid or expired access token' },
+          { status: 401 }
+        )
+      }
+
+      // Calculate metadata for enhanced tracking experience
+      const tokenAge = Math.floor((Date.now() - token.createdAt.getTime()) / 60000) // in minutes
+      const isFirstVisit = !token.usedAt
+      
+      // Check if user has an account
+      const accountExists = await prisma.user.findUnique({
+        where: { email: token.booking.guestEmail }
+      }) !== null
+      
+      // Count related bookings
+      const relatedBookingsCount = await prisma.rentalBooking.count({
+        where: { 
+          guestEmail: token.booking.guestEmail,
+          id: { not: token.booking.id } // Exclude current booking
+        }
+      })
+
+      // Mark token as used (only on first real visit, not automated checks)
+      if (!token.usedAt && tokenAge > 0) {
+        await prisma.guestAccessToken.update({
+          where: { id: token.id },
+          data: { usedAt: new Date() }
+        })
+      }
+
+      return NextResponse.json({ 
+        booking: token.booking,
+        isFirstVisit,
+        tokenAge,
+        accountExists,
+        relatedBookingsCount
+      })
+    }
+
+    // Standard booking lookup (by ID or code) - keeping original logic
+    const booking = await prisma.rentalBooking.findFirst({
+      where: {
+        OR: [
+          bookingId ? { id: bookingId } : {},
+          bookingCode ? { bookingCode } : {}
+        ].filter(condition => Object.keys(condition).length > 0)
+      },
+      include: {
+        car: {
+          include: {
+            photos: true,
+            host: true
+          }
+        },
+        host: true,
+        messages: {
+          orderBy: { createdAt: 'desc' }
+        },
+        fraudIndicators: true
+      }
+    })
+
+    if (!booking) {
+      return NextResponse.json(
+        { error: 'Booking not found' },
+        { status: 404 }
+      )
+    }
+
+    // For non-token access, still provide basic metadata
+    const accountExists = await prisma.user.findUnique({
+      where: { email: booking.guestEmail }
+    }) !== null
+    
+    const relatedBookingsCount = await prisma.rentalBooking.count({
+      where: { 
+        guestEmail: booking.guestEmail,
+        id: { not: booking.id }
+      }
+    })
+
+    return NextResponse.json({ 
+      booking,
+      isFirstVisit: false, // Non-token access is never first visit
+      tokenAge: 0,
+      accountExists,
+      relatedBookingsCount
+    })
+
+  } catch (error) {
+    console.error('Error fetching booking:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch booking' },
+      { status: 500 }
+    )
+  }
+}
+
+// PATCH - Update booking status (kept for admin use)
+export async function PATCH(request: NextRequest) {
+  try {
+    const { bookingId, action, data, adminToken } = await request.json()
+
+    // For now, require a simple admin token
+    // TODO: Implement proper admin authentication
+    if (!adminToken || adminToken !== process.env.ADMIN_TOKEN) {
+      return NextResponse.json(
+        { error: 'Admin authentication required' },
+        { status: 401 }
+      )
+    }
+
+    const booking = await prisma.rentalBooking.findUnique({
+      where: { id: bookingId },
+      include: { host: true, car: true }
+    })
+
+    if (!booking) {
+      return NextResponse.json(
+        { error: 'Booking not found' },
+        { status: 404 }
+      )
+    }
+
+    let updatedBooking
+    switch (action) {
+      case 'approve':
+        // Only for P2P bookings or fraud review in PENDING status
+        if (booking.status !== RentalBookingStatus.PENDING) {
+          return NextResponse.json(
+            { error: 'Booking is not pending approval' },
+            { status: 400 }
+          )
+        }
+
+        updatedBooking = await prisma.$transaction(async (tx) => {
+          // Update booking status
+          const updated = await tx.rentalBooking.update({
+            where: { id: bookingId },
+            data: {
+              status: RentalBookingStatus.CONFIRMED,
+              paymentStatus: 'paid',
+              verificationStatus: 'approved',
+              reviewedBy: data?.reviewedBy || 'admin',
+              reviewedAt: new Date(),
+              licenseVerified: true,
+              selfieVerified: true,
+              flaggedForReview: false,
+              riskNotes: data?.notes || null
+            }
+          })
+
+          // Update car statistics
+          await tx.rentalCar.update({
+            where: { id: booking.carId },
+            data: {
+              totalTrips: { increment: 1 }
+            }
+          })
+
+          // Block availability dates
+          const dates = []
+          const currentDate = new Date(booking.startDate)
+          const endDate = new Date(booking.endDate)
+
+          while (currentDate <= endDate) {
+            dates.push(new Date(currentDate))
+            currentDate.setDate(currentDate.getDate() + 1)
+          }
+
+          await tx.rentalAvailability.createMany({
+            data: dates.map(date => ({
+              carId: booking.carId,
+              date,
+              isAvailable: false,
+              note: `Booked - ${booking.bookingCode}`
+            })),
+            skipDuplicates: true
+          })
+
+          // Log approval
+          await tx.activityLog.create({
+            data: {
+              action: 'booking_approved',
+              entityType: 'RentalBooking',
+              entityId: bookingId,
+              metadata: {
+                reviewedBy: data?.reviewedBy || 'admin',
+                wasFlaged: booking.flaggedForReview,
+                riskScore: booking.riskScore
+              }
+            }
+          })
+
+          return updated
+        })
+
+        // Send confirmation emails
+        Promise.all([
+          sendBookingConfirmation(updatedBooking),
+          sendHostNotification(updatedBooking)
+        ]).catch(error => {
+          console.error('Error sending approval emails:', error)
+        })
+        break
+
+      case 'reject':
+        updatedBooking = await prisma.$transaction(async (tx) => {
+          const updated = await tx.rentalBooking.update({
+            where: { id: bookingId },
+            data: {
+              status: RentalBookingStatus.CANCELLED,
+              verificationStatus: 'rejected',
+              verificationNotes: data?.reason,
+              reviewedBy: data?.reviewedBy || 'admin',
+              reviewedAt: new Date(),
+              cancelledAt: new Date(),
+              cancelledBy: 'ADMIN',
+              cancellationReason: data?.reason || 'Failed verification'
+            }
+          })
+
+          // Log rejection
+          await tx.activityLog.create({
+            data: {
+              action: 'booking_rejected',
+              entityType: 'RentalBooking',
+              entityId: bookingId,
+              metadata: {
+                reason: data?.reason,
+                reviewedBy: data?.reviewedBy || 'admin',
+                riskScore: booking.riskScore
+              }
+            }
+          })
+
+          return updated
+        })
+        break
+
+      case 'cancel':
+        // Standard cancellation logic
+        const now = new Date()
+        const startDate = new Date(booking.startDate)
+        const hoursUntilStart = (startDate.getTime() - now.getTime()) / (1000 * 60 * 60)
+
+        if (hoursUntilStart < 24) {
+          return NextResponse.json(
+            { error: 'Cannot cancel within 24 hours of start time' },
+            { status: 400 }
+          )
+        }
+
+        updatedBooking = await prisma.rentalBooking.update({
+          where: { id: bookingId },
+          data: {
+            status: RentalBookingStatus.CANCELLED,
+            paymentStatus: 'refunded',
+            cancelledAt: new Date(),
+            cancelledBy: 'ADMIN',
+            cancellationReason: data?.reason || 'Admin cancellation'
+          }
+        })
+        break
+
+      default:
+        return NextResponse.json(
+          { error: 'Invalid action' },
+          { status: 400 }
+        )
+    }
+
+    return NextResponse.json({ booking: updatedBooking })
+
+  } catch (error) {
+    console.error('Error updating booking:', error)
+    return NextResponse.json(
+      { error: 'Failed to update booking' },
+      { status: 500 }
+    )
+  }
+}
+
+// Helper functions
+function generateBookingCode(): string {
+  const prefix = 'RENT'
+  const year = new Date().getFullYear()
+  const random = Math.random().toString(36).substring(2, 8).toUpperCase()
+  return `${prefix}-${year}-${random}`
+}
+
+function calculateAge(dateOfBirth: string): number {
+  const today = new Date()
+  const birthDate = new Date(dateOfBirth)
+  let age = today.getFullYear() - birthDate.getFullYear()
+  const monthDiff = today.getMonth() - birthDate.getMonth()
+  
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--
+  }
+  
+  return age
+}

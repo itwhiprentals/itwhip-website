@@ -7,7 +7,6 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Header from '../components/Header'
 import { 
-  IoCallOutline,
   IoMailOutline,
   IoLocationOutline,
   IoChatbubblesOutline,
@@ -19,13 +18,13 @@ import {
   IoCheckmarkCircle,
   IoWarningOutline,
   IoHeadsetOutline,
-  IoDocumentTextOutline,
   IoLogoTwitter,
   IoLogoLinkedin,
   IoLogoFacebook,
   IoLogoInstagram,
-  IoHomeOutline,
-  IoPeopleOutline
+  IoFlashOutline,
+  IoGlobeOutline,
+  IoShieldCheckmarkOutline
 } from 'react-icons/io5'
 
 export default function ContactPage() {
@@ -33,10 +32,9 @@ export default function ContactPage() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    phone: '',
     subject: 'general',
     message: '',
-    userType: 'rider'
+    userType: 'guest'
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
@@ -56,57 +54,100 @@ export default function ContactPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
+    setSubmitStatus('idle')
     
-    // Simulate form submission
-    setTimeout(() => {
-      setIsSubmitting(false)
-      setSubmitStatus('success')
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        subject: 'general',
-        message: '',
-        userType: 'rider'
+    try {
+      const response = await fetch('/api/contact/general', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
       })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setSubmitStatus('success')
+        setFormData({
+          name: '',
+          email: '',
+          subject: 'general',
+          message: '',
+          userType: 'guest'
+        })
+        
+        // Reset status after 5 seconds
+        setTimeout(() => setSubmitStatus('idle'), 5000)
+      } else {
+        setSubmitStatus('error')
+        console.error('Form submission error:', data.error)
+        
+        // Show error message
+        alert(data.error || 'Failed to send message. Please try again.')
+        
+        // Reset error status after 5 seconds
+        setTimeout(() => setSubmitStatus('idle'), 5000)
+      }
+    } catch (error) {
+      console.error('Network error:', error)
+      setSubmitStatus('error')
+      alert('Network error. Please check your connection and try again.')
       
-      // Reset status after 5 seconds
+      // Reset error status after 5 seconds  
       setTimeout(() => setSubmitStatus('idle'), 5000)
-    }, 1500)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  const contactMethods = [
+  const contactReasons = [
     {
-      icon: IoCallOutline,
-      title: 'Phone Support',
-      description: '24/7 support for riders',
-      contact: '(480) 555-0199',
-      action: 'tel:+14805550199',
-      available: 'Available 24/7'
+      icon: IoFlashOutline,
+      title: 'Quick Response',
+      description: 'Average response time under 2 hours during business hours'
     },
     {
-      icon: IoMailOutline,
-      title: 'Email Support',
-      description: 'General inquiries',
-      contact: 'support@itwhip.com',
-      action: 'mailto:support@itwhip.com',
-      available: 'Response within 24 hours'
+      icon: IoGlobeOutline,
+      title: 'Digital-First Platform',
+      description: 'As an online platform, we optimize support through digital channels'
+    },
+    {
+      icon: IoShieldCheckmarkOutline,
+      title: 'Tracked & Secure',
+      description: 'All inquiries are tracked and prioritized for quality service'
+    },
+    {
+      icon: IoHeadsetOutline,
+      title: 'Callback Available',
+      description: 'Complex issues receive priority callback from specialized teams'
+    }
+  ]
+
+  const inquiryTypes = [
+    {
+      icon: IoCarOutline,
+      title: 'Ride Support',
+      description: 'Booking issues, cancellations, or ride assistance',
+      response: '1-2 hours'
     },
     {
       icon: IoBusinessOutline,
       title: 'Hotel Partnerships',
-      description: 'For hotel executives',
-      contact: 'partners@itwhip.com',
-      action: 'mailto:partners@itwhip.com',
-      available: 'Business hours'
+      description: 'Partnership opportunities and integration',
+      response: '24 hours'
     },
     {
       icon: IoCarOutline,
-      title: 'Driver Support',
-      description: 'Driver applications & support',
-      contact: 'drivers@itwhip.com',
-      action: 'mailto:drivers@itwhip.com',
-      available: 'Mon-Fri 9AM-6PM MST'
+      title: 'Driver/Host Inquiries',
+      description: 'Join our network as a driver or list your vehicle',
+      response: '48 hours'
+    },
+    {
+      icon: IoMailOutline,
+      title: 'General Questions',
+      description: 'Platform information and other inquiries',
+      response: '24 hours'
     }
   ]
 
@@ -115,34 +156,34 @@ export default function ContactPage() {
       city: 'Phoenix Headquarters',
       address: '2390 E Camelback Rd',
       cityState: 'Phoenix, AZ 85016',
-      phone: '(480) 555-0100',
-      type: 'Main Office'
+      type: 'Technology Center',
+      note: 'Digital operations only'
     },
     {
-      city: 'Scottsdale Operations',
+      city: 'Scottsdale Hub',
       address: '7373 E Doubletree Ranch Rd',
       cityState: 'Scottsdale, AZ 85258',
-      phone: '(480) 555-0200',
-      type: 'Operations Center'
+      type: 'Support Operations',
+      note: 'No walk-in service'
     }
   ]
 
   const faqs = [
     {
-      question: 'How do I get a booking code?',
-      answer: 'Booking codes are provided when you reserve a room at any of our partner hotels. The code will be in your confirmation email.'
+      question: 'Why is contact only available through the form?',
+      answer: 'As a technology platform, we\'ve optimized our support through digital channels. This allows us to track, prioritize, and resolve inquiries efficiently while maintaining service quality across all time zones.'
     },
     {
-      question: 'Which hotels offer ItWhip service?',
-      answer: 'We partner with premium hotels including Four Seasons, The Phoenician, Fairmont, and other luxury properties in Phoenix and Scottsdale.'
+      question: 'How quickly will I receive a response?',
+      answer: 'Response times vary by inquiry type: Urgent ride issues (1-2 hours), General questions (24 hours), Partnership inquiries (24-48 hours). Complex issues may receive a callback from our specialized team.'
     },
     {
-      question: 'What if my ride is late?',
-      answer: 'Our average pickup time is under 4 minutes. If your driver is delayed, you\'ll receive real-time updates and compensation if applicable.'
+      question: 'What if I have an emergency during a ride?',
+      answer: 'For true emergencies, always call 911 first. For urgent ride issues, submit a form marked as "urgent" and our team will prioritize your case for immediate callback.'
     },
     {
-      question: 'How do I become a driver?',
-      answer: 'Visit our driver portal or email drivers@itwhip.com. You\'ll need a luxury vehicle (less than 3 years old) and pass our background check.'
+      question: 'Can I visit your office locations?',
+      answer: 'Our offices are technology and operations centers without public reception areas. All support is handled digitally to ensure consistent, high-quality service for all users.'
     }
   ]
 
@@ -165,65 +206,18 @@ export default function ContactPage() {
             <div className="flex items-center space-x-2">
               <IoChatbubblesOutline className="w-5 h-5 sm:w-6 sm:h-6 text-amber-600" />
               <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
-                Contact Us
+                Contact Support
               </h1>
               <span className="hidden sm:inline-block ml-2 px-2 py-1 text-xs text-amber-600 bg-amber-100 dark:bg-amber-900/20 rounded">
-                24/7 Support
+                Digital Support
               </span>
             </div>
             <div className="hidden md:flex items-center space-x-4">
               <a href="#faqs" className="text-sm text-gray-600 dark:text-gray-300 hover:text-amber-600">
                 FAQs
               </a>
-              <a href="#offices" className="text-sm text-gray-600 dark:text-gray-300 hover:text-amber-600">
-                Offices
-              </a>
-              <Link href="/support" className="text-sm text-gray-600 dark:text-gray-300 hover:text-amber-600">
-                Support Center
-              </Link>
-              <a 
-                href="tel:+14805550199"
-                className="px-4 py-2 bg-amber-600 text-white text-sm rounded-lg font-semibold hover:bg-amber-700"
-              >
-                Call Now
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile Quick Navigation - Fixed */}
-      <div className="md:hidden fixed top-[106px] left-0 right-0 z-30 bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800">
-        <div className="flex items-center">
-          <div className="flex-1 overflow-x-auto">
-            <div className="flex">
-              <a 
-                href="#faqs" 
-                className="flex items-center space-x-1.5 px-4 py-3 text-gray-600 dark:text-gray-300 hover:text-amber-600 dark:hover:text-amber-400 transition-colors whitespace-nowrap border-r border-gray-200 dark:border-gray-800 min-w-fit"
-              >
-                <IoHelpCircleOutline className="w-4 h-4 flex-shrink-0" />
-                <span className="text-xs font-medium">FAQs</span>
-              </a>
-              <a 
-                href="#offices" 
-                className="flex items-center space-x-1.5 px-4 py-3 text-gray-600 dark:text-gray-300 hover:text-amber-600 dark:hover:text-amber-400 transition-colors whitespace-nowrap border-r border-gray-200 dark:border-gray-800 min-w-fit"
-              >
-                <IoLocationOutline className="w-4 h-4 flex-shrink-0" />
-                <span className="text-xs font-medium">Offices</span>
-              </a>
-              <Link 
-                href="/support" 
-                className="flex items-center space-x-1.5 px-4 py-3 text-gray-600 dark:text-gray-300 hover:text-amber-600 dark:hover:text-amber-400 transition-colors whitespace-nowrap border-r border-gray-200 dark:border-gray-800 min-w-fit"
-              >
-                <IoHeadsetOutline className="w-4 h-4 flex-shrink-0" />
-                <span className="text-xs font-medium">Support</span>
-              </Link>
-              <a 
-                href="tel:+14805550199"
-                className="flex items-center space-x-1 px-4 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white text-xs font-semibold whitespace-nowrap min-w-fit"
-              >
-                <IoCallOutline className="w-4 h-4 flex-shrink-0" />
-                <span>Call Now</span>
+              <a href="#form" className="px-4 py-2 bg-amber-600 text-white text-sm rounded-lg font-semibold hover:bg-amber-700">
+                Send Message
               </a>
             </div>
           </div>
@@ -231,276 +225,294 @@ export default function ContactPage() {
       </div>
 
       {/* Scrollable Content Area */}
-      <div className="flex-1 overflow-y-auto mt-[150px] md:mt-[112px] pb-20">
+      <div className="flex-1 overflow-y-auto mt-[106px] md:mt-[112px] pb-20">
         {/* Hero Section */}
         <section className="bg-gradient-to-b from-amber-50 to-white dark:from-gray-950 dark:to-gray-900 py-8 sm:py-12 lg:py-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-3xl mx-auto">
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-6">
-                How Can We Help?
+                Get Support Anytime
               </h1>
-              <p className="text-base sm:text-lg lg:text-xl text-gray-600 dark:text-gray-400">
-                Our team is here to assist with rides, hotel partnerships, or any questions about ItWhip services.
+              <p className="text-base sm:text-lg lg:text-xl text-gray-600 dark:text-gray-400 mb-8">
+                Our digital-first support system ensures fast, tracked responses to all inquiries. 
+                Submit your message below and our specialized team will respond based on priority.
               </p>
+              
+              {/* Why Digital Support */}
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 max-w-2xl mx-auto">
+                <div className="flex items-start space-x-3">
+                  <IoGlobeOutline className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div className="text-left">
+                    <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
+                      Why We Use Digital Support
+                    </p>
+                    <p className="text-xs text-blue-800 dark:text-blue-200">
+                      As a technology platform operating across multiple time zones, digital support allows us to 
+                      provide consistent, high-quality service 24/7. Every inquiry is tracked, prioritized, and 
+                      routed to the right specialist for faster resolution.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Quick Contact Methods */}
+        {/* Why Digital Contact */}
         <section className="py-8 sm:py-12">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-              {contactMethods.map((method, idx) => (
-                <a
-                  key={idx}
-                  href={method.action}
-                  className="bg-white dark:bg-gray-900 rounded-lg p-4 sm:p-6 shadow-sm hover:shadow-lg transition group"
-                >
-                  <div className="flex items-start space-x-3">
-                    <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/20 rounded-lg flex items-center justify-center group-hover:bg-amber-200 dark:group-hover:bg-amber-800/30 transition">
-                      <method.icon className="w-5 h-5 text-amber-600" />
+              {contactReasons.map((reason, idx) => (
+                <div key={idx} className="bg-white dark:bg-gray-900 rounded-lg p-4 sm:p-6 shadow-sm">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/20 rounded-lg flex items-center justify-center mb-3">
+                      <reason.icon className="w-6 h-6 text-amber-600" />
                     </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base mb-1">
-                        {method.title}
-                      </h3>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
-                        {method.description}
-                      </p>
-                      <p className="text-sm font-medium text-amber-600 group-hover:text-amber-700">
-                        {method.contact}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {method.available}
-                      </p>
-                    </div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base mb-2">
+                      {reason.title}
+                    </h3>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                      {reason.description}
+                    </p>
                   </div>
-                </a>
+                </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* Contact Form & Offices */}
-        <section className="py-8 sm:py-12 bg-white dark:bg-black">
+        {/* Inquiry Types */}
+        <section className="py-8 sm:py-12 bg-gray-50 dark:bg-gray-950">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Contact Form */}
-              <div className="lg:col-span-2">
-                <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-6 sm:p-8">
-                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-6">
-                    Send Us a Message
-                  </h2>
+            <div className="text-center mb-8">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
+                How Can We Help?
+              </h2>
+              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
+                Select your inquiry type below for fastest routing
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {inquiryTypes.map((type, idx) => (
+                <div key={idx} className="bg-white dark:bg-gray-900 rounded-lg p-4 shadow-sm">
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900/20 dark:to-amber-800/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <type.icon className="w-6 h-6 text-amber-600" />
+                    </div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white text-sm mb-2">
+                      {type.title}
+                    </h3>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                      {type.description}
+                    </p>
+                    <div className="inline-flex items-center text-xs text-amber-600 bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded">
+                      <IoTimeOutline className="w-3 h-3 mr-1" />
+                      Response: {type.response}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Contact Form */}
+        <section id="form" className="py-8 sm:py-12 bg-white dark:bg-black">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-6 sm:p-8">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-6">
+                Send Your Message
+              </h2>
+              
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Your Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.name}
+                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
                   
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Your Name *
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={formData.name}
-                          onChange={(e) => setFormData({...formData, name: e.target.value})}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Email Address *
-                        </label>
-                        <input
-                          type="email"
-                          required
-                          value={formData.email}
-                          onChange={(e) => setFormData({...formData, email: e.target.value})}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-                        />
-                      </div>
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Email Address *
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={formData.email}
+                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+                </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Phone Number
-                        </label>
-                        <input
-                          type="tel"
-                          value={formData.phone}
-                          onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          I am a...
-                        </label>
-                        <select
-                          value={formData.userType}
-                          onChange={(e) => setFormData({...formData, userType: e.target.value})}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-                        >
-                          <option value="rider">Hotel Guest / Rider</option>
-                          <option value="hotel">Hotel Executive</option>
-                          <option value="driver">Driver / Interested Driver</option>
-                          <option value="media">Media / Press</option>
-                          <option value="other">Other</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Subject *
-                      </label>
-                      <select
-                        required
-                        value={formData.subject}
-                        onChange={(e) => setFormData({...formData, subject: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-                      >
-                        <option value="general">General Inquiry</option>
-                        <option value="booking">Booking Issue</option>
-                        <option value="partnership">Hotel Partnership</option>
-                        <option value="driver">Driver Application</option>
-                        <option value="support">Technical Support</option>
-                        <option value="billing">Billing Question</option>
-                        <option value="feedback">Feedback</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Message *
-                      </label>
-                      <textarea
-                        required
-                        rows={5}
-                        value={formData.message}
-                        onChange={(e) => setFormData({...formData, message: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-                        placeholder="Please tell us how we can help..."
-                      />
-                    </div>
-
-                    {submitStatus === 'success' && (
-                      <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
-                        <div className="flex items-center space-x-2">
-                          <IoCheckmarkCircle className="w-5 h-5 text-green-600" />
-                          <p className="text-sm text-green-800 dark:text-green-300">
-                            Thank you! We'll respond within 24 hours.
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    <button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="w-full sm:w-auto px-6 py-3 bg-amber-600 text-white rounded-lg font-semibold hover:bg-amber-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      I am a...
+                    </label>
+                    <select
+                      value={formData.userType}
+                      onChange={(e) => setFormData({...formData, userType: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                     >
-                      {isSubmitting ? (
-                        <>
-                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          <span>Sending...</span>
-                        </>
-                      ) : (
-                        <>
-                          <IoSendOutline className="w-5 h-5" />
-                          <span>Send Message</span>
-                        </>
-                      )}
-                    </button>
-                  </form>
-                </div>
-              </div>
-
-              {/* Office Locations */}
-              <div className="space-y-6">
-                <div id="offices">
-                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-6">
-                    Our Offices
-                  </h2>
+                      <option value="guest">Guest / Traveler</option>
+                      <option value="hotel">Hotel Partner</option>
+                      <option value="driver">Driver / Vehicle Owner</option>
+                      <option value="corporate">Corporate Client</option>
+                      <option value="media">Media / Press</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
                   
-                  <div className="space-y-4">
-                    {offices.map((office, idx) => (
-                      <div key={idx} className="bg-white dark:bg-gray-900 rounded-lg p-4 sm:p-6 shadow-sm">
-                        <div className="flex items-start space-x-3">
-                          <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <IoLocationOutline className="w-5 h-5 text-amber-600" />
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
-                              {office.city}
-                            </h3>
-                            <p className="text-xs text-amber-600 mb-2">{office.type}</p>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                              {office.address}<br />
-                              {office.cityState}
-                            </p>
-                            <a href={`tel:${office.phone.replace(/[^\d]/g, '')}`} className="text-sm text-amber-600 hover:text-amber-700 mt-2 inline-block">
-                              {office.phone}
-                            </a>
-                          </div>
-                        </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Subject *
+                    </label>
+                    <select
+                      required
+                      value={formData.subject}
+                      onChange={(e) => setFormData({...formData, subject: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    >
+                      <option value="general">General Question</option>
+                      <option value="booking">Booking / Ride Issue</option>
+                      <option value="partnership">Partnership Opportunity</option>
+                      <option value="driver">Driver / Host Application</option>
+                      <option value="support">Technical Support</option>
+                      <option value="billing">Billing / Payment</option>
+                      <option value="feedback">Feedback / Suggestion</option>
+                      <option value="urgent">Urgent Issue</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Message *
+                  </label>
+                  <textarea
+                    required
+                    rows={6}
+                    value={formData.message}
+                    onChange={(e) => setFormData({...formData, message: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    placeholder="Please provide details about your inquiry. Include booking numbers, dates, or any relevant information that will help us assist you better."
+                  />
+                </div>
+
+                {submitStatus === 'success' && (
+                  <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
+                    <div className="flex items-center space-x-2">
+                      <IoCheckmarkCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium text-green-800 dark:text-green-300">
+                          Message sent successfully!
+                        </p>
+                        <p className="text-xs text-green-700 dark:text-green-400 mt-1">
+                          We'll respond based on the priority of your inquiry. Check your email for updates.
+                        </p>
                       </div>
-                    ))}
+                    </div>
                   </div>
+                )}
+
+                {submitStatus === 'error' && (
+                  <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 border border-red-200 dark:border-red-800">
+                    <div className="flex items-center space-x-2">
+                      <IoWarningOutline className="w-5 h-5 text-red-600 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium text-red-800 dark:text-red-300">
+                          Failed to send message
+                        </p>
+                        <p className="text-xs text-red-700 dark:text-red-400 mt-1">
+                          Please check your connection and try again.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4 border border-amber-200 dark:border-amber-800">
+                  <p className="text-xs text-amber-800 dark:text-amber-200">
+                    <strong>Note:</strong> For urgent safety issues during an active ride, prioritize your safety first. 
+                    Mark your inquiry as "Urgent Issue" and we'll prioritize callback within 1 hour during business hours.
+                  </p>
                 </div>
 
-                {/* Business Hours */}
-                <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 sm:p-6">
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-                    <IoTimeOutline className="w-5 h-5 text-amber-600 mr-2" />
-                    Support Hours
-                  </h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Rider Support:</span>
-                      <span className="font-medium text-gray-900 dark:text-white">24/7</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Hotel Partners:</span>
-                      <span className="font-medium text-gray-900 dark:text-white">Mon-Fri 8AM-6PM</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Driver Support:</span>
-                      <span className="font-medium text-gray-900 dark:text-white">Mon-Fri 9AM-6PM</span>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-3">All times in MST (Mountain Standard Time)</p>
-                  </div>
-                </div>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full sm:w-auto px-6 py-3 bg-amber-600 text-white rounded-lg font-semibold hover:bg-amber-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Sending...</span>
+                    </>
+                  ) : (
+                    <>
+                      <IoSendOutline className="w-5 h-5" />
+                      <span>Send Message</span>
+                    </>
+                  )}
+                </button>
+              </form>
+            </div>
+          </div>
+        </section>
 
-                {/* Social Media */}
-                <div className="bg-white dark:bg-gray-900 rounded-lg p-4 sm:p-6 shadow-sm">
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
-                    Follow Us
-                  </h3>
-                  <div className="flex space-x-4">
-                    <a href="https://twitter.com/itwhip" className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center hover:bg-amber-100 dark:hover:bg-amber-900/20 transition">
-                      <IoLogoTwitter className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                    </a>
-                    <a href="https://linkedin.com/company/itwhip" className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center hover:bg-amber-100 dark:hover:bg-amber-900/20 transition">
-                      <IoLogoLinkedin className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                    </a>
-                    <a href="https://facebook.com/itwhip" className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center hover:bg-amber-100 dark:hover:bg-amber-900/20 transition">
-                      <IoLogoFacebook className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                    </a>
-                    <a href="https://instagram.com/itwhip" className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center hover:bg-amber-100 dark:hover:bg-amber-900/20 transition">
-                      <IoLogoInstagram className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                    </a>
+        {/* Office Locations */}
+        <section className="py-8 sm:py-12 bg-gray-50 dark:bg-gray-950">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-6 text-center">
+              Our Locations
+            </h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {offices.map((office, idx) => (
+                <div key={idx} className="bg-white dark:bg-gray-900 rounded-lg p-6 shadow-sm">
+                  <div className="flex items-start space-x-3">
+                    <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <IoLocationOutline className="w-5 h-5 text-amber-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
+                        {office.city}
+                      </h3>
+                      <p className="text-xs text-amber-600 mb-2">{office.type}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {office.address}<br />
+                        {office.cityState}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-500 mt-2 italic">
+                        {office.note}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              ))}
+            </div>
+            
+            <div className="mt-6 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+              <p className="text-sm text-blue-800 dark:text-blue-200 text-center">
+                <strong>Note:</strong> Our offices are technology centers without public reception. 
+                All support is handled digitally for consistent service quality.
+              </p>
             </div>
           </div>
         </section>
 
         {/* FAQs */}
-        <section id="faqs" className="py-8 sm:py-12 bg-gray-50 dark:bg-gray-950">
+        <section id="faqs" className="py-8 sm:py-12">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-6 sm:mb-8 text-center">
               Frequently Asked Questions
@@ -519,32 +531,39 @@ export default function ContactPage() {
                 </div>
               ))}
             </div>
-
-            <div className="mt-8 text-center">
-              <Link href="/how-it-works" className="text-amber-600 hover:text-amber-700 font-medium">
-                View all FAQs →
-              </Link>
-            </div>
           </div>
         </section>
 
-        {/* Emergency Contact */}
-        <section className="py-6 sm:py-8 bg-red-600">
+        {/* Social Media */}
+        <section className="py-8 sm:py-12 bg-white dark:bg-black">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col sm:flex-row items-center justify-between">
-              <div className="text-white mb-4 sm:mb-0">
-                <h3 className="font-bold text-lg mb-1">Emergency Support</h3>
-                <p className="text-sm text-red-100">For urgent ride issues or safety concerns</p>
+            <div className="text-center">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                Connect With Us
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                Follow us for updates, news, and travel tips
+              </p>
+              <div className="flex justify-center space-x-4">
+                <a href="https://twitter.com/itwhip" className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center hover:bg-amber-100 dark:hover:bg-amber-900/20 transition">
+                  <IoLogoTwitter className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+                </a>
+                <a href="https://linkedin.com/company/itwhip" className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center hover:bg-amber-100 dark:hover:bg-amber-900/20 transition">
+                  <IoLogoLinkedin className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+                </a>
+                <a href="https://facebook.com/itwhip" className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center hover:bg-amber-100 dark:hover:bg-amber-900/20 transition">
+                  <IoLogoFacebook className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+                </a>
+                <a href="https://instagram.com/itwhip" className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center hover:bg-amber-100 dark:hover:bg-amber-900/20 transition">
+                  <IoLogoInstagram className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+                </a>
               </div>
-              <a href="tel:+14805550911" className="px-6 py-3 bg-white text-red-600 rounded-lg font-bold hover:bg-red-50 transition">
-                Call (480) 555-0911
-              </a>
             </div>
           </div>
         </section>
 
         {/* Footer */}
-        <footer className="bg-white dark:bg-black border-t border-gray-200 dark:border-gray-800 py-6 sm:py-8">
+        <footer className="bg-gray-50 dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800 py-6 sm:py-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center text-xs sm:text-sm text-gray-500">
               <p>© 2024 ItWhip Technologies, Inc. All rights reserved.</p>
@@ -552,6 +571,7 @@ export default function ContactPage() {
                 <Link href="/terms" className="hover:text-gray-700 dark:hover:text-gray-300">Terms</Link>
                 <Link href="/privacy" className="hover:text-gray-700 dark:hover:text-gray-300">Privacy</Link>
                 <Link href="/about" className="hover:text-gray-700 dark:hover:text-gray-300">About</Link>
+                <Link href="/how-it-works" className="hover:text-gray-700 dark:hover:text-gray-300">How It Works</Link>
               </div>
             </div>
           </div>

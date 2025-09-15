@@ -1,62 +1,41 @@
 import { NextResponse } from 'next/server'
 
 export async function GET() {
-  if (!process.env.SMTP_PASS) {
-    return NextResponse.json({
-      success: false,
-      error: 'SMTP_PASS not configured'
-    }, { status: 500 })
-  }
-  
   try {
-    // Import without .default
-    const nodemailer = await import('nodemailer');
+    const nodemailer = require('nodemailer')
     
-    // Check what we got
-    const createTransporter = nodemailer.createTransporter || 
-                             nodemailer.default?.createTransporter ||
-                             (nodemailer as any).createTransport;
-    
-    if (!createTransporter) {
-      return NextResponse.json({
-        success: false,
-        error: 'createTransporter not found',
-        keys: Object.keys(nodemailer)
-      }, { status: 500 })
-    }
-    
-    const transporter = createTransporter({
-      host: 'smtp.office365.com',
-      port: 587,
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST || 'smtp.office365.com',
+      port: parseInt(process.env.SMTP_PORT || '587'),
       secure: false,
       auth: {
-        user: 'info@itwhip.com',
+        user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS
       },
-      requireTLS: true,
       tls: {
-        ciphers: 'SSLv3'
+        rejectUnauthorized: false
       }
-    });
+    })
+    
+    await transporter.verify()
     
     const info = await transporter.sendMail({
-      from: '"ItWhip Rentals" <info@itwhip.com>',
+      from: process.env.SMTP_USER,
       to: 'hxris08@gmail.com',
-      subject: 'Test Email from ItWhip',
-      text: 'If you see this, email is working!',
-      html: '<b>If you see this, email is working!</b>'
-    });
-    
-    return NextResponse.json({
-      success: true,
-      messageId: info.messageId,
-      accepted: info.accepted
+      subject: 'ItWhip Platform Test',
+      html: '<h1>Success!</h1><p>Your ItWhip email system is working.</p>'
     })
-  } catch (error) {
-    console.error('Email error:', error);
-    return NextResponse.json({
-      success: false,
-      error: error.message || 'Failed to send email'
-    }, { status: 500 })
+    
+    return NextResponse.json({ 
+      success: true, 
+      messageId: info.messageId,
+      message: 'Check hxris08@gmail.com for the test email!' 
+    })
+    
+  } catch (error: any) {
+    return NextResponse.json({ 
+      success: false, 
+      error: error.message 
+    })
   }
 }

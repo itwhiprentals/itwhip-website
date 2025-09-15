@@ -1,5 +1,6 @@
 // app/api/auth/login/route.ts
 import { NextRequest, NextResponse } from 'next/server'
+import * as argon2 from 'argon2'
 import bcrypt from 'bcryptjs'
 import { SignJWT } from 'jose'
 import { nanoid } from 'nanoid'
@@ -12,6 +13,53 @@ const JWT_SECRET = new TextEncoder().encode(
 const JWT_REFRESH_SECRET = new TextEncoder().encode(
   process.env.JWT_REFRESH_SECRET || 'fallback-refresh-secret'
 )
+
+// Argon2 configuration (matching signup)
+const ARGON2_CONFIG = {
+  type: argon2.argon2id,
+  memoryCost: 65536,
+  timeCost: 3,
+  parallelism: 4,
+  hashLength: 32,
+  saltLength: 16
+}
+
+// Helper function to verify password with hybrid approach
+async function verifyPassword(password: string, hash: string): Promise<{ valid: boolean, needsRehash: boolean }> {
+  try {
+    // Try Argon2 first (new format)
+    if (hash.startsWith('$argon2id$')) {
+      const valid = await argon2.verify(hash, password)
+      return { valid, needsRehash: false }
+    }
+    
+    // Fallback to bcrypt (legacy format)
+    if (hash.startsWith('$2a$') || hash.startsWith('$2b$') || hash.startsWith('$2y$')) {
+      const valid = await bcrypt.compare(password, hash)
+      return { valid, needsRehash: valid } // If valid, flag for rehashing to Argon2
+    }
+    
+    // Unknown hash format
+    console.warn('Unknown password hash format')
+    return { valid: false, needsRehash: false }
+    
+  } catch (error) {
+    console.error('Password verification error:', error)
+    return { valid: false, needsRehash: false }
+  }
+}
+
+// Helper function to upgrade bcrypt hash to Argon2
+async function upgradePasswordHash(userId: string, password: string): Promise<void> {
+  try {
+    const newHash = await argon2.hash(password, ARGON2_CONFIG)
+    await db.updateUserPasswordHash(userId, newHash)
+    console.log(`Password hash upgraded to Argon2 for user: ${userId}`)
+  } catch (error) {
+    console.error('Failed to upgrade password hash:', error)
+    // Don't throw - login should still succeed even if upgrade fails
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -36,8 +84,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verify password
-    const passwordValid = await bcrypt.compare(password, user.password_hash)
+    // Verify password with hybrid approach
+    const { valid: passwordValid, needsRehash } = await verifyPassword(password, user.password_hash)
     
     if (!passwordValid) {
       return NextResponse.json(
@@ -52,6 +100,14 @@ export async function POST(request: NextRequest) {
         { error: 'Account is deactivated. Please contact support.' },
         { status: 403 }
       )
+    }
+
+    // Upgrade password hash if needed (bcrypt -> Argon2)
+    if (needsRehash) {
+      // Run in background - don't wait for completion
+      upgradePasswordHash(user.id, password).catch(err => {
+        console.error('Background password upgrade failed:', err)
+      })
     }
 
     // Generate tokens
@@ -106,7 +162,7 @@ export async function POST(request: NextRequest) {
     })
 
     // Set secure HTTP-only cookies
-    response.cookies.set('access_token', accessToken, {
+    response.cookies.set('accessToken', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -114,7 +170,7 @@ export async function POST(request: NextRequest) {
       path: '/'
     })
 
-    response.cookies.set('refresh_token', refreshToken, {
+    response.cookies.set('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -122,7 +178,7 @@ export async function POST(request: NextRequest) {
       path: '/'
     })
 
-    console.log('User logged in successfully:', user.email)
+    console.log(`User logged in successfully: ${user.email} ${needsRehash ? '(password upgraded)' : '(argon2)'}`)
     return response
 
   } catch (error) {

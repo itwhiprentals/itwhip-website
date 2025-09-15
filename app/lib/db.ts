@@ -1,53 +1,6 @@
 // app/lib/db.ts
-import { Pool } from 'pg'
-
-if (!process.env.DATABASE_URL) {
-  throw new Error('DATABASE_URL is not defined')
-}
-
-// Create a singleton pool instance
-const globalForDb = global as unknown as { pool: Pool }
-
-export const pool =
-  globalForDb.pool ||
-  new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: {
-      rejectUnauthorized: false // Required for Neon
-    },
-    max: 10, // Maximum number of clients in the pool
-    idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-    connectionTimeoutMillis: 2000, // Return an error after 2 seconds if connection fails
-  })
-
-if (process.env.NODE_ENV !== 'production') {
-  globalForDb.pool = pool
-}
-
-// Helper function to get a client from the pool
-export async function getClient() {
-  const client = await pool.connect()
-  return client
-}
-
-// Helper function for queries
-export async function query(text: string, params?: any[]) {
-  const start = Date.now()
-  try {
-    const res = await pool.query(text, params)
-    const duration = Date.now() - start
-    
-    // Log slow queries in development
-    if (process.env.NODE_ENV !== 'production' && duration > 100) {
-      console.log('Slow query detected:', { text, duration, rows: res.rowCount })
-    }
-    
-    return res
-  } catch (error) {
-    console.error('Database query error:', error)
-    throw error
-  }
-}
+import prisma from '@/app/lib/database/prisma'
+import { nanoid } from 'nanoid'
 
 // User-specific queries
 export const db = {
@@ -59,42 +12,89 @@ export const db = {
     phone?: string
     role?: string
   }) {
-    const { email, passwordHash, name, phone, role = 'guest' } = data
+    const { email, passwordHash, name, phone, role = 'CLAIMED' } = data  // Changed from 'GUEST' to 'CLAIMED'
     
-    const result = await query(
-      `INSERT INTO users (email, password_hash, name, phone, role, is_verified, is_active)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING id, email, name, phone, role, is_verified, is_active, created_at`,
-      [email, passwordHash, name, phone, role, false, true]
-    )
+    const user = await prisma.user.create({
+      data: {
+        email: email.toLowerCase(),
+        passwordHash,
+        name,
+        phone,
+        role: role as any, // Map to UserRole enum
+        emailVerified: false,
+        isActive: true
+      }
+    })
     
-    return result.rows[0]
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      phone: user.phone,
+      role: user.role,
+      is_verified: user.emailVerified,
+      is_active: user.isActive,
+      created_at: user.createdAt
+    }
   },
 
   // Find user by email
   async getUserByEmail(email: string) {
-    const result = await query(
-      'SELECT * FROM users WHERE email = $1',
-      [email]
-    )
-    return result.rows[0]
+    const user = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() }
+    })
+    
+    if (!user) return null
+    
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      phone: user.phone,
+      role: user.role,
+      password_hash: user.passwordHash,
+      is_verified: user.emailVerified,
+      is_active: user.isActive,
+      last_login: user.lastActive,
+      created_at: user.createdAt
+    }
   },
 
   // Find user by ID
   async getUserById(id: string) {
-    const result = await query(
-      'SELECT id, email, name, phone, role, is_verified, is_active, last_login, created_at FROM users WHERE id = $1',
-      [id]
-    )
-    return result.rows[0]
+    const user = await prisma.user.findUnique({
+      where: { id }
+    })
+    
+    if (!user) return null
+    
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      phone: user.phone,
+      role: user.role,
+      is_verified: user.emailVerified,
+      is_active: user.isActive,
+      last_login: user.lastActive,
+      created_at: user.createdAt
+    }
   },
 
   // Update last login
   async updateLastLogin(userId: string) {
-    await query(
-      'UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1',
-      [userId]
-    )
+    await prisma.user.update({
+      where: { id: userId },
+      data: { lastActive: new Date() }
+    })
+  },
+
+  // Update user's password hash (for Argon2 migration)
+  async updateUserPasswordHash(userId: string, newHash: string) {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: newHash }
+    })
   },
 
   // Save refresh token
@@ -106,45 +106,67 @@ export const db = {
   }) {
     const { userId, token, family, expiresAt } = data
     
-    const result = await query(
-      `INSERT INTO refresh_tokens (user_id, token, family, expires_at)
-       VALUES ($1, $2, $3, $4)
-       RETURNING id`,
-      [userId, token, family, expiresAt]
-    )
+    // Get request info if available (you might pass this from the route)
+    const ipAddress = '0.0.0.0' // Should be passed from request
+    const userAgent = 'Unknown' // Should be passed from request
     
-    return result.rows[0]
+    const session = await prisma.session.create({
+      data: {
+        userId,
+        token: nanoid(), // Access token
+        refreshToken: token,
+        tokenFamily: family,
+        expiresAt,
+        ipAddress,
+        userAgent
+      }
+    })
+    
+    return { id: session.id }
   },
 
   // Get refresh token
   async getRefreshToken(token: string) {
-    const result = await query(
-      `SELECT rt.*, u.email, u.role 
-       FROM refresh_tokens rt
-       JOIN users u ON rt.user_id = u.id
-       WHERE rt.token = $1 AND rt.expires_at > NOW()`,
-      [token]
-    )
-    return result.rows[0]
+    const session = await prisma.session.findUnique({
+      where: { 
+        refreshToken: token,
+        expiresAt: { gt: new Date() },
+        revokedAt: null
+      },
+      include: {
+        user: true
+      }
+    })
+    
+    if (!session || !session.user) return null
+    
+    return {
+      id: session.id,
+      user_id: session.userId,
+      token: session.refreshToken,
+      family: session.tokenFamily,
+      expires_at: session.expiresAt,
+      email: session.user.email,
+      role: session.user.role
+    }
   },
 
   // Invalidate refresh token family (for security)
   async invalidateRefreshTokenFamily(family: string) {
-    await query(
-      'DELETE FROM refresh_tokens WHERE family = $1',
-      [family]
-    )
+    await prisma.session.updateMany({
+      where: { tokenFamily: family },
+      data: { revokedAt: new Date() }
+    })
   },
 
   // Delete all refresh tokens for a user (logout from all devices)
   async deleteUserRefreshTokens(userId: string) {
     try {
-      const result = await query(
-        'DELETE FROM refresh_tokens WHERE user_id = $1',
-        [userId]
-      )
-      console.log(`Deleted ${result.rowCount} refresh tokens for user ${userId}`)
-      return result.rowCount
+      const result = await prisma.session.deleteMany({
+        where: { userId }
+      })
+      console.log(`Deleted ${result.count} refresh tokens for user ${userId}`)
+      return result.count
     } catch (error) {
       console.error('Error deleting user refresh tokens:', error)
       throw error
@@ -154,11 +176,11 @@ export const db = {
   // Revoke specific refresh token
   async revokeRefreshToken(token: string) {
     try {
-      const result = await query(
-        'UPDATE refresh_tokens SET revoked_at = CURRENT_TIMESTAMP WHERE token = $1',
-        [token]
-      )
-      return result.rowCount
+      const result = await prisma.session.updateMany({
+        where: { refreshToken: token },
+        data: { revokedAt: new Date() }
+      })
+      return result.count
     } catch (error) {
       console.error('Error revoking refresh token:', error)
       throw error
@@ -167,65 +189,60 @@ export const db = {
 
   // Check if refresh token is revoked
   async isRefreshTokenRevoked(token: string) {
-    const result = await query(
-      'SELECT revoked_at FROM refresh_tokens WHERE token = $1',
-      [token]
-    )
-    if (result.rows.length === 0) return true // Token doesn't exist
-    return result.rows[0].revoked_at !== null
+    const session = await prisma.session.findUnique({
+      where: { refreshToken: token }
+    })
+    
+    if (!session) return true // Token doesn't exist
+    return session.revokedAt !== null
   },
 
   // Clean up expired tokens (run periodically)
   async cleanupExpiredTokens() {
-    const result = await query(
-      'DELETE FROM refresh_tokens WHERE expires_at < NOW() OR revoked_at IS NOT NULL'
-    )
-    console.log(`Cleaned up ${result.rowCount} expired/revoked tokens`)
-    return result.rowCount
+    const result = await prisma.session.deleteMany({
+      where: {
+        OR: [
+          { expiresAt: { lt: new Date() } },
+          { revokedAt: { not: null } }
+        ]
+      }
+    })
+    console.log(`Cleaned up ${result.count} expired/revoked tokens`)
+    return result.count
   },
 
   // Get user's active sessions
   async getUserSessions(userId: string) {
-    const result = await query(
-      `SELECT id, user_agent, ip_address, created_at, last_activity 
-       FROM refresh_tokens 
-       WHERE user_id = $1 
-         AND expires_at > NOW() 
-         AND revoked_at IS NULL
-       ORDER BY last_activity DESC`,
-      [userId]
-    )
-    return result.rows
+    const sessions = await prisma.session.findMany({
+      where: {
+        userId,
+        expiresAt: { gt: new Date() },
+        revokedAt: null
+      },
+      orderBy: { lastActivity: 'desc' }
+    })
+    
+    return sessions.map(s => ({
+      id: s.id,
+      user_agent: s.userAgent,
+      ip_address: s.ipAddress,
+      created_at: s.createdAt,
+      last_activity: s.lastActivity
+    }))
   },
 
   // Update session activity
   async updateSessionActivity(token: string) {
-    await query(
-      'UPDATE refresh_tokens SET last_activity = CURRENT_TIMESTAMP WHERE token = $1',
-      [token]
-    )
+    await prisma.session.updateMany({
+      where: { refreshToken: token },
+      data: { lastActivity: new Date() }
+    })
   }
 }
 
-// Create indexes for better performance (run these once in your database)
+// No need for createIndexes - Prisma handles this in schema
 export const createIndexes = async () => {
-  try {
-    // Index for email lookups (fixes slow query issue)
-    await query('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)')
-    
-    // Index for refresh token lookups
-    await query('CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token ON refresh_tokens(token)')
-    
-    // Index for user's refresh tokens
-    await query('CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens(user_id)')
-    
-    // Index for cleanup job
-    await query('CREATE INDEX IF NOT EXISTS idx_refresh_tokens_expires_at ON refresh_tokens(expires_at)')
-    
-    console.log('✅ Database indexes created successfully')
-  } catch (error) {
-    console.error('Error creating indexes:', error)
-  }
+  console.log('✅ Indexes are managed by Prisma schema')
 }
 
 // Run cleanup job periodically (call this from a cron job or setInterval)

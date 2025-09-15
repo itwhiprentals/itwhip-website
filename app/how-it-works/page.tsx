@@ -6,35 +6,43 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Header from '../components/Header'
+import Footer from '../components/Footer'
 import { 
   IoCarSportOutline,
-  IoQrCodeOutline,
-  IoPhonePortraitOutline,
-  IoLocationOutline,
   IoShieldCheckmarkOutline,
-  IoSparklesOutline,
-  IoCheckmarkCircle,
-  IoArrowForwardOutline,
-  IoBusinessOutline,
-  IoAirplaneOutline,
-  IoTimeOutline,
   IoWalletOutline,
+  IoCheckmarkCircle,
+  IoLocationOutline,
+  IoTimeOutline,
+  IoPhonePortraitOutline,
+  IoPersonOutline,
+  IoCalendarOutline,
+  IoDocumentTextOutline,
+  IoBusinessOutline,
   IoStarOutline,
+  IoTrendingUpOutline,
+  IoKeyOutline,
+  IoCarOutline,
+  IoSearchOutline,
   IoFlashOutline,
-  IoRocketOutline,
-  IoInformationCircleOutline,
+  IoCashOutline,
+  IoHeartOutline,
+  IoReceiptOutline,
   IoHelpCircleOutline,
-  IoBookOutline
+  IoInformationCircleOutline,
+  IoArrowForwardOutline,
+  IoChevronForwardOutline,
+  IoSparklesOutline
 } from 'react-icons/io5'
 
 export default function HowItWorksPage() {
   const router = useRouter()
-  const [activeStep, setActiveStep] = useState(1)
+  const [activeTab, setActiveTab] = useState<'guest' | 'host'>('guest')
   
-  // Header state management for main nav
+  // Header state management
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
-  // Header handlers for main nav
+  // Header handlers
   const handleGetAppClick = () => {
     window.open('https://testflight.apple.com/join/ygzsQbNf', '_blank')
   }
@@ -43,100 +51,225 @@ export default function HowItWorksPage() {
     router.push('/')
   }
 
-  const steps = [
+  const guestSteps = [
     {
-      number: 1,
-      title: 'Book Your Hotel',
-      description: 'Reserve your stay at any of our premium partner properties',
-      icon: IoBusinessOutline,
-      details: 'When you book with our partner hotels, you automatically gain access to instant luxury rides throughout your stay.'
+      icon: IoSearchOutline,
+      title: 'Search & Book',
+      description: 'Find your perfect ride near any Phoenix hotel or location. No account required.',
+      details: [
+        'Instant availability across Phoenix metro',
+        'Compare vehicles by type and price',
+        'Book with just email - no signup needed',
+        'Transparent pricing with no hidden fees'
+      ],
+      cta: { text: 'Search Cars', link: '/' }
     },
     {
-      number: 2,
-      title: 'Get Your Code',
-      description: 'Receive your exclusive booking code with your hotel confirmation',
-      icon: IoQrCodeOutline,
-      details: 'Your booking code arrives via email and SMS. This code unlocks member rates and premium vehicles.'
+      icon: IoKeyOutline,
+      title: 'Pick Up',
+      description: 'Convenient pickup at hotels, airport, or delivery to your location.',
+      details: [
+        'Hotel lobby pickup available',
+        'Sky Harbor Airport location',
+        'Optional delivery service',
+        'Contactless options available'
+      ]
     },
     {
-      number: 3,
-      title: 'Request Instant Rides',
-      description: 'Open the app and enter your booking code to access luxury vehicles',
-      icon: IoPhonePortraitOutline,
-      details: 'Skip surge pricing with fixed rates. Choose from Tesla, Mercedes, and BMW vehicles.'
-    },
-    {
-      number: 4,
-      title: 'Enjoy VIP Service',
-      description: 'Your luxury vehicle arrives in minutes, charged directly to your room',
-      icon: IoSparklesOutline,
-      details: 'Professional drivers, premium vehicles, and seamless billing to your hotel folio.'
+      icon: IoCarOutline,
+      title: 'Drive & Return',
+      description: 'Enjoy your trip with full protection included. Easy return process.',
+      details: [
+        'Comprehensive insurance included',
+        'Responsive digital support',
+        'Flexible return locations',
+        'Simple inspection process'
+      ]
     }
   ]
 
-  const features = [
+  const hostSteps = [
     {
-      icon: IoShieldCheckmarkOutline,
-      title: 'No Surge Pricing',
-      description: 'Fixed rates to the airport, even during peak times'
+      icon: IoDocumentTextOutline,
+      title: 'List Your Vehicle',
+      description: 'Quick approval process. Professional photos. Set your availability.',
+      details: [
+        'Vehicles 2015 or newer qualify',
+        'Set your own pricing and rules',
+        'Control your calendar',
+        'Professional listing support'
+      ],
+      cta: { text: 'Start Listing Process', link: '/list-your-car' }
     },
     {
-      icon: IoCarSportOutline,
-      title: 'Luxury Fleet',
-      description: 'Tesla, Mercedes, BMW, and other premium vehicles'
+      icon: IoShieldCheckmarkOutline,
+      title: 'We Handle Everything',
+      description: 'Guest screening, insurance, payments, and support all managed for you.',
+      details: [
+        'Comprehensive protection included',
+        'All guests verified',
+        'We handle guest communication',
+        'Damage claims managed'
+      ],
+      cta: { text: 'Learn About Protection', link: '/host-protection' }
+    },
+    {
+      icon: IoCashOutline,
+      title: 'Get Paid Fast',
+      description: 'Direct deposit within 48 hours. Track earnings in real-time.',
+      details: [
+        'Industry-leading payment speed',
+        'No payment processing fees',
+        'Detailed earnings reports',
+        'Tax documentation provided'
+      ],
+      cta: { text: 'View Earnings Potential', link: '/host-earnings' }
+    }
+  ]
+
+  const guestBenefits = [
+    {
+      icon: IoWalletOutline,
+      title: 'Transparent Pricing',
+      description: 'No surge pricing. Clear rates upfront. All fees shown before booking.',
+      highlight: 'Save up to 35% vs traditional rentals'
+    },
+    {
+      icon: IoPhonePortraitOutline,
+      title: 'Book Without Account',
+      description: 'No app download required. Book with just your email. Get instant confirmation.',
+      highlight: 'Ready in 60 seconds'
+    },
+    {
+      icon: IoLocationOutline,
+      title: 'Convenient Locations',
+      description: 'Vehicles available at major hotels and Sky Harbor Airport.',
+      highlight: 'Phoenix metro coverage'
+    },
+    {
+      icon: IoShieldCheckmarkOutline,
+      title: 'Full Protection',
+      description: 'Every rental includes comprehensive insurance coverage with clear deductibles.',
+      highlight: 'Peace of mind included'
     },
     {
       icon: IoTimeOutline,
-      title: 'Instant Pickup',
-      description: 'Average wait time under 4 minutes at partner hotels'
-    },
-    {
-      icon: IoWalletOutline,
-      title: 'Room Charging',
-      description: 'All rides automatically billed to your hotel room'
-    },
-    {
-      icon: IoAirplaneOutline,
-      title: 'Airport Priority',
-      description: 'Dedicated pickup zones at Sky Harbor Airport'
+      title: 'Flexible Options',
+      description: 'Hourly, daily, or weekly rentals. Extend easily through the app.',
+      highlight: 'Your schedule, your way'
     },
     {
       icon: IoStarOutline,
-      title: 'VIP Drivers',
-      description: 'Professional drivers with 4.9+ star ratings'
+      title: 'Quality Vehicles',
+      description: 'All cars inspected and maintained. Wide selection from economy to luxury.',
+      highlight: 'Something for everyone'
     }
   ]
 
+  const hostBenefits = [
+    {
+      icon: IoTrendingUpOutline,
+      title: 'Maximize Earnings',
+      description: 'Earn up to 85% of each rental. No listing fees. No hidden charges.',
+      highlight: 'Keep more of what you earn',
+      link: '/host-earnings'
+    },
+    {
+      icon: IoShieldCheckmarkOutline,
+      title: 'Complete Protection',
+      description: 'Up to $1M liability coverage. Physical damage protection with deductibles. We handle all claims.',
+      highlight: 'Your car is protected',
+      link: '/host-protection'
+    },
+    {
+      icon: IoBusinessOutline,
+      title: 'Access Hotel Guests',
+      description: 'Tap into demand from our growing hotel network. Prime placement at partner locations.',
+      highlight: 'Built-in demand'
+    },
+    {
+      icon: IoFlashOutline,
+      title: 'Fast Payments',
+      description: 'Get paid within 48 hours. Direct deposit. Real-time earnings tracking.',
+      highlight: 'Fastest in the industry'
+    },
+    {
+      icon: IoHeartOutline,
+      title: 'We Handle Support',
+      description: 'All guest communication managed. Responsive digital support. You just provide the car.',
+      highlight: 'Hassle-free hosting'
+    },
+    {
+      icon: IoReceiptOutline,
+      title: 'Tax Benefits',
+      description: 'Automated tax reporting. Business expense tracking. Potential deductions available.',
+      highlight: 'Simplify tax season'
+    }
+  ]
+
+  const requirements = {
+    guest: [
+      { text: 'Valid driver\'s license', required: true },
+      { text: '21 years or older (25+ for luxury)', required: true },
+      { text: 'Valid payment method', required: true },
+      { text: 'Clean driving record', required: false },
+      { text: 'Smartphone for app features', required: false }
+    ],
+    host: [
+      { text: 'Vehicle 2015 or newer', required: true },
+      { text: 'Clean title', required: true },
+      { text: 'Valid registration & insurance', required: true },
+      { text: 'Pass safety inspection', required: true },
+      { text: 'Phoenix metro location', required: true }
+    ]
+  }
+
   const faqs = [
     {
-      question: 'Which hotels offer instant rides?',
-      answer: 'Premium properties including Four Seasons, The Phoenician, Fairmont, and select luxury hotels in Phoenix, Scottsdale, and surrounding areas.'
+      question: 'How is this different from traditional car rental?',
+      answer: 'We connect you directly with local vehicle owners and our managed fleet, offering more variety, better prices, and convenient hotel pickup locations. No rental counter lines, no hidden fees.',
+      category: 'general'
     },
     {
-      question: 'How do I get a booking code?',
-      answer: 'Book directly with any partner hotel or through their official website. Your booking code is included in your confirmation email.'
+      question: 'What protection is included?',
+      answer: 'Every rental includes liability insurance up to $1M and physical damage protection with reasonable deductibles. Hosts are fully protected, and guests have peace of mind.',
+      category: 'general'
     },
     {
-      question: 'Can I use this without a hotel booking?',
-      answer: 'ItWhip is an exclusive service for hotel guests. You must have an active reservation at a partner property to access instant rides.'
+      question: 'How do hotel pickups work?',
+      answer: 'Many vehicles are available at partner hotels. Simply select hotel pickup during booking, and collect keys from the concierge or designated area. Some hosts offer lobby meet-and-greet.',
+      category: 'guest'
     },
     {
-      question: 'How much do rides cost?',
-      answer: 'Fixed rates starting at $29 to the airport. No surge pricing, ever. All rides are automatically charged to your hotel room.'
+      question: 'Can I book without creating an account?',
+      answer: 'Yes! Book with just your email address. We\'ll send confirmation and access details instantly. Download our app for the best experience, but it\'s not required.',
+      category: 'guest'
     },
     {
-      question: 'What vehicles are available?',
-      answer: 'Our fleet includes Tesla Model S/X, Mercedes S-Class, BMW 7 Series, and other luxury vehicles. All less than 3 years old.'
+      question: 'How quickly do hosts get paid?',
+      answer: 'Hosts receive payment via direct deposit within 48 hours of trip completion. This is significantly faster than other platforms.',
+      category: 'host'
     },
     {
-      question: 'How fast is pickup?',
-      answer: 'Average pickup time is under 4 minutes at partner hotels. Airport pickups are coordinated with your flight arrival.'
+      question: 'What if my car is damaged?',
+      answer: 'Our protection covers physical damage with deductibles based on vehicle value. We handle all claims and coordinate repairs. You\'re never alone in the process.',
+      category: 'host'
+    },
+    {
+      question: 'What are the vehicle requirements?',
+      answer: 'Vehicles must be 2015 or newer, have a clean title, pass our safety inspection, and be registered in Arizona. All types welcome from economy to luxury.',
+      category: 'host'
+    },
+    {
+      question: 'How does pricing work?',
+      answer: 'Hosts set their daily rates. We add a platform fee for our services and protection. Guests see total price upfront with no hidden fees. Airport and delivery fees shown clearly.',
+      category: 'general'
     }
   ]
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col">
-      {/* Main Header Component with Full Navigation - Fixed */}
+      {/* Header */}
       <div className="fixed top-0 left-0 right-0 z-50">
         <Header
           isMobileMenuOpen={isMobileMenuOpen}
@@ -146,299 +279,344 @@ export default function HowItWorksPage() {
         />
       </div>
 
-      {/* Page Title Section - Fixed below main header */}
+      {/* Page Title */}
       <div className="fixed top-14 md:top-16 left-0 right-0 z-40 bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <IoRocketOutline className="w-5 h-5 sm:w-6 sm:h-6 text-amber-600" />
+              <IoCarSportOutline className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
               <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                 How It Works
               </h1>
-              <span className="hidden sm:inline-block ml-2 px-2 py-1 text-xs text-amber-600 bg-amber-100 dark:bg-amber-900/20 rounded">
-                4 Simple Steps
-              </span>
             </div>
             <div className="hidden md:flex items-center space-x-4">
-              <a href="#steps" className="text-sm text-gray-600 dark:text-gray-300 hover:text-amber-600">
-                Steps
-              </a>
-              <a href="#features" className="text-sm text-gray-600 dark:text-gray-300 hover:text-amber-600">
-                Features
-              </a>
-              <a href="#faqs" className="text-sm text-gray-600 dark:text-gray-300 hover:text-amber-600">
-                FAQs
-              </a>
-              <Link 
-                href="/"
-                className="px-4 py-2 bg-amber-600 text-white text-sm rounded-lg font-semibold hover:bg-amber-700"
-              >
-                Book Now
+              <Link href="/list-your-car" className="text-sm text-gray-600 dark:text-gray-300 hover:text-purple-600">
+                Become a Host
+              </Link>
+              <Link href="/" className="text-sm text-purple-600 font-semibold hover:text-purple-700">
+                Find a Car
               </Link>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Mobile Quick Navigation - Fixed */}
-      <div className="md:hidden fixed top-[106px] left-0 right-0 z-30 bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800">
-        <div className="flex items-center">
-          <div className="flex-1 overflow-x-auto">
-            <div className="flex">
-              <a 
-                href="#steps" 
-                className="flex items-center space-x-1.5 px-4 py-3 text-gray-600 dark:text-gray-300 hover:text-amber-600 dark:hover:text-amber-400 transition-colors whitespace-nowrap border-r border-gray-200 dark:border-gray-800 min-w-fit"
-              >
-                <IoBookOutline className="w-4 h-4 flex-shrink-0" />
-                <span className="text-xs font-medium">Steps</span>
-              </a>
-              <a 
-                href="#features" 
-                className="flex items-center space-x-1.5 px-4 py-3 text-gray-600 dark:text-gray-300 hover:text-amber-600 dark:hover:text-amber-400 transition-colors whitespace-nowrap border-r border-gray-200 dark:border-gray-800 min-w-fit"
-              >
-                <IoSparklesOutline className="w-4 h-4 flex-shrink-0" />
-                <span className="text-xs font-medium">Features</span>
-              </a>
-              <a 
-                href="#faqs" 
-                className="flex items-center space-x-1.5 px-4 py-3 text-gray-600 dark:text-gray-300 hover:text-amber-600 dark:hover:text-amber-400 transition-colors whitespace-nowrap border-r border-gray-200 dark:border-gray-800 min-w-fit"
-              >
-                <IoHelpCircleOutline className="w-4 h-4 flex-shrink-0" />
-                <span className="text-xs font-medium">FAQs</span>
-              </a>
-              <Link 
-                href="/"
-                className="flex items-center space-x-1 px-4 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white text-xs font-semibold whitespace-nowrap min-w-fit"
-              >
-                <IoCarSportOutline className="w-4 h-4 flex-shrink-0" />
-                <span>Book Now</span>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Scrollable Content Area */}
-      <div className="flex-1 overflow-y-auto mt-[150px] md:mt-[112px] pb-20">
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto mt-[106px] md:mt-[112px] pb-20">
+        
         {/* Hero Section */}
-        <section className="bg-gradient-to-b from-amber-50 to-white dark:from-gray-950 dark:to-gray-900 py-8 sm:py-12 lg:py-16">
+        <section className="bg-gradient-to-b from-purple-50 to-white dark:from-gray-950 dark:to-gray-900 py-12 sm:py-16 lg:py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center max-w-3xl mx-auto">
-              <div className="inline-flex items-center space-x-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-amber-100 dark:bg-amber-900/20 rounded-full mb-4 sm:mb-6">
-                <IoSparklesOutline className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600" />
-                <span className="text-xs sm:text-sm text-amber-800 dark:text-amber-300 font-medium">
-                  Exclusive for Hotel Guests
-                </span>
-              </div>
-              
+            <div className="text-center max-w-4xl mx-auto">
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-6">
-                Instant Luxury Rides
-                <span className="block text-amber-600 mt-2">For Premium Hotel Guests</span>
+                Car Sharing Made Simple
+                <span className="block text-purple-600 mt-2">For Phoenix</span>
               </h1>
               
-              <p className="text-base sm:text-lg lg:text-xl text-gray-600 dark:text-gray-400 mb-6 sm:mb-8">
-                Skip the surge pricing. Book your hotel, get your code, and enjoy instant access to 
-                luxury vehicles throughout your stay.
+              <p className="text-base sm:text-lg lg:text-xl text-gray-600 dark:text-gray-400 mb-8">
+                Whether you're looking to rent a car or earn from your vehicle,
+                we've streamlined everything.
               </p>
 
-              <div className="flex flex-col sm:flex-row items-center justify-center space-y-3 sm:space-y-0 sm:space-x-4">
-                <Link href="/" className="w-full sm:w-auto px-6 sm:px-8 py-3 bg-amber-600 text-white rounded-lg font-bold hover:bg-amber-700 transition shadow-lg">
-                  Find Hotels with Instant Rides
-                </Link>
-                <a href="#steps" className="w-full sm:w-auto px-6 sm:px-8 py-3 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition border border-gray-300 dark:border-gray-600">
-                  See How It Works
-                </a>
+              {/* Tab Selector */}
+              <div className="inline-flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+                <button
+                  onClick={() => setActiveTab('guest')}
+                  className={`px-6 py-3 rounded-md text-sm font-medium transition-all ${
+                    activeTab === 'guest' 
+                      ? 'bg-white dark:bg-gray-700 text-purple-600 shadow-sm' 
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900'
+                  }`}
+                >
+                  <IoPersonOutline className="inline w-5 h-5 mr-2" />
+                  I Need a Car
+                </button>
+                <button
+                  onClick={() => setActiveTab('host')}
+                  className={`px-6 py-3 rounded-md text-sm font-medium transition-all ${
+                    activeTab === 'host' 
+                      ? 'bg-white dark:bg-gray-700 text-purple-600 shadow-sm' 
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900'
+                  }`}
+                >
+                  <IoCarOutline className="inline w-5 h-5 mr-2" />
+                  I Have a Car
+                </button>
               </div>
             </div>
           </div>
         </section>
 
         {/* Steps Section */}
-        <section id="steps" className="py-8 sm:py-12 lg:py-16">
+        <section className="py-12 sm:py-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-8 sm:mb-12">
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-3 sm:mb-4">
-                Four Simple Steps
+            <div className="text-center mb-12">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
+                {activeTab === 'guest' ? 'Book a Car in 3 Simple Steps' : 'Start Earning in 3 Simple Steps'}
               </h2>
-              <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-                From hotel booking to luxury ride in minutes
+              <p className="text-gray-600 dark:text-gray-400">
+                {activeTab === 'guest' 
+                  ? 'No account required. Book in under 60 seconds.' 
+                  : 'Quick approval. Professional support. Fast payments.'}
               </p>
             </div>
 
-            {/* Desktop Steps */}
-            <div className="hidden lg:grid lg:grid-cols-4 gap-8 mb-12">
-              {steps.map((step) => (
-                <div
-                  key={step.number}
-                  className={`relative cursor-pointer transition-all ${
-                    activeStep === step.number ? 'scale-105' : 'opacity-75 hover:opacity-100'
-                  }`}
-                  onClick={() => setActiveStep(step.number)}
-                >
-                  <div className="text-center">
-                    <div className={`inline-flex items-center justify-center w-20 h-20 rounded-full mb-4 ${
-                      activeStep === step.number
-                        ? 'bg-gradient-to-r from-amber-400 to-amber-500'
-                        : 'bg-gray-200 dark:bg-gray-800'
-                    }`}>
-                      <step.icon className={`w-10 h-10 ${
-                        activeStep === step.number ? 'text-white' : 'text-gray-600 dark:text-gray-400'
-                      }`} />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {(activeTab === 'guest' ? guestSteps : hostSteps).map((step, idx) => (
+                <div key={idx} className="relative">
+                  {idx < 2 && (
+                    <div className="hidden md:block absolute top-12 left-full w-full">
+                      <IoChevronForwardOutline className="w-8 h-8 text-purple-300 -ml-4" />
                     </div>
+                  )}
+                  
+                  <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+                    <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center mb-4">
+                      <step.icon className="w-6 h-6 text-purple-600" />
+                    </div>
+                    
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                      {step.title}
+                      Step {idx + 1}: {step.title}
                     </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                       {step.description}
                     </p>
+                    
+                    <ul className="space-y-2 mb-4">
+                      {step.details.map((detail, detailIdx) => (
+                        <li key={detailIdx} className="flex items-start">
+                          <IoCheckmarkCircle className="w-4 h-4 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                          <span className="text-xs text-gray-600 dark:text-gray-400">{detail}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    
+                    {step.cta && (
+                      <Link 
+                        href={step.cta.link}
+                        className="inline-flex items-center text-sm font-medium text-purple-600 hover:text-purple-700"
+                      >
+                        {step.cta.text}
+                        <IoArrowForwardOutline className="w-4 h-4 ml-1" />
+                      </Link>
+                    )}
                   </div>
-                  {step.number < 4 && (
-                    <div className="hidden lg:block absolute top-10 left-full w-full">
-                      <IoArrowForwardOutline className="w-6 h-6 text-gray-400 mx-auto" />
-                    </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Benefits Section */}
+        <section className="py-12 sm:py-16 bg-gray-50 dark:bg-gray-950">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
+                {activeTab === 'guest' ? 'Why Guests Choose Us' : 'Why Hosts Love Us'}
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400">
+                {activeTab === 'guest' 
+                  ? 'Better prices, more convenience, full protection' 
+                  : 'Higher earnings, complete protection, hassle-free management'}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {(activeTab === 'guest' ? guestBenefits : hostBenefits).map((benefit, idx) => (
+                <div key={idx} className="bg-white dark:bg-gray-900 rounded-lg p-6 shadow-sm hover:shadow-lg transition-shadow">
+                  <benefit.icon className="w-10 h-10 text-purple-600 mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                    {benefit.title}
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                    {benefit.description}
+                  </p>
+                  <p className="text-xs font-semibold text-purple-600">
+                    {benefit.highlight}
+                  </p>
+                  {benefit.link && (
+                    <Link 
+                      href={benefit.link}
+                      className="inline-flex items-center mt-3 text-sm font-medium text-purple-600 hover:text-purple-700"
+                    >
+                      Learn more
+                      <IoArrowForwardOutline className="w-4 h-4 ml-1" />
+                    </Link>
                   )}
                 </div>
               ))}
             </div>
 
-            {/* Mobile Steps */}
-            <div className="lg:hidden space-y-4 mb-8">
-              {steps.map((step) => (
-                <div
-                  key={step.number}
-                  className={`border rounded-lg p-4 cursor-pointer transition-all ${
-                    activeStep === step.number
-                      ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20'
-                      : 'border-gray-200 dark:border-gray-700'
-                  }`}
-                  onClick={() => setActiveStep(step.number)}
-                >
-                  <div className="flex items-start space-x-4">
-                    <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center ${
-                      activeStep === step.number
-                        ? 'bg-gradient-to-r from-amber-400 to-amber-500'
-                        : 'bg-gray-200 dark:bg-gray-800'
-                    }`}>
-                      <step.icon className={`w-6 h-6 ${
-                        activeStep === step.number ? 'text-white' : 'text-gray-600 dark:text-gray-400'
-                      }`} />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
-                        Step {step.number}: {step.title}
-                      </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {step.description}
-                      </p>
-                    </div>
-                  </div>
+            {activeTab === 'host' && (
+              <div className="mt-12 text-center">
+                <div className="inline-flex items-center px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full text-sm font-medium">
+                  <IoSparklesOutline className="w-4 h-4 mr-2" />
+                  Limited Time: 0% commission for your first 60 days
                 </div>
-              ))}
-            </div>
-
-            {/* Active Step Details */}
-            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6 sm:p-8 max-w-3xl mx-auto">
-              <div className="flex items-center space-x-4 mb-4">
-                <div className="w-12 h-12 bg-gradient-to-r from-amber-400 to-amber-500 rounded-full flex items-center justify-center">
-                  {steps[activeStep - 1] && (() => {
-                    const StepIcon = steps[activeStep - 1].icon
-                    return <StepIcon className="w-6 h-6 text-white" />
-                  })()}
+                <div className="mt-4">
+                  <Link 
+                    href="/list-your-car"
+                    className="inline-flex items-center text-purple-600 hover:text-purple-700 font-medium"
+                  >
+                    Start earning today
+                    <IoArrowForwardOutline className="w-4 h-4 ml-1" />
+                  </Link>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                  {steps[activeStep - 1]?.title}
-                </h3>
               </div>
-              <p className="text-gray-600 dark:text-gray-400">
-                {steps[activeStep - 1]?.details}
-              </p>
-            </div>
+            )}
           </div>
         </section>
 
-        {/* Features Grid */}
-        <section id="features" className="py-8 sm:py-12 lg:py-16 bg-white dark:bg-black">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-8 sm:mb-12">
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-3 sm:mb-4">
-                Why Hotel Guests Love ItWhip
+        {/* Requirements Section */}
+        <section className="py-12 sm:py-16">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
+                Simple Requirements
               </h2>
-              <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-                Premium service exclusively for premium hotel guests
-              </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
-              {features.map((feature, idx) => (
-                <div key={idx} className="text-center p-4 sm:p-6">
-                  <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-amber-100 dark:bg-amber-900/20 rounded-full mb-3 sm:mb-4">
-                    <feature.icon className="w-7 h-7 sm:w-8 sm:h-8 text-amber-600" />
+            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
+                {activeTab === 'guest' ? 'To Rent a Car' : 'To List Your Car'}
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {requirements[activeTab].map((req, idx) => (
+                  <div key={idx} className="flex items-start">
+                    {req.required ? (
+                      <IoCheckmarkCircle className="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-0.5" />
+                    ) : (
+                      <IoInformationCircleOutline className="w-5 h-5 text-blue-500 mr-3 flex-shrink-0 mt-0.5" />
+                    )}
+                    <div>
+                      <span className="text-gray-700 dark:text-gray-300">{req.text}</span>
+                      {req.required && (
+                        <span className="ml-2 text-xs text-gray-500">(Required)</span>
+                      )}
+                    </div>
                   </div>
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                    {feature.title}
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {feature.description}
-                  </p>
-                </div>
-              ))}
+                ))}
+              </div>
+
+              <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                {activeTab === 'host' ? (
+                  <Link 
+                    href="/host-requirements"
+                    className="inline-flex items-center text-purple-600 hover:text-purple-700 font-medium"
+                  >
+                    View detailed requirements
+                    <IoArrowForwardOutline className="w-4 h-4 ml-1" />
+                  </Link>
+                ) : (
+                  <Link 
+                    href="/contact"
+                    className="inline-flex items-center text-purple-600 hover:text-purple-700 font-medium"
+                  >
+                    Have questions? Contact us
+                    <IoArrowForwardOutline className="w-4 h-4 ml-1" />
+                  </Link>
+                )}
+              </div>
             </div>
           </div>
         </section>
 
-        {/* FAQs */}
-        <section id="faqs" className="py-8 sm:py-12 lg:py-16 bg-gray-50 dark:bg-gray-950">
-          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-8 sm:mb-12">
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-3 sm:mb-4">
+        {/* FAQs Section */}
+        <section className="py-12 sm:py-16 bg-gray-50 dark:bg-gray-950">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
                 Frequently Asked Questions
               </h2>
             </div>
 
-            <div className="space-y-4 sm:space-y-6">
-              {faqs.map((faq, idx) => (
-                <div key={idx} className="bg-white dark:bg-gray-900 rounded-lg p-4 sm:p-6 shadow-sm">
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                    {faq.question}
-                  </h3>
-                  <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
-                    {faq.answer}
-                  </p>
-                </div>
-              ))}
+            <div className="space-y-4">
+              {faqs
+                .filter(faq => faq.category === 'general' || faq.category === activeTab)
+                .map((faq, idx) => (
+                  <div key={idx} className="bg-white dark:bg-gray-900 rounded-lg p-6 shadow-sm">
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-2 flex items-start">
+                      <IoHelpCircleOutline className="w-5 h-5 text-purple-600 mr-2 flex-shrink-0 mt-0.5" />
+                      {faq.question}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 ml-7">
+                      {faq.answer}
+                    </p>
+                  </div>
+                ))}
+            </div>
+
+            <div className="mt-8 text-center">
+              <Link 
+                href="/contact"
+                className="inline-flex items-center text-purple-600 hover:text-purple-700 font-medium"
+              >
+                Have more questions? Contact us
+                <IoArrowForwardOutline className="w-4 h-4 ml-1" />
+              </Link>
             </div>
           </div>
         </section>
 
-        {/* CTA Section */}
-        <section className="py-8 sm:py-12 lg:py-16 bg-gradient-to-r from-amber-600 to-amber-700">
+        {/* Final CTA */}
+        <section className="py-12 sm:py-16 bg-gradient-to-r from-purple-600 to-purple-700">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-3 sm:mb-4">
-              Ready for Instant Luxury Rides?
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4">
+              Ready to Get Started?
             </h2>
-            <p className="text-base sm:text-lg lg:text-xl text-amber-100 mb-6 sm:mb-8">
-              Book your stay at a premium partner hotel and skip the surge pricing forever
+            <p className="text-base sm:text-lg lg:text-xl text-purple-100 mb-8">
+              {activeTab === 'guest' 
+                ? 'Find your perfect car in Phoenix today' 
+                : 'Turn your car into a revenue generator'}
             </p>
-            <Link href="/" className="inline-block px-6 sm:px-8 py-3 bg-white text-amber-600 rounded-lg font-bold hover:bg-amber-50 transition shadow-lg text-sm sm:text-base">
-              View Partner Hotels
-            </Link>
+            
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              {activeTab === 'guest' ? (
+                <>
+                  <Link 
+                    href="/"
+                    className="inline-block px-8 py-3 bg-white text-purple-600 rounded-lg font-bold hover:bg-purple-50 transition shadow-lg"
+                  >
+                    Search Available Cars
+                  </Link>
+                  <button 
+                    onClick={() => setActiveTab('host')}
+                    className="inline-block px-8 py-3 bg-purple-500 text-white rounded-lg font-bold hover:bg-purple-400 transition"
+                  >
+                    Or List Your Car
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link 
+                    href="/list-your-car"
+                    className="inline-block px-8 py-3 bg-white text-purple-600 rounded-lg font-bold hover:bg-purple-50 transition shadow-lg"
+                  >
+                    List Your Car Now
+                  </Link>
+                  <Link 
+                    href="/host-earnings"
+                    className="inline-block px-8 py-3 bg-purple-500 text-white rounded-lg font-bold hover:bg-purple-400 transition"
+                  >
+                    Calculate Earnings
+                  </Link>
+                </>
+              )}
+            </div>
+
+            {activeTab === 'host' && (
+              <p className="text-xs text-purple-200 mt-6">
+                Join our growing community of Phoenix hosts earning extra income
+              </p>
+            )}
           </div>
         </section>
-
-        {/* Footer */}
-        <footer className="bg-white dark:bg-black border-t border-gray-200 dark:border-gray-800 py-6 sm:py-8">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center text-xs sm:text-sm text-gray-500">
-              <p>© 2024 ItWhip. Exclusive luxury rides for premium hotel guests.</p>
-              <div className="mt-3 sm:mt-4 space-x-3 sm:space-x-4">
-                <Link href="/terms" className="hover:text-gray-700 dark:hover:text-gray-300">Terms</Link>
-                <Link href="/privacy" className="hover:text-gray-700 dark:hover:text-gray-300">Privacy</Link>
-                <Link href="/contact" className="hover:text-gray-700 dark:hover:text-gray-300">Contact</Link>
-              </div>
-            </div>
-          </div>
-        </footer>
       </div>
+
+      {/* Footer */}
+      <Footer />
     </div>
   )
 }

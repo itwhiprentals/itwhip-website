@@ -1,33 +1,38 @@
 // app/components/MobileMenu.tsx
-
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { 
   IoCloseOutline,
   IoChevronForwardOutline,
   IoChevronDownOutline,
-  IoAirplaneOutline,
-  IoCarOutline,
-  IoPricetagOutline,
   IoBusinessOutline,
+  IoCarOutline,
+  IoKeyOutline,
+  IoSparklesOutline,
+  IoCodeSlashOutline,
+  IoPersonCircleOutline,
+  IoGridOutline,
+  IoLogOutOutline,
+  IoPersonOutline,
+  IoSettingsOutline,
+  IoHelpCircleOutline,
+  IoDocumentTextOutline,
+  IoShieldCheckmarkOutline,
   IoCallOutline,
   IoMailOutline,
   IoLocationOutline,
-  IoLogoFacebook,
-  IoLogoTwitter,
-  IoLogoInstagram,
-  IoLogoLinkedin,
-  IoLogInOutline,
-  IoLogOutOutline,
-  IoPersonOutline,
-  IoPersonCircleOutline,
+  IoSearchOutline,
+  IoPricetagOutline,
+  IoMapOutline,
+  IoHomeOutline,
+  IoCalculatorOutline,
+  IoShieldOutline,
   IoCarSportOutline,
-  IoCodeSlashOutline,
-  IoSettingsOutline,
-  IoKeyOutline
+  IoFlashOutline,
+  IoDiamondOutline
 } from 'react-icons/io5'
 
 interface User {
@@ -48,51 +53,56 @@ interface MobileMenuProps {
   onLogout?: () => void
 }
 
-// Mobile navigation structure
-const mobileNavItems = [
+// Navigation data structure for cleaner code
+const navigationSections = [
   {
-    label: 'Services',
-    icon: <IoAirplaneOutline className="w-5 h-5" />,
+    id: 'browse',
+    label: 'Browse Cars',
+    icon: IoCarOutline,
     items: [
-      { label: 'How It Works', href: '/how-it-works' },
-      { label: 'Flight Tracker', href: '/flights' },
-      { label: 'Group Rides', href: '/group-rides' },
-      { label: 'Corporate Accounts', href: '/corporate' },
-      { label: 'Private Club', href: '/private-club' }
+      { href: '/', label: 'All Cars', icon: IoCarOutline },
+      { href: '/rentals/search?category=luxury', label: 'Luxury', icon: IoDiamondOutline },
+      { href: '/rentals/search?category=suv', label: 'SUVs', icon: IoCarSportOutline },
+      { href: '/rentals/search?category=economy', label: 'Economy', icon: IoPricetagOutline },
+      { href: '/rentals/search?category=electric', label: 'Electric', icon: IoFlashOutline }
     ]
   },
   {
-    label: 'Technology',
-    icon: <IoCodeSlashOutline className="w-5 h-5" />,
+    id: 'host',
+    label: 'Host',
+    icon: IoKeyOutline,
+    badge: { text: 'EARN', color: 'from-green-500 to-emerald-500' },
     items: [
-      { label: 'Developer APIs', href: '/developers' },
-      { label: 'Instant Ride SDK™', href: '/sdk', highlight: true },
-      { label: 'Integration Partners', href: '/integrations' },
-      { label: 'Hotel Solutions', href: '/hotel-solutions' },
-      { label: 'Hotel Portal', href: '/portal/login' },
-      { label: 'GDS Documentation', href: '/gds' }
+      { href: '/list-your-car', label: 'List Your Car', icon: IoSparklesOutline, highlight: true },
+      { href: '/host-requirements', label: 'Host Requirements', icon: IoDocumentTextOutline },
+      { href: '/host-earnings', label: 'Earnings Calculator', icon: IoCalculatorOutline },
+      { href: '/host-insurance', label: 'Insurance & Protection', icon: IoShieldOutline }
     ]
   },
   {
-    label: 'Drivers',
-    icon: <IoCarOutline className="w-5 h-5" />,
-    badge: 'HIRING',
+    id: 'business',
+    label: 'Business',
+    icon: IoBusinessOutline,
     items: [
-      { label: 'Become a Driver', href: '/drive', highlight: true },
-      { label: 'Driver Requirements', href: '/requirements' },
-      { label: 'Earnings Calculator', href: '/earnings' },
-      { label: 'Driver Portal', href: '/driver/login' }
+      { href: '/corporate', label: 'Corporate Rentals', icon: IoBusinessOutline },
+      { href: '/integrations', label: 'Integration Partners', icon: IoShieldCheckmarkOutline },
+      { href: '/developers', label: 'API Access', icon: IoCodeSlashOutline },
+      { 
+        href: '/gds', 
+        label: 'GDS Integration', 
+        icon: IoGridOutline,
+        badge: { text: 'NEW', color: 'from-blue-500 to-purple-500' }
+      }
     ]
   },
   {
-    label: 'Company',
-    icon: <IoBusinessOutline className="w-5 h-5" />,
+    id: 'support',
+    label: 'Support',
+    icon: IoHelpCircleOutline,
     items: [
-      { label: 'About Us', href: '/about' },
-      { label: 'Careers', href: '/careers', badge: '12 open' },
-      { label: 'Press', href: '/press' },
-      { label: 'Investors', href: '/investors' },
-      { label: 'Contact', href: '/contact' }
+      { href: '/how-it-works', label: 'How It Works', icon: IoHelpCircleOutline },
+      { href: '/contact', label: 'Contact Us', icon: IoMailOutline },
+      { href: '/about', label: 'About', icon: IoBusinessOutline }
     ]
   }
 ]
@@ -109,66 +119,148 @@ export default function MobileMenu({
 }: MobileMenuProps) {
   const pathname = usePathname()
   const [expandedSection, setExpandedSection] = useState<string | null>(null)
-  
-  // Determine active service based on pathname
-  const getActiveService = () => {
-    if (pathname?.startsWith('/rides')) return 'rides'
-    if (pathname?.startsWith('/hotels')) return 'hotels'
-    if (pathname?.startsWith('/rentals')) return 'rentals'
-    return null
-  }
-
-  const activeService = getActiveService()
+  const menuRef = useRef<HTMLDivElement>(null)
+  const previousFocusRef = useRef<HTMLElement | null>(null)
   
   // Prevent body scroll when menu is open
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden'
+      // Store the current focused element
+      previousFocusRef.current = document.activeElement as HTMLElement
+      
+      // Prevent body scroll
+      const scrollY = window.scrollY
+      document.body.style.position = 'fixed'
+      document.body.style.top = `-${scrollY}px`
+      document.body.style.width = '100%'
+      
+      // Focus on close button for accessibility
+      setTimeout(() => {
+        const closeBtn = menuRef.current?.querySelector('[aria-label="Close menu"]') as HTMLElement
+        closeBtn?.focus()
+      }, 100)
     } else {
-      document.body.style.overflow = 'unset'
+      // Restore body scroll
+      const scrollY = document.body.style.top
+      document.body.style.position = ''
+      document.body.style.top = ''
+      document.body.style.width = ''
+      window.scrollTo(0, parseInt(scrollY || '0') * -1)
+      
+      // Restore focus to previous element
+      previousFocusRef.current?.focus()
     }
     
     return () => {
-      document.body.style.overflow = 'unset'
+      document.body.style.position = ''
+      document.body.style.top = ''
+      document.body.style.width = ''
     }
   }, [isOpen])
 
-  // Handle section toggle
-  const toggleSection = (label: string) => {
-    setExpandedSection(expandedSection === label ? null : label)
-  }
+  // Handle ESC key to close menu
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose()
+      }
+    }
+    
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [isOpen, onClose])
+
+  // Trap focus within menu when open
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handleTabKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return
+
+      const focusableElements = menuRef.current?.querySelectorAll(
+        'a[href], button:not([disabled]), textarea, input, select'
+      )
+      
+      if (!focusableElements || focusableElements.length === 0) return
+
+      const firstElement = focusableElements[0] as HTMLElement
+      const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement
+
+      if (e.shiftKey && document.activeElement === firstElement) {
+        e.preventDefault()
+        lastElement.focus()
+      } else if (!e.shiftKey && document.activeElement === lastElement) {
+        e.preventDefault()
+        firstElement.focus()
+      }
+    }
+
+    document.addEventListener('keydown', handleTabKey)
+    return () => document.removeEventListener('keydown', handleTabKey)
+  }, [isOpen])
+
+  // Handle section toggle with memoization
+  const toggleSection = useCallback((label: string) => {
+    setExpandedSection(prev => prev === label ? null : label)
+  }, [])
 
   // Handle navigation click
-  const handleNavClick = () => {
+  const handleNavClick = useCallback(() => {
     onClose()
     setExpandedSection(null)
-  }
+  }, [onClose])
+
+  // Check if link is active
+  const isActiveLink = useCallback((href: string) => {
+    return pathname === href
+  }, [pathname])
+
+  // Quick action handler
+  const handleQuickAction = useCallback((action: () => void) => {
+    action()
+    handleNavClick()
+  }, [handleNavClick])
 
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 lg:hidden">
-      {/* Backdrop */}
+    <div 
+      className="fixed inset-0 z-50 lg:hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Mobile navigation menu"
+    >
+      {/* Backdrop with animation */}
       <div 
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/70 backdrop-blur-md animate-fadeIn"
         onClick={onClose}
+        aria-hidden="true"
       />
       
       {/* Menu Panel */}
-      <div className={`
-        absolute right-0 top-0 h-full w-full max-w-sm
-        bg-white dark:bg-gray-900 shadow-2xl
-        transform transition-transform duration-300 ease-out
-        ${isOpen ? 'translate-x-0' : 'translate-x-full'}
-      `}>
+      <div 
+        ref={menuRef}
+        className={`
+          absolute right-0 top-0 h-full w-80 max-w-[85vw]
+          bg-white dark:bg-gray-950 shadow-2xl
+          transform transition-transform duration-300 ease-out
+          ${isOpen ? 'translate-x-0' : 'translate-x-full'}
+        `}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
-          <div className="text-xl font-bold text-gray-900 dark:text-white">
-            Menu
+          <div className="flex flex-col">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+              It<span className="font-black">W</span>hip
+            </h2>
+            <span className="text-[10px] text-gray-500 dark:text-gray-400 tracking-widest uppercase font-medium">
+              TECHNOLOGY
+            </span>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 
+              transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
             aria-label="Close menu"
           >
             <IoCloseOutline className="w-6 h-6 text-gray-700 dark:text-gray-300" />
@@ -176,314 +268,253 @@ export default function MobileMenu({
         </div>
 
         {/* Scrollable Content */}
-        <div className="overflow-y-auto h-[calc(100%-80px)]">
+        <div className="overflow-y-auto h-[calc(100%-80px)] overscroll-contain">
           
-          {/* User Info Section (if logged in) */}
+          {/* User Profile Section (if logged in) */}
           {isLoggedIn && user && (
-            <div className="p-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                  <IoPersonCircleOutline className="w-8 h-8 text-gray-600 dark:text-gray-400" />
+            <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950 border-b border-gray-200 dark:border-gray-800">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className={`
+                  w-12 h-12 rounded-full flex items-center justify-center 
+                  text-white font-medium text-lg shadow-lg
+                  ${user.role === 'ADMIN' 
+                    ? 'bg-gradient-to-br from-red-500 to-red-600' 
+                    : 'bg-gradient-to-br from-blue-500 to-purple-500'}
+                `}>
+                  {user.name ? user.name[0].toUpperCase() : 'U'}
                 </div>
-                <div className="flex-1">
-                  <p className="font-medium text-gray-900 dark:text-white">
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-gray-900 dark:text-white truncate">
                     {user.name || 'User'}
                   </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
                     {user.email}
                   </p>
+                  {user.role === 'ADMIN' && (
+                    <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
+                      Administrator
+                    </span>
+                  )}
                 </div>
               </div>
               
-              {/* Quick Actions for Logged In Users */}
-              <div className="mt-4 space-y-2">
+              {/* Quick Actions Grid */}
+              <div className="grid grid-cols-2 gap-2">
                 <button
-                  onClick={() => {
-                    if (onProfileClick) onProfileClick()
-                    handleNavClick()
-                  }}
-                  className="w-full flex items-center justify-between px-4 py-3 
-                    bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg 
-                    hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  onClick={() => handleQuickAction(onProfileClick || (() => {}))}
+                  className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900 
+                    rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105
+                    focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  aria-label="View profile"
                 >
-                  <div className="flex items-center space-x-3">
-                    <IoPersonOutline className="w-5 h-5" />
-                    <span className="font-medium">Profile & Settings</span>
-                  </div>
-                  <IoChevronForwardOutline className="w-5 h-5 text-gray-400" />
+                  <IoPersonOutline className="w-5 h-5 text-gray-700 dark:text-gray-300 mb-1" />
+                  <span className="text-xs text-gray-700 dark:text-gray-300">Profile</span>
                 </button>
                 
                 <Link
-                  href="/dashboard"
+                  href={user?.role === 'ADMIN' ? '/admin/dashboard' : '/dashboard'}
                   onClick={handleNavClick}
-                  className="w-full flex items-center justify-between px-4 py-3 
-                    bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg 
-                    hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900 
+                    rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105
+                    focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  aria-label="Go to dashboard"
                 >
-                  <div className="flex items-center space-x-3">
-                    <IoSettingsOutline className="w-5 h-5" />
-                    <span className="font-medium">Dashboard</span>
-                  </div>
-                  <IoChevronForwardOutline className="w-5 h-5 text-gray-400" />
+                  <IoGridOutline className="w-5 h-5 text-gray-700 dark:text-gray-300 mb-1" />
+                  <span className="text-xs text-gray-700 dark:text-gray-300">Dashboard</span>
+                </Link>
+                
+                {user?.role !== 'ADMIN' && (
+                  <Link
+                    href="/dashboard/bookings"
+                    onClick={handleNavClick}
+                    className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900 
+                      rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105
+                      focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    aria-label="View my rentals"
+                  >
+                    <IoKeyOutline className="w-5 h-5 text-gray-700 dark:text-gray-300 mb-1" />
+                    <span className="text-xs text-gray-700 dark:text-gray-300">My Rentals</span>
+                  </Link>
+                )}
+                
+                <Link
+                  href="/settings"
+                  onClick={handleNavClick}
+                  className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900 
+                    rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105
+                    focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  aria-label="Go to settings"
+                >
+                  <IoSettingsOutline className="w-5 h-5 text-gray-700 dark:text-gray-300 mb-1" />
+                  <span className="text-xs text-gray-700 dark:text-gray-300">Settings</span>
                 </Link>
               </div>
             </div>
           )}
           
-          {/* THREE-WAY SERVICE NAVIGATION */}
+          {/* Map View Button */}
           <div className="p-4 border-b border-gray-200 dark:border-gray-800">
-            <div className="flex items-center justify-center">
-              <div className="relative flex items-center bg-gray-100 dark:bg-gray-800 rounded-full p-0.5">
-                {/* Background slider */}
-                <div 
-                  className={`absolute h-8 w-24 rounded-full transition-transform duration-300 ${
-                    activeService === 'rides' 
-                      ? 'bg-gradient-to-r from-blue-500 to-blue-600 translate-x-0' 
-                      : activeService === 'hotels'
-                      ? 'bg-gradient-to-r from-amber-500 to-amber-600 translate-x-[96px]'
-                      : activeService === 'rentals'
-                      ? 'bg-gradient-to-r from-purple-500 to-purple-600 translate-x-[192px]'
-                      : 'hidden'
-                  }`} 
-                />
-                
-                {/* Rides Button */}
-                <Link
-                  href="/rides"
-                  onClick={handleNavClick}
-                  className={`relative z-10 flex items-center justify-center w-24 py-2 rounded-full transition-colors text-sm font-medium ${
-                    activeService === 'rides' 
-                      ? 'text-white' 
-                      : 'text-gray-600 dark:text-gray-400'
-                  }`}
-                >
-                  <IoCarOutline className="w-3 h-3 mr-1" />
-                  Rides
-                </Link>
-                
-                {/* Hotels Button */}
-                <Link
-                  href="/hotels"
-                  onClick={handleNavClick}
-                  className={`relative z-10 flex items-center justify-center w-24 py-2 rounded-full transition-colors text-sm font-medium ${
-                    activeService === 'hotels' 
-                      ? 'text-white' 
-                      : 'text-gray-600 dark:text-gray-400'
-                  }`}
-                >
-                  <IoBusinessOutline className="w-3 h-3 mr-1" />
-                  Hotels
-                </Link>
-
-                {/* Rentals Button */}
-                <Link
-                  href="/rentals"
-                  onClick={handleNavClick}
-                  className={`relative z-10 flex items-center justify-center w-24 py-2 rounded-full transition-colors text-sm font-medium ${
-                    activeService === 'rentals' 
-                      ? 'text-white' 
-                      : 'text-gray-600 dark:text-gray-400'
-                  }`}
-                >
-                  <IoKeyOutline className="w-3 h-3 mr-1" />
-                  Rentals
-                </Link>
-              </div>
-            </div>
+            <Link
+              href="/rentals/search?view=map"
+              onClick={handleNavClick}
+              className="w-full flex items-center justify-center space-x-2 px-4 py-3 
+                bg-gradient-to-r from-blue-500 to-purple-500 text-white
+                rounded-xl hover:shadow-lg transition-all hover:scale-[1.02] font-medium
+                focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              aria-label="Explore cars on map view"
+            >
+              <IoMapOutline className="w-5 h-5" aria-hidden="true" />
+              <span>Explore Cars on Map</span>
+            </Link>
           </div>
-
-          {/* Sign In / Sign Up Button (Only if not logged in) */}
-          {!isLoggedIn && (
-            <div className="p-4 space-y-3 border-b border-gray-200 dark:border-gray-800">
-              <Link
-                href="/auth/login"
-                onClick={handleNavClick}
-                className="w-full flex items-center justify-between px-4 py-3 
-                  bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <div className="flex items-center space-x-3">
-                  <IoLogInOutline className="w-5 h-5" />
-                  <span className="font-medium">Sign In / Sign Up</span>
-                </div>
-                <IoChevronForwardOutline className="w-5 h-5" />
-              </Link>
-            </div>
-          )}
 
           {/* Navigation Sections */}
-          <div className="py-2">
-            {mobileNavItems.map((section) => (
-              <div key={section.label} className="border-b border-gray-200 dark:border-gray-800">
-                {/* Section Header */}
-                <button
-                  onClick={() => toggleSection(section.label)}
-                  className="w-full flex items-center justify-between px-4 py-3
-                    hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="text-gray-600 dark:text-gray-400">
-                      {section.icon}
-                    </div>
-                    <span className="font-medium text-gray-900 dark:text-white">
-                      {section.label}
-                    </span>
-                    {section.badge && (
-                      <span className="px-2 py-0.5 bg-red-500 text-white text-xs rounded-full font-bold">
-                        {section.badge}
+          <nav className="px-4 py-2" aria-label="Main navigation">
+            {/* Home Link */}
+            <div className="border-b border-gray-100 dark:border-gray-900">
+              <Link
+                href="/"
+                onClick={handleNavClick}
+                className={`
+                  w-full flex items-center space-x-3 py-3 transition-colors
+                  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset rounded-lg
+                  ${isActiveLink('/') 
+                    ? 'text-blue-600 dark:text-blue-400' 
+                    : 'hover:text-blue-600 dark:hover:text-blue-400'}
+                `}
+                aria-current={isActiveLink('/') ? 'page' : undefined}
+              >
+                <div className={`transition-colors ${
+                  isActiveLink('/') 
+                    ? 'text-blue-600 dark:text-blue-400' 
+                    : 'text-gray-500 dark:text-gray-400'
+                }`}>
+                  <IoHomeOutline className="w-5 h-5" aria-hidden="true" />
+                </div>
+                <span className="font-medium text-gray-900 dark:text-white">
+                  Home
+                </span>
+              </Link>
+            </div>
+
+            {/* Dynamic Navigation Sections */}
+            {navigationSections.map((section) => {
+              const Icon = section.icon
+              const isExpanded = expandedSection === section.id
+              
+              return (
+                <div key={section.id} className="border-b border-gray-100 dark:border-gray-900">
+                  <button
+                    onClick={() => toggleSection(section.id)}
+                    className="w-full flex items-center justify-between py-3 
+                      hover:text-blue-600 dark:hover:text-blue-400 transition-colors
+                      focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset rounded-lg"
+                    aria-expanded={isExpanded}
+                    aria-controls={`${section.id}-menu`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="text-gray-500 dark:text-gray-400">
+                        <Icon className="w-5 h-5" aria-hidden="true" />
+                      </div>
+                      <span className="font-medium text-gray-900 dark:text-white">
+                        {section.label}
                       </span>
-                    )}
-                  </div>
-                  <IoChevronDownOutline className={`
-                    w-5 h-5 text-gray-400 transition-transform
-                    ${expandedSection === section.label ? 'rotate-180' : ''}
-                  `} />
-                </button>
-
-                {/* Section Items */}
-                {expandedSection === section.label && (
-                  <div className="bg-gray-50 dark:bg-gray-800/50 py-2">
-                    {section.items.map((item) => (
-                      <Link
-                        key={item.label}
-                        href={item.href}
-                        onClick={handleNavClick}
-                        className={`
-                          block px-12 py-2.5 text-sm transition-colors
-                          ${'highlight' in item && item.highlight 
-                            ? 'text-blue-600 dark:text-blue-400 font-medium' 
-                            : 'text-gray-700 dark:text-gray-300'
-                          }
-                          hover:bg-gray-100 dark:hover:bg-gray-800
-                        `}
-                      >
-                        <span className="flex items-center justify-between">
-                          {item.label}
-                          {'highlight' in item && item.highlight && (
-                            <span className="text-xs bg-amber-500 text-white px-2 py-0.5 rounded-full">
-                              NEW
-                            </span>
-                          )}
-                          {'badge' in item && item.badge && (
-                            <span className="text-xs text-green-600 dark:text-green-400">
-                              {item.badge}
-                            </span>
-                          )}
+                      {section.badge && (
+                        <span className={`
+                          text-xs bg-gradient-to-r ${section.badge.color} 
+                          text-white px-2 py-0.5 rounded-full font-medium shadow-sm
+                        `}>
+                          {section.badge.text}
                         </span>
-                      </Link>
-                    ))}
+                      )}
+                    </div>
+                    <IoChevronDownOutline 
+                      className={`
+                        w-5 h-5 text-gray-400 transition-transform duration-200
+                        ${isExpanded ? 'rotate-180' : ''}
+                      `}
+                      aria-hidden="true"
+                    />
+                  </button>
+                  
+                  {/* Expandable Menu Items */}
+                  <div
+                    id={`${section.id}-menu`}
+                    className={`
+                      overflow-hidden transition-all duration-200 ease-in-out
+                      ${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}
+                    `}
+                  >
+                    <div className="pb-3 pl-12 space-y-1">
+                      {section.items.map((item) => {
+                        const ItemIcon = item.icon
+                        
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            onClick={handleNavClick}
+                            className={`
+                              flex items-center gap-2 py-2 text-sm transition-colors
+                              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset rounded-lg px-2
+                              ${item.highlight 
+                                ? 'text-blue-600 dark:text-blue-400 font-medium' 
+                                : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'}
+                            `}
+                          >
+                            {ItemIcon && <ItemIcon className="w-4 h-4" aria-hidden="true" />}
+                            <div className="flex items-center justify-between flex-1">
+                              <span>{item.label}</span>
+                              {item.badge && (
+                                <span className={`
+                                  text-xs bg-gradient-to-r ${item.badge.color} 
+                                  text-white px-2 py-0.5 rounded-full
+                                `}>
+                                  {item.badge.text}
+                                </span>
+                              )}
+                            </div>
+                          </Link>
+                        )
+                      })}
+                    </div>
                   </div>
-                )}
-              </div>
-            ))}
-          </div>
+                </div>
+              )
+            })}
+          </nav>
 
-          {/* Sign Out Button (Only if logged in) */}
+          {/* Sign Out (if logged in) */}
           {isLoggedIn && (
             <div className="p-4 border-t border-gray-200 dark:border-gray-800">
               <button
-                onClick={() => {
-                  if (onLogout) onLogout()
-                  handleNavClick()
-                }}
-                className="w-full flex items-center justify-between px-4 py-3 
-                  bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg 
-                  hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                onClick={() => handleQuickAction(onLogout || (() => {}))}
+                className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 
+                  text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 
+                  rounded-lg transition-all hover:scale-[0.98] font-medium
+                  focus:outline-none focus:ring-2 focus:ring-red-500"
+                aria-label="Sign out"
               >
-                <div className="flex items-center space-x-3">
-                  <IoLogOutOutline className="w-5 h-5" />
-                  <span className="font-medium">Sign Out</span>
-                </div>
+                <IoLogOutOutline className="w-5 h-5" aria-hidden="true" />
+                <span>Sign Out</span>
               </button>
             </div>
           )}
 
-          {/* Contact Info */}
-          <div className="p-4 border-t border-gray-200 dark:border-gray-800">
-            <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-              Contact Us
-            </div>
-            <div className="space-y-3">
-              <a
-                href="tel:+16025550100"
-                className="flex items-center space-x-3 text-sm text-gray-600 dark:text-gray-400 
-                  hover:text-gray-900 dark:hover:text-white transition-colors"
-              >
-                <IoCallOutline className="w-5 h-5" />
-                <span>(602) 555-0100</span>
-              </a>
-              
-              <a
-                href="mailto:support@itwhip.com"
-                className="flex items-center space-x-3 text-sm text-gray-600 dark:text-gray-400 
-                  hover:text-gray-900 dark:hover:text-white transition-colors"
-              >
-                <IoMailOutline className="w-5 h-5" />
-                <span>support@itwhip.com</span>
-              </a>
-              
-              <div className="flex items-center space-x-3 text-sm text-gray-600 dark:text-gray-400">
-                <IoLocationOutline className="w-5 h-5" />
-                <span>Phoenix, Arizona</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Social Links */}
-          <div className="p-4 border-t border-gray-200 dark:border-gray-800">
-            <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 text-center">
-              Follow Us
-            </div>
-            <div className="flex items-center justify-center space-x-4">
-              <a
-                href="https://facebook.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 
-                  dark:hover:text-white transition-colors"
-                aria-label="Facebook"
-              >
-                <IoLogoFacebook className="w-6 h-6" />
-              </a>
-              <a
-                href="https://twitter.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 
-                  dark:hover:text-white transition-colors"
-                aria-label="Twitter"
-              >
-                <IoLogoTwitter className="w-6 h-6" />
-              </a>
-              <a
-                href="https://instagram.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 
-                  dark:hover:text-white transition-colors"
-                aria-label="Instagram"
-              >
-                <IoLogoInstagram className="w-6 h-6" />
-              </a>
-              <a
-                href="https://linkedin.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 
-                  dark:hover:text-white transition-colors"
-                aria-label="LinkedIn"
-              >
-                <IoLogoLinkedin className="w-6 h-6" />
-              </a>
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="p-4 text-center text-xs text-gray-500 dark:text-gray-500 border-t border-gray-200 dark:border-gray-800">
-            <p>© 2019-2025 ItWhip Technologies, Inc.</p>
-            <p className="mt-1">All rights reserved.</p>
-          </div>
         </div>
       </div>
     </div>
   )
 }
+
+// Add CSS for animation (add to your global CSS or module)
+const animationStyles = `
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out;
+}
+`

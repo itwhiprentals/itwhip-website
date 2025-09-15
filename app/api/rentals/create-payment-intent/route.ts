@@ -38,7 +38,8 @@ export async function POST(request: NextRequest) {
 
     // Get user from database
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
+      where: { email: session.user.email },
+      select: { id: true, name: true, email: true }
     })
 
     if (!user) {
@@ -61,10 +62,25 @@ export async function POST(request: NextRequest) {
 
     const { amount, deposit, bookingDetails } = validationResult.data
 
-    // Get car and host details for metadata
+    // SECURE QUERY - Get car and host details with SELECT
     const car = await prisma.rentalCar.findUnique({
       where: { id: bookingDetails.carId },
-      include: { host: true }
+      select: {
+        id: true,
+        make: true,
+        model: true,
+        year: true,
+        dailyRate: true,
+        hostId: true,
+        host: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+            // Only fields needed for payment processing
+          }
+        }
+      }
     })
 
     if (!car) {
@@ -109,11 +125,6 @@ export async function POST(request: NextRequest) {
       },
       // Set up for split payments (platform fee)
       application_fee_amount: platformFee,
-      // Transfer data for connected accounts (if using Stripe Connect)
-      // transfer_data: {
-      //   destination: car.host.stripeAccountId,
-      //   amount: hostPayout
-      // },
       // Capture method - authorize now, capture after verification
       capture_method: 'automatic',
       // Setup for future usage (save card)
@@ -264,10 +275,6 @@ export async function PATCH(request: NextRequest) {
 
 // Helper function to get or create Stripe customer
 async function getOrCreateStripeCustomer(user: any, email: string): Promise<string> {
-  // Check if user already has a Stripe customer ID stored
-  // This would typically be stored in your User model
-  // For now, we'll create a new customer or search for existing
-
   try {
     // Search for existing customer by email
     const existingCustomers = await stripe.customers.list({
@@ -287,12 +294,6 @@ async function getOrCreateStripeCustomer(user: any, email: string): Promise<stri
         userId: user.id
       }
     })
-
-    // TODO: Save customer.id to user record in database
-    // await prisma.user.update({
-    //   where: { id: user.id },
-    //   data: { stripeCustomerId: customer.id }
-    // })
 
     return customer.id
 

@@ -1,9 +1,7 @@
 // app/api/rentals/search/route.ts
-
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/app/lib/database/prisma'
 
-// Named export for GET method (required by Next.js 13+ App Router)
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -21,53 +19,46 @@ export async function GET(request: NextRequest) {
     const priceMin = searchParams.get('priceMin')
     const priceMax = searchParams.get('priceMax')
 
-    // Build the where clause for Prisma
+    // Build where clause - UPDATED TO ALLOW ALL CITIES
     const whereClause: any = {
-      isActive: true,
-      city: {
-        contains: location.split(',')[0], // Extract city name
-        mode: 'insensitive'
-      }
+      isActive: true
     }
 
-    // Add instant book filter
-    if (instantBook) {
-      whereClause.instantBook = true
+    // REMOVED CITY RESTRICTIONS - Now searches all active cars regardless of city
+    // If you want to filter by a specific location, you can still do it
+    const locationCity = location.split(',')[0].toLowerCase()
+    if (locationCity && locationCity !== 'all') {
+      // Optional: If a specific city is provided, filter by it
+      // But for now, we're showing all cars from all cities
+      // You can uncomment the line below to enable city-specific filtering
+      // whereClause.city = { contains: locationCity, mode: 'insensitive' }
     }
 
-    // Add car type filter
-    if (carType && carType !== 'all') {
-      whereClause.carType = carType.toUpperCase() // Fixed: carType not type
-    }
-
-    // Add price range filter
+    if (instantBook) whereClause.instantBook = true
+    if (carType && carType !== 'all') whereClause.carType = carType.toUpperCase()
+    
     if (priceMin || priceMax) {
       whereClause.dailyRate = {}
       if (priceMin) whereClause.dailyRate.gte = parseFloat(priceMin)
       if (priceMax) whereClause.dailyRate.lte = parseFloat(priceMax)
     }
 
-    // Add date availability filter if dates are provided
     if (pickupDate && returnDate) {
       const startDate = new Date(pickupDate)
       const endDate = new Date(returnDate)
       
       whereClause.bookings = {
         none: {
-          OR: [
-            {
-              startDate: { lte: endDate },
-              endDate: { gte: startDate }
-            }
-          ],
-          status: {
-            notIn: ['CANCELLED', 'COMPLETED']
-          }
+          OR: [{
+            startDate: { lte: endDate },
+            endDate: { gte: startDate }
+          }],
+          status: { notIn: ['CANCELLED', 'COMPLETED'] }
         }
       }
     }
 
-    // Build the orderBy clause based on sortBy parameter
+    // Build orderBy
     let orderBy: any = {}
     switch (sortBy) {
       case 'price_low':
@@ -79,15 +70,7 @@ export async function GET(request: NextRequest) {
       case 'rating':
         orderBy = { rating: 'desc' }
         break
-      case 'distance':
-        // For distance sorting, we'd need to calculate based on coordinates
-        // For now, use a default sort
-        orderBy = { createdAt: 'desc' }
-        break
-      case 'recommended':
       default:
-        // Recommended could be a combination of factors
-        // Fixed: Removed 'featured' field that doesn't exist
         orderBy = [
           { rating: 'desc' },
           { totalTrips: 'desc' },
@@ -96,33 +79,90 @@ export async function GET(request: NextRequest) {
         break
     }
 
-    // Fetch cars from database
+    // SECURE QUERY - USE SELECT, NOT INCLUDE
     const cars = await prisma.rentalCar.findMany({
       where: whereClause,
-      include: {
+      select: {
+        // Essential fields only
+        id: true,
+        make: true,
+        model: true,
+        year: true,
+        carType: true,
+        transmission: true,
+        seats: true,
+        dailyRate: true,
+        weeklyRate: true,
+        monthlyRate: true,
+        weeklyDiscount: true,
+        monthlyDiscount: true,
+        features: true,
+        rules: true,
+        instantBook: true,
+        mpgCity: true,
+        mpgHighway: true,
+        
+        // Location
+        address: true,
+        city: true,
+        state: true,
+        zipCode: true,
+        latitude: true,
+        longitude: true,
+        
+        // Delivery options
+        airportPickup: true,
+        hotelDelivery: true,
+        homeDelivery: true,
+        
+        // Requirements
+        advanceNotice: true,
+        minTripDuration: true,
+        maxTripDuration: true,
+        insuranceIncluded: true,
+        insuranceDaily: true,
+        
+        // Stats - FIXED: Use totalTrips from database
+        rating: true,
+        totalTrips: true,  // This is the actual trip count stored in the database
+        
+        // Host - LIMITED PUBLIC FIELDS (REMOVED ID)
         host: {
           select: {
-            id: true,
+            // id: true, // REMOVED - Internal ID not needed
             name: true,
-            profilePhoto: true,  // Fixed: was 'avatar'
-            isVerified: true,    // Fixed: was 'verified'
+            profilePhoto: true,
             responseRate: true,
-            responseTime: true
+            responseTime: true,
+            isVerified: true
           }
         },
+        
+        // Photos - LIMITED (REMOVED ID)
         photos: {
+          select: {
+            // id: true, // REMOVED - Internal ID not needed
+            url: true,
+            caption: true,
+            order: true
+          },
           orderBy: { order: 'asc' },
           take: 5
         },
-        reviews: {
-          select: {
-            rating: true
-          }
-        },
+        
+        // Count only - FIXED: Count only COMPLETED and ACTIVE bookings
         _count: {
           select: {
-            bookings: true,
-            reviews: true
+            bookings: {
+              where: {
+                status: {
+                  in: ['COMPLETED', 'ACTIVE']  // Only count real trips, not cancelled or pending
+                }
+              }
+            },
+            reviews: {
+              where: { isVisible: true }
+            }
           }
         }
       },
@@ -130,28 +170,9 @@ export async function GET(request: NextRequest) {
       take: limit
     })
 
-    // Transform the data for the frontend
+    // Transform cars with clean data
     const transformedCars = cars.map(car => {
-      // Calculate average rating
-      const averageRating = car.reviews.length > 0
-        ? car.reviews.reduce((sum, review) => sum + review.rating, 0) / car.reviews.length
-        : 5.0
-
-      // Calculate price with fees
-      const serviceFee = car.dailyRate * 0.15
-      const totalDaily = car.dailyRate + serviceFee
-
-      // Calculate total price for the rental period
-      let totalPrice = totalDaily
-      if (pickupDate && returnDate) {
-        const days = Math.ceil(
-          (new Date(returnDate).getTime() - new Date(pickupDate).getTime()) / 
-          (1000 * 60 * 60 * 24)
-        )
-        totalPrice = totalDaily * days
-      }
-
-      // Parse features if it's a string (JSON)
+      // Parse features safely
       let parsedFeatures = []
       try {
         if (typeof car.features === 'string') {
@@ -163,7 +184,7 @@ export async function GET(request: NextRequest) {
         parsedFeatures = []
       }
 
-      // Parse rules if it's a string (JSON)
+      // Parse rules safely
       let parsedRules = []
       try {
         if (typeof car.rules === 'string' && car.rules) {
@@ -173,12 +194,32 @@ export async function GET(request: NextRequest) {
         parsedRules = []
       }
 
+      // Calculate pricing
+      const serviceFee = car.dailyRate * 0.15
+      const totalDaily = car.dailyRate + serviceFee
+      
+      let totalPrice = totalDaily
+      if (pickupDate && returnDate) {
+        const days = Math.ceil(
+          (new Date(returnDate).getTime() - new Date(pickupDate).getTime()) / 
+          (1000 * 60 * 60 * 24)
+        )
+        totalPrice = totalDaily * days
+      }
+
+      // FIXED: Format rating to 1 decimal place
+      const formattedRating = car.rating ? parseFloat(car.rating.toFixed(1)) : 5.0
+
+      // FIXED: Use nullish coalescing to properly handle 0 values
+      // Now if totalTrips is 0, it will use 0 instead of falling through
+      const actualTripCount = car.totalTrips ?? car._count.bookings ?? 0
+
       return {
         id: car.id,
         make: car.make,
         model: car.model,
         year: car.year,
-        type: car.carType,  // Fixed: using carType from schema
+        type: car.carType,
         transmission: car.transmission,
         seats: car.seats,
         mpg: {
@@ -188,8 +229,8 @@ export async function GET(request: NextRequest) {
             ? Math.round((car.mpgCity + car.mpgHighway) / 2)
             : null
         },
-        features: parsedFeatures,
-        description: `${car.year} ${car.make} ${car.model} - ${car.carType}`, // Generated description
+        features: parsedFeatures.slice(0, 5),
+        description: `${car.year} ${car.make} ${car.model}`,
         dailyRate: car.dailyRate,
         weeklyRate: car.weeklyRate,
         monthlyRate: car.monthlyRate,
@@ -201,7 +242,7 @@ export async function GET(request: NextRequest) {
           address: car.address,
           city: car.city,
           state: car.state,
-          zip: car.zipCode,  // Fixed: was 'zip'
+          zip: car.zipCode,
           lat: car.latitude,
           lng: car.longitude,
           airport: car.airportPickup,
@@ -209,163 +250,48 @@ export async function GET(request: NextRequest) {
           homeDelivery: car.homeDelivery
         },
         host: {
-          id: car.host.id,
+          // id: car.host.id, // REMOVED - Not exposing internal host ID
           name: car.host.name,
-          avatar: car.host.profilePhoto || '/default-avatar.png',  // Fixed: was avatar
-          verified: car.host.isVerified,  // Fixed: was verified
-          responseRate: car.host.responseRate,
-          responseTime: car.host.responseTime,
-          totalTrips: car._count.bookings
+          avatar: car.host.profilePhoto || '/default-avatar.png',
+          verified: car.host.isVerified,
+          responseRate: car.host.responseRate || 95,
+          responseTime: car.host.responseTime || 60,
+          totalTrips: actualTripCount  // FIXED: Use actual trip count here too
         },
         photos: car.photos.map(photo => ({
-          id: photo.id,
+          // id: photo.id, // REMOVED - Not exposing internal photo ID
           url: photo.url,
           alt: photo.caption || `${car.make} ${car.model}`
         })),
         rating: {
-          average: averageRating,
+          average: formattedRating,  // FIXED: Use formatted rating
           count: car._count.reviews
         },
-        trips: car._count.bookings,
-        available: true, // Since we filtered by availability
-        cancellationPolicy: 'MODERATE', // Default policy
+        // FIXED: Provide both field names for compatibility
+        trips: actualTripCount,        // For frontend compatibility
+        totalTrips: actualTripCount,   // Alternative field name
+        available: true,
+        cancellationPolicy: 'MODERATE',
         requirements: {
           minAge: 21,
           license: '2+ years',
-          deposit: car.depositAmount || 500,
+          deposit: 500,
           advanceNotice: car.advanceNotice || 2,
           minDuration: car.minTripDuration || 1,
           maxDuration: car.maxTripDuration || 30
         },
-        rules: parsedRules,
+        rules: parsedRules.slice(0, 3),
         insurance: {
           included: car.insuranceIncluded,
-          dailyRate: car.insuranceDaily
+          dailyRate: car.insuranceDaily || 25
         },
         discounts: {
-          weekly: car.weeklyDiscount,
-          monthly: car.monthlyDiscount
+          weekly: car.weeklyDiscount || 0.15,
+          monthly: car.monthlyDiscount || 0.30
         }
       }
     })
 
-    // Also fetch from Amadeus if needed (for traditional rentals)
-    let amadeusResults: any[] = []
-    if (process.env.AMADEUS_API_KEY && process.env.AMADEUS_API_SECRET) {
-      try {
-        // Check if we have cached Amadeus results first
-        const cacheKey = `${location}_${pickupDate}_${returnDate}`
-        const cachedResults = await prisma.amadeusCarCache.findFirst({
-          where: {
-            location: location,
-            searchDate: {
-              gte: new Date(Date.now() - 3600000) // Cache for 1 hour
-            }
-          }
-        })
-
-        if (cachedResults && cachedResults.carData) {
-          // Parse cached data
-          try {
-            const cachedData = JSON.parse(cachedResults.carData)
-            amadeusResults = cachedData.slice(0, 5) // Limit Amadeus results
-          } catch (e) {
-            console.error('Error parsing cached Amadeus data:', e)
-          }
-        } else {
-          // For now, return mock Amadeus data
-          // In production, make actual API call to Amadeus
-          amadeusResults = [
-            {
-              id: 'amadeus-1',
-              provider: 'Enterprise',
-              make: 'Toyota',
-              model: 'Camry',
-              year: 2024,
-              type: 'SEDAN',
-              transmission: 'AUTOMATIC',
-              seats: 5,
-              mpg: {
-                city: 28,
-                highway: 36,
-                combined: 32
-              },
-              features: ['Bluetooth', 'Backup Camera', 'Cruise Control'],
-              dailyRate: 65,
-              totalDaily: 74.75,
-              location: {
-                address: 'Phoenix Sky Harbor Airport',
-                city: 'Phoenix',
-                state: 'AZ',
-                airport: true
-              },
-              photos: [
-                { url: 'https://via.placeholder.com/400x300?text=Toyota+Camry', alt: 'Toyota Camry' }
-              ],
-              rating: { average: 4.5, count: 234 },
-              available: true,
-              provider_type: 'traditional'
-            },
-            {
-              id: 'amadeus-2',
-              provider: 'Hertz',
-              make: 'Nissan',
-              model: 'Altima',
-              year: 2024,
-              type: 'SEDAN',
-              transmission: 'AUTOMATIC',
-              seats: 5,
-              mpg: {
-                city: 27,
-                highway: 38,
-                combined: 32
-              },
-              features: ['Apple CarPlay', 'Android Auto', 'Lane Assist'],
-              dailyRate: 58,
-              totalDaily: 66.70,
-              location: {
-                address: 'Phoenix Sky Harbor Airport',
-                city: 'Phoenix',
-                state: 'AZ',
-                airport: true
-              },
-              photos: [
-                { url: 'https://via.placeholder.com/400x300?text=Nissan+Altima', alt: 'Nissan Altima' }
-              ],
-              rating: { average: 4.3, count: 189 },
-              available: true,
-              provider_type: 'traditional'
-            }
-          ]
-
-          // Cache the results for future use
-          if (amadeusResults.length > 0) {
-            try {
-              await prisma.amadeusCarCache.create({
-                data: {
-                  location: location,
-                  searchDate: new Date(),
-                  carData: JSON.stringify(amadeusResults),
-                  expiresAt: new Date(Date.now() + 3600000) // Expire in 1 hour
-                }
-              })
-            } catch (cacheError) {
-              console.error('Error caching Amadeus results:', cacheError)
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Amadeus API error:', error)
-      }
-    }
-
-    // Combine results
-    const allResults = [
-      ...transformedCars,
-      ...amadeusResults
-    ]
-
-    // Return the response
     return NextResponse.json({
       success: true,
       location,
@@ -384,53 +310,25 @@ export async function GET(request: NextRequest) {
           max: priceMax
         }
       },
-      results: allResults,
-      total: allResults.length,
+      results: transformedCars,
+      total: transformedCars.length,
       page: 1,
       limit,
       metadata: {
-        p2pCount: transformedCars.length,
-        traditionalCount: amadeusResults.length,
+        // REMOVED p2pCount and traditionalCount - These expose internal categorization
+        totalResults: transformedCars.length,  // Generic count instead
         cached: false
       }
     })
 
   } catch (error) {
     console.error('Search API error:', error)
-    
-    // Return error response
     return NextResponse.json(
       { 
         success: false,
-        error: 'Failed to search cars',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        error: 'Failed to search cars'
       },
       { status: 500 }
-    )
-  }
-}
-
-// Named export for POST method (if needed for advanced search)
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json()
-    
-    // Use the same logic as GET but with body parameters
-    // This allows for more complex search queries
-    
-    return NextResponse.json({
-      success: true,
-      message: 'Advanced search endpoint',
-      body
-    })
-    
-  } catch (error) {
-    return NextResponse.json(
-      { 
-        success: false,
-        error: 'Invalid request body'
-      },
-      { status: 400 }
     )
   }
 }
