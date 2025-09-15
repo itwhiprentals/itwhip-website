@@ -4,6 +4,7 @@
 import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { extractCarId } from '@/app/lib/utils/urls'  // ADD THIS IMPORT
 import { 
   IoArrowBackOutline,
   IoLocationOutline,
@@ -160,7 +161,10 @@ function formatDriveType(driveType?: string | null): string {
 export default function CarDetailsClient({ params }: PageProps) {
   const router = useRouter()
   const resolvedParams = use(params)
-  const carId = resolvedParams.carId
+  const urlSlug = resolvedParams.carId
+  
+  // Extract the real car ID from the URL (handles both old and new formats)
+  const carId = extractCarId(urlSlug)
   
   const [car, setCar] = useState<RentalCarWithDetails | null>(null)
   const [loading, setLoading] = useState(true)

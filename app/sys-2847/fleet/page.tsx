@@ -1,6 +1,7 @@
 // app/sys-2847/fleet/page.tsx
 'use client'
 
+export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Car, CarStatus } from './types'

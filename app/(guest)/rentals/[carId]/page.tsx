@@ -1,6 +1,8 @@
 // app/(guest)/rentals/[carId]/page.tsx
 import { Metadata } from 'next'
+import Script from 'next/script'
 import CarDetailsClient from './CarDetailsClient'
+import { extractCarId, generateCarUrl } from '@/app/lib/utils/urls'
 
 // Generate dynamic Open Graph metadata for link previews
 export async function generateMetadata({ 
@@ -8,7 +10,10 @@ export async function generateMetadata({
 }: { 
   params: Promise<{ carId: string }> 
 }): Promise<Metadata> {
-  const { carId } = await params
+  const { carId: urlSlug } = await params
+  
+  // Extract the real car ID from the URL (handles both old and new formats)
+  const carId = extractCarId(urlSlug)
   
   try {
     const response = await fetch(
@@ -30,6 +35,15 @@ export async function generateMetadata({
     const title = `${car.year} ${car.make} ${car.model} - $${car.dailyRate}/day | ItWhip`
     const description = `Rent this ${car.year} ${car.make} ${car.model} in ${car.city}, ${car.state}. ${car.seats} seats, ${car.transmission || 'automatic'} transmission. ${car.instantBook ? 'Book instantly!' : 'Contact host to book.'}`
     
+    // Generate the SEO-friendly URL for OpenGraph
+    const seoUrl = generateCarUrl({
+      id: carId,
+      make: car.make,
+      model: car.model,
+      year: car.year,
+      city: car.city
+    })
+    
     return {
       title,
       description,
@@ -38,7 +52,7 @@ export async function generateMetadata({
       openGraph: {
         title,
         description,
-        url: `https://itwhip.com/rentals/${carId}`,
+        url: `https://itwhip.com${seoUrl}`,  // Use SEO-friendly URL
         siteName: 'ItWhip Rentals',
         images: [
           {
@@ -71,7 +85,7 @@ export async function generateMetadata({
       
       // Additional SEO
       alternates: {
-        canonical: `https://itwhip.com/rentals/${carId}`,
+        canonical: `https://itwhip.com${seoUrl}`,  // Use SEO-friendly URL
       },
       
       keywords: `${car.make}, ${car.model}, car rental ${car.city}, luxury car rental, ${car.carType || 'car'} rental Phoenix`,
@@ -94,11 +108,133 @@ export async function generateMetadata({
 }
 
 // Server Component - Pass params as CarDetailsClient expects
-export default function CarDetailsPage({ 
+export default async function CarDetailsPage({ 
   params 
 }: { 
   params: Promise<{ carId: string }> 
 }) {
-  // CarDetailsClient expects params as a prop and will fetch its own data
-  return <CarDetailsClient params={params} />
+  const { carId: urlSlug } = await params
+  const carId = extractCarId(urlSlug)
+  
+  // Fetch car data for schema markup
+  let schemaData = null
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_APP_URL || 'https://itwhip.com'}/api/rentals/cars/${carId}`,
+      { cache: 'no-store' }
+    )
+    
+    if (response.ok) {
+      const car = await response.json()
+      
+      // Generate SEO URL
+      const seoUrl = generateCarUrl({
+        id: carId,
+        make: car.make,
+        model: car.model,
+        year: car.year,
+        city: car.city
+      })
+      
+      // Build schema.org JSON-LD
+      schemaData = {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": `${car.year} ${car.make} ${car.model}`,
+        "image": car.photos?.map((photo: any) => photo.url || photo) || [],
+        "description": `Rent this ${car.year} ${car.make} ${car.model} ${car.carType || ''} in ${car.city}, ${car.state}. ${car.seats || 5} seats, ${car.transmission || 'automatic'} transmission.`,
+        "brand": {
+          "@type": "Brand",
+          "name": car.make
+        },
+        "model": car.model,
+        "vehicleModelDate": car.year.toString(),
+        "vehicleConfiguration": car.carType || "sedan",
+        "vehicleTransmission": car.transmission || "automatic",
+        "vehicleSeatingCapacity": car.seats || 5,
+        "fuelType": car.fuelType || "gasoline",
+        "offers": {
+          "@type": "Offer",
+          "url": `https://itwhip.com${seoUrl}`,
+          "priceCurrency": "USD",
+          "price": car.dailyRate,
+          "priceValidUntil": new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+          "availability": "https://schema.org/InStock",
+          "validFrom": new Date().toISOString(),
+          "seller": {
+            "@type": "Organization",
+            "name": car.host?.name || "ItWhip",
+            "image": car.host?.profilePhoto || "https://itwhip.com/logo.png"
+          }
+        },
+        // Add aggregate rating if available
+        ...(car.rating && car.totalTrips > 0 ? {
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": car.rating,
+            "reviewCount": car.totalTrips,
+            "bestRating": "5",
+            "worstRating": "1"
+          }
+        } : {}),
+        // Add reviews if available
+        ...(car.reviews && car.reviews.length > 0 ? {
+          "review": car.reviews.slice(0, 5).map((review: any) => ({
+            "@type": "Review",
+            "author": {
+              "@type": "Person",
+              "name": review.reviewerName || review.reviewerProfile?.name || "Anonymous"
+            },
+            "datePublished": review.createdAt,
+            "reviewBody": review.comment,
+            "reviewRating": {
+              "@type": "Rating",
+              "ratingValue": review.rating,
+              "bestRating": "5",
+              "worstRating": "1"
+            }
+          }))
+        } : {}),
+        // Location information
+        "availableAtOrFrom": {
+          "@type": "Place",
+          "name": `${car.city}, ${car.state}`,
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": car.city,
+            "addressRegion": car.state,
+            "postalCode": car.zipCode,
+            "addressCountry": "US"
+          },
+          ...(car.location?.lat && car.location?.lng ? {
+            "geo": {
+              "@type": "GeoCoordinates",
+              "latitude": car.location.lat,
+              "longitude": car.location.lng
+            }
+          } : {})
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error generating schema:', error)
+  }
+  
+  return (
+    <>
+      {/* Add JSON-LD structured data */}
+      {schemaData && (
+        <Script
+          id="car-schema"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(schemaData)
+          }}
+        />
+      )}
+      
+      {/* CarDetailsClient expects params as a prop and will fetch its own data */}
+      <CarDetailsClient params={params} />
+    </>
+  )
 }

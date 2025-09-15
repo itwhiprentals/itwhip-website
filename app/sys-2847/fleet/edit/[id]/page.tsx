@@ -1,6 +1,8 @@
 // app/sys-2847/fleet/edit/[id]/page.tsx
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { Car, CarFormData } from '../../types'

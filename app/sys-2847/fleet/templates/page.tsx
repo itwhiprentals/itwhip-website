@@ -1,6 +1,8 @@
 // app/sys-2847/fleet/templates/page.tsx
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { SectionHeader, Alert } from '../components'

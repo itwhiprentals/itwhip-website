@@ -1,10 +1,15 @@
+
 // app/sys-2847/fleet/bulk/page.tsx
 'use client'
 
+export const dynamic = 'force-dynamic'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { SectionHeader, Alert } from '../components'
 import { DEFAULT_HOST_IDS } from '../constants'
+
+// Force dynamic rendering to avoid pre-rendering issues
+
 
 export default function BulkUploadPage() {
   const router = useRouter()

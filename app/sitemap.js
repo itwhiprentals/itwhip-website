@@ -41,14 +41,33 @@ export default async function sitemap() {
     },
   ]
 
-  // TODO: Add dynamic car pages when you have more inventory
-  // const cars = await fetch(`${baseUrl}/api/rentals/cars`).then(res => res.json())
-  // const carPages = cars.map(car => ({
-  //   url: `${baseUrl}/rentals/${car.id}`,
-  //   lastModified: new Date(),
-  //   changeFrequency: 'weekly',
-  //   priority: 0.7,
-  // }))
+  // Add dynamic car pages with SEO-friendly URLs
+  let carPages = []
+  try {
+    const response = await fetch(`${baseUrl}/api/rentals/cars`)
+    if (response.ok) {
+      const data = await response.json()
+      const cars = data.results || data.cars || data || []
+      
+      carPages = cars.map(car => {
+        // Generate SEO-friendly slug
+        const slug = `${car.year}-${car.make}-${car.model}-${car.city || 'phoenix'}`
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '')
+        
+        return {
+          url: `${baseUrl}/rentals/${slug}-${car.id}`,
+          lastModified: car.updatedAt ? new Date(car.updatedAt) : new Date(),
+          changeFrequency: 'weekly',
+          priority: 0.7,
+        }
+      })
+    }
+  } catch (error) {
+    console.error('Error fetching cars for sitemap:', error)
+    // Continue without car pages if fetch fails
+  }
 
-  return [...staticPages]
+  return [...staticPages, ...carPages]
 }

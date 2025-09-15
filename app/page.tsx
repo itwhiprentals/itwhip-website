@@ -1,5 +1,5 @@
 // app/page.tsx
-// Rental landing page as homepage - Updated with consistent rounded-lg (8px)
+// Rental landing page as homepage - Updated with SEO-friendly URLs
 
 'use client'
 
@@ -11,6 +11,7 @@ import BrowseByTypeSection from './rentals-sections/BrowseByTypeSection'
 import BenefitsSection from './rentals-sections/BenefitsSection'
 import Footer from '@/app/components/Footer'
 import Header from '@/app/components/Header'
+import { generateCarUrl } from '@/app/lib/utils/urls'  // ADD THIS IMPORT
 import { 
   IoCarOutline, 
   IoFlashOutline,
@@ -170,10 +171,21 @@ export default function RentalsPage() {
                   
                   const tripCount = car.trips || car.totalTrips || car.rating?.count || 0
                   
+                  // Generate SEO-friendly URL for this car
+                  const carUrl = car.make && car.model && car.year && car.city 
+                    ? generateCarUrl({
+                        id: car.id,
+                        make: car.make,
+                        model: car.model,
+                        year: car.year,
+                        city: car.city || car.location?.city || 'Phoenix'
+                      })
+                    : `/rentals/${car.id}` // Fallback to old format if data is missing
+                  
                   return (
                     <Link
                       key={car.id}
-                      href={`/rentals/${car.id}`}
+                      href={carUrl}  // CHANGED: Now uses SEO-friendly URL
                       className="group relative bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300"
                     >
                       {/* Image Container with Gradient Overlay */}
