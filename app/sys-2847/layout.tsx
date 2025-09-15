@@ -1,12 +1,14 @@
 // app/sys-2847/layout.tsx
 'use client'
+export const dynamic = 'force-dynamic'
 
+import { Suspense } from 'react'
 import { useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ThemeProvider, ThemeToggle } from './fleet/providers/theme-provider'
 
-export default function InternalLayout({
+function InternalLayoutContent({
   children,
 }: {
   children: React.ReactNode
@@ -191,5 +193,21 @@ export default function InternalLayout({
         </footer>
       </div>
     </ThemeProvider>
+  )
+}
+
+export default function InternalLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-gray-600 dark:text-gray-400">Loading...</div>
+      </div>
+    }>
+      <InternalLayoutContent>{children}</InternalLayoutContent>
+    </Suspense>
   )
 }
