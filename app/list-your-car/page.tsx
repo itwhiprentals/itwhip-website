@@ -6,6 +6,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Header from '../components/Header'
+import Footer from '../components/Footer'
 import { 
   IoCarSportOutline,
   IoCashOutline,
@@ -257,11 +258,11 @@ export default function ListYourCarPage() {
               </span>
             </div>
             <div className="hidden md:flex items-center space-x-4">
-              <Link href="/host-earnings" className="text-sm text-gray-600 dark:text-gray-300 hover:text-purple-600">
-                Full Earnings Details
+              <Link href="/host-benefits" className="text-sm text-gray-600 dark:text-gray-300 hover:text-purple-600">
+                View All Benefits
               </Link>
               <Link href="/host-protection" className="text-sm text-gray-600 dark:text-gray-300 hover:text-purple-600">
-                Protection & Tools
+                Protection Details
               </Link>
               <button 
                 onClick={() => setShowInquiryForm(true)}
@@ -275,7 +276,7 @@ export default function ListYourCarPage() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto mt-[106px] md:mt-[112px] pb-20">
+      <div className="flex-1 overflow-y-auto mt-[106px] md:mt-[112px]">
         
         {/* Hero Section with Immediate Value Prop */}
         <section className="relative bg-gradient-to-b from-purple-50 to-white dark:from-gray-950 dark:to-gray-900 py-8 sm:py-12 lg:py-16 overflow-hidden">
@@ -378,10 +379,10 @@ export default function ListYourCarPage() {
                   Start Application →
                 </button>
                 <Link 
-                  href="/host-earnings" 
+                  href="/host-benefits" 
                   className="w-full sm:w-auto px-8 py-3 bg-white dark:bg-gray-800 text-purple-600 rounded-lg font-semibold hover:bg-purple-50 transition border-2 border-purple-600"
                 >
-                  See Full Details
+                  See All Benefits
                 </Link>
               </div>
 
@@ -409,8 +410,8 @@ export default function ListYourCarPage() {
                 <div className="text-xs sm:text-sm text-purple-100">Insurance Cost</div>
               </div>
               <div>
-                <div className="text-2xl sm:text-3xl font-bold text-white">24/7</div>
-                <div className="text-xs sm:text-sm text-purple-100">Support</div>
+                <div className="text-2xl sm:text-3xl font-bold text-white">$2M</div>
+                <div className="text-xs sm:text-sm text-purple-100">Max Coverage</div>
               </div>
             </div>
           </div>
@@ -476,6 +477,16 @@ export default function ListYourCarPage() {
                 </tbody>
               </table>
             </div>
+
+            <div className="mt-6 text-center">
+              <Link 
+                href="/host-requirements"
+                className="inline-flex items-center text-purple-600 hover:text-purple-700 font-medium"
+              >
+                View detailed requirements
+                <IoArrowForwardOutline className="w-4 h-4 ml-1" />
+              </Link>
+            </div>
           </div>
         </section>
 
@@ -521,6 +532,13 @@ export default function ListYourCarPage() {
                     Save $3,000-6,000/year vs commercial insurance
                   </p>
                 </div>
+                <Link 
+                  href="/host-protection"
+                  className="inline-flex items-center mt-4 text-sm font-medium text-purple-600 hover:text-purple-700"
+                >
+                  Protection details
+                  <IoArrowForwardOutline className="w-4 h-4 ml-1" />
+                </Link>
               </div>
 
               {/* Technology & Tools */}
@@ -552,6 +570,13 @@ export default function ListYourCarPage() {
                     Professional photography included for luxury+
                   </p>
                 </div>
+                <Link 
+                  href="/host-benefits#tools"
+                  className="inline-flex items-center mt-4 text-sm font-medium text-purple-600 hover:text-purple-700"
+                >
+                  View all tools
+                  <IoArrowForwardOutline className="w-4 h-4 ml-1" />
+                </Link>
               </div>
 
               {/* Support & Service */}
@@ -563,7 +588,7 @@ export default function ListYourCarPage() {
                 <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                   <li className="flex items-start">
                     <IoCheckmarkCircle className="w-4 h-4 text-green-500 mr-2 mt-0.5" />
-                    <span>24/7 guest communication</span>
+                    <span>All guest communication</span>
                   </li>
                   <li className="flex items-start">
                     <IoCheckmarkCircle className="w-4 h-4 text-green-500 mr-2 mt-0.5" />
@@ -583,7 +608,24 @@ export default function ListYourCarPage() {
                     You just keep your car clean & maintained
                   </p>
                 </div>
+                <Link 
+                  href="/how-it-works"
+                  className="inline-flex items-center mt-4 text-sm font-medium text-purple-600 hover:text-purple-700"
+                >
+                  How it works
+                  <IoArrowForwardOutline className="w-4 h-4 ml-1" />
+                </Link>
               </div>
+            </div>
+
+            <div className="mt-8 text-center">
+              <Link 
+                href="/host-benefits"
+                className="inline-flex items-center px-6 py-3 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 transition"
+              >
+                View All Host Benefits
+                <IoArrowForwardOutline className="w-5 h-5 ml-2" />
+              </Link>
             </div>
           </div>
         </section>
@@ -631,8 +673,8 @@ export default function ListYourCarPage() {
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                 Plus: Priority placement, instant payouts, dedicated support, and more
               </p>
-              <Link href="/host-protection#rewards" className="text-purple-600 hover:text-purple-700 text-sm font-medium">
-                View all host benefits →
+              <Link href="/host-benefits#rewards" className="text-purple-600 hover:text-purple-700 text-sm font-medium">
+                View all rewards & tiers →
               </Link>
             </div>
           </div>
@@ -688,6 +730,15 @@ export default function ListYourCarPage() {
                 </p>
               </div>
             </div>
+
+            <div className="mt-8 text-center">
+              <Link 
+                href="/how-it-works"
+                className="text-purple-600 hover:text-purple-700 font-medium"
+              >
+                Learn more about the process →
+              </Link>
+            </div>
           </div>
         </section>
 
@@ -723,6 +774,15 @@ export default function ListYourCarPage() {
               <p className="text-xs text-gray-500 text-center mt-4">
                 We provide all documentation for your tax preparer
               </p>
+              
+              <div className="text-center mt-4">
+                <Link 
+                  href="/host-benefits#taxes"
+                  className="text-purple-600 hover:text-purple-700 text-sm font-medium"
+                >
+                  View tax benefit details →
+                </Link>
+              </div>
             </div>
           </div>
         </section>
@@ -806,27 +866,10 @@ export default function ListYourCarPage() {
             </div>
           </div>
         </section>
-
-        {/* Footer */}
-        <footer className="bg-white dark:bg-black border-t border-gray-200 dark:border-gray-800 py-8">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center text-xs text-gray-500">
-              <p className="mb-4">
-                © 2024 ItWhip Technologies. The smarter way to share your car.
-              </p>
-              <div className="space-x-4">
-                <Link href="/host-earnings" className="hover:text-purple-600">Detailed Earnings</Link>
-                <Link href="/host-protection" className="hover:text-purple-600">Protection Details</Link>
-                <Link href="/host-faq" className="hover:text-purple-600">FAQs</Link>
-                <Link href="/contact" className="hover:text-purple-600">Contact</Link>
-              </div>
-              <p className="mt-4 text-xs">
-                Insurance provided through licensed carriers. Earnings vary by vehicle, location, and availability.
-              </p>
-            </div>
-          </div>
-        </footer>
       </div>
+
+      {/* Full Footer */}
+      <Footer />
 
       {/* Application Form Modal */}
       {showInquiryForm && (
