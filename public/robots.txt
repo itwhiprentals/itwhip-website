@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://itwhip.com/sitemap.xml
