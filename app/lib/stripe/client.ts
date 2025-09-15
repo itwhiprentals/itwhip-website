@@ -1,8 +1,12 @@
 // app/lib/stripe/client.ts
 import Stripe from 'stripe'
 
-// Temporarily hardcode the key to bypass environment variable issues
-const STRIPE_KEY = 'sk_test_51O22e7IZPP7mao58ZBwgxNyQTKFW8uWVNb4he61hh2huTRp2y8enDK0EtPvFmjihJqw1vPaDOiex0UgRbykP4YhW0058b6R1jh'
+// Get the key from environment variable
+const STRIPE_KEY = process.env.STRIPE_SECRET_KEY!
+
+if (!STRIPE_KEY) {
+  throw new Error('STRIPE_SECRET_KEY is not set in environment variables')
+}
 
 // Initialize Stripe with your secret key
 export const stripe = new Stripe(
