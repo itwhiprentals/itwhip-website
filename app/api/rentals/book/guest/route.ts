@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { createGuestToken } from '@/app/lib/auth/guest-tokens'
-import { sendEmail } from '@/app/lib/email'
+import sendEmail from '@/app/lib/email'
 import { addHours } from 'date-fns'
 
 export async function POST(request: NextRequest) {
@@ -88,8 +88,8 @@ export async function POST(request: NextRequest) {
         taxes,
         totalAmount,
         status: initialStatus,
-        paymentStatus: 'pending',
-        verificationStatus: verificationRequired ? 'pending' : 'approved',
+        paymentStatus: 'PENDING',
+        verificationStatus: verificationRequired ? 'PENDING' : 'APPROVED',
         verificationDeadline: verificationRequired ? addHours(new Date(), 24) : null
       },
       include: {

@@ -153,7 +153,6 @@ export async function sendHostNotification(
 
 /**
  * Send charges processed email
- * Note: You have a charges-processed.tsx template, but it might need to be converted to return the expected format
  */
 export async function sendChargesProcessedEmail(
   to: string,
@@ -184,6 +183,76 @@ export async function sendChargesProcessedEmail(
   } catch (error) {
     console.error('Error sending charges processed email:', error)
     return { success: false, error: 'Failed to send charges processed email' }
+  }
+}
+
+/**
+ * Send payment failed email
+ */
+export async function sendPaymentFailedEmail(
+  to: string,
+  data: {
+    guestName: string
+    bookingCode: string
+    failureReason: string
+    amount: number
+    retryInstructions?: string
+  }
+): Promise<EmailResponse> {
+  try {
+    const subject = `Payment Failed - Action Required for ${data.bookingCode}`
+    
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+          <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2>⚠️ Payment Failed</h2>
+            <p>Hi ${data.guestName},</p>
+            <p>We were unable to process the payment for your recent rental charges.</p>
+            
+            <div style="background: #fee2e2; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <p><strong>Booking Code:</strong> ${data.bookingCode}</p>
+              <p><strong>Amount:</strong> $${data.amount.toFixed(2)}</p>
+              <p><strong>Reason:</strong> ${data.failureReason}</p>
+            </div>
+            
+            <p><strong>What to do next:</strong></p>
+            <p>${data.retryInstructions || 'Please update your payment method at https://itwhip.com/rentals/dashboard to avoid any service interruption.'}</p>
+            
+            <p>If you have questions, contact us at info@itwhip.com</p>
+            
+            <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
+            <p style="font-size: 12px; color: #666;">
+              © 2024 ItWhip. All rights reserved.<br>
+              Phoenix, Arizona
+            </p>
+          </div>
+        </body>
+      </html>
+    `
+    
+    const text = `
+      Payment Failed
+      
+      Hi ${data.guestName},
+      
+      We were unable to process the payment for your recent rental charges.
+      
+      Booking Code: ${data.bookingCode}
+      Amount: $${data.amount.toFixed(2)}
+      Reason: ${data.failureReason}
+      
+      What to do next:
+      ${data.retryInstructions || 'Please update your payment method at https://itwhip.com/rentals/dashboard'}
+      
+      If you have questions, contact us at info@itwhip.com
+    `
+    
+    return await sendEmail(to, subject, html, text)
+  } catch (error) {
+    console.error('Error sending payment failed email:', error)
+    return { success: false, error: 'Failed to send payment failed email' }
   }
 }
 

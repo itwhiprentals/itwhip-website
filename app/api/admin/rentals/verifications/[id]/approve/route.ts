@@ -7,7 +7,7 @@ import {
   sendHostNotification,
   sendChargesProcessedEmail,
   sendChargesWaivedEmail
-} from '@/app/lib/email'
+} from '@/app/lib/email/index'
 import { PaymentProcessor } from '@/app/lib/stripe/payment-processor'
 
 interface ChargeAdjustment {
@@ -390,10 +390,10 @@ async function waiveAllCharges(
       await prisma.tripCharge.update({
         where: { id: booking.tripCharges[0].id },
         data: {
-          chargeStatus: 'WAIVED',
+          chargeStatus: 'FULLY_WAIVED',
           waivedAmount: charges.total,
-          waivedReason: reason,
-          waivedByAdminId: adminId,
+          waiveReason: reason,
+          waivedBy: adminId,
           waivedAt: new Date()
         }
       })
@@ -495,11 +495,11 @@ async function partialWaiveCharges(
       await prisma.tripCharge.update({
         where: { id: booking.tripCharges[0].id },
         data: {
-          chargeStatus: chargeResult?.status === 'succeeded' ? 'PARTIAL_CHARGED' : 'PARTIAL_WAIVED',
+          chargeStatus: chargeResult?.status === 'succeeded' ? 'PARTIAL_CHARGED' : 'PARTIALLY_WAIVED',
           waivedAmount: waiveResult.waivedAmount,
           chargedAmount: waiveResult.remainingAmount,
-          waivedReason: reason,
-          waivedByAdminId: adminId,
+          waiveReason: reason,
+          waivedBy: adminId,
           waivedAt: new Date(),
           stripeChargeId: chargeResult?.chargeId,
           chargedAt: chargeResult?.status === 'succeeded' ? new Date() : null

@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { PaymentProcessor } from '@/app/lib/stripe/payment-processor'
-import { sendChargesProcessedEmail, sendPaymentFailedEmail } from '@/app/lib/email'
+import { sendChargesProcessedEmail, sendPaymentFailedEmail } from '@/app/lib/email/index'
 
 interface QueueFilters {
   status?: 'pending' | 'failed' | 'expired' | 'all'
@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
     // Calculate statistics
     const stats = {
       totalPending: bookings.length,
-      totalAmount: bookings.reduce((sum, b) => sum + (b.pendingChargesAmount || 0), 0),
+      totalAmount: bookings.reduce((sum, b) => sum + (b.pendingChargesAmount?.toNumber() || 0), 0),
       oldestPending: bookings[0]?.tripEndedAt || null,
       readyToProcess: bookings.filter(b => {
         const tripEndTime = b.tripEndedAt ? new Date(b.tripEndedAt) : null
@@ -116,7 +116,7 @@ export async function GET(request: NextRequest) {
         bookingCode: booking.bookingCode,
         guestName: booking.guestName,
         guestEmail: booking.guestEmail,
-        pendingAmount: booking.pendingChargesAmount,
+        pendingAmount: booking.pendingChargesAmount?.toNumber() || 0,
         tripEndedAt: booking.tripEndedAt,
         hoursWaiting,
         isExpired: hoursWaiting >= olderThan,
@@ -125,7 +125,7 @@ export async function GET(request: NextRequest) {
         tripCharge: tripCharge ? {
           id: tripCharge.id,
           status: tripCharge.chargeStatus,
-          retryCount: tripCharge.retryCount || 0,
+          retryCount: tripCharge.chargeAttempts || 0,
           lastFailureReason: tripCharge.failureReason
         } : null,
         car: {
@@ -235,7 +235,7 @@ export async function POST(request: NextRequest) {
     
     for (const booking of bookingsToProcess) {
       const tripCharge = booking.tripCharges[0]
-      const retryCount = tripCharge?.retryCount || 0
+      const retryCount = tripCharge?.chargeAttempts || 0
       
       // Skip if exceeded max retries
       if (retryCount >= maxRetries) {
@@ -250,7 +250,8 @@ export async function POST(request: NextRequest) {
       }
       
       // Skip if no charges
-      if (!booking.pendingChargesAmount || booking.pendingChargesAmount <= 0) {
+      const pendingAmount = booking.pendingChargesAmount?.toNumber() || 0
+      if (pendingAmount <= 0) {
         results.push({
           bookingId: booking.id,
           bookingCode: booking.bookingCode,
@@ -262,23 +263,23 @@ export async function POST(request: NextRequest) {
       
       if (dryRun) {
         // Dry run - don't actually charge
-        console.log(`[Charge Queue] DRY RUN: Would charge ${booking.bookingCode} $${booking.pendingChargesAmount}`)
+        console.log(`[Charge Queue] DRY RUN: Would charge ${booking.bookingCode} $${pendingAmount}`)
         results.push({
           bookingId: booking.id,
           bookingCode: booking.bookingCode,
           status: 'success',
-          amount: booking.pendingChargesAmount,
+          amount: pendingAmount,
           error: 'Dry run - no charge processed'
         })
       } else {
         // Attempt to process the charge
         try {
-          console.log(`[Charge Queue] Processing charge for ${booking.bookingCode}: $${booking.pendingChargesAmount}`)
+          console.log(`[Charge Queue] Processing charge for ${booking.bookingCode}: $${pendingAmount}`)
           
           const chargeResult = await PaymentProcessor.chargeAdditionalFees(
             booking.stripeCustomerId!,
             booking.stripePaymentMethodId!,
-            Math.round(booking.pendingChargesAmount * 100),
+            Math.round(pendingAmount * 100),
             `Auto-processed trip charges for booking ${booking.bookingCode}`,
             {
               bookingId: booking.id,
@@ -314,7 +315,7 @@ export async function POST(request: NextRequest) {
                     chargedAt: new Date(),
                     stripeChargeId: chargeResult.chargeId,
                     processedByAdminId: adminId,
-                    retryCount: retryCount + 1
+                    chargeAttempts: retryCount + 1
                   }
                 })
               ] : []),
@@ -326,9 +327,9 @@ export async function POST(request: NextRequest) {
                   senderId: 'system',
                   senderType: 'admin',
                   senderName: 'System',
-                  message: `✅ Additional charges of $${booking.pendingChargesAmount.toFixed(2)} have been automatically processed after the 24-hour review period.`,
+                  message: `✅ Additional charges of $${pendingAmount.toFixed(2)} have been automatically processed after the 24-hour review period.`,
                   category: 'charges',
-                  metadata: { chargeId: chargeResult.chargeId, amount: booking.pendingChargesAmount },
+                  metadata: { chargeId: chargeResult.chargeId, amount: pendingAmount },
                   isRead: false
                 }
               })
@@ -339,7 +340,7 @@ export async function POST(request: NextRequest) {
               await sendChargesProcessedEmail(booking.guestEmail, {
                 guestName: booking.guestName || 'Guest',
                 bookingCode: booking.bookingCode,
-                chargeAmount: booking.pendingChargesAmount,
+                chargeAmount: pendingAmount,
                 chargeId: chargeResult.chargeId
               }).catch(console.error)
             }
@@ -348,11 +349,11 @@ export async function POST(request: NextRequest) {
               bookingId: booking.id,
               bookingCode: booking.bookingCode,
               status: 'success',
-              amount: booking.pendingChargesAmount,
+              amount: pendingAmount,
               chargeId: chargeResult.chargeId
             })
             
-            console.log(`[Charge Queue] Successfully charged ${booking.bookingCode}: $${booking.pendingChargesAmount}`)
+            console.log(`[Charge Queue] Successfully charged ${booking.bookingCode}: $${pendingAmount}`)
             
           } else {
             // Charge failed
@@ -379,8 +380,8 @@ export async function POST(request: NextRequest) {
                 data: {
                   chargeStatus: 'FAILED',
                   failureReason: chargeError.message,
-                  retryCount: retryCount + 1,
-                  lastRetryAt: new Date()
+                  chargeAttempts: retryCount + 1,
+                  lastAttemptAt: new Date()
                 }
               })
             ] : []),
@@ -392,7 +393,7 @@ export async function POST(request: NextRequest) {
                 senderId: 'system',
                 senderType: 'admin',
                 senderName: 'System',
-                message: `⚠️ Failed to process additional charges of $${booking.pendingChargesAmount.toFixed(2)}. ${
+                message: `⚠️ Failed to process additional charges of $${pendingAmount.toFixed(2)}. ${
                   retryCount + 1 >= maxRetries 
                     ? 'Maximum retry attempts reached. Manual intervention required.'
                     : 'Will retry again later.'
@@ -410,7 +411,7 @@ export async function POST(request: NextRequest) {
                 data: {
                   type: 'CHARGE_FAILED',
                   title: `Payment Failed - ${booking.bookingCode}`,
-                  message: `Failed to process $${booking.pendingChargesAmount.toFixed(2)} after ${maxRetries} attempts. Manual intervention required.`,
+                  message: `Failed to process $${pendingAmount.toFixed(2)} after ${maxRetries} attempts. Manual intervention required.`,
                   priority: 'HIGH',
                   status: 'UNREAD',
                   relatedId: booking.id,
@@ -418,7 +419,7 @@ export async function POST(request: NextRequest) {
                   actionRequired: true,
                   actionUrl: `/admin/rentals/verifications/${booking.id}`,
                   metadata: {
-                    amount: booking.pendingChargesAmount,
+                    amount: pendingAmount,
                     error: chargeError.message,
                     retryCount: retryCount + 1
                   }
@@ -432,7 +433,7 @@ export async function POST(request: NextRequest) {
             await sendPaymentFailedEmail(booking.guestEmail, {
               guestName: booking.guestName || 'Guest',
               bookingCode: booking.bookingCode,
-              chargeAmount: booking.pendingChargesAmount,
+              amount: pendingAmount,
               failureReason: chargeError.message
             }).catch(console.error)
           }
@@ -441,7 +442,7 @@ export async function POST(request: NextRequest) {
             bookingId: booking.id,
             bookingCode: booking.bookingCode,
             status: 'failed',
-            amount: booking.pendingChargesAmount,
+            amount: pendingAmount,
             error: chargeError.message
           })
         }
@@ -516,13 +517,19 @@ export async function DELETE(request: NextRequest) {
       )
     }
     
+    // Get the booking first to capture the amount
+    const bookingBefore = await prisma.rentalBooking.findUnique({
+      where: { id: bookingId },
+      select: { pendingChargesAmount: true }
+    })
+    
     // Clear pending charges for the booking
     const booking = await prisma.rentalBooking.update({
       where: { id: bookingId },
       data: {
         pendingChargesAmount: null,
         verificationStatus: 'COMPLETED',
-        paymentStatus: 'CHARGES_CLEARED',
+        paymentStatus: 'CHARGES_WAIVED',
         chargesNotes: reason
       }
     })
@@ -534,10 +541,10 @@ export async function DELETE(request: NextRequest) {
         chargeStatus: { in: ['PENDING', 'FAILED'] }
       },
       data: {
-        chargeStatus: 'CLEARED',
-        clearedReason: reason,
-        clearedByAdminId: adminId,
-        clearedAt: new Date()
+        chargeStatus: 'FULLY_WAIVED',
+        waiveReason: reason,
+        waivedByAdminId: adminId,
+        waivedAt: new Date()
       }
     })
     
@@ -550,7 +557,7 @@ export async function DELETE(request: NextRequest) {
         metadata: {
           reason,
           clearedBy: adminId,
-          amount: booking.pendingChargesAmount
+          amount: bookingBefore?.pendingChargesAmount?.toNumber() || 0
         },
         ipAddress: request.headers.get('x-forwarded-for') || 'admin'
       }
@@ -562,7 +569,7 @@ export async function DELETE(request: NextRequest) {
       booking: {
         id: booking.id,
         bookingCode: booking.bookingCode,
-        clearedAmount: booking.pendingChargesAmount
+        clearedAmount: bookingBefore?.pendingChargesAmount?.toNumber() || 0
       }
     })
     
