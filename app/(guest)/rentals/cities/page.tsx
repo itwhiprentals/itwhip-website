@@ -16,6 +16,9 @@ import {
   IoStarOutline
 } from 'react-icons/io5'
 
+// Add ISR - Revalidate every 60 seconds
+export const revalidate = 60
+
 export const metadata: Metadata = {
   title: 'Car Rentals by City | Phoenix Metro Areas | ItWhip',
   description: 'Browse car rentals in Phoenix, Scottsdale, Tempe, Mesa, and more Arizona cities. Find the perfect rental car near you with instant booking available.',
