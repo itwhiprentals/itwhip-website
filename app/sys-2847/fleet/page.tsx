@@ -1,7 +1,6 @@
 // app/sys-2847/fleet/page.tsx
 'use client'
 
-export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Car, CarStatus } from './types'
@@ -11,11 +10,15 @@ export default function FleetDashboard() {
   const router = useRouter()
   const [cars, setCars] = useState<Car[]>([])
   const [loading, setLoading] = useState(true)
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list') // Default to list on mobile
   const [filter, setFilter] = useState<string>('all')
 
   useEffect(() => {
     fetchCars()
+    // Set view mode based on screen size
+    if (window.innerWidth < 768) {
+      setViewMode('list')
+    }
   }, [])
 
   const fetchCars = async () => {
@@ -57,38 +60,38 @@ export default function FleetDashboard() {
   if (loading) return <LoadingSpinner />
 
   return (
-    <div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 sm:p-6">
       <SectionHeader 
         title="Fleet Management" 
         description={`Managing ${cars.length} vehicles`}
       />
 
-      {/* Stats */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
-        <StatCard title="Total Cars" value={stats.total} color="white" />
+      {/* Stats - Mobile responsive */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
+        <StatCard title="Total" value={stats.total} color="white" />
         <StatCard title="Available" value={stats.available} color="green" />
         <StatCard title="Booked" value={stats.booked} color="blue" />
         <StatCard title="Maintenance" value={stats.maintenance} color="yellow" />
       </div>
 
-      {/* Actions Bar */}
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex gap-2">
+      {/* Actions Bar - Mobile optimized */}
+      <div className="flex flex-col sm:flex-row gap-3 sm:justify-between sm:items-center mb-6">
+        <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0">
           <button
             onClick={() => router.push('/sys-2847/fleet/add')}
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+            className="flex-shrink-0 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors text-sm sm:text-base"
           >
             Add Car
           </button>
           <button
             onClick={() => router.push('/sys-2847/fleet/bulk')}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+            className="flex-shrink-0 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm sm:text-base"
           >
             Bulk Upload
           </button>
           <button
             onClick={() => router.push('/sys-2847/fleet/templates')}
-            className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors"
+            className="flex-shrink-0 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors text-sm sm:text-base"
           >
             Templates
           </button>
@@ -98,7 +101,7 @@ export default function FleetDashboard() {
           <select
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 sm:flex-none px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="all">All Status</option>
             <option value="AVAILABLE">Available</option>
@@ -110,7 +113,7 @@ export default function FleetDashboard() {
             onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
             className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded text-sm text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
-            {viewMode === 'grid' ? 'List View' : 'Grid View'}
+            {viewMode === 'grid' ? '☰' : '⊞'}
           </button>
         </div>
       </div>
@@ -124,7 +127,7 @@ export default function FleetDashboard() {
         />
       ) : (
         <div className={viewMode === 'grid' 
-          ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4' 
+          ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4' 
           : 'space-y-2'
         }>
           {filteredCars.map((car) => {
@@ -261,9 +264,9 @@ export default function FleetDashboard() {
                   </>
                 ) : (
                   /* List View - Mobile Optimized */
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-4 p-4">
+                  <div className="flex items-center gap-3 p-3">
                     {/* Thumbnail */}
-                    <div className="w-full sm:w-24 h-32 sm:h-16 bg-gray-100 dark:bg-gray-900 rounded flex-shrink-0 overflow-hidden">
+                    <div className="w-20 h-20 bg-gray-100 dark:bg-gray-900 rounded flex-shrink-0 overflow-hidden">
                       {photoUrl ? (
                         <img 
                           src={photoUrl} 
@@ -280,29 +283,24 @@ export default function FleetDashboard() {
                       )}
                     </div>
                     
-                    {/* List details */}
-                    <div className="flex-1 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-                      <div className="flex flex-col sm:flex-row sm:gap-6 sm:items-center">
-                        <div>
-                          <div className="font-bold text-gray-900 dark:text-white">
+                    {/* List details - Mobile optimized */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start mb-1">
+                        <div className="min-w-0 flex-1 mr-2">
+                          <div className="font-bold text-gray-900 dark:text-white text-sm truncate">
                             {car.year} {car.make} {car.model}
                           </div>
-                          <div className="text-sm text-gray-600 dark:text-gray-400">
-                            {car.color} • {car.host?.name || 'Unknown Host'}
-                          </div>
-                          <div className="text-sm text-gray-600 dark:text-gray-400 mt-1 sm:hidden">
-                            <span className="text-green-600 dark:text-green-400 font-semibold">${car.dailyRate}</span>/day • {car.city}, {car.state}
+                          <div className="text-xs text-gray-600 dark:text-gray-400">
+                            {car.color} • {car.city}
                           </div>
                         </div>
-                        <div className="hidden sm:block text-gray-600 dark:text-gray-400 text-sm">
-                          <span className="text-green-600 dark:text-green-400 font-semibold">${car.dailyRate}</span>/day
-                        </div>
-                        <div className="hidden sm:block text-gray-600 dark:text-gray-400 text-sm">
-                          {car.city}, {car.state}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 justify-between sm:justify-end">
                         <StatusBadge status={car.status || CarStatus.AVAILABLE} />
+                      </div>
+                      
+                      <div className="flex items-center justify-between mt-2">
+                        <div className="text-green-600 dark:text-green-400 font-semibold">
+                          ${car.dailyRate}<span className="text-xs text-gray-500">/day</span>
+                        </div>
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
