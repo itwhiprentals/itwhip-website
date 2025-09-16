@@ -3,14 +3,17 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
-import CityCarCard from './components/CityCarCard'
 import prisma from '@/app/lib/database/prisma'
+import { generateCarUrl } from '@/app/lib/utils/urls'
 import styles from './cities.module.css'
 import { 
   IoLocationOutline, 
   IoArrowForwardOutline,
   IoCarOutline,
-  IoNavigateOutline
+  IoNavigateOutline,
+  IoFlashOutline,
+  IoStarSharp,
+  IoStarOutline
 } from 'react-icons/io5'
 
 export const metadata: Metadata = {
@@ -48,6 +51,101 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
   return R * c
 }
 
+// Car Card Component - Matching the [city]/page.tsx design
+function CarCard({ car }: { car: any }) {
+  const imageUrl = car.photos?.[0]?.url || 
+    'https://images.unsplash.com/photo-1583267746897-2cf415887172?w=800&h=600&fit=crop'
+  
+  const showLocalHostBadge = car.host && !car.instantBook
+  const carUrl = generateCarUrl({
+    id: car.id,
+    make: car.make,
+    model: car.model,
+    year: car.year,
+    city: car.city
+  })
+
+  return (
+    <Link
+      href={carUrl}
+      className="flex-shrink-0 w-64 sm:w-72 group bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300"
+    >
+      {/* Image Container - Wide rectangular */}
+      <div className="relative h-24 sm:h-28 bg-gray-200 dark:bg-gray-700 overflow-hidden">
+        <img
+          src={imageUrl}
+          alt={`${car.year} ${car.make} ${car.model}`}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+        />
+        
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+        
+        {/* Badges - Smaller */}
+        <div className="absolute top-2 left-2 flex gap-1">
+          {showLocalHostBadge && (
+            <span className="px-2 py-0.5 bg-black/70 backdrop-blur-sm text-white text-[10px] font-bold rounded-full flex items-center gap-1">
+              <IoStarSharp className="w-2.5 h-2.5" />
+              HOST
+            </span>
+          )}
+          {car.instantBook && (
+            <span className="px-2 py-0.5 bg-emerald-500/90 backdrop-blur-sm text-white text-[10px] font-bold rounded-full flex items-center gap-1">
+              <IoFlashOutline className="w-2.5 h-2.5" />
+              INSTANT
+            </span>
+          )}
+        </div>
+        
+        {/* Price Badge - Smaller */}
+        <div className="absolute bottom-2 right-2">
+          <div className="px-2 py-1 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-md shadow-lg">
+            <div className="flex items-baseline gap-0.5">
+              <span className="text-sm font-bold text-gray-900 dark:text-white">
+                ${car.dailyRate}
+              </span>
+              <span className="text-[10px] text-gray-600 dark:text-gray-400">/day</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Content - Compact */}
+      <div className="p-3">
+        {/* Title - Make and Model on separate lines */}
+        <div className="mb-1">
+          <div className="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors line-clamp-1">
+            {car.year} {car.make}
+          </div>
+          <div className="text-xs font-medium text-gray-700 dark:text-gray-300 line-clamp-1">
+            {car.model}
+          </div>
+        </div>
+        
+        {/* Car Type, Specs, Rating & Trips - All in one row */}
+        <div className="flex items-center gap-1.5 text-[11px] text-gray-600 dark:text-gray-400">
+          <span className="capitalize">{car.carType?.toLowerCase() || 'sedan'}</span>
+          <span>•</span>
+          <span>{car.seats || 5} seats</span>
+          {car.rating && (
+            <>
+              <span>•</span>
+              <div className="flex items-center gap-0.5">
+                <IoStarOutline className="w-2.5 h-2.5 text-amber-400 fill-current" />
+                <span className="font-medium text-gray-700 dark:text-gray-300">
+                  {car.rating.toFixed(1)}
+                </span>
+              </div>
+            </>
+          )}
+          <span>•</span>
+          <span>{car.totalTrips || 0} trips</span>
+        </div>
+      </div>
+    </Link>
+  )
+}
+
 export default async function CitiesPage() {
   // Fetch all active cars grouped by city
   const carsByCity = await prisma.rentalCar.groupBy({
@@ -82,6 +180,8 @@ export default async function CitiesPage() {
           rating: true,
           totalTrips: true,
           instantBook: true,
+          carType: true,
+          seats: true,
           photos: {
             select: {
               url: true,
@@ -153,9 +253,10 @@ export default async function CitiesPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header />
       
-      <div className="pt-16">
-        {/* Hero Section with Video Background */}
-        <section className="relative h-[400px] sm:h-[500px] md:h-[600px] overflow-hidden">
+      {/* Main content wrapper to match [city]/page.tsx structure */}
+      <div>
+        {/* Hero Section */}
+        <section className="relative h-[300px] sm:h-[350px] md:h-[400px] overflow-hidden">
           {/* Video Background */}
           <div className="absolute inset-0 z-0">
             <video
@@ -175,22 +276,22 @@ export default async function CitiesPage() {
           {/* Hero Content */}
           <div className="relative z-10 h-full flex items-center justify-center">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-              <div className="flex items-center justify-center gap-2 text-amber-400 mb-4">
+              <div className="flex items-center justify-center gap-2 text-amber-400 mb-3">
                 <IoNavigateOutline className="w-5 h-5" />
                 <span className="text-sm font-semibold">Near Phoenix, AZ</span>
               </div>
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-4">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-3">
                 Browse Cars by City
               </h1>
-              <p className="text-lg sm:text-xl text-gray-200 max-w-2xl mx-auto">
+              <p className="text-base sm:text-lg text-gray-200 max-w-2xl mx-auto">
                 Find the perfect rental car in your area. {sortedCities.reduce((sum, c) => sum + c.count, 0)} cars available across {sortedCities.length} cities.
               </p>
             </div>
           </div>
         </section>
 
-        {/* Cities List */}
-        <section className="py-8 sm:py-12">
+        {/* Cities List Section - matching [city]/page.tsx structure */}
+        <section className="py-6 sm:py-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {sortedCities.length > 0 ? (
               <div className="space-y-8 sm:space-y-12">
@@ -199,9 +300,9 @@ export default async function CitiesPage() {
                   const citySlug = (cityData.city || '').toLowerCase().replace(/\s+/g, '-')
                   
                   return (
-                    <div key={cityData.city} className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
-                      {/* City Header */}
-                      <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
+                    <div key={cityData.city} className="rounded-lg overflow-hidden">
+                      {/* City Header - Consistent with [city]/page.tsx */}
+                      <div className="pb-4 border-b border-gray-200 dark:border-gray-700">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-4">
                             <div>
@@ -237,19 +338,17 @@ export default async function CitiesPage() {
                       </div>
 
                       {/* Cars Preview - Horizontal Scroll */}
-                      <div className="relative">
-                        <div className={`flex gap-3 sm:gap-4 p-4 sm:p-6 ${styles.scrollbarHide}`}>
+                      <div className="relative pt-4">
+                        <div className={`flex gap-3 sm:gap-4 pb-4 ${styles.scrollbarHide}`}>
                           {cityData.cars.map((car) => (
-                            <div key={car.id} className="flex-shrink-0 w-48 sm:w-56 md:w-64">
-                              <CityCarCard car={car} />
-                            </div>
+                            <CarCard key={car.id} car={car} />
                           ))}
                           
                           {/* Show More Card */}
                           {cityData.count > cityData.cars.length && (
                             <Link
                               href={`/rentals/cities/${citySlug}`}
-                              className="flex-shrink-0 w-48 sm:w-56 md:w-64 bg-gray-100 dark:bg-gray-700 rounded-lg flex flex-col items-center justify-center h-32 sm:h-36 md:h-40 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group"
+                              className="flex-shrink-0 w-64 sm:w-72 bg-gray-100 dark:bg-gray-700 rounded-lg flex flex-col items-center justify-center h-[164px] sm:h-[176px] hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group"
                             >
                               <IoCarOutline className="w-8 h-8 text-gray-400 dark:text-gray-500 mb-2 group-hover:scale-110 transition-transform" />
                               <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
@@ -263,7 +362,7 @@ export default async function CitiesPage() {
                         </div>
                         
                         {/* Mobile View All Button */}
-                        <div className="sm:hidden px-4 pb-4">
+                        <div className="sm:hidden pt-2">
                           <Link
                             href={`/rentals/cities/${citySlug}`}
                             className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-lg font-medium text-sm"
@@ -298,8 +397,6 @@ export default async function CitiesPage() {
             )}
           </div>
         </section>
-
-        {/* SEO Content Section - Removed */}
       </div>
       
       <Footer />

@@ -64,13 +64,6 @@ const navItems = [
   }
 ]
 
-interface HeaderProps {
-  isMobileMenuOpen: boolean
-  setIsMobileMenuOpen: (isOpen: boolean) => void
-  handleGetAppClick: () => void
-  handleSearchClick: () => void
-}
-
 interface User {
   id: string
   name: string
@@ -78,14 +71,21 @@ interface User {
   role: string
 }
 
+// Make all props optional with default values
+interface HeaderProps {
+  handleGetAppClick?: () => void
+  handleSearchClick?: () => void
+}
+
 export default function Header({
-  isMobileMenuOpen,
-  setIsMobileMenuOpen,
-  handleGetAppClick,
-  handleSearchClick
-}: HeaderProps) {
+  handleGetAppClick = () => {},
+  handleSearchClick = () => {}
+}: HeaderProps = {}) {
   const router = useRouter()
   const pathname = usePathname()
+  
+  // State management - all internal to Header
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [scrolled, setScrolled] = useState(false)

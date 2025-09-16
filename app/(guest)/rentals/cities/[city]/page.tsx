@@ -6,13 +6,13 @@ import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
 import prisma from '@/app/lib/database/prisma'
 import { generateCarUrl } from '@/app/lib/utils/urls'
+import CitySearchWrapper from '@/app/(guest)/rentals/cities/[city]/CitySearchWrapper'
 import { 
   IoLocationOutline, 
   IoArrowBackOutline,
   IoFlashOutline,
   IoStarSharp,
   IoCarOutline,
-  IoFilterOutline,
   IoStarOutline,
   IoCarSportOutline
 } from 'react-icons/io5'
@@ -65,6 +65,101 @@ export async function generateStaticParams() {
   }))
 }
 
+// Car Card Component - More rectangular/horizontal
+function CarCard({ car, cityName }: { car: any, cityName: string }) {
+  const imageUrl = car.photos?.[0]?.url || 
+    'https://images.unsplash.com/photo-1583267746897-2cf415887172?w=800&h=600&fit=crop'
+  
+  const showLocalHostBadge = car.host && !car.instantBook
+  const carUrl = generateCarUrl({
+    id: car.id,
+    make: car.make,
+    model: car.model,
+    year: car.year,
+    city: car.city || cityName
+  })
+
+  return (
+    <Link
+      href={carUrl}
+      className="flex-shrink-0 w-64 sm:w-72 group bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300"
+    >
+      {/* Image Container - Wide rectangular */}
+      <div className="relative h-24 sm:h-28 bg-gray-200 dark:bg-gray-700 overflow-hidden">
+        <img
+          src={imageUrl}
+          alt={`${car.year} ${car.make} ${car.model}`}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+        />
+        
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+        
+        {/* Badges - Smaller */}
+        <div className="absolute top-2 left-2 flex gap-1">
+          {showLocalHostBadge && (
+            <span className="px-2 py-0.5 bg-black/70 backdrop-blur-sm text-white text-[10px] font-bold rounded-full flex items-center gap-1">
+              <IoStarSharp className="w-2.5 h-2.5" />
+              HOST
+            </span>
+          )}
+          {car.instantBook && (
+            <span className="px-2 py-0.5 bg-emerald-500/90 backdrop-blur-sm text-white text-[10px] font-bold rounded-full flex items-center gap-1">
+              <IoFlashOutline className="w-2.5 h-2.5" />
+              INSTANT
+            </span>
+          )}
+        </div>
+        
+        {/* Price Badge - Smaller */}
+        <div className="absolute bottom-2 right-2">
+          <div className="px-2 py-1 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-md shadow-lg">
+            <div className="flex items-baseline gap-0.5">
+              <span className="text-sm font-bold text-gray-900 dark:text-white">
+                ${car.dailyRate}
+              </span>
+              <span className="text-[10px] text-gray-600 dark:text-gray-400">/day</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Content - Compact */}
+      <div className="p-3">
+        {/* Title - Make and Model on separate lines */}
+        <div className="mb-1">
+          <div className="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors line-clamp-1">
+            {car.year} {car.make}
+          </div>
+          <div className="text-xs font-medium text-gray-700 dark:text-gray-300 line-clamp-1">
+            {car.model}
+          </div>
+        </div>
+        
+        {/* Car Type, Specs, Rating & Trips - All in one row */}
+        <div className="flex items-center gap-1.5 text-[11px] text-gray-600 dark:text-gray-400">
+          <span className="capitalize">{car.carType?.toLowerCase() || 'sedan'}</span>
+          <span>•</span>
+          <span>{car.seats} seats</span>
+          {car.rating && (
+            <>
+              <span>•</span>
+              <div className="flex items-center gap-0.5">
+                <IoStarOutline className="w-2.5 h-2.5 text-amber-400 fill-current" />
+                <span className="font-medium text-gray-700 dark:text-gray-300">
+                  {car.rating.toFixed(1)}
+                </span>
+              </div>
+            </>
+          )}
+          <span>•</span>
+          <span>{car.totalTrips} trips</span>
+        </div>
+      </div>
+    </Link>
+  )
+}
+
 export default async function CityPage({ 
   params 
 }: { 
@@ -73,8 +168,8 @@ export default async function CityPage({
   const { city } = await params
   const cityName = city.charAt(0).toUpperCase() + city.slice(1).replace(/-/g, ' ')
 
-  // Fetch all cars for this city
-  const cars = await prisma.rentalCar.findMany({
+  // Fetch all cars for this city with more details
+  const allCars = await prisma.rentalCar.findMany({
     where: { 
       city: {
         equals: cityName,
@@ -96,13 +191,11 @@ export default async function CityPage({
       features: true,
       city: true,
       address: true,
-      latitude: true,
-      longitude: true,
+      fuelType: true,
       rating: true,
       totalTrips: true,
       instantBook: true,
-      airportPickup: true,
-      hotelDelivery: true,
+      createdAt: true,
       photos: {
         select: {
           url: true,
@@ -110,45 +203,25 @@ export default async function CityPage({
           isHero: true
         },
         orderBy: { order: 'asc' },
-        take: 3
+        take: 1
       },
       host: {
         select: {
           name: true,
           profilePhoto: true,
-          isVerified: true,
-          responseTime: true,
-          responseRate: true
-        }
-      },
-      _count: {
-        select: {
-          reviews: {
-            where: { isVisible: true }
-          }
+          isVerified: true
         }
       }
-    },
-    orderBy: [
-      { rating: 'desc' },
-      { totalTrips: 'desc' },
-      { createdAt: 'desc' }
-    ]
+    }
   })
 
   // If no cars found, show 404
-  if (cars.length === 0) {
+  if (allCars.length === 0) {
     notFound()
   }
 
-  // Calculate price range for the city
-  const prices = cars.map(car => car.dailyRate)
-  const minPrice = Math.min(...prices)
-  const maxPrice = Math.max(...prices)
-  const avgPrice = Math.round(prices.reduce((a, b) => a + b, 0) / prices.length)
-
-  // Parse features for display
-  const carsWithParsedFeatures = cars.map(car => {
+  // Parse features for all cars
+  const carsWithParsedFeatures = allCars.map(car => {
     let parsedFeatures = []
     try {
       if (typeof car.features === 'string') {
@@ -162,246 +235,280 @@ export default async function CityPage({
     return { ...car, features: parsedFeatures }
   })
 
+  // Categorize cars
+  const newListings = carsWithParsedFeatures
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 10)
+
+  const topRated = carsWithParsedFeatures
+    .filter(car => car.rating && car.rating >= 4.5)
+    .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+
+  const luxuryCars = carsWithParsedFeatures
+    .filter(car => 
+      car.carType === 'luxury' || 
+      car.carType === 'convertible' ||
+      car.dailyRate >= 200 ||
+      car.make.toLowerCase().includes('mercedes') ||
+      car.make.toLowerCase().includes('bmw') ||
+      car.make.toLowerCase().includes('audi') ||
+      car.make.toLowerCase().includes('tesla') ||
+      car.make.toLowerCase().includes('porsche') ||
+      car.make.toLowerCase().includes('lamborghini') ||
+      car.make.toLowerCase().includes('ferrari')
+    )
+    .sort((a, b) => b.dailyRate - a.dailyRate)
+
+  const electricCars = carsWithParsedFeatures
+    .filter(car => 
+      car.fuelType === 'electric' || 
+      car.fuelType === 'hybrid' ||
+      car.make.toLowerCase().includes('tesla') ||
+      car.model.toLowerCase().includes('electric') ||
+      car.model.toLowerCase().includes('ev')
+    )
+
+  const affordableCars = carsWithParsedFeatures
+    .filter(car => car.dailyRate <= 100)
+    .sort((a, b) => a.dailyRate - b.dailyRate)
+
+  // Prepare searchable content for the wrapper
+  const searchableContent = [
+    {
+      sectionId: 'new-listings',
+      searchTerms: newListings.flatMap(car => [
+        car.make,
+        car.model,
+        car.carType || '',
+        car.year.toString(),
+        ...car.features,
+        'new',
+        'recent',
+        'latest'
+      ])
+    },
+    {
+      sectionId: 'top-rated',
+      searchTerms: topRated.flatMap(car => [
+        car.make,
+        car.model,
+        car.carType || '',
+        car.year.toString(),
+        ...car.features,
+        'top',
+        'rated',
+        'best',
+        '5 star'
+      ])
+    },
+    {
+      sectionId: 'luxury',
+      searchTerms: luxuryCars.flatMap(car => [
+        car.make,
+        car.model,
+        car.carType || '',
+        car.year.toString(),
+        ...car.features,
+        'luxury',
+        'premium',
+        'high-end'
+      ])
+    },
+    {
+      sectionId: 'electric',
+      searchTerms: electricCars.flatMap(car => [
+        car.make,
+        car.model,
+        car.carType || '',
+        car.year.toString(),
+        ...car.features,
+        'electric',
+        'ev',
+        'hybrid',
+        'eco'
+      ])
+    },
+    {
+      sectionId: 'affordable',
+      searchTerms: affordableCars.flatMap(car => [
+        car.make,
+        car.model,
+        car.carType || '',
+        car.year.toString(),
+        ...car.features,
+        'budget',
+        'cheap',
+        'affordable',
+        'under 100'
+      ])
+    }
+  ].filter(section => section.searchTerms.length > 0)
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header />
       
-      <div className="pt-16">
-        {/* City Hero Section */}
-        <section className="bg-gradient-to-b from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-900 py-8 sm:py-12">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            {/* Breadcrumb */}
-            <nav className="flex items-center gap-2 text-sm mb-6">
-              <Link 
-                href="/rentals/cities" 
-                className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white flex items-center gap-1"
-              >
-                <IoArrowBackOutline className="w-4 h-4" />
-                All Cities
-              </Link>
-              <span className="text-gray-400">/</span>
-              <span className="text-gray-900 dark:text-white font-medium">{cityName}</span>
-            </nav>
-
-            {/* City Header */}
-            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-              <div>
-                <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-2">
-                  {cityName} Car Rentals
-                </h1>
-                <p className="text-lg text-gray-600 dark:text-gray-400">
-                  {cars.length} {cars.length === 1 ? 'car' : 'cars'} available • ${minPrice}-${maxPrice}/day
-                </p>
-              </div>
-              
-              {/* Sort/Filter Options */}
-              <div className="flex items-center gap-3">
-                <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                  <IoFilterOutline className="w-4 h-4" />
-                  <span className="text-sm font-medium">Filters</span>
-                </button>
-                <select className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium">
-                  <option>Recommended</option>
-                  <option>Price: Low to High</option>
-                  <option>Price: High to Low</option>
-                  <option>Most Trips</option>
-                  <option>Best Rated</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Cars Grid */}
-        <section className="py-8 sm:py-12">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {carsWithParsedFeatures.map((car) => {
-                const imageUrl = car.photos?.[0]?.url || 
-                  'https://images.unsplash.com/photo-1583267746897-2cf415887172?w=800&h=600&fit=crop'
-                
-                const showLocalHostBadge = car.host && !car.instantBook
-                const carUrl = generateCarUrl({
-                  id: car.id,
-                  make: car.make,
-                  model: car.model,
-                  year: car.year,
-                  city: car.city || cityName
-                })
-                
-                return (
-                  <Link
-                    key={car.id}
-                    href={carUrl}
-                    className="group bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
-                  >
-                    {/* Image Container */}
-                    <div className="relative h-56 sm:h-64 bg-gray-200 dark:bg-gray-700 overflow-hidden">
-                      <img
-                        src={imageUrl}
-                        alt={`${car.year} ${car.make} ${car.model}`}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                      />
-                      
-                      {/* Gradient overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      
-                      {/* Badges */}
-                      <div className="absolute top-3 left-3 flex flex-col gap-2">
-                        {showLocalHostBadge && (
-                          <span className="px-3 py-1 bg-black/80 backdrop-blur-sm text-white text-xs font-bold rounded-full shadow-lg flex items-center gap-1">
-                            <IoStarSharp className="w-3 h-3" />
-                            LOCAL HOST
-                          </span>
-                        )}
-                        {car.instantBook && (
-                          <span className="px-3 py-1 bg-emerald-500 backdrop-blur-sm text-white text-xs font-bold rounded-full shadow-lg flex items-center gap-1">
-                            <IoFlashOutline className="w-3 h-3" />
-                            INSTANT BOOK
-                          </span>
-                        )}
-                      </div>
-                      
-                      {/* Price Badge */}
-                      <div className="absolute bottom-3 right-3">
-                        <div className="px-4 py-2.5 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-lg shadow-xl">
-                          <div className="flex items-baseline gap-1">
-                            <span className="text-2xl font-black text-gray-900 dark:text-white">
-                              ${car.dailyRate}
-                            </span>
-                            <span className="text-sm text-gray-600 dark:text-gray-400">/day</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Content */}
-                    <div className="p-5">
-                      {/* Title */}
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                        {car.year} {car.make} {car.model}
-                      </h3>
-                      
-                      {/* Car Type & Specs */}
-                      <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400 mb-3">
-                        <span className="capitalize">{car.carType?.toLowerCase() || 'sedan'}</span>
-                        <span>•</span>
-                        <span>{car.seats} seats</span>
-                        <span>•</span>
-                        <span className="capitalize">{car.transmission?.toLowerCase() || 'automatic'}</span>
-                      </div>
-                      
-                      {/* Rating & Reviews */}
-                      <div className="flex items-center gap-3 mb-3">
-                        {car.rating && (
-                          <div className="flex items-center gap-1">
-                            <div className="flex">
-                              {[...Array(5)].map((_, i) => (
-                                <IoStarOutline
-                                  key={i}
-                                  className={`w-3.5 h-3.5 ${
-                                    i < Math.floor(car.rating)
-                                      ? 'text-amber-400 fill-current'
-                                      : 'text-gray-300'
-                                  }`}
-                                />
-                              ))}
-                            </div>
-                            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                              {car.rating.toFixed(1)}
-                            </span>
-                          </div>
-                        )}
-                        <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                          <IoCarSportOutline className="w-3.5 h-3.5" />
-                          {car.totalTrips || 0} trips
+      <div>
+        <CitySearchWrapper
+          cityName={cityName}
+          totalCars={allCars.length}
+          searchableContent={searchableContent}
+        >
+          {/* New Listings Section */}
+          {newListings.length > 0 && (
+            <>
+              <div className="border-t border-gray-200 dark:border-gray-700" />
+              <section id="new-listings" className="py-3 sm:py-4">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <div className="flex items-center gap-3 mb-0.5">
+                        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+                          New Listings
+                        </h2>
+                        <span className="px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-semibold rounded-full">
+                          {newListings.length} cars
                         </span>
-                        {car._count.reviews > 0 && (
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
-                            {car._count.reviews} reviews
-                          </span>
-                        )}
                       </div>
-                      
-                      {/* Features */}
-                      {car.features.length > 0 && (
-                        <div className="flex gap-2 mb-3 flex-wrap">
-                          {car.features.slice(0, 3).map((feature: string, idx: number) => (
-                            <span
-                              key={idx}
-                              className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-xs rounded text-gray-600 dark:text-gray-400"
-                            >
-                              {feature}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      
-                      {/* Location & Host */}
-                      <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <IoLocationOutline className="w-4 h-4 text-gray-400" />
-                            <span className="text-sm text-gray-600 dark:text-gray-400">
-                              {car.address || cityName}
-                            </span>
-                          </div>
-                          {car.host && (
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
-                              by {car.host.name}
-                            </span>
-                          )}
-                        </div>
-                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Recently added cars in {cityName}
+                      </p>
                     </div>
-                  </Link>
-                )
-              })}
-            </div>
-          </div>
-        </section>
+                  </div>
+                  <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+                    {newListings.map((car) => (
+                      <CarCard key={car.id} car={car} cityName={cityName} />
+                    ))}
+                  </div>
+                </div>
+              </section>
+            </>
+          )}
 
-        {/* SEO Content Section */}
-        <section className="py-12 bg-gray-100 dark:bg-gray-800">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-              Explore {cityName} with ItWhip
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              Discover the best of {cityName}, Arizona with our diverse selection of rental cars. 
-              Whether you're visiting for business or pleasure, we have the perfect vehicle to match your needs and budget. 
-              With prices ranging from ${minPrice} to ${maxPrice} per day, you'll find everything from economical compact cars 
-              to luxurious premium vehicles.
-            </p>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              Many of our {cityName} rentals offer instant booking for immediate availability, while others are provided 
-              by local hosts who take pride in maintaining their vehicles to the highest standards. 
-              Average daily rate in {cityName} is ${avgPrice}, making it an affordable option for both short and long-term rentals.
-            </p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">{cars.length}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Available Cars</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">${avgPrice}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Avg. Daily Rate</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {cars.filter(c => c.instantBook).length}
+          {/* Top Rated Section */}
+          {topRated.length > 0 && (
+            <>
+              <div className="border-t border-gray-200 dark:border-gray-700" />
+              <section id="top-rated" className="py-3 sm:py-4">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <div className="flex items-center gap-3 mb-0.5">
+                        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+                          Top Rated
+                        </h2>
+                        <span className="px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-semibold rounded-full">
+                          4.5+ stars
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Highest-rated cars by our customers
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+                    {topRated.map((car) => (
+                      <CarCard key={car.id} car={car} cityName={cityName} />
+                    ))}
+                  </div>
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Instant Book</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {cars.filter(c => c.rating && c.rating >= 4.5).length}
+              </section>
+            </>
+          )}
+
+          {/* Luxury Cars Section */}
+          {luxuryCars.length > 0 && (
+            <>
+              <div className="border-t border-gray-200 dark:border-gray-700" />
+              <section id="luxury" className="py-3 sm:py-4">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <div className="flex items-center gap-3 mb-0.5">
+                        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+                          Luxury & Premium
+                        </h2>
+                        <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 text-xs font-semibold rounded-full">
+                          {luxuryCars.length} cars
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Premium vehicles for special occasions
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+                    {luxuryCars.map((car) => (
+                      <CarCard key={car.id} car={car} cityName={cityName} />
+                    ))}
+                  </div>
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Top Rated</div>
-              </div>
-            </div>
-          </div>
-        </section>
+              </section>
+            </>
+          )}
+
+          {/* Electric Cars Section */}
+          {electricCars.length > 0 && (
+            <>
+              <div className="border-t border-gray-200 dark:border-gray-700" />
+              <section id="electric" className="py-3 sm:py-4">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <div className="flex items-center gap-3 mb-0.5">
+                        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+                          Electric & Eco-Friendly
+                        </h2>
+                        <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-semibold rounded-full">
+                          Zero emissions
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Sustainable and efficient vehicles
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+                    {electricCars.map((car) => (
+                      <CarCard key={car.id} car={car} cityName={cityName} />
+                    ))}
+                  </div>
+                </div>
+              </section>
+            </>
+          )}
+
+          {/* Affordable Cars Section */}
+          {affordableCars.length > 0 && (
+            <>
+              <div className="border-t border-gray-200 dark:border-gray-700" />
+              <section id="affordable" className="py-3 sm:py-4">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <div className="flex items-center gap-3 mb-0.5">
+                        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+                          Budget-Friendly
+                        </h2>
+                        <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs font-semibold rounded-full">
+                          Under $100/day
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Affordable options for every budget
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+                    {affordableCars.map((car) => (
+                      <CarCard key={car.id} car={car} cityName={cityName} />
+                    ))}
+                  </div>
+                </div>
+              </section>
+            </>
+          )}
+        </CitySearchWrapper>
       </div>
       
       <Footer />

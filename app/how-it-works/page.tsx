@@ -32,7 +32,18 @@ import {
   IoInformationCircleOutline,
   IoArrowForwardOutline,
   IoChevronForwardOutline,
-  IoSparklesOutline
+  IoSparklesOutline,
+  IoCameraOutline,
+  IoFingerPrintOutline,
+  IoNotificationsOutline,
+  IoMailOutline,
+  IoAnalyticsOutline,
+  IoClipboardOutline,
+  IoTimerOutline,
+  IoWifiOutline,
+  IoDiamondOutline,
+  IoRibbonOutline,
+  IoMedalOutline
 } from 'react-icons/io5'
 
 export default function HowItWorksPage() {
@@ -54,36 +65,36 @@ export default function HowItWorksPage() {
   const guestSteps = [
     {
       icon: IoSearchOutline,
-      title: 'Search & Book',
-      description: 'Find your perfect ride near any Phoenix hotel or location. No account required.',
+      title: 'Find Your Perfect Car',
+      description: 'Browse our curated fleet. Filter by type, price, and features. No account required.',
       details: [
-        'Instant availability across Phoenix metro',
-        'Compare vehicles by type and price',
-        'Book with just email - no signup needed',
-        'Transparent pricing with no hidden fees'
+        'Economy to exotic vehicles available',
+        'Real photos and verified reviews',
+        'Transparent pricing with all fees shown',
+        'Instant availability calendar'
       ],
-      cta: { text: 'Search Cars', link: '/' }
+      cta: { text: 'Browse Cars', link: '/' }
     },
     {
-      icon: IoKeyOutline,
-      title: 'Pick Up',
-      description: 'Convenient pickup at hotels, airport, or delivery to your location.',
+      icon: IoMailOutline,
+      title: 'Book in 60 Seconds',
+      description: 'Book with just your email - no signup hassles. Guest checkout available.',
       details: [
-        'Hotel lobby pickup available',
-        'Sky Harbor Airport location',
-        'Optional delivery service',
-        'Contactless options available'
+        'No app download required',
+        'Email confirmation instantly',
+        'Secure payment processing',
+        'Manage booking via email link'
       ]
     },
     {
-      icon: IoCarOutline,
-      title: 'Drive & Return',
-      description: 'Enjoy your trip with full protection included. Easy return process.',
+      icon: IoKeyOutline,
+      title: 'Pick Up & Drive',
+      description: 'Multiple convenient pickup options. Full protection included automatically.',
       details: [
-        'Comprehensive insurance included',
-        'Responsive digital support',
-        'Flexible return locations',
-        'Simple inspection process'
+        'Hotel lobby pickup available',
+        'Airport location (Sky Harbor)',
+        'Optional delivery to your location',
+        'Comprehensive insurance included'
       ]
     }
   ]
@@ -91,178 +102,210 @@ export default function HowItWorksPage() {
   const hostSteps = [
     {
       icon: IoDocumentTextOutline,
-      title: 'List Your Vehicle',
-      description: 'Quick approval process. Professional photos. Set your availability.',
+      title: 'Quick Application',
+      description: '5-minute online application. Instant approval for qualifying vehicles.',
       details: [
-        'Vehicles 2015 or newer qualify',
-        'Set your own pricing and rules',
-        'Control your calendar',
-        'Professional listing support'
+        '2015 or newer vehicles qualify',
+        'Under 130,000 miles required',
+        'Clean title verification',
+        'Free 20-minute inspection'
       ],
-      cta: { text: 'Start Listing Process', link: '/list-your-car' }
+      cta: { text: 'Start Application', link: '/list-your-car' }
     },
     {
       icon: IoShieldCheckmarkOutline,
       title: 'We Handle Everything',
-      description: 'Guest screening, insurance, payments, and support all managed for you.',
+      description: 'Complete protection included. Guest screening, payments, and support managed.',
       details: [
-        'Comprehensive protection included',
-        'All guests verified',
-        'We handle guest communication',
-        'Damage claims managed'
+        'Up to $2M liability coverage',
+        'Multi-point guest verification',
+        'All communication handled',
+        '48-72 hour claims resolution'
       ],
-      cta: { text: 'Learn About Protection', link: '/host-protection' }
+      cta: { text: 'View Protection Details', link: '/host-protection' }
     },
     {
       icon: IoCashOutline,
-      title: 'Get Paid Fast',
-      description: 'Direct deposit within 48 hours. Track earnings in real-time.',
+      title: 'Get Paid in 48 Hours',
+      description: 'Industry\'s fastest payments via direct deposit. Track earnings in real-time.',
       details: [
-        'Industry-leading payment speed',
+        '48-hour payment guarantee',
+        'Keep 78-85% of rental revenue',
         'No payment processing fees',
-        'Detailed earnings reports',
-        'Tax documentation provided'
+        'Automated tax documentation'
       ],
-      cta: { text: 'View Earnings Potential', link: '/host-earnings' }
+      cta: { text: 'Calculate Earnings', link: '/host-earnings' }
     }
   ]
 
   const guestBenefits = [
     {
       icon: IoWalletOutline,
-      title: 'Transparent Pricing',
-      description: 'No surge pricing. Clear rates upfront. All fees shown before booking.',
-      highlight: 'Save up to 35% vs traditional rentals'
+      title: 'Better Prices',
+      description: 'Save 20-35% compared to traditional rentals. No surge pricing ever.',
+      highlight: 'Starting at $45/day'
     },
     {
       icon: IoPhonePortraitOutline,
-      title: 'Book Without Account',
-      description: 'No app download required. Book with just your email. Get instant confirmation.',
-      highlight: 'Ready in 60 seconds'
+      title: 'No Account Required',
+      description: 'Book with just email. Access booking anytime via secure link.',
+      highlight: 'Guest checkout available'
     },
     {
       icon: IoLocationOutline,
       title: 'Convenient Locations',
-      description: 'Vehicles available at major hotels and Sky Harbor Airport.',
-      highlight: 'Phoenix metro coverage'
+      description: 'Vehicles at major hotels and Sky Harbor Airport.',
+      highlight: 'Free hotel delivery'
     },
     {
       icon: IoShieldCheckmarkOutline,
       title: 'Full Protection',
-      description: 'Every rental includes comprehensive insurance coverage with clear deductibles.',
+      description: 'Every rental includes comprehensive insurance coverage.',
       highlight: 'Peace of mind included'
     },
     {
       icon: IoTimeOutline,
-      title: 'Flexible Options',
-      description: 'Hourly, daily, or weekly rentals. Extend easily through the app.',
-      highlight: 'Your schedule, your way'
+      title: 'Flexible Rentals',
+      description: 'Daily or weekly rentals. Extend easily through our platform.',
+      highlight: 'Instant booking'
     },
     {
       icon: IoStarOutline,
       title: 'Quality Vehicles',
-      description: 'All cars inspected and maintained. Wide selection from economy to luxury.',
-      highlight: 'Something for everyone'
+      description: 'All cars inspected and maintained. Wide selection available.',
+      highlight: 'Verified reviews'
     }
   ]
 
   const hostBenefits = [
     {
       icon: IoTrendingUpOutline,
-      title: 'Maximize Earnings',
-      description: 'Earn up to 85% of each rental. No listing fees. No hidden charges.',
-      highlight: 'Keep more of what you earn',
+      title: 'Higher Earnings',
+      description: 'Keep 78-85% of rental revenue. Simple, transparent commission.',
+      highlight: '$600-3,000/month average',
       link: '/host-earnings'
     },
     {
       icon: IoShieldCheckmarkOutline,
-      title: 'Complete Protection',
-      description: 'Up to $1M liability coverage. Physical damage protection with deductibles. We handle all claims.',
-      highlight: 'Your car is protected',
+      title: '$0 Insurance Cost',
+      description: 'Protection included - save $3,000-6,000/year vs commercial insurance.',
+      highlight: 'Up to $2M coverage',
       link: '/host-protection'
     },
     {
-      icon: IoBusinessOutline,
-      title: 'Access Hotel Guests',
-      description: 'Tap into demand from our growing hotel network. Prime placement at partner locations.',
-      highlight: 'Built-in demand'
-    },
-    {
       icon: IoFlashOutline,
-      title: 'Fast Payments',
-      description: 'Get paid within 48 hours. Direct deposit. Real-time earnings tracking.',
-      highlight: 'Fastest in the industry'
+      title: '48-Hour Payments',
+      description: 'Fastest in the industry. Direct deposit after each trip.',
+      highlight: 'Get paid quickly'
     },
     {
-      icon: IoHeartOutline,
-      title: 'We Handle Support',
-      description: 'All guest communication managed. Responsive digital support. You just provide the car.',
-      highlight: 'Hassle-free hosting'
+      icon: IoAnalyticsOutline,
+      title: 'Smart Tools',
+      description: 'GPS tracking, pricing optimization, and earnings analytics.',
+      highlight: 'Professional platform'
     },
     {
       icon: IoReceiptOutline,
       title: 'Tax Benefits',
-      description: 'Automated tax reporting. Business expense tracking. Potential deductions available.',
-      highlight: 'Simplify tax season'
+      description: 'Deduct expenses and depreciation. Save $8,000-25,000 annually.',
+      highlight: 'Maximize deductions'
+    },
+    {
+      icon: IoHeartOutline,
+      title: 'Full Support',
+      description: 'We handle guest communication and claims. You just provide the car.',
+      highlight: 'Hassle-free hosting'
     }
   ]
 
   const requirements = {
     guest: [
       { text: 'Valid driver\'s license', required: true },
-      { text: '21 years or older (25+ for luxury)', required: true },
+      { text: '21+ years old (25+ for luxury/exotic)', required: true },
       { text: 'Valid payment method', required: true },
-      { text: 'Clean driving record', required: false },
-      { text: 'Smartphone for app features', required: false }
+      { text: 'Pass verification check', required: true },
+      { text: 'Smartphone for best experience', required: false }
     ],
     host: [
       { text: 'Vehicle 2015 or newer', required: true },
-      { text: 'Clean title', required: true },
-      { text: 'Valid registration & insurance', required: true },
+      { text: 'Under 130,000 miles', required: true },
+      { text: 'Clean title (no salvage)', required: true },
       { text: 'Pass safety inspection', required: true },
       { text: 'Phoenix metro location', required: true }
     ]
   }
 
+  const hostTiers = [
+    {
+      tier: 'Standard Host',
+      trips: 'Starting out',
+      commission: '15-20%',
+      benefits: 'Full protection, 48hr payments'
+    },
+    {
+      tier: 'Silver Host',
+      trips: '10+ trips',
+      commission: '14-19%',
+      benefits: 'Priority placement, dedicated support'
+    },
+    {
+      tier: 'Gold Host',
+      trips: '25+ trips',
+      commission: '13-18%',
+      benefits: 'Featured listings, instant payouts'
+    },
+    {
+      tier: 'Platinum Host',
+      trips: '50+ trips',
+      commission: '12-17%',
+      benefits: 'Homepage features, API access'
+    }
+  ]
+
   const faqs = [
     {
       question: 'How is this different from traditional car rental?',
-      answer: 'We connect you directly with local vehicle owners and our managed fleet, offering more variety, better prices, and convenient hotel pickup locations. No rental counter lines, no hidden fees.',
+      answer: 'We offer a curated fleet at better prices with more convenient pickup locations. No rental counter lines, transparent pricing, and the option to book without creating an account.',
       category: 'general'
     },
     {
       question: 'What protection is included?',
-      answer: 'Every rental includes liability insurance up to $1M and physical damage protection with reasonable deductibles. Hosts are fully protected, and guests have peace of mind.',
+      answer: 'Every rental includes liability insurance up to $2M and physical damage protection. Both guests and hosts are fully protected during the rental period.',
       category: 'general'
     },
     {
-      question: 'How do hotel pickups work?',
-      answer: 'Many vehicles are available at partner hotels. Simply select hotel pickup during booking, and collect keys from the concierge or designated area. Some hosts offer lobby meet-and-greet.',
+      question: 'Can I book without an account?',
+      answer: 'Yes! Book with just your email address. We\'ll send confirmation and a secure link to manage your booking. No app download required.',
       category: 'guest'
     },
     {
-      question: 'Can I book without creating an account?',
-      answer: 'Yes! Book with just your email address. We\'ll send confirmation and access details instantly. Download our app for the best experience, but it\'s not required.',
+      question: 'How do I pick up the car?',
+      answer: 'Multiple options: hotel lobby pickup, airport location, or delivery to your address. You\'ll receive detailed pickup instructions via email.',
       category: 'guest'
     },
     {
-      question: 'How quickly do hosts get paid?',
-      answer: 'Hosts receive payment via direct deposit within 48 hours of trip completion. This is significantly faster than other platforms.',
+      question: 'How much can I earn as a host?',
+      answer: 'Earnings vary by vehicle: Economy cars average $600-1,100/month, standard vehicles $900-1,500/month, luxury $1,500-3,000/month based on 15-20 rental days.',
       category: 'host'
     },
     {
-      question: 'What if my car is damaged?',
-      answer: 'Our protection covers physical damage with deductibles based on vehicle value. We handle all claims and coordinate repairs. You\'re never alone in the process.',
+      question: 'When do hosts get paid?',
+      answer: 'Within 48 hours of trip completion via direct deposit - the fastest in the industry. Choose daily or weekly payout schedules.',
       category: 'host'
     },
     {
       question: 'What are the vehicle requirements?',
-      answer: 'Vehicles must be 2015 or newer, have a clean title, pass our safety inspection, and be registered in Arizona. All types welcome from economy to luxury.',
+      answer: 'Vehicles must be 2015 or newer, have under 130,000 miles, clean title, and pass our safety inspection. All types welcome from economy to exotic.',
       category: 'host'
     },
     {
       question: 'How does pricing work?',
-      answer: 'Hosts set their daily rates. We add a platform fee for our services and protection. Guests see total price upfront with no hidden fees. Airport and delivery fees shown clearly.',
+      answer: 'Hosts set competitive daily rates. We add a 15-20% platform fee that covers insurance and support. Guests see the total price upfront with no hidden fees.',
+      category: 'general'
+    },
+    {
+      question: 'What if something goes wrong?',
+      answer: 'Our support team responds within 1-2 hours during business hours. For accidents or urgent issues, we have priority handling with typical response in minutes.',
       category: 'general'
     }
   ]
@@ -309,13 +352,12 @@ export default function HowItWorksPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-4xl mx-auto">
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-6">
-                Car Sharing Made Simple
+                Car Rentals Made Simple
                 <span className="block text-purple-600 mt-2">For Phoenix</span>
               </h1>
               
               <p className="text-base sm:text-lg lg:text-xl text-gray-600 dark:text-gray-400 mb-8">
-                Whether you're looking to rent a car or earn from your vehicle,
-                we've streamlined everything.
+                Whether you need a car or want to earn from yours, we've made it simple.
               </p>
 
               {/* Tab Selector */}
@@ -352,12 +394,12 @@ export default function HowItWorksPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
-                {activeTab === 'guest' ? 'Book a Car in 3 Simple Steps' : 'Start Earning in 3 Simple Steps'}
+                {activeTab === 'guest' ? '3 Simple Steps to Your Perfect Rental' : 'Start Earning in 24 Hours'}
               </h2>
               <p className="text-gray-600 dark:text-gray-400">
                 {activeTab === 'guest' 
-                  ? 'No account required. Book in under 60 seconds.' 
-                  : 'Quick approval. Professional support. Fast payments.'}
+                  ? 'Book in under 60 seconds. No account required.' 
+                  : 'Quick approval. Complete protection. Fast payments.'}
               </p>
             </div>
 
@@ -413,12 +455,12 @@ export default function HowItWorksPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
-                {activeTab === 'guest' ? 'Why Guests Choose Us' : 'Why Hosts Love Us'}
+                {activeTab === 'guest' ? 'Why Rent With Us' : 'Why Hosts Choose Us'}
               </h2>
               <p className="text-gray-600 dark:text-gray-400">
                 {activeTab === 'guest' 
                   ? 'Better prices, more convenience, full protection' 
-                  : 'Higher earnings, complete protection, hassle-free management'}
+                  : 'Higher earnings, zero insurance costs, professional tools'}
               </p>
             </div>
 
@@ -523,6 +565,46 @@ export default function HowItWorksPage() {
           </div>
         </section>
 
+        {/* Host Tiers - Only show for hosts */}
+        {activeTab === 'host' && (
+          <section className="py-12 sm:py-16 bg-white dark:bg-black">
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="text-center mb-8">
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
+                  Earn More as You Grow
+                </h2>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Unlock rewards and reduced commissions
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {hostTiers.map((tier, idx) => (
+                  <div key={idx} className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 text-center">
+                    {idx === 0 && <IoCarOutline className="w-8 h-8 text-gray-400 mx-auto mb-2" />}
+                    {idx === 1 && <IoMedalOutline className="w-8 h-8 text-gray-400 mx-auto mb-2" />}
+                    {idx === 2 && <IoRibbonOutline className="w-8 h-8 text-yellow-500 mx-auto mb-2" />}
+                    {idx === 3 && <IoDiamondOutline className="w-8 h-8 text-purple-600 mx-auto mb-2" />}
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-1">{tier.tier}</h4>
+                    <p className="text-xs text-gray-500 mb-2">{tier.trips}</p>
+                    <p className="text-sm font-bold text-purple-600 mb-2">{tier.commission}</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">{tier.benefits}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6 text-center">
+                <Link 
+                  href="/host-benefits"
+                  className="text-purple-600 hover:text-purple-700 text-sm font-medium"
+                >
+                  View all host benefits →
+                </Link>
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* FAQs Section */}
         <section className="py-12 sm:py-16 bg-gray-50 dark:bg-gray-950">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -608,9 +690,27 @@ export default function HowItWorksPage() {
 
             {activeTab === 'host' && (
               <p className="text-xs text-purple-200 mt-6">
-                Join our growing community of Phoenix hosts earning extra income
+                Join hundreds of Phoenix hosts earning extra income
               </p>
             )}
+          </div>
+        </section>
+
+        {/* Support Notice */}
+        <section className="py-8 bg-white dark:bg-black">
+          <div className="max-w-4xl mx-auto px-4 text-center">
+            <div className="flex items-center justify-center space-x-2 mb-2">
+              <IoNotificationsOutline className="w-5 h-5 text-purple-600" />
+              <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                Quick Response Support
+              </span>
+            </div>
+            <p className="text-xs text-gray-600 dark:text-gray-400">
+              Contact us through our support center - typical response within 1-2 hours during business hours
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              For urgent issues, mark as priority for faster response
+            </p>
           </div>
         </section>
       </div>

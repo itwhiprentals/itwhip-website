@@ -62,7 +62,7 @@ export default function QuickActionsBar() {
               <span>Map</span>
             </Link>
 
-            {/* Cities */}
+            {/* Cities - UPDATED LINK */}
             <Link 
               href="/rentals/cities" 
               className="flex items-center gap-1.5 px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all hover:scale-105 font-medium text-sm whitespace-nowrap flex-shrink-0"
