@@ -39,6 +39,12 @@ const CITY_COORDS: Record<string, { lat: number; lng: number }> = {
   'Glendale': { lat: 33.5387, lng: -112.1859 },
   'Gilbert': { lat: 33.3528, lng: -111.7890 },
   'Peoria': { lat: 33.5806, lng: -112.2374 },
+  'Paradise Valley': { lat: 33.5417, lng: -111.9437 },
+  'Avondale': { lat: 33.4356, lng: -112.3496 },
+  'Anthem': { lat: 33.8675, lng: -112.1184 },
+  'Tucson': { lat: 32.2226, lng: -110.9747 },
+  'Flagstaff': { lat: 35.1983, lng: -111.6513 },
+  'Laveen': { lat: 33.3628, lng: -112.1691 }
 }
 
 // Calculate distance between two coordinates
