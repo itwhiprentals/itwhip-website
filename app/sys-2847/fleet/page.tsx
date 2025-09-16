@@ -10,13 +10,16 @@ export default function FleetDashboard() {
   const router = useRouter()
   const [cars, setCars] = useState<Car[]>([])
   const [loading, setLoading] = useState(true)
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list') // Default to list on mobile
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [filter, setFilter] = useState<string>('all')
 
   useEffect(() => {
     fetchCars()
-    // Set view mode based on screen size
-    if (window.innerWidth < 768) {
+  }, [])
+
+  // Separate effect for client-side only window operations
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
       setViewMode('list')
     }
   }, [])
