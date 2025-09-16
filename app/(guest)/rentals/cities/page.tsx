@@ -19,14 +19,58 @@ import {
 // Add ISR - Revalidate every 60 seconds
 export const revalidate = 60
 
-export const metadata: Metadata = {
-  title: 'Car Rentals by City | Phoenix Metro Areas | ItWhip',
-  description: 'Browse car rentals in Phoenix, Scottsdale, Tempe, Mesa, and more Arizona cities. Find the perfect rental car near you with instant booking available.',
-  openGraph: {
-    title: 'Arizona Car Rentals by City - ItWhip',
-    description: 'Explore rental cars across Phoenix metro cities. From luxury to economy, find your perfect ride.',
-    images: ['/og-cities.jpg'],
-  },
+// Generate dynamic metadata with actual car photos
+export async function generateMetadata(): Promise<Metadata> {
+  // Get the first 4 cars with photos for a collage effect
+  const carsWithPhotos = await prisma.rentalCar.findMany({
+    where: {
+      isActive: true,
+      photos: {
+        some: {}
+      }
+    },
+    select: {
+      photos: {
+        where: { isHero: true },
+        select: { url: true },
+        take: 1
+      }
+    },
+    take: 4
+  })
+
+  // Get the first available photo or use a default
+  const ogImages = carsWithPhotos
+    .map(car => car.photos[0]?.url)
+    .filter(Boolean)
+  
+  // If we have photos, use the first one; otherwise use a default
+  const primaryOgImage = ogImages[0] || 'https://itwhip.com/default-og-image.jpg'
+
+  return {
+    title: 'Car Rentals by City | Phoenix Metro Areas | ItWhip',
+    description: 'Browse car rentals in Phoenix, Scottsdale, Tempe, Mesa, and more Arizona cities. Find the perfect rental car near you with instant booking available.',
+    openGraph: {
+      title: 'Arizona Car Rentals by City - ItWhip',
+      description: 'Explore rental cars across Phoenix metro cities. From luxury to economy, find your perfect ride.',
+      images: [
+        {
+          url: primaryOgImage,
+          width: 1200,
+          height: 630,
+          alt: 'ItWhip Car Rentals - Available Cars in Arizona'
+        }
+      ],
+      type: 'website',
+      url: 'https://itwhip.com/rentals/cities'
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: 'Arizona Car Rentals by City - ItWhip',
+      description: 'Explore rental cars across Phoenix metro cities.',
+      images: [primaryOgImage]
+    }
+  }
 }
 
 // City coordinates for distance calculation

@@ -20,7 +20,7 @@ import {
 // Add ISR - Revalidate every 60 seconds
 export const revalidate = 60
 
-// Generate metadata for SEO
+// Generate metadata for SEO with dynamic OG images
 export async function generateMetadata({ 
   params 
 }: { 
@@ -40,14 +40,66 @@ export async function generateMetadata({
     }
   })
 
+  // Get the best cars with photos from this city for OG image
+  const topCars = await prisma.rentalCar.findMany({
+    where: {
+      city: {
+        equals: cityName,
+        mode: 'insensitive'
+      },
+      isActive: true,
+      photos: {
+        some: {}
+      }
+    },
+    select: {
+      make: true,
+      model: true,
+      year: true,
+      photos: {
+        where: { isHero: true },
+        select: { url: true },
+        take: 1
+      }
+    },
+    orderBy: [
+      { rating: 'desc' },
+      { totalTrips: 'desc' }
+    ],
+    take: 3
+  })
+
+  // Get the first photo from the top cars
+  const ogImage = topCars[0]?.photos[0]?.url || 
+    'https://images.unsplash.com/photo-1583267746897-2cf415887172?w=1200&h=630&fit=crop'
+
+  // Create a descriptive title for sharing
+  const carTypes = topCars.length > 0 
+    ? `including ${topCars[0].year} ${topCars[0].make} ${topCars[0].model}`
+    : 'from economy to luxury'
+
   return {
     title: `${cityName} Car Rentals | ${carCount} Cars Available | ItWhip`,
-    description: `Rent cars in ${cityName}, Arizona from $45/day. ${carCount} vehicles available including luxury, economy, and SUVs. Instant booking and free delivery available.`,
+    description: `Rent cars in ${cityName}, Arizona from $45/day. ${carCount} vehicles available ${carTypes}. Instant booking and free delivery available.`,
     openGraph: {
       title: `${cityName} Car Rentals - ${carCount} Available | ItWhip`,
       description: `Browse ${carCount} rental cars in ${cityName}. From luxury to economy, find your perfect ride with instant booking.`,
       url: `https://itwhip.com/rentals/cities/${city}`,
-      images: [`/og-${city}.jpg`],
+      images: [
+        {
+          url: ogImage,
+          width: 1200,
+          height: 630,
+          alt: `Car rentals available in ${cityName}, Arizona`
+        }
+      ],
+      type: 'website'
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${cityName} Car Rentals - ${carCount} Available`,
+      description: `Browse ${carCount} rental cars in ${cityName}. Instant booking available.`,
+      images: [ogImage]
     },
     alternates: {
       canonical: `https://itwhip.com/rentals/cities/${city}`,
