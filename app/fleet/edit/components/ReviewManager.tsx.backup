@@ -1,0 +1,1471 @@
+// app/sys-2847/fleet/edit/components/ReviewManager.tsx
+'use client'
+
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+
+interface ReviewerProfile {
+  id: string
+  name: string
+  profilePhotoUrl?: string
+  city: string
+  state: string
+  memberSince: string
+  tripCount: number
+  reviewCount: number
+  isVerified: boolean
+}
+
+interface Review {
+  id: string
+  rating: number
+  title?: string
+  comment: string
+  isVisible: boolean
+  isPinned: boolean
+  isVerified: boolean
+  helpfulCount: number
+  tripStartDate?: string
+  tripEndDate?: string
+  hostResponse?: string
+  hostRespondedAt?: string
+  supportResponse?: string
+  supportRespondedAt?: string
+  supportRespondedBy?: string
+  createdAt: string
+  reviewerProfile?: ReviewerProfile
+  reviewer?: {
+    name: string
+    profilePhotoUrl?: string
+  }
+}
+
+interface ReviewManagerProps {
+  carId: string
+}
+
+export function ReviewManager({ carId }: ReviewManagerProps) {
+  // Track component mount status
+  const isMounted = useRef(true)
+  const abortControllerRef = useRef<AbortController | null>(null)
+  const pollingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  
+  // State initialization
+  const [reviews, setReviews] = useState<Review[]>([])
+  const [reviewerProfiles, setReviewerProfiles] = useState<ReviewerProfile[]>([])
+  const [loading, setLoading] = useState(true)
+  const [stats, setStats] = useState<any>(null)
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  
+  // Filter states for unified view
+  const [showHidden, setShowHidden] = useState(true)
+  const [filterVerified, setFilterVerified] = useState<'all' | 'verified' | 'unverified'>('all')
+  
+  // Modal states - Store IDs instead of objects for stability
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [editingReviewId, setEditingReviewId] = useState<string | null>(null)
+  const [replyingToReviewData, setReplyingToReviewData] = useState<{ reviewId: string, type: 'host' | 'support' } | null>(null)
+  const [editingHelpfulCountId, setEditingHelpfulCountId] = useState<string | null>(null)
+  
+  // Derive the actual review objects from IDs
+  const editingReview = useMemo(() => {
+    if (!editingReviewId) return null
+    return reviews.find(r => r.id === editingReviewId) || null
+  }, [editingReviewId, reviews])
+  
+  const replyingToReview = useMemo(() => {
+    if (!replyingToReviewData) return null
+    const review = reviews.find(r => r.id === replyingToReviewData.reviewId)
+    return review ? { review, type: replyingToReviewData.type } : null
+  }, [replyingToReviewData, reviews])
+
+  const editingHelpfulCountReview = useMemo(() => {
+    if (!editingHelpfulCountId) return null
+    return reviews.find(r => r.id === editingHelpfulCountId) || null
+  }, [editingHelpfulCountId, reviews])
+  
+  // Track if any modal is open
+  const isAnyModalOpen = useMemo(() => {
+    return showAddModal || !!editingReviewId || !!replyingToReviewData || !!editingHelpfulCountId
+  }, [showAddModal, editingReviewId, replyingToReviewData, editingHelpfulCountId])
+  
+  // Enhanced new review state
+  const [newReview, setNewReview] = useState({
+    rating: 5,
+    title: '',
+    comment: '',
+    reviewerName: '',
+    profilePhotoUrl: '',
+    reviewerCity: 'Phoenix',
+    reviewerState: 'AZ',
+    tripStartDate: '',
+    tripEndDate: '',
+    isVerified: false,
+    isPinned: false,
+    helpfulCount: 0,
+    createNewProfile: true,
+    selectedProfileId: ''
+  })
+
+  // Cleanup on unmount
+  useEffect(() => {
+    isMounted.current = true
+    
+    return () => {
+      isMounted.current = false
+      
+      // Cancel any pending requests
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
+      
+      // Clear polling timeout
+      if (pollingTimeoutRef.current) {
+        clearTimeout(pollingTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  const fetchReviews = useCallback(async (options: { force?: boolean, skipModalCheck?: boolean } = {}) => {
+    // Don't fetch if modal is open (unless forced or skip check)
+    if (!options.skipModalCheck && !options.force && isAnyModalOpen) {
+      console.log('Modal is open, skipping fetch')
+      return
+    }
+    
+    // Don't fetch if component is unmounted
+    if (!isMounted.current) {
+      console.log('Component unmounted, skipping fetch')
+      return
+    }
+    
+    // Cancel any previous request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+    
+    // Create new abort controller
+    abortControllerRef.current = new AbortController()
+    
+    try {
+      const response = await fetch(`/sys-2847/fleet/api/cars/${carId}/reviews`, {
+        signal: abortControllerRef.current.signal,
+        // Add cache control to prevent stale data
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      })
+      
+      if (!isMounted.current) return
+      
+      if (response.ok) {
+        const data = await response.json()
+        
+        // Double-check modals aren't open before updating state
+        if (isMounted.current && !isAnyModalOpen) {
+          if (data?.data?.reviews) {
+            setReviews(data.data.reviews)
+            setStats(data.data.stats || null)
+          }
+        }
+      } else if (response.status !== 0) { // 0 = aborted
+        console.error('Failed to fetch reviews, status:', response.status)
+      }
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log('Fetch aborted (expected)')
+      } else if (isMounted.current) {
+        console.error('Failed to fetch reviews:', error)
+      }
+    } finally {
+      if (isMounted.current) {
+        setLoading(false)
+      }
+    }
+  }, [carId, isAnyModalOpen])
+
+  const fetchReviewerProfiles = useCallback(async () => {
+    if (!isMounted.current) return
+    
+    try {
+      const controller = new AbortController()
+      const response = await fetch('/sys-2847/fleet/api/reviewer-profiles', {
+        signal: controller.signal
+      })
+      
+      if (!isMounted.current) return
+      
+      if (response.ok) {
+        const data = await response.json()
+        if (isMounted.current) {
+          setReviewerProfiles(data.data?.profiles || [])
+        }
+      }
+    } catch (error: any) {
+      if (error.name !== 'AbortError' && isMounted.current) {
+        console.error('Failed to fetch reviewer profiles:', error)
+      }
+    }
+  }, [])
+
+  // Initial load with delay to avoid database race conditions
+  useEffect(() => {
+    let initialLoadTimeout: NodeJS.Timeout
+    
+    const loadInitialData = async () => {
+      // Small delay to let database stabilize
+      await new Promise(resolve => {
+        initialLoadTimeout = setTimeout(resolve, 200)
+      })
+      
+      if (isMounted.current) {
+        fetchReviews({ force: true, skipModalCheck: true })
+        fetchReviewerProfiles()
+      }
+    }
+    
+    loadInitialData()
+    
+    return () => {
+      if (initialLoadTimeout) {
+        clearTimeout(initialLoadTimeout)
+      }
+    }
+  }, [carId, fetchReviews, fetchReviewerProfiles])
+
+  // Polling setup with modal awareness
+  useEffect(() => {
+    // Clear any existing timeout
+    if (pollingTimeoutRef.current) {
+      clearTimeout(pollingTimeoutRef.current)
+    }
+    
+    // Don't poll if modals are open
+    if (isAnyModalOpen) {
+      console.log('Modal open, pausing polling')
+      return
+    }
+    
+    const pollReviews = () => {
+      if (!isMounted.current || isAnyModalOpen) {
+        return
+      }
+      
+      fetchReviews()
+      
+      // Schedule next poll
+      pollingTimeoutRef.current = setTimeout(pollReviews, 20000) // 20 seconds
+    }
+    
+    // Start polling after initial delay
+    pollingTimeoutRef.current = setTimeout(pollReviews, 20000)
+    
+    return () => {
+      if (pollingTimeoutRef.current) {
+        clearTimeout(pollingTimeoutRef.current)
+      }
+    }
+  }, [isAnyModalOpen, fetchReviews])
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    
+    setUploadingPhoto(true)
+    
+    try {
+      const formData = new FormData()
+      formData.append('files', file)
+      
+      const response = await fetch('/sys-2847/fleet/api/upload', {
+        method: 'POST',
+        body: formData
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        const photoUrl = data.data[0]
+        setNewReview({ ...newReview, profilePhotoUrl: photoUrl })
+      } else {
+        alert('Failed to upload photo')
+      }
+    } catch (error) {
+      console.error('Upload failed:', error)
+      alert('Failed to upload photo')
+    } finally {
+      setUploadingPhoto(false)
+    }
+  }
+
+  const handleReply = async (reviewId: string, response: string, responseDate: string, type: 'host' | 'support') => {
+    try {
+      const updateData: any = {}
+      
+      if (type === 'host') {
+        updateData.hostResponse = response
+        updateData.hostRespondedAt = responseDate
+      } else {
+        updateData.supportResponse = response
+        updateData.supportRespondedAt = responseDate
+        updateData.supportRespondedBy = 'ItWhip Support'
+      }
+
+      const apiResponse = await fetch(`/sys-2847/fleet/api/reviews/${reviewId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updateData)
+      })
+
+      if (apiResponse.ok) {
+        // Optimistically update local state
+        setReviews(prevReviews => 
+          prevReviews.map(review => 
+            review.id === reviewId 
+              ? { ...review, ...updateData }
+              : review
+          )
+        )
+        
+        // Close modal
+        setReplyingToReviewData(null)
+      } else {
+        alert('Failed to add response')
+      }
+    } catch (error) {
+      console.error('Failed to add response:', error)
+      alert('Failed to add response')
+    }
+  }
+
+  const handleUpdateHelpfulCount = async (reviewId: string, newCount: number) => {
+    try {
+      const response = await fetch(`/sys-2847/fleet/api/reviews/${reviewId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ helpfulCount: newCount })
+      })
+
+      if (response.ok) {
+        // Optimistically update local state
+        setReviews(prevReviews => 
+          prevReviews.map(review => 
+            review.id === reviewId 
+              ? { ...review, helpfulCount: newCount }
+              : review
+          )
+        )
+        
+        // Close modal
+        setEditingHelpfulCountId(null)
+      } else {
+        alert('Failed to update helpful count')
+      }
+    } catch (error) {
+      console.error('Failed to update helpful count:', error)
+      alert('Failed to update helpful count')
+    }
+  }
+
+  // Apply filters to reviews - NO SOURCE FILTERING
+  const filteredReviews = useMemo(() => {
+    let filtered = [...reviews]
+    
+    // Filter by visibility
+    if (!showHidden) {
+      filtered = filtered.filter(r => r.isVisible)
+    }
+    
+    // Filter by verification status
+    if (filterVerified === 'verified') {
+      filtered = filtered.filter(r => r.isVerified)
+    } else if (filterVerified === 'unverified') {
+      filtered = filtered.filter(r => !r.isVerified)
+    }
+    
+    return filtered
+  }, [reviews, showHidden, filterVerified])
+
+  const handleAddReview = async () => {
+    if (!newReview.reviewerName || !newReview.comment) {
+      alert('Please fill in reviewer name and review')
+      return
+    }
+
+    try {
+      const reviewData = {
+        rating: newReview.rating,
+        title: newReview.title,
+        comment: newReview.comment,
+        reviewerName: newReview.reviewerName,
+        profilePhotoUrl: newReview.profilePhotoUrl,
+        reviewerCity: newReview.reviewerCity,
+        reviewerState: newReview.reviewerState,
+        tripStartDate: newReview.tripStartDate || null,
+        tripEndDate: newReview.tripEndDate || null,
+        isVerified: newReview.isVerified,
+        isPinned: newReview.isPinned,
+        helpfulCount: newReview.helpfulCount,
+        createNewProfile: newReview.createNewProfile,
+        reviewerProfileId: newReview.createNewProfile ? null : newReview.selectedProfileId,
+        isVisible: true
+      }
+
+      const response = await fetch(`/sys-2847/fleet/api/cars/${carId}/reviews`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reviewData)
+      })
+
+      const result = await response.json()
+
+      if (response.ok) {
+        // Reset form
+        setNewReview({
+          rating: 5,
+          title: '',
+          comment: '',
+          reviewerName: '',
+          profilePhotoUrl: '',
+          reviewerCity: 'Phoenix',
+          reviewerState: 'AZ',
+          tripStartDate: '',
+          tripEndDate: '',
+          isVerified: false,
+          isPinned: false,
+          helpfulCount: 0,
+          createNewProfile: true,
+          selectedProfileId: ''
+        })
+        
+        // Close modal
+        setShowAddModal(false)
+        
+        // Optimistically add to state
+        if (result.data) {
+          setReviews(prev => [...prev, result.data])
+        }
+        
+        // Refresh profiles
+        await fetchReviewerProfiles()
+      } else {
+        alert('Failed to add review: ' + (result.error || 'Unknown error'))
+      }
+    } catch (error) {
+      console.error('Failed to add review:', error)
+      alert('Failed to add review')
+    }
+  }
+
+  const handleDeleteReview = async (reviewId: string) => {
+    if (!confirm('Are you sure you want to delete this review?')) return
+
+    try {
+      const response = await fetch(`/sys-2847/fleet/api/reviews/${reviewId}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        // Optimistically remove from state
+        setReviews(prev => prev.filter(r => r.id !== reviewId))
+      } else {
+        alert('Failed to delete review')
+      }
+    } catch (error) {
+      console.error('Failed to delete review:', error)
+      alert('Failed to delete review')
+    }
+  }
+
+  const handleUpdateReview = async () => {
+    if (!editingReview || !editingReviewId) return
+
+    try {
+      const response = await fetch(`/sys-2847/fleet/api/reviews/${editingReviewId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rating: editingReview.rating,
+          title: editingReview.title,
+          comment: editingReview.comment,
+          isVisible: editingReview.isVisible,
+          isPinned: editingReview.isPinned,
+          isVerified: editingReview.isVerified
+        })
+      })
+
+      if (response.ok) {
+        // Optimistically update state
+        setReviews(prev => 
+          prev.map(r => 
+            r.id === editingReviewId 
+              ? { ...r, ...editingReview }
+              : r
+          )
+        )
+        
+        // Close modal
+        setEditingReviewId(null)
+      } else {
+        alert('Failed to update review')
+      }
+    } catch (error) {
+      console.error('Failed to update review:', error)
+      alert('Failed to update review')
+    }
+  }
+
+  const toggleVisibility = async (review: Review) => {
+    try {
+      const response = await fetch(`/sys-2847/fleet/api/reviews/${review.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isVisible: !review.isVisible })
+      })
+
+      if (response.ok) {
+        setReviews(prev => 
+          prev.map(r => 
+            r.id === review.id 
+              ? { ...r, isVisible: !r.isVisible }
+              : r
+          )
+        )
+      }
+    } catch (error) {
+      console.error('Failed to toggle visibility:', error)
+    }
+  }
+
+  const togglePin = async (review: Review) => {
+    try {
+      const response = await fetch(`/sys-2847/fleet/api/reviews/${review.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isPinned: !review.isPinned })
+      })
+
+      if (response.ok) {
+        setReviews(prev => 
+          prev.map(r => 
+            r.id === review.id 
+              ? { ...r, isPinned: !r.isPinned }
+              : r
+          )
+        )
+      }
+    } catch (error) {
+      console.error('Failed to toggle pin:', error)
+    }
+  }
+
+  const StarRating = ({ rating, onChange }: { rating: number; onChange?: (r: number) => void }) => (
+    <div className="flex gap-1">
+      {[1, 2, 3, 4, 5].map(star => (
+        <button
+          key={star}
+          type="button"
+          onClick={() => onChange && onChange(star)}
+          disabled={!onChange}
+          className={onChange ? 'cursor-pointer' : 'cursor-default'}
+        >
+          <svg 
+            className={`w-5 h-5 ${star <= rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+            viewBox="0 0 20 20"
+          >
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+          </svg>
+        </button>
+      ))}
+    </div>
+  )
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+          Reviews Management
+        </h3>
+        <button
+          type="button"
+          onClick={() => setShowAddModal(true)}
+          className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+        >
+          Add Review
+        </button>
+      </div>
+
+      {/* Review Stats */}
+      {stats && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div className="text-center">
+            <div className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+              {stats.average.toFixed(1)}
+            </div>
+            <StarRating rating={Math.round(stats.average)} />
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+              Based on {stats.total} review{stats.total !== 1 ? 's' : ''}
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            {stats.distribution.map(({ rating, count, percentage }: any) => (
+              <div key={rating} className="flex items-center gap-2">
+                <span className="text-sm text-gray-600 dark:text-gray-400 w-4">{rating}</span>
+                <svg className="w-4 h-4 text-yellow-400 fill-current">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+                <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                  <div 
+                    className="bg-yellow-400 h-2 rounded-full"
+                    style={{ width: `${percentage}%` }}
+                  />
+                </div>
+                <span className="text-sm text-gray-600 dark:text-gray-400 w-8">{count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Unified Filters */}
+      <div className="flex gap-4 mb-4 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+        <label className="flex items-center">
+          <input
+            type="checkbox"
+            checked={showHidden}
+            onChange={(e) => setShowHidden(e.target.checked)}
+            className="mr-2"
+          />
+          <span className="text-sm text-gray-700 dark:text-gray-300">Show Hidden</span>
+        </label>
+        
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-700 dark:text-gray-300">Verification:</span>
+          <select
+            value={filterVerified}
+            onChange={(e) => setFilterVerified(e.target.value as 'all' | 'verified' | 'unverified')}
+            className="text-sm px-2 py-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded"
+          >
+            <option value="all">All</option>
+            <option value="verified">Verified Only</option>
+            <option value="unverified">Unverified Only</option>
+          </select>
+        </div>
+        
+        <div className="ml-auto text-sm text-gray-600 dark:text-gray-400">
+          Showing {filteredReviews.length} of {reviews.length} reviews
+        </div>
+      </div>
+
+      {/* Unified Reviews List */}
+      <div className="space-y-4 max-h-96 overflow-y-auto">
+        {loading ? (
+          <p className="text-gray-500 dark:text-gray-400">Loading reviews...</p>
+        ) : filteredReviews.length > 0 ? (
+          filteredReviews.map(review => (
+            <ReviewCard 
+              key={review.id} 
+              review={review} 
+              onDelete={handleDeleteReview}
+              onEdit={(review: Review) => setEditingReviewId(review.id)}
+              onToggleVisibility={toggleVisibility}
+              onTogglePin={togglePin}
+              onReply={(data: { review: Review, type: 'host' | 'support' }) => 
+                setReplyingToReviewData({ reviewId: data.review.id, type: data.type })
+              }
+              onEditHelpfulCount={(review: Review) => setEditingHelpfulCountId(review.id)}
+            />
+          ))
+        ) : (
+          <p className="text-gray-500 dark:text-gray-400">
+            {reviews.length === 0 ? 'No reviews yet' : 'No reviews match your filters'}
+          </p>
+        )}
+      </div>
+
+      {/* Add Review Modal */}
+      {showAddModal && (
+        <AddReviewModal
+          newReview={newReview}
+          setNewReview={setNewReview}
+          reviewerProfiles={reviewerProfiles}
+          onAdd={handleAddReview}
+          onClose={() => setShowAddModal(false)}
+          uploadingPhoto={uploadingPhoto}
+          onPhotoUpload={handlePhotoUpload}
+        />
+      )}
+
+      {/* Edit Review Modal */}
+      {editingReview && editingReviewId && (
+        <EditReviewModal
+          review={editingReview}
+          setReview={(updatedReview: Review) => {
+            // Update the review in the reviews array as user edits
+            setReviews(prev => 
+              prev.map(r => r.id === editingReviewId ? updatedReview : r)
+            )
+          }}
+          onUpdate={handleUpdateReview}
+          onClose={() => setEditingReviewId(null)}
+        />
+      )}
+
+      {/* Reply Modal */}
+      {replyingToReview && replyingToReviewData && (
+        <ReplyModal
+          review={replyingToReview.review}
+          type={replyingToReview.type}
+          onReply={handleReply}
+          onClose={() => setReplyingToReviewData(null)}
+        />
+      )}
+
+      {/* Helpful Count Modal */}
+      {editingHelpfulCountReview && editingHelpfulCountId && (
+        <HelpfulCountModal
+          review={editingHelpfulCountReview}
+          onUpdate={handleUpdateHelpfulCount}
+          onClose={() => setEditingHelpfulCountId(null)}
+        />
+      )}
+    </div>
+  )
+}
+
+// Review Card Component - NO SOURCE INDICATORS
+function ReviewCard({ review, onDelete, onEdit, onToggleVisibility, onTogglePin, onReply, onEditHelpfulCount }: any) {
+  const reviewer = review.reviewerProfile || review.reviewer
+  
+  return (
+    <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+      <div className="flex justify-between items-start mb-2">
+        <div className="flex items-start gap-3">
+          {reviewer?.profilePhotoUrl && (
+            <img 
+              src={reviewer.profilePhotoUrl} 
+              alt={reviewer.name}
+              className="w-10 h-10 rounded-full object-cover"
+            />
+          )}
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-gray-900 dark:text-white">
+                {reviewer?.name || 'Anonymous'}
+              </span>
+              {review.isPinned && (
+                <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 text-xs rounded-full">
+                  📌 Pinned
+                </span>
+              )}
+              {review.isVerified && (
+                <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs rounded-full">
+                  ✓ Verified
+                </span>
+              )}
+              {!review.isVisible && (
+                <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-900/30 text-gray-700 dark:text-gray-400 text-xs rounded-full">
+                  👁️ Hidden
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2 mt-1">
+              <StarRating rating={review.rating} />
+              {review.helpfulCount > 0 && (
+                <span className="text-xs text-gray-500">
+                  {review.helpfulCount} helpful
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex gap-2">
+          <button
+            onClick={() => onEditHelpfulCount(review)}
+            className="text-amber-600 hover:text-amber-700 text-sm"
+            title="Edit helpful count"
+          >
+            Helpful
+          </button>
+          
+          <button
+            onClick={() => onTogglePin(review)}
+            className="text-purple-600 hover:text-purple-700 text-sm"
+            title={review.isPinned ? 'Unpin' : 'Pin to top'}
+          >
+            {review.isPinned ? 'Unpin' : 'Pin'}
+          </button>
+          
+          <button
+            onClick={() => onToggleVisibility(review)}
+            className="text-gray-600 hover:text-gray-700 text-sm"
+            title={review.isVisible ? 'Hide' : 'Show'}
+          >
+            {review.isVisible ? 'Hide' : 'Show'}
+          </button>
+          
+          <button
+            onClick={() => onEdit(review)}
+            className="text-blue-600 hover:text-blue-700 text-sm"
+          >
+            Edit
+          </button>
+          
+          <button
+            onClick={() => onDelete(review.id)}
+            className="text-red-600 hover:text-red-700 text-sm"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+      
+      {review.title && (
+        <h4 className="font-semibold text-gray-900 dark:text-white mb-1">
+          {review.title}
+        </h4>
+      )}
+      
+      <p className="text-gray-700 dark:text-gray-300">{review.comment}</p>
+      
+      {review.tripStartDate && (
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+          Trip: {new Date(review.tripStartDate).toLocaleDateString()} - {new Date(review.tripEndDate).toLocaleDateString()}
+        </p>
+      )}
+      
+      {/* Host Response */}
+      {review.hostResponse && (
+        <div className="mt-3 pl-4 border-l-2 border-blue-400">
+          <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">
+            Host Response:
+          </p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">{review.hostResponse}</p>
+          {review.hostRespondedAt && (
+            <p className="text-xs text-gray-500 mt-1">
+              {new Date(review.hostRespondedAt).toLocaleDateString()}
+            </p>
+          )}
+        </div>
+      )}
+      
+      {/* Support Response */}
+      {review.supportResponse && (
+        <div className="mt-3 pl-4 border-l-2 border-green-400">
+          <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">
+            ItWhip Support:
+          </p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">{review.supportResponse}</p>
+          {review.supportRespondedAt && (
+            <p className="text-xs text-gray-500 mt-1">
+              {new Date(review.supportRespondedAt).toLocaleDateString()}
+            </p>
+          )}
+        </div>
+      )}
+      
+      {/* Reply Buttons */}
+      <div className="mt-3 flex gap-2">
+        {!review.hostResponse && (
+          <button
+            onClick={() => onReply({ review, type: 'host' })}
+            className="text-xs px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Reply as Host
+          </button>
+        )}
+        {!review.supportResponse && (
+          <button
+            onClick={() => onReply({ review, type: 'support' })}
+            className="text-xs px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+          >
+            Reply as Support
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// Helpful Count Modal Component
+function HelpfulCountModal({ review, onUpdate, onClose }: any) {
+  const [helpfulCount, setHelpfulCount] = useState(review.helpfulCount || 0)
+
+  const handleSubmit = () => {
+    if (helpfulCount < 0) {
+      alert('Helpful count cannot be negative')
+      return
+    }
+    onUpdate(review.id, helpfulCount)
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          Edit Helpful Count
+        </h3>
+        
+        <div className="mb-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+            Review by {review.reviewerProfile?.name || review.reviewer?.name || 'Guest'}:
+          </p>
+          <p className="text-sm text-gray-700 dark:text-gray-300 italic">
+            "{review.comment.substring(0, 100)}{review.comment.length > 100 ? '...' : ''}"
+          </p>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Helpful Count
+          </label>
+          <input
+            type="number"
+            value={helpfulCount}
+            onChange={(e) => setHelpfulCount(parseInt(e.target.value) || 0)}
+            min="0"
+            max="999"
+            className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded"
+          />
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            Set how many people found this review helpful (0-999)
+          </p>
+        </div>
+        
+        <div className="flex gap-2 mt-6">
+          <button
+            type="button"
+            onClick={handleSubmit}
+            className="flex-1 px-4 py-2 bg-amber-600 text-white rounded hover:bg-amber-700"
+          >
+            Update Count
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Add Review Modal Component
+function AddReviewModal({ newReview, setNewReview, reviewerProfiles, onAdd, onClose, uploadingPhoto, onPhotoUpload }: any) {
+  const StarRating = ({ rating, onChange }: any) => (
+    <div className="flex gap-1">
+      {[1, 2, 3, 4, 5].map(star => (
+        <button
+          key={star}
+          type="button"
+          onClick={() => onChange(star)}
+          className="cursor-pointer"
+        >
+          <svg 
+            className={`w-5 h-5 ${star <= rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+            viewBox="0 0 20 20"
+          >
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+          </svg>
+        </button>
+      ))}
+    </div>
+  )
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full my-8">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          Add Review
+        </h3>
+        
+        <div className="space-y-4 max-h-[70vh] overflow-y-auto">
+          {/* Profile Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Reviewer Profile
+            </label>
+            <div className="space-y-2">
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  checked={newReview.createNewProfile}
+                  onChange={() => setNewReview({ ...newReview, createNewProfile: true })}
+                  className="mr-2"
+                />
+                Create New Profile
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  checked={!newReview.createNewProfile}
+                  onChange={() => setNewReview({ ...newReview, createNewProfile: false })}
+                  className="mr-2"
+                />
+                Use Existing Profile
+              </label>
+            </div>
+          </div>
+
+          {!newReview.createNewProfile && (
+            <div>
+              <select
+                value={newReview.selectedProfileId}
+                onChange={(e) => {
+                  const profile = reviewerProfiles.find((p: any) => p.id === e.target.value)
+                  setNewReview({ 
+                    ...newReview, 
+                    selectedProfileId: e.target.value,
+                    reviewerName: profile?.name || '',
+                    profilePhotoUrl: profile?.profilePhotoUrl || '',
+                    reviewerCity: profile?.city || 'Phoenix',
+                    reviewerState: profile?.state || 'AZ'
+                  })
+                }}
+                className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded"
+              >
+                <option value="">Select a profile...</option>
+                {reviewerProfiles.map((profile: any) => (
+                  <option key={profile.id} value={profile.id}>
+                    {profile.name} - {profile.city}, {profile.state} ({profile.reviewCount} reviews)
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {newReview.createNewProfile && (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Reviewer Name
+                  </label>
+                  <input
+                    type="text"
+                    value={newReview.reviewerName}
+                    onChange={(e) => setNewReview({ ...newReview, reviewerName: e.target.value })}
+                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded"
+                    placeholder="Sarah M."
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Profile Photo
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newReview.profilePhotoUrl}
+                      onChange={(e) => setNewReview({ ...newReview, profilePhotoUrl: e.target.value })}
+                      className="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded text-sm"
+                      placeholder="URL or upload"
+                      disabled={uploadingPhoto}
+                    />
+                    <label className="px-3 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 cursor-pointer text-sm whitespace-nowrap">
+                      {uploadingPhoto ? 'Uploading...' : 'Upload'}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={onPhotoUpload}
+                        className="hidden"
+                        disabled={uploadingPhoto}
+                      />
+                    </label>
+                  </div>
+                  {newReview.profilePhotoUrl && (
+                    <img 
+                      src={newReview.profilePhotoUrl} 
+                      alt="Preview" 
+                      className="mt-2 w-16 h-16 rounded-full object-cover"
+                    />
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    City
+                  </label>
+                  <input
+                    type="text"
+                    value={newReview.reviewerCity}
+                    onChange={(e) => setNewReview({ ...newReview, reviewerCity: e.target.value })}
+                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    State
+                  </label>
+                  <input
+                    type="text"
+                    value={newReview.reviewerState}
+                    onChange={(e) => setNewReview({ ...newReview, reviewerState: e.target.value })}
+                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded"
+                    maxLength={2}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Trip Dates */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Trip Start Date
+              </label>
+              <input
+                type="date"
+                value={newReview.tripStartDate}
+                onChange={(e) => setNewReview({ ...newReview, tripStartDate: e.target.value })}
+                className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Trip End Date
+              </label>
+              <input
+                type="date"
+                value={newReview.tripEndDate}
+                onChange={(e) => setNewReview({ ...newReview, tripEndDate: e.target.value })}
+                className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded"
+              />
+            </div>
+          </div>
+
+          {/* Rating */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Rating
+            </label>
+            <StarRating 
+              rating={newReview.rating} 
+              onChange={(r: number) => setNewReview({ ...newReview, rating: r })}
+            />
+          </div>
+
+          {/* Review Title */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Review Title (Optional)
+            </label>
+            <input
+              type="text"
+              value={newReview.title}
+              onChange={(e) => setNewReview({ ...newReview, title: e.target.value })}
+              className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded"
+              placeholder="Amazing experience!"
+            />
+          </div>
+          
+          {/* Review Comment */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Review
+            </label>
+            <textarea
+              value={newReview.comment}
+              onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })}
+              rows={4}
+              className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded"
+              placeholder="Write the review..."
+            />
+          </div>
+
+          {/* Options */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={newReview.isVerified}
+                  onChange={(e) => setNewReview({ ...newReview, isVerified: e.target.checked })}
+                  className="mr-2"
+                />
+                Verified Trip
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={newReview.isPinned}
+                  onChange={(e) => setNewReview({ ...newReview, isPinned: e.target.checked })}
+                  className="mr-2"
+                />
+                Pin to Top
+              </label>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Initial Helpful Count
+              </label>
+              <input
+                type="number"
+                value={newReview.helpfulCount}
+                onChange={(e) => setNewReview({ ...newReview, helpfulCount: parseInt(e.target.value) || 0 })}
+                className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded"
+                min="0"
+              />
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex gap-2 mt-6">
+          <button
+            type="button"
+            onClick={onAdd}
+            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Add Review
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Edit Review Modal Component
+function EditReviewModal({ review, setReview, onUpdate, onClose }: any) {
+  const StarRating = ({ rating, onChange }: any) => (
+    <div className="flex gap-1">
+      {[1, 2, 3, 4, 5].map(star => (
+        <button
+          key={star}
+          type="button"
+          onClick={() => onChange(star)}
+          className="cursor-pointer"
+        >
+          <svg 
+            className={`w-5 h-5 ${star <= rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+            viewBox="0 0 20 20"
+          >
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+          </svg>
+        </button>
+      ))}
+    </div>
+  )
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          Edit Review
+        </h3>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Rating
+            </label>
+            <StarRating 
+              rating={review.rating} 
+              onChange={(r: number) => setReview({ ...review, rating: r })}
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Title
+            </label>
+            <input
+              type="text"
+              value={review.title || ''}
+              onChange={(e) => setReview({ ...review, title: e.target.value })}
+              className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Review
+            </label>
+            <textarea
+              value={review.comment}
+              onChange={(e) => setReview({ ...review, comment: e.target.value })}
+              rows={4}
+              className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded"
+            />
+          </div>
+        </div>
+        
+        <div className="flex gap-2 mt-6">
+          <button
+            type="button"
+            onClick={onUpdate}
+            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Save Changes
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Reply Modal Component with Date Picker
+function ReplyModal({ review, type, onReply, onClose }: any) {
+  const [response, setResponse] = useState('')
+  const [responseDate, setResponseDate] = useState('')
+  
+  // Calculate suggested response date
+  useState(() => {
+    const reviewDate = new Date(review.createdAt)
+    const suggestedDate = new Date(reviewDate)
+    
+    const daysToAdd = type === 'host' 
+      ? Math.floor(Math.random() * 5) + 3
+      : Math.floor(Math.random() * 6) + 5
+    
+    suggestedDate.setDate(suggestedDate.getDate() + daysToAdd)
+    
+    const year = suggestedDate.getFullYear()
+    const month = String(suggestedDate.getMonth() + 1).padStart(2, '0')
+    const day = String(suggestedDate.getDate()).padStart(2, '0')
+    
+    setResponseDate(`${year}-${month}-${day}`)
+  })
+  
+  const handleSubmit = () => {
+    if (!response.trim()) {
+      alert('Please enter a response')
+      return
+    }
+    if (!responseDate) {
+      alert('Please select a response date')
+      return
+    }
+    
+    const reviewDate = new Date(review.createdAt)
+    const selectedDate = new Date(responseDate)
+    
+    if (selectedDate < reviewDate) {
+      alert('Response date cannot be before the review date')
+      return
+    }
+    
+    onReply(review.id, response, responseDate, type)
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          Reply as {type === 'host' ? 'Host' : 'ItWhip Support'}
+        </h3>
+        
+        <div className="mb-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+            Responding to review from {review.reviewerProfile?.name || review.reviewer?.name || 'Guest'}:
+          </p>
+          <p className="text-sm text-gray-700 dark:text-gray-300 italic mb-2">
+            "{review.comment.substring(0, 100)}{review.comment.length > 100 ? '...' : ''}"
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Review date: {new Date(review.createdAt).toLocaleDateString()}
+          </p>
+        </div>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Response Date
+            </label>
+            <input
+              type="date"
+              value={responseDate}
+              onChange={(e) => setResponseDate(e.target.value)}
+              min={review.createdAt.split('T')[0]}
+              className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded"
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              {type === 'host' 
+                ? 'Typically hosts respond within 3-7 days' 
+                : 'Support usually responds within 5-10 days'}
+            </p>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Your Response
+            </label>
+            <textarea
+              value={response}
+              onChange={(e) => setResponse(e.target.value)}
+              rows={4}
+              className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded"
+              placeholder={
+                type === 'host' 
+                  ? "Thank you for your review! We're glad you enjoyed..." 
+                  : "Thank you for your feedback. We've addressed..."
+              }
+            />
+          </div>
+        </div>
+        
+        <div className="flex gap-2 mt-6">
+          <button
+            type="button"
+            onClick={handleSubmit}
+            className={`flex-1 px-4 py-2 text-white rounded ${
+              type === 'host' 
+                ? 'bg-blue-600 hover:bg-blue-700' 
+                : 'bg-green-600 hover:bg-green-700'
+            }`}
+          >
+            Post Response
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Helper function for star rating
+function StarRating({ rating }: { rating: number }) {
+  return (
+    <div className="flex gap-1">
+      {[1, 2, 3, 4, 5].map(star => (
+        <svg 
+          key={star}
+          className={`w-5 h-5 ${star <= rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+          viewBox="0 0 20 20"
+        >
+          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+        </svg>
+      ))}
+    </div>
+  )
+}
