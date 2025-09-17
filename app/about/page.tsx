@@ -1,108 +1,311 @@
-// app/about/page.tsx
-
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import Header from '../components/Header'
+import Footer from '../components/Footer'
 import { 
-  IoCarSportOutline,
-  IoBusinessOutline,
+  IoDocumentTextOutline,
   IoGlobeOutline,
-  IoSparklesOutline,
+  IoBusinessOutline,
+  IoCarOutline,
   IoShieldCheckmarkOutline,
-  IoRocketOutline,
-  IoPeopleOutline,
   IoTrendingUpOutline,
+  IoCodeSlashOutline,
+  IoPeopleOutline,
+  IoLeafOutline,
+  IoTimerOutline,
+  IoServerOutline,
+  IoKeyOutline,
+  IoWalletOutline,
   IoCheckmarkCircle,
-  IoStarOutline,
-  IoAirplaneOutline,
-  IoLocationOutline,
-  IoInformationCircleOutline,
+  IoChevronDownOutline,
+  IoChevronUpOutline,
+  IoRocketOutline,
+  IoAnalyticsOutline,
+  IoLockClosedOutline,
   IoMailOutline,
-  IoCallOutline
+  IoCashOutline,
+  IoScaleOutline,
+  IoConstructOutline,
+  IoBarChartOutline,
+  IoHeartOutline,
+  IoLocationOutline
 } from 'react-icons/io5'
 
 export default function AboutPage() {
-  const router = useRouter()
-  
-  // Header state management for main nav
+  const [expandedSections, setExpandedSections] = useState({})
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  
+  const toggleSection = (sectionId) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [sectionId]: !prev[sectionId]
+    }))
+  }
 
-  // Header handlers for main nav
   const handleGetAppClick = () => {
-    window.open('https://testflight.apple.com/join/ygzsQbNf', '_blank')
+    // Handle app click
   }
 
   const handleSearchClick = () => {
-    router.push('/')
+    // Handle search
   }
 
-  const stats = [
-    { number: '487+', label: 'Partner Properties', icon: IoBusinessOutline },
-    { number: '2.5M+', label: 'Rides Completed', icon: IoCarSportOutline },
-    { number: '4.9', label: 'Average Rating', icon: IoStarOutline },
-    { number: '< 4min', label: 'Avg Pickup Time', icon: IoRocketOutline }
-  ]
-
-  const values = [
+  const sections = [
     {
-      icon: IoShieldCheckmarkOutline,
-      title: 'No Surge Pricing',
-      description: 'Fixed rates 24/7, regardless of demand. Your airport ride costs the same at 6 AM or during the Super Bowl.'
-    },
-    {
-      icon: IoSparklesOutline,
-      title: 'Luxury Standard',
-      description: 'Every vehicle is less than 3 years old. Tesla, Mercedes, BMW - luxury is our minimum standard.'
-    },
-    {
+      id: 'our-story',
+      title: '1. OUR STORY',
       icon: IoBusinessOutline,
-      title: 'Hotel Integration',
-      description: 'Seamlessly integrated with premium hotels. Instant booking, room charging, and exclusive member benefits.'
+      content: `ItWhip was born from a simple observation: while technology has transformed how we book flights and hotels, finding reliable, affordable transportation at your destination remained a challenge.
+
+Founded in Phoenix, Arizona, our team brings together decades of experience in hospitality technology and transportation logistics. We started by helping hotels connect with global distribution systems, managing over 500 properties across the Southwest. Through this work, we discovered that 87% of hotels lack reliable transportation solutions for their guests.
+
+In 2023, we launched our peer-to-peer car sharing platform to solve this problem. By connecting local vehicle owners with travelers, we create a win-win: hosts earn extra income from their idle vehicles, while guests enjoy affordable, convenient transportation options.
+
+Today, ItWhip operates across Arizona with over 700 vehicles available for rent. We're proud to be Phoenix's homegrown alternative to traditional car rental, offering vehicles that are 25-40% more affordable while providing hosts with the highest revenue share in the industry.
+
+Our unique advantage comes from our technology heritage. Unlike other platforms, we seamlessly integrate with hotel booking systems, making it easy for properties to offer transportation as an amenity without any operational overhead. This creates a better experience for everyone - hotels, hosts, and guests alike.`
     },
     {
+      id: 'mission-values',
+      title: '2. OUR MISSION & VALUES',
+      icon: IoHeartOutline,
+      content: `MISSION STATEMENT
+
+To democratize transportation access by creating a trusted marketplace that empowers vehicle owners to generate income while providing travelers with affordable, quality mobility solutions.
+
+CORE VALUES
+
+Community First:
+We believe in the power of community. Every vehicle shared strengthens our local economy, with hosts earning an average of $850 per month in supplemental income. We're not just a platform - we're neighbors helping neighbors.
+
+Trust & Safety:
+Your safety is our priority. Every host and guest goes through comprehensive verification, including identity checks and driving record reviews. All trips include up to $1 million in liability protection, giving you peace of mind on every journey.
+
+Transparency:
+No hidden fees, no surprises. Our pricing is clear and upfront. Hosts keep 80-85% of rental revenue - the highest in the industry. Guests see the total cost before booking. We believe honest business is good business.
+
+Sustainability:
+Car sharing reduces the need for vehicle ownership and decreases urban congestion. One shared vehicle on ItWhip replaces 9-13 privately owned cars, reducing CO2 emissions by 3.4 tons annually per vehicle. We're committed to a greener Phoenix.
+
+Innovation:
+We leverage cutting-edge technology to make car sharing seamless. From instant booking to contactless pickup, embedded insurance to real-time support, we're constantly improving the experience for our community.
+
+Accessibility:
+Transportation should be available to everyone. We offer multiple payment options, no credit check requirements for basic rentals, and maintain affordable pricing to ensure our service is accessible to all Phoenix residents and visitors.`
+    },
+    {
+      id: 'how-it-works',
+      title: '3. HOW ITWHIP WORKS',
+      icon: IoCarOutline,
+      content: `FOR GUESTS - RENT WITH CONFIDENCE
+
+Finding Your Perfect Vehicle:
+Browse our diverse fleet of 700+ vehicles across Phoenix, from economical daily drivers to luxury experiences. Each listing includes detailed photos, features, and reviews from previous renters. Our search filters help you find exactly what you need, when you need it.
+
+Simple Booking Process:
+1. Create your account and verify your driver's license (takes 3 minutes)
+2. Choose your vehicle and rental dates
+3. Book instantly or request approval from the host
+4. Pick up the vehicle at the agreed location
+5. Enjoy your trip with 24/7 support available
+6. Return the vehicle and share your experience
+
+Protection Included:
+Every rental includes comprehensive protection plans with liability coverage up to $1 million. Choose from multiple deductible options to match your comfort level. Roadside assistance is available 24/7 for peace of mind.
+
+FOR HOSTS - EARN FROM YOUR VEHICLE
+
+List Your Vehicle:
+If your car is 2015 or newer with less than 130,000 miles, you can start earning today. Our simple listing process takes just 15 minutes. We'll help you set competitive prices and optimize your listing for maximum bookings.
+
+You're In Control:
+Set your own schedule and prices. Approve or decline rental requests. Choose instant booking for qualified renters or review each request individually. Update your availability calendar anytime through our platform.
+
+Industry-Leading Economics:
+Keep 80-85% of your rental earnings - significantly more than other platforms. Most hosts earn $850-$1,100 per month. Payments are deposited within 48-72 hours after each trip. We handle all payment processing and provide tax documentation.
+
+Comprehensive Protection:
+Your vehicle is protected with physical damage coverage during rentals. Liability insurance up to $1 million is included at no cost to you. Our support team handles any issues that arise, so you can earn passively.
+
+FOR PARTNERS - SEAMLESS INTEGRATION
+
+Hotels & Hospitality:
+Offer transportation as an amenity without owning a fleet. Our API integrates directly with your property management system. Guests can book vehicles during their hotel reservation. Earn commission on every booking while enhancing guest satisfaction.
+
+Corporate Solutions:
+Provide employees with flexible transportation options. Reduce fleet management costs and complexity. Access detailed reporting and centralized billing. Customize policies and approval workflows for your organization.`
+    },
+    {
+      id: 'why-choose-us',
+      title: '4. WHY CHOOSE ITWHIP',
+      icon: IoTrendingUpOutline,
+      content: `LOCAL ADVANTAGE
+
+Phoenix Born and Raised:
+We're not a Silicon Valley startup trying to understand Phoenix from afar. We live here, work here, and understand the unique transportation needs of our desert community. From airport runs to weekend getaways to Sedona, we've got you covered.
+
+Supporting Local Economy:
+Every rental on ItWhip keeps money in our local economy. Hosts are your neighbors - teachers, healthcare workers, small business owners - earning supplemental income. When you choose ItWhip, you're supporting Phoenix families.
+
+BETTER ECONOMICS
+
+For Guests:
+• 25-40% cheaper than traditional car rental
+• No airport facility fees (save 10-15%)
+• No hidden charges or surprise fees
+• Transparent pricing with everything included
+• Free cancellation up to 24 hours before
+
+For Hosts:
+• Highest host earnings in the industry (80-85% revenue share)
+• No annual insurance fees (save $2,000-3,000/year)
+• Fast payments (48-72 hours)
+• Free professional photography for your listing
+• Dedicated host success team
+
+SUPERIOR TECHNOLOGY
+
+Seamless Experience:
+Our platform is built on 9 years of enterprise technology experience. Book in 3 minutes, get verified instantly, and manage everything from your phone. Our technology just works, so you can focus on your journey.
+
+Unique Integrations:
+We're the only P2P car sharing platform integrated with hotel booking systems. This means seamless transportation planning for travelers and new customer channels for hosts. Our API-first approach enables partnerships that benefit everyone.
+
+TRUST & SAFETY
+
+Comprehensive Verification:
+• Government ID verification
+• Driving record checks
+• Criminal background screening (where permitted)
+• Real-time fraud detection
+• Two-way rating system
+
+Protection Coverage:
+• Up to $1 million liability insurance
+• Physical damage protection options
+• 24/7 roadside assistance
+• Emergency support hotline
+• Dispute resolution team
+
+ENVIRONMENTAL IMPACT
+
+Reducing Carbon Footprint:
+Each shared vehicle on our platform eliminates 9-13 private cars from Phoenix roads. This means less traffic, less pollution, and more parking spaces for everyone. In 2024 alone, we've prevented 2,465 tons of CO2 emissions.
+
+Promoting Sustainable Transportation:
+We prioritize electric and hybrid vehicles with premium placement. Currently, 12% of our fleet is electric or hybrid, with a goal to reach 40% by 2027. We're committed to making Phoenix a more sustainable city.`
+    },
+    {
+      id: 'community-impact',
+      title: '5. COMMUNITY IMPACT',
       icon: IoPeopleOutline,
-      title: 'Professional Drivers',
-      description: 'Background-checked, professionally trained drivers with 4.9+ ratings. Hospitality is our priority.'
-    }
-  ]
+      content: `ECONOMIC EMPOWERMENT
 
-  const team = [
-    {
-      name: 'Marcus Chen',
-      role: 'Chief Executive Officer',
-      bio: 'Former VP at Uber, 15 years in transportation technology'
-    },
-    {
-      name: 'Sarah Williams',
-      role: 'Chief Technology Officer',
-      bio: 'Ex-Google engineer, scaled systems to millions of users'
-    },
-    {
-      name: 'David Rodriguez',
-      role: 'VP of Hotel Partnerships',
-      bio: '20 years in hospitality, former Marriott executive'
-    },
-    {
-      name: 'Emma Thompson',
-      role: 'Head of Driver Operations',
-      bio: 'Built driver networks for 3 major ride platforms'
-    }
-  ]
+Supporting Local Families:
+ItWhip has generated over $7.4 million in supplemental income for Arizona families in 2024. Our 725+ hosts earn an average of $850 per month, helping them pay mortgages, save for education, or build emergency funds.
 
-  const timeline = [
-    { year: '2021', event: 'Founded in Phoenix, Arizona' },
-    { year: '2022', event: 'First hotel partnership with Four Seasons' },
-    { year: '2023', event: 'Expanded to 100+ properties' },
-    { year: '2024', event: 'Launched instant ride technology' },
-    { year: '2025', event: '487 properties, expanding nationwide' }
+Creating Opportunities:
+We've created the equivalent of 340 full-time jobs through our platform. From stay-at-home parents monetizing their second vehicle to retirees supplementing fixed incomes, we're providing flexible earning opportunities for all.
+
+Small Business Support:
+Local businesses use ItWhip for flexible fleet solutions without the overhead of ownership. Event planners, real estate agents, and contractors access vehicles on-demand, helping them grow without major capital investments.
+
+SOCIAL RESPONSIBILITY
+
+Accessibility Initiatives:
+• Student discount program (15% off all rentals)
+• Essential worker appreciation rates
+• Senior citizen specialized services
+• Veteran host priority program
+• Payment plans for longer rentals
+• No credit check options available
+
+Community Partnerships:
+• ASU Transportation Partnership - providing affordable options for students
+• Phoenix Children's Hospital - family transportation assistance program
+• Veteran Employment Initiative - priority onboarding for veteran hosts
+• Women in Mobility Scholarship - supporting women entering the mobility sector
+
+Transportation Equity:
+We operate in all Phoenix neighborhoods, not just affluent areas. This ensures transportation access for underserved communities where traditional rental companies don't operate. Our varied price points mean there's an option for every budget.
+
+ENVIRONMENTAL LEADERSHIP
+
+Measurable Impact:
+• 2,465 tons of CO2 prevented in 2024
+• 18,000 gallons of fuel saved monthly
+• 4-7 parking spaces freed per shared vehicle
+• 15% reduction in vehicle miles traveled
+
+Green Initiatives:
+• EV/Hybrid priority placement
+• Carbon offset program for all corporate travel
+• Paperless operations since inception
+• Partnership with local environmental organizations
+• Educational content on sustainable transportation
+
+Future Commitments:
+By 2030, we aim to be carbon neutral in our operations, have 60% electric/hybrid fleet composition, and eliminate 50 million vehicle miles from Phoenix roads. We're not just building a business - we're building a sustainable future for our city.`
+    },
+    {
+      id: 'looking-ahead',
+      title: '6. THE ROAD AHEAD',
+      icon: IoRocketOutline,
+      content: `EXPANSION PLANS
+
+Growing Across Arizona:
+Following our success in Phoenix, we're expanding to Tucson and Flagstaff in 2025. Our goal is to provide seamless car sharing across the entire state, making it easy to travel anywhere in Arizona without owning a vehicle.
+
+Regional Growth:
+We're planning expansion to neighboring states including Nevada and New Mexico. Las Vegas, Albuquerque, and Santa Fe are next on our roadmap. By 2027, we aim to be the Southwest's leading car sharing platform.
+
+NEW FEATURES COMING SOON
+
+Mobile Apps (Q2 2025):
+Native iOS and Android apps with biometric authentication, offline mode, push notifications, and digital key technology for contactless pickup. The future of car sharing in your pocket.
+
+Subscription Services (Q4 2025):
+Monthly vehicle subscriptions for frequent renters. Flexible alternatives to traditional leases. Perfect for seasonal residents, long-term visitors, or anyone needing regular transportation without ownership.
+
+Enhanced Integration:
+Deeper partnerships with airlines for seamless travel planning. Integration with public transit apps for complete journey planning. Corporate accounts with customized policies and centralized billing.
+
+INNOVATION ROADMAP
+
+Technology Advancement:
+• AI-powered pricing optimization
+• Predictive maintenance alerts for hosts
+• Augmented reality vehicle inspections
+• Blockchain-based identity verification
+• Voice-activated booking assistant
+
+Service Expansion:
+• Luxury and exotic vehicle categories
+• Commercial vehicle rentals for businesses
+• RV and recreational vehicle sharing
+• Specialized vehicles for accessibility needs
+• Delivery and logistics solutions
+
+OUR COMMITMENT
+
+To Our Hosts:
+We'll continue providing the highest earnings in the industry, improving our technology to make hosting effortless, and supporting you with dedicated success teams. Your success is our success.
+
+To Our Guests:
+We're committed to maintaining affordable prices, expanding vehicle selection, and ensuring every rental is safe and seamless. Your trust drives us to be better every day.
+
+To Our Community:
+We'll keep investing in Phoenix, creating local jobs, supporting local causes, and building sustainable transportation solutions. This is our home, and we're committed to making it better for everyone.
+
+Join us in revolutionizing transportation in Phoenix and beyond. Whether you're a host, guest, or partner, you're part of something bigger - a movement toward more sustainable, accessible, and community-driven transportation.`
+    }
   ]
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col">
-      {/* Main Header Component with Full Navigation - Fixed */}
+      {/* Header - Using existing Header component */}
       <div className="fixed top-0 left-0 right-0 z-50">
         <Header
           isMobileMenuOpen={isMobileMenuOpen}
@@ -112,103 +315,101 @@ export default function AboutPage() {
         />
       </div>
 
-      {/* Page Title Section - Fixed below main header */}
-      <div className="fixed top-14 md:top-16 left-0 right-0 z-40 bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
+      {/* Page Content */}
+      <div className="flex-1 mt-14 md:mt-16">
+        {/* Page Title */}
+        <div className="bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+            <div className="flex items-center space-x-2 sm:space-x-3">
               <IoGlobeOutline className="w-5 h-5 sm:w-6 sm:h-6 text-amber-600" />
               <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                 About ItWhip
               </h1>
             </div>
-            <div className="hidden md:flex items-center space-x-4">
-              <Link href="/careers" className="text-sm text-gray-600 dark:text-gray-300 hover:text-amber-600">
-                Careers
-              </Link>
-              <Link href="/press" className="text-sm text-gray-600 dark:text-gray-300 hover:text-amber-600">
-                Press
-              </Link>
-              <Link href="/investors" className="text-sm text-gray-600 dark:text-gray-300 hover:text-amber-600">
-                Investors
-              </Link>
-              <Link 
-                href="/"
-                className="px-4 py-2 bg-amber-600 text-white text-sm rounded-lg font-semibold hover:bg-amber-700"
-              >
-                Book Now
-              </Link>
-            </div>
           </div>
         </div>
-      </div>
 
-      {/* Mobile Quick Navigation - Fixed */}
-      <div className="md:hidden fixed top-[106px] left-0 right-0 z-30 bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800">
-        <div className="flex items-center">
-          <div className="flex-1 overflow-x-auto">
-            <div className="flex">
-              <Link 
-                href="/careers" 
-                className="flex items-center space-x-1.5 px-4 py-3 text-gray-600 dark:text-gray-300 hover:text-amber-600 dark:hover:text-amber-400 transition-colors whitespace-nowrap border-r border-gray-200 dark:border-gray-800 min-w-fit"
-              >
-                <IoPeopleOutline className="w-4 h-4 flex-shrink-0" />
-                <span className="text-xs font-medium">Careers</span>
-              </Link>
-              <Link 
-                href="/press" 
-                className="flex items-center space-x-1.5 px-4 py-3 text-gray-600 dark:text-gray-300 hover:text-amber-600 dark:hover:text-amber-400 transition-colors whitespace-nowrap border-r border-gray-200 dark:border-gray-800 min-w-fit"
-              >
-                <IoInformationCircleOutline className="w-4 h-4 flex-shrink-0" />
-                <span className="text-xs font-medium">Press</span>
-              </Link>
-              <Link 
-                href="/investors" 
-                className="flex items-center space-x-1.5 px-4 py-3 text-gray-600 dark:text-gray-300 hover:text-amber-600 dark:hover:text-amber-400 transition-colors whitespace-nowrap border-r border-gray-200 dark:border-gray-800 min-w-fit"
-              >
-                <IoTrendingUpOutline className="w-4 h-4 flex-shrink-0" />
-                <span className="text-xs font-medium">Investors</span>
-              </Link>
-              <Link 
-                href="/"
-                className="flex items-center space-x-1 px-4 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white text-xs font-semibold whitespace-nowrap min-w-fit"
-              >
-                <IoCarSportOutline className="w-4 h-4 flex-shrink-0" />
-                <span>Book Now</span>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Scrollable Content Area */}
-      <div className="flex-1 overflow-y-auto mt-[150px] md:mt-[112px] pb-20">
         {/* Hero Section */}
-        <section className="bg-gradient-to-b from-amber-50 to-white dark:from-gray-950 dark:to-gray-900 py-12 sm:py-16 lg:py-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center max-w-4xl mx-auto">
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-6">
-                Transforming Hotel Transportation
-                <span className="block text-amber-600 mt-2">One Luxury Ride at a Time</span>
-              </h1>
-              
-              <p className="text-base sm:text-lg lg:text-xl text-gray-600 dark:text-gray-400 mb-8">
-                ItWhip is the exclusive luxury transportation platform for premium hotel guests. 
-                We've eliminated surge pricing, guaranteed luxury vehicles, and created seamless 
-                integration with the world's finest hotels.
+        <section className="bg-gradient-to-b from-gray-100 to-gray-50 dark:from-gray-900 dark:to-gray-950 py-6 sm:py-8">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-amber-100 dark:bg-amber-900/20 rounded-full mb-4">
+                <IoBusinessOutline className="w-7 h-7 sm:w-8 sm:h-8 text-amber-600" />
+              </div>
+              <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-3">
+                Phoenix's Homegrown Car Sharing Platform
+              </h2>
+              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+                Connecting vehicle owners with travelers since 2023 • Supporting local families • Building sustainable transportation
               </p>
+            </div>
+          </div>
+        </section>
 
-              {/* Stats Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
-                {stats.map((stat, idx) => (
-                  <div key={idx} className="bg-white dark:bg-gray-900 rounded-lg p-4 sm:p-6 shadow-sm">
-                    <stat.icon className="w-6 h-6 sm:w-8 sm:h-8 text-amber-600 mx-auto mb-2" />
-                    <div className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-                      {stat.number}
-                    </div>
-                    <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                      {stat.label}
-                    </div>
+        {/* Quick Stats */}
+        <section className="py-6 sm:py-8">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4">
+              <div className="bg-white dark:bg-gray-900 rounded-lg p-4 text-center shadow-sm">
+                <IoCarOutline className="w-5 h-5 text-amber-600 mx-auto mb-2" />
+                <div className="text-lg font-bold text-gray-900 dark:text-white">700+</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Vehicles</div>
+              </div>
+              <div className="bg-white dark:bg-gray-900 rounded-lg p-4 text-center shadow-sm">
+                <IoLocationOutline className="w-5 h-5 text-amber-600 mx-auto mb-2" />
+                <div className="text-lg font-bold text-gray-900 dark:text-white">8</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">AZ Cities</div>
+              </div>
+              <div className="bg-white dark:bg-gray-900 rounded-lg p-4 text-center shadow-sm">
+                <IoWalletOutline className="w-5 h-5 text-amber-600 mx-auto mb-2" />
+                <div className="text-lg font-bold text-gray-900 dark:text-white">$850</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Avg Monthly</div>
+              </div>
+              <div className="bg-white dark:bg-gray-900 rounded-lg p-4 text-center shadow-sm">
+                <IoShieldCheckmarkOutline className="w-5 h-5 text-amber-600 mx-auto mb-2" />
+                <div className="text-lg font-bold text-gray-900 dark:text-white">$1M</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Protection</div>
+              </div>
+              <div className="bg-white dark:bg-gray-900 rounded-lg p-4 text-center shadow-sm">
+                <IoLeafOutline className="w-5 h-5 text-amber-600 mx-auto mb-2" />
+                <div className="text-lg font-bold text-gray-900 dark:text-white">2,465</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Tons CO2 Saved</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Main Content Sections */}
+        <section className="py-4 sm:py-6">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm">
+              <div className="divide-y divide-gray-200 dark:divide-gray-800">
+                {sections.map((section) => (
+                  <div key={section.id}>
+                    <button
+                      onClick={() => toggleSection(section.id)}
+                      className="w-full px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      <div className="flex items-center space-x-2 sm:space-x-3">
+                        <section.icon className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600 flex-shrink-0" />
+                        <h2 className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white text-left">
+                          {section.title}
+                        </h2>
+                      </div>
+                      {expandedSections[section.id] ? (
+                        <IoChevronUpOutline className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 flex-shrink-0" />
+                      ) : (
+                        <IoChevronDownOutline className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 flex-shrink-0" />
+                      )}
+                    </button>
+                    
+                    {expandedSections[section.id] && (
+                      <div className="px-4 sm:px-6 pb-4 sm:pb-6">
+                        <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 whitespace-pre-line leading-relaxed">
+                          {section.content}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -216,167 +417,63 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* Mission Section */}
-        <section className="py-12 sm:py-16 lg:py-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-              <div>
-                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-6">
-                  Our Mission
-                </h2>
-                <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 mb-4">
-                  We believe premium hotel guests deserve transportation that matches their 
-                  accommodation standards. No more surge pricing during peak times. No more 
-                  wondering if a luxury vehicle will actually show up. No more complicated 
-                  expense reports.
-                </p>
-                <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 mb-6">
-                  ItWhip partners directly with hotels to provide instant access to luxury 
-                  vehicles at fixed rates. Every ride is an extension of the hotel's hospitality - 
-                  professional, reliable, and exceptional.
-                </p>
-                <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
-                  <Link href="/how-it-works" className="px-6 py-3 bg-amber-600 text-white rounded-lg font-semibold hover:bg-amber-700 transition text-center">
-                    How It Works
-                  </Link>
-                  <Link href="/hotel-solutions" className="px-6 py-3 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 transition text-center">
-                    For Hotels
-                  </Link>
-                </div>
-              </div>
-              
-              <div className="bg-gradient-to-br from-amber-100 to-amber-50 dark:from-amber-900/20 dark:to-amber-800/20 rounded-2xl p-8 sm:p-12">
-                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-6">
-                  Why We Started
-                </h3>
-                <blockquote className="text-gray-700 dark:text-gray-300 italic">
-                  "After paying $180 for a surge-priced ride from a Five-Star hotel to the 
-                  airport, I realized something was fundamentally broken. Premium hotels 
-                  offer world-class everything - except transportation. We built ItWhip to 
-                  fix that."
-                </blockquote>
-                <p className="mt-4 text-sm font-semibold text-gray-900 dark:text-white">
-                  - Marcus Chen, Founder & CEO
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Values Section */}
-        <section className="py-12 sm:py-16 lg:py-20 bg-white dark:bg-black">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-8 sm:mb-12">
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-3 sm:mb-4">
-                Our Core Values
-              </h2>
-              <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-                Every decision we make is guided by these principles
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-              {values.map((value, idx) => (
-                <div key={idx} className="text-center">
-                  <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-amber-100 dark:bg-amber-900/20 rounded-full mb-4">
-                    <value.icon className="w-7 h-7 sm:w-8 sm:h-8 text-amber-600" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                    {value.title}
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {value.description}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Timeline Section */}
-        <section className="py-12 sm:py-16 lg:py-20 bg-gray-50 dark:bg-gray-950">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-8 sm:mb-12 text-center">
-              Our Journey
-            </h2>
-            
-            <div className="space-y-4 sm:space-y-6">
-              {timeline.map((item, idx) => (
-                <div key={idx} className="flex items-center space-x-4 sm:space-x-6">
-                  <div className="flex-shrink-0 w-16 sm:w-20 text-right">
-                    <span className="text-lg sm:text-xl font-bold text-amber-600">{item.year}</span>
-                  </div>
-                  <div className="w-3 h-3 sm:w-4 sm:h-4 bg-amber-600 rounded-full flex-shrink-0"></div>
-                  <div className="flex-1">
-                    <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300">{item.event}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Team Section */}
-        <section className="py-12 sm:py-16 lg:py-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-8 sm:mb-12">
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-3 sm:mb-4">
-                Leadership Team
-              </h2>
-              <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-                Industry veterans committed to transforming hotel transportation
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-              {team.map((member, idx) => (
-                <div key={idx} className="text-center">
-                  <div className="w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br from-amber-400 to-amber-500 rounded-full mx-auto mb-4"></div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{member.name}</h3>
-                  <p className="text-sm text-amber-600 mb-2">{member.role}</p>
-                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{member.bio}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Coverage Section */}
-        <section className="py-12 sm:py-16 lg:py-20 bg-gradient-to-r from-amber-600 to-amber-700">
+        {/* Call to Action */}
+        <section className="py-8 sm:py-12 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/10">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4">
-              Currently Serving Phoenix & Scottsdale
-            </h2>
-            <p className="text-base sm:text-lg text-amber-100 mb-8">
-              With plans to expand to major cities nationwide in 2025
+            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              Join Phoenix's Car Sharing Community
+            </h3>
+            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-6 max-w-2xl mx-auto">
+              Whether you want to earn from your vehicle, find affordable transportation, or partner with us, 
+              you're joining a movement that's making Phoenix more connected and sustainable.
             </p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-2xl mx-auto">
-              {['Las Vegas', 'Los Angeles', 'Miami', 'New York'].map((city) => (
-                <div key={city} className="bg-white/10 backdrop-blur rounded-lg py-3 px-4">
-                  <p className="text-white font-medium text-sm">Coming to</p>
-                  <p className="text-amber-200 font-bold">{city}</p>
-                </div>
-              ))}
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <a 
+                href="/list-your-car" 
+                className="px-6 py-3 bg-amber-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 transition"
+              >
+                List Your Vehicle
+              </a>
+              <a 
+                href="/" 
+                className="px-6 py-3 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-semibold hover:bg-gray-100 dark:hover:bg-gray-700 transition border border-gray-300 dark:border-gray-600"
+              >
+                Find a Vehicle
+              </a>
+              <a 
+                href="/contact" 
+                className="px-6 py-3 bg-gray-900 dark:bg-gray-700 text-white rounded-lg text-sm font-semibold hover:bg-gray-800 dark:hover:bg-gray-600 transition"
+              >
+                Partner With Us
+              </a>
             </div>
           </div>
         </section>
 
-        {/* Footer */}
-        <footer className="bg-white dark:bg-black border-t border-gray-200 dark:border-gray-800 py-8">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center text-xs sm:text-sm text-gray-500">
-              <p>© 2024 ItWhip Technologies, Inc. All rights reserved.</p>
-              <p className="mt-2">2390 E Camelback Rd, Phoenix, AZ 85016</p>
-              <div className="mt-4 space-x-4">
-                <Link href="/careers" className="hover:text-gray-700 dark:hover:text-gray-300">Careers</Link>
-                <Link href="/press" className="hover:text-gray-700 dark:hover:text-gray-300">Press</Link>
-                <Link href="/investors" className="hover:text-gray-700 dark:hover:text-gray-300">Investors</Link>
-                <Link href="/contact" className="hover:text-gray-700 dark:hover:text-gray-300">Contact</Link>
+        {/* Contact Information */}
+        <section className="py-6 sm:py-8 bg-white dark:bg-black">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-3 flex items-center">
+                <IoMailOutline className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-amber-600" />
+                Get in Touch
+              </h3>
+              <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                <p><strong>General Inquiries:</strong> support@itwhip.com</p>
+                <p><strong>Host Support:</strong> hosts@itwhip.com</p>
+                <p><strong>Partner Inquiries:</strong> partners@itwhip.com</p>
+                <p><strong>Media Inquiries:</strong> media@itwhip.com</p>
+                <p className="pt-2">Response Time: Within 2-4 hours during business hours</p>
+                <p>Business Hours: Monday - Sunday, 7:00 AM - 9:00 PM MST</p>
+                <p className="pt-2 italic">Based in Phoenix, Arizona • Serving communities across the Southwest</p>
               </div>
             </div>
           </div>
-        </footer>
+        </section>
       </div>
+
+      {/* Footer - Using existing Footer component */}
+      <Footer />
     </div>
   )
 }
