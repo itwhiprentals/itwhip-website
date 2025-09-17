@@ -1,4 +1,4 @@
-// app/sys-2847/fleet/edit/components/reviews/modals/EditReviewModal.tsx
+// app/sys/fleet/edit/components/reviews/modals/EditReviewModal.tsx
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -17,14 +17,31 @@ export function EditReviewModal({
   onClose,
   onPhotoUpload 
 }: EditReviewModalProps) {
-  const [editedReview, setEditedReview] = useState<Review>(review)
+  const [editedReview, setEditedReview] = useState<Review>(() => ({
+    ...review,
+    // Ensure reviewer object exists for consistent state management
+    reviewer: review.reviewer || {
+      name: review.reviewerProfile?.name || '',
+      profilePhotoUrl: review.reviewerProfile?.profilePhotoUrl || '',
+      city: review.reviewerProfile?.city || 'Phoenix',
+      state: review.reviewerProfile?.state || 'AZ'
+    }
+  }))
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [activeTab, setActiveTab] = useState<'basic' | 'dates' | 'profile'>('basic')
 
-  // Initialize with existing review data
+  // Reset when review prop changes
   useEffect(() => {
-    setEditedReview(review)
-  }, [review])
+    setEditedReview({
+      ...review,
+      reviewer: review.reviewer || {
+        name: review.reviewerProfile?.name || '',
+        profilePhotoUrl: review.reviewerProfile?.profilePhotoUrl || '',
+        city: review.reviewerProfile?.city || 'Phoenix',
+        state: review.reviewerProfile?.state || 'AZ'
+      }
+    })
+  }, [review.id]) // Only reset when review ID changes, not on every prop update
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -33,23 +50,83 @@ export function EditReviewModal({
     setUploadingPhoto(true)
     try {
       const photoUrl = await onPhotoUpload(file)
-      setEditedReview(prev => ({
-        ...prev,
-        reviewerProfile: prev.reviewerProfile ? {
-          ...prev.reviewerProfile,
-          profilePhotoUrl: photoUrl
-        } : undefined,
-        reviewer: prev.reviewer ? {
-          ...prev.reviewer,
-          profilePhotoUrl: photoUrl
-        } : undefined
-      }))
+      
+      // Simplified update
+      setEditedReview(prev => {
+        const updated = { ...prev }
+        
+        if (updated.reviewerProfile) {
+          updated.reviewerProfile = {
+            ...updated.reviewerProfile,
+            profilePhotoUrl: photoUrl
+          }
+        }
+        
+        if (updated.reviewer) {
+          updated.reviewer = {
+            ...updated.reviewer,
+            profilePhotoUrl: photoUrl
+          }
+        }
+        
+        return updated
+      })
     } catch (error) {
       console.error('Photo upload failed:', error)
       alert('Failed to upload photo')
     } finally {
       setUploadingPhoto(false)
     }
+  }
+
+  // Helper function to update reviewer data
+  const updateReviewerField = (field: string, value: any) => {
+    setEditedReview(prev => {
+      const updated = { ...prev }
+      
+      // Update reviewer object
+      if (!updated.reviewer) {
+        updated.reviewer = {
+          name: '',
+          profilePhotoUrl: '',
+          city: 'Phoenix',
+          state: 'AZ'
+        }
+      }
+      updated.reviewer = {
+        ...updated.reviewer,
+        [field]: value
+      }
+      
+      // Update reviewerProfile if it exists
+      if (updated.reviewerProfile) {
+        updated.reviewerProfile = {
+          ...updated.reviewerProfile,
+          [field]: value
+        }
+      }
+      
+      return updated
+    })
+  }
+
+  // Helper function to update reviewerProfile specific fields
+  const updateProfileField = (field: string, value: any) => {
+    setEditedReview(prev => {
+      const updated = { ...prev }
+      
+      if (!updated.reviewerProfile) {
+        // Don't create a profile if it doesn't exist
+        return updated
+      }
+      
+      updated.reviewerProfile = {
+        ...updated.reviewerProfile,
+        [field]: value
+      }
+      
+      return updated
+    })
   }
 
   const handleSubmit = () => {
@@ -73,6 +150,7 @@ export function EditReviewModal({
     }
 
     onUpdate(editedReview)
+    onClose()
   }
 
   const StarRating = ({ rating, onChange }: { rating: number; onChange: (r: number) => void }) => (
@@ -146,7 +224,7 @@ export function EditReviewModal({
                 </label>
                 <StarRating 
                   rating={editedReview.rating} 
-                  onChange={(r) => setEditedReview({ ...editedReview, rating: r })}
+                  onChange={(r) => setEditedReview(prev => ({ ...prev, rating: r }))}
                 />
               </div>
               
@@ -157,7 +235,7 @@ export function EditReviewModal({
                 <input
                   type="text"
                   value={editedReview.title || ''}
-                  onChange={(e) => setEditedReview({ ...editedReview, title: e.target.value })}
+                  onChange={(e) => setEditedReview(prev => ({ ...prev, title: e.target.value }))}
                   className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded"
                   placeholder="Amazing experience!"
                 />
@@ -168,8 +246,8 @@ export function EditReviewModal({
                   Review Content
                 </label>
                 <textarea
-                  value={editedReview.comment}
-                  onChange={(e) => setEditedReview({ ...editedReview, comment: e.target.value })}
+                  value={editedReview.comment || ''}
+                  onChange={(e) => setEditedReview(prev => ({ ...prev, comment: e.target.value }))}
                   rows={6}
                   className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded"
                   placeholder="Write the review..."
@@ -184,10 +262,10 @@ export function EditReviewModal({
                   <input
                     type="number"
                     value={editedReview.helpfulCount}
-                    onChange={(e) => setEditedReview({ 
-                      ...editedReview, 
+                    onChange={(e) => setEditedReview(prev => ({ 
+                      ...prev, 
                       helpfulCount: parseInt(e.target.value) || 0 
-                    })}
+                    }))}
                     min="0"
                     max="999"
                     className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded"
@@ -199,10 +277,10 @@ export function EditReviewModal({
                     <input
                       type="checkbox"
                       checked={editedReview.isVisible}
-                      onChange={(e) => setEditedReview({ 
-                        ...editedReview, 
+                      onChange={(e) => setEditedReview(prev => ({ 
+                        ...prev, 
                         isVisible: e.target.checked 
-                      })}
+                      }))}
                       className="mr-2"
                     />
                     <span className="text-sm text-gray-700 dark:text-gray-300">Visible</span>
@@ -211,10 +289,10 @@ export function EditReviewModal({
                     <input
                       type="checkbox"
                       checked={editedReview.isPinned}
-                      onChange={(e) => setEditedReview({ 
-                        ...editedReview, 
+                      onChange={(e) => setEditedReview(prev => ({ 
+                        ...prev, 
                         isPinned: e.target.checked 
-                      })}
+                      }))}
                       className="mr-2"
                     />
                     <span className="text-sm text-gray-700 dark:text-gray-300">Pinned to Top</span>
@@ -223,10 +301,10 @@ export function EditReviewModal({
                     <input
                       type="checkbox"
                       checked={editedReview.isVerified}
-                      onChange={(e) => setEditedReview({ 
-                        ...editedReview, 
+                      onChange={(e) => setEditedReview(prev => ({ 
+                        ...prev, 
                         isVerified: e.target.checked 
-                      })}
+                      }))}
                       className="mr-2"
                     />
                     <span className="text-sm text-gray-700 dark:text-gray-300">Verified Trip</span>
@@ -247,10 +325,10 @@ export function EditReviewModal({
                   <input
                     type="date"
                     value={editedReview.tripStartDate?.split('T')[0] || ''}
-                    onChange={(e) => setEditedReview({ 
-                      ...editedReview, 
+                    onChange={(e) => setEditedReview(prev => ({ 
+                      ...prev, 
                       tripStartDate: e.target.value 
-                    })}
+                    }))}
                     className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded"
                   />
                 </div>
@@ -262,10 +340,10 @@ export function EditReviewModal({
                   <input
                     type="date"
                     value={editedReview.tripEndDate?.split('T')[0] || ''}
-                    onChange={(e) => setEditedReview({ 
-                      ...editedReview, 
+                    onChange={(e) => setEditedReview(prev => ({ 
+                      ...prev, 
                       tripEndDate: e.target.value 
-                    })}
+                    }))}
                     min={editedReview.tripStartDate?.split('T')[0]}
                     className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded"
                   />
@@ -279,10 +357,10 @@ export function EditReviewModal({
                 <input
                   type="datetime-local"
                   value={editedReview.createdAt?.slice(0, 16) || ''}
-                  onChange={(e) => setEditedReview({ 
-                    ...editedReview, 
+                  onChange={(e) => setEditedReview(prev => ({ 
+                    ...prev, 
                     createdAt: e.target.value 
-                  })}
+                  }))}
                   min={editedReview.tripEndDate?.split('T')[0]}
                   className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded"
                 />
@@ -291,7 +369,7 @@ export function EditReviewModal({
                 </p>
               </div>
 
-              {editedReview.hostRespondedAt && (
+              {editedReview.hostResponse && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Host Response Date
@@ -299,17 +377,20 @@ export function EditReviewModal({
                   <input
                     type="datetime-local"
                     value={editedReview.hostRespondedAt?.slice(0, 16) || ''}
-                    onChange={(e) => setEditedReview({ 
-                      ...editedReview, 
+                    onChange={(e) => setEditedReview(prev => ({ 
+                      ...prev, 
                       hostRespondedAt: e.target.value 
-                    })}
+                    }))}
                     min={editedReview.createdAt?.slice(0, 16)}
                     className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded"
                   />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Host typically responds 1-7 days after review
+                  </p>
                 </div>
               )}
 
-              {editedReview.supportRespondedAt && (
+              {editedReview.supportResponse && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Support Response Date
@@ -317,13 +398,16 @@ export function EditReviewModal({
                   <input
                     type="datetime-local"
                     value={editedReview.supportRespondedAt?.slice(0, 16) || ''}
-                    onChange={(e) => setEditedReview({ 
-                      ...editedReview, 
+                    onChange={(e) => setEditedReview(prev => ({ 
+                      ...prev, 
                       supportRespondedAt: e.target.value 
-                    })}
+                    }))}
                     min={editedReview.hostRespondedAt || editedReview.createdAt?.slice(0, 16)}
                     className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded"
                   />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Support typically responds 3-10 days after review if needed
+                  </p>
                 </div>
               )}
             </>
@@ -344,20 +428,7 @@ export function EditReviewModal({
                       editedReview.reviewer?.name || 
                       ''
                     }
-                    onChange={(e) => {
-                      const name = e.target.value
-                      setEditedReview(prev => ({
-                        ...prev,
-                        reviewerProfile: prev.reviewerProfile ? {
-                          ...prev.reviewerProfile,
-                          name
-                        } : undefined,
-                        reviewer: prev.reviewer ? {
-                          ...prev.reviewer,
-                          name
-                        } : { name, profilePhotoUrl: '' }
-                      }))
-                    }}
+                    onChange={(e) => updateReviewerField('name', e.target.value)}
                     className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded"
                     placeholder="John Doe"
                   />
@@ -375,20 +446,7 @@ export function EditReviewModal({
                         editedReview.reviewer?.profilePhotoUrl || 
                         ''
                       }
-                      onChange={(e) => {
-                        const url = e.target.value
-                        setEditedReview(prev => ({
-                          ...prev,
-                          reviewerProfile: prev.reviewerProfile ? {
-                            ...prev.reviewerProfile,
-                            profilePhotoUrl: url
-                          } : undefined,
-                          reviewer: prev.reviewer ? {
-                            ...prev.reviewer,
-                            profilePhotoUrl: url
-                          } : undefined
-                        }))
-                      }}
+                      onChange={(e) => updateReviewerField('profilePhotoUrl', e.target.value)}
                       className="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded text-sm"
                       placeholder="Photo URL"
                       disabled={uploadingPhoto}
@@ -428,20 +486,7 @@ export function EditReviewModal({
                       editedReview.reviewer?.city || 
                       'Phoenix'
                     }
-                    onChange={(e) => {
-                      const city = e.target.value
-                      setEditedReview(prev => ({
-                        ...prev,
-                        reviewerProfile: prev.reviewerProfile ? {
-                          ...prev.reviewerProfile,
-                          city
-                        } : undefined,
-                        reviewer: prev.reviewer ? {
-                          ...prev.reviewer,
-                          city
-                        } : undefined
-                      }))
-                    }}
+                    onChange={(e) => updateReviewerField('city', e.target.value)}
                     className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded"
                   />
                 </div>
@@ -457,20 +502,7 @@ export function EditReviewModal({
                       editedReview.reviewer?.state || 
                       'AZ'
                     }
-                    onChange={(e) => {
-                      const state = e.target.value
-                      setEditedReview(prev => ({
-                        ...prev,
-                        reviewerProfile: prev.reviewerProfile ? {
-                          ...prev.reviewerProfile,
-                          state
-                        } : undefined,
-                        reviewer: prev.reviewer ? {
-                          ...prev.reviewer,
-                          state
-                        } : undefined
-                      }))
-                    }}
+                    onChange={(e) => updateReviewerField('state', e.target.value)}
                     className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded"
                     maxLength={2}
                   />
@@ -487,16 +519,7 @@ export function EditReviewModal({
                       <input
                         type="number"
                         value={editedReview.reviewerProfile.tripCount || 0}
-                        onChange={(e) => {
-                          const tripCount = parseInt(e.target.value) || 0
-                          setEditedReview(prev => ({
-                            ...prev,
-                            reviewerProfile: prev.reviewerProfile ? {
-                              ...prev.reviewerProfile,
-                              tripCount
-                            } : undefined
-                          }))
-                        }}
+                        onChange={(e) => updateProfileField('tripCount', parseInt(e.target.value) || 0)}
                         min="1"
                         max="999"
                         className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded"
@@ -510,16 +533,7 @@ export function EditReviewModal({
                       <input
                         type="number"
                         value={editedReview.reviewerProfile.reviewCount || 0}
-                        onChange={(e) => {
-                          const reviewCount = parseInt(e.target.value) || 0
-                          setEditedReview(prev => ({
-                            ...prev,
-                            reviewerProfile: prev.reviewerProfile ? {
-                              ...prev.reviewerProfile,
-                              reviewCount
-                            } : undefined
-                          }))
-                        }}
+                        onChange={(e) => updateProfileField('reviewCount', parseInt(e.target.value) || 0)}
                         min="1"
                         max="999"
                         className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded"
@@ -534,16 +548,7 @@ export function EditReviewModal({
                     <input
                       type="date"
                       value={editedReview.reviewerProfile.memberSince?.split('T')[0] || ''}
-                      onChange={(e) => {
-                        const memberSince = e.target.value
-                        setEditedReview(prev => ({
-                          ...prev,
-                          reviewerProfile: prev.reviewerProfile ? {
-                            ...prev.reviewerProfile,
-                            memberSince
-                          } : undefined
-                        }))
-                      }}
+                      onChange={(e) => updateProfileField('memberSince', e.target.value)}
                       className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded"
                     />
                   </div>
@@ -553,16 +558,7 @@ export function EditReviewModal({
                       <input
                         type="checkbox"
                         checked={editedReview.reviewerProfile.isVerified || false}
-                        onChange={(e) => {
-                          const isVerified = e.target.checked
-                          setEditedReview(prev => ({
-                            ...prev,
-                            reviewerProfile: prev.reviewerProfile ? {
-                              ...prev.reviewerProfile,
-                              isVerified
-                            } : undefined
-                          }))
-                        }}
+                        onChange={(e) => updateProfileField('isVerified', e.target.checked)}
                         className="mr-2"
                       />
                       <span className="text-sm text-gray-700 dark:text-gray-300">Verified Profile</span>
