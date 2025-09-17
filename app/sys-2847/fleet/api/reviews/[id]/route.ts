@@ -1,4 +1,4 @@
-// app/sys-2847/fleet/api/reviews/[id]/route.ts
+// app/sys/fleet/api/reviews/[id]/route.ts
 // Admin endpoint for individual review operations
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -101,15 +101,19 @@ export async function PUT(
       updateData.tripEndDate = body.tripEndDate ? new Date(body.tripEndDate) : null
     }
 
+    // ADDED: Update review created date if provided
+    if (body.createdAt !== undefined) {
+      updateData.createdAt = body.createdAt ? new Date(body.createdAt) : null
+    }
+
     // Update host response if provided
     if (body.hostResponse !== undefined) {
       updateData.hostResponse = body.hostResponse
       if (body.hostRespondedAt !== undefined) {
         updateData.hostRespondedAt = body.hostRespondedAt ? new Date(body.hostRespondedAt) : null
-      } else if (body.hostResponse) {
+      } else if (body.hostResponse && !existingReview.hostResponse) {
+        // Only auto-set date if adding a NEW response, not editing existing
         updateData.hostRespondedAt = new Date()
-      } else {
-        updateData.hostRespondedAt = null
       }
     }
 
@@ -118,12 +122,15 @@ export async function PUT(
       updateData.supportResponse = body.supportResponse
       if (body.supportRespondedAt !== undefined) {
         updateData.supportRespondedAt = body.supportRespondedAt ? new Date(body.supportRespondedAt) : null
-      } else if (body.supportResponse) {
+      } else if (body.supportResponse && !existingReview.supportResponse) {
+        // Only auto-set date if adding a NEW response, not editing existing
         updateData.supportRespondedAt = new Date()
-      } else {
-        updateData.supportRespondedAt = null
       }
-      updateData.supportRespondedBy = body.supportRespondedBy || 'ItWhip Support'
+      if (body.supportRespondedBy !== undefined) {
+        updateData.supportRespondedBy = body.supportRespondedBy
+      } else if (body.supportResponse && !existingReview.supportResponse) {
+        updateData.supportRespondedBy = 'ItWhip Support'
+      }
     }
 
     // Update helpful count if provided

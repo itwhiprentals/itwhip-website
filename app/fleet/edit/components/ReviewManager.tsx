@@ -1,4 +1,4 @@
-// app/sys-2847/fleet/edit/components/ReviewManager.tsx
+// app/sys/fleet/edit/components/ReviewManager.tsx
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
@@ -152,7 +152,7 @@ export function ReviewManager({ carId }: ReviewManagerProps) {
     }
   }
 
-  // Update review - INCLUDING PROFILE FIELDS
+  // Update review - INCLUDING PROFILE FIELDS AND CREATEDAT
   const handleUpdateReview = async (updatedReview: Review) => {
     try {
       // Extract review fields
@@ -175,7 +175,8 @@ export function ReviewManager({ carId }: ReviewManagerProps) {
         hostRespondedAt: updatedReview.hostRespondedAt || null,
         supportResponse: updatedReview.supportResponse || null,
         supportRespondedAt: updatedReview.supportRespondedAt || null,
-        supportRespondedBy: updatedReview.supportRespondedBy || null
+        supportRespondedBy: updatedReview.supportRespondedBy || null,
+        createdAt: updatedReview.createdAt || null, // ADDED: Include createdAt field
       }
 
       // Add reviewer profile fields if they exist
