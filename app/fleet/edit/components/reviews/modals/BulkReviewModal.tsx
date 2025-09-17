@@ -1,4 +1,4 @@
-// app/sys-2847/fleet/edit/components/reviews/modals/BulkReviewModal.tsx
+// app/fleet/edit/components/reviews/modals/BulkReviewModal.tsx
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -62,7 +62,7 @@ export function BulkReviewModal({ carId, carName, reviewerProfiles, onClose, onC
 
   const fetchUsedProfiles = async () => {
     try {
-      const response = await fetch(`/sys-2847/fleet/api/cars/${carId}/reviews`)
+      const response = await fetch(`/fleet/api/cars/${carId}/reviews`)
       if (response.ok) {
         const data = await response.json()
         const usedIds = new Set(
@@ -85,7 +85,7 @@ export function BulkReviewModal({ carId, carName, reviewerProfiles, onClose, onC
   const handleGenerate = async () => {
     setIsGenerating(true)
     try {
-      const response = await fetch(`/sys-2847/fleet/api/cars/${carId}/reviews/bulk`, {
+      const response = await fetch(`/fleet/api/cars/${carId}/reviews/bulk`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -156,7 +156,7 @@ export function BulkReviewModal({ carId, carName, reviewerProfiles, onClose, onC
           reviewData.reviewerState = review.newReviewerState || 'AZ'
         }
 
-        const response = await fetch(`/sys-2847/fleet/api/cars/${carId}/reviews`, {
+        const response = await fetch(`/fleet/api/cars/${carId}/reviews`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(reviewData)
@@ -429,7 +429,7 @@ export function BulkReviewModal({ carId, carName, reviewerProfiles, onClose, onC
             </div>
           </div>
         ) : (
-          // Preview Screen with fixed scrolling
+          // Preview Screen with fixed scrolling and checkbox
           <>
             <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
               <div className="flex justify-between items-center">
@@ -478,7 +478,10 @@ export function BulkReviewModal({ carId, carName, reviewerProfiles, onClose, onC
                       <input
                         type="checkbox"
                         checked={review.selected}
-                        onChange={() => {}}
+                        onChange={(e) => {
+                          e.stopPropagation()
+                          toggleReviewSelection(review.id)
+                        }}
                         className="mt-1"
                         onClick={(e) => e.stopPropagation()}
                       />
