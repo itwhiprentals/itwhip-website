@@ -1351,6 +1351,159 @@ model AmadeusCarCache {
 }
 
 // ============================================================================
+// CAREER/JOB MODELS - NEW SECTION!
+// ============================================================================
+
+model JobPosting {
+  id          String   @id @default(cuid())
+  
+  // Basic Information
+  title       String
+  department  String   // Engineering, Operations, Sales, Customer Success, etc.
+  location    String   // Phoenix, AZ / Remote / Hybrid
+  type        JobType  // FULL_TIME, PART_TIME, CONTRACT, INTERNSHIP
+  
+  // Detailed Description
+  description      String   @db.Text
+  requirements     String   @db.Text
+  responsibilities String   @db.Text
+  qualifications   String?  @db.Text
+  benefits         String?  @db.Text
+  
+  // Compensation
+  salaryMin      Int?
+  salaryMax      Int?
+  salaryPeriod   String?  @default("yearly") // yearly, hourly
+  showSalary     Boolean  @default(true)
+  equity         String?  // "0.1% - 0.5%"
+  
+  // Experience Requirements
+  experienceMin  Int?     // Minimum years required
+  experienceMax  Int?     // Maximum years (for senior caps)
+  experienceRequired String? // "3+ years", "5-7 years", etc.
+  
+  // Status & Display
+  isActive       Boolean  @default(true)
+  isFeatured     Boolean  @default(false)
+  isRemote       Boolean  @default(false)
+  openPositions  Int      @default(1) // Number of positions available
+  
+  // Application Settings
+  applyUrl       String?  // External application URL if not using internal system
+  applyEmail     String?  // Direct email for applications
+  
+  // Tracking & Analytics
+  views          Int      @default(0)
+  applicationCount Int    @default(0)
+  
+  // Dates
+  postedDate     DateTime @default(now())
+  closingDate    DateTime?
+  filledDate     DateTime?
+  
+  // Relations
+  applications   JobApplication[]
+  
+  // Metadata
+  keywords       String?  // SEO keywords, comma separated
+  metadata       Json?    // Additional structured data
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  @@index([isActive])
+  @@index([department])
+  @@index([location])
+  @@index([type])
+  @@index([postedDate])
+}
+
+model JobApplication {
+  id         String   @id @default(cuid())
+  
+  // Job Reference
+  jobId      String
+  job        JobPosting @relation(fields: [jobId], references: [id])
+  
+  // Applicant Information
+  firstName  String
+  lastName   String
+  email      String
+  phone      String
+  
+  // Professional Links
+  linkedin   String?
+  github     String?
+  portfolio  String?
+  website    String?
+  
+  // Documents
+  resumeUrl  String   // Cloudinary/S3 URL
+  coverLetter String? @db.Text
+  coverLetterUrl String? // If uploaded as file instead
+  additionalDocsUrl String? // Portfolio samples, etc.
+  
+  // Application Details
+  yearsExperience Int?
+  currentCompany  String?
+  currentTitle    String?
+  expectedSalary  Int?
+  availableDate   DateTime?
+  
+  // Screening Questions (stored as JSON)
+  screeningAnswers Json?   // {"question1": "answer1", "question2": "answer2"}
+  
+  // Status Tracking
+  status     ApplicationStatus @default(NEW)
+  stage      String?           // Phone Screen, Technical, Onsite, etc.
+  rating     Int?              // 1-5 rating from reviewer
+  
+  // Internal Notes & Review
+  notes      String?  @db.Text  // Internal notes from reviewers
+  reviewedBy String?            // Admin/HR who reviewed
+  reviewedAt DateTime?
+  
+  // Communication Tracking
+  lastContactedAt DateTime?
+  interviewDate   DateTime?
+  offerDate       DateTime?
+  offerAmount     Int?
+  
+  // Source Tracking
+  source     String?  // LinkedIn, Indeed, Direct, Referral, etc.
+  referredBy String?  // Employee referral name
+  utmSource  String?  // UTM tracking parameters
+  utmMedium  String?
+  utmCampaign String?
+  
+  // Rejection/Withdrawal
+  rejectionReason String?
+  withdrawnReason String?
+  
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  @@index([jobId])
+  @@index([status])
+  @@index([email])
+  @@index([createdAt])
+  @@unique([jobId, email]) // Prevent duplicate applications
+}
+
+// Optional: Track application activities for audit trail
+model ApplicationActivity {
+  id            String   @id @default(cuid())
+  applicationId String
+  action        String   // status_changed, note_added, email_sent, etc.
+  performedBy   String   // Admin user ID or email
+  details       Json?    // Additional context
+  createdAt     DateTime @default(now())
+  
+  @@index([applicationId])
+  @@index([createdAt])
+}
+
+// ============================================================================
 // REVENUE MODELS
 // ============================================================================
 
@@ -1606,7 +1759,7 @@ model LoginAttempt {
 }
 
 // ============================================================================
-// ENUMS - INCLUDING NEW REVIEW SOURCE
+// ENUMS - INCLUDING NEW JOB ENUMS!
 // ============================================================================
 
 enum UserRole {
@@ -1878,4 +2031,31 @@ enum ChargeStatus {
   ADJUSTMENT_FAILED
   UNDER_REVIEW
   EXPIRED
+}
+
+// ============================================================================
+// NEW JOB/CAREER ENUMS
+// ============================================================================
+
+enum JobType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+  TEMPORARY
+}
+
+enum ApplicationStatus {
+  NEW
+  REVIEWING
+  PHONE_SCREEN
+  TECHNICAL_TEST
+  INTERVIEW_SCHEDULED
+  INTERVIEWED
+  REFERENCE_CHECK
+  OFFER_EXTENDED
+  OFFER_ACCEPTED
+  REJECTED
+  WITHDRAWN
+  HIRED
 }
