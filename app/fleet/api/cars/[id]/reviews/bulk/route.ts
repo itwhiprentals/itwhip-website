@@ -2,77 +2,199 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 
-// Review content organized by rating category
-const reviewContent: Record<number, Array<{title: string, text: string}>> = {
+// Separate title pools for maximum variety - 100+ unique titles
+const reviewTitles = {
   5: [
-    { title: "Spotless and amazing!", text: "Car was spotless and drove amazing. Super easy pickup with the host." },
-    { title: "Would book again!", text: "Loved it! The ride was smooth, and the host was chill. Would book again in a heartbeat." },
-    { title: "Easy process", text: "Host was super quick to reply and made the whole process easy. The car was comfy and fun to drive." },
-    { title: "Exactly as listed", text: "Car was exactly as listed. Clean, fast, and the host was great with communication." },
-    { title: "Fantastic car!", text: "Fantastic car! Drove smooth, looked sharp, and host made drop-off a breeze." },
-    { title: "Solid experience", text: "Solid experience overall. Car had great pickup and handled really well. Would rent again." },
-    { title: "Perfect weekend car", text: "Loved this car! Perfect for my weekend getaway. Host was friendly and easy to work with." },
-    { title: "Zero complaints", text: "Clean interior, easy booking, and smooth ride. Zero complaints." },
-    { title: "Flawless experience", text: "Host was on time, car was gassed up, and the ride was flawless. Great experience!" },
-    { title: "Great road trip car", text: "Super comfy ride. Took it on a road trip and had no issues at all. Host was great too." },
-    { title: "Blast to drive!", text: "This car was a blast to drive! Host was communicative and everything went smoothly." },
-    { title: "Perfect shape", text: "Host made everything easy. Car was in perfect shape and looked even better in person." },
-    { title: "Would book again", text: "Drove super smooth, clean interior, Bluetooth worked fine. Would book again!" },
-    { title: "Awesome rental", text: "Awesome rental! Host was friendly and flexible with pickup times. Car handled like new." },
-    { title: "Stress-free process", text: "Great car for the price. Smooth drive, nice host, and overall a stress-free process." },
-    { title: "Incredible car", text: "Car looked incredible and drove even better. Host made everything super easy." },
-    { title: "Best rental yet", text: "Best rental I've had so far. Host was professional, and the car was spotless." },
-    { title: "Smoothly done", text: "Everything went smoothly from start to finish. Car was clean and fun to drive." },
-    { title: "Head-turner!", text: "Very professional host. The car was a head-turner everywhere I went." },
-    { title: "Highly recommend", text: "Simple process, great communication, and the car was fantastic. Highly recommend." },
-    { title: "Loved the ride", text: "Absolutely loved the ride. Host was on point and super easy to work with." },
-    { title: "Perfect rental!", text: "Perfect rental experience! Car was clean, powerful, and comfortable for my trip." },
-    { title: "Extra special", text: "Great car and great host. Made my weekend getaway extra special." },
-    { title: "Flawless car", text: "Car was flawless, host was amazing, and the process was super smooth." },
-    { title: "Better than photos", text: "Host was super helpful. The car looked better than the photos and drove perfectly." },
-    { title: "Exceeded expectations", text: "This rental exceeded expectations. Car was pristine and handled beautifully." },
-    { title: "No issues", text: "Host was friendly, car was clean, and the ride was fun. No issues at all." },
-    { title: "Definitely book again", text: "Super smooth experience from start to finish. Would definitely book again." },
-    { title: "Loved every minute", text: "Loved every minute driving this car. Host kept it spotless and ready." },
-    { title: "Perfect rental!", text: "Host was easy to reach, car drove great, and drop-off was simple. Perfect rental!" },
-    { title: "Couldn't ask for more", text: "Car ran smooth, looked sharp, and the host was awesome. Couldn't ask for more." },
-    { title: "Best experience", text: "Best experience I've had renting so far. Host was great and car was flawless." },
-    { title: "Perfect for business", text: "Car was exactly what I needed for my business trip. Host kept everything simple." },
-    { title: "Loved it!", text: "Host was great and car was super clean. Loved the ride!" },
-    { title: "Easy process", text: "Perfect rental! Smooth car, great host, and easy process." },
-    { title: "Quick responses", text: "Great ride, very clean, and the host was quick to respond to messages." },
-    { title: "Super easy", text: "Host was awesome, car was spotless, and the process was super easy. Highly recommend." },
-    { title: "Everything as expected", text: "Solid host, solid car. Everything was as expected and ran smoothly." },
-    { title: "Fun to drive", text: "Car was fun to drive and pickup was stress-free. Will definitely rent again." }
+    // Enthusiastic titles
+    "Absolutely incredible!", "Beyond expectations!", "Phenomenal experience!", "Outstanding rental!",
+    "Exceeded all expectations!", "Couldn't be happier!", "Blown away!", "Simply the best!",
+    "Perfection!", "10/10 experience!", "Wow, just wow!", "Unbelievable service!",
+    
+    // Professional/Formal titles
+    "Excellent service throughout", "Highly professional experience", "Seamless transaction",
+    "First-class service", "Premium experience", "Exceptional quality", "Superior service",
+    "Flawless execution", "Impeccable condition", "Professional excellence",
+    
+    // Casual/Friendly titles
+    "Super smooth!", "Totally worth it!", "Awesome sauce!", "So easy!", "Loved every minute!",
+    "Can't beat this!", "Nailed it!", "Crushed it!", "Killed it!", "Sweet ride!",
+    "Dope experience!", "Fire rental!", "Sick ride!", "Legit amazing!", "For real great!",
+    
+    // Location-specific titles
+    "Perfect for Phoenix cruise", "Ideal for Scottsdale nights", "Great for Arizona roads",
+    "Desert driving dream", "Valley cruising perfection", "Tempe trip triumph",
+    "Mesa made memorable", "Chandler cruise champion", "Gilbert getaway gold",
+    
+    // Purpose-specific titles
+    "Business trip savior", "Date night perfection", "Weekend warrior approved",
+    "Road trip ready", "Family vacation win", "Anniversary special", "Birthday blast",
+    "Graduation celebration car", "Interview day confidence", "Airport run hero",
+    
+    // Feature-focused titles
+    "Smooth as butter", "Handles like a dream", "Comfort on wheels", "Tech lover's dream",
+    "Bluetooth brilliance", "AC saved the day", "Sound system sensation", "Fuel efficient fantastic",
+    "Spacious and stylish", "Clean machine", "Power and grace", "Luxury feels",
+    
+    // Time-related titles
+    "Last-minute lifesaver", "Quick and easy", "Right on time", "Prompt and perfect",
+    "No wait, no worry", "Instant satisfaction", "Speed of service", "Time well spent",
+    
+    // Host-focused titles
+    "Host made it happen", "Amazing host experience", "Host went extra mile",
+    "Communication A+", "Host was the MVP", "Five-star host", "Host made difference",
+    "Responsive and reliable", "Host exceeded expectations", "Professional host",
+    
+    // Simple but effective
+    "Yes!", "Perfect!", "Amazing!", "Fantastic!", "Brilliant!", "Excellent!", "Superb!",
+    "Outstanding!", "Remarkable!", "Exceptional!", "Wonderful!", "Terrific!", "Stellar!",
+    
+    // Unique expressions
+    "Chef's kiss perfect", "Bucket list checked", "Dreams do come true", "Worth every penny",
+    "Memories made", "Adventure delivered", "Expectations shattered", "Bar raised high",
+    "New favorite host", "Repeat customer guaranteed", "Tell your friends good",
+    "Screenshot this review", "Bookmark this host", "Save this listing"
   ],
   4: [
-    { title: "Pretty good overall", text: "Pickup took a bit longer than expected, but host was apologetic. Car itself was excellent." },
-    { title: "AC issue but still good", text: "Car was okay, but AC took a while to cool down in the Arizona heat. Host was kind though." },
-    { title: "Less gas than expected", text: "Not bad. Car drove fine but had less gas than I expected at pickup. Otherwise smooth rental." },
-    { title: "Minor Bluetooth issue", text: "Smooth process. Only minor issue was Bluetooth taking a minute to connect. Otherwise perfect." },
-    { title: "Slight delay", text: "Pretty good overall. Car ran great, but pickup was delayed a little. Host was apologetic." },
-    { title: "Minor pickup issue", text: "Minor issue with pickup time, but the car itself was perfect. Drove like new." },
-    { title: "Good rental", text: "Nice car, friendly host. Everything went smoothly. The only reason for 4 stars is the car had less gas than expected, but not a big deal." },
-    { title: "Almost perfect", text: "Really enjoyed the car and the convenience. Just wish the pickup time could have been a bit more flexible, but understand the host has a schedule too." },
-    { title: "Solid choice", text: "Good value for money. Car performed well and was clean. Minor delay during pickup but the host communicated well about it." },
-    { title: "Would recommend", text: "Had a good experience overall. The car met our needs perfectly for the weekend trip. Just a few more miles on it than expected from the photos." },
-    { title: "Solid rental", text: "Solid rental. Car was reliable, host was nice, and price was fair." }
+    // Minor issue acknowledgments
+    "Great with small hiccup", "Almost perfect", "Very good overall", "Solid experience",
+    "Good rental, tiny issue", "Nearly flawless", "Small delay, great car", "Worth it despite wait",
+    "Great car, minor note", "Mostly smooth", "One small thing", "99% perfect",
+    
+    // Balanced titles
+    "Good not great", "Pretty solid", "Decent experience", "Fair and square",
+    "Met expectations", "Did the job", "No major complaints", "Worked out fine",
+    "Happy enough", "Good value overall", "Satisfied customer", "Would recommend with note",
+    
+    // Specific issue mentions
+    "AC issue but manageable", "Bluetooth quirk aside", "Pickup delay forgiven",
+    "Gas gauge surprise", "Small cosmetic note", "Radio static minor", "Seat adjustment stuck",
+    "Mirror wobble only issue", "Horn quiet but ok", "Windshield chip noted"
   ],
   3: [
-    { title: "Decent but had issues", text: "The car itself was fine but pickup was delayed by an hour. Host apologized but it did affect my plans. Car ran well once I got it." },
-    { title: "Mixed experience", text: "Car was older than expected and had some wear. Still drove okay and served its purpose. Host was nice but communication could be better." },
-    { title: "Okay rental", text: "Got me where I needed to go. Car was functional but not as clean as I'd hoped. Price was fair for what it was." },
-    { title: "Average", text: "Nothing special but nothing terrible. Car had some cosmetic issues not shown in photos. Host was responsive at least." },
-    { title: "Met basic needs", text: "The car worked for my trip but had some quirks. Radio didn't work and there was a strange smell. Host tried to help resolve issues." }
+    // Neutral/Mixed titles
+    "Mixed bag", "Some good, some bad", "Middle of the road", "Take it or leave it",
+    "Room for improvement", "Adequate", "It was okay", "Got me there", "Functional",
+    "Nothing special", "Average experience", "Meh overall", "Could be better",
+    "Acceptable", "Fair enough", "So-so experience", "Hit and miss"
   ],
   2: [
-    { title: "Disappointed", text: "Car had more issues than disclosed. Check engine light came on during my trip. Host was difficult to reach. Not the experience I was hoping for." },
-    { title: "Below expectations", text: "Photos were misleading - car was in much worse condition. Still driveable but definitely not worth the price. Very disappointed." },
-    { title: "Not great", text: "Multiple problems with this rental. Late pickup, car wasn't clean, and had mechanical issues. Host was apologetic but that doesn't fix the experience." }
+    // Disappointed titles
+    "Not what I expected", "Disappointed", "Below average", "Needs work",
+    "Won't repeat", "Learned my lesson", "Not worth it", "Regrettable",
+    "Should have known", "Red flags missed", "Buyer beware", "Look elsewhere"
   ],
   1: [
-    { title: "Terrible experience", text: "Car broke down on the highway. Host was unresponsive. Had to get an Uber to my destination. Would not recommend to anyone." },
-    { title: "Avoid", text: "Complete disaster. Car was not as advertised, filthy inside, and had major mechanical problems. Worst rental experience ever." }
+    // Negative titles
+    "Avoid", "Terrible", "Disaster", "Never again", "Worst experience",
+    "Complete mess", "Total fail", "Absolutely not", "Hard pass", "Stay away"
+  ]
+}
+
+// Review text content - kept separate from titles
+const reviewTexts = {
+  5: [
+    "Car was spotless and drove amazing. Super easy pickup with the host.",
+    "Loved it! The ride was smooth, and the host was chill. Would book again in a heartbeat.",
+    "Host was super quick to reply and made the whole process easy. The car was comfy and fun to drive.",
+    "Car was exactly as listed. Clean, fast, and the host was great with communication.",
+    "Fantastic car! Drove smooth, looked sharp, and host made drop-off a breeze.",
+    "Solid experience overall. Car had great pickup and handled really well. Would rent again.",
+    "Loved this car! Perfect for my weekend getaway. Host was friendly and easy to work with.",
+    "Clean interior, easy booking, and smooth ride. Zero complaints.",
+    "Host was on time, car was gassed up, and the ride was flawless. Great experience!",
+    "Super comfy ride. Took it on a road trip and had no issues at all. Host was great too.",
+    "This car was a blast to drive! Host was communicative and everything went smoothly.",
+    "Host made everything easy. Car was in perfect shape and looked even better in person.",
+    "Drove super smooth, clean interior, Bluetooth worked fine. Would book again!",
+    "Awesome rental! Host was friendly and flexible with pickup times. Car handled like new.",
+    "Great car for the price. Smooth drive, nice host, and overall a stress-free process.",
+    "Car looked incredible and drove even better. Host made everything super easy.",
+    "Best rental I've had so far. Host was professional, and the car was spotless.",
+    "Everything went smoothly from start to finish. Car was clean and fun to drive.",
+    "Very professional host. The car was a head-turner everywhere I went.",
+    "Simple process, great communication, and the car was fantastic. Highly recommend.",
+    "Absolutely loved the ride. Host was on point and super easy to work with.",
+    "Perfect rental experience! Car was clean, powerful, and comfortable for my trip.",
+    "Great car and great host. Made my weekend getaway extra special.",
+    "Car was flawless, host was amazing, and the process was super smooth.",
+    "Host was super helpful. The car looked better than the photos and drove perfectly.",
+    "This rental exceeded expectations. Car was pristine and handled beautifully.",
+    "Host was friendly, car was clean, and the ride was fun. No issues at all.",
+    "Super smooth experience from start to finish. Would definitely book again.",
+    "Loved every minute driving this car. Host kept it spotless and ready.",
+    "Host was easy to reach, car drove great, and drop-off was simple. Perfect rental!",
+    "Car ran smooth, looked sharp, and the host was awesome. Couldn't ask for more.",
+    "Best experience I've had renting so far. Host was great and car was flawless.",
+    "Car was exactly what I needed for my business trip. Host kept everything simple.",
+    "Host was great and car was super clean. Loved the ride!",
+    "Perfect rental! Smooth car, great host, and easy process.",
+    "Great ride, very clean, and the host was quick to respond to messages.",
+    "Host was awesome, car was spotless, and the process was super easy. Highly recommend.",
+    "Solid host, solid car. Everything was as expected and ran smoothly.",
+    "Car was fun to drive and pickup was stress-free. Will definitely rent again.",
+    "The host's attention to detail was impressive. Car was immaculate inside and out.",
+    "Exceeded my expectations in every way. The car performed flawlessly throughout my trip.",
+    "Communication was top-notch and the vehicle was exactly as described. Fantastic experience.",
+    "This host knows how to treat customers right. Car was perfect and process was seamless.",
+    "I've rented many times before, and this was by far the smoothest experience.",
+    "The car handled the mountain roads beautifully. Host gave great local driving tips too.",
+    "Everything about this rental was professional. From booking to return, no issues whatsoever.",
+    "Host accommodated my early pickup request. Car was already running with AC on. Perfect!",
+    "The car's condition exceeded the photos. You can tell the host takes pride in their vehicle.",
+    "Responsive host, pristine vehicle, fair price. The trifecta of a great rental experience.",
+    "This was my first time using the platform and the host made it incredibly easy.",
+    "The car got so many compliments. Host's maintenance schedule really shows."
+  ],
+  4: [
+    "Pickup took a bit longer than expected, but host was apologetic. Car itself was excellent.",
+    "Car was okay, but AC took a while to cool down in the Arizona heat. Host was kind though.",
+    "Not bad. Car drove fine but had less gas than I expected at pickup. Otherwise smooth rental.",
+    "Smooth process. Only minor issue was Bluetooth taking a minute to connect. Otherwise perfect.",
+    "Pretty good overall. Car ran great, but pickup was delayed a little. Host was apologetic.",
+    "Minor issue with pickup time, but the car itself was perfect. Drove like new.",
+    "Nice car, friendly host. Everything went smoothly. The only reason for 4 stars is the car had less gas than expected, but not a big deal.",
+    "Really enjoyed the car and the convenience. Just wish the pickup time could have been a bit more flexible, but understand the host has a schedule too.",
+    "Good value for money. Car performed well and was clean. Minor delay during pickup but the host communicated well about it.",
+    "Had a good experience overall. The car met our needs perfectly for the weekend trip. Just a few more miles on it than expected from the photos.",
+    "Solid rental. Car was reliable, host was nice, and price was fair.",
+    "The car drove great but the interior had a slight odor. Host provided air fresheners which helped.",
+    "Everything was good except for a 20-minute wait at pickup. Host was stuck in traffic and kept me updated.",
+    "Car performed well on the highway. City driving revealed some brake squeaking but nothing concerning.",
+    "Great host communication. Car was clean but the passenger window was slow to roll down.",
+    "Would rent again despite the minor GPS issues. Host was very understanding and helpful.",
+    "The experience was positive overall. Just wish the car had been washed more recently.",
+    "Fuel economy wasn't quite what I expected but the car was comfortable and reliable.",
+    "Check-in process was smooth. Car had a few more scratches than shown but all cosmetic.",
+    "Good rental for the price. The trunk was smaller than anticipated but we made it work."
+  ],
+  3: [
+    "The car itself was fine but pickup was delayed by an hour. Host apologized but it did affect my plans. Car ran well once I got it.",
+    "Car was older than expected and had some wear. Still drove okay and served its purpose. Host was nice but communication could be better.",
+    "Got me where I needed to go. Car was functional but not as clean as I'd hoped. Price was fair for what it was.",
+    "Nothing special but nothing terrible. Car had some cosmetic issues not shown in photos. Host was responsive at least.",
+    "The car worked for my trip but had some quirks. Radio didn't work and there was a strange smell. Host tried to help resolve issues.",
+    "Average experience. Car was adequate for basic transportation but lacked the comfort advertised.",
+    "Mixed feelings about this rental. Host was nice but car condition was disappointing.",
+    "Functional vehicle but definitely seen better days. Price reflected condition at least.",
+    "Car got me from A to B but that's about it. Several features mentioned in listing didn't work.",
+    "Okay for a budget option but wouldn't choose again if alternatives available."
+  ],
+  2: [
+    "Car had more issues than disclosed. Check engine light came on during my trip. Host was difficult to reach. Not the experience I was hoping for.",
+    "Photos were misleading - car was in much worse condition. Still driveable but definitely not worth the price. Very disappointed.",
+    "Multiple problems with this rental. Late pickup, car wasn't clean, and had mechanical issues. Host was apologetic but that doesn't fix the experience.",
+    "Disappointing experience. Car made concerning noises and host seemed unaware of issues.",
+    "Would not recommend. Too many problems for the price point. Host needs to maintain vehicle better.",
+    "Regret choosing this rental. Communication was poor and car condition was unacceptable.",
+    "Expected much better based on listing. Reality was far from advertised condition.",
+    "Save your money and look elsewhere. This was not worth the hassle."
+  ],
+  1: [
+    "Car broke down on the highway. Host was unresponsive. Had to get an Uber to my destination. Would not recommend to anyone.",
+    "Complete disaster. Car was not as advertised, filthy inside, and had major mechanical problems. Worst rental experience ever.",
+    "Avoid at all costs. Nothing about this rental went right. From pickup to breakdown, absolute nightmare.",
+    "Never again. Host was dishonest about car condition. Wasted my time and money.",
+    "Terrible from start to finish. Do yourself a favor and book elsewhere."
   ]
 }
 
@@ -86,7 +208,9 @@ const firstNames = [
   'Tyler', 'Natalie', 'Andrew', 'Brittany', 'Patrick', 'Lauren', 'Benjamin', 'Julia', 'Danielle', 'Kyle',
   'Megan', 'Ethan', 'Aaron', 'Ella', 'Lucas', 'Sofia', 'Grace', 'Henry', 'Maya', 'Isabella',
   'Noah', 'Lily', 'Logan', 'Mia', 'Jack', 'Zoe', 'Ava', 'Amelia', 'Jacob', 'Charlotte',
-  'Alexander', 'Harper', 'Mason', 'Evelyn', 'Liam', 'Abigail', 'Aiden', 'Scarlett', 'Jackson', 'Madison'
+  'Alexander', 'Harper', 'Mason', 'Evelyn', 'Liam', 'Abigail', 'Aiden', 'Scarlett', 'Jackson', 'Madison',
+  'Ryan', 'Katie', 'Nathan', 'Alexis', 'Jordan', 'Taylor', 'Cameron', 'Morgan', 'Austin', 'Brooke',
+  'Carlos', 'Maria', 'Luis', 'Ana', 'Miguel', 'Sofia', 'Diego', 'Carmen', 'Jorge', 'Isabel'
 ]
 
 const lastNames = [
@@ -95,7 +219,8 @@ const lastNames = [
   'Robinson', 'Walker', 'Hall', 'Allen', 'Young', 'King', 'Wright', 'Lopez', 'Hill', 'Green',
   'Adams', 'Baker', 'Nelson', 'Carter', 'Mitchell', 'Perez', 'Roberts', 'Turner', 'Phillips', 'Campbell',
   'Parker', 'Evans', 'Edwards', 'Collins', 'Stewart', 'Sanchez', 'Morris', 'Rogers', 'Reed', 'Cook',
-  'Morgan', 'Bell', 'Murphy', 'Bailey', 'Rivera', 'Cooper', 'Richardson', 'Cox', 'Howard', 'Ward'
+  'Morgan', 'Bell', 'Murphy', 'Bailey', 'Rivera', 'Cooper', 'Richardson', 'Cox', 'Howard', 'Ward',
+  'Torres', 'Peterson', 'Gray', 'Ramirez', 'James', 'Watson', 'Brooks', 'Kelly', 'Sanders', 'Price'
 ]
 
 // Host names for reference
@@ -106,7 +231,7 @@ const hostNames = [
 ]
 
 // Cities with their correct states for accurate location data
-const arizonaCities = ['Phoenix', 'Scottsdale', 'Tempe', 'Mesa', 'Chandler', 'Gilbert', 'Glendale', 'Peoria', 'Surprise', 'Avondale']
+const arizonaCities = ['Phoenix', 'Scottsdale', 'Tempe', 'Mesa', 'Chandler', 'Gilbert', 'Glendale', 'Peoria', 'Surprise', 'Avondale', 'Tucson']
 const outOfStateCities = [
   { city: 'Los Angeles', state: 'CA' },
   { city: 'San Diego', state: 'CA' },
@@ -119,17 +244,52 @@ const outOfStateCities = [
   { city: 'San Francisco', state: 'CA' },
   { city: 'Portland', state: 'OR' },
   { city: 'Seattle', state: 'WA' },
-  { city: 'Tucson', state: 'AZ' }
+  { city: 'Houston', state: 'TX' },
+  { city: 'San Antonio', state: 'TX' },
+  { city: 'El Paso', state: 'TX' },
+  { city: 'Flagstaff', state: 'AZ' }
 ]
 
+// Track recently used items to avoid repetition
+let recentlyUsedTitles: string[] = []
+let recentlyUsedTexts: string[] = []
+let recentlyUsedNames: string[] = []
+
 // Helper functions with neutral names
-function selectReviewContent(rating: number) {
-  const content = reviewContent[rating] || reviewContent[5]
-  return content[Math.floor(Math.random() * content.length)]
+function selectReviewContent(rating: number): { title: string; text: string } {
+  const titles = reviewTitles[rating] || reviewTitles[5]
+  const texts = reviewTexts[rating] || reviewTexts[5]
+  
+  // Select title avoiding recent ones
+  let availableTitles = titles.filter(t => !recentlyUsedTitles.includes(t))
+  if (availableTitles.length === 0) {
+    // Reset if we've used all titles
+    recentlyUsedTitles = []
+    availableTitles = titles
+  }
+  const title = availableTitles[Math.floor(Math.random() * availableTitles.length)]
+  recentlyUsedTitles.push(title)
+  if (recentlyUsedTitles.length > 10) {
+    recentlyUsedTitles.shift() // Keep only last 10
+  }
+  
+  // Select text avoiding recent ones
+  let availableTexts = texts.filter(t => !recentlyUsedTexts.includes(t))
+  if (availableTexts.length === 0) {
+    recentlyUsedTexts = []
+    availableTexts = texts
+  }
+  const text = availableTexts[Math.floor(Math.random() * availableTexts.length)]
+  recentlyUsedTexts.push(text)
+  if (recentlyUsedTexts.length > 10) {
+    recentlyUsedTexts.shift() // Keep only last 10
+  }
+  
+  return { title, text }
 }
 
 function calculateTripLength(): number {
-  const durations = [1, 2, 2, 2, 3, 3, 3, 4, 4, 5] // Weighted toward 2-3 days
+  const durations = [1, 2, 2, 2, 3, 3, 3, 4, 4, 5, 7] // Weighted toward 2-3 days
   return durations[Math.floor(Math.random() * durations.length)]
 }
 
@@ -149,9 +309,22 @@ function calculateEngagementScore(daysOld: number, rating: number): number {
 }
 
 function formatReviewerName(): string {
-  const firstName = firstNames[Math.floor(Math.random() * firstNames.length)]
-  const lastInitial = lastNames[Math.floor(Math.random() * lastNames.length)][0]
-  return `${firstName} ${lastInitial}.`
+  let name = ''
+  let attempts = 0
+  
+  do {
+    const firstName = firstNames[Math.floor(Math.random() * firstNames.length)]
+    const lastInitial = lastNames[Math.floor(Math.random() * lastNames.length)][0]
+    name = `${firstName} ${lastInitial}.`
+    attempts++
+  } while (recentlyUsedNames.includes(name) && attempts < 10)
+  
+  recentlyUsedNames.push(name)
+  if (recentlyUsedNames.length > 15) {
+    recentlyUsedNames.shift() // Keep only last 15 names
+  }
+  
+  return name
 }
 
 function selectReviewerLocation(): { city: string, state: string } {
@@ -178,9 +351,20 @@ function scheduleReviewDates(startDate: Date, endDate: Date, count: number): Dat
     throw new Error('Invalid date range')
   }
   
-  // Calculate review posting dates within the range
+  // Calculate review posting dates within the range with some clustering
   for (let i = 0; i < count; i++) {
-    const randomDay = Math.floor(Math.random() * totalDays)
+    // Create natural clustering - some reviews close together, some spread out
+    let randomDay: number
+    if (Math.random() < 0.3) {
+      // 30% chance of clustering near other reviews
+      const clusterCenter = Math.floor(Math.random() * totalDays)
+      const variance = Math.min(7, totalDays / 10) // Cluster within 7 days or 10% of range
+      randomDay = Math.max(0, Math.min(totalDays, clusterCenter + Math.floor((Math.random() - 0.5) * variance * 2)))
+    } else {
+      // 70% chance of random distribution
+      randomDay = Math.floor(Math.random() * totalDays)
+    }
+    
     const reviewDate = new Date(startDate)
     reviewDate.setDate(reviewDate.getDate() + randomDay)
     dates.push(reviewDate)
@@ -199,6 +383,11 @@ export async function POST(
     const body = await request.json()
     
     console.log('Bulk review processing request:', { carId, ...body })
+    
+    // Reset tracking arrays for new batch
+    recentlyUsedTitles = []
+    recentlyUsedTexts = []
+    recentlyUsedNames = []
     
     const {
       startDate,
