@@ -27,7 +27,31 @@ export async function GET(
             id: true,
             rating: true,
             comment: true,
+            title: true,  // Added title field
             createdAt: true,
+            tripStartDate: true,  // Added trip dates
+            tripEndDate: true,
+            helpfulCount: true,  // Added helpful count
+            isVerified: true,    // Added verification status
+            isPinned: true,      // Added pinned status
+            
+            // ADDED: Include host response data
+            hostResponse: true,
+            hostRespondedAt: true,
+            supportResponse: true,
+            supportRespondedAt: true,
+            supportRespondedBy: true,
+            
+            // Include host details
+            host: {
+              select: {
+                id: true,
+                name: true,
+                profilePhoto: true
+              }
+            },
+            
+            // Include car details
             car: {
               select: {
                 id: true,
@@ -77,29 +101,57 @@ export async function GET(
         : 0
     }
 
-    // Format response - NOW USING ACTUAL CALCULATED COUNTS
+    // Format response with complete review data including host responses
     const formattedProfile = {
       id: profile.id,
       name: profile.name,
       profilePhotoUrl: profile.profilePhotoUrl,
       location: `${profile.city}, ${profile.state}`,
+      city: profile.city,
+      state: profile.state,
       memberSince: profile.memberSince,
-      tripCount: stats.totalReviews,      // CHANGED: Use actual count instead of static value
-      reviewCount: stats.totalReviews,    // CHANGED: Use actual count instead of static value
+      tripCount: stats.totalReviews,      // Use actual count
+      reviewCount: stats.totalReviews,    // Use actual count
       isVerified: profile.isVerified,
       stats,
       recentReviews: profile.reviews.map(review => ({
         id: review.id,
         rating: review.rating,
+        title: review.title,
         comment: review.comment ? 
           (review.comment.length > 150 
             ? review.comment.substring(0, 150) + '...' 
             : review.comment)
           : null,
+        fullComment: review.comment,  // Include full comment for modal
         createdAt: review.createdAt,
+        tripStartDate: review.tripStartDate,
+        tripEndDate: review.tripEndDate,
+        helpfulCount: review.helpfulCount,
+        isVerified: review.isVerified,
+        isPinned: review.isPinned,
+        
+        // ADDED: Include host response data for each review
+        hostResponse: review.hostResponse,
+        hostRespondedAt: review.hostRespondedAt,
+        supportResponse: review.supportResponse,
+        supportRespondedAt: review.supportRespondedAt,
+        supportRespondedBy: review.supportRespondedBy,
+        
+        // Include host information
+        host: review.host ? {
+          id: review.host.id,
+          name: review.host.name,
+          profilePhoto: review.host.profilePhoto
+        } : null,
+        
+        // Include car information
         car: {
           id: review.car.id,
           displayName: `${review.car.year} ${review.car.make} ${review.car.model}`,
+          make: review.car.make,
+          model: review.car.model,
+          year: review.car.year,
           photoUrl: review.car.photos[0]?.url || null
         }
       }))

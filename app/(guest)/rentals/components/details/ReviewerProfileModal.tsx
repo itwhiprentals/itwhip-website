@@ -21,12 +21,20 @@ import {
 interface RecentReview {
   id: string
   rating: number
+  title?: string
   comment: string
+  fullComment?: string
   createdAt: string
+  tripStartDate?: string
+  tripEndDate?: string
+  helpfulCount?: number
+  isVerified?: boolean
+  isPinned?: boolean
   hostResponse?: string
   hostRespondedAt?: string
   supportResponse?: string
   supportRespondedAt?: string
+  supportRespondedBy?: string
   car: {
     id: string
     displayName: string
@@ -36,6 +44,7 @@ interface RecentReview {
     year?: number
   }
   host?: {
+    id?: string
     name?: string
     profilePhoto?: string
   }
@@ -84,6 +93,12 @@ export default function ReviewerProfileModal({ reviewer, isOpen, onClose }: Revi
   useEffect(() => {
     if (isOpen && reviewer?.id) {
       fetchFullProfile()
+    } else if (!isOpen) {
+      // Reset state when modal closes
+      setFullProfileData(null)
+      setExpandedReviews([])
+      setExpandedHostResponses([])
+      setExpandedSupportResponses([])
     }
   }, [isOpen, reviewer?.id])
 
@@ -107,48 +122,12 @@ export default function ReviewerProfileModal({ reviewer, isOpen, onClose }: Revi
       const response = await fetch(`/api/rentals/reviewers/${reviewer.id}`)
       if (response.ok) {
         const data = await response.json()
-        
-        // Try to get host responses from the main reviews endpoint
-        const carIds = data.data.recentReviews?.map((r: any) => r.car?.id).filter(Boolean) || []
-        if (carIds.length > 0) {
-          // For each car, try to get the full review data including host responses
-          const reviewsWithResponses = await Promise.all(
-            data.data.recentReviews.map(async (review: any) => {
-              if (review.car?.id) {
-                try {
-                  const carReviewsResponse = await fetch(`/api/rentals/cars/${review.car.id}/reviews`)
-                  if (carReviewsResponse.ok) {
-                    const carReviewsData = await carReviewsResponse.json()
-                    // Find this specific review in the car's reviews
-                    const fullReview = carReviewsData.data?.reviews?.find((r: any) => 
-                      r.reviewer?.id === reviewer.id && r.rating === review.rating
-                    )
-                    if (fullReview) {
-                      return {
-                        ...review,
-                        hostResponse: fullReview.hostResponse,
-                        hostRespondedAt: fullReview.hostRespondedAt,
-                        supportResponse: fullReview.supportResponse,
-                        supportRespondedAt: fullReview.supportRespondedAt,
-                        host: fullReview.host // Include host data with photo and name
-                      }
-                    }
-                  }
-                } catch (e) {
-                  console.error('Error fetching car reviews:', e)
-                }
-              }
-              return review
-            })
-          )
-          
-          setFullProfileData({
-            ...data.data,
-            recentReviews: reviewsWithResponses
-          })
-        } else {
-          setFullProfileData(data.data)
-        }
+        // The API now returns complete data with host responses
+        // No need for additional fetching
+        setFullProfileData(data.data)
+      } else {
+        // Fallback to original reviewer data if fetch fails
+        setFullProfileData(reviewer)
       }
     } catch (error) {
       console.error('Failed to fetch full reviewer profile:', error)
@@ -323,12 +302,15 @@ export default function ReviewerProfileModal({ reviewer, isOpen, onClose }: Revi
                       const isExpanded = expandedReviews.includes(review.id)
                       const isHostExpanded = expandedHostResponses.includes(review.id)
                       const isSupportExpanded = expandedSupportResponses.includes(review.id)
-                      const isLongComment = review.comment && review.comment.length > 80
+                      
+                      // Use fullComment if available, otherwise use comment
+                      const fullComment = review.fullComment || review.comment
+                      const isLongComment = fullComment && fullComment.length > 80
                       const isLongHostResponse = review.hostResponse && review.hostResponse.length > 60
                       const isLongSupportResponse = review.supportResponse && review.supportResponse.length > 60
                       
-                      const displayComment = !review.comment ? '' :
-                        (isExpanded || !isLongComment ? review.comment : review.comment.substring(0, 80) + '...')
+                      const displayComment = !fullComment ? '' :
+                        (isExpanded || !isLongComment ? fullComment : fullComment.substring(0, 80) + '...')
                       const displayHostResponse = !review.hostResponse ? '' :
                         (isHostExpanded || !isLongHostResponse ? review.hostResponse : review.hostResponse.substring(0, 60) + '...')
                       const displaySupportResponse = !review.supportResponse ? '' :
@@ -373,7 +355,7 @@ export default function ReviewerProfileModal({ reviewer, isOpen, onClose }: Revi
                           </button>
                           
                           {/* Review Comment */}
-                          {review.comment && (
+                          {fullComment && (
                             <div className="ml-12">
                               <p className="text-xs text-gray-600 dark:text-gray-400">
                                 {displayComment}
@@ -399,7 +381,7 @@ export default function ReviewerProfileModal({ reviewer, isOpen, onClose }: Revi
                             </div>
                           )}
 
-                          {/* Host Response */}
+                          {/* Host Response - Each review has its own unique host response */}
                           {review.hostResponse && (
                             <div className="mt-1.5 ml-12 pl-2 border-l-2 border-blue-400">
                               <div className="flex items-center gap-1 mb-0.5">
@@ -449,7 +431,7 @@ export default function ReviewerProfileModal({ reviewer, isOpen, onClose }: Revi
                             </div>
                           )}
 
-                          {/* Support Response */}
+                          {/* Support Response - Each review has its own unique support response */}
                           {review.supportResponse && (
                             <div className="mt-1.5 ml-12 pl-2 border-l-2 border-green-400">
                               <div className="flex items-center gap-1 mb-0.5">
