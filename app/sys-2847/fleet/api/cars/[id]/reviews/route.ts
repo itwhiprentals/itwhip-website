@@ -1,4 +1,4 @@
-// app/sys-2847/fleet/api/cars/[id]/reviews/route.ts
+// app/fleet/api/cars/[id]/reviews/route.ts
 // Admin endpoint for managing car reviews
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -97,8 +97,45 @@ export async function GET(
       console.log(`No reviews found for car ${carId}. This car may not have any reviews yet.`)
     }
 
+    // Get unique reviewer profile IDs to calculate their actual counts
+    const profileIds = [...new Set(reviews
+      .filter(r => r.reviewerProfile?.id)
+      .map(r => r.reviewerProfile!.id))]
+
+    // Calculate actual review counts for each profile
+    const profileCounts = await Promise.all(
+      profileIds.map(async (profileId) => {
+        const count = await prisma.rentalReview.count({
+          where: {
+            reviewerProfileId: profileId,
+            isVisible: true  // Only count visible reviews
+          }
+        })
+        return { profileId, count }
+      })
+    )
+
+    // Create a map for quick lookup
+    const countsMap = new Map(profileCounts.map(p => [p.profileId, p.count]))
+
+    // Update reviews with actual profile counts
+    const reviewsWithActualCounts = reviews.map(review => {
+      if (review.reviewerProfile) {
+        const actualCount = countsMap.get(review.reviewerProfile.id) || 0
+        return {
+          ...review,
+          reviewerProfile: {
+            ...review.reviewerProfile,
+            reviewCount: actualCount,  // Override with actual count
+            tripCount: actualCount      // For now, trips = reviews
+          }
+        }
+      }
+      return review
+    })
+
     // Sanitize reviews to remove internal fields
-    const sanitizedReviews = reviews.map(sanitizeReview)
+    const sanitizedReviews = reviewsWithActualCounts.map(sanitizeReview)
 
     // Calculate public statistics only
     const stats = {
@@ -185,11 +222,7 @@ export async function POST(
       
       if (existingProfile) {
         reviewerProfileId = existingProfile.id
-        // Increment review count
-        await prisma.reviewerProfile.update({
-          where: { id: existingProfile.id },
-          data: { reviewCount: { increment: 1 } }
-        })
+        // Note: We don't increment here anymore since we calculate dynamically
       } else {
         // Calculate smart member since date for basic profile too
         const memberSince = calculateMemberSince(body.tripStartDate)
@@ -200,7 +233,9 @@ export async function POST(
             name: body.reviewerName,
             city: car.city,
             state: car.state,
-            memberSince: memberSince
+            memberSince: memberSince,
+            tripCount: 1,
+            reviewCount: 1
           }
         })
         reviewerProfileId = newProfile.id
@@ -270,6 +305,19 @@ export async function POST(
         }
       }
     })
+
+    // If review has a profile, calculate its actual current counts
+    if (review.reviewerProfile) {
+      const actualCount = await prisma.rentalReview.count({
+        where: {
+          reviewerProfileId: review.reviewerProfile.id,
+          isVisible: true
+        }
+      })
+      
+      review.reviewerProfile.reviewCount = actualCount
+      review.reviewerProfile.tripCount = actualCount
+    }
 
     // ONLY update stats if the review is visible (represents a real completed trip)
     if (body.isVisible !== false) {

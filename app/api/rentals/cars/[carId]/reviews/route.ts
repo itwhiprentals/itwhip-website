@@ -122,6 +122,27 @@ export async function GET(
       })
     ])
 
+    // Calculate actual counts for each unique reviewer profile
+    const profileIds = [...new Set(reviews
+      .filter(r => r.reviewerProfile?.id)
+      .map(r => r.reviewerProfile!.id))]
+
+    // Get actual review counts for each profile
+    const profileCounts = await Promise.all(
+      profileIds.map(async (profileId) => {
+        const count = await prisma.rentalReview.count({
+          where: {
+            reviewerProfileId: profileId,
+            isVisible: true  // Only count visible reviews
+          }
+        })
+        return { profileId, count }
+      })
+    )
+
+    // Create a map for quick lookup
+    const countsMap = new Map(profileCounts.map(p => [p.profileId, p.count]))
+
     // Calculate statistics from all visible reviews
     const allVisibleReviews = await prisma.rentalReview.findMany({
       where: {
@@ -167,77 +188,84 @@ export async function GET(
       }))
     }
 
-    // Format reviews for display
-    const formattedReviews = reviews.map((review, index) => ({
-      // Use index-based ID for React keys
-      id: `review-${carId.substring(0, 8)}-${index}`,
-      
-      // Review content
-      rating: review.rating,
-      title: review.title,
-      comment: review.comment,
-      
-      // Subcategory ratings (if provided)
-      ...(review.cleanliness && {
-        ratings: {
-          cleanliness: review.cleanliness,
-          accuracy: review.accuracy,
-          communication: review.communication,
-          convenience: review.convenience,
-          value: review.value
-        }
-      }),
-      
-      // Engagement metrics
-      helpfulCount: review.helpfulCount,
-      isVerified: review.isVerified,
-      isPinned: review.isPinned,
-      
-      // Host/Support responses - keep dates for display
-      ...(review.hostResponse && {
-        hostResponse: review.hostResponse,
-        hostRespondedAt: review.hostRespondedAt
-      }),
-      
-      ...(review.supportResponse && {
-        supportResponse: review.supportResponse,
-        supportRespondedAt: review.supportRespondedAt,
-        supportRespondedBy: review.supportRespondedBy || 'ItWhip Support'
-      }),
-      
-      // Trip dates
-      tripStartDate: review.tripStartDate,
-      tripEndDate: review.tripEndDate,
-      
-      // Review date
-      createdAt: review.createdAt,
-      
-      // Reviewer info - keep real ID for profile modal
-      reviewer: review.reviewerProfile ? {
-        id: review.reviewerProfile.id, // Real ID for API lookup
-        name: review.reviewerProfile.name,
-        profilePhotoUrl: review.reviewerProfile.profilePhotoUrl,
-        city: review.reviewerProfile.city,
-        state: review.reviewerProfile.state,
-        memberSince: review.reviewerProfile.memberSince,
-        tripCount: review.reviewerProfile.tripCount,
-        reviewCount: review.reviewerProfile.reviewCount,
-        isVerified: review.reviewerProfile.isVerified
-      } : {
-        id: null, // Guest has no profile
-        name: 'Guest',
-        profilePhotoUrl: null,
-        city: 'Phoenix',
-        state: 'AZ',
-        memberSince: review.createdAt,
-        tripCount: 1,
-        reviewCount: 1,
-        isVerified: false
-      },
-      
-      // Add host data
-      host: car.host
-    }))
+    // Format reviews for display with actual profile counts
+    const formattedReviews = reviews.map((review, index) => {
+      // Get actual count for this profile if it exists
+      const actualCount = review.reviewerProfile?.id 
+        ? countsMap.get(review.reviewerProfile.id) || 0 
+        : 0
+
+      return {
+        // Use index-based ID for React keys
+        id: `review-${carId.substring(0, 8)}-${index}`,
+        
+        // Review content
+        rating: review.rating,
+        title: review.title,
+        comment: review.comment,
+        
+        // Subcategory ratings (if provided)
+        ...(review.cleanliness && {
+          ratings: {
+            cleanliness: review.cleanliness,
+            accuracy: review.accuracy,
+            communication: review.communication,
+            convenience: review.convenience,
+            value: review.value
+          }
+        }),
+        
+        // Engagement metrics
+        helpfulCount: review.helpfulCount,
+        isVerified: review.isVerified,
+        isPinned: review.isPinned,
+        
+        // Host/Support responses - keep dates for display
+        ...(review.hostResponse && {
+          hostResponse: review.hostResponse,
+          hostRespondedAt: review.hostRespondedAt
+        }),
+        
+        ...(review.supportResponse && {
+          supportResponse: review.supportResponse,
+          supportRespondedAt: review.supportRespondedAt,
+          supportRespondedBy: review.supportRespondedBy || 'ItWhip Support'
+        }),
+        
+        // Trip dates
+        tripStartDate: review.tripStartDate,
+        tripEndDate: review.tripEndDate,
+        
+        // Review date
+        createdAt: review.createdAt,
+        
+        // Reviewer info - with ACTUAL counts
+        reviewer: review.reviewerProfile ? {
+          id: review.reviewerProfile.id, // Real ID for API lookup
+          name: review.reviewerProfile.name,
+          profilePhotoUrl: review.reviewerProfile.profilePhotoUrl,
+          city: review.reviewerProfile.city,
+          state: review.reviewerProfile.state,
+          memberSince: review.reviewerProfile.memberSince,
+          tripCount: actualCount,      // CHANGED: Use actual count instead of static value
+          reviewCount: actualCount,    // CHANGED: Use actual count instead of static value
+          isVerified: review.reviewerProfile.isVerified
+        } : {
+          id: null, // Guest has no profile
+          name: 'Guest',
+          profilePhotoUrl: null,
+          city: 'Phoenix',
+          state: 'AZ',
+          memberSince: review.createdAt,
+          tripCount: 1,
+          reviewCount: 1,
+          isVerified: false
+        },
+        
+        // Add host data
+        host: car.host
+      }
+    })
 
     return NextResponse.json({
       success: true,

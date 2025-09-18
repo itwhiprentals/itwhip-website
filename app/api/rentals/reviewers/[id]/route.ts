@@ -77,15 +77,15 @@ export async function GET(
         : 0
     }
 
-    // Format response
+    // Format response - NOW USING ACTUAL CALCULATED COUNTS
     const formattedProfile = {
       id: profile.id,
       name: profile.name,
       profilePhotoUrl: profile.profilePhotoUrl,
       location: `${profile.city}, ${profile.state}`,
       memberSince: profile.memberSince,
-      tripCount: profile.tripCount,
-      reviewCount: profile.reviewCount,
+      tripCount: stats.totalReviews,      // CHANGED: Use actual count instead of static value
+      reviewCount: stats.totalReviews,    // CHANGED: Use actual count instead of static value
       isVerified: profile.isVerified,
       stats,
       recentReviews: profile.reviews.map(review => ({
