@@ -12,7 +12,7 @@ import {
   IoChevronBackOutline,
   IoPersonOutline,
   IoBusinessOutline,
-  IoSparklesOutline
+  IoStarSharp
 } from 'react-icons/io5'
 
 interface SimilarCar {
@@ -39,6 +39,11 @@ interface SimilarCar {
   distance?: number
   similarityScore?: number
   hostId?: string
+  host?: {
+    name?: string
+    profilePhoto?: string
+    isVerified?: boolean
+  }
 }
 
 interface SimilarCarsProps {
@@ -72,22 +77,18 @@ function isCompanyName(name: string): boolean {
   
   const nameLower = name.toLowerCase()
   
-  // Check for explicit company indicators
   for (const indicator of companyIndicators) {
     if (nameLower.includes(indicator.toLowerCase())) {
       return true
     }
   }
   
-  // Check if name doesn't look like a personal name
   const words = name.trim().split(/\s+/)
   
-  // If it's a single word and longer than typical first names, might be company
   if (words.length === 1 && words[0].length > 12) {
     return true
   }
   
-  // If more than 3 words, likely a company unless it has middle initial pattern
   if (words.length > 3) {
     return true
   }
@@ -99,29 +100,23 @@ function isCompanyName(name: string): boolean {
 function formatDisplayName(name: string, isCompany?: boolean): string {
   if (!name) return 'Host'
   
-  // If explicitly marked as company or detected as company, return full name
   if (isCompany || isCompanyName(name)) {
     return name
   }
   
-  // For individuals, show first name + last initial
   const words = name.trim().split(/\s+/)
   
   if (words.length === 1) {
-    // Single word name, just return it
     return words[0]
   } else if (words.length === 2) {
-    // First and last name
     const firstName = words[0]
     const lastInitial = words[1].charAt(0).toUpperCase()
     return `${firstName} ${lastInitial}.`
   } else if (words.length === 3 && words[1].length <= 2) {
-    // Likely has middle initial
     const firstName = words[0]
     const lastInitial = words[2].charAt(0).toUpperCase()
     return `${firstName} ${lastInitial}.`
   } else {
-    // Multiple words, take first and last
     const firstName = words[0]
     const lastInitial = words[words.length - 1].charAt(0).toUpperCase()
     return `${firstName} ${lastInitial}.`
@@ -130,7 +125,7 @@ function formatDisplayName(name: string, isCompany?: boolean): string {
 
 // Calculate distance between two points
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 3959 // Earth's radius in miles
+  const R = 3959
   const dLat = (lat2 - lat1) * Math.PI / 180
   const dLon = (lon2 - lon1) * Math.PI / 180
   const a = 
@@ -140,13 +135,10 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
   const actualDistance = R * c
   
-  // Generate a random minimum between 1.0 and 1.9 miles
-  // Use coordinates as seed for consistent randomization per car
   const seed = Math.abs(lat2 + lon2) * 10000
-  const randomFactor = (seed % 10) / 10 // Gives 0.0 to 0.9
-  const minDistance = 1.0 + randomFactor // Range: 1.0 to 1.9
+  const randomFactor = (seed % 10) / 10
+  const minDistance = 1.0 + randomFactor
   
-  // Return the greater of actual distance or randomized minimum
   return Math.max(minDistance, actualDistance)
 }
 
@@ -161,54 +153,48 @@ function calculateSimilarityScore(
 ): number {
   let score = 0
   
-  // Car type match (highest weight)
   if (targetType && car.carType?.toLowerCase() === targetType.toLowerCase()) {
     score += 30
   }
   
-  // Price similarity (within 20% range)
   if (targetPrice && car.dailyRate) {
     const priceDiff = Math.abs(car.dailyRate - targetPrice)
     const pricePercent = priceDiff / targetPrice
     if (pricePercent <= 0.1) {
-      score += 25 // Within 10%
+      score += 25
     } else if (pricePercent <= 0.2) {
-      score += 15 // Within 20%
+      score += 15
     } else if (pricePercent <= 0.3) {
-      score += 5 // Within 30%
+      score += 5
     }
   }
   
-  // Distance proximity (used internally for scoring, not displayed)
   if (distance !== undefined) {
     if (distance < 0.5) {
-      score += 25 // Very close
+      score += 25
     } else if (distance < 1) {
-      score += 20 // Walking distance
+      score += 20
     } else if (distance < 2) {
-      score += 15 // Very nearby
+      score += 15
     } else if (distance < 5) {
-      score += 10 // Nearby
+      score += 10
     } else if (distance < 10) {
-      score += 5 // Same area
+      score += 5
     }
   }
   
-  // Instant book match
   if (targetInstantBook && car.instantBook) {
     score += 10
   }
   
-  // Feature matching
   if (targetFeatures && car.features) {
     const carFeatures = Array.isArray(car.features) ? car.features : []
     const matchingFeatures = targetFeatures.filter(f => 
       carFeatures.some(cf => cf.toLowerCase().includes(f.toLowerCase()))
     )
-    score += matchingFeatures.length * 2 // 2 points per matching feature
+    score += matchingFeatures.length * 2
   }
   
-  // Rating boost (slight preference for well-rated cars)
   if (car.rating && car.rating >= 4.5) {
     score += 5
   }
@@ -216,24 +202,160 @@ function calculateSimilarityScore(
   return score
 }
 
-// Carousel Component that can be reused
+// Updated CarCard Component matching city page design
+function CarCard({ 
+  car, 
+  currentLocation,
+  currentCarPrice 
+}: { 
+  car: SimilarCar
+  currentLocation?: { lat?: number; lng?: number }
+  currentCarPrice: number
+}) {
+  const imageUrl = car.photos?.[0]?.url || car.photos?.[0] || 
+    'https://images.unsplash.com/photo-1583267746897-2cf415887172?w=800&h=600&fit=crop'
+  
+  // Calculate distance for this car
+  let displayDistance: number | undefined
+  if (currentLocation?.lat && currentLocation?.lng && car.location?.lat && car.location?.lng) {
+    displayDistance = calculateDistance(
+      currentLocation.lat,
+      currentLocation.lng,
+      car.location.lat,
+      car.location.lng
+    )
+  }
+  
+  const priceDifference = Math.abs(car.dailyRate - currentCarPrice)
+  const showPriceDifference = priceDifference > 5
+  
+  return (
+    <Link
+      href={`/rentals/${car.id}`}
+      className="flex-shrink-0 w-64 sm:w-72 group bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300"
+    >
+      {/* Image Container - Compact rectangular */}
+      <div className="relative h-24 sm:h-28 bg-gray-200 dark:bg-gray-700 overflow-hidden">
+        <img
+          src={imageUrl}
+          alt={`${car.year} ${car.make} ${car.model}`}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+        />
+        
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+        
+        {/* Price comparison badge - Top left */}
+        {showPriceDifference && (
+          <div className="absolute top-2 left-2">
+            <span className={`px-2 py-0.5 backdrop-blur-sm text-white text-[11px] font-bold rounded-full ${
+              car.dailyRate < currentCarPrice 
+                ? 'bg-green-600/90' 
+                : 'bg-gray-700/80'
+            }`}>
+              ${Math.round(priceDifference)} {car.dailyRate < currentCarPrice ? 'LESS' : 'MORE'}
+            </span>
+          </div>
+        )}
+        
+        {/* Best Match badge if applicable - only show if no price difference badge */}
+        {!showPriceDifference && car.similarityScore && car.similarityScore >= 70 && (
+          <div className="absolute top-2 left-2">
+            <span className="px-2 py-0.5 bg-amber-600/90 backdrop-blur-sm text-white text-[10px] font-bold rounded-full">
+              BEST MATCH
+            </span>
+          </div>
+        )}
+        
+        {/* Distance badge - if applicable */}
+        {displayDistance && (
+          <div className="absolute bottom-2 left-2">
+            <div className="px-2 py-0.5 bg-amber-600/90 backdrop-blur-sm text-white text-[10px] font-bold rounded-full">
+              {displayDistance.toFixed(1)} mi
+            </div>
+          </div>
+        )}
+        
+        {/* Price Badge - Bottom right */}
+        <div className="absolute bottom-2 right-2">
+          <div className="px-2 py-1 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-md shadow-lg">
+            <div className="flex items-baseline gap-0.5">
+              <span className="text-sm font-bold text-gray-900 dark:text-white">
+                ${Math.round(car.dailyRate)}
+              </span>
+              <span className="text-[10px] text-gray-600 dark:text-gray-400">/day</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Content - Compact */}
+      <div className="p-3">
+        {/* Title - Make and Model on separate lines */}
+        <div className="mb-1">
+          <div className="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors line-clamp-1 flex items-center justify-between">
+            <span>{car.year} {car.make}</span>
+            {car.instantBook && (
+              <span className="px-1.5 py-0.5 bg-emerald-500 text-white text-[9px] font-bold rounded flex items-center gap-0.5">
+                <IoFlashOutline className="w-2.5 h-2.5" />
+                INSTANT
+              </span>
+            )}
+          </div>
+          <div className="text-xs font-medium text-gray-700 dark:text-gray-300 line-clamp-1">
+            {car.model}
+          </div>
+        </div>
+        
+        {/* Car Type, Seats, Rating & Trips - All in one row */}
+        <div className="flex items-center justify-between text-[11px] text-gray-600 dark:text-gray-400">
+          <div className="flex items-center gap-1.5">
+            <span className="capitalize">{car.carType?.toLowerCase() || 'sedan'}</span>
+            <span>•</span>
+            <span>{car.seats || 5} seats</span>
+            {car.rating && car.rating > 0 && (
+              <>
+                <span>•</span>
+                <div className="flex items-center gap-0.5">
+                  <IoStarOutline className="w-2.5 h-2.5 text-amber-400 fill-current" />
+                  <span className="font-medium text-gray-700 dark:text-gray-300">
+                    {car.rating.toFixed(1)}
+                  </span>
+                </div>
+              </>
+            )}
+          </div>
+          {/* Trips or New Listing - Far right */}
+          <span className="text-[10px]">
+            {car.rating && car.rating > 0 && car.totalTrips ? 
+              `(${car.totalTrips} ${car.totalTrips === 1 ? 'trip' : 'trips'})` : 
+              <span className="text-green-600 dark:text-green-400 font-medium">(New listing)</span>
+            }
+          </span>
+        </div>
+      </div>
+    </Link>
+  )
+}
+
+// Updated Carousel Component
 function CarCarousel({ 
   cars, 
   scrollId,
-  dailyRate,
-  currentLocation
+  currentLocation,
+  currentCarPrice
 }: { 
   cars: SimilarCar[]
   scrollId: string
-  dailyRate: number
   currentLocation?: { lat?: number; lng?: number }
+  currentCarPrice: number
 }) {
   const [scrollPosition, setScrollPosition] = useState(0)
   
   const scroll = (direction: 'left' | 'right') => {
     const container = document.getElementById(scrollId)
     if (container) {
-      const scrollAmount = 320 // Width of one card plus gap
+      const scrollAmount = 280 // Adjusted for new card width
       const newPosition = direction === 'left' 
         ? Math.max(0, scrollPosition - scrollAmount)
         : scrollPosition + scrollAmount
@@ -268,128 +390,17 @@ function CarCarousel({
       {/* Cars carousel */}
       <div 
         id={scrollId}
-        className="flex gap-6 overflow-x-auto scrollbar-hide pb-4"
+        className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide"
         onScroll={(e) => setScrollPosition(e.currentTarget.scrollLeft)}
       >
-        {cars.map((car) => {
-          // Calculate distance for this car if we have locations
-          let displayDistance: number | undefined
-          if (currentLocation?.lat && currentLocation?.lng && car.location?.lat && car.location?.lng) {
-            displayDistance = calculateDistance(
-              currentLocation.lat,
-              currentLocation.lng,
-              car.location.lat,
-              car.location.lng
-            )
-          }
-          
-          return (
-            <Link
-              key={car.id}
-              href={`/rentals/${car.id}`}
-              className="flex-shrink-0 w-72 group"
-            >
-              <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all border border-gray-100 dark:border-gray-700">
-                {/* Car image */}
-                <div className="relative h-48 bg-gray-200 dark:bg-gray-700">
-                  {car.photos && car.photos[0] ? (
-                    <img
-                      src={car.photos[0].url || car.photos[0]}
-                      alt={`${car.make} ${car.model}`}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <IoCarOutline className="w-12 h-12 text-gray-400" />
-                    </div>
-                  )}
-                  
-                  {/* Top badges */}
-                  <div className="absolute top-2 left-2 flex flex-wrap gap-2">
-                    {car.instantBook && (
-                      <span className="px-2 py-1 bg-green-600 text-white text-xs font-semibold rounded-full flex items-center gap-1 shadow-lg">
-                        <IoFlashOutline className="w-3 h-3" />
-                        Instant
-                      </span>
-                    )}
-                    {car.similarityScore && car.similarityScore >= 70 && (
-                      <span className="px-2 py-1 bg-amber-600 text-white text-xs font-semibold rounded-full shadow-lg">
-                        Best Match
-                      </span>
-                    )}
-                  </div>
-                  
-                  {/* Bottom location badges */}
-                  <div className="absolute bottom-2 left-2 right-2 flex justify-between items-center">
-                    {/* Distance badge on left */}
-                    {displayDistance && (
-                      <div className="px-2 py-1 bg-amber-600/90 backdrop-blur text-white text-xs font-semibold rounded-full shadow-lg">
-                        {displayDistance.toFixed(1)} mi
-                      </div>
-                    )}
-                    
-                    {/* City badge on right */}
-                    <div className="px-2 py-1 bg-black/80 backdrop-blur text-white text-xs rounded-full flex items-center gap-1 shadow-lg ml-auto">
-                      <IoLocationOutline className="w-3 h-3" />
-                      {car.city}
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Car details */}
-                <div className="p-4">
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2 truncate">
-                    {car.year} {car.make} {car.model}
-                  </h3>
-                  
-                  {/* New clean display structure */}
-                  <div className="text-sm text-gray-600 dark:text-gray-400 mb-2 -ml-2">
-                    {car.rating && car.rating > 0 && car.totalTrips && car.totalTrips > 0 ? (
-                      <div className="flex items-center gap-2 ml-2">
-                        <div className="flex items-center gap-1">
-                          <IoStarOutline className="w-3.5 h-3.5 text-amber-500 fill-current" />
-                          <span className="font-medium">{car.rating.toFixed(1)}</span>
-                          <span className="text-xs text-gray-500">({car.totalTrips} trips)</span>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex">
-                        <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 rounded-lg">
-                          <span className="font-medium text-green-700 dark:text-green-300">New listing</span>
-                          <span className="text-xs text-green-600 dark:text-green-400">• Book and save 5%</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-xl font-bold text-gray-900 dark:text-white">
-                        ${Math.round(car.dailyRate)}
-                      </span>
-                      <span className="text-sm text-gray-500 dark:text-gray-400 ml-1">
-                        /day
-                      </span>
-                    </div>
-                    
-                    {/* Show price difference */}
-                    {Math.abs(car.dailyRate - dailyRate) > 5 && (
-                      <span className={`text-xs font-medium ${
-                        car.dailyRate < dailyRate 
-                          ? 'text-green-600 dark:text-green-400' 
-                          : 'text-gray-600 dark:text-gray-400'
-                      }`}>
-                        {car.dailyRate < dailyRate 
-                          ? `$${Math.round(dailyRate - car.dailyRate)} less` 
-                          : `$${Math.round(car.dailyRate - dailyRate)} more`}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </Link>
-          )
-        })}
+        {cars.map((car) => (
+          <CarCard 
+            key={car.id} 
+            car={car} 
+            currentLocation={currentLocation}
+            currentCarPrice={currentCarPrice}
+          />
+        ))}
       </div>
     </>
   )
@@ -429,7 +440,6 @@ export default function SimilarCars({
           })
         },
         () => {
-          // Default to Phoenix center if location denied
           setUserLocation({
             lat: 33.4484,
             lng: -112.0740
@@ -462,26 +472,18 @@ export default function SimilarCars({
     try {
       setLoadingHost(true)
       
-      // Build query params for host's other cars
       const params = new URLSearchParams({
         hostId: hostId,
-        exclude: currentCarId, // Exclude the current car
-        limit: '10' // Get up to 10 cars from the same host
+        exclude: currentCarId,
+        limit: '10'
       })
-      
-      console.log('Fetching host cars with params:', params.toString())
       
       const response = await fetch(`/api/rentals/host-cars?${params.toString()}`)
       
       if (response.ok) {
         const data = await response.json()
-        console.log('Host cars API response:', data)
         
-        // The API returns { cars: [...], count: X }
         if (data && data.cars && Array.isArray(data.cars)) {
-          console.log('Host has', data.cars.length, 'other cars')
-          
-          // Sort host cars by price similarity to current car
           const sortedHostCars = data.cars.sort((a: SimilarCar, b: SimilarCar) => {
             const aDiff = Math.abs(a.dailyRate - dailyRate)
             const bDiff = Math.abs(b.dailyRate - dailyRate)
@@ -490,11 +492,9 @@ export default function SimilarCars({
           
           setHostCars(sortedHostCars)
         } else {
-          console.log('No cars array in response or empty')
           setHostCars([])
         }
       } else {
-        console.log('Failed to fetch host cars:', response.status)
         setHostCars([])
       }
     } catch (error) {
@@ -509,34 +509,23 @@ export default function SimilarCars({
     try {
       setLoading(true)
       
-      // Build query params
       const params = new URLSearchParams({
         exclude: currentCarId,
         city: city,
-        limit: '12' // Get more to filter down to best matches
+        limit: '12'
       })
       
-      // Add optional filters
       if (carType) params.append('carType', carType)
-      // If we have a hostId, exclude all cars from this host from similar cars
       if (hostId) params.append('excludeHost', hostId)
       
-      console.log('Fetching similar cars with params:', params.toString())
-      
       const response = await fetch(`/api/rentals/similar?${params.toString()}`)
-      
-      console.log('Response status:', response.status)
       
       if (response.ok) {
         const cars = await response.json()
         
-        console.log('Received cars from API:', cars.length, cars)
-        
-        // Calculate distances and similarity scores
         const carsWithScores = cars.map((car: SimilarCar) => {
           let distance: number | undefined
           
-          // Calculate distance if we have coordinates
           if (location?.lat && location?.lng && car.location?.lat && car.location?.lng) {
             distance = calculateDistance(
               location.lat,
@@ -545,7 +534,6 @@ export default function SimilarCars({
               car.location.lng
             )
           } else if (userLocation && car.location?.lat && car.location?.lng) {
-            // Fallback to user location
             distance = calculateDistance(
               userLocation.lat,
               userLocation.lng,
@@ -570,7 +558,6 @@ export default function SimilarCars({
           }
         })
         
-        // Sort by similarity score and take top 8
         const sortedCars = carsWithScores
           .sort((a, b) => (b.similarityScore || 0) - (a.similarityScore || 0))
           .slice(0, 8)
@@ -585,20 +572,21 @@ export default function SimilarCars({
     }
   }
 
-  // Loading skeleton
+  // Loading skeleton - Updated to match new card dimensions
   const LoadingSkeleton = () => (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
       {[...Array(4)].map((_, i) => (
-        <div key={i} className="animate-pulse">
-          <div className="bg-gray-200 dark:bg-gray-700 rounded-lg h-48 mb-3" />
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2" />
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
+        <div key={i} className="flex-shrink-0 w-64 sm:w-72 animate-pulse">
+          <div className="bg-gray-200 dark:bg-gray-700 rounded-lg h-24 sm:h-28 mb-3" />
+          <div className="px-3">
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2" />
+            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
+          </div>
         </div>
       ))}
     </div>
   )
 
-  // Don't render anything if no cars to show
   if (!loadingHost && hostCars.length === 0 && !loading && similarCars.length === 0) {
     return null
   }
@@ -610,7 +598,6 @@ export default function SimilarCars({
         <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
           <div className="mb-3 pl-4">
             <h2 className="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-1.5">
-              {/* Host profile photo or fallback icon */}
               {hostProfilePhoto ? (
                 <img 
                   src={hostProfilePhoto} 
@@ -624,14 +611,12 @@ export default function SimilarCars({
                 <IoPersonOutline className="w-5 h-5" />
               )}
               
-              {/* Title text with privacy-protected name */}
               {isCompanyHost ? (
                 <>More from {displayName}</>
               ) : (
                 <>{displayName ? `${displayName}'s` : "Host's"} Other Whips</>
               )}
               
-              {/* Premium Fleet Badge if host has luxury cars */}
               {hostCars.some(car => 
                 car.carType?.toLowerCase() === 'luxury' || 
                 car.carType?.toLowerCase() === 'exotic' ||
@@ -659,8 +644,8 @@ export default function SimilarCars({
             <CarCarousel 
               cars={hostCars} 
               scrollId="host-cars-container"
-              dailyRate={dailyRate}
               currentLocation={location || userLocation}
+              currentCarPrice={dailyRate}
             />
           )}
         </div>
@@ -685,8 +670,8 @@ export default function SimilarCars({
             <CarCarousel 
               cars={similarCars} 
               scrollId="similar-cars-container"
-              dailyRate={dailyRate}
               currentLocation={location || userLocation}
+              currentCarPrice={dailyRate}
             />
           )}
         </div>
