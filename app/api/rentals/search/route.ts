@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     const pickupTime = searchParams.get('pickupTime') || '10:00'
     const returnTime = searchParams.get('returnTime') || '10:00'
     const sortBy = searchParams.get('sortBy') || 'recommended'
-    const limit = parseInt(searchParams.get('limit') || '20')
+    // REMOVED LIMIT - Will fetch all cars
     const instantBook = searchParams.get('instantBook') === 'true'
     const carType = searchParams.get('carType')
     const priceMin = searchParams.get('priceMin')
@@ -80,6 +80,7 @@ export async function GET(request: NextRequest) {
     }
 
     // SECURE QUERY - USE SELECT, NOT INCLUDE
+    // REMOVED 'take' PARAMETER TO FETCH ALL CARS
     const cars = await prisma.rentalCar.findMany({
       where: whereClause,
       select: {
@@ -166,8 +167,8 @@ export async function GET(request: NextRequest) {
           }
         }
       },
-      orderBy,
-      take: limit
+      orderBy
+      // REMOVED: take: limit - Now fetches all matching cars
     })
 
     // Transform cars with clean data
@@ -313,7 +314,7 @@ export async function GET(request: NextRequest) {
       results: transformedCars,
       total: transformedCars.length,
       page: 1,
-      limit,
+      limit: transformedCars.length,  // Set limit to actual count for compatibility
       metadata: {
         // REMOVED p2pCount and traditionalCount - These expose internal categorization
         totalResults: transformedCars.length,  // Generic count instead
