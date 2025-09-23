@@ -13,7 +13,7 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title: 'ItWhip - Luxury Rides Without Surge | Hotels Earn From Every Ride',
+  title: 'ItWhip - Luxury Rides Platform | Hotels Earn From Every Ride',
   description: 'Phoenix premium transportation network. Riders save 60% vs surge pricing. Hotels earn $300K/year from guest rides. Zero investment required.',
   
   // Google Search Console Verification - KEEP THIS
@@ -23,8 +23,8 @@ export const metadata: Metadata = {
   
   // Open Graph for Facebook, LinkedIn, etc.
   openGraph: {
-    title: 'ItWhip - Skip The Surge | Turn Rides Into Revenue',
-    description: 'Phoenix\'s premium ride network. Luxury vehicles at fixed prices for riders. $300K annual revenue for hotels. Join 127 partners already earning.',
+    title: 'ItWhip - Hotels Rental Car Plaform | Book or List your Car Today',
+    description: 'Phoenix\'s premium car rentals network for hotel guests. $300K annual revenue for hotels. Join TODAY and start earning.',
     url: 'https://itwhip.com',
     siteName: 'ItWhip',
     images: [
@@ -122,9 +122,9 @@ export default function RootLayout({
                 addressCountry: 'US'
               },
               sameAs: [
-                'https://facebook.com/itwhip',
+                'https://www.facebook.com/people/Itwhipcom/61573990760395/?mibextid=wwXIfr&rdid=2egGjvDzm0ZkDaJt&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F16A6t34gWx%2F%3Fmibextid%3DwwXIfr',
                 'https://twitter.com/itwhip',
-                'https://instagram.com/itwhip',
+                'https://instagram.com/itwhiptech',
                 'https://linkedin.com/company/itwhip'
               ],
               areaServed: {
