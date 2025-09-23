@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   
   // Open Graph for Facebook, LinkedIn, etc.
   openGraph: {
-    title: 'ItWhip - Hotels Rental Car Plaform | Book or List your Car Today',
+    title: 'ItWhip - Hotels Rental Car Plaform | Book or List your Car Today.',
     description: 'Phoenix\'s premium car rentals network for hotel guests. $300K annual revenue for hotels. Join TODAY and start earning.',
     url: 'https://itwhip.com',
     siteName: 'ItWhip',
