@@ -20,6 +20,7 @@ import {
   IoChevronBackOutline,
   IoChevronForwardOutline
 } from 'react-icons/io5'
+import { calculateDistance, formatDistance, safeCalculateDistance } from '../utils/mapHelpers'
 
 // Initialize Mapbox token
 if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
@@ -96,15 +97,6 @@ const getMarkerColor = (car: Car): string => {
   return '#f59e0b'
 }
 
-// Privacy-safe distance formatting
-const formatDistance = (distance: number | null | undefined): string => {
-  if (distance === null || distance === undefined) return ''
-  if (distance < 0.5) return 'Less than 1 mile'
-  if (distance < 1) return '1 mile'
-  if (distance < 2) return `${distance.toFixed(1)} mi`
-  return `${Math.round(distance)} mi`
-}
-
 // Fixed Mobile Car Detail Card
 function CarDetailCard({ 
   car, 
@@ -121,8 +113,13 @@ function CarDetailCard({
 }) {
   const [imageIndex, setImageIndex] = useState(0)
   
-  // Use the distance from the car object, don't recalculate
-  const distance = car.distance
+  // Calculate distance safely using the imported helper
+  const distance = useMemo(() => {
+    if (userLocation && car.location) {
+      return safeCalculateDistance(userLocation, car.location)
+    }
+    return car.distance || null
+  }, [userLocation, car.location, car.distance])
 
   const nextImage = () => {
     if (car.photos && car.photos.length > 1) {
@@ -238,6 +235,16 @@ function CarDetailCard({
                     <IoStarOutline className="w-3 h-3 text-amber-500 fill-current" />
                     <span className="text-xs">{car.rating.average.toFixed(1)}</span>
                     <span className="text-xs text-gray-500">({car.rating.count})</span>
+                    <span className="text-xs text-gray-500">•</span>
+                    <span className="text-xs text-gray-500">{car.seats || 5} seats</span>
+                    {distance !== null && distance !== undefined && (
+                      <>
+                        <span className="text-xs text-gray-500">•</span>
+                        <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                          {formatDistance(distance)}
+                        </span>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
@@ -250,20 +257,7 @@ function CarDetailCard({
               </div>
             </div>
             
-            {/* Location and specs */}
-            <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 mb-3">
-              <span>{car.seats || 5} seats</span>
-              <span>•</span>
-              <span>{car.transmission || 'Auto'}</span>
-              {distance !== null && distance !== undefined && (
-                <>
-                  <span>•</span>
-                  <span className="text-blue-600 dark:text-blue-400 font-medium">
-                    {formatDistance(distance)}
-                  </span>
-                </>
-              )}
-            </div>
+
             
             {/* Action button */}
             <button
@@ -360,16 +354,19 @@ function CarDetailCard({
               <div className="flex items-center gap-1">
                 <IoStarOutline className="w-4 h-4 text-amber-500 fill-current" />
                 <span>{car.rating.average.toFixed(1)}</span>
+                <span className="text-gray-500">({car.rating.count})</span>
+                <span className="text-gray-500">•</span>
+                <span>{car.seats || 5} seats</span>
+                {distance !== null && distance !== undefined && (
+                  <>
+                    <span className="text-gray-500">•</span>
+                    <span className="text-blue-600 dark:text-blue-400 font-medium">
+                      {formatDistance(distance)}
+                    </span>
+                  </>
+                )}
               </div>
             )}
-            <div className="flex items-center gap-1">
-              <IoCarOutline className="w-4 h-4" />
-              <span>{car.seats || 5} seats</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <IoSpeedometerOutline className="w-4 h-4" />
-              <span>{car.transmission || 'Auto'}</span>
-            </div>
           </div>
           
           <button
@@ -601,17 +598,30 @@ export default function CarMapView({
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
   
-  // Use distance that's already calculated - don't recalculate
+  // Calculate distances for cars using the imported helper
   const carsWithDistance = useMemo(() => {
-    return cars.map(car => ({
-      ...car,
-      distance: car.distance // Use existing distance, don't recalculate
-    })).sort((a, b) => {
+    return cars.map(car => {
+      let distance = car.distance
+      
+      // If no distance is set and we have user location, calculate it
+      if (distance === null || distance === undefined) {
+        if (userLocation && car.location) {
+          distance = safeCalculateDistance(userLocation, car.location)
+        } else if (searchLocation && car.location) {
+          distance = safeCalculateDistance(searchLocation, car.location)
+        }
+      }
+      
+      return {
+        ...car,
+        distance
+      }
+    }).sort((a, b) => {
       if (a.distance === null || a.distance === undefined) return 1
       if (b.distance === null || b.distance === undefined) return -1
       return a.distance - b.distance
     })
-  }, [cars])
+  }, [cars, userLocation, searchLocation])
   
   // Initialize map - FIXED
   useEffect(() => {
