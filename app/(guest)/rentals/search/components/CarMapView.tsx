@@ -139,12 +139,12 @@ function CarDetailCard({
       <>
         {/* Backdrop for tap-to-close */}
         <div 
-          className="fixed inset-0 z-[59]" 
+          className="absolute inset-0 z-[59]" 
           onClick={onClose}
         />
         
         {/* Floating square card - compact size */}
-        <div className="fixed left-4 right-4 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl z-[60]" 
+        <div className="absolute left-4 right-4 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl z-[60]" 
              style={{ 
                bottom: '20px',
                maxWidth: '320px',
