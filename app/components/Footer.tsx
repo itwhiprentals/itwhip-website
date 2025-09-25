@@ -41,6 +41,14 @@ export default function Footer() {
           minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
           seconds: Math.floor((distance % (1000 * 60)) / 1000)
         })
+      } else {
+        // When countdown reaches zero, set to 0
+        setTimeLeft({
+          days: 0,
+          hours: 0,
+          minutes: 0,
+          seconds: 0
+        })
       }
     }, 1000)
     
@@ -51,7 +59,7 @@ export default function Footer() {
     <footer className="bg-gray-100 dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800">
       {/* Main Footer Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
-        <div className="grid grid-cols-2 md:grid-cols-7 gap-3 md:gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-3 md:gap-4 mb-8">
           {/* Company Info */}
           <div className="col-span-2 md:col-span-2">
             {/* Logo - ItWhip with bold W and TECHNOLOGY underneath */}
@@ -177,35 +185,6 @@ export default function Footer() {
             </ul>
           </div>
           
-          {/* Drivers Links */}
-          <div className="md:col-span-1">
-            <h4 className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white mb-2">
-              Drivers
-            </h4>
-            <ul className="space-y-1.5">
-              <li>
-                <Link href="/drive" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Become a Driver
-                </Link>
-              </li>
-              <li>
-                <Link href="/driver-requirements" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Requirements
-                </Link>
-              </li>
-              <li>
-                <Link href="/driver-portal" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Driver Portal
-                </Link>
-              </li>
-              <li>
-                <Link href="/earnings" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Driver Earnings
-                </Link>
-              </li>
-            </ul>
-          </div>
-          
           {/* Hosts Links */}
           <div className="md:col-span-1">
             <h4 className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white mb-2">
@@ -288,7 +267,7 @@ export default function Footer() {
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
               <a 
-                href="https://testflight.apple.com/join/itwhip"
+                href="https://testflight.apple.com/join/ygzsQbNf"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="group relative overflow-hidden bg-gradient-to-r from-gray-900 to-black hover:from-black hover:to-gray-900 text-white px-6 py-3 rounded-lg transition-all transform hover:scale-105 shadow-lg"
