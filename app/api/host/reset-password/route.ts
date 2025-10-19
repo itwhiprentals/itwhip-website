@@ -94,12 +94,12 @@ export async function POST(req: NextRequest) {
 
     // Send confirmation email
     try {
-      const { sendEmail } = await import('@/app/lib/email/sendEmail')
+      const { sendEmail } = await import('@/app/lib/email/sender')
       
-      await sendEmail({
-        to: host.email,
-        subject: 'Your ItWhip Host Password Was Changed',
-        html: `
+      await sendEmail(
+        host.email,
+        'Your ItWhip Host Password Was Changed',
+        `
           <!DOCTYPE html>
           <html>
             <head>
@@ -173,8 +173,26 @@ export async function POST(req: NextRequest) {
               </table>
             </body>
           </html>
+        `,
         `
-      })
+Host Password Changed
+
+Hi ${host.name},
+
+This is a confirmation that your ItWhip host account password was successfully changed.
+
+✓ Password Updated
+Changed on: ${new Date().toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' })}
+
+You can now sign in to the Host Portal with your new password.
+
+⚠️ Didn't change your password?
+If you didn't make this change, please contact our host support team immediately at hosts@itwhip.com
+
+ItWhip Technologies, Inc. - Host Portal
+© 2025 ItWhip. All rights reserved.
+        `
+      )
       
       console.log(`[Host Password Reset] Confirmation email sent to: ${host.email}`)
     } catch (emailError) {

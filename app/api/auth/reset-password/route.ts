@@ -72,12 +72,12 @@ export async function POST(req: NextRequest) {
 
     // Send confirmation email (optional but recommended)
     try {
-      const { sendEmail } = await import('@/app/lib/email/sendEmail')
+      const { sendEmail } = await import('@/app/lib/email/sender')
       
-      await sendEmail({
-        to: user.email!,
-        subject: 'Your ItWhip Password Was Changed',
-        html: `
+      await sendEmail(
+        user.email!,
+        'Your ItWhip Password Was Changed',
+        `
           <!DOCTYPE html>
           <html>
             <head>
@@ -150,8 +150,26 @@ export async function POST(req: NextRequest) {
               </table>
             </body>
           </html>
+        `,
         `
-      })
+Password Changed
+
+Hi${user.name ? ` ${user.name}` : ''},
+
+This is a confirmation that your ItWhip password was successfully changed.
+
+✓ Password Updated
+Changed on: ${new Date().toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' })}
+
+You can now sign in with your new password.
+
+⚠️ Didn't change your password?
+If you didn't make this change, please contact our support team immediately at support@itwhip.com
+
+ItWhip Technologies, Inc.
+© 2025 ItWhip. All rights reserved.
+        `
+      )
       
       console.log(`[Password Reset] Confirmation email sent to: ${user.email}`)
     } catch (emailError) {

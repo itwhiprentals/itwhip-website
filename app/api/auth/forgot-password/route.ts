@@ -97,13 +97,13 @@ export async function POST(req: NextRequest) {
     const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password?token=${resetToken}`
     
     try {
-      // Import your email function
-      const { sendEmail } = await import('@/app/lib/email/sendEmail')
+      // Import sendEmail from sender directly
+      const { sendEmail } = await import('@/app/lib/email/sender')
       
-      await sendEmail({
-        to: user.email!,
-        subject: 'Reset Your ItWhip Password',
-        html: `
+      await sendEmail(
+        user.email!,
+        'Reset Your ItWhip Password',
+        `
           <!DOCTYPE html>
           <html>
             <head>
@@ -180,8 +180,24 @@ export async function POST(req: NextRequest) {
               </table>
             </body>
           </html>
+        `,
         `
-      })
+Reset Your ItWhip Password
+
+Hi${user.name ? ` ${user.name}` : ''},
+
+We received a request to reset your password. Click the link below to create a new password:
+
+${resetUrl}
+
+⚠️ Security Notice:
+This link expires in 1 hour and can only be used once.
+If you didn't request this, you can safely ignore this email.
+
+ItWhip Technologies, Inc.
+© 2025 ItWhip. All rights reserved.
+        `
+      )
 
       console.log(`[Password Reset] Email sent to: ${user.email}`)
     } catch (emailError) {

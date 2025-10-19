@@ -1,7 +1,7 @@
 // app/(guest)/profile/page.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { IoArrowBackOutline } from 'react-icons/io5'
 
@@ -69,7 +69,62 @@ interface GuestProfile {
   pushNotifications: boolean
 }
 
-export default function GuestProfilePage() {
+// Loading skeleton component
+function GuestProfileLoadingSkeleton() {
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-4">
+        <div className="animate-pulse space-y-6">
+          {/* Back button skeleton */}
+          <div className="h-11 bg-gray-200 dark:bg-gray-700 rounded w-32"></div>
+          
+          {/* Header skeleton */}
+          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-48"></div>
+          
+          {/* Profile card skeleton */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="flex items-center space-x-4">
+              <div className="h-24 w-24 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+              <div className="flex-1 space-y-3">
+                <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-48"></div>
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-64"></div>
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32"></div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Verification progress skeleton */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="space-y-3">
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-4/6"></div>
+            </div>
+          </div>
+          
+          {/* Tabs skeleton */}
+          <div className="flex space-x-4 border-b border-gray-200 dark:border-gray-700 pb-2">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
+            ))}
+          </div>
+          
+          {/* Content skeleton */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="space-y-4">
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-4/6"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Main profile content component (uses useSearchParams)
+function GuestProfileContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   
@@ -438,5 +493,14 @@ export default function GuestProfilePage() {
         </div>
       </div>
     </div>
+  )
+}
+
+// Main page component with Suspense wrapper
+export default function GuestProfilePage() {
+  return (
+    <Suspense fallback={<GuestProfileLoadingSkeleton />}>
+      <GuestProfileContent />
+    </Suspense>
   )
 }
