@@ -6,33 +6,32 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { 
   IoCloseOutline,
-  IoChevronForwardOutline,
   IoChevronDownOutline,
   IoBusinessOutline,
   IoCarOutline,
   IoKeyOutline,
   IoSparklesOutline,
   IoCodeSlashOutline,
-  IoPersonCircleOutline,
   IoGridOutline,
   IoLogOutOutline,
   IoPersonOutline,
   IoSettingsOutline,
   IoHelpCircleOutline,
-  IoDocumentTextOutline,
-  IoShieldCheckmarkOutline,
-  IoCallOutline,
   IoMailOutline,
-  IoLocationOutline,
-  IoSearchOutline,
-  IoPricetagOutline,
   IoMapOutline,
   IoHomeOutline,
   IoCalculatorOutline,
-  IoShieldOutline,
+  IoShieldCheckmarkOutline,
   IoCarSportOutline,
   IoFlashOutline,
-  IoDiamondOutline
+  IoDiamondOutline,
+  IoCalendarOutline,
+  IoWalletOutline,
+  IoPricetagOutline,
+  IoChatbubbleOutline,
+  IoDocumentTextOutline,
+  IoStarOutline,
+  IoCardOutline
 } from 'react-icons/io5'
 
 interface User {
@@ -40,6 +39,13 @@ interface User {
   name: string
   email: string
   role: string
+  profilePhoto?: string
+}
+
+interface HostNavItem {
+  name: string
+  href: string
+  icon: React.ComponentType<{ className?: string }>
 }
 
 interface MobileMenuProps {
@@ -51,9 +57,11 @@ interface MobileMenuProps {
   user?: User | null
   onProfileClick?: () => void
   onLogout?: () => void
+  isHost?: boolean
+  isHostPage?: boolean
+  hostNavItems?: HostNavItem[]
 }
 
-// Navigation data structure for cleaner code
 const navigationSections = [
   {
     id: 'browse',
@@ -64,7 +72,8 @@ const navigationSections = [
       { href: '/rentals/search?category=luxury', label: 'Luxury', icon: IoDiamondOutline },
       { href: '/rentals/search?category=suv', label: 'SUVs', icon: IoCarSportOutline },
       { href: '/rentals/search?category=economy', label: 'Economy', icon: IoPricetagOutline },
-      { href: '/rentals/search?category=electric', label: 'Electric', icon: IoFlashOutline }
+      { href: '/rentals/search?category=electric', label: 'Electric', icon: IoFlashOutline },
+      { href: '/rentals/search?view=map', label: 'Map View', icon: IoMapOutline }
     ]
   },
   {
@@ -73,10 +82,11 @@ const navigationSections = [
     icon: IoKeyOutline,
     badge: { text: 'EARN', color: 'from-green-500 to-emerald-500' },
     items: [
-      { href: '/list-your-car', label: 'List Your Car', icon: IoSparklesOutline, highlight: true },
-      { href: '/host-requirements', label: 'Host Requirements', icon: IoDocumentTextOutline },
-      { href: '/host-earnings', label: 'Earnings Calculator', icon: IoCalculatorOutline },
-      { href: '/host-insurance', label: 'Insurance & Protection', icon: IoShieldOutline }
+      { href: '/host/signup', label: 'List Your Car', icon: IoSparklesOutline, highlight: true },
+      { href: '/host/dashboard', label: 'Dashboard', icon: IoHomeOutline },
+      { href: '/host/cars', label: 'My Cars', icon: IoCarOutline },
+      { href: '/host/bookings', label: 'Bookings', icon: IoCalendarOutline },
+      { href: '/host/earnings', label: 'Earnings', icon: IoCalculatorOutline }
     ]
   },
   {
@@ -107,6 +117,16 @@ const navigationSections = [
   }
 ]
 
+// Guest Navigation Items
+const guestNavItems = [
+  { name: 'Dashboard', href: '/dashboard', icon: IoHomeOutline },
+  { name: 'My Trips', href: '/rentals/dashboard/bookings', icon: IoCalendarOutline },
+  { name: 'Messages', href: '/messages', icon: IoChatbubbleOutline },
+  { name: 'Profile', href: '/profile', icon: IoPersonOutline },
+  { name: 'Payment Methods', href: '/profile?tab=payment', icon: IoCardOutline },
+  { name: 'Reviews', href: '/profile?tab=reviews', icon: IoStarOutline },
+]
+
 export default function MobileMenu({
   isOpen,
   onClose,
@@ -115,39 +135,44 @@ export default function MobileMenu({
   isLoggedIn = false,
   user = null,
   onProfileClick,
-  onLogout
+  onLogout,
+  isHost = false,
+  isHostPage = false,
+  hostNavItems = []
 }: MobileMenuProps) {
   const pathname = usePathname()
   const [expandedSection, setExpandedSection] = useState<string | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const previousFocusRef = useRef<HTMLElement | null>(null)
+
+  // Determine user type
+  const isAdmin = user?.role === 'ADMIN'
+  const isGuest = isLoggedIn && user && !isAdmin && !isHost
   
-  // Prevent body scroll when menu is open
+  // Check if we're on guest pages
+  const isGuestPage = pathname?.startsWith('/dashboard') || 
+                      pathname?.startsWith('/profile') || 
+                      pathname?.startsWith('/messages') ||
+                      pathname?.startsWith('/rentals/dashboard')
+  
   useEffect(() => {
     if (isOpen) {
-      // Store the current focused element
       previousFocusRef.current = document.activeElement as HTMLElement
-      
-      // Prevent body scroll
       const scrollY = window.scrollY
       document.body.style.position = 'fixed'
       document.body.style.top = `-${scrollY}px`
       document.body.style.width = '100%'
       
-      // Focus on close button for accessibility
       setTimeout(() => {
         const closeBtn = menuRef.current?.querySelector('[aria-label="Close menu"]') as HTMLElement
         closeBtn?.focus()
       }, 100)
     } else {
-      // Restore body scroll
       const scrollY = document.body.style.top
       document.body.style.position = ''
       document.body.style.top = ''
       document.body.style.width = ''
       window.scrollTo(0, parseInt(scrollY || '0') * -1)
-      
-      // Restore focus to previous element
       previousFocusRef.current?.focus()
     }
     
@@ -158,7 +183,6 @@ export default function MobileMenu({
     }
   }, [isOpen])
 
-  // Handle ESC key to close menu
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
@@ -170,52 +194,19 @@ export default function MobileMenu({
     return () => document.removeEventListener('keydown', handleEscape)
   }, [isOpen, onClose])
 
-  // Trap focus within menu when open
-  useEffect(() => {
-    if (!isOpen) return
-
-    const handleTabKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Tab') return
-
-      const focusableElements = menuRef.current?.querySelectorAll(
-        'a[href], button:not([disabled]), textarea, input, select'
-      )
-      
-      if (!focusableElements || focusableElements.length === 0) return
-
-      const firstElement = focusableElements[0] as HTMLElement
-      const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement
-
-      if (e.shiftKey && document.activeElement === firstElement) {
-        e.preventDefault()
-        lastElement.focus()
-      } else if (!e.shiftKey && document.activeElement === lastElement) {
-        e.preventDefault()
-        firstElement.focus()
-      }
-    }
-
-    document.addEventListener('keydown', handleTabKey)
-    return () => document.removeEventListener('keydown', handleTabKey)
-  }, [isOpen])
-
-  // Handle section toggle with memoization
   const toggleSection = useCallback((label: string) => {
     setExpandedSection(prev => prev === label ? null : label)
   }, [])
 
-  // Handle navigation click
   const handleNavClick = useCallback(() => {
     onClose()
     setExpandedSection(null)
   }, [onClose])
 
-  // Check if link is active
   const isActiveLink = useCallback((href: string) => {
     return pathname === href
   }, [pathname])
 
-  // Quick action handler
   const handleQuickAction = useCallback((action: () => void) => {
     action()
     handleNavClick()
@@ -230,14 +221,12 @@ export default function MobileMenu({
       aria-modal="true"
       aria-label="Mobile navigation menu"
     >
-      {/* Backdrop with animation */}
       <div 
         className="absolute inset-0 bg-black/70 backdrop-blur-md animate-fadeIn"
         onClick={onClose}
         aria-hidden="true"
       />
       
-      {/* Menu Panel */}
       <div 
         ref={menuRef}
         className={`
@@ -247,14 +236,16 @@ export default function MobileMenu({
           ${isOpen ? 'translate-x-0' : 'translate-x-full'}
         `}
       >
-        {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
           <div className="flex flex-col">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">
               It<span className="font-black">W</span>hip
             </h2>
             <span className="text-[10px] text-gray-500 dark:text-gray-400 tracking-widest uppercase font-medium">
-              TECHNOLOGY
+              {isAdmin ? 'ADMIN PORTAL' :
+               isHost && isHostPage ? 'HOST PORTAL' :
+               isGuest && isGuestPage ? 'GUEST PORTAL' : 
+               'TECHNOLOGY'}
             </span>
           </div>
           <button
@@ -267,22 +258,33 @@ export default function MobileMenu({
           </button>
         </div>
 
-        {/* Scrollable Content */}
         <div className="overflow-y-auto h-[calc(100%-80px)] overscroll-contain">
           
-          {/* User Profile Section (if logged in) */}
+          {/* User Profile Section */}
           {isLoggedIn && user && (
             <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950 border-b border-gray-200 dark:border-gray-800">
               <div className="flex items-center space-x-3 mb-4">
-                <div className={`
-                  w-12 h-12 rounded-full flex items-center justify-center 
-                  text-white font-medium text-lg shadow-lg
-                  ${user.role === 'ADMIN' 
-                    ? 'bg-gradient-to-br from-red-500 to-red-600' 
-                    : 'bg-gradient-to-br from-blue-500 to-purple-500'}
-                `}>
-                  {user.name ? user.name[0].toUpperCase() : 'U'}
-                </div>
+                {/* Profile Photo or Initial */}
+                {user.profilePhoto ? (
+                  <img 
+                    src={user.profilePhoto} 
+                    alt={user.name || 'Profile'} 
+                    className="w-12 h-12 rounded-full object-cover border-2 border-green-500 shadow-lg"
+                  />
+                ) : (
+                  <div className={`
+                    w-12 h-12 rounded-full flex items-center justify-center 
+                    text-white font-medium text-lg shadow-lg border-2 border-green-500
+                    ${isAdmin 
+                      ? 'bg-gradient-to-br from-red-500 to-red-600' 
+                      : isHost
+                      ? 'bg-gradient-to-br from-purple-500 to-purple-600'
+                      : 'bg-gradient-to-br from-green-500 to-blue-600'}
+                  `}>
+                    {user.name ? user.name[0].toUpperCase() : 'U'}
+                  </div>
+                )}
+                
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-gray-900 dark:text-white truncate">
                     {user.name || 'User'}
@@ -290,87 +292,225 @@ export default function MobileMenu({
                   <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
                     {user.email}
                   </p>
-                  {user.role === 'ADMIN' && (
+                  {isAdmin && (
                     <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
                       Administrator
+                    </span>
+                  )}
+                  {isHost && (
+                    <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400">
+                      Host
+                    </span>
+                  )}
+                  {isGuest && (
+                    <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                      Guest
                     </span>
                   )}
                 </div>
               </div>
               
-              {/* Quick Actions Grid */}
+              {/* Quick Actions Grid - Different for Each User Type */}
               <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => handleQuickAction(onProfileClick || (() => {}))}
-                  className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900 
-                    rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105
-                    focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  aria-label="View profile"
-                >
-                  <IoPersonOutline className="w-5 h-5 text-gray-700 dark:text-gray-300 mb-1" />
-                  <span className="text-xs text-gray-700 dark:text-gray-300">Profile</span>
-                </button>
-                
-                <Link
-                  href={user?.role === 'ADMIN' ? '/admin/dashboard' : '/dashboard'}
-                  onClick={handleNavClick}
-                  className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900 
-                    rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105
-                    focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  aria-label="Go to dashboard"
-                >
-                  <IoGridOutline className="w-5 h-5 text-gray-700 dark:text-gray-300 mb-1" />
-                  <span className="text-xs text-gray-700 dark:text-gray-300">Dashboard</span>
-                </Link>
-                
-                {user?.role !== 'ADMIN' && (
-                  <Link
-                    href="/dashboard/bookings"
-                    onClick={handleNavClick}
-                    className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900 
-                      rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105
-                      focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    aria-label="View my rentals"
-                  >
-                    <IoKeyOutline className="w-5 h-5 text-gray-700 dark:text-gray-300 mb-1" />
-                    <span className="text-xs text-gray-700 dark:text-gray-300">My Rentals</span>
-                  </Link>
-                )}
-                
-                <Link
-                  href="/settings"
-                  onClick={handleNavClick}
-                  className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900 
-                    rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105
-                    focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  aria-label="Go to settings"
-                >
-                  <IoSettingsOutline className="w-5 h-5 text-gray-700 dark:text-gray-300 mb-1" />
-                  <span className="text-xs text-gray-700 dark:text-gray-300">Settings</span>
-                </Link>
+                {isHost ? (
+                  // HOST QUICK ACTIONS
+                  <>
+                    <Link
+                      href="/host/dashboard"
+                      onClick={handleNavClick}
+                      className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900 
+                        rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105
+                        focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    >
+                      <IoHomeOutline className="w-5 h-5 text-gray-700 dark:text-gray-300 mb-1" />
+                      <span className="text-xs text-gray-700 dark:text-gray-300">Dashboard</span>
+                    </Link>
+                    <Link
+                      href="/host/cars"
+                      onClick={handleNavClick}
+                      className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900 
+                        rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105
+                        focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    >
+                      <IoCarOutline className="w-5 h-5 text-gray-700 dark:text-gray-300 mb-1" />
+                      <span className="text-xs text-gray-700 dark:text-gray-300">My Cars</span>
+                    </Link>
+                    <Link
+                      href="/host/bookings"
+                      onClick={handleNavClick}
+                      className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900 
+                        rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105
+                        focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    >
+                      <IoCalendarOutline className="w-5 h-5 text-gray-700 dark:text-gray-300 mb-1" />
+                      <span className="text-xs text-gray-700 dark:text-gray-300">Bookings</span>
+                    </Link>
+                    <Link
+                      href="/host/earnings"
+                      onClick={handleNavClick}
+                      className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900 
+                        rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105
+                        focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    >
+                      <IoWalletOutline className="w-5 h-5 text-gray-700 dark:text-gray-300 mb-1" />
+                      <span className="text-xs text-gray-700 dark:text-gray-300">Earnings</span>
+                    </Link>
+                  </>
+                ) : isGuest ? (
+                  // GUEST QUICK ACTIONS
+                  <>
+                    <Link
+                      href="/dashboard"
+                      onClick={handleNavClick}
+                      className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900 
+                        rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105
+                        focus:outline-none focus:ring-2 focus:ring-green-500"
+                    >
+                      <IoHomeOutline className="w-5 h-5 text-gray-700 dark:text-gray-300 mb-1" />
+                      <span className="text-xs text-gray-700 dark:text-gray-300">Dashboard</span>
+                    </Link>
+                    <Link
+                      href="/rentals/dashboard/bookings"
+                      onClick={handleNavClick}
+                      className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900 
+                        rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105
+                        focus:outline-none focus:ring-2 focus:ring-green-500"
+                    >
+                      <IoCalendarOutline className="w-5 h-5 text-gray-700 dark:text-gray-300 mb-1" />
+                      <span className="text-xs text-gray-700 dark:text-gray-300">My Bookings</span>
+                    </Link>
+                    <Link
+                      href="/messages"
+                      onClick={handleNavClick}
+                      className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900 
+                        rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105
+                        focus:outline-none focus:ring-2 focus:ring-green-500"
+                    >
+                      <IoChatbubbleOutline className="w-5 h-5 text-gray-700 dark:text-gray-300 mb-1" />
+                      <span className="text-xs text-gray-700 dark:text-gray-300">Messages</span>
+                    </Link>
+                    <Link
+                      href="/profile"
+                      onClick={handleNavClick}
+                      className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900 
+                        rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105
+                        focus:outline-none focus:ring-2 focus:ring-green-500"
+                    >
+                      <IoPersonOutline className="w-5 h-5 text-gray-700 dark:text-gray-300 mb-1" />
+                      <span className="text-xs text-gray-700 dark:text-gray-300">Profile</span>
+                    </Link>
+                  </>
+                ) : isAdmin ? (
+                  // ADMIN QUICK ACTIONS
+                  <>
+                    <Link
+                      href="/admin/dashboard"
+                      onClick={handleNavClick}
+                      className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900 
+                        rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105
+                        focus:outline-none focus:ring-2 focus:ring-red-500"
+                    >
+                      <IoGridOutline className="w-5 h-5 text-gray-700 dark:text-gray-300 mb-1" />
+                      <span className="text-xs text-gray-700 dark:text-gray-300">Dashboard</span>
+                    </Link>
+                    <Link
+                      href="/admin/hosts"
+                      onClick={handleNavClick}
+                      className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900 
+                        rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105
+                        focus:outline-none focus:ring-2 focus:ring-red-500"
+                    >
+                      <IoCarOutline className="w-5 h-5 text-gray-700 dark:text-gray-300 mb-1" />
+                      <span className="text-xs text-gray-700 dark:text-gray-300">Hosts</span>
+                    </Link>
+                    <Link
+                      href="/admin/profile"
+                      onClick={handleNavClick}
+                      className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900 
+                        rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105
+                        focus:outline-none focus:ring-2 focus:ring-red-500"
+                    >
+                      <IoPersonOutline className="w-5 h-5 text-gray-700 dark:text-gray-300 mb-1" />
+                      <span className="text-xs text-gray-700 dark:text-gray-300">Profile</span>
+                    </Link>
+                    <Link
+                      href="/admin/settings"
+                      onClick={handleNavClick}
+                      className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900 
+                        rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105
+                        focus:outline-none focus:ring-2 focus:ring-red-500"
+                    >
+                      <IoSettingsOutline className="w-5 h-5 text-gray-700 dark:text-gray-300 mb-1" />
+                      <span className="text-xs text-gray-700 dark:text-gray-300">Settings</span>
+                    </Link>
+                  </>
+                ) : null}
               </div>
             </div>
           )}
-          
-          {/* Map View Button */}
-          <div className="p-4 border-b border-gray-200 dark:border-gray-800">
-            <Link
-              href="/rentals/search?view=map"
-              onClick={handleNavClick}
-              className="w-full flex items-center justify-center space-x-2 px-4 py-3 
-                bg-gradient-to-r from-blue-500 to-purple-500 text-white
-                rounded-xl hover:shadow-lg transition-all hover:scale-[1.02] font-medium
-                focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              aria-label="Explore cars on map view"
-            >
-              <IoMapOutline className="w-5 h-5" aria-hidden="true" />
-              <span>Explore Cars on Map</span>
-            </Link>
-          </div>
 
-          {/* Navigation Sections */}
+          {/* Host Navigation Section */}
+          {isHost && isHostPage && hostNavItems.length > 0 && (
+            <div className="p-4 border-b border-gray-200 dark:border-gray-800">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase mb-3">Host Navigation</h3>
+              <div className="space-y-1">
+                {hostNavItems.map((item) => {
+                  const Icon = item.icon
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={handleNavClick}
+                      className={`
+                        flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                        ${isActiveLink(item.href)
+                          ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900'}
+                      `}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span>{item.name}</span>
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Guest Navigation Section */}
+          {isGuest && isGuestPage && (
+            <div className="p-4 border-b border-gray-200 dark:border-gray-800">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase mb-3">Guest Navigation</h3>
+              <div className="space-y-1">
+                {guestNavItems.map((item) => {
+                  const Icon = item.icon
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={handleNavClick}
+                      className={`
+                        flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                        ${isActiveLink(item.href)
+                          ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900'}
+                      `}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span>{item.name}</span>
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Navigation Sections - Site Navigation (Always visible) */}
           <nav className="px-4 py-2" aria-label="Main navigation">
-            {/* Home Link */}
+            {(isHost || isGuest || isAdmin) && (
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Site Navigation</p>
+            )}
+            
             <div className="border-b border-gray-100 dark:border-gray-900">
               <Link
                 href="/"
@@ -397,7 +537,6 @@ export default function MobileMenu({
               </Link>
             </div>
 
-            {/* Dynamic Navigation Sections */}
             {navigationSections.map((section) => {
               const Icon = section.icon
               const isExpanded = expandedSection === section.id
@@ -437,7 +576,6 @@ export default function MobileMenu({
                     />
                   </button>
                   
-                  {/* Expandable Menu Items */}
                   <div
                     id={`${section.id}-menu`}
                     className={`
@@ -484,7 +622,7 @@ export default function MobileMenu({
             })}
           </nav>
 
-          {/* Sign Out (if logged in) */}
+          {/* Sign Out */}
           {isLoggedIn && (
             <div className="p-4 border-t border-gray-200 dark:border-gray-800">
               <button
@@ -506,15 +644,3 @@ export default function MobileMenu({
     </div>
   )
 }
-
-// Add CSS for animation (add to your global CSS or module)
-const animationStyles = `
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.animate-fadeIn {
-  animation: fadeIn 0.2s ease-out;
-}
-`

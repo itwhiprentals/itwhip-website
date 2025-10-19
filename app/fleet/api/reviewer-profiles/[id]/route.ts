@@ -1,8 +1,11 @@
-// app/sys-2847/fleet/api/reviewer-profiles/[id]/route.ts
+// app/fleet/api/reviewer-profiles/[id]/route.ts
 // Admin endpoint for individual reviewer profile operations
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
+
+// ========== 🆕 ACTIVITY TRACKING IMPORT ==========
+import { trackActivity } from '@/lib/helpers/guestProfileStatus'
 
 // GET - Fetch a single reviewer profile
 export async function GET(
@@ -72,6 +75,19 @@ export async function PUT(
       )
     }
 
+    // ========== 🆕 DETECT DOCUMENT VERIFICATION (BEFORE UPDATE) ==========
+    const wasVerifiedBefore = existingProfile.documentsVerified
+    const isBeingVerifiedNow = body.documentsVerified === true && !wasVerifiedBefore
+    const isBeingRejectedNow = body.documentsVerified === false && wasVerifiedBefore
+    
+    // Store which documents are being verified
+    const documentsVerified: string[] = []
+    if (body.documentsVerified) {
+      if (existingProfile.governmentIdUrl) documentsVerified.push('Government ID')
+      if (existingProfile.driversLicenseUrl) documentsVerified.push("Driver's License")
+      if (existingProfile.selfieUrl) documentsVerified.push('Verification Selfie')
+    }
+
     // Build update data
     const updateData: any = {}
     
@@ -86,6 +102,16 @@ export async function PUT(
       updateData.memberSince = new Date(body.memberSince)
     }
 
+    // Document verification fields
+    if (body.documentsVerified !== undefined) {
+      updateData.documentsVerified = body.documentsVerified
+      if (body.documentsVerified) {
+        updateData.documentVerifiedAt = new Date()
+      } else {
+        updateData.documentVerifiedAt = null
+      }
+    }
+
     // Update the profile
     const updatedProfile = await prisma.reviewerProfile.update({
       where: { id: profileId },
@@ -96,6 +122,73 @@ export async function PUT(
         }
       }
     })
+
+    // ========== 🆕 TRACK DOCUMENT VERIFICATION ACTIVITY ==========
+    if (isBeingVerifiedNow) {
+      try {
+        // Build description
+        const documentList = documentsVerified.join(', ')
+        const description = documentsVerified.length > 0
+          ? `Documents verified by admin - ${documentList}`
+          : 'Documents verified by admin'
+
+        await trackActivity(profileId, {
+          action: 'DOCUMENT_VERIFIED',
+          description,
+          performedBy: 'FLEET_ADMIN',
+          metadata: {
+            verifiedBy: 'Fleet Admin',
+            verifiedAt: new Date().toISOString(),
+            documentsVerified,
+            documentCount: documentsVerified.length,
+            // Document URLs (for reference)
+            documents: {
+              governmentId: existingProfile.governmentIdUrl || null,
+              governmentIdType: existingProfile.governmentIdType || null,
+              driversLicense: existingProfile.driversLicenseUrl || null,
+              selfie: existingProfile.selfieUrl || null
+            },
+            // Verification impact
+            canInstantBook: true,
+            verificationComplete: true
+          }
+        })
+
+        console.log('✅ Document verification tracked in guest timeline:', {
+          guestId: profileId,
+          documentsVerified
+        })
+      } catch (trackingError) {
+        console.error('❌ Failed to track document verification activity:', trackingError)
+        // Continue without breaking - tracking is non-critical
+      }
+    }
+
+    // ========== 🆕 TRACK DOCUMENT REJECTION ==========
+    if (isBeingRejectedNow) {
+      try {
+        await trackActivity(profileId, {
+          action: 'DOCUMENT_REJECTED',
+          description: 'Documents rejected by admin - Verification status revoked',
+          performedBy: 'FLEET_ADMIN',
+          metadata: {
+            rejectedBy: 'Fleet Admin',
+            rejectedAt: new Date().toISOString(),
+            reason: body.rejectionReason || 'Documents did not meet verification requirements',
+            previouslyVerified: wasVerifiedBefore,
+            verificationRevoked: true
+          }
+        })
+
+        console.log('✅ Document rejection tracked in guest timeline:', {
+          guestId: profileId
+        })
+      } catch (trackingError) {
+        console.error('❌ Failed to track document rejection activity:', trackingError)
+        // Continue without breaking - tracking is non-critical
+      }
+    }
+    // ========== END ACTIVITY TRACKING ==========
 
     return NextResponse.json({
       success: true,

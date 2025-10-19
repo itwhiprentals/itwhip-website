@@ -23,7 +23,8 @@ import {
   IoSpeedometerOutline,
   IoShieldCheckmarkOutline,
   IoDocumentTextOutline,
-  IoImageOutline
+  IoImageOutline,
+  IoCloseOutline
 } from 'react-icons/io5'
 
 interface HostDetails {
@@ -36,6 +37,7 @@ interface HostDetails {
   isVerified: boolean
   verifiedAt?: string
   verificationLevel?: string
+  approvalStatus?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED' | 'NEEDS_ATTENTION'
   responseTime?: number
   responseRate?: number
   acceptanceRate?: number
@@ -148,6 +150,109 @@ export default function HostDetailPage({ params }: { params: Promise<{ id: strin
     return null
   }
 
+  const handleApprove = async () => {
+    if (!confirm('Approve this host application?')) return
+    
+    try {
+      const response = await fetch(`/api/admin/hosts/${host?.id}/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          commission: 20,
+          permissions: {
+            dashboardAccess: true,
+            canViewBookings: true,
+            canEditCalendar: true,
+            canSetPricing: true,
+            canWithdrawFunds: false
+          }
+        })
+      })
+      
+      if (response.ok) {
+        alert('Host approved successfully')
+        fetchHostDetails()
+      } else {
+        alert('Failed to approve host')
+      }
+    } catch (error) {
+      console.error('Approval failed:', error)
+      alert('Failed to approve host')
+    }
+  }
+
+  const handleReject = async () => {
+    const reason = prompt('Enter rejection reason:')
+    if (!reason) return
+    
+    try {
+      const response = await fetch(`/api/admin/hosts/${host?.id}/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason })
+      })
+      
+      if (response.ok) {
+        alert('Host rejected')
+        fetchHostDetails()
+      } else {
+        alert('Failed to reject host')
+      }
+    } catch (error) {
+      console.error('Rejection failed:', error)
+      alert('Failed to reject host')
+    }
+  }
+
+  const handleSuspend = async () => {
+    const reason = prompt('Enter suspension reason:')
+    if (!reason) return
+    
+    try {
+      const response = await fetch(`/api/admin/hosts/${host?.id}/suspend`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason })
+      })
+      
+      if (response.ok) {
+        alert('Host suspended')
+        fetchHostDetails()
+      } else {
+        alert('Failed to suspend host')
+      }
+    } catch (error) {
+      console.error('Suspension failed:', error)
+      alert('Failed to suspend host')
+    }
+  }
+
+  const handleReactivate = async () => {
+    if (!confirm('Reactivate this host?')) return
+    
+    try {
+      const response = await fetch(`/api/admin/hosts/${host?.id}/reactivate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          notes: 'Reactivated from admin panel',
+          reactivateVehicles: true,
+          probationPeriod: 30
+        })
+      })
+      
+      if (response.ok) {
+        alert('Host reactivated successfully')
+        fetchHostDetails()
+      } else {
+        alert('Failed to reactivate host')
+      }
+    } catch (error) {
+      console.error('Reactivation failed:', error)
+      alert('Failed to reactivate host')
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
@@ -194,6 +299,46 @@ export default function HostDetailPage({ params }: { params: Promise<{ id: strin
               </button>
             </div>
             <div className="flex items-center space-x-2">
+              {/* Action Buttons - Show based on host status */}
+              {host.approvalStatus === 'PENDING' && (
+                <>
+                  <button
+                    onClick={handleApprove}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center space-x-2"
+                  >
+                    <IoCheckmarkCircle className="w-5 h-5" />
+                    <span>Approve</span>
+                  </button>
+                  <button
+                    onClick={handleReject}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center space-x-2"
+                  >
+                    <IoCloseOutline className="w-5 h-5" />
+                    <span>Reject</span>
+                  </button>
+                </>
+              )}
+              
+              {host.approvalStatus === 'APPROVED' && (
+                <button
+                  onClick={handleSuspend}
+                  className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 flex items-center space-x-2"
+                >
+                  <IoTimeOutline className="w-5 h-5" />
+                  <span>Suspend</span>
+                </button>
+              )}
+
+              {host.approvalStatus === 'SUSPENDED' && (
+                <button
+                  onClick={handleReactivate}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center space-x-2"
+                >
+                  <IoCheckmarkCircle className="w-5 h-5" />
+                  <span>Reactivate</span>
+                </button>
+              )}
+
               <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2">
                 <IoCreateOutline className="w-5 h-5" />
                 <span>Edit Host</span>
@@ -226,6 +371,17 @@ export default function HostDetailPage({ params }: { params: Promise<{ id: strin
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{host.name}</h1>
                 {host.isVerified && (
                   <IoCheckmarkCircle className="w-6 h-6 text-blue-500" />
+                )}
+                {host.approvalStatus && (
+                  <span className={`px-3 py-1 text-sm rounded-full ${
+                    host.approvalStatus === 'APPROVED' ? 'bg-green-100 text-green-800' :
+                    host.approvalStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                    host.approvalStatus === 'SUSPENDED' ? 'bg-orange-100 text-orange-800' :
+                    host.approvalStatus === 'REJECTED' ? 'bg-red-100 text-red-800' :
+                    'bg-gray-100 text-gray-800'
+                  }`}>
+                    {host.approvalStatus}
+                  </span>
                 )}
                 {host.active ? (
                   <span className="px-3 py-1 text-sm rounded-full bg-green-100 text-green-800">Active</span>

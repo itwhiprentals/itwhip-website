@@ -5,6 +5,7 @@ import { prisma } from '@/app/lib/database/prisma'
 import { validateOdometer, validateFuelLevel, validateInspectionPhotos } from '@/app/lib/trip/validation'
 import { calculateTripCharges } from '@/app/lib/trip/calculations'
 import { PaymentProcessor } from '@/app/lib/stripe/payment-processor'
+import { calculateHostEarnings } from '@/app/fleet/financial-constants'
 import { 
   RentalBookingStatus, 
   VerificationStatus, 
@@ -14,6 +15,9 @@ import {
   DisputeType,
   DisputeStatus 
 } from '@prisma/client'
+
+// ========== 🆕 ACTIVITY TRACKING IMPORT ==========
+import { trackActivity } from '@/lib/helpers/guestProfileStatus'
 
 // Status transition constants using proper enum values
 const STATUS_TRANSITIONS = {
@@ -195,14 +199,12 @@ export async function POST(
               stripeChargeId = paymentResult.chargeId
               break
             } else if (paymentResult.status === 'requires_action') {
-              // Payment needs 3D Secure or additional authentication
               console.log(`[Trip End] Payment requires authentication, routing to P2P`)
               chargeStatus = ChargeStatus.UNDER_REVIEW
               statusTransition = STATUS_TRANSITIONS.CHARGES_PENDING
               chargeFailureReason = 'Payment requires additional authentication'
               break
             } else {
-              // Payment failed, maybe retry
               chargeAttempts++
               
               if (chargeAttempts > maxRetries) {
@@ -212,7 +214,7 @@ export async function POST(
                 chargeFailureReason = paymentResult.error || 'Payment processing failed'
               } else {
                 console.log(`[Trip End] Payment attempt ${chargeAttempts} failed, retrying...`)
-                await new Promise(resolve => setTimeout(resolve, 1000)) // Wait 1 second before retry
+                await new Promise(resolve => setTimeout(resolve, 1000))
               }
             }
           } catch (paymentError: any) {
@@ -294,7 +296,7 @@ export async function POST(
       // Create TripCharge record if there are charges
       if (hasCharges) {
         const holdUntil = new Date()
-        holdUntil.setHours(holdUntil.getHours() + 24) // 24-hour hold
+        holdUntil.setHours(holdUntil.getHours() + 24)
 
         await tx.tripCharge.create({
           data: {
@@ -320,7 +322,7 @@ export async function POST(
             lastAttemptAt: chargeAttempts > 0 ? new Date() : null,
             holdUntil: chargeStatus === ChargeStatus.PENDING ? holdUntil : null,
             guestNotifiedAt: new Date(),
-            requiresApproval: charges.total > 500 // Auto-approval threshold
+            requiresApproval: charges.total > 500
           }
         })
 
@@ -359,6 +361,90 @@ export async function POST(
         }
       }
 
+      // ========================================================================
+      // PAYOUT CREATION - AUTOMATED PAYOUT SYSTEM
+      // ========================================================================
+      
+      // Only create payout if trip completed successfully (no major issues)
+      if (statusTransition.status === RentalBookingStatus.COMPLETED) {
+        
+        // Check if this is a new host (first 3 trips have 7-day hold instead of 3)
+        const completedTripsCount = await tx.rentalBooking.count({
+          where: {
+            hostId: booking.hostId,
+            status: RentalBookingStatus.COMPLETED
+          }
+        })
+        const isNewHost = completedTripsCount < 3
+        
+        // Calculate host earnings
+        const hostEarnings = calculateHostEarnings(
+          booking.totalAmount,
+          booking.host.protectionPlan || 'BASIC',
+          isNewHost
+        )
+        
+        // Determine when payout is eligible
+        const holdDays = isNewHost ? 7 : 3
+        const eligibleAt = new Date(Date.now() + (holdDays * 24 * 60 * 60 * 1000))
+        
+        // Create RentalPayout record (PENDING status)
+        await tx.rentalPayout.create({
+          data: {
+            hostId: booking.hostId,
+            bookingId: booking.id,
+            amount: hostEarnings.hostEarnings,
+            status: 'PENDING',
+            eligibleAt: eligibleAt,
+            
+            // Period tracking (for compatibility with existing schema)
+            startDate: booking.startDate,
+            endDate: booking.endDate,
+            bookingCount: 1,
+            grossEarnings: booking.totalAmount,
+            platformFee: hostEarnings.platformRevenue,
+            processingFee: hostEarnings.processingFee,
+            netPayout: hostEarnings.hostEarnings,
+            currency: 'USD'
+          }
+        })
+        
+        // Update host pending balance
+        await tx.rentalHost.update({
+          where: { id: booking.hostId },
+          data: {
+            pendingBalance: { increment: hostEarnings.hostEarnings }
+          }
+        })
+        
+        // Log payout creation
+        await tx.activityLog.create({
+          data: {
+            action: 'PAYOUT_CREATED',
+            entityType: 'RentalPayout',
+            entityId: booking.id,
+            metadata: {
+              amount: hostEarnings.hostEarnings,
+              eligibleAt: eligibleAt,
+              holdDays: holdDays,
+              isNewHost: isNewHost,
+              commission: hostEarnings.platformRevenue,
+              fee: hostEarnings.processingFee,
+              bookingCode: booking.bookingCode,
+              bookingTotal: booking.totalAmount,
+              timestamp: new Date()
+            },
+            ipAddress: request.headers.get('x-forwarded-for') || 'unknown'
+          }
+        })
+        
+        console.log(`[Trip End] Created payout for ${booking.bookingCode}: $${hostEarnings.hostEarnings.toFixed(2)}, eligible on ${eligibleAt.toISOString().split('T')[0]}`)
+      }
+      
+      // ========================================================================
+      // END PAYOUT CREATION
+      // ========================================================================
+
       // Create inspection photo records
       const photoRecords = Object.entries(inspectionPhotos).map(([category, url]) => ({
         bookingId,
@@ -379,7 +465,6 @@ export async function POST(
       // Create disputes if any
       if (disputes && disputes.length > 0) {
         for (const disputeReason of disputes) {
-          // Map dispute reason to DisputeType
           let disputeType: DisputeType = DisputeType.OTHER
           if (disputeReason.toLowerCase().includes('mileage')) {
             disputeType = DisputeType.MILEAGE
@@ -449,7 +534,7 @@ export async function POST(
         }
       })
 
-      // Create activity log
+      // Create activity log for trip end
       await tx.activityLog.create({
         data: {
           action: 'TRIP_ENDED',
@@ -478,11 +563,105 @@ export async function POST(
 
       return updatedBooking
     }, {
-      maxWait: 10000, // 10 seconds max wait
-      timeout: 30000, // 30 seconds timeout
+      maxWait: 10000,
+      timeout: 30000,
     })
 
-    // Send notifications (outside transaction for better performance)
+    // ========== 🆕 TRACK TRIP END ACTIVITY ==========
+    // This populates the guest's activity timeline for the Status Tab
+    // Wrapped in try-catch - won't break trip end if tracking fails
+    try {
+      // Find guest's ReviewerProfile ID
+      let guestProfileId = booking.reviewerProfileId
+      
+      if (!guestProfileId && booking.guestEmail) {
+        const reviewerProfile = await prisma.reviewerProfile.findFirst({
+          where: { email: booking.guestEmail },
+          select: { id: true }
+        })
+        guestProfileId = reviewerProfile?.id
+      }
+
+      if (guestProfileId) {
+        // Calculate trip duration
+        const tripStart = new Date(booking.tripStartedAt!)
+        const tripEnd = new Date()
+        const tripDurationHours = Math.round((tripEnd.getTime() - tripStart.getTime()) / (1000 * 60 * 60))
+        const milesDriven = endMileage - (booking.startMileage || 0)
+
+        // Build comprehensive description based on outcome
+        let description = `Trip ended for ${booking.car.year} ${booking.car.make} ${booking.car.model}`
+        
+        if (!hasCharges) {
+          description += ' - No additional charges'
+        } else if (chargeStatus === ChargeStatus.CHARGED) {
+          description += ` - Additional charges of $${charges.total.toFixed(2)} paid`
+        } else if (chargeStatus === ChargeStatus.DISPUTED) {
+          description += ` - $${charges.total.toFixed(2)} disputed and under review`
+        } else {
+          description += ` - $${charges.total.toFixed(2)} pending review`
+        }
+
+        await trackActivity(guestProfileId, {
+          action: 'TRIP_ENDED',
+          description,
+          metadata: {
+            bookingId: booking.id,
+            bookingCode: booking.bookingCode,
+            carName: `${booking.car.year} ${booking.car.make} ${booking.car.model}`,
+            endMileage,
+            startMileage: booking.startMileage || 0,
+            milesDriven,
+            fuelLevelEnd,
+            fuelLevelStart: booking.fuelLevelStart || 'Unknown',
+            tripDurationHours,
+            tripEndedAt: new Date().toISOString(),
+            
+            // Charge information
+            hasCharges,
+            totalCharges: hasCharges ? charges.total : 0,
+            chargeStatus: ChargeStatus[chargeStatus],
+            chargeBreakdown: hasCharges ? {
+              mileage: charges.mileage?.charge || 0,
+              fuel: charges.fuel?.charge || 0,
+              late: charges.late?.charge || 0,
+              damage: charges.damage?.charge || 0
+            } : null,
+            
+            // Dispute information
+            hasDisputes: disputes && disputes.length > 0,
+            disputeReasons: disputes || [],
+            
+            // Damage information
+            damageReported,
+            damageDescription: damageDescription || null,
+            
+            // Payment information
+            paymentChoice,
+            paymentStatus: paymentResult?.status || (hasCharges ? 'pending_review' : 'none'),
+            stripeChargeId: stripeChargeId || null,
+            
+            // Photos
+            photoCount: Object.keys(inspectionPhotos).length
+          }
+        })
+
+        console.log('✅ Trip end tracked in guest timeline:', {
+          guestId: guestProfileId,
+          bookingId: booking.id,
+          hasCharges,
+          chargeStatus: ChargeStatus[chargeStatus]
+        })
+      } else {
+        console.warn('⚠️ Could not find guest profile for trip end tracking')
+      }
+    } catch (trackingError) {
+      console.error('❌ Failed to track trip end activity:', trackingError)
+      // Continue without breaking - tracking is non-critical
+    }
+    // ========== END ACTIVITY TRACKING ==========
+
+    // Send notifications (outside transaction)
     try {
       if (booking.host.email) {
         console.log(`[Trip End] Notifying host ${booking.host.email} about trip end`)
@@ -491,26 +670,24 @@ export async function POST(
 
       if (booking.guestEmail) {
         console.log(`[Trip End] Sending trip summary to guest ${booking.guestEmail}`)
-        // TODO: Send email to guest with appropriate message based on charge status
+        // TODO: Send email to guest
       }
     } catch (notificationError) {
       console.error('[Trip End] Notification error (non-blocking):', notificationError)
-      // Don't fail the request if notifications fail
     }
 
-    // Construct response
     const responseData = {
       success: true,
       booking: result,
       charges,
       hasCharges,
-      chargeStatus: ChargeStatus[chargeStatus], // Convert enum to string
+      chargeStatus: ChargeStatus[chargeStatus],
       paymentResult: paymentResult ? {
         status: paymentResult.status,
         chargeId: paymentResult.chargeId,
         error: paymentResult.error
       } : null,
-      statusTransition: RentalBookingStatus[statusTransition.status], // Convert enum to string
+      statusTransition: RentalBookingStatus[statusTransition.status],
       message: getResponseMessage(hasCharges, chargeStatus, charges),
       nextSteps: getNextSteps(hasCharges, chargeStatus),
       canLeaveReview: statusTransition.status === RentalBookingStatus.COMPLETED
@@ -521,7 +698,6 @@ export async function POST(
   } catch (error) {
     console.error('[Trip End] Fatal error:', error)
     
-    // Log critical error to audit log instead of errorLog
     if (booking?.id) {
       try {
         await prisma.auditLog.create({
@@ -562,7 +738,6 @@ export async function POST(
   }
 }
 
-// Helper functions
 function getResponseMessage(hasCharges: boolean, chargeStatus: ChargeStatus, charges: any): string {
   if (!hasCharges) {
     return 'Trip ended successfully with no additional charges. Thank you for choosing ItWhip!'
@@ -603,7 +778,6 @@ function getNextSteps(hasCharges: boolean, chargeStatus: ChargeStatus): string {
   }
 }
 
-// GET - Check if trip can be ended
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -638,7 +812,6 @@ export async function GET(
       )
     }
 
-    // Verify guest access
     if (booking.guestEmail !== guestEmail && booking.renterId) {
       return NextResponse.json(
         { error: 'Unauthorized' },

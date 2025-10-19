@@ -10,6 +10,7 @@ import {
  getPickupReminderTemplate,
  getPaymentReceiptTemplate,
  getTripCompleteTemplate,
+ getHostVerificationTemplate,
  BookingReceivedData,
  VerificationPendingData,
  BookingConfirmedData,
@@ -18,6 +19,7 @@ import {
  PickupReminderData,
  PaymentReceiptData,
  TripCompleteData,
+ HostVerificationData,
  EmailResponse
 } from './email/templates'
 
@@ -35,6 +37,7 @@ export enum EmailTemplate {
  BOOKING_CONFIRMATION = 'booking_confirmation',
  BOOKING_CANCELLED = 'booking_cancelled',
  HOST_NOTIFICATION = 'host_notification',
+ HOST_VERIFICATION = 'host_verification',
  PAYMENT_CONFIRMATION = 'payment_confirmation',
  REVIEW_REQUEST = 'review_request',
  SECURITY_ALERT = 'security_alert',
@@ -158,6 +161,26 @@ export async function sendReviewRequest(
 ): Promise<EmailResponse> {
  const template = getTripCompleteTemplate(data)
  return sendEmail(to, template.subject, template.html, template.text)
+}
+
+/**
+ * Send host verification email
+ * Used for verifying host email addresses during signup
+ */
+export async function sendHostVerificationEmail(
+ to: string,
+ data: HostVerificationData
+): Promise<EmailResponse> {
+ try {
+   const template = getHostVerificationTemplate(data)
+   return await sendEmail(to, template.subject, template.html, template.text)
+ } catch (error) {
+   console.error('Error sending host verification email:', error)
+   return { 
+     success: false, 
+     error: 'Failed to send host verification email' 
+   }
+ }
 }
 
 // Welcome and auth emails (keeping simple inline for now as they're not rental-specific)

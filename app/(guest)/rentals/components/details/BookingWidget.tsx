@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { 
   IoCalendarOutline,
   IoLocationOutline,
@@ -19,11 +20,36 @@ import {
   IoWarningOutline,
   IoCarOutline,
   IoPersonAddOutline,
-  IoWaterOutline
+  IoWaterOutline,
+  IoLockClosedOutline,
+  IoInformationCircleOutline
 } from 'react-icons/io5'
 
 interface BookingWidgetProps {
   car: any
+  isBookable?: boolean
+  suspensionMessage?: string | null
+}
+
+interface InsuranceQuote {
+  tier: string
+  vehicleValue: number
+  days: number
+  dailyPremium: number
+  totalPremium: number
+  platformRevenue: number
+  increasedDeposit: number | null
+  coverage: {
+    liability: number
+    collision: number | string
+    deductible: number
+    description: string
+  }
+  provider: {
+    id: string
+    name: string
+    type: string
+  }
 }
 
 // Helper function to determine car class and deposit
@@ -50,7 +76,7 @@ function getArizonaDateString(daysToAdd: number = 0): string {
   return `${year}-${month}-${day}`
 }
 
-export default function BookingWidget({ car }: BookingWidgetProps) {
+export default function BookingWidget({ car, isBookable = true, suspensionMessage }: BookingWidgetProps) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [showFloatingPrice, setShowFloatingPrice] = useState(false)
@@ -66,19 +92,26 @@ export default function BookingWidget({ car }: BookingWidgetProps) {
   const [startTime, setStartTime] = useState('10:00')
   const [endTime, setEndTime] = useState('10:00')
   
-  // Collapsible sections - START COLLAPSED
+  // Collapsible sections
   const [showDelivery, setShowDelivery] = useState(false)
   const [showEnhancements, setShowEnhancements] = useState(false)
   const [expandedInsurance, setExpandedInsurance] = useState<string | null>(null)
+  
+  // Insurance from database
+  const [insuranceTier, setInsuranceTier] = useState<'MINIMUM' | 'BASIC' | 'PREMIUM' | 'LUXURY'>('PREMIUM')
+  const [insuranceQuotes, setInsuranceQuotes] = useState<{ [key: string]: InsuranceQuote | null }>({
+    MINIMUM: null,
+    BASIC: null,
+    PREMIUM: null,
+    LUXURY: null
+  })
+  const [loadingQuotes, setLoadingQuotes] = useState(false)
   
   // Delivery
   const [deliveryType, setDeliveryType] = useState<'pickup' | 'airport' | 'hotel' | 'valet'>('pickup')
   const [deliveryAddress, setDeliveryAddress] = useState('')
   
-  // Insurance options (separate from add-ons)
-  const [insuranceType, setInsuranceType] = useState<'premium' | 'standard' | 'basic'>('premium')
-  
-  // Updated Add-ons (removed track insurance and photoshoot, added refuel and additional driver)
+  // Add-ons
   const [addOns, setAddOns] = useState({
     refuelService: false,
     additionalDriver: false,
@@ -88,11 +121,16 @@ export default function BookingWidget({ car }: BookingWidgetProps) {
   
   // Pricing based on car
   const dailyRate = car?.dailyRate || 1495
-  const { carClass, deposit } = getCarClassAndDeposit(dailyRate)
+  const vehicleValue = car?.value || dailyRate * 365 // Estimate if not provided
+  const { carClass, deposit: baseDeposit } = getCarClassAndDeposit(dailyRate)
   const days = Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) || 1
   
+  // Get current insurance quote
+  const currentQuote = insuranceQuotes[insuranceTier]
+  const insurancePrice = currentQuote?.totalPremium || 0
+  const actualDeposit = currentQuote?.increasedDeposit || baseDeposit
+  
   const basePrice = dailyRate * days
-  const insurancePrice = insuranceType === 'premium' ? 195 * days : insuranceType === 'standard' ? 125 * days : 75 * days
   const refuelService = addOns.refuelService ? 75 : 0
   const additionalDriver = addOns.additionalDriver ? 50 * days : 0
   const extraMiles = addOns.extraMiles ? 295 : 0
@@ -102,6 +140,49 @@ export default function BookingWidget({ car }: BookingWidgetProps) {
   const serviceFee = Math.round(basePrice * 0.15)
   const taxes = Math.round((basePrice + serviceFee) * 0.086)
   const total = basePrice + insurancePrice + refuelService + additionalDriver + extraMiles + vipConcierge + deliveryFee + serviceFee + taxes
+  
+  // Fetch insurance quotes when dates change
+  useEffect(() => {
+    if (days > 0) {
+      fetchInsuranceQuotes()
+    }
+  }, [days, vehicleValue])
+  
+  const fetchInsuranceQuotes = async () => {
+    setLoadingQuotes(true)
+    try {
+      // Fetch quotes for all tiers
+      const tiers: Array<'MINIMUM' | 'BASIC' | 'PREMIUM' | 'LUXURY'> = ['MINIMUM', 'BASIC', 'PREMIUM', 'LUXURY']
+      const quotes: { [key: string]: InsuranceQuote | null } = {}
+      
+      for (const tier of tiers) {
+        const response = await fetch('/api/bookings/insurance/quote', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            carId: car?.id,
+            vehicleValue,
+            startDate,
+            endDate,
+            tier
+          })
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          quotes[tier] = data.quote
+        } else {
+          quotes[tier] = null
+        }
+      }
+      
+      setInsuranceQuotes(quotes)
+    } catch (error) {
+      console.error('Failed to fetch insurance quotes:', error)
+    } finally {
+      setLoadingQuotes(false)
+    }
+  }
   
   // Handle scroll for floating price (mobile)
   useEffect(() => {
@@ -117,20 +198,22 @@ export default function BookingWidget({ car }: BookingWidgetProps) {
   }, [])
   
   const handleBooking = () => {
+    if (!isBookable) return
+    
     setIsLoading(true)
     
-    // Store dates with timezone context
     const bookingDetails = {
       carId: car?.id,
       carClass,
-      startDate,  // Keep as YYYY-MM-DD
-      endDate,    // Keep as YYYY-MM-DD
+      startDate,
+      endDate,
       startTime,
       endTime,
-      timezone: 'America/Phoenix',  // Add timezone indicator
+      timezone: 'America/Phoenix',
       deliveryType,
       deliveryAddress,
-      insuranceType,
+      insuranceTier,
+      insuranceQuote: currentQuote,
       addOns,
       pricing: {
         days,
@@ -141,7 +224,7 @@ export default function BookingWidget({ car }: BookingWidgetProps) {
         serviceFee,
         taxes,
         total,
-        deposit,
+        deposit: actualDeposit,
         breakdown: {
           refuelService,
           additionalDriver,
@@ -162,6 +245,79 @@ export default function BookingWidget({ car }: BookingWidgetProps) {
     { value: 'hotel', label: 'Hotel', icon: IoHomeOutline, fee: 105, desc: 'Your accommodation' }
   ]
 
+  const getInsuranceTierName = (tier: string) => {
+    const names: { [key: string]: string } = {
+      MINIMUM: 'Minimum',
+      BASIC: 'Basic',
+      PREMIUM: 'Premium',
+      LUXURY: 'Luxury'
+    }
+    return names[tier] || tier
+  }
+
+  // If car is not bookable, show unavailable state
+  if (!isBookable) {
+    return (
+      <div ref={widgetRef} className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 sticky top-20">
+        <div className="text-center mb-6">
+          <IoLockClosedOutline className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            Currently Unavailable
+          </h3>
+          {suspensionMessage ? (
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              {suspensionMessage}
+            </p>
+          ) : (
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              This vehicle is temporarily unavailable for booking.
+            </p>
+          )}
+        </div>
+
+        <div className="pb-4 mb-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-baseline gap-2 justify-center">
+            <span className="text-2xl font-bold text-gray-500 dark:text-gray-400 line-through">
+              ${dailyRate.toLocaleString()}
+            </span>
+            <span className="text-gray-400 dark:text-gray-500">/ day</span>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <Link
+            href="/rentals/dashboard/bookings"
+            className="w-full py-3 px-4 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-lg flex items-center justify-center gap-2 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+          >
+            <IoCalendarOutline className="w-5 h-5" />
+            View Booking History
+          </Link>
+
+          <Link
+            href={`/rentals/search?location=${car?.city || 'Phoenix'}&carType=${car?.carType || ''}`}
+            className="w-full py-3 px-4 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-lg transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+          >
+            <IoCarOutline className="w-5 h-5" />
+            Browse Similar Cars
+          </Link>
+
+          <button className="w-full py-2 text-sm text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-500 font-medium flex items-center justify-center gap-1">
+            <IoInformationCircleOutline className="w-4 h-4" />
+            Contact Support for Assistance
+          </button>
+        </div>
+
+        <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+          <p className="text-xs text-blue-700 dark:text-blue-300">
+            <IoInformationCircleOutline className="inline w-3 h-3 mr-1" />
+            This listing may become available again. Add it to your favorites to be notified of status changes.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  // Normal bookable widget content
   return (
     <>
       <div ref={widgetRef} className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 sticky top-20">
@@ -266,7 +422,7 @@ export default function BookingWidget({ car }: BookingWidgetProps) {
           )}
         </div>
         
-        {/* Insurance Protection - Updated without badges in main view */}
+        {/* Insurance Protection - Database Driven */}
         <div className="mb-6">
           <label className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
             <IoShieldCheckmarkOutline className="w-4 h-4" />
@@ -274,146 +430,83 @@ export default function BookingWidget({ car }: BookingWidgetProps) {
             <span className="text-xs font-normal text-red-500">*Required</span>
           </label>
           
-          <div className="space-y-2">
-            {/* Premium Protection */}
-            <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-              <label className={`block p-3 cursor-pointer transition-all ${insuranceType === 'premium' ? 'bg-amber-50 dark:bg-amber-900/20 border-l-4 border-l-amber-600' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="radio"
-                      name="insurance"
-                      value="premium"
-                      checked={insuranceType === 'premium'}
-                      onChange={(e) => setInsuranceType(e.target.value as any)}
-                      className="w-4 h-4 text-amber-600 focus:ring-amber-500"
-                    />
-                    <div>
-                      <span className="text-sm font-medium">Premium Protection</span>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          setExpandedInsurance(expandedInsurance === 'premium' ? null : 'premium')
-                        }}
-                        className="ml-2 text-xs text-amber-600 hover:text-amber-700"
-                      >
-                        {expandedInsurance === 'premium' ? 'Hide' : 'Details'}
-                      </button>
-                    </div>
-                  </div>
-                  <span className="text-sm font-semibold">${195}/day</span>
-                </div>
-              </label>
-              {expandedInsurance === 'premium' && (
-                <div className="px-6 pb-3 text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50">
-                  <div className="mt-2 mb-2">
-                    <span className="text-green-600 font-semibold">✓ RECOMMENDED OPTION</span>
-                  </div>
-                  <ul className="space-y-1">
-                    <li>• $1,000 deductible (lowest available)</li>
-                    <li>• Covers all damage including undercarriage</li>
-                    <li>• 24/7 roadside assistance & towing</li>
-                    <li>• Loss of use coverage included</li>
-                    <li>• Personal effects up to $5,000</li>
-                  </ul>
-                </div>
-              )}
+          {loadingQuotes ? (
+            <div className="text-center py-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-amber-600 mx-auto"></div>
+              <p className="text-xs text-gray-500 mt-2">Loading insurance options...</p>
             </div>
-
-            {/* Standard Protection */}
-            <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-              <label className={`block p-3 cursor-pointer transition-all ${insuranceType === 'standard' ? 'bg-amber-50 dark:bg-amber-900/20 border-l-4 border-l-amber-600' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="radio"
-                      name="insurance"
-                      value="standard"
-                      checked={insuranceType === 'standard'}
-                      onChange={(e) => setInsuranceType(e.target.value as any)}
-                      className="w-4 h-4 text-amber-600 focus:ring-amber-500"
-                    />
-                    <div>
-                      <span className="text-sm font-medium">Standard Protection</span>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          setExpandedInsurance(expandedInsurance === 'standard' ? null : 'standard')
-                        }}
-                        className="ml-2 text-xs text-amber-600 hover:text-amber-700"
-                      >
-                        {expandedInsurance === 'standard' ? 'Hide' : 'Details'}
-                      </button>
-                    </div>
+          ) : (
+            <div className="space-y-2">
+              {(['LUXURY', 'PREMIUM', 'BASIC', 'MINIMUM'] as const).map((tier) => {
+                const quote = insuranceQuotes[tier]
+                if (!quote) return null
+                
+                return (
+                  <div key={tier} className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                    <label className={`block p-3 cursor-pointer transition-all ${insuranceTier === tier ? 'bg-amber-50 dark:bg-amber-900/20 border-l-4 border-l-amber-600' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="radio"
+                            name="insurance"
+                            value={tier}
+                            checked={insuranceTier === tier}
+                            onChange={(e) => setInsuranceTier(e.target.value as any)}
+                            className="w-4 h-4 text-amber-600 focus:ring-amber-500"
+                          />
+                          <div>
+                            <span className="text-sm font-medium">{getInsuranceTierName(tier)} Protection</span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                setExpandedInsurance(expandedInsurance === tier ? null : tier)
+                              }}
+                              className="ml-2 text-xs text-amber-600 hover:text-amber-700"
+                            >
+                              {expandedInsurance === tier ? 'Hide' : 'Details'}
+                            </button>
+                          </div>
+                        </div>
+                        <span className="text-sm font-semibold">
+                          {quote.dailyPremium === 0 ? 'Included' : `$${quote.dailyPremium}/day`}
+                        </span>
+                      </div>
+                    </label>
+                    {expandedInsurance === tier && (
+                      <div className="px-6 pb-3 text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50">
+                        {tier === 'LUXURY' && (
+                          <div className="mt-2 mb-2">
+                            <span className="text-green-600 font-semibold">✓ RECOMMENDED OPTION</span>
+                          </div>
+                        )}
+                        {tier === 'MINIMUM' && quote.increasedDeposit && (
+                          <div className="mt-2 mb-2">
+                            <span className="text-orange-600 font-semibold flex items-center gap-1">
+                              <IoWarningOutline className="w-3 h-3" />
+                              Requires ${quote.increasedDeposit.toLocaleString()} deposit
+                            </span>
+                          </div>
+                        )}
+                        <ul className="space-y-1 mt-2">
+                          <li>• Liability: ${quote.coverage.liability.toLocaleString()}</li>
+                          <li>• Collision: {typeof quote.coverage.collision === 'number' ? `$${quote.coverage.collision.toLocaleString()}` : quote.coverage.collision}</li>
+                          <li>• Deductible: {quote.coverage.deductible === 0 ? 'None' : `$${quote.coverage.deductible.toLocaleString()}`}</li>
+                          <li className="text-gray-500 mt-1">• {quote.coverage.description}</li>
+                        </ul>
+                        <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                          <p className="text-xs text-gray-500">
+                            Provider: {quote.provider.name}
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <span className="text-sm font-semibold">${125}/day</span>
-                </div>
-              </label>
-              {expandedInsurance === 'standard' && (
-                <div className="px-6 pb-3 text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50">
-                  <ul className="space-y-1 mt-2">
-                    <li>• $2,500 deductible</li>
-                    <li>• Covers major damage and theft</li>
-                    <li>• Business hours roadside assistance</li>
-                    <li>• Basic liability coverage</li>
-                  </ul>
-                </div>
-              )}
+                )
+              })}
             </div>
-
-            {/* Basic Protection */}
-            <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-              <label className={`block p-3 cursor-pointer transition-all ${insuranceType === 'basic' ? 'bg-amber-50 dark:bg-amber-900/20 border-l-4 border-l-amber-600' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="radio"
-                      name="insurance"
-                      value="basic"
-                      checked={insuranceType === 'basic'}
-                      onChange={(e) => setInsuranceType(e.target.value as any)}
-                      className="w-4 h-4 text-amber-600 focus:ring-amber-500"
-                    />
-                    <div>
-                      <span className="text-sm font-medium">Basic Protection</span>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          setExpandedInsurance(expandedInsurance === 'basic' ? null : 'basic')
-                        }}
-                        className="ml-2 text-xs text-amber-600 hover:text-amber-700"
-                      >
-                        {expandedInsurance === 'basic' ? 'Hide' : 'Details'}
-                      </button>
-                    </div>
-                  </div>
-                  <span className="text-sm font-semibold">${75}/day</span>
-                </div>
-              </label>
-              {expandedInsurance === 'basic' && (
-                <div className="px-6 pb-3 text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50">
-                  <div className="mt-2 mb-2">
-                    <span className="text-orange-600 font-semibold flex items-center gap-1">
-                      <IoWarningOutline className="w-3 h-3" />
-                      HIGH RISK - Limited Coverage
-                    </span>
-                  </div>
-                  <ul className="space-y-1">
-                    <li>• $5,000 deductible</li>
-                    <li>• State minimum liability only</li>
-                    <li>• No roadside assistance</li>
-                    <li>• You're responsible for most damages</li>
-                  </ul>
-                </div>
-              )}
-            </div>
-          </div>
+          )}
         </div>
         
         {/* Delivery Method - COLLAPSIBLE */}
@@ -475,7 +568,7 @@ export default function BookingWidget({ car }: BookingWidgetProps) {
           )}
         </div>
         
-        {/* Updated Enhancements - COLLAPSIBLE */}
+        {/* Enhancements - COLLAPSIBLE */}
         <div className="mb-6">
           <button
             onClick={() => setShowEnhancements(!showEnhancements)}
@@ -499,7 +592,6 @@ export default function BookingWidget({ car }: BookingWidgetProps) {
           
           {showEnhancements && (
             <div className="p-3 border-x border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-b-lg space-y-2">
-              {/* Refuel Service - NEW */}
               <label className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer border border-gray-100 dark:border-gray-700 rounded-lg">
                 <div className="flex items-center gap-3">
                   <input
@@ -519,7 +611,6 @@ export default function BookingWidget({ car }: BookingWidgetProps) {
                 <span className="text-sm font-semibold">$75</span>
               </label>
               
-              {/* Additional Driver - NEW */}
               <label className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer border border-gray-100 dark:border-gray-700 rounded-lg">
                 <div className="flex items-center gap-3">
                   <input
@@ -539,7 +630,6 @@ export default function BookingWidget({ car }: BookingWidgetProps) {
                 <span className="text-sm font-semibold">${50}/day</span>
               </label>
               
-              {/* Extra Miles */}
               <label className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer border border-gray-100 dark:border-gray-700 rounded-lg">
                 <div className="flex items-center gap-3">
                   <input
@@ -559,7 +649,6 @@ export default function BookingWidget({ car }: BookingWidgetProps) {
                 <span className="text-sm font-semibold">$295</span>
               </label>
               
-              {/* VIP Concierge */}
               <label className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer border border-gray-100 dark:border-gray-700 rounded-lg">
                 <div className="flex items-center gap-3">
                   <input
@@ -590,7 +679,7 @@ export default function BookingWidget({ car }: BookingWidgetProps) {
           
           {insurancePrice > 0 && (
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600 dark:text-gray-400">Insurance protection</span>
+              <span className="text-gray-600 dark:text-gray-400">Insurance ({getInsuranceTierName(insuranceTier)})</span>
               <span>${insurancePrice.toLocaleString()}</span>
             </div>
           )}
@@ -627,7 +716,7 @@ export default function BookingWidget({ car }: BookingWidgetProps) {
                   ${total.toLocaleString()}
                 </span>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Plus ${deposit.toLocaleString()} security deposit (hold)
+                  Plus ${actualDeposit.toLocaleString()} security deposit (hold)
                 </p>
               </div>
             </div>

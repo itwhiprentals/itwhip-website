@@ -4,10 +4,11 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
-// Simple inline Car icon (replace with your actual icon import)
+// Fixed Car icon - showing actual car instead of checkmark
 const Car = ({ className = "w-5 h-5" }: any) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+      d="M5 13l1-1h3l2-2h6l2 2h3l1 1v5a1 1 0 01-1 1h-2a1 1 0 01-1-1v-1H7v1a1 1 0 01-1 1H4a1 1 0 01-1-1v-5l2-1zm0 0l-2-5.5A1 1 0 014 6h3.5l2 4H5zm14 0l2-5.5A1 1 0 0020 6h-3.5l-2 4H19zm-10 4h6" />
   </svg>
 )
 
@@ -84,8 +85,8 @@ export default function RentalBookingsSection() {
   // Loading state
   if (loading) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-4">
-        <h2 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white mb-3">
+      <div className="bg-white dark:bg-gray-800/95 rounded-lg shadow-sm p-4 sm:p-6 mb-4 border border-gray-200 dark:border-gray-700/50">
+        <h2 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white mb-4">
           Your Car Rentals
         </h2>
         <div className="flex justify-center items-center py-8">
@@ -98,8 +99,8 @@ export default function RentalBookingsSection() {
   // Error state
   if (error) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-4">
-        <h2 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white mb-3">
+      <div className="bg-white dark:bg-gray-800/95 rounded-lg shadow-sm p-4 sm:p-6 mb-4 border border-gray-200 dark:border-gray-700/50">
+        <h2 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white mb-4">
           Your Car Rentals
         </h2>
         <div className="text-center py-6">
@@ -119,8 +120,8 @@ export default function RentalBookingsSection() {
   // No bookings state
   if (!bookings || bookings.length === 0) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-4">
-        <h2 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white mb-3">
+      <div className="bg-white dark:bg-gray-800/95 rounded-lg shadow-sm p-4 sm:p-6 mb-4 border border-gray-200 dark:border-gray-700/50">
+        <h2 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white mb-4">
           Your Car Rentals
         </h2>
         <div className="text-center py-6">
@@ -137,69 +138,150 @@ export default function RentalBookingsSection() {
     )
   }
 
-  // Has bookings - display them
+  // Has bookings - MOBILE: GRID/SQUARE CARDS, DESKTOP: LIST VIEW
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-4">
-      <div className="flex justify-between items-center mb-3">
-        <h2 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white">
-          Your Car Rentals ({bookings.length})
-        </h2>
-        <button
-          onClick={handleViewAll}
-          className="text-sm text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
-        >
-          View All
-        </button>
+    <>
+      {/* Header with fixed dark mode background */}
+      <div className="bg-white dark:bg-gray-800/95 rounded-lg shadow-sm p-4 sm:p-6 mb-4 border border-gray-200 dark:border-gray-700/50">
+        <div className="flex justify-between items-center">
+          <h2 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white">
+            Your Car Rentals ({bookings.length})
+          </h2>
+          <button
+            onClick={handleViewAll}
+            className="text-sm text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
+          >
+            View All
+          </button>
+        </div>
       </div>
       
-      <div className="space-y-3">
-        {bookings.slice(0, 3).map(booking => (
-          <div 
-            key={booking.id}
-            className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
-            onClick={() => handleBookingClick(booking.id)}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
+      {/* MOBILE: Horizontal scrollable square cards */}
+      <div className="sm:hidden mb-4">
+        <div className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide">
+          {bookings.slice(0, 3).map(booking => (
+            <div 
+              key={booking.id}
+              className="flex-shrink-0 w-64 bg-white dark:bg-gray-800/95 border border-gray-200 dark:border-gray-700/50 rounded-lg overflow-hidden hover:shadow-md cursor-pointer transition-all snap-start"
+              onClick={() => handleBookingClick(booking.id)}
+            >
+              {/* Car Image - Square aspect ratio */}
+              <div className="relative w-full h-48 bg-gray-200 dark:bg-gray-700">
                 {booking.car?.photos?.[0] ? (
                   <img 
                     src={booking.car.photos[0].url}
                     alt={`${booking.car.make} ${booking.car.model}`}
-                    className="w-16 h-12 object-cover rounded"
+                    className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-16 h-12 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center">
-                    <Car className="w-6 h-6 text-gray-400" />
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Car className="w-12 h-12 text-gray-400" />
                   </div>
                 )}
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-white">
-                    {booking.car?.year} {booking.car?.make} {booking.car?.model}
-                  </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {booking.bookingCode} • {new Date(booking.startDate).toLocaleDateString()} - {new Date(booking.endDate).toLocaleDateString()}
-                  </p>
-                  {(booking.verificationStatus === 'pending' || booking.verificationStatus === 'submitted') && (
-                    <span className="inline-flex items-center px-2 py-1 mt-1 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200">
-                      <AlertCircle className="w-3 h-3 mr-1" />
-                      Verification Required
-                    </span>
-                  )}
+                
+                {/* Status badge on image */}
+                <div className="absolute top-2 right-2">
+                  <span className={`px-2 py-1 rounded text-xs font-medium ${
+                    booking.status === 'ACTIVE' 
+                      ? 'bg-green-500 text-white'
+                      : booking.status === 'COMPLETED'
+                      ? 'bg-gray-500 text-white'
+                      : 'bg-yellow-500 text-white'
+                  }`}>
+                    {booking.status}
+                  </span>
                 </div>
               </div>
               
-              <div className="text-right">
-                <span className="text-sm font-medium text-gray-900 dark:text-white">
-                  ${booking.totalAmount?.toFixed(0) || '0'}
-                </span>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  {booking.status}
+              {/* Card Info */}
+              <div className="p-3">
+                <h3 className="font-semibold text-gray-900 dark:text-white text-sm mb-1 truncate">
+                  {booking.car?.year} {booking.car?.make} {booking.car?.model}
+                </h3>
+                
+                {/* Confirmation Number */}
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1.5">
+                  <span className="font-medium">Confirmation #:</span><br />
+                  {booking.bookingCode}
                 </p>
+                
+                {/* Trip Dates */}
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                  <span className="font-medium">Trip Dates:</span><br />
+                  {new Date(booking.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(booking.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                </p>
+                
+                {/* Price */}
+                <div className="flex justify-between items-center pt-2 border-t border-gray-100 dark:border-gray-700">
+                  <span className="text-xs text-gray-600 dark:text-gray-400">Total</span>
+                  <span className="text-sm font-bold text-gray-900 dark:text-white">
+                    ${booking.totalAmount?.toFixed(0) || '0'}
+                  </span>
+                </div>
+                
+                {(booking.verificationStatus === 'pending' || booking.verificationStatus === 'submitted') && (
+                  <div className="flex items-center mt-2 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200">
+                    <AlertCircle className="w-3 h-3 mr-1 flex-shrink-0" />
+                    <span className="truncate text-xs">Verify Required</span>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-    </div>
+
+      {/* DESKTOP: List view with container */}
+      <div className="hidden sm:block bg-white dark:bg-gray-800/95 rounded-lg shadow-sm p-4 sm:p-6 mb-4 border border-gray-200 dark:border-gray-700/50">
+        <div className="space-y-3">
+          {bookings.slice(0, 3).map(booking => (
+            <div 
+              key={booking.id}
+              className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors"
+              onClick={() => handleBookingClick(booking.id)}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  {booking.car?.photos?.[0] ? (
+                    <img 
+                      src={booking.car.photos[0].url}
+                      alt={`${booking.car.make} ${booking.car.model}`}
+                      className="w-20 h-16 object-cover rounded"
+                    />
+                  ) : (
+                    <div className="w-20 h-16 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center">
+                      <Car className="w-8 h-8 text-gray-400" />
+                    </div>
+                  )}
+                  <div>
+                    <p className="font-medium text-gray-900 dark:text-white">
+                      {booking.car?.year} {booking.car?.make} {booking.car?.model}
+                    </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {booking.bookingCode} • {new Date(booking.startDate).toLocaleDateString()} - {new Date(booking.endDate).toLocaleDateString()}
+                    </p>
+                    {(booking.verificationStatus === 'pending' || booking.verificationStatus === 'submitted') && (
+                      <span className="inline-flex items-center px-2 py-1 mt-1 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200">
+                        <AlertCircle className="w-3 h-3 mr-1" />
+                        Verification Required
+                      </span>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="text-right">
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">
+                    ${booking.totalAmount?.toFixed(0) || '0'}
+                  </span>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    {booking.status}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
   )
 }

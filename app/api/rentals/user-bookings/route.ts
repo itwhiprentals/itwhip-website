@@ -1,55 +1,24 @@
 // File: app/api/rentals/user-bookings/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
-import { verifyJWT } from '@/lib/auth/jwt'
 import type { RentalBookingStatus } from '@/app/lib/dal/types'
+import { verifyRequest } from '@/app/lib/auth/verify-request'
 
-// GET /api/rentals/user-bookings - Get user's rental bookings
 export async function GET(request: NextRequest) {
   try {
-    // Get auth token from cookies or header
-    const accessTokenCookie = request.cookies.get('accessToken')?.value
-    const refreshTokenCookie = request.cookies.get('refreshToken')?.value
-    const authHeader = request.headers.get('authorization')?.replace('Bearer ', '')
-    
-    // Try access token first
-    const token = accessTokenCookie || authHeader
-    
-    let userEmail = null
-    let userId = null
-    
-    if (token) {
-      try {
-        const payload = await verifyJWT(token)
-        if (payload?.userId) {
-          // Get user details to find email
-          const user = await prisma.user.findUnique({
-            where: { id: payload.userId },
-            select: { id: true, email: true }
-          })
-          if (user) {
-            userId = user.id
-            userEmail = user.email
-            console.log('Authenticated user:', userEmail)
-          }
-        }
-      } catch (error) {
-        console.log('Access token expired or invalid:', error)
-        
-        // Try refresh token if access token failed
-        if (refreshTokenCookie) {
-          try {
-            // You would implement refresh token logic here
-            // For now, we'll just log it
-            console.log('Would refresh token here')
-          } catch (refreshError) {
-            console.log('Refresh token also failed')
-          }
-        }
-      }
+    const user = await verifyRequest(request)
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
     }
 
-    // Get query parameters
+    const userEmail = user.email
+    const userId = user.id
+    console.log('Authenticated user via auth service:', userEmail)
+
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status') as RentalBookingStatus | null
     const page = parseInt(searchParams.get('page') || '1')
@@ -59,228 +28,179 @@ export async function GET(request: NextRequest) {
     const bookingId = searchParams.get('bookingId')
     const guestEmail = searchParams.get('guestEmail')
 
-    // Build where clause
-    let whereClause: any = {}
+    console.log('Fetching bookings with where clause:', JSON.stringify({
+      userId,
+      userEmail,
+      status,
+      bookingId,
+      guestEmail
+    }))
 
-    // If specific booking ID is requested
+    const whereConditions: string[] = []
+    
     if (bookingId) {
-      whereClause = { id: bookingId }
-    } 
-    // If guest email is provided in query (for guest access)
-    else if (guestEmail) {
-      whereClause = { guestEmail: guestEmail }
-    }
-    // If authenticated user
-    else if (userId || userEmail) {
-      const orConditions = []
-      if (userId) {
-        orConditions.push({ renterId: userId })
-      }
-      if (userEmail) {
-        orConditions.push({ guestEmail: userEmail })
-      }
-      whereClause = { OR: orConditions }
-    }
-    // No authentication - try to be helpful for testing
-    else {
-      console.log('No authentication found, returning recent bookings for testing')
-      // In production, you'd return empty array
-      // For development/testing, return recent bookings
-      if (process.env.NODE_ENV === 'development') {
-        // Return recent bookings for testing
-        whereClause = {} // This will return all bookings
-      } else {
-        // Production: return empty if not authenticated
-        return NextResponse.json({
-          success: true,
-          bookings: [],
-          stats: {
-            total: 0,
-            upcoming: 0,
-            active: 0,
-            completed: 0,
-            cancelled: 0
-          },
-          pagination: {
-            page: 1,
-            limit: 10,
-            totalPages: 0,
-            totalCount: 0,
-            hasMore: false
-          }
-        })
+      whereConditions.push(`b.id = '${bookingId}'`)
+    } else if (guestEmail && userEmail && guestEmail === userEmail) {
+      whereConditions.push(`b."guestEmail" = '${userEmail}'`)
+    } else {
+      const orParts: string[] = []
+      if (userId) orParts.push(`b."renterId" = '${userId}'`)
+      if (userEmail) orParts.push(`b."guestEmail" = '${userEmail}'`)
+      if (orParts.length > 0) {
+        whereConditions.push(`(${orParts.join(' OR ')})`)
       }
     }
 
-    // Add status filter if provided
     if (status) {
-      whereClause.status = status
+      whereConditions.push(`b.status = '${status}'`)
     }
 
-    console.log('Fetching bookings with where clause:', JSON.stringify(whereClause))
+    const whereClause = whereConditions.length > 0 
+      ? `WHERE ${whereConditions.join(' AND ')}` 
+      : ''
 
-    // SECURE QUERY - USE SELECT NOT INCLUDE
-    const [bookings, totalCount] = await Promise.all([
-      prisma.rentalBooking.findMany({
-        where: whereClause,
-        select: {
-          // Booking fields
-          id: true,
-          bookingCode: true,
-          status: true,
-          verificationStatus: true,
-          tripStatus: true,
-          
-          // Dates
-          startDate: true,
-          endDate: true,
-          startTime: true,
-          endTime: true,
-          numberOfDays: true,
-          createdAt: true,
-          updatedAt: true,
-          
-          // Guest info
-          guestName: true,
-          guestEmail: true,
-          guestPhone: true,
-          renterId: true,
-          
-          // Trip details
-          tripStartedAt: true,
-          tripEndedAt: true,
-          startMileage: true,
-          endMileage: true,
-          fuelLevelStart: true,
-          fuelLevelEnd: true,
-          actualStartTime: true,
-          actualEndTime: true,
-          inspectionPhotosStart: true,
-          inspectionPhotosEnd: true,
-          
-          // Pickup window
-          pickupWindowStart: true,
-          pickupWindowEnd: true,
-          pickupLatitude: true,
-          pickupLongitude: true,
-          returnLatitude: true,
-          returnLongitude: true,
-          pickupLocationVerified: true,
-          partnerLocationId: true,
-          
-          // Location
-          pickupLocation: true,
-          pickupType: true,
-          deliveryAddress: true,
-          returnLocation: true,
-          
-          // Verification
-          documentsSubmittedAt: true,
-          reviewedAt: true,
-          licenseVerified: true,
-          selfieVerified: true,
-          licensePhotoUrl: true,
-          insurancePhotoUrl: true,
-          selfiePhotoUrl: true,
-          
-          // Pricing
-          dailyRate: true,
-          subtotal: true,
-          deliveryFee: true,
-          insuranceFee: true,
-          serviceFee: true,
-          taxes: true,
-          totalAmount: true,
-          depositAmount: true,
-          
-          // Payment
-          paymentStatus: true,
-          paymentIntentId: true,
-          stripeCustomerId: true,
-          stripePaymentMethodId: true,
-          
-          // GUEST ACCESS TOKENS - NEW ADDITION
-          guestAccessTokens: {
-            select: {
-              token: true,
-              expiresAt: true
-            },
-            where: {
-              expiresAt: { gte: new Date() }
-            },
-            take: 1,
-            orderBy: {
-              createdAt: 'desc'
-            }
-          },
-          
-          // Car - LIMITED FIELDS
-          car: {
-            select: {
-              id: true,
-              make: true,
-              model: true,
-              year: true,
-              carType: true,
-              transmission: true,
-              seats: true,
-              city: true,
-              state: true,
-              photos: {
-                select: {
-                  id: true,
-                  url: true,
-                  caption: true,
-                  order: true
-                },
-                orderBy: { order: 'asc' },
-                take: 5
-              }
-            }
-          },
-          
-          // Host - LIMITED FIELDS
-          host: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              phone: true,
-              profilePhoto: true,
-              rating: true,
-              responseTime: true,
-              isVerified: true
-            }
-          },
-          
-          // Review - check if exists
-          review: {
-            select: {
-              id: true,
-              rating: true,
-              comment: true,
-              createdAt: true
-            }
-          },
-          
-          // Messages count
-          messages: {
-            where: { isRead: false },
-            select: { id: true }
-          }
-        },
-        orderBy: { [sortBy]: sortOrder },
-        skip: (page - 1) * limit,
-        take: limit
-      }),
-      prisma.rentalBooking.count({ where: whereClause })
-    ])
+    const orderDirection = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC'
+    const offset = (page - 1) * limit
 
-    console.log(`Found ${bookings.length} bookings for query`)
+    // ✅ FIXED: Optimized single query
+    const query = `
+      SELECT 
+        b.id,
+        b."bookingCode",
+        b.status,
+        b."verificationStatus",
+        b."tripStatus",
+        b."startDate",
+        b."endDate",
+        b."startTime",
+        b."endTime",
+        b."numberOfDays",
+        b."createdAt",
+        b."updatedAt",
+        b."guestName",
+        b."guestEmail",
+        b."guestPhone",
+        b."renterId",
+        b."tripStartedAt",
+        b."tripEndedAt",
+        b."startMileage",
+        b."endMileage",
+        b."fuelLevelStart",
+        b."fuelLevelEnd",
+        b."actualStartTime",
+        b."actualEndTime",
+        b."inspectionPhotosStart",
+        b."inspectionPhotosEnd",
+        b."pickupWindowStart",
+        b."pickupWindowEnd",
+        b."pickupLatitude",
+        b."pickupLongitude",
+        b."returnLatitude",
+        b."returnLongitude",
+        b."pickupLocationVerified",
+        b."partnerLocationId",
+        b."pickupLocation",
+        b."pickupType",
+        b."deliveryAddress",
+        b."returnLocation",
+        b."documentsSubmittedAt",
+        b."reviewedAt",
+        b."licenseVerified",
+        b."selfieVerified",
+        b."licensePhotoUrl",
+        b."insurancePhotoUrl",
+        b."selfiePhotoUrl",
+        b."dailyRate",
+        b.subtotal,
+        b."deliveryFee",
+        b."insuranceFee",
+        b."serviceFee",
+        b.taxes,
+        b."totalAmount",
+        b."depositAmount",
+        b."paymentStatus",
+        b."paymentIntentId",
+        b."stripeCustomerId",
+        b."stripePaymentMethodId",
+        b."carId",
+        b."hostId",
+        
+        (
+          SELECT json_build_object(
+            'token', gat.token,
+            'expiresAt', gat."expiresAt"
+          )
+          FROM "GuestAccessToken" gat
+          WHERE gat."bookingId" = b.id 
+            AND gat."expiresAt" >= NOW()
+          ORDER BY gat."createdAt" DESC
+          LIMIT 1
+        ) as "guestAccessToken",
+        
+        json_build_object(
+          'id', c.id,
+          'make', c.make,
+          'model', c.model,
+          'year', c.year,
+          'carType', c."carType",
+          'transmission', c.transmission,
+          'seats', c.seats,
+          'city', c.city,
+          'state', c.state,
+          'photos', COALESCE(
+            (SELECT json_agg(json_build_object(
+              'id', cp.id,
+              'url', cp.url,
+              'caption', cp.caption
+            ) ORDER BY cp."order" ASC)
+            FROM "RentalCarPhoto" cp
+            WHERE cp."carId" = c.id
+            LIMIT 5), '[]'::json
+          )
+        ) as car,
+        
+        json_build_object(
+          'id', h.id,
+          'name', h.name,
+          'email', h.email,
+          'phone', h.phone,
+          'profilePhoto', h."profilePhoto",
+          'rating', h.rating,
+          'responseTime', h."responseTime",
+          'isVerified', h."isVerified"
+        ) as host,
+        
+        (SELECT json_build_object(
+          'id', r.id,
+          'rating', r.rating,
+          'comment', r.comment,
+          'createdAt', r."createdAt"
+        )
+        FROM "RentalReview" r
+        WHERE r."bookingId" = b.id
+        LIMIT 1) as review,
+        
+        COALESCE((
+          SELECT COUNT(*)::int
+          FROM "RentalMessage" m
+          WHERE m."bookingId" = b.id 
+            AND m."isRead" = false
+        ), 0) as unread_messages_count
+        
+      FROM "RentalBooking" b
+      LEFT JOIN "RentalCar" c ON c.id = b."carId"
+      LEFT JOIN "RentalHost" h ON h.id = b."hostId"
+      ${whereClause}
+      ORDER BY b."${sortBy}" ${orderDirection}
+      LIMIT ${limit}
+      OFFSET ${offset}
+    `
 
-    // Transform bookings to match expected format
-    const transformedBookings = bookings.map(booking => {
-      // Determine booking state based on dates and status
+    const bookingsRaw = await prisma.$queryRawUnsafe(query) as any[]
+
+    console.log(`Found ${bookingsRaw.length} bookings for authenticated user: ${userEmail}`)
+
+    const transformedBookings = bookingsRaw.map(booking => {
       const now = new Date()
       let bookingState: string
       
@@ -288,9 +208,9 @@ export async function GET(request: NextRequest) {
         bookingState = 'CANCELLED'
       } else if (booking.status === 'COMPLETED') {
         bookingState = 'COMPLETED'
-      } else if (booking.startDate > now) {
+      } else if (new Date(booking.startDate) > now) {
         bookingState = 'UPCOMING'
-      } else if (booking.endDate < now) {
+      } else if (new Date(booking.endDate) < now) {
         bookingState = 'COMPLETED'
       } else {
         bookingState = 'ACTIVE'
@@ -302,11 +222,7 @@ export async function GET(request: NextRequest) {
         status: booking.status,
         bookingState,
         verificationStatus: booking.verificationStatus,
-        
-        // GUEST TOKEN - NEW ADDITION
-        guestToken: booking.guestAccessTokens?.[0]?.token || null,
-        
-        // TRIP FIELDS
+        guestToken: booking.guestAccessToken?.token || null,
         tripStatus: booking.tripStatus,
         tripStartedAt: booking.tripStartedAt,
         tripEndedAt: booking.tripEndedAt,
@@ -318,18 +234,14 @@ export async function GET(request: NextRequest) {
         actualEndTime: booking.actualEndTime,
         inspectionPhotosStart: booking.inspectionPhotosStart,
         inspectionPhotosEnd: booking.inspectionPhotosEnd,
-        
-        // PICKUP WINDOW FIELDS
         pickupWindowStart: booking.pickupWindowStart,
         pickupWindowEnd: booking.pickupWindowEnd,
-        pickupLatitude: booking.pickupLatitude,
-        pickupLongitude: booking.pickupLongitude,
-        returnLatitude: booking.returnLatitude,
-        returnLongitude: booking.returnLongitude,
+        pickupLatitude: booking.pickupLatitude ? parseFloat(booking.pickupLatitude) : null,
+        pickupLongitude: booking.pickupLongitude ? parseFloat(booking.pickupLongitude) : null,
+        returnLatitude: booking.returnLatitude ? parseFloat(booking.returnLatitude) : null,
+        returnLongitude: booking.returnLongitude ? parseFloat(booking.returnLongitude) : null,
         pickupLocationVerified: booking.pickupLocationVerified,
         partnerLocationId: booking.partnerLocationId,
-        
-        // Documents and verification
         documentsSubmittedAt: booking.documentsSubmittedAt,
         reviewedAt: booking.reviewedAt,
         licenseVerified: booking.licenseVerified,
@@ -337,7 +249,6 @@ export async function GET(request: NextRequest) {
         licensePhotoUrl: booking.licensePhotoUrl,
         insurancePhotoUrl: booking.insurancePhotoUrl,
         selfiePhotoUrl: booking.selfiePhotoUrl,
-        
         car: {
           id: booking.car.id,
           make: booking.car.make,
@@ -346,109 +257,84 @@ export async function GET(request: NextRequest) {
           type: booking.car.carType,
           transmission: booking.car.transmission,
           seats: booking.car.seats,
-          photos: booking.car.photos.map(photo => ({
-            id: photo.id,
-            url: photo.url,
-            caption: photo.caption
-          })),
+          photos: booking.car.photos || [],
           location: `${booking.car.city}, ${booking.car.state}`
         },
-        
-        host: {
-          id: booking.host.id,
-          name: booking.host.name,
-          email: booking.host.email,
-          phone: booking.host.phone,
-          profilePhoto: booking.host.profilePhoto,
-          rating: booking.host.rating,
-          responseTime: booking.host.responseTime,
-          isVerified: booking.host.isVerified
-        },
-        
-        // Guest information
+        host: booking.host,
         guestName: booking.guestName,
         guestEmail: booking.guestEmail,
         guestPhone: booking.guestPhone,
-        
         startDate: booking.startDate,
         endDate: booking.endDate,
         startTime: booking.startTime,
         endTime: booking.endTime,
         numberOfDays: booking.numberOfDays,
-        
         pickupLocation: booking.pickupLocation,
         pickupType: booking.pickupType,
         deliveryAddress: booking.deliveryAddress,
         returnLocation: booking.returnLocation || booking.pickupLocation,
-        
-        dailyRate: booking.dailyRate,
-        subtotal: booking.subtotal,
-        deliveryFee: booking.deliveryFee,
-        insuranceFee: booking.insuranceFee,
-        serviceFee: booking.serviceFee,
-        taxes: booking.taxes,
-        totalAmount: booking.totalAmount,
-        depositAmount: booking.depositAmount,
-        
+        dailyRate: parseFloat(booking.dailyRate),
+        subtotal: parseFloat(booking.subtotal),
+        deliveryFee: parseFloat(booking.deliveryFee),
+        insuranceFee: parseFloat(booking.insuranceFee),
+        serviceFee: parseFloat(booking.serviceFee),
+        taxes: parseFloat(booking.taxes),
+        totalAmount: parseFloat(booking.totalAmount),
+        depositAmount: parseFloat(booking.depositAmount),
         paymentStatus: booking.paymentStatus,
         paymentIntentId: booking.paymentIntentId,
         stripeCustomerId: booking.stripeCustomerId,
         stripePaymentMethodId: booking.stripePaymentMethodId,
-        
         hasReview: booking.review !== null,
         review: booking.review || null,
-        
-        hasUnreadMessages: booking.messages.length > 0,
-        latestMessage: null, // Would need separate query for this
-        
+        hasUnreadMessages: booking.unread_messages_count > 0,
+        latestMessage: null,
         createdAt: booking.createdAt,
         updatedAt: booking.updatedAt
       }
     })
 
-    // Calculate stats - only for authenticated users
-    let stats = {
+    const baseWhere = {
+      OR: [
+        ...(userId ? [{ renterId: userId }] : []),
+        ...(userEmail ? [{ guestEmail: userEmail }] : [])
+      ]
+    }
+
+    const [totalCount, statsResults, upcomingCount] = await Promise.all([
+      prisma.rentalBooking.count({
+        where: {
+          ...baseWhere,
+          ...(status ? { status } : {})
+        }
+      }),
+      prisma.rentalBooking.groupBy({
+        by: ['status'],
+        where: baseWhere,
+        _count: { id: true }
+      }),
+      prisma.rentalBooking.count({
+        where: {
+          ...baseWhere,
+          status: { notIn: ['CANCELLED', 'COMPLETED'] },
+          startDate: { gt: new Date() }
+        }
+      })
+    ])
+
+    const statusCounts = statsResults.reduce((acc, stat) => {
+      acc[stat.status] = stat._count.id
+      return acc
+    }, {} as Record<string, number>)
+
+    const stats = {
       total: totalCount,
-      upcoming: 0,
-      active: 0,
-      completed: 0,
-      cancelled: 0
+      upcoming: upcomingCount,
+      active: statusCounts['ACTIVE'] || 0,
+      completed: statusCounts['COMPLETED'] || 0,
+      cancelled: statusCounts['CANCELLED'] || 0
     }
 
-    if (userId || userEmail) {
-      stats = {
-        total: totalCount,
-        upcoming: await prisma.rentalBooking.count({
-          where: {
-            ...whereClause,
-            status: { notIn: ['CANCELLED', 'COMPLETED'] },
-            startDate: { gt: new Date() }
-          }
-        }),
-        active: await prisma.rentalBooking.count({
-          where: {
-            ...whereClause,
-            status: 'ACTIVE',
-            startDate: { lte: new Date() },
-            endDate: { gte: new Date() }
-          }
-        }),
-        completed: await prisma.rentalBooking.count({
-          where: {
-            ...whereClause,
-            status: 'COMPLETED'
-          }
-        }),
-        cancelled: await prisma.rentalBooking.count({
-          where: {
-            ...whereClause,
-            status: 'CANCELLED'
-          }
-        })
-      }
-    }
-
-    // Pagination info
     const pagination = {
       page,
       limit,
@@ -476,21 +362,20 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/rentals/user-bookings/cancel - Cancel a booking
+// POST - Cancel booking
 export async function POST(request: NextRequest) {
   try {
-    const token = request.cookies.get('accessToken')?.value || 
-                  request.headers.get('authorization')?.replace('Bearer ', '')
-    
-    let userId = null
-    if (token) {
-      try {
-        const payload = await verifyJWT(token)
-        userId = payload?.userId
-      } catch (error) {
-        console.log('Auth verification failed')
-      }
+    const user = await verifyRequest(request)
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
     }
+
+    const userId = user.id
+    const userEmail = user.email
 
     const body = await request.json()
     const { bookingId, reason } = body
@@ -502,7 +387,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // SECURE QUERY - USE SELECT
     const booking = await prisma.rentalBooking.findUnique({
       where: { id: bookingId },
       select: {
@@ -529,23 +413,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check ownership (if authenticated)
-    if (userId && booking.renterId !== userId) {
-      // Check if it's a guest booking with matching email
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { email: true }
-      })
-      
-      if (!user || user.email !== booking.guestEmail) {
-        return NextResponse.json(
-          { error: 'Unauthorized' },
-          { status: 403 }
-        )
-      }
+    const isOwner = (userId && booking.renterId === userId) || 
+                    (userEmail && booking.guestEmail === userEmail)
+    
+    if (!isOwner) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 403 }
+      )
     }
 
-    // Check if cancellation is allowed
     const now = new Date()
     const hoursUntilStart = (booking.startDate.getTime() - now.getTime()) / (1000 * 60 * 60)
     
@@ -556,30 +433,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Update booking status
-    const updatedBooking = await prisma.rentalBooking.update({
+    await prisma.rentalBooking.update({
       where: { id: bookingId },
       data: {
         status: 'CANCELLED',
         cancelledAt: new Date(),
         cancelledBy: 'GUEST',
         cancellationReason: reason || 'User requested cancellation'
-      },
-      select: {
-        id: true,
-        status: true,
-        cancelledAt: true
       }
     })
 
-    // Calculate refund based on cancellation policy
     let refundPercentage = 0
     if (hoursUntilStart >= 72) {
-      refundPercentage = 100 // Full refund if 3+ days before
+      refundPercentage = 100
     } else if (hoursUntilStart >= 48) {
-      refundPercentage = 50 // 50% refund if 2-3 days before
-    } else {
-      refundPercentage = 0 // No refund if less than 2 days
+      refundPercentage = 50
     }
 
     const refundAmount = (booking.totalAmount * refundPercentage) / 100
@@ -607,21 +475,20 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PUT /api/rentals/user-bookings/extend - Extend a booking
+// PUT - Extend booking
 export async function PUT(request: NextRequest) {
   try {
-    const token = request.cookies.get('accessToken')?.value || 
-                  request.headers.get('authorization')?.replace('Bearer ', '')
-    
-    let userId = null
-    if (token) {
-      try {
-        const payload = await verifyJWT(token)
-        userId = payload?.userId
-      } catch (error) {
-        console.log('Auth verification failed')
-      }
+    const user = await verifyRequest(request)
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
     }
+
+    const userId = user.id
+    const userEmail = user.email
 
     const body = await request.json()
     const { bookingId, newEndDate } = body
@@ -633,7 +500,6 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // SECURE QUERY - USE SELECT
     const booking = await prisma.rentalBooking.findUnique({
       where: { id: bookingId },
       select: {
@@ -665,22 +531,16 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // Check ownership
-    if (userId && booking.renterId !== userId) {
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { email: true }
-      })
-      
-      if (!user || user.email !== booking.guestEmail) {
-        return NextResponse.json(
-          { error: 'Unauthorized' },
-          { status: 403 }
-        )
-      }
+    const isOwner = (userId && booking.renterId === userId) || 
+                    (userEmail && booking.guestEmail === userEmail)
+    
+    if (!isOwner) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 403 }
+      )
     }
 
-    // Calculate additional days and cost
     const newEnd = new Date(newEndDate)
     const originalEnd = new Date(booking.endDate)
     const additionalDays = Math.ceil(
@@ -694,7 +554,6 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // Check availability for extension period
     const conflicts = await prisma.rentalBooking.findFirst({
       where: {
         carId: booking.carId,
@@ -713,14 +572,12 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // Calculate additional cost
     const additionalSubtotal = booking.dailyRate * additionalDays
     const additionalServiceFee = additionalSubtotal * 0.15
     const additionalTaxes = (additionalSubtotal + additionalServiceFee) * 0.09
     const additionalCost = additionalSubtotal + additionalServiceFee + additionalTaxes
 
-    // Update the booking
-    const updatedBooking = await prisma.rentalBooking.update({
+    await prisma.rentalBooking.update({
       where: { id: bookingId },
       data: {
         endDate: newEnd,
@@ -730,12 +587,6 @@ export async function PUT(request: NextRequest) {
         taxes: booking.taxes + additionalTaxes,
         totalAmount: booking.totalAmount + additionalCost,
         updatedAt: new Date()
-      },
-      select: {
-        id: true,
-        endDate: true,
-        status: true,
-        totalAmount: true
       }
     })
 

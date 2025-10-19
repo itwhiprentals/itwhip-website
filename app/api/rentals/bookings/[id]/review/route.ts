@@ -3,6 +3,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 
+// ========== 🆕 ACTIVITY TRACKING IMPORT ==========
+import { trackActivity } from '@/lib/helpers/guestProfileStatus'
+
 // GET - Check if review exists for this booking
 export async function GET(
   request: NextRequest,
@@ -356,6 +359,76 @@ export async function POST(
       // This could be implemented later if needed
       console.log(`Review submitted with ${photos.length} photos`)
     }
+
+    // ========== 🆕 TRACK REVIEW SUBMISSION ACTIVITY ==========
+    try {
+      // Build star rating display (★★★★★ or ★★★★☆)
+      const fullStars = '★'.repeat(rating)
+      const emptyStars = '☆'.repeat(5 - rating)
+      const starDisplay = fullStars + emptyStars
+
+      // Build category ratings summary
+      const categoryRatings: string[] = []
+      if (cleanliness) categoryRatings.push(`Cleanliness: ${cleanliness}`)
+      if (accuracy) categoryRatings.push(`Accuracy: ${accuracy}`)
+      if (communication) categoryRatings.push(`Communication: ${communication}`)
+      if (convenience) categoryRatings.push(`Convenience: ${convenience}`)
+      if (value) categoryRatings.push(`Value: ${value}`)
+
+      // Build description
+      const description = `Review submitted for ${booking.car.year} ${booking.car.make} ${booking.car.model} - ${starDisplay} (${rating}/5)`
+
+      await trackActivity(reviewerProfile.id, {
+        action: 'REVIEW_SUBMITTED',
+        description,
+        metadata: {
+          reviewId: newReview.id,
+          bookingId: booking.id,
+          bookingCode: booking.bookingCode,
+          carName: `${booking.car.year} ${booking.car.make} ${booking.car.model}`,
+          carId: booking.carId,
+          hostName: booking.host.name,
+          hostId: booking.hostId,
+          
+          // Ratings
+          overallRating: rating,
+          categoryRatings: {
+            cleanliness: cleanliness || null,
+            accuracy: accuracy || null,
+            communication: communication || null,
+            convenience: convenience || null,
+            value: value || null
+          },
+          
+          // Review content
+          title: title || null,
+          commentLength: comment.trim().length,
+          hasPhotos: photos && photos.length > 0,
+          photoCount: photos?.length || 0,
+          
+          // Trip details
+          tripStartDate: booking.startDate.toISOString(),
+          tripEndDate: booking.endDate.toISOString(),
+          
+          // Profile impact
+          isFirstReview: reviewerProfile.reviewCount === 0,
+          totalReviewsNow: reviewerProfile.reviewCount + 1,
+          
+          // Timestamp
+          submittedAt: new Date().toISOString()
+        }
+      })
+
+      console.log('✅ Review submission tracked in guest timeline:', {
+        guestId: reviewerProfile.id,
+        rating,
+        bookingId: booking.id
+      })
+    } catch (trackingError) {
+      console.error('❌ Failed to track review submission activity:', trackingError)
+      // Continue without breaking - tracking is non-critical
+    }
+    // ========== END ACTIVITY TRACKING ==========
     
     // Send notification to host about new review (optional)
     // await sendEmailToHost(booking.host.email, newReview)

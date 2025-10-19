@@ -1,6 +1,12 @@
 // app/api/rentals/search/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/app/lib/database/prisma'
+import { calculateDistance, getBoundingBox } from '@/lib/utils/distance'
+import { checkAvailability } from '@/lib/utils/availability'
+import { getLocationByName, ALL_ARIZONA_LOCATIONS } from '@/lib/data/arizona-locations'
+
+// Default search radius in miles
+const DEFAULT_RADIUS_MILES = 25
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,27 +19,68 @@ export async function GET(request: NextRequest) {
     const pickupTime = searchParams.get('pickupTime') || '10:00'
     const returnTime = searchParams.get('returnTime') || '10:00'
     const sortBy = searchParams.get('sortBy') || 'recommended'
-    // REMOVED LIMIT - Will fetch all cars
     const instantBook = searchParams.get('instantBook') === 'true'
     const carType = searchParams.get('carType')
     const priceMin = searchParams.get('priceMin')
     const priceMax = searchParams.get('priceMax')
+    const radiusMiles = searchParams.get('radius') 
+      ? parseInt(searchParams.get('radius')!) 
+      : DEFAULT_RADIUS_MILES
 
-    // Build where clause - UPDATED TO ALLOW ALL CITIES
+    // ============================================================================
+    // STEP 1: DETERMINE SEARCH LOCATION COORDINATES
+    // ============================================================================
+    
+    let searchCoordinates: { latitude: number; longitude: number } | null = null
+    
+    // Try to find location in our Arizona locations data
+    const locationData = getLocationByName(location)
+    
+    if (locationData) {
+      searchCoordinates = {
+        latitude: locationData.latitude,
+        longitude: locationData.longitude
+      }
+    } else {
+      // Fallback: Try to match city name from location string
+      const cityName = location.split(',')[0].trim()
+      const matchedLocation = ALL_ARIZONA_LOCATIONS.find(
+        loc => loc.city.toLowerCase() === cityName.toLowerCase()
+      )
+      
+      if (matchedLocation) {
+        searchCoordinates = {
+          latitude: matchedLocation.latitude,
+          longitude: matchedLocation.longitude
+        }
+      } else {
+        // Default to Phoenix center if no match
+        searchCoordinates = {
+          latitude: 33.4484,
+          longitude: -112.0740
+        }
+      }
+    }
+
+    // ============================================================================
+    // STEP 2: BUILD BASE QUERY WITH BOUNDING BOX PRE-FILTER
+    // ============================================================================
+    
     const whereClause: any = {
       isActive: true
     }
 
-    // REMOVED CITY RESTRICTIONS - Now searches all active cars regardless of city
-    // If you want to filter by a specific location, you can still do it
-    const locationCity = location.split(',')[0].toLowerCase()
-    if (locationCity && locationCity !== 'all') {
-      // Optional: If a specific city is provided, filter by it
-      // But for now, we're showing all cars from all cities
-      // You can uncomment the line below to enable city-specific filtering
-      // whereClause.city = { contains: locationCity, mode: 'insensitive' }
+    // Use bounding box to pre-filter cars (optimization)
+    if (searchCoordinates) {
+      const boundingBox = getBoundingBox(searchCoordinates, radiusMiles)
+      
+      whereClause.AND = [
+        { latitude: { gte: boundingBox.minLat, lte: boundingBox.maxLat } },
+        { longitude: { gte: boundingBox.minLng, lte: boundingBox.maxLng } }
+      ]
     }
 
+    // Add other filters
     if (instantBook) whereClause.instantBook = true
     if (carType && carType !== 'all') whereClause.carType = carType.toUpperCase()
     
@@ -43,48 +90,14 @@ export async function GET(request: NextRequest) {
       if (priceMax) whereClause.dailyRate.lte = parseFloat(priceMax)
     }
 
-    if (pickupDate && returnDate) {
-      const startDate = new Date(pickupDate)
-      const endDate = new Date(returnDate)
-      
-      whereClause.bookings = {
-        none: {
-          OR: [{
-            startDate: { lte: endDate },
-            endDate: { gte: startDate }
-          }],
-          status: { notIn: ['CANCELLED', 'COMPLETED'] }
-        }
-      }
-    }
-
-    // Build orderBy
-    let orderBy: any = {}
-    switch (sortBy) {
-      case 'price_low':
-        orderBy = { dailyRate: 'asc' }
-        break
-      case 'price_high':
-        orderBy = { dailyRate: 'desc' }
-        break
-      case 'rating':
-        orderBy = { rating: 'desc' }
-        break
-      default:
-        orderBy = [
-          { rating: 'desc' },
-          { totalTrips: 'desc' },
-          { createdAt: 'desc' }
-        ]
-        break
-    }
-
-    // SECURE QUERY - USE SELECT, NOT INCLUDE
-    // REMOVED 'take' PARAMETER TO FETCH ALL CARS
+    // ============================================================================
+    // STEP 3: FETCH CARS WITH RELATED DATA
+    // ============================================================================
+    
     const cars = await prisma.rentalCar.findMany({
       where: whereClause,
       select: {
-        // Essential fields only
+        // Essential fields
         id: true,
         make: true,
         model: true,
@@ -115,6 +128,12 @@ export async function GET(request: NextRequest) {
         airportPickup: true,
         hotelDelivery: true,
         homeDelivery: true,
+        deliveryFee: true,
+        airportFee: true,
+        hotelFee: true,
+        homeFee: true,
+        deliveryRadius: true,
+        freeDeliveryRadius: true,
         
         // Requirements
         advanceNotice: true,
@@ -123,14 +142,13 @@ export async function GET(request: NextRequest) {
         insuranceIncluded: true,
         insuranceDaily: true,
         
-        // Stats - FIXED: Use totalTrips from database
+        // Stats
         rating: true,
-        totalTrips: true,  // This is the actual trip count stored in the database
+        totalTrips: true,
         
-        // Host - LIMITED PUBLIC FIELDS (REMOVED ID)
+        // Host - LIMITED PUBLIC FIELDS
         host: {
           select: {
-            // id: true, // REMOVED - Internal ID not needed
             name: true,
             profilePhoto: true,
             responseRate: true,
@@ -139,10 +157,9 @@ export async function GET(request: NextRequest) {
           }
         },
         
-        // Photos - LIMITED (REMOVED ID)
+        // Photos
         photos: {
           select: {
-            // id: true, // REMOVED - Internal ID not needed
             url: true,
             caption: true,
             order: true
@@ -151,14 +168,46 @@ export async function GET(request: NextRequest) {
           take: 5
         },
         
-        // Count only - FIXED: Count only COMPLETED and ACTIVE bookings
+        // Bookings - for availability check
+        bookings: pickupDate && returnDate ? {
+          where: {
+            status: { notIn: ['CANCELLED', 'COMPLETED'] },
+            OR: [
+              {
+                startDate: { lte: new Date(returnDate) },
+                endDate: { gte: new Date(pickupDate) }
+              }
+            ]
+          },
+          select: {
+            id: true,
+            startDate: true,
+            endDate: true,
+            status: true
+          }
+        } : false,
+        
+        // Blocked dates - for availability check
+        availability: pickupDate && returnDate ? {
+          where: {
+            date: {
+              gte: new Date(pickupDate),
+              lte: new Date(returnDate)
+            },
+            isAvailable: false
+          },
+          select: {
+            date: true,
+            isAvailable: true
+          }
+        } : false,
+        
+        // Count only
         _count: {
           select: {
             bookings: {
               where: {
-                status: {
-                  in: ['COMPLETED', 'ACTIVE']  // Only count real trips, not cancelled or pending
-                }
+                status: { in: ['COMPLETED', 'ACTIVE'] }
               }
             },
             reviews: {
@@ -166,13 +215,104 @@ export async function GET(request: NextRequest) {
             }
           }
         }
-      },
-      orderBy
-      // REMOVED: take: limit - Now fetches all matching cars
+      }
     })
 
-    // Transform cars with clean data
-    const transformedCars = cars.map(car => {
+    // ============================================================================
+    // STEP 4: FILTER BY RADIUS AND CHECK AVAILABILITY
+    // ============================================================================
+    
+    const processedCars = cars
+      .map(car => {
+        // Calculate distance from search location
+        if (!car.latitude || !car.longitude || !searchCoordinates) {
+          return null
+        }
+
+        const distance = calculateDistance(
+          searchCoordinates,
+          { latitude: car.latitude, longitude: car.longitude }
+        )
+
+        // Filter by radius
+        if (distance > radiusMiles) {
+          return null
+        }
+
+        // Check availability if dates provided
+        let availabilityInfo = null
+        if (pickupDate && returnDate) {
+          const bookingsData = car.bookings || []
+          const blockedDatesData = (car.availability || []).map((avail: any) => ({
+            id: car.id,
+            carId: car.id,
+            date: avail.date,
+            isAvailable: avail.isAvailable
+          }))
+
+          availabilityInfo = checkAvailability(
+            car.id,
+            { startDate: pickupDate, endDate: returnDate },
+            bookingsData as any,
+            blockedDatesData
+          )
+        }
+
+        return {
+          car,
+          distance,
+          availabilityInfo
+        }
+      })
+      .filter(Boolean) as Array<{ 
+        car: any
+        distance: number
+        availabilityInfo: any
+      }>
+
+    // ============================================================================
+    // STEP 5: SORT RESULTS
+    // ============================================================================
+    
+    let sortedCars = [...processedCars]
+    
+    switch (sortBy) {
+      case 'price_low':
+        sortedCars.sort((a, b) => a.car.dailyRate - b.car.dailyRate)
+        break
+      case 'price_high':
+        sortedCars.sort((a, b) => b.car.dailyRate - a.car.dailyRate)
+        break
+      case 'rating':
+        sortedCars.sort((a, b) => (b.car.rating || 0) - (a.car.rating || 0))
+        break
+      case 'distance':
+        sortedCars.sort((a, b) => a.distance - b.distance)
+        break
+      default: // recommended
+        sortedCars.sort((a, b) => {
+          // Prioritize: availability > rating > trips > distance
+          if (a.availabilityInfo && b.availabilityInfo) {
+            if (a.availabilityInfo.isFullyAvailable && !b.availabilityInfo.isFullyAvailable) return -1
+            if (!a.availabilityInfo.isFullyAvailable && b.availabilityInfo.isFullyAvailable) return 1
+          }
+          
+          const ratingDiff = (b.car.rating || 0) - (a.car.rating || 0)
+          if (Math.abs(ratingDiff) > 0.5) return ratingDiff
+          
+          const tripsDiff = (b.car.totalTrips || 0) - (a.car.totalTrips || 0)
+          if (tripsDiff !== 0) return tripsDiff
+          
+          return a.distance - b.distance
+        })
+        break
+    }
+
+    // ============================================================================
+    // STEP 6: TRANSFORM RESULTS FOR RESPONSE
+    // ============================================================================
+    
+    const transformedCars = sortedCars.map(({ car, distance, availabilityInfo }) => {
       // Parse features safely
       let parsedFeatures = []
       try {
@@ -208,12 +348,24 @@ export async function GET(request: NextRequest) {
         totalPrice = totalDaily * days
       }
 
-      // FIXED: Format rating to 1 decimal place
+      // Format rating
       const formattedRating = car.rating ? parseFloat(car.rating.toFixed(1)) : 5.0
 
-      // FIXED: Use nullish coalescing to properly handle 0 values
-      // Now if totalTrips is 0, it will use 0 instead of falling through
+      // Get actual trip count
       const actualTripCount = car.totalTrips ?? car._count.bookings ?? 0
+
+      // Privacy-protected distance (never show < 1 mile)
+      let displayDistance = distance
+      if (distance < 1.0) {
+        const seed = car.id.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0)
+        const random = (seed % 9) / 10
+        displayDistance = 1.1 + random
+      }
+
+      // Check if within free delivery radius
+      const withinFreeDelivery = car.freeDeliveryRadius 
+        ? distance <= car.freeDeliveryRadius 
+        : false
 
       return {
         id: car.id,
@@ -246,32 +398,53 @@ export async function GET(request: NextRequest) {
           zip: car.zipCode,
           lat: car.latitude,
           lng: car.longitude,
+          distance: parseFloat(displayDistance.toFixed(1)),
+          distanceText: `${displayDistance.toFixed(1)} miles away`,
           airport: car.airportPickup,
           hotelDelivery: car.hotelDelivery,
-          homeDelivery: car.homeDelivery
+          homeDelivery: car.homeDelivery,
+          deliveryFees: {
+            airport: car.airportFee || 0,
+            hotel: car.hotelFee || 35,
+            home: car.homeFee || 50,
+            general: car.deliveryFee || 35
+          },
+          deliveryRadius: car.deliveryRadius || 10,
+          freeDeliveryRadius: car.freeDeliveryRadius || 0,
+          withinFreeDelivery
         },
         host: {
-          // id: car.host.id, // REMOVED - Not exposing internal host ID
           name: car.host.name,
           avatar: car.host.profilePhoto || '/default-avatar.png',
           verified: car.host.isVerified,
           responseRate: car.host.responseRate || 95,
           responseTime: car.host.responseTime || 60,
-          totalTrips: actualTripCount  // FIXED: Use actual trip count here too
+          totalTrips: actualTripCount
         },
-        photos: car.photos.map(photo => ({
-          // id: photo.id, // REMOVED - Not exposing internal photo ID
+        photos: car.photos.map((photo: any) => ({
           url: photo.url,
           alt: photo.caption || `${car.make} ${car.model}`
         })),
         rating: {
-          average: formattedRating,  // FIXED: Use formatted rating
+          average: formattedRating,
           count: car._count.reviews
         },
-        // FIXED: Provide both field names for compatibility
-        trips: actualTripCount,        // For frontend compatibility
-        totalTrips: actualTripCount,   // Alternative field name
-        available: true,
+        trips: actualTripCount,
+        totalTrips: actualTripCount,
+        available: availabilityInfo ? !availabilityInfo.isCompletelyUnavailable : true,
+        availability: availabilityInfo ? {
+          isFullyAvailable: availabilityInfo.isFullyAvailable,
+          isPartiallyAvailable: availabilityInfo.isPartiallyAvailable,
+          isCompletelyUnavailable: availabilityInfo.isCompletelyUnavailable,
+          availableDays: availabilityInfo.availableDays,
+          unavailableDays: availabilityInfo.unavailableDays,
+          totalDays: availabilityInfo.totalDays,
+          label: availabilityInfo.isFullyAvailable 
+            ? 'Available'
+            : availabilityInfo.isCompletelyUnavailable
+              ? 'Unavailable'
+              : `${availabilityInfo.availableDays} of ${availabilityInfo.totalDays} days available`
+        } : null,
         cancellationPolicy: 'MODERATE',
         requirements: {
           minAge: 21,
@@ -293,9 +466,15 @@ export async function GET(request: NextRequest) {
       }
     })
 
+    // ============================================================================
+    // STEP 7: RETURN RESPONSE
+    // ============================================================================
+
     return NextResponse.json({
       success: true,
       location,
+      searchCoordinates,
+      radiusMiles,
       dates: {
         pickup: pickupDate,
         return: returnDate,
@@ -313,11 +492,11 @@ export async function GET(request: NextRequest) {
       },
       results: transformedCars,
       total: transformedCars.length,
-      page: 1,
-      limit: transformedCars.length,  // Set limit to actual count for compatibility
       metadata: {
-        // REMOVED p2pCount and traditionalCount - These expose internal categorization
-        totalResults: transformedCars.length,  // Generic count instead
+        totalResults: transformedCars.length,
+        fullyAvailable: transformedCars.filter(c => c.availability?.isFullyAvailable).length,
+        partiallyAvailable: transformedCars.filter(c => c.availability?.isPartiallyAvailable).length,
+        unavailable: transformedCars.filter(c => c.availability?.isCompletelyUnavailable).length,
         cached: false
       }
     })
@@ -327,7 +506,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       { 
         success: false,
-        error: 'Failed to search cars'
+        error: 'Failed to search cars',
+        message: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
     )

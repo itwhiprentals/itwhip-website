@@ -8,6 +8,9 @@ import {
  sendHostNotification 
 } from '@/app/lib/email'
 
+// ========== 🆕 ACTIVITY TRACKING IMPORT ==========
+import { trackActivity } from '@/lib/helpers/guestProfileStatus'
+
 export async function POST(request: NextRequest) {
  try {
    const body = await request.json()
@@ -113,6 +116,105 @@ export async function POST(request: NextRequest) {
        })
      }
    }
+
+   // ========== 🆕 TRACK BOOKING VERIFICATION ACTIVITY ==========
+   try {
+     // Find guest's ReviewerProfile
+     let guestProfileId = booking.reviewerProfileId
+     
+     if (!guestProfileId && booking.guestEmail) {
+       const reviewerProfile = await prisma.reviewerProfile.findFirst({
+         where: { email: booking.guestEmail },
+         select: { id: true }
+       })
+       guestProfileId = reviewerProfile?.id
+     }
+
+     if (guestProfileId) {
+       if (approved) {
+         // Track approval
+         await trackActivity(guestProfileId, {
+           action: 'BOOKING_CONFIRMED',
+           description: `Booking confirmed for ${booking.car.year} ${booking.car.make} ${booking.car.model}`,
+           performedBy: 'ADMIN',
+           metadata: {
+             bookingId: booking.id,
+             bookingCode: booking.bookingCode,
+             carName: `${booking.car.year} ${booking.car.make} ${booking.car.model}`,
+             carId: booking.carId,
+             hostName: booking.car.host.name,
+             hostId: booking.car.host.id,
+             
+             // Verification details
+             verificationStatus: 'approved',
+             reviewedBy: adminId,
+             reviewedAt: new Date().toISOString(),
+             reviewNotes: reviewNotes || null,
+             
+             // Booking details
+             startDate: booking.startDate.toISOString(),
+             endDate: booking.endDate.toISOString(),
+             pickupLocation: booking.pickupLocation,
+             totalAmount: booking.totalAmount,
+             
+             // Status changes
+             previousStatus: booking.status,
+             newStatus: 'CONFIRMED',
+             licenseVerified: true,
+             selfieVerified: true,
+             
+             // Next steps
+             canStartTrip: true,
+             dashboardAccess: true
+           }
+         })
+
+         console.log('✅ Booking confirmation tracked in guest timeline:', {
+           guestId: guestProfileId,
+           bookingId: booking.id,
+           approved: true
+         })
+       } else {
+         // Track rejection
+         await trackActivity(guestProfileId, {
+           action: 'BOOKING_CANCELLED',
+           description: `Booking verification rejected for ${booking.car.year} ${booking.car.make} ${booking.car.model}`,
+           performedBy: 'ADMIN',
+           metadata: {
+             bookingId: booking.id,
+             bookingCode: booking.bookingCode,
+             carName: `${booking.car.year} ${booking.car.make} ${booking.car.model}`,
+             
+             // Rejection details
+             verificationStatus: 'rejected',
+             rejectionReason: reviewNotes || 'Verification requirements not met',
+             reviewedBy: adminId,
+             reviewedAt: new Date().toISOString(),
+             
+             // Status changes
+             previousStatus: booking.status,
+             newStatus: 'CANCELLED',
+             
+             // Next steps
+             canRebook: true,
+             requiresNewDocuments: true
+           }
+         })
+
+         console.log('✅ Booking rejection tracked in guest timeline:', {
+           guestId: guestProfileId,
+           bookingId: booking.id,
+           approved: false
+         })
+       }
+     } else {
+       console.warn('⚠️ Could not find guest profile for booking verification tracking')
+     }
+   } catch (trackingError) {
+     console.error('❌ Failed to track booking verification activity:', trackingError)
+     // Continue without breaking - tracking is non-critical
+   }
+   // ========== END ACTIVITY TRACKING ==========
    
    return NextResponse.json({
      success: true,

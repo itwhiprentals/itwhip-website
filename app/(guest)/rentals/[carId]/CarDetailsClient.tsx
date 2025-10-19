@@ -4,7 +4,7 @@
 import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { extractCarId } from '@/app/lib/utils/urls'  // ADD THIS IMPORT
+import { extractCarId } from '@/app/lib/utils/urls'
 import { 
   IoArrowBackOutline,
   IoLocationOutline,
@@ -26,7 +26,9 @@ import {
   IoChevronUpOutline,
   IoFlashOutline,
   IoTimeOutline,
-  IoCalendarOutline
+  IoCalendarOutline,
+  IoWarningOutline,
+  IoLockClosedOutline
 } from 'react-icons/io5'
 import PhotoGallery from '../components/details/PhotoGallery'
 import BookingWidget from '../components/details/BookingWidget'
@@ -35,10 +37,10 @@ import ReviewSection from '../components/details/ReviewSection'
 import SimilarCars from '../components/details/SimilarCars'
 import { formatCurrency } from '@/app/(guest)/rentals/lib/rental-utils'
 
-// Type definition for the car data - UPDATED to include hostId
+// Updated type definition with suspension fields
 interface RentalCarWithDetails {
   id: string
-  hostId?: string  // Added hostId field
+  hostId?: string
   make: string
   model: string
   year: number
@@ -85,7 +87,8 @@ interface RentalCarWithDetails {
     rating?: number
     responseTime?: number
     isVerified?: boolean
-    isCompany?: boolean  // Added for company detection
+    isCompany?: boolean
+    approvalStatus?: string  // ADDED
   }
   reviews?: any[]
   currentMileage?: number
@@ -93,6 +96,11 @@ interface RentalCarWithDetails {
   driveType?: string
   vin?: string
   licensePlate?: string
+  // SUSPENSION FIELDS
+  isBookable?: boolean
+  hostStatus?: string
+  suspensionMessage?: string | null
+  isActive?: boolean
 }
 
 interface PageProps {
@@ -163,7 +171,7 @@ export default function CarDetailsClient({ params }: PageProps) {
   const resolvedParams = use(params)
   const urlSlug = resolvedParams.carId
   
-  // Extract the real car ID from the URL (handles both old and new formats)
+  // Extract the real car ID from the URL
   const carId = extractCarId(urlSlug)
   
   const [car, setCar] = useState<RentalCarWithDetails | null>(null)
@@ -171,34 +179,32 @@ export default function CarDetailsClient({ params }: PageProps) {
   const [isFavorited, setIsFavorited] = useState(false)
   const [showAboutCar, setShowAboutCar] = useState(true)
   const [showGuidelines, setShowGuidelines] = useState(true)
-  const [showAllAboutFeatures, setShowAllAboutFeatures] = useState(false) // NEW STATE FOR FEATURES
+  const [showAllAboutFeatures, setShowAllAboutFeatures] = useState(false)
+  const [hasBookingHistory, setHasBookingHistory] = useState(false)
 
   useEffect(() => {
     if (carId) {
       loadCarDetails(carId)
       checkIfFavorited(carId)
+      checkBookingHistory(carId)
     }
   }, [carId])
 
-  // FIXED: Added cache: 'no-store' to prevent browser caching
   const loadCarDetails = async (id: string) => {
     try {
       setLoading(true)
-      // Force fresh data every time - no caching
       const response = await fetch(`/api/rentals/cars/${id}`, {
-        cache: 'no-store',  // Prevents browser caching
-        next: { revalidate: 0 }  // Tells Next.js to always fetch fresh data
+        cache: 'no-store',
+        next: { revalidate: 0 }
       })
       
       if (response.ok) {
         const data = await response.json()
-        console.log('Car data loaded (fresh):', { 
-          carId: data.id, 
-          make: data.make,
-          model: data.model,
-          totalTrips: data.totalTrips,  // This will now show current value
-          rating: data.rating,  // This will now show current value
-          timestamp: new Date().toISOString()  // Log when fetched
+        console.log('Car data loaded:', { 
+          carId: data.id,
+          isBookable: data.isBookable,
+          hostStatus: data.hostStatus,
+          suspensionMessage: data.suspensionMessage
         })
         setCar(data as RentalCarWithDetails)
       } else if (response.status === 404) {
@@ -218,6 +224,12 @@ export default function CarDetailsClient({ params }: PageProps) {
   const checkIfFavorited = (id: string) => {
     const favorites = JSON.parse(localStorage.getItem('rental_favorites') || '[]')
     setIsFavorited(favorites.includes(id))
+  }
+
+  const checkBookingHistory = (carId: string) => {
+    // Check if user has booking history with this car
+    const bookingHistory = JSON.parse(localStorage.getItem('rental_booking_history') || '[]')
+    setHasBookingHistory(bookingHistory.includes(carId))
   }
 
   const toggleFavorite = () => {
@@ -291,22 +303,19 @@ export default function CarDetailsClient({ params }: PageProps) {
     )
   }
 
-  // Parse features with better error handling
+  // Parse features
   let features: string[] = []
   
   try {
     if (car.features) {
       if (typeof car.features === 'string') {
         try {
-          // Try to parse as JSON
           let parsed = JSON.parse(car.features)
           
-          // Check if it was double-stringified
           if (typeof parsed === 'string') {
             try {
               parsed = JSON.parse(parsed)
             } catch {
-              // It's a regular string, split by comma
               features = car.features.split(',').map(f => f.trim()).filter(f => f.length > 0)
             }
           }
@@ -315,7 +324,6 @@ export default function CarDetailsClient({ params }: PageProps) {
             features = parsed.filter(f => typeof f === 'string' && f.length > 0)
           }
         } catch {
-          // Not JSON, try comma-separated
           if (car.features.includes(',')) {
             features = car.features.split(',').map(f => f.trim()).filter(f => f.length > 0)
           } else if (car.features.length > 0 && car.features.length < 100) {
@@ -331,31 +339,26 @@ export default function CarDetailsClient({ params }: PageProps) {
     features = []
   }
 
-  // Parse rules - properly handle JSON format from RentalGuidelines
+  // Parse rules
   let rules: string[] = []
   
   try {
     if (car.rules) {
       if (typeof car.rules === 'string') {
-        // Skip if it's just the word "rules" (bad data)
         if (car.rules.toLowerCase() === 'rules') {
           rules = []
         } else {
-          // Try to parse as JSON array (this is what RentalGuidelines saves)
           try {
             let parsed = JSON.parse(car.rules)
             
-            // Check if it was double-stringified
             if (typeof parsed === 'string') {
               try {
                 parsed = JSON.parse(parsed)
               } catch {
-                // It's a regular string, not double-stringified
                 parsed = car.rules
               }
             }
             
-            // Now check if we have an array
             if (Array.isArray(parsed)) {
               rules = parsed.filter(rule => 
                 typeof rule === 'string' && 
@@ -363,7 +366,6 @@ export default function CarDetailsClient({ params }: PageProps) {
                 rule.toLowerCase() !== 'rules'
               )
             } else if (typeof parsed === 'string' && parsed.length > 0) {
-              // Single rule string - try to split it
               if (parsed.includes('. ')) {
                 rules = parsed.split('. ')
                   .map(rule => rule.trim())
@@ -374,33 +376,28 @@ export default function CarDetailsClient({ params }: PageProps) {
               }
             }
           } catch (jsonError) {
-            // Try period-separated format (legacy)
             if (car.rules.includes('. ')) {
               rules = car.rules.split('. ')
                 .map(rule => rule.trim())
                 .filter(rule => rule.length > 0 && rule.toLowerCase() !== 'rules')
                 .map(rule => rule.endsWith('.') ? rule.slice(0, -1) : rule)
             } 
-            // Try semicolon-separated format (legacy)
             else if (car.rules.includes(';')) {
               rules = car.rules.split(';')
                 .map(rule => rule.trim())
                 .filter(rule => rule.length > 0 && rule.toLowerCase() !== 'rules')
             }
-            // Try comma-separated ONLY if it doesn't look like a mileage rule
             else if (car.rules.includes(',') && !car.rules.includes('miles/day')) {
               rules = car.rules.split(',')
                 .map(rule => rule.trim())
                 .filter(rule => rule.length > 0 && rule.toLowerCase() !== 'rules')
             }
-            // Single rule or unrecognized format
             else if (car.rules.length > 0 && car.rules.toLowerCase() !== 'rules') {
               rules = [car.rules.trim()]
             }
           }
         }
       } else if (Array.isArray(car.rules)) {
-        // Already an array
         rules = car.rules.filter(rule => 
           typeof rule === 'string' && 
           rule.length > 0 && 
@@ -409,7 +406,6 @@ export default function CarDetailsClient({ params }: PageProps) {
       }
     }
     
-    // If no rules found, provide sensible defaults
     if (rules.length === 0) {
       rules = [
         "200 miles/day included, $3/mile after",
@@ -421,7 +417,6 @@ export default function CarDetailsClient({ params }: PageProps) {
     }
   } catch (error) {
     console.error('Error parsing rules:', error)
-    // Provide default rules on error
     rules = [
       "200 miles/day included, $3/mile after",
       "No smoking",
@@ -437,6 +432,45 @@ export default function CarDetailsClient({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* SUSPENSION WARNING BANNER */}
+      {car.suspensionMessage && (
+        <div className="bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800">
+          <div className="max-w-7xl mx-auto px-4 py-4">
+            <div className="flex items-start gap-3">
+              <IoWarningOutline className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">
+                  {car.suspensionMessage}
+                </p>
+                {hasBookingHistory && (
+                  <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                    You have a previous booking for this vehicle. 
+                    <Link href="/rentals/dashboard/bookings" className="underline ml-1 hover:text-amber-800">
+                      View your booking history →
+                    </Link>
+                  </p>
+                )}
+                {!hasBookingHistory && (
+                  <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                    <Link href="/rentals/search" className="underline hover:text-amber-800">
+                      Browse similar available cars →
+                    </Link>
+                  </p>
+                )}
+              </div>
+              {!car.isBookable && (
+                <div className="flex items-center gap-1 px-2 py-1 bg-amber-100 dark:bg-amber-900/30 rounded">
+                  <IoLockClosedOutline className="w-4 h-4 text-amber-700 dark:text-amber-400" />
+                  <span className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                    Not Bookable
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header Bar */}
       <div className="sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4">
@@ -474,8 +508,10 @@ export default function CarDetailsClient({ params }: PageProps) {
         </div>
       </div>
 
-      {/* Photo Gallery */}
-      <PhotoGallery photos={car.photos || []} carName={`${car.year} ${car.make} ${car.model}`} />
+      {/* Photo Gallery - Add opacity if suspended */}
+      <div className={car.isBookable === false ? 'opacity-90' : ''}>
+        <PhotoGallery photos={car.photos || []} carName={`${car.year} ${car.make} ${car.model}`} />
+      </div>
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -488,7 +524,7 @@ export default function CarDetailsClient({ params }: PageProps) {
                 {car.year} {car.make} {car.model}
               </h1>
               
-              {/* Location and Meta Info - THIS IS WHERE THE RATING/TRIPS DISPLAY */}
+              {/* Location and Meta Info */}
               <div className="flex flex-wrap items-center gap-4 text-sm mb-4">
                 <div className="flex items-center gap-1.5">
                   <IoLocationOutline className="w-4 h-4 text-gray-400" />
@@ -497,28 +533,38 @@ export default function CarDetailsClient({ params }: PageProps) {
                   </span>
                 </div>
                 
-                {/* Rating and Trips Display - Now shows fresh data */}
+                {/* Rating and Trips Display */}
                 {car.rating && car.rating > 0 && car.totalTrips && car.totalTrips > 0 ? (
                   <div className="flex items-center gap-1.5">
                     <div className="flex items-center">
                       <IoStar className="w-4 h-4 text-amber-400 fill-current" />
                       <span className="font-semibold ml-1">
-                        {typeof car.rating === 'number' ? car.rating.toFixed(1) : car.rating} </span>                    </div>
+                        {typeof car.rating === 'number' ? car.rating.toFixed(1) : car.rating}
+                      </span>
+                    </div>
                     <span className="text-gray-500">({car.totalTrips} {car.totalTrips === 1 ? 'trip' : 'trips'})</span>
                   </div>
                 ) : (
                   <span className="text-gray-500">New listing</span>
                 )}
 
-                {car.instantBook && (
+                {car.instantBook && car.isBookable !== false && (
                   <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
                     <IoFlashOutline className="w-4 h-4" />
                     <span className="font-medium">Instant Book</span>
                   </div>
                 )}
+                
+                {/* Show suspension status if suspended */}
+                {car.hostStatus && car.hostStatus !== 'APPROVED' && (
+                  <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+                    <IoWarningOutline className="w-4 h-4" />
+                    <span className="font-medium">Limited Availability</span>
+                  </div>
+                )}
               </div>
 
-              {/* Key Specs Bar - Updated to handle VehicleSpecs data */}
+              {/* Key Specs Bar */}
               <div className="flex flex-wrap gap-6 py-4 border-y border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-2">
                   <IoPeopleOutline className="w-5 h-5 text-gray-400" />
@@ -644,14 +690,13 @@ export default function CarDetailsClient({ params }: PageProps) {
                     </div>
                   )}
 
-                  {/* Features - UPDATED WITH CLEANER DESIGN */}
+                  {/* Features */}
                   {features.length > 0 && (
                     <div>
                       <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
                         Features
                       </h3>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        {/* Show only first 6 features or all if showAllAboutFeatures is true */}
                         {(showAllAboutFeatures ? features : features.slice(0, 6)).map((feature: string, index: number) => (
                           <div
                             key={index}
@@ -663,7 +708,6 @@ export default function CarDetailsClient({ params }: PageProps) {
                         ))}
                       </div>
                       
-                      {/* Show more/less button if there are more than 6 features */}
                       {features.length > 6 && (
                         <button
                           onClick={() => setShowAllAboutFeatures(!showAllAboutFeatures)}
@@ -733,7 +777,7 @@ export default function CarDetailsClient({ params }: PageProps) {
                     </div>
                   </div>
 
-                  {/* Pickup Info - Generalized */}
+                  {/* Pickup Info */}
                   <div>
                     <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
                       Pickup Location
@@ -789,11 +833,15 @@ export default function CarDetailsClient({ params }: PageProps) {
 
           {/* Right Column - Booking Widget */}
           <div className="lg:sticky lg:top-20 h-fit">
-            <BookingWidget car={car} />
+            <BookingWidget 
+              car={car} 
+              isBookable={car.isBookable}
+              suspensionMessage={car.suspensionMessage}
+            />
           </div>
         </div>
 
-        {/* Similar Cars Section - FIXED WITH PROPER HOST ID AND PROFILE PHOTO */}
+        {/* Similar Cars Section */}
         <SimilarCars 
           currentCarId={car.id}
           carType={car.carType || car.type}
@@ -802,10 +850,10 @@ export default function CarDetailsClient({ params }: PageProps) {
           features={features}
           instantBook={car.instantBook}
           location={car.location}
-          hostId={car.hostId || car.host?.id}  // Use hostId from car or fallback to host.id
+          hostId={car.hostId || car.host?.id}
           hostName={car.host?.name}
-          hostProfilePhoto={car.host?.profilePhoto || car.host?.profileImage}  // Pass host profile photo
-          isCompany={car.host?.isCompany}  // Pass company flag if available
+          hostProfilePhoto={car.host?.profilePhoto || car.host?.profileImage}
+          isCompany={car.host?.isCompany}
         />
       </div>
     </div>

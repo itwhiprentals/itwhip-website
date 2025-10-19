@@ -33,7 +33,10 @@ export async function GET(
         },
         city: 'Phoenix',
         state: 'AZ',
-        provider_type: 'traditional'
+        provider_type: 'traditional',
+        isBookable: true,
+        hostStatus: 'APPROVED',
+        suspensionMessage: null
       })
     }
 
@@ -43,7 +46,7 @@ export async function GET(
       select: {
         // Car details
         id: true,
-        // REMOVED: hostId - internal ID should not be exposed
+        isActive: true,  // ADDED: Need this to determine bookability
         make: true,
         model: true,
         year: true,
@@ -114,29 +117,25 @@ export async function GET(
         totalTrips: true,
         rating: true,
         
-        // Host - SECURED WITH ONLY PUBLIC FIELDS
+        // Host - SECURED WITH ONLY PUBLIC FIELDS + APPROVAL STATUS
         host: {
           select: {
             id: true,
             name: true,
+            approvalStatus: true,  // ADDED: Need this to check suspension
             profilePhoto: true,
             bio: true,
             responseTime: true,
             responseRate: true,
             acceptanceRate: true,
-            totalTrips: true,  // We'll override this with actual count
+            totalTrips: true,
             rating: true,
             city: true,
             state: true,
             joinedAt: true,
             isVerified: true,
-            verificationLevel: true,    // For verification badges
-            // REMOVED: email - privacy concern
-            // REMOVED: phone - privacy concern
-            // REMOVED: zipCode - too specific
-            active: true,               // Host status
-            // REMOVED: verifiedAt - exact timestamp reveals patterns
-            // REMOVED: createdAt - exact timestamp reveals patterns
+            verificationLevel: true,
+            active: true,
           }
         },
         
@@ -172,7 +171,6 @@ export async function GET(
             hostRespondedAt: true,
             supportResponse: true,
             supportRespondedAt: true,
-            // NO source field - this is key!
             
             reviewerProfile: {
               select: {
@@ -215,7 +213,31 @@ export async function GET(
       )
     }
 
-    // FIXED: Calculate actual host trip count from visible reviews
+    // SUSPENSION HANDLING - Check host status
+    const hostStatus = car.host?.approvalStatus || 'APPROVED'
+    const isHostActive = car.host?.active !== false
+    const isCarActive = car.isActive !== false
+    
+    // Determine if car is bookable
+    const isBookable = hostStatus === 'APPROVED' && isHostActive && isCarActive
+    
+    // Create appropriate suspension message
+    let suspensionMessage: string | null = null
+    if (!isBookable) {
+      if (hostStatus === 'SUSPENDED') {
+        suspensionMessage = 'This listing is temporarily unavailable. The host account is under review.'
+      } else if (hostStatus === 'PENDING') {
+        suspensionMessage = 'This listing is pending approval. Please check back later.'
+      } else if (hostStatus === 'REJECTED') {
+        suspensionMessage = 'This listing is no longer available.'
+      } else if (!isHostActive) {
+        suspensionMessage = 'This host is currently inactive. Browse similar cars in your area.'
+      } else if (!isCarActive) {
+        suspensionMessage = 'This vehicle is currently unavailable for booking.'
+      }
+    }
+
+    // Calculate actual host trip count from visible reviews
     let hostActualTripCount = 0
     if (car.host) {
       const hostReviewCount = await prisma.rentalReview.count({
@@ -230,7 +252,7 @@ export async function GET(
       hostActualTripCount = hostReviewCount
     }
 
-    // FIXED: Calculate host's actual average rating from all their visible reviews
+    // Calculate host's actual average rating from all their visible reviews
     let hostActualRating = car.host?.rating || 0
     if (car.host) {
       const hostReviews = await prisma.rentalReview.findMany({
@@ -253,14 +275,13 @@ export async function GET(
     // Add computed host verification flags for frontend
     const hostWithFlags = car.host ? {
       ...car.host,
-      totalTrips: hostActualTripCount,  // FIXED: Use actual count instead of stored value
-      rating: parseFloat(hostActualRating.toFixed(1)),  // FIXED: Use calculated rating
-      // Add boolean flags for email/phone verification without exposing actual data
-      hasVerifiedEmail: car.host?.isVerified || false,  // Generic verification status
-      hasVerifiedPhone: car.host?.isVerified || false,  // Generic verification status
+      totalTrips: hostActualTripCount,
+      rating: parseFloat(hostActualRating.toFixed(1)),
+      hasVerifiedEmail: car.host?.isVerified || false,
+      hasVerifiedPhone: car.host?.isVerified || false,
     } : null
 
-    // Calculate average rating from reviews if they exist, otherwise use car's rating
+    // Calculate average rating from reviews
     let averageRating: number
     
     if (car.reviews.length > 0) {
@@ -270,19 +291,24 @@ export async function GET(
       averageRating = car.rating || 0
     }
     
-    // FIXED: Always format rating to 1 decimal place
     const formattedRating = parseFloat(averageRating.toFixed(1))
 
-    // Build response - FIXED: Use car.totalTrips from database, not booking count
+    // Build response with suspension handling fields
     const response = {
       ...car,
-      host: hostWithFlags,  // Use the modified host object with actual counts
-      rating: formattedRating,  // Always formatted to 1 decimal
-      totalTrips: car.totalTrips || 0,  // Use actual totalTrips from database
+      host: hostWithFlags,
+      rating: formattedRating,
+      totalTrips: car.totalTrips || 0,
       reviewCount: car._count.reviews,
+      // SUSPENSION HANDLING FIELDS
+      isBookable,
+      hostStatus,
+      suspensionMessage,
+      isActive: car.isActive,  // Include car's active status
       _count: undefined // Remove internal structure
     }
 
+    // Return car data even if suspended (no 404 for suspended hosts)
     return NextResponse.json(response)
     
   } catch (error) {

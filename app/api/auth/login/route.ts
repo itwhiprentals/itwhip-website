@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs'
 import { SignJWT } from 'jose'
 import { nanoid } from 'nanoid'
 import db from '@/app/lib/db'
+import { loginRateLimit, getClientIp, createRateLimitResponse } from '@/app/lib/rate-limit'
 
 // Get JWT secrets
 const JWT_SECRET = new TextEncoder().encode(
@@ -63,10 +64,23 @@ async function upgradePasswordHash(userId: string, password: string): Promise<vo
 
 export async function POST(request: NextRequest) {
   try {
+    // ✅ STEP 1: Rate Limit Check (5 attempts per 15 minutes)
+    const clientIp = getClientIp(request)
+    const identifier = `login:${clientIp}`
+    
+    const { success, limit, reset, remaining } = await loginRateLimit.limit(identifier)
+    
+    if (!success) {
+      console.warn(`🚨 Rate limit exceeded for IP: ${clientIp}`)
+      return createRateLimitResponse(reset, remaining)
+    }
+
+    console.log(`✅ Rate limit check passed for ${clientIp} (${remaining}/${limit} remaining)`)
+
+    // ✅ STEP 2: Parse and validate input
     const body = await request.json()
     const { email, password } = body
 
-    // Validate input
     if (!email || !password) {
       return NextResponse.json(
         { error: 'Email and password are required' },
@@ -74,7 +88,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get user from database
+    // ✅ STEP 3: Get user from database
     const user = await db.getUserByEmail(email.toLowerCase())
     
     if (!user) {
@@ -84,7 +98,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verify password with hybrid approach
+    // ✅ STEP 4: Verify password with hybrid approach
     const { valid: passwordValid, needsRehash } = await verifyPassword(password, user.password_hash)
     
     if (!passwordValid) {
@@ -94,7 +108,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if user is active
+    // ✅ STEP 5: Check if user is active
     if (!user.is_active) {
       return NextResponse.json(
         { error: 'Account is deactivated. Please contact support.' },
@@ -102,7 +116,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Upgrade password hash if needed (bcrypt -> Argon2)
+    // ✅ STEP 6: Upgrade password hash if needed (bcrypt -> Argon2)
     if (needsRehash) {
       // Run in background - don't wait for completion
       upgradePasswordHash(user.id, password).catch(err => {
@@ -110,7 +124,7 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Generate tokens
+    // ✅ STEP 7: Generate tokens
     const tokenId = nanoid()
     const refreshTokenId = nanoid()
     const refreshFamily = nanoid()
@@ -139,7 +153,7 @@ export async function POST(request: NextRequest) {
       .setExpirationTime('7d')
       .sign(JWT_REFRESH_SECRET)
 
-    // Save refresh token to database
+    // ✅ STEP 8: Save refresh token to database
     await db.saveRefreshToken({
       userId: user.id,
       token: refreshToken,
@@ -147,10 +161,10 @@ export async function POST(request: NextRequest) {
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
     })
 
-    // Update last login
+    // ✅ STEP 9: Update last login
     await db.updateLastLogin(user.id)
 
-    // Create response with cookies
+    // ✅ STEP 10: Create response with cookies
     const response = NextResponse.json({
       success: true,
       user: {
@@ -178,11 +192,17 @@ export async function POST(request: NextRequest) {
       path: '/'
     })
 
-    console.log(`User logged in successfully: ${user.email} ${needsRehash ? '(password upgraded)' : '(argon2)'}`)
+    // ✅ STEP 11: Add rate limit headers to response
+    response.headers.set('X-RateLimit-Limit', limit.toString())
+    response.headers.set('X-RateLimit-Remaining', remaining.toString())
+    response.headers.set('X-RateLimit-Reset', new Date(reset).toISOString())
+
+    console.log(`✅ User logged in successfully: ${user.email} ${needsRehash ? '(password upgraded)' : '(argon2)'}`)
+    
     return response
 
   } catch (error) {
-    console.error('Login error:', error)
+    console.error('❌ Login error:', error)
     return NextResponse.json(
       { error: 'An error occurred during login' },
       { status: 500 }

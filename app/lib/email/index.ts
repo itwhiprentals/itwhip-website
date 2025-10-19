@@ -8,9 +8,22 @@ import {
   getPickupReminderTemplate,
   getPaymentReceiptTemplate,
   getTripCompleteTemplate,
-  getVerificationPendingTemplate
+  getVerificationPendingTemplate,
+  // NEW HOST LIFECYCLE TEMPLATES
+  getHostDocumentRequestTemplate,
+  getHostBackgroundCheckTemplate,
+  getHostActionRequiredTemplate,
+  getHostRejectionTemplate,
+  getHostApprovalTemplate
 } from './templates'
-import type { EmailResponse } from './types'
+import type { 
+  EmailResponse,
+  HostDocumentRequestData,
+  HostBackgroundCheckData,
+  HostActionRequiredData,
+  HostRejectionData,
+  HostApprovalData
+} from './types'
 
 /**
  * Send verification approved email (uses booking confirmed template)
@@ -569,3 +582,92 @@ export async function sendAdminAlert(
   
   return await sendEmail(adminEmail, subject, html, text)
 }
+
+// ============================================================================
+// NEW HOST LIFECYCLE EMAIL FUNCTIONS - PHASE 2
+// ============================================================================
+
+/**
+ * Send host document request email
+ */
+export async function sendHostDocumentRequest(
+  to: string,
+  data: HostDocumentRequestData
+): Promise<EmailResponse> {
+  try {
+    const template = getHostDocumentRequestTemplate(data)
+    return await sendEmail(to, template.subject, template.html, template.text)
+  } catch (error) {
+    console.error('Error sending host document request email:', error)
+    return { success: false, error: 'Failed to send host document request email' }
+  }
+}
+
+/**
+ * Send host background check status email
+ */
+export async function sendHostBackgroundCheckStatus(
+  to: string,
+  data: HostBackgroundCheckData
+): Promise<EmailResponse> {
+  try {
+    const template = getHostBackgroundCheckTemplate(data)
+    return await sendEmail(to, template.subject, template.html, template.text)
+  } catch (error) {
+    console.error('Error sending host background check status email:', error)
+    return { success: false, error: 'Failed to send host background check status email' }
+  }
+}
+
+/**
+ * Send host action required email
+ */
+export async function sendHostActionRequired(
+  to: string,
+  data: HostActionRequiredData
+): Promise<EmailResponse> {
+  try {
+    const template = getHostActionRequiredTemplate(data)
+    return await sendEmail(to, template.subject, template.html, template.text)
+  } catch (error) {
+    console.error('Error sending host action required email:', error)
+    return { success: false, error: 'Failed to send host action required email' }
+  }
+}
+
+/**
+ * Send host rejection email
+ */
+export async function sendHostRejection(
+  to: string,
+  data: HostRejectionData
+): Promise<EmailResponse> {
+  try {
+    const template = getHostRejectionTemplate(data)
+    return await sendEmail(to, template.subject, template.html, template.text)
+  } catch (error) {
+    console.error('Error sending host rejection email:', error)
+    return { success: false, error: 'Failed to send host rejection email' }
+  }
+}
+
+/**
+ * Send host approval email
+ */
+export async function sendHostApproval(
+  to: string,
+  data: HostApprovalData
+): Promise<EmailResponse> {
+  try {
+    const template = getHostApprovalTemplate(data)
+    return await sendEmail(to, template.subject, template.html, template.text)
+  } catch (error) {
+    console.error('Error sending host approval email:', error)
+    return { success: false, error: 'Failed to send host approval email' }
+  }
+}
+
+// Export all functions for convenience
+export {
+  sendEmail
+} from './sender'

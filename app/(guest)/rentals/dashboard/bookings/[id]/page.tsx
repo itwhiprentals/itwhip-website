@@ -3,23 +3,21 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Booking, Message } from './types'
+import { Booking } from './types'
 import { BookingDetails } from './components/BookingDetails'
-import { MessagesPanel } from './components/MessagesPanel'
 import { BookingSidebar } from './components/BookingSidebar'
 import { PolicyFooter, CancellationDialog } from './components/BookingModals'
-import { ChevronLeft, XCircle, CheckCircle, Copy, Clock } from './components/Icons'
+import { ChevronLeft, XCircle, CheckCircle, Copy, Clock, MessageSquare } from './components/Icons'
 import StatusProgression from '../../../components/StatusProgression'
 // Import Trip Cards
 import { TripStartCard } from './components/trip/TripStartCard'
 import { TripActiveCard } from './components/trip/TripActiveCard'
 import { TripEndCard } from './components/trip/TripEndCard'
 import { 
-  getTimeUntilPickup, getStatusColor, validateFileUpload, 
-  formatCurrency 
+  getTimeUntilPickup, validateFileUpload 
 } from './utils/helpers'
 import { 
-  MESSAGE_POLLING_INTERVAL, BOOKING_POLLING_INTERVAL, 
+  BOOKING_POLLING_INTERVAL, 
   FILE_UPLOAD_CONFIG 
 } from './constants'
 
@@ -31,14 +29,11 @@ export default function BookingDetailsPage() {
   
   // State management
   const [booking, setBooking] = useState<Booking | null>(null)
-  const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(true)
-  const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [uploadingFile, setUploadingFile] = useState(false)
   const [copiedCode, setCopiedCode] = useState(false)
   const [showCancelDialog, setShowCancelDialog] = useState(false)
-  const [lastMessageCount, setLastMessageCount] = useState(0)
   const [previousStatus, setPreviousStatus] = useState<string | null>(null)
 
   // Load booking data
@@ -68,66 +63,6 @@ export default function BookingDetailsPage() {
       setLoading(false)
     }
   }, [bookingId, booking])
-
-  // Load messages
-  const loadMessages = useCallback(async () => {
-    if (!booking) return
-    
-    try {
-      const headers: HeadersInit = {}
-      if (booking.guestEmail) {
-        headers['x-guest-email'] = booking.guestEmail
-      }
-      
-      const response = await fetch(`/api/rentals/bookings/${bookingId}/messages`, { headers })
-      if (response.ok) {
-        const data = await response.json()
-        setMessages(data.messages || [])
-        
-        // Track message count for auto-scroll
-        if (data.messages && data.messages.length > lastMessageCount) {
-          setLastMessageCount(data.messages.length)
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load messages:', error)
-    }
-  }, [bookingId, booking, lastMessageCount])
-
-  // Send message
-  const sendMessage = useCallback(async (messageText: string) => {
-    if (!messageText.trim() || !booking) return
-
-    setSending(true)
-    setError(null)
-    
-    try {
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json'
-      }
-      if (booking.guestEmail) {
-        headers['x-guest-email'] = booking.guestEmail
-      }
-
-      const response = await fetch(`/api/rentals/bookings/${bookingId}/messages`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ message: messageText })
-      })
-
-      if (response.ok) {
-        await loadMessages()
-      } else {
-        const error = await response.json()
-        setError(error.error || 'Failed to send message')
-      }
-    } catch (error) {
-      console.error('Failed to send message:', error)
-      setError('Failed to send message')
-    } finally {
-      setSending(false)
-    }
-  }, [bookingId, booking, loadMessages])
 
   // Handle file upload
   const handleFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -159,11 +94,8 @@ export default function BookingDetailsPage() {
       })
 
       if (response.ok) {
-        const data = await response.json()
-        
-        // Send message with attachment
-        await sendMessage(`Uploaded document: ${file.name}`)
         await loadBooking() // Reload to update verification status
+        alert('Document uploaded successfully!')
       } else {
         const error = await response.json()
         setError(error.error || 'Failed to upload file')
@@ -177,7 +109,7 @@ export default function BookingDetailsPage() {
         fileInputRef.current.value = ''
       }
     }
-  }, [bookingId, booking, sendMessage, loadBooking])
+  }, [bookingId, booking, loadBooking])
 
   // Handle cancellation
   const handleCancellation = useCallback(async (reason: string) => {
@@ -230,7 +162,6 @@ export default function BookingDetailsPage() {
 
   // Show approval notification
   const showApprovalNotification = () => {
-    // You could use a toast library here
     alert('Great news! Your booking has been approved and confirmed!')
   }
 
@@ -238,10 +169,8 @@ export default function BookingDetailsPage() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
     if (urlParams.get('tripStarted') === 'true') {
-      // Show success notification for trip start
       alert('Trip started successfully! Drive safely.')
     } else if (urlParams.get('tripEnded') === 'true') {
-      // Show success notification for trip end
       alert('Trip completed successfully! Thank you for choosing ItWhip.')
     }
   }, [])
@@ -259,24 +188,14 @@ export default function BookingDetailsPage() {
   // Initial load and polling
   useEffect(() => {
     loadBooking()
-    loadMessages()
     
-    // Poll for updates
+    // Poll for booking updates
     const bookingInterval = setInterval(loadBooking, BOOKING_POLLING_INTERVAL)
-    const messageInterval = setInterval(loadMessages, MESSAGE_POLLING_INTERVAL)
     
     return () => {
       clearInterval(bookingInterval)
-      clearInterval(messageInterval)
     }
-  }, []) // Empty deps for initial load only
-
-  // Separate effect for message loading when booking changes
-  useEffect(() => {
-    if (booking) {
-      loadMessages()
-    }
-  }, [booking?.id])
+  }, [loadBooking])
 
   // Loading state
   if (loading) {
@@ -359,7 +278,7 @@ export default function BookingDetailsPage() {
           </div>
         </div>
 
-        {/* Status Progression Component - UPDATED WITH tripStatus */}
+        {/* Status Progression Component */}
         <StatusProgression
           status={booking.status}
           tripStatus={booking.tripStatus}
@@ -371,7 +290,7 @@ export default function BookingDetailsPage() {
           reviewedAt={booking.reviewedAt}
         />
 
-        {/* Trip Management Cards - NEW SECTION */}
+        {/* Trip Management Cards */}
         {booking.status === 'CONFIRMED' && !booking.tripStartedAt && (
           <div className="mt-6">
             <TripStartCard booking={booking} onTripStarted={loadBooking} />
@@ -392,25 +311,45 @@ export default function BookingDetailsPage() {
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-          {/* Left Column - Details & Messages */}
+          {/* Left Column - Details & Messages Button */}
           <div className="lg:col-span-2 space-y-6">
             <BookingDetails 
               booking={booking}
-              messages={messages}
+              messages={[]}
               onUploadClick={() => fileInputRef.current?.click()}
               uploadingFile={uploadingFile}
             />
             
-            <MessagesPanel
-              bookingId={bookingId}
-              messages={messages}
-              loading={false}
-              sending={sending}
-              error={error}
-              onSendMessage={sendMessage}
-              onFileUpload={handleFileUpload}
-              uploadingFile={uploadingFile}
-            />
+            {/* Messages Card - Link to Central Messages */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                    <MessageSquare className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      Messages
+                    </h2>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Communicate with host and support
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => router.push('/messages')}
+                className="w-full py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+              >
+                <MessageSquare className="w-5 h-5" />
+                <span>View All Messages</span>
+              </button>
+
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
+                All your booking conversations in one place
+              </p>
+            </div>
           </div>
 
           {/* Right Column - Sidebar */}

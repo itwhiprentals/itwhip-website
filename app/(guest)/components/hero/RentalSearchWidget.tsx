@@ -1,9 +1,9 @@
-// app/(guest)/components/hero/RentalSearchWidget
-// Clean rental search card with 3 fields: Location, Pickup (date+time), Return (date+time)
+// app/(guest)/components/hero/RentalSearchWidget.tsx
+// Clean rental search card with autocomplete location search
 
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { 
   IoLocationOutline, 
@@ -12,8 +12,12 @@ import {
   IoCloseOutline,
   IoChevronDownOutline,
   IoChevronBackOutline,
-  IoChevronForwardOutline
+  IoChevronForwardOutline,
+  IoAirplaneOutline,
+  IoBusinessOutline,
+  IoSearchOutline
 } from 'react-icons/io5'
+import { searchLocations, getGroupedLocations, getPopularLocations, type Location } from '@/lib/data/arizona-locations'
 
 interface RentalSearchCardProps {
   onSearch?: (params: any) => void
@@ -30,6 +34,17 @@ export default function RentalSearchCard({
   const [calendarType, setCalendarType] = useState<'pickup' | 'return'>('pickup')
   const [showTimeDropdown, setShowTimeDropdown] = useState<'pickup' | 'return' | null>(null)
   const timeDropdownRef = useRef<HTMLDivElement>(null)
+  
+  // Location autocomplete state
+  const [showLocationDropdown, setShowLocationDropdown] = useState(false)
+  const [locationQuery, setLocationQuery] = useState('')
+  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null)
+  const [locationResults, setLocationResults] = useState<{ airports: Location[], cities: Location[] }>({
+    airports: [],
+    cities: []
+  })
+  const locationInputRef = useRef<HTMLInputElement>(null)
+  const locationDropdownRef = useRef<HTMLDivElement>(null)
   
   // Calculate defaults
   const getDefaultDates = () => {
@@ -54,16 +69,73 @@ export default function RentalSearchCard({
     returnTime: '10:00'
   })
 
-  // Close time dropdown when clicking outside
+  // Debounced location search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (locationQuery.trim().length > 0) {
+        const grouped = getGroupedLocations(locationQuery)
+        setLocationResults(grouped)
+        setShowLocationDropdown(true)
+      } else {
+        // Show popular locations when empty
+        const popular = getPopularLocations()
+        const grouped = {
+          airports: popular.filter(loc => loc.type === 'airport'),
+          cities: popular.filter(loc => loc.type === 'city')
+        }
+        setLocationResults(grouped)
+      }
+    }, 300) // 300ms debounce
+
+    return () => clearTimeout(timer)
+  }, [locationQuery])
+
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (timeDropdownRef.current && !timeDropdownRef.current.contains(event.target as Node)) {
         setShowTimeDropdown(null)
       }
+      
+      if (
+        locationDropdownRef.current && 
+        !locationDropdownRef.current.contains(event.target as Node) &&
+        locationInputRef.current &&
+        !locationInputRef.current.contains(event.target as Node)
+      ) {
+        setShowLocationDropdown(false)
+      }
     }
+    
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  // Handle location selection
+  const handleLocationSelect = (location: Location) => {
+    setSelectedLocation(location)
+    setLocationQuery(location.name)
+    setSearchParams(prev => ({ ...prev, location: location.name }))
+    setShowLocationDropdown(false)
+  }
+
+  // Handle location input change
+  const handleLocationInputChange = (value: string) => {
+    setLocationQuery(value)
+    setSearchParams(prev => ({ ...prev, location: value }))
+    if (value.trim().length > 0) {
+      setShowLocationDropdown(true)
+    }
+  }
+
+  // Clear location
+  const handleClearLocation = () => {
+    setLocationQuery('')
+    setSelectedLocation(null)
+    setSearchParams(prev => ({ ...prev, location: '' }))
+    setShowLocationDropdown(false)
+    locationInputRef.current?.focus()
+  }
   
   // Format date for display
   const formatDate = (dateString: string) => {
@@ -285,6 +357,82 @@ export default function RentalSearchCard({
       </div>
     )
   }
+
+  // Location Dropdown Component
+  const LocationDropdown = () => {
+    const hasResults = locationResults.airports.length > 0 || locationResults.cities.length > 0
+    
+    return (
+      <div 
+        ref={locationDropdownRef}
+        className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto"
+      >
+        {!hasResults ? (
+          <div className="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
+            No locations found
+          </div>
+        ) : (
+          <div className="p-2">
+            {/* Airports Section */}
+            {locationResults.airports.length > 0 && (
+              <div className="mb-2">
+                <div className="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Airports
+                </div>
+                {locationResults.airports.map((location) => (
+                  <button
+                    key={location.id}
+                    onClick={() => handleLocationSelect(location)}
+                    className="w-full px-3 py-2.5 text-left rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-3"
+                  >
+                    <div className="flex-shrink-0 w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                      <IoAirplaneOutline className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                        {location.iataCode} - {location.name}
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                        {location.city}, {location.state}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Cities Section */}
+            {locationResults.cities.length > 0 && (
+              <div>
+                <div className="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Cities
+                </div>
+                {locationResults.cities.map((location) => (
+                  <button
+                    key={location.id}
+                    onClick={() => handleLocationSelect(location)}
+                    className="w-full px-3 py-2.5 text-left rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-3"
+                  >
+                    <div className="flex-shrink-0 w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+                      <IoBusinessOutline className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                        {location.name}
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                        {location.city}, {location.state}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    )
+  }
   
   return (
     <>
@@ -294,30 +442,35 @@ export default function RentalSearchCard({
             {/* Mobile: Stack vertically / Desktop: All in one line */}
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-2">
               
-              {/* Location Field */}
+              {/* Location Field with Autocomplete */}
               <div className="flex-1">
                 <div className="relative">
-                  <IoLocationOutline className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400 z-10" />
+                  <IoLocationOutline className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400 z-10 pointer-events-none" />
                   <input
+                    ref={locationInputRef}
                     type="text"
-                    value={searchParams.location}
-                    onChange={(e) => setSearchParams(prev => ({ ...prev, location: e.target.value }))}
-                    placeholder="Where?"
+                    value={locationQuery}
+                    onChange={(e) => handleLocationInputChange(e.target.value)}
+                    onFocus={() => setShowLocationDropdown(true)}
+                    placeholder="City or Airport"
                     className="w-full pl-9 sm:pl-11 pr-8 sm:pr-10 py-2.5 sm:py-3 
                       bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 
                       text-gray-900 dark:text-white placeholder-gray-500
                       rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white 
                       transition-all text-sm sm:text-base"
                   />
-                  {searchParams.location && (
+                  {locationQuery && (
                     <button
-                      onClick={() => setSearchParams(prev => ({ ...prev, location: '' }))}
+                      onClick={handleClearLocation}
                       className="absolute right-2 sm:right-3 top-1/2 transform -translate-y-1/2 p-1 
-                        hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                        hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors z-10"
                     >
                       <IoCloseOutline className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-500" />
                     </button>
                   )}
+                  
+                  {/* Location Dropdown */}
+                  {showLocationDropdown && <LocationDropdown />}
                 </div>
               </div>
               
@@ -416,16 +569,19 @@ export default function RentalSearchCard({
                 onClick={handleSearch}
                 disabled={isLoading || !searchParams.location}
                 className={`px-4 sm:px-6 py-2.5 sm:py-3 font-semibold rounded-lg sm:rounded-xl 
-                  transition-all duration-200 whitespace-nowrap text-sm sm:text-base ${
+                  transition-all duration-200 whitespace-nowrap text-sm sm:text-base flex items-center justify-center gap-2 ${
                   searchParams.location 
                     ? 'bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200' 
                     : 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
                 }`}
               >
                 {isLoading ? (
-                  <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white dark:border-black border-t-transparent rounded-full animate-spin mx-auto" />
+                  <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white dark:border-black border-t-transparent rounded-full animate-spin" />
                 ) : (
-                  'Search'
+                  <>
+                    <IoSearchOutline className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span className="hidden sm:inline">Search</span>
+                  </>
                 )}
               </button>
             </div>

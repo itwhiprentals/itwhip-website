@@ -19,6 +19,10 @@ import {
   calculateDriverAge 
 } from '@/app/lib/booking/verification-rules'
 
+// ========== 🆕 ACTIVITY TRACKING IMPORT ==========
+import { trackActivity } from '@/lib/helpers/guestProfileStatus'
+// ========== END IMPORT ==========
+
 // ========== STRIPE TEST INTEGRATION ==========
 import Stripe from 'stripe'
 
@@ -558,6 +562,7 @@ export async function POST(request: NextRequest) {
           paymentStatus: true,
           flaggedForReview: true,
           riskScore: true,
+          reviewerProfileId: true,
           
           car: {
             select: {
@@ -588,6 +593,52 @@ export async function POST(request: NextRequest) {
           }
         }
       })
+
+      // ========== 🆕 TRACK BOOKING CREATION ACTIVITY ==========
+      // Get reviewerProfileId if guest has one (via email)
+      let guestProfileId = newBooking.reviewerProfileId
+      
+      if (!guestProfileId) {
+        // Try to find existing reviewer profile by email
+        const existingProfile = await tx.reviewerProfile.findUnique({
+          where: { email: bookingData.guestEmail },
+          select: { id: true }
+        })
+        guestProfileId = existingProfile?.id || null
+      }
+      
+      // Track activity if we have a profile ID
+      if (guestProfileId) {
+        try {
+          await trackActivity(guestProfileId, {
+            action: 'BOOKING_CREATED',
+            description: `Booked ${car.year} ${car.make} ${car.model} for ${pricing.days} day${pricing.days > 1 ? 's' : ''}`,
+            performedBy: 'GUEST',
+            metadata: {
+              bookingId: newBooking.id,
+              bookingCode: newBooking.bookingCode,
+              carName: `${car.year} ${car.make} ${car.model}`,
+              carId: bookingData.carId,
+              startDate: bookingData.startDate.toISOString(),
+              endDate: bookingData.endDate.toISOString(),
+              numberOfDays: pricing.days,
+              totalAmount: pricing.total,
+              pickupLocation: bookingData.pickupLocation,
+              pickupType: bookingData.pickupType,
+              status: newBooking.status,
+              needsVerification,
+              verificationReason: needsVerification ? verificationReason : null
+            }
+          })
+          console.log('✅ Tracked booking creation activity for guest:', guestProfileId)
+        } catch (trackError) {
+          console.error('⚠️ Failed to track booking activity (non-blocking):', trackError)
+          // Don't fail the booking if tracking fails
+        }
+      } else {
+        console.log('ℹ️ No reviewer profile found for guest email:', bookingData.guestEmail)
+      }
+      // ========== END ACTIVITY TRACKING ==========
 
       // Store fraud indicators if any
       if (riskFlags.length > 0 && !isDevelopment) {

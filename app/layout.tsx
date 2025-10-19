@@ -2,6 +2,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
+import { Providers } from './providers'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -122,7 +123,7 @@ export default function RootLayout({
                 addressCountry: 'US'
               },
               sameAs: [
-                'https://www.facebook.com/people/Itwhipcom/61573990760395/?mibextid=wwXIfr&rdid=2egGjvDzm0ZkDaJt&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F16A6t34gWx%2F%3Fmibextid%3DwwXIfr',
+                'https://www.facebook.com/people/Itwhipcom/61573990760395/?mibextid=wwXIfr&rdid=2egGjvDzm0ZkDaJt&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F16A6t34gWX%2F%3Fmibextid%3DwwXIfr',
                 'https://twitter.com/itwhip',
                 'https://instagram.com/itwhiptech',
                 'https://linkedin.com/company/itwhip'
@@ -186,7 +187,9 @@ export default function RootLayout({
         {/* Google Analytics or other tracking scripts can go here */}
       </head>
       <body className={`${inter.className} antialiased`}>
-        {children}
+        <Providers>
+          {children}
+        </Providers>
         
         {/* You can add any persistent scripts or components here */}
       </body>

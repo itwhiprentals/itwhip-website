@@ -2,19 +2,39 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
+import { 
+  IoPersonOutline, 
+  IoShieldCheckmarkOutline, 
+  IoPeopleOutline, 
+  IoChatbubblesOutline,
+  IoDocumentTextOutline,
+  IoMegaphoneOutline,
+  IoCalendarOutline,
+  IoCarSportOutline,
+  IoCloudUploadOutline,
+  IoGridOutline,
+  IoHomeOutline
+} from 'react-icons/io5'
 import { Car, CarStatus } from './types'
 import { StatCard, StatusBadge, EmptyState, LoadingSpinner, SectionHeader } from './components'
 
 export default function FleetDashboard() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [cars, setCars] = useState<Car[]>([])
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [filter, setFilter] = useState<string>('all')
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  // Get API key from URL
+  const apiKey = searchParams.get('key') || 'phoenix-fleet-2847'
 
   useEffect(() => {
     fetchCars()
+    fetchUnreadMessages()
   }, [])
 
   // Separate effect for client-side only window operations
@@ -26,7 +46,7 @@ export default function FleetDashboard() {
 
   const fetchCars = async () => {
     try {
-      const response = await fetch('/sys-2847/fleet/api/cars')  // KEEP THIS AS IS - API stays at sys-2847
+      const response = await fetch(`/fleet/api/cars?key=${apiKey}`)
       const data = await response.json()
       if (data.success) {
         setCars(data.data || [])
@@ -35,6 +55,18 @@ export default function FleetDashboard() {
       console.error('Failed to fetch cars:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchUnreadMessages = async () => {
+    try {
+      const response = await fetch(`/fleet/api/messages/unread-count?key=${apiKey}`)
+      const data = await response.json()
+      if (data.success) {
+        setUnreadCount(data.data.count || 0)
+      }
+    } catch (error) {
+      console.error('Failed to fetch unread messages:', error)
     }
   }
 
@@ -52,11 +84,9 @@ export default function FleetDashboard() {
   // Helper function to get the main photo
   const getCarPhoto = (car: Car) => {
     if (car.photos && car.photos.length > 0) {
-      // Find hero photo or use first photo
       const heroPhoto = car.photos.find(p => p.isHero)
       return heroPhoto?.url || car.photos[0].url
     }
-    // Placeholder image if no photos
     return null
   }
 
@@ -64,10 +94,47 @@ export default function FleetDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 sm:p-6">
-      <SectionHeader 
-        title="Fleet Management" 
-        description={`Managing ${cars.length} vehicles`}
-      />
+      {/* Header with Primary Actions */}
+      <div className="mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Fleet Management</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">Managing {cars.length} vehicles</p>
+          </div>
+          
+          {/* Header Actions - Primary Operations */}
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href={`/fleet?key=${apiKey}`}
+              className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm flex items-center gap-2"
+            >
+              <IoHomeOutline className="text-lg" />
+              Dashboard
+            </Link>
+            <button
+              onClick={() => router.push(`/fleet/add?key=${apiKey}`)}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm flex items-center gap-2"
+            >
+              <IoCarSportOutline className="text-lg" />
+              Add Car
+            </button>
+            <button
+              onClick={() => router.push(`/fleet/bulk-upload?key=${apiKey}`)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center gap-2"
+            >
+              <IoCloudUploadOutline className="text-lg" />
+              Bulk Upload
+            </button>
+            <button
+              onClick={() => router.push(`/fleet/templates?key=${apiKey}`)}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm flex items-center gap-2"
+            >
+              <IoGridOutline className="text-lg" />
+              Templates
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* Stats - Mobile responsive */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
@@ -77,29 +144,84 @@ export default function FleetDashboard() {
         <StatCard title="Maintenance" value={stats.maintenance} color="yellow" />
       </div>
 
-      {/* Actions Bar - Mobile optimized */}
-      <div className="flex flex-col sm:flex-row gap-3 sm:justify-between sm:items-center mb-6">
-        <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0">
-          <button
-            onClick={() => router.push('/fleet/add')}
-            className="flex-shrink-0 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors text-sm sm:text-base"
+      {/* Navigation Actions - Management Operations */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg border dark:border-gray-700 p-4 mb-6">
+        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 uppercase tracking-wide">
+          Management Hub
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+          {/* Messages */}
+          <Link
+            href={`/fleet/messages?key=${apiKey}`}
+            className="relative px-4 py-3 bg-gradient-to-br from-blue-500 to-cyan-600 text-white rounded-lg hover:from-blue-600 hover:to-cyan-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
           >
-            Add Car
-          </button>
-          <button
-            onClick={() => router.push('/fleet/bulk')}
-            className="flex-shrink-0 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm sm:text-base"
-          >
-            Bulk Upload
-          </button>
-          <button
-            onClick={() => router.push('/fleet/templates')}
-            className="flex-shrink-0 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors text-sm sm:text-base"
-          >
-            Templates
-          </button>
-        </div>
+            <IoChatbubblesOutline className="text-2xl group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-medium">Messages</span>
+            {unreadCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center animate-pulse shadow-lg">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
+          </Link>
 
+          {/* Hosts */}
+          <Link
+            href={`/fleet/hosts?key=${apiKey}`}
+            className="px-4 py-3 bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
+          >
+            <IoPersonOutline className="text-2xl group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-medium">Hosts</span>
+          </Link>
+
+          {/* Guests */}
+          <Link
+            href={`/fleet/guests?key=${apiKey}`}
+            className="px-4 py-3 bg-gradient-to-br from-teal-500 to-teal-600 text-white rounded-lg hover:from-teal-600 hover:to-teal-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
+          >
+            <IoPeopleOutline className="text-2xl group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-medium">Guests</span>
+          </Link>
+
+          {/* Insurance */}
+          <Link
+            href={`/fleet/insurance?key=${apiKey}`}
+            className="px-4 py-3 bg-gradient-to-br from-indigo-500 to-indigo-600 text-white rounded-lg hover:from-indigo-600 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
+          >
+            <IoShieldCheckmarkOutline className="text-2xl group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-medium">Insurance</span>
+          </Link>
+
+          {/* Claims */}
+          <Link
+            href={`/fleet/claims?key=${apiKey}`}
+            className="px-4 py-3 bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
+          >
+            <IoDocumentTextOutline className="text-2xl group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-medium">Claims</span>
+          </Link>
+
+          {/* Appeals */}
+          <Link
+            href={`/fleet/appeals?key=${apiKey}`}
+            className="px-4 py-3 bg-gradient-to-br from-rose-500 to-rose-600 text-white rounded-lg hover:from-rose-600 hover:to-rose-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
+          >
+            <IoMegaphoneOutline className="text-2xl group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-medium">Appeals</span>
+          </Link>
+
+          {/* Bookings */}
+          <Link
+            href={`/fleet/bookings?key=${apiKey}`}
+            className="px-4 py-3 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white rounded-lg hover:from-emerald-600 hover:to-emerald-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
+          >
+            <IoCalendarOutline className="text-2xl group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-medium">Bookings</span>
+          </Link>
+        </div>
+      </div>
+
+      {/* Filter and View Controls */}
+      <div className="flex flex-col sm:flex-row gap-3 sm:justify-between sm:items-center mb-6">
         <div className="flex gap-2">
           <select
             value={filter}
@@ -119,6 +241,10 @@ export default function FleetDashboard() {
             {viewMode === 'grid' ? '☰' : '⊞'}
           </button>
         </div>
+
+        <div className="text-sm text-gray-600 dark:text-gray-400">
+          Showing {filteredCars.length} of {cars.length} vehicles
+        </div>
       </div>
 
       {/* Cars Display */}
@@ -126,7 +252,7 @@ export default function FleetDashboard() {
         <EmptyState 
           message="No cars in fleet yet"
           actionText="Add First Car"
-          onAction={() => router.push('/fleet/add')}
+          onAction={() => router.push(`/fleet/add?key=${apiKey}`)}
         />
       ) : (
         <div className={viewMode === 'grid' 
@@ -140,7 +266,7 @@ export default function FleetDashboard() {
               <div
                 key={car.id}
                 className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden hover:border-gray-400 dark:hover:border-gray-600 cursor-pointer transition-all hover:shadow-lg dark:hover:shadow-xl shadow-sm"
-                onClick={() => router.push(`/fleet/edit/${car.id}`)}
+                onClick={() => router.push(`/fleet/edit/${car.id}?key=${apiKey}`)}
               >
                 {viewMode === 'grid' ? (
                   <>
@@ -256,7 +382,7 @@ export default function FleetDashboard() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
-                            router.push(`/fleet/edit/${car.id}`)
+                            router.push(`/fleet/edit/${car.id}?key=${apiKey}`)
                           }}
                           className="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
                         >
@@ -307,7 +433,7 @@ export default function FleetDashboard() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
-                            router.push(`/fleet/edit/${car.id}`)
+                            router.push(`/fleet/edit/${car.id}?key=${apiKey}`)
                           }}
                           className="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                         >

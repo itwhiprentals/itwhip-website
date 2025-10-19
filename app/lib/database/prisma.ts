@@ -124,6 +124,7 @@ const prismaClientSingleton = () => {
 declare global {
   var prisma: undefined | ReturnType<typeof prismaClientSingleton>
   var prismaConnectionCount: number
+  var cleanupRegistered: boolean
 }
 
 // ============================================================================
@@ -308,7 +309,7 @@ export async function paginate<T>(
 }
 
 // ============================================================================
-// CLEANUP & SHUTDOWN
+// CLEANUP & SHUTDOWN (FIXED - NO MORE MEMORY LEAKS)
 // ============================================================================
 
 async function cleanup() {
@@ -318,21 +319,24 @@ async function cleanup() {
     console.log('✅ Database connection closed gracefully')
   } catch (error) {
     console.error('❌ Error during database disconnect:', error)
-    // Don't exit in serverless environments
-    if (process.env.NODE_ENV === 'development') {
-      process.exit(1)
-    }
   }
 }
 
-// Graceful shutdown handlers
-process.on('beforeExit', cleanup)
-process.on('SIGINT', cleanup)
-process.on('SIGTERM', cleanup)
-process.on('SIGUSR2', cleanup) // For nodemon restart
-
-// Prevent multiple listeners warning
-process.setMaxListeners(15)
+// ✅ FIX: Only register cleanup handlers ONCE globally
+if (!globalThis.cleanupRegistered) {
+  globalThis.cleanupRegistered = true
+  
+  // Increase max listeners to prevent warnings
+  process.setMaxListeners(20)
+  
+  // Register cleanup handlers only once
+  process.once('beforeExit', cleanup)
+  process.once('SIGINT', cleanup)
+  process.once('SIGTERM', cleanup)
+  process.once('SIGUSR2', cleanup) // For nodemon restart
+  
+  console.log('🔧 Cleanup handlers registered')
+}
 
 // ============================================================================
 // MONITORING & METRICS
@@ -340,10 +344,11 @@ process.setMaxListeners(15)
 
 let queryCount = 0
 let errorCount = 0
+let metricsInterval: NodeJS.Timeout | null = null
 
-// Export metrics every minute in production
-if (process.env.NODE_ENV === 'production') {
-  setInterval(() => {
+// Export metrics every minute in production (with proper cleanup)
+if (process.env.NODE_ENV === 'production' && !metricsInterval) {
+  metricsInterval = setInterval(() => {
     if (queryCount > 0) {
       console.log('📊 Database Metrics:', {
         queries: queryCount,
@@ -356,6 +361,14 @@ if (process.env.NODE_ENV === 'production') {
       errorCount = 0
     }
   }, 60000)
+  
+  // ✅ FIX: Clear interval on cleanup
+  process.once('beforeExit', () => {
+    if (metricsInterval) {
+      clearInterval(metricsInterval)
+      metricsInterval = null
+    }
+  })
 }
 
 // ============================================================================

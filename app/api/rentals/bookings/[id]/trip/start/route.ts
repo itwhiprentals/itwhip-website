@@ -5,6 +5,9 @@ import { prisma } from '@/app/lib/database/prisma'
 import { canStartTrip, validateOdometer, validateFuelLevel, validateInspectionPhotos } from '@/app/lib/trip/validation'
 import { calculateTripWindow } from '@/app/lib/trip/timeWindows'
 
+// ========== 🆕 ACTIVITY TRACKING IMPORT ==========
+import { trackActivity } from '@/lib/helpers/guestProfileStatus'
+
 export async function POST(
  request: NextRequest,
  { params }: { params: Promise<{ id: string }> }
@@ -150,6 +153,51 @@ export async function POST(
 
      return updatedBooking
    })
+
+   // ========== 🆕 TRACK TRIP START ACTIVITY ==========
+   // This populates the guest's activity timeline for the Status Tab
+   // Wrapped in try-catch - won't break trip start if tracking fails
+   try {
+     // Find guest's ReviewerProfile ID
+     let guestProfileId = booking.reviewerProfileId
+     
+     if (!guestProfileId && booking.guestEmail) {
+       const reviewerProfile = await prisma.reviewerProfile.findFirst({
+         where: { email: booking.guestEmail },
+         select: { id: true }
+       })
+       guestProfileId = reviewerProfile?.id
+     }
+
+     if (guestProfileId) {
+       await trackActivity(guestProfileId, {
+         action: 'TRIP_STARTED',
+         description: `Trip started for ${booking.car.year} ${booking.car.make} ${booking.car.model}`,
+         metadata: {
+           bookingId: booking.id,
+           bookingCode: booking.bookingCode,
+           carName: `${booking.car.year} ${booking.car.make} ${booking.car.model}`,
+           startMileage,
+           fuelLevelStart,
+           location,
+           photoCount: Object.keys(inspectionPhotos).length,
+           tripStartedAt: new Date().toISOString(),
+           ...(checklist && { checklist })
+         }
+       })
+
+       console.log('✅ Trip start tracked in guest timeline:', {
+         guestId: guestProfileId,
+         bookingId: booking.id
+       })
+     } else {
+       console.warn('⚠️ Could not find guest profile for trip start tracking')
+     }
+   } catch (trackingError) {
+     console.error('❌ Failed to track trip start activity:', trackingError)
+     // Continue without breaking - tracking is non-critical
+   }
+   // ========== END ACTIVITY TRACKING ==========
 
    // Send notification to host
    if (booking.host.email) {

@@ -14,36 +14,35 @@ import {
   IoShieldCheckmarkOutline,
   IoMapOutline,
   IoListOutline,
-  IoPersonOutline,
   IoSearchOutline,
   IoChevronDownOutline,
   IoCloseOutline,
   IoSwapVerticalOutline,
   IoTimeOutline,
-  IoCheckmarkOutline,
-  IoChevronForwardOutline,
-  IoChevronBackOutline,
-  IoHomeOutline,
+  IoCheckmarkCircleOutline,
+  IoAlertCircleOutline,
+  IoWarningOutline,
+  IoCarSportOutline,
   IoAirplaneOutline,
-  IoBedOutline,
-  IoCarSportOutline
+  IoBusinessOutline
 } from 'react-icons/io5'
 import { format, parseISO } from 'date-fns'
 import { MapContainer } from './components/MapContainer'
 import { getLocationCoordinates } from './utils/mapHelpers'
 import Footer from '@/app/components/Footer'
+import RentalSearchCard from '@/app/(guest)/components/hero/RentalSearchWidget'
 
 // Loading skeleton component
 function CarCardSkeleton() {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl">
-      <div className="aspect-w-16 aspect-h-10 bg-gray-300 dark:bg-gray-700 rounded-t-lg h-48"></div>
+      <div className="aspect-w-16 aspect-h-10 bg-gray-300 dark:bg-gray-700 rounded-t-lg h-48 animate-pulse"></div>
       <div className="p-5">
-        <div className="h-6 bg-gray-300 dark:bg-gray-700 rounded w-3/4 mb-3"></div>
-        <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-1/2 mb-4"></div>
+        <div className="h-6 bg-gray-300 dark:bg-gray-700 rounded w-3/4 mb-3 animate-pulse"></div>
+        <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-1/2 mb-4 animate-pulse"></div>
         <div className="flex justify-between">
-          <div className="h-8 bg-gray-300 dark:bg-gray-700 rounded w-24"></div>
-          <div className="h-8 bg-gray-300 dark:bg-gray-700 rounded w-20"></div>
+          <div className="h-8 bg-gray-300 dark:bg-gray-700 rounded w-24 animate-pulse"></div>
+          <div className="h-8 bg-gray-300 dark:bg-gray-700 rounded w-20 animate-pulse"></div>
         </div>
       </div>
     </div>
@@ -59,7 +58,6 @@ function SearchResultsContent() {
   
   const [cars, setCars] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null)
   const [filters, setFilters] = useState({
     carType: [] as string[],
     minPrice: 0,
@@ -68,12 +66,14 @@ function SearchResultsContent() {
     instantBook: false,
     transmission: 'all',
     seats: 'all',
-    delivery: [] as string[]
+    delivery: [] as string[],
+    availability: 'all' // all, available, partial
   })
   const [sortBy, setSortBy] = useState('recommended')
   const [showFilters, setShowFilters] = useState(false)
-  const [showMap, setShowMap] = useState(viewParam === 'map') // Initialize based on URL parameter
+  const [showMap, setShowMap] = useState(viewParam === 'map')
   const [totalCount, setTotalCount] = useState(0)
+  const [searchMetadata, setSearchMetadata] = useState<any>(null)
 
   // Parse search params
   const location = searchParams.get('location') || 'Phoenix, AZ'
@@ -87,54 +87,6 @@ function SearchResultsContent() {
     (new Date(returnDate).getTime() - new Date(pickupDate).getTime()) 
     / (1000 * 60 * 60 * 24)
   )
-
-  // Get user location - default to Phoenix
-  useEffect(() => {
-    // Default to Phoenix center
-    setUserLocation({
-      lat: 33.4484,
-      lng: -112.0740
-    })
-    
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          })
-        },
-        (error) => {
-          console.log('Using Phoenix center as default location')
-        }
-      )
-    }
-  }, [])
-
-  // Distance calculation function with privacy protection
-  const calculateDistance = (carLat: number, carLng: number, carId: string): string => {
-    if (!userLocation || !carLat || !carLng) return 'Phoenix area'
-    
-    const R = 3959 // Earth's radius in miles
-    const dLat = (carLat - userLocation.lat) * Math.PI / 180
-    const dLon = (carLng - userLocation.lng) * Math.PI / 180
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(userLocation.lat * Math.PI / 180) * Math.cos(carLat * Math.PI / 180) *
-      Math.sin(dLon/2) * Math.sin(dLon/2)
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
-    let distance = R * c
-    
-    // Privacy protection: Never show less than 1 mile
-    if (distance < 1.0) {
-      // Randomize between 1.1 and 1.9 for privacy
-      const seed = carId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
-      const random = (seed % 9) / 10 // Gives 0.0 to 0.8
-      distance = 1.1 + random // Range: 1.1 to 1.9
-    }
-    
-    return `${distance.toFixed(1)} miles away`
-  }
 
   // Fetch cars
   const fetchCars = useCallback(async () => {
@@ -163,6 +115,7 @@ function SearchResultsContent() {
       if (data.success) {
         setCars(data.results || [])
         setTotalCount(data.total || 0)
+        setSearchMetadata(data.metadata || null)
       } else {
         console.error('Search failed:', data.error)
         setCars([])
@@ -181,33 +134,20 @@ function SearchResultsContent() {
     fetchCars()
   }, [fetchCars])
 
-  // Sort cars by distance if needed
-  const sortedCars = useMemo(() => {
-    if (!cars || cars.length === 0) return []
+  // Filter cars by availability filter
+  const filteredCars = useMemo(() => {
+    if (filters.availability === 'all') return cars
     
-    let sorted = [...cars]
-    
-    // Add distance to each car
-    if (userLocation) {
-      sorted = sorted.map(car => ({
-        ...car,
-        distance: car.location?.lat && car.location?.lng 
-          ? calculateDistance(car.location.lat, car.location.lng, car.id)
-          : 'Phoenix area'
-      }))
-    }
-    
-    // Sort by distance if selected
-    if (sortBy === 'distance' && userLocation) {
-      sorted.sort((a, b) => {
-        const distA = parseFloat(a.distance) || 999
-        const distB = parseFloat(b.distance) || 999
-        return distA - distB
-      })
-    }
-    
-    return sorted
-  }, [cars, sortBy, userLocation])
+    return cars.filter(car => {
+      if (filters.availability === 'available') {
+        return car.availability?.isFullyAvailable
+      }
+      if (filters.availability === 'partial') {
+        return car.availability?.isPartiallyAvailable
+      }
+      return true
+    })
+  }, [cars, filters.availability])
 
   // Handle search update
   const handleSearchUpdate = (params: any) => {
@@ -252,8 +192,8 @@ function SearchResultsContent() {
   // Delivery options
   const deliveryOptions = [
     { value: 'airport', label: 'Airport Pickup', icon: IoAirplaneOutline },
-    { value: 'hotel', label: 'Hotel Delivery', icon: IoBedOutline },
-    { value: 'home', label: 'Home Delivery', icon: IoHomeOutline }
+    { value: 'hotel', label: 'Hotel Delivery', icon: IoBusinessOutline },
+    { value: 'home', label: 'Home Delivery', icon: IoLocationOutline }
   ]
 
   // Sort options
@@ -302,7 +242,8 @@ function SearchResultsContent() {
       instantBook: false,
       transmission: 'all',
       seats: 'all',
-      delivery: []
+      delivery: [],
+      availability: 'all'
     })
   }
 
@@ -313,102 +254,70 @@ function SearchResultsContent() {
     (filters.instantBook ? 1 : 0) +
     (filters.transmission !== 'all' ? 1 : 0) +
     (filters.seats !== 'all' ? 1 : 0) +
-    (filters.minPrice > 0 || filters.maxPrice < 1000 ? 1 : 0)
+    (filters.minPrice > 0 || filters.maxPrice < 1000 ? 1 : 0) +
+    (filters.availability !== 'all' ? 1 : 0)
+
+  // Get availability badge
+  const getAvailabilityBadge = (car: any) => {
+    if (!car.availability) return null
+
+    if (car.availability.isFullyAvailable) {
+      return (
+        <span className="px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 text-xs font-semibold rounded-full flex items-center gap-1">
+          <IoCheckmarkCircleOutline className="w-3 h-3" />
+          Available
+        </span>
+      )
+    }
+
+    if (car.availability.isCompletelyUnavailable) {
+      return (
+        <span className="px-2 py-1 bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 text-xs font-semibold rounded-full flex items-center gap-1">
+          <IoCloseOutline className="w-3 h-3" />
+          Unavailable
+        </span>
+      )
+    }
+
+    if (car.availability.isPartiallyAvailable) {
+      return (
+        <span className="px-2 py-1 bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 text-xs font-semibold rounded-full flex items-center gap-1">
+          <IoWarningOutline className="w-3 h-3" />
+          Partial
+        </span>
+      )
+    }
+
+    return null
+  }
 
   return (
     <>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        {/* Search Filter Bar */}
-        <div className="bg-white dark:bg-gray-800 sticky top-14 md:top-16 z-30 border-b border-gray-200 dark:border-gray-700">
+        {/* Search Widget - Sticky on mobile/desktop */}
+        <div className="bg-white dark:bg-gray-800 sticky top-0 md:top-16 z-40 border-b border-gray-200 dark:border-gray-700 py-4">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <RentalSearchCard onSearch={handleSearchUpdate} variant="compact" />
+          </div>
+        </div>
+
+        {/* Filter Bar */}
+        <div className="bg-white dark:bg-gray-800 sticky top-[88px] md:top-[152px] z-30 border-b border-gray-200 dark:border-gray-700">
           <div className="max-w-7xl mx-auto">
             {/* Scrollable filter container */}
             <div className="overflow-x-auto">
               <div className="flex items-center gap-2 px-4 sm:px-6 lg:px-8 py-3 min-w-max">
-                {/* Location Filter */}
-                <div className="relative">
-                  <select
-                    value={location}
-                    onChange={(e) => handleSearchUpdate({ location: e.target.value })}
-                    className="h-10 pl-10 pr-8 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 appearance-none cursor-pointer min-w-[140px]"
-                  >
-                    <option value="Phoenix, AZ">Phoenix, AZ</option>
-                    <option value="Scottsdale, AZ">Scottsdale, AZ</option>
-                    <option value="Tempe, AZ">Tempe, AZ</option>
-                    <option value="Mesa, AZ">Mesa, AZ</option>
-                    <option value="Chandler, AZ">Chandler, AZ</option>
-                    <option value="Gilbert, AZ">Gilbert, AZ</option>
-                  </select>
-                  <IoLocationOutline className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
-                  <IoChevronDownOutline className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
-                </div>
-
-                {/* Dates Container */}
-                <div className="flex items-center bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg">
-                  {/* Pickup Date */}
-                  <div className="relative">
-                    <input
-                      type="date"
-                      value={pickupDate}
-                      onChange={(e) => handleSearchUpdate({ pickupDate: e.target.value })}
-                      className="h-10 pl-10 pr-2 bg-transparent border-0 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 min-w-[140px]"
-                    />
-                    <IoCalendarOutline className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
-                  </div>
-                  
-                  <div className="w-px h-6 bg-gray-300 dark:bg-gray-600" />
-                  
-                  {/* Return Date */}
-                  <div className="relative">
-                    <input
-                      type="date"
-                      value={returnDate}
-                      onChange={(e) => handleSearchUpdate({ returnDate: e.target.value })}
-                      className="h-10 pl-3 pr-3 bg-transparent border-0 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 min-w-[140px]"
-                    />
-                  </div>
-                </div>
-
-                {/* Times Container */}
-                <div className="flex items-center bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg">
-                  {/* Pickup Time */}
-                  <div className="relative">
-                    <select
-                      value={pickupTime}
-                      onChange={(e) => handleSearchUpdate({ pickupTime: e.target.value })}
-                      className="h-10 pl-10 pr-2 bg-transparent border-0 text-sm focus:outline-none appearance-none cursor-pointer min-w-[100px]"
-                    >
-                      {Array.from({ length: 24 }, (_, i) => {
-                        const hour = i.toString().padStart(2, '0')
-                        return (
-                          <option key={`pickup-${hour}`} value={`${hour}:00`}>
-                            {hour}:00
-                          </option>
-                        )
-                      })}
-                    </select>
-                    <IoTimeOutline className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
-                  </div>
-                  
-                  <div className="w-px h-6 bg-gray-300 dark:bg-gray-600" />
-                  
-                  {/* Return Time */}
-                  <div className="relative">
-                    <select
-                      value={returnTime}
-                      onChange={(e) => handleSearchUpdate({ returnTime: e.target.value })}
-                      className="h-10 pl-3 pr-3 bg-transparent border-0 text-sm focus:outline-none appearance-none cursor-pointer min-w-[80px]"
-                    >
-                      {Array.from({ length: 24 }, (_, i) => {
-                        const hour = i.toString().padStart(2, '0')
-                        return (
-                          <option key={`return-${hour}`} value={`${hour}:00`}>
-                            {hour}:00
-                          </option>
-                        )
-                      })}
-                    </select>
-                  </div>
-                </div>
+                
+                {/* Availability Filter */}
+                <select
+                  value={filters.availability}
+                  onChange={(e) => setFilters(prev => ({ ...prev, availability: e.target.value }))}
+                  className="h-10 px-4 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 appearance-none cursor-pointer min-w-[140px]"
+                >
+                  <option value="all">All Cars</option>
+                  <option value="available">Fully Available</option>
+                  <option value="partial">Partial Availability</option>
+                </select>
 
                 {/* Car Type Quick Filter */}
                 {carTypes.slice(0, 4).map(type => (
@@ -503,7 +412,19 @@ function SearchResultsContent() {
             <div className="px-4 sm:px-6 lg:px-8 py-2 text-sm text-gray-600 dark:text-gray-400 border-t border-gray-100 dark:border-gray-700">
               {!isLoading && (
                 <>
-                  <span className="font-medium text-gray-900 dark:text-white">{totalCount}</span> car{totalCount !== 1 ? 's' : ''} available
+                  <span className="font-medium text-gray-900 dark:text-white">{filteredCars.length}</span> car{filteredCars.length !== 1 ? 's' : ''} 
+                  {searchMetadata && (
+                    <>
+                      <span className="mx-2">•</span>
+                      <span className="text-green-600 dark:text-green-400">{searchMetadata.fullyAvailable || 0} fully available</span>
+                      {searchMetadata.partiallyAvailable > 0 && (
+                        <>
+                          <span className="mx-2">•</span>
+                          <span className="text-yellow-600 dark:text-yellow-400">{searchMetadata.partiallyAvailable} partial</span>
+                        </>
+                      )}
+                    </>
+                  )}
                   <span className="mx-2">•</span>
                   {format(parseISO(pickupDate), 'MMM d')} - {format(parseISO(returnDate), 'MMM d')}
                   <span className="mx-2">•</span>
@@ -519,9 +440,9 @@ function SearchResultsContent() {
           {/* Conditionally render Map or Grid view */}
           {showMap ? (
             <MapContainer
-              cars={sortedCars}
-              searchLocation={getLocationCoordinates(location)}
-              userLocation={userLocation}
+              cars={filteredCars}
+              searchLocation={searchMetadata?.searchCoordinates || { latitude: 33.4484, longitude: -112.0740 }}
+              userLocation={searchMetadata?.searchCoordinates}
               rentalDays={rentalDays}
               isLoading={isLoading}
             />
@@ -534,7 +455,7 @@ function SearchResultsContent() {
                     <CarCardSkeleton key={i} />
                   ))}
                 </div>
-              ) : sortedCars.length === 0 ? (
+              ) : filteredCars.length === 0 ? (
                 <div className="text-center py-12">
                   <IoCarOutline className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
@@ -552,7 +473,7 @@ function SearchResultsContent() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {sortedCars.map((car) => (
+                  {filteredCars.map((car) => (
                     <Link
                       key={car.id}
                       href={`/rentals/${car.id}`}
@@ -580,11 +501,7 @@ function SearchResultsContent() {
                               INSTANT BOOK
                             </span>
                           )}
-                          {car.host && (
-                            <span className="px-3 py-1 bg-black/80 backdrop-blur-sm text-white text-xs font-bold rounded-full shadow-lg">
-                              LOCAL HOST
-                            </span>
-                          )}
+                          {getAvailabilityBadge(car)}
                         </div>
 
                         {/* Price Badge */}
@@ -636,37 +553,51 @@ function SearchResultsContent() {
                                   <IoStarOutline key={i} className="w-3.5 h-3.5 text-gray-300" />
                                 ))}
                               </div>
-                              <span className="text-gray-500">No reviews</span>
+                              <span className="text-gray-500">New</span>
                             </div>
                           )}
                           
                           {/* Trip Count */}
                           <span className="text-gray-600 dark:text-gray-400 flex items-center gap-1">
                             <IoCarSportOutline className="w-3.5 h-3.5" />
-                            {car.trips || car.host?.totalTrips || car.totalTrips || 0 > 0 ? (
-                              <>{car.trips || car.host?.totalTrips || car.totalTrips || 0} trips</>
+                            {car.trips || 0 > 0 ? (
+                              <>{car.trips || 0} trips</>
                             ) : (
                               <>New listing</>
                             )}
                           </span>
                         </div>
 
-                        {/* Location with Distance - Bottom section with border */}
+                        {/* Availability Info (for partial) */}
+                        {car.availability?.isPartiallyAvailable && (
+                          <div className="mb-3 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                            <p className="text-xs text-yellow-800 dark:text-yellow-400 font-medium">
+                              {car.availability.label}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Location with Distance - Bottom section */}
                         <div className="pt-3 border-t-2 border-gray-200 dark:border-gray-600">
                           <div className="flex items-center justify-between text-sm">
                             <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400 font-medium">
                               <IoLocationOutline className="w-3.5 h-3.5" />
                               <span>
-                                {car.distance || 
-                                 (car.location?.lat && car.location?.lng 
-                                   ? calculateDistance(car.location.lat, car.location.lng, car.id)
-                                   : `${car.location?.city || 'Phoenix'} area`)}
+                                {car.location?.distanceText || `${car.location?.city || 'Phoenix'} area`}
                               </span>
                             </div>
                             <span className="text-green-600 dark:text-green-400 font-medium">
-                              View
+                              View →
                             </span>
                           </div>
+                          
+                          {/* Free Delivery Badge */}
+                          {car.location?.withinFreeDelivery && (
+                            <div className="mt-2 flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                              <IoCheckmarkCircleOutline className="w-3.5 h-3.5" />
+                              <span>Free delivery available</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </Link>
@@ -689,7 +620,7 @@ export default function SearchResultsPage() {
     <Suspense fallback={
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <IoCarOutline className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <IoCarOutline className="w-16 h-16 text-gray-400 mx-auto mb-4 animate-pulse" />
           <p className="text-gray-600 dark:text-gray-400">Loading cars...</p>
         </div>
       </div>
