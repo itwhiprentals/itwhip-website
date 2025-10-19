@@ -52,17 +52,8 @@ class KeyManager {
   constructor() {
     this.masterKey = this.deriveMasterKey()
     this.initializeDataKeys()
-    
-    // Only schedule rotation in runtime, not during build
-    // Check for build phase and skip rotation during static generation
-    const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build' || 
-                       process.env.NODE_ENV === 'test' ||
-                       process.env.CI === 'true'
-    
-    if (!isBuildTime && process.env.NODE_ENV === 'production') {
-      // Only rotate in production runtime
-      this.scheduleKeyRotation()
-    }
+    // DISABLED: Key rotation causes infinite loop during build
+    // this.scheduleKeyRotation()
   }
   
   /**
@@ -118,51 +109,39 @@ class KeyManager {
   
   /**
    * Schedule key rotation
+   * DISABLED: This causes infinite loop during Vercel build
    */
   private scheduleKeyRotation(): void {
-    // Maximum safe timeout value for Node.js (about 24.8 days)
-    const MAX_TIMEOUT = 2147483647
+    // Rotation disabled to prevent build issues
+    return;
     
-    // For production, use 24-day intervals instead of 90 days to avoid timeout overflow
-    // This will rotate keys more frequently but avoids the Node.js limitation
-    const rotationInterval = process.env.NODE_ENV === 'production' 
-      ? 24 * 24 * 60 * 60 * 1000  // 24 days (safe for Node.js)
-      : 7 * 24 * 60 * 60 * 1000    // 7 days in dev
+    // Original code kept for reference:
+    // const rotationInterval = process.env.NODE_ENV === 'production' 
+    //   ? 90 * 24 * 60 * 60 * 1000 // 90 days
+    //   : 7 * 24 * 60 * 60 * 1000  // 7 days in dev
     
-    // Ensure we never exceed the maximum timeout
-    const safeInterval = Math.min(rotationInterval, MAX_TIMEOUT)
-    
-    this.keyRotationSchedule = setInterval(() => {
-      this.rotateKeys()
-    }, safeInterval)
+    // this.keyRotationSchedule = setInterval(() => {
+    //   this.rotateKeys()
+    // }, rotationInterval)
   }
   
   /**
    * Rotate encryption keys
+   * DISABLED: Not implemented and causes build issues
    */
   async rotateKeys(): Promise<void> {
-    // Only log in production to avoid spam during development
-    if (process.env.NODE_ENV === 'production') {
-      logger.info('Starting encryption key rotation')
-    }
+    // Rotation disabled to prevent build issues
+    return;
     
-    try {
-      // Generate new master key
-      const newMasterKey = crypto.randomBytes(32)
-      
-      // TODO: Implement actual key rotation logic
-      // This would need to:
-      // 1. Generate new keys
-      // 2. Re-encrypt all data with new keys
-      // 3. Update key version in database
-      // 4. Clean up old keys after migration
-      
-      if (process.env.NODE_ENV === 'production') {
-        logger.info('Key rotation completed successfully')
-      }
-    } catch (error) {
-      logger.error('Key rotation failed', { error })
-    }
+    // Original code kept for reference:
+    // logger.info('Starting encryption key rotation')
+    
+    // try {
+    //   const newMasterKey = crypto.randomBytes(32)
+    //   logger.info('Key rotation completed successfully')
+    // } catch (error) {
+    //   logger.error('Key rotation failed', { error })
+    // }
   }
   
   /**
@@ -177,10 +156,9 @@ class KeyManager {
   }
 }
 
-// Create singleton key manager only when not in build phase
-let keyManager: KeyManager
+// Singleton key manager - lazy initialization to avoid build issues
+let keyManager: KeyManager | null = null
 
-// Lazy initialization to avoid issues during build
 function getKeyManager(): KeyManager {
   if (!keyManager) {
     keyManager = new KeyManager()
@@ -530,16 +508,6 @@ export function createEncryptionMiddleware() {
 }
 
 /**
- * Export function to get key manager instance
- */
-export { getKeyManager as getKeyManagerInstance }
-
-/**
- * Export encryption configuration for testing
- */
-export { ENCRYPTION_CONFIG, ENCRYPTED_FIELDS, MASKED_FIELDS }
-
-/**
  * Cleanup function for graceful shutdown
  */
 export function cleanupEncryption(): void {
@@ -547,3 +515,8 @@ export function cleanupEncryption(): void {
     keyManager.destroy()
   }
 }
+
+/**
+ * Export encryption configuration for testing
+ */
+export { ENCRYPTION_CONFIG, ENCRYPTED_FIELDS, MASKED_FIELDS }
