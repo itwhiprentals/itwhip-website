@@ -16,7 +16,7 @@ import type {
 import { getRolePermissions, getRoleTier } from './rbac'
 
 // Initialize Prisma
-const prisma = new PrismaClient()
+// Using shared prisma instance
 
 // ============================================================================
 // CONFIGURATION

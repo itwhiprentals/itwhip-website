@@ -3,7 +3,7 @@
  * Implements immutable audit trails, hash chaining, and compliance reporting
  */
 
-import { PrismaClient } from '@prisma/client'
+import { prisma } from "@/app/lib/database/prisma"
 import { createHash, randomBytes } from 'crypto'
 import type {
   AuditLog,
@@ -16,7 +16,7 @@ import type { User, Permission } from '@/app/types/auth'
 import { sanitizeForLogging } from '../security/encryption'
 
 // Initialize Prisma
-const prisma = new PrismaClient()
+// Using shared prisma instance
 
 // ============================================================================
 // CONFIGURATION

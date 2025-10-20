@@ -1,8 +1,8 @@
 // app/api/rentals/similar/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from "@/app/lib/database/prisma"
 
-const prisma = new PrismaClient()
+// Using shared prisma instance
 
 export async function GET(request: NextRequest) {
   try {

@@ -8,7 +8,7 @@ import { PrismaClient } from '@/app/lib/dal/types'
 import type { RequestSignature } from '@/app/types/security'
 
 // Initialize Prisma
-const prisma = new PrismaClient()
+// Using shared prisma instance
 
 // ============================================================================
 // CONFIGURATION
