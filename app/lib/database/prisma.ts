@@ -31,7 +31,7 @@ const prismaClientSingleton = () => {
     datasources: {
       db: {
         // Use pooled connection for Neon (better performance)
-        url: process.env.DATABASE_URL_POOLED || process.env.DATABASE_URL,
+        url: process.env.DATABASE_URL,
       },
     },
   })
