@@ -36,7 +36,7 @@ export default function BookingDetailsPage() {
   const [showCancelDialog, setShowCancelDialog] = useState(false)
   const [previousStatus, setPreviousStatus] = useState<string | null>(null)
 
-  // Load booking data
+  // ✅ FIXED: Load booking data - removed booking from dependencies
   const loadBooking = useCallback(async () => {
     try {
       const response = await fetch(`/api/rentals/user-bookings?bookingId=${bookingId}`)
@@ -45,15 +45,17 @@ export default function BookingDetailsPage() {
         if (data.bookings && data.bookings.length > 0) {
           const newBooking = data.bookings[0]
           
-          // Check for status change
-          if (booking && booking.status !== newBooking.status) {
-            if (newBooking.status === 'CONFIRMED' && booking.status === 'PENDING') {
-              // Booking was just approved!
-              showApprovalNotification()
+          // ✅ FIXED: Use functional update to avoid dependency on booking
+          setBooking(prevBooking => {
+            // Check for status change
+            if (prevBooking && prevBooking.status !== newBooking.status) {
+              if (newBooking.status === 'CONFIRMED' && prevBooking.status === 'PENDING') {
+                // Booking was just approved!
+                showApprovalNotification()
+              }
             }
-          }
-          
-          setBooking(newBooking)
+            return newBooking
+          })
         }
       }
     } catch (error) {
@@ -62,12 +64,12 @@ export default function BookingDetailsPage() {
     } finally {
       setLoading(false)
     }
-  }, [bookingId, booking])
+  }, [bookingId]) // ✅ Only bookingId in dependencies
 
   // Handle file upload
   const handleFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (!file || !booking) return
+    if (!file) return
 
     const validation = validateFileUpload(file)
     if (!validation.valid) {
@@ -82,9 +84,11 @@ export default function BookingDetailsPage() {
       const formData = new FormData()
       formData.append('file', file)
 
+      // Get current booking email from state
+      const currentBooking = booking
       const headers: HeadersInit = {}
-      if (booking.guestEmail) {
-        headers['x-guest-email'] = booking.guestEmail
+      if (currentBooking?.guestEmail) {
+        headers['x-guest-email'] = currentBooking.guestEmail
       }
 
       const response = await fetch(`/api/rentals/bookings/${bookingId}/upload`, {
@@ -113,14 +117,15 @@ export default function BookingDetailsPage() {
 
   // Handle cancellation
   const handleCancellation = useCallback(async (reason: string) => {
-    if (!booking) return
+    const currentBooking = booking
+    if (!currentBooking) return
     
     try {
       const response = await fetch(`/api/rentals/bookings/${bookingId}/cancel`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-guest-email': booking.guestEmail || ''
+          'x-guest-email': currentBooking.guestEmail || ''
         },
         body: JSON.stringify({
           reason: reason || 'Guest requested cancellation',
@@ -185,17 +190,19 @@ export default function BookingDetailsPage() {
     setPreviousStatus(booking?.status || null)
   }, [booking?.status, previousStatus])
 
-  // Initial load and polling
+  // ✅ FIXED: Initial load and polling - only depend on bookingId
   useEffect(() => {
     loadBooking()
     
     // Poll for booking updates
-    const bookingInterval = setInterval(loadBooking, BOOKING_POLLING_INTERVAL)
+    const bookingInterval = setInterval(() => {
+      loadBooking()
+    }, BOOKING_POLLING_INTERVAL)
     
     return () => {
       clearInterval(bookingInterval)
     }
-  }, [loadBooking])
+  }, [bookingId]) // ✅ Only bookingId, loadBooking is stable now
 
   // Loading state
   if (loading) {
