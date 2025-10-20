@@ -428,3 +428,25 @@ textarea:focus {
 .border-success { border-color: var(--success); }
 .border-dark { border-color: var(--dark); }
 .border-light { border-color: var(--light); }
+/* ============================================
+   FIX: Prevent mobile zoom on input focus
+   ============================================
+   iOS Safari zooms in on inputs < 16px
+   This prevents that annoying behavior
+   ============================================ */
+input,
+textarea,
+select {
+  font-size: 16px !important;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="tel"],
+input[type="number"],
+input[type="search"],
+textarea {
+  font-size: 16px !important;
+  font-size: max(16px, 1rem) !important;
+}
