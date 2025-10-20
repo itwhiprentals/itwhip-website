@@ -5,7 +5,7 @@ import RentalSearchCard from '@/app/(guest)/components/hero/RentalSearchWidget'
 
 export default function HeroSection() {
   return (
-    <section className="relative min-h-[70vh] md:min-h-[85vh] flex items-center justify-center overflow-hidden bg-black">
+    <section className="relative min-h-[45vh] md:min-h-[40vh] flex items-center justify-center overflow-hidden bg-black">
       {/* Video Background */}
       <div className="absolute inset-0 w-full h-full">
         <video 
@@ -24,13 +24,13 @@ export default function HeroSection() {
       {/* Gradient Overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/30 to-black/60" />
 
-      {/* Hero Content */}
-      <div className="relative z-10 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-3 md:mb-4 tracking-tight">
-          Your ride, your way
+      {/* Hero Content - Moved up with negative margin */}
+      <div className="relative z-10 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center -mt-12 sm:-mt-16">
+        <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-1 md:mb-1.5 tracking-tight">
+        Your Trip, Your Way.
         </h1>
-        <p className="text-lg sm:text-xl md:text-2xl text-gray-300 mb-8 md:mb-12 max-w-2xl mx-auto px-4">
-          Book directly from local Phoenix hosts and save big
+        <p className="text-base sm:text-lg md:text-xl text-gray-300 mb-2.5 md:mb-3 max-w-2xl mx-auto px-4">
+          
         </p>
 
         <div className="px-2 sm:px-0">
@@ -38,10 +38,10 @@ export default function HeroSection() {
         </div>
       </div>
       
-      {/* Scroll Indicator */}
-      <div className="absolute bottom-6 sm:bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-        <div className="w-6 h-10 border-2 border-white/30 rounded-full flex justify-center">
-          <div className="w-1 h-3 bg-white/60 rounded-full mt-2 animate-pulse" />
+      {/* Scroll Indicator - Now visible with more space */}
+      <div className="absolute bottom-4 sm:bottom-6 left-1/2 transform -translate-x-1/2 animate-bounce">
+        <div className="w-5 h-8 border-2 border-white/30 rounded-full flex justify-center">
+          <div className="w-1 h-2.5 bg-white/60 rounded-full mt-1.5 animate-pulse" />
         </div>
       </div>
     </section>
