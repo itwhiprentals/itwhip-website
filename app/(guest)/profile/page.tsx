@@ -153,10 +153,13 @@ function GuestProfileContent() {
     pushNotifications: true
   })
 
-  // Fetch profile on mount and when tab changes
+  // ✅ FIXED: Fetch profile only once on mount
   useEffect(() => {
     fetchProfile()
-    
+  }, [])
+
+  // ✅ FIXED: Handle tab changes separately
+  useEffect(() => {
     const tabParam = searchParams.get('tab')
     if (tabParam && ['profile', 'status', 'documents', 'insurance', 'payment', 'settings', 'reviews'].includes(tabParam)) {
       setActiveTab(tabParam as TabType)
@@ -383,7 +386,7 @@ function GuestProfileContent() {
           />
         </div>
 
-        {/* Verification Progress - ✅ UPDATED WITH EMAIL AND PHONE */}
+        {/* Verification Progress */}
         <div className="mb-4">
           <VerificationProgress
             documentsVerified={profile.documentsVerified}
