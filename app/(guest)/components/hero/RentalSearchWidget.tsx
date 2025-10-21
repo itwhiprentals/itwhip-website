@@ -1,9 +1,10 @@
 // app/(guest)/components/hero/RentalSearchWidget.tsx
-// Compact rental search card optimized for cinematic hero
+// Professional search with Portals - medium readable dropdowns
 
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { 
   IoLocationOutline, 
@@ -36,7 +37,9 @@ export default function RentalSearchCard({
   const [showTimeDropdown, setShowTimeDropdown] = useState<'pickup' | 'return' | null>(null)
   const [dateError, setDateError] = useState<string>('')
   const [isGettingLocation, setIsGettingLocation] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const timeDropdownRef = useRef<HTMLDivElement>(null)
+  const timeButtonRef = useRef<HTMLButtonElement>(null)
   
   // Location autocomplete state
   const [showLocationDropdown, setShowLocationDropdown] = useState(false)
@@ -48,6 +51,12 @@ export default function RentalSearchCard({
   })
   const locationInputRef = useRef<HTMLInputElement>(null)
   const locationDropdownRef = useRef<HTMLDivElement>(null)
+  
+  // Track if component is mounted (for Portal)
+  useEffect(() => {
+    setMounted(true)
+    return () => setMounted(false)
+  }, [])
   
   // Calculate defaults
   const getDefaultDates = () => {
@@ -94,7 +103,6 @@ export default function RentalSearchCard({
         setLocationResults(grouped)
         setShowLocationDropdown(true)
       } else {
-        // Show popular locations when empty
         const popular = getPopularLocations()
         const grouped = {
           airports: popular.filter(loc => loc.type === 'airport'),
@@ -110,7 +118,8 @@ export default function RentalSearchCard({
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (timeDropdownRef.current && !timeDropdownRef.current.contains(event.target as Node)) {
+      if (timeDropdownRef.current && !timeDropdownRef.current.contains(event.target as Node) &&
+          timeButtonRef.current && !timeButtonRef.current.contains(event.target as Node)) {
         setShowTimeDropdown(null)
       }
       
@@ -140,12 +149,7 @@ export default function RentalSearchCard({
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-        const { latitude, longitude } = position.coords
-        
-        // Use reverse geocoding to get city name
         try {
-          // For now, default to Phoenix since we're Phoenix-focused
-          // In production, you'd use Google Maps Geocoding API here
           const phoenixLocation = getPopularLocations().find(loc => loc.city === 'Phoenix' && loc.type === 'city')
           if (phoenixLocation) {
             handleLocationSelect(phoenixLocation)
@@ -197,7 +201,7 @@ export default function RentalSearchCard({
   
   // Format date for display
   const formatDate = (dateString: string) => {
-    if (!dateString) return 'Select date'
+    if (!dateString) return 'Select'
     const date = new Date(dateString)
     const options: Intl.DateTimeFormatOptions = { 
       month: 'short', 
@@ -206,7 +210,7 @@ export default function RentalSearchCard({
     return date.toLocaleDateString('en-US', options)
   }
 
-  // Format time for display
+  // Format time for display - FULL FORMAT (10:00 AM)
   const formatTime = (timeString: string) => {
     const [hour, minute] = timeString.split(':')
     const hourNum = parseInt(hour)
@@ -248,7 +252,7 @@ export default function RentalSearchCard({
     }
   }
 
-  // Calendar Component
+  // Calendar Component - RENDERED VIA PORTAL
   const CalendarModal = () => {
     const isPickup = calendarType === 'pickup'
     const currentDate = isPickup ? searchParams.pickupDate : searchParams.returnDate
@@ -286,24 +290,22 @@ export default function RentalSearchCard({
                        'July', 'August', 'September', 'October', 'November', 'December']
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
     
-    return (
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    const modalContent = (
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[99999] flex items-center justify-center p-4">
         <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-sm mx-auto shadow-2xl">
-          {/* Calendar Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white">
               {isPickup ? 'Pickup' : 'Return'} Date
             </h3>
             <button
               onClick={() => setShowCalendar(false)}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
             >
-              <IoCloseOutline className="w-5 h-5 text-gray-500" />
+              <IoCloseOutline className="w-4 h-4 text-gray-500" />
             </button>
           </div>
           
-          {/* Month Navigation */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-200 dark:border-gray-700">
             <button
               onClick={() => {
                 if (viewMonth.month === 0) {
@@ -312,11 +314,11 @@ export default function RentalSearchCard({
                   setViewMonth({ ...viewMonth, month: viewMonth.month - 1 })
                 }
               }}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+              className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
             >
-              <IoChevronBackOutline className="w-5 h-5" />
+              <IoChevronBackOutline className="w-4 h-4" />
             </button>
-            <span className="text-base font-medium text-gray-900 dark:text-white">
+            <span className="text-sm font-medium text-gray-900 dark:text-white">
               {monthNames[viewMonth.month]} {viewMonth.year}
             </span>
             <button
@@ -327,31 +329,26 @@ export default function RentalSearchCard({
                   setViewMonth({ ...viewMonth, month: viewMonth.month + 1 })
                 }
               }}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+              className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
             >
-              <IoChevronForwardOutline className="w-5 h-5" />
+              <IoChevronForwardOutline className="w-4 h-4" />
             </button>
           </div>
 
-          {/* Calendar Grid */}
-          <div className="p-4">
-            {/* Day Names */}
-            <div className="grid grid-cols-7 mb-2">
+          <div className="p-3">
+            <div className="grid grid-cols-7 mb-1.5">
               {dayNames.map(day => (
-                <div key={day} className="text-center text-xs font-medium text-gray-500 dark:text-gray-400 py-2">
+                <div key={day} className="text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 py-1.5">
                   {day}
                 </div>
               ))}
             </div>
             
-            {/* Days */}
-            <div className="grid grid-cols-7 gap-1">
-              {/* Empty cells for days before month starts */}
+            <div className="grid grid-cols-7 gap-0.5">
               {Array.from({ length: getFirstDayOfMonth(viewMonth.month, viewMonth.year) }).map((_, i) => (
-                <div key={`empty-${i}`} className="p-3" />
+                <div key={`empty-${i}`} className="p-2" />
               ))}
               
-              {/* Month days */}
               {Array.from({ length: getDaysInMonth(viewMonth.month, viewMonth.year) }).map((_, i) => {
                 const day = i + 1
                 const dateStr = new Date(viewMonth.year, viewMonth.month, day).toISOString().split('T')[0]
@@ -364,7 +361,7 @@ export default function RentalSearchCard({
                     key={day}
                     onClick={() => !isDisabled && handleDateSelect(day)}
                     disabled={isDisabled}
-                    className={`min-h-[44px] p-2 rounded-lg text-sm font-medium transition-colors
+                    className={`h-9 rounded-lg text-xs font-medium transition-colors
                       ${isSelected 
                         ? 'bg-black dark:bg-white text-white dark:text-black' 
                         : isToday
@@ -383,15 +380,39 @@ export default function RentalSearchCard({
         </div>
       </div>
     )
+
+    return mounted ? createPortal(modalContent, document.body) : null
   }
 
-  // Time Dropdown Component
+  // Time Dropdown Component - RENDERED VIA PORTAL
   const TimeDropdown = ({ type }: { type: 'pickup' | 'return' }) => {
     const currentTime = type === 'pickup' ? searchParams.pickupTime : searchParams.returnTime
     
-    return (
-      <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
-        <div className="p-2">
+    const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 })
+    
+    useEffect(() => {
+      if (timeButtonRef.current) {
+        const rect = timeButtonRef.current.getBoundingClientRect()
+        setDropdownPosition({
+          top: rect.bottom + window.scrollY,
+          left: rect.left + window.scrollX,
+          width: rect.width
+        })
+      }
+    }, [showTimeDropdown])
+    
+    const dropdownContent = (
+      <div 
+        ref={timeDropdownRef}
+        style={{
+          position: 'absolute',
+          top: `${dropdownPosition.top + 4}px`,
+          left: `${dropdownPosition.left}px`,
+          minWidth: `${dropdownPosition.width}px`,
+        }}
+        className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-[99999] max-h-[200px] overflow-y-auto"
+      >
+        <div className="p-1">
           {timeOptions.map((option) => (
             <button
               key={option.value}
@@ -403,9 +424,9 @@ export default function RentalSearchCard({
                 }
                 setShowTimeDropdown(null)
               }}
-              className={`w-full min-h-[44px] px-3 py-2.5 text-left rounded-lg text-sm transition-colors
+              className={`w-full h-8 px-2.5 py-1 text-left rounded-md text-[11px] transition-colors
                 ${currentTime === option.value
-                  ? 'bg-black dark:bg-white text-white dark:text-black'
+                  ? 'bg-black dark:bg-white text-white dark:text-black font-semibold'
                   : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
             >
@@ -415,43 +436,73 @@ export default function RentalSearchCard({
         </div>
       </div>
     )
+
+    return mounted ? createPortal(dropdownContent, document.body) : null
   }
 
-  // Location Dropdown Component
+  // Location Dropdown Component - RENDERED VIA PORTAL - IMPROVED HEIGHT
   const LocationDropdown = () => {
     const hasResults = locationResults.airports.length > 0 || locationResults.cities.length > 0
     
-    return (
+    const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0, openUpward: false })
+    
+    useEffect(() => {
+      if (locationInputRef.current && showLocationDropdown) {
+        const rect = locationInputRef.current.getBoundingClientRect()
+        const viewportHeight = window.innerHeight
+        const spaceBelow = viewportHeight - rect.bottom
+        const spaceAbove = rect.top
+        const dropdownHeight = 360 // max-height
+        
+        // Open upward if not enough space below but enough space above
+        const openUpward = spaceBelow < dropdownHeight && spaceAbove > spaceBelow
+        
+        setDropdownPosition({
+          top: openUpward ? rect.top + window.scrollY - dropdownHeight - 4 : rect.bottom + window.scrollY,
+          left: rect.left + window.scrollX,
+          width: rect.width,
+          openUpward
+        })
+      }
+    }, [showLocationDropdown])
+    
+    const dropdownContent = (
       <div 
         ref={locationDropdownRef}
-        className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto"
+        style={{
+          position: 'absolute',
+          top: `${dropdownPosition.top + 4}px`,
+          left: `${dropdownPosition.left}px`,
+          width: `${dropdownPosition.width}px`,
+        }}
+        className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-[99999] max-h-[340px] sm:max-h-[260px] overflow-y-auto"
       >
         {!hasResults ? (
-          <div className="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
+          <div className="p-3 text-center text-gray-500 dark:text-gray-400 text-xs">
             No locations found
           </div>
         ) : (
-          <div className="p-2">
+          <div className="p-1.5">
             {/* Airports Section */}
             {locationResults.airports.length > 0 && (
-              <div className="mb-2">
-                <div className="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <div className="mb-1.5">
+                <div className="px-2.5 py-1.5 text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Airports
                 </div>
                 {locationResults.airports.map((location) => (
                   <button
                     key={location.id}
                     onClick={() => handleLocationSelect(location)}
-                    className="w-full min-h-[44px] px-3 py-2.5 text-left rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-3"
+                    className="w-full min-h-[40px] px-2.5 py-2 text-left rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2.5"
                   >
-                    <div className="flex-shrink-0 w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                      <IoAirplaneOutline className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    <div className="flex-shrink-0 w-7 h-7 bg-blue-100 dark:bg-blue-900/30 rounded-md flex items-center justify-center">
+                      <IoAirplaneOutline className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                      <div className="text-[13px] font-semibold text-gray-900 dark:text-white truncate">
                         {location.iataCode} - {location.name}
                       </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                      <div className="text-[11px] text-gray-500 dark:text-gray-400">
                         {location.city}, {location.state}
                       </div>
                     </div>
@@ -463,23 +514,23 @@ export default function RentalSearchCard({
             {/* Cities Section */}
             {locationResults.cities.length > 0 && (
               <div>
-                <div className="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <div className="px-2.5 py-1.5 text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Cities
                 </div>
                 {locationResults.cities.map((location) => (
                   <button
                     key={location.id}
                     onClick={() => handleLocationSelect(location)}
-                    className="w-full min-h-[44px] px-3 py-2.5 text-left rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-3"
+                    className="w-full min-h-[40px] px-2.5 py-2 text-left rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2.5"
                   >
-                    <div className="flex-shrink-0 w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                      <IoBusinessOutline className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    <div className="flex-shrink-0 w-7 h-7 bg-gray-100 dark:bg-gray-700 rounded-md flex items-center justify-center">
+                      <IoBusinessOutline className="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                      <div className="text-[13px] font-semibold text-gray-900 dark:text-white truncate">
                         {location.name}
                       </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                      <div className="text-[11px] text-gray-500 dark:text-gray-400">
                         {location.city}, {location.state}
                       </div>
                     </div>
@@ -491,179 +542,174 @@ export default function RentalSearchCard({
         )}
       </div>
     )
+
+    return mounted && showLocationDropdown ? createPortal(dropdownContent, document.body) : null
   }
   
   return (
     <>
-      <div className="w-full max-w-5xl mx-auto px-4 sm:px-0">
-        <div className="bg-white dark:bg-gray-900 rounded-lg sm:rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
-          <div className="p-2 sm:p-2.5">
-            {/* Mobile: Stack vertically / Desktop: All in one line */}
-            <div className="flex flex-col sm:flex-row gap-1.5 sm:gap-1.5">
+      <div className="w-full max-w-5xl mx-auto px-4 sm:px-0 relative z-10">
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700">
+          <div className="p-1.5">
+            {/* Single line layout on desktop, stack on mobile */}
+            <div className="flex flex-col sm:flex-row gap-1">
               
-              {/* Location Field with Autocomplete + Use My Location */}
-              <div className="flex-1">
+              {/* Location Field - COMPACT */}
+              <div className="flex-1 sm:max-w-[240px]">
                 <div className="relative">
-                  <IoLocationOutline className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 z-10 pointer-events-none" />
+                  <IoLocationOutline className="absolute left-2 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
                   <input
                     ref={locationInputRef}
                     type="text"
                     value={locationQuery}
                     onChange={(e) => handleLocationInputChange(e.target.value)}
                     onFocus={() => setShowLocationDropdown(true)}
-                    placeholder="City or Airport"
-                    className="w-full min-h-[44px] pl-8 sm:pl-9 pr-20 sm:pr-24 py-2 
+                    placeholder="Where?"
+                    className="w-full h-[38px] pl-7 pr-14 
                       bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 
-                      text-gray-900 dark:text-white placeholder-gray-500
-                      rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white 
-                      transition-all text-sm"
+                      text-gray-900 dark:text-white placeholder-gray-400
+                      rounded-md focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white 
+                      transition-all text-[12px] font-medium"
                   />
-                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1 z-10">
+                  <div className="absolute right-1 top-1/2 transform -translate-y-1/2 flex items-center gap-0.5">
                     {locationQuery && (
                       <button
                         onClick={handleClearLocation}
                         className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
                       >
-                        <IoCloseOutline className="w-3.5 h-3.5 text-gray-500" />
+                        <IoCloseOutline className="w-3 h-3 text-gray-400" />
                       </button>
                     )}
                     <button
                       onClick={handleUseMyLocation}
                       disabled={isGettingLocation}
-                      className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                      className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
                       title="Use my location"
                     >
                       {isGettingLocation ? (
-                        <div className="w-3.5 h-3.5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                        <div className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
                       ) : (
-                        <IoNavigateOutline className="w-3.5 h-3.5 text-gray-500" />
+                        <IoNavigateOutline className="w-3 h-3 text-gray-400" />
                       )}
                     </button>
                   </div>
                   
-                  {/* Location Dropdown */}
                   {showLocationDropdown && <LocationDropdown />}
                 </div>
               </div>
               
-              {/* Pickup Field */}
-              <div className="flex-1 sm:min-w-[180px]">
+              {/* Pickup Field - COMPACT */}
+              <div className="flex-1 sm:max-w-[200px]">
                 <div className="flex gap-1">
-                  {/* Date Button */}
                   <button
                     onClick={() => {
                       setCalendarType('pickup')
                       setShowCalendar(true)
                     }}
-                    className="flex-1 min-h-[44px]"
+                    className="flex-1 h-[38px]"
                   >
-                    <div className="flex items-center px-2 sm:px-2.5 py-1.5 sm:py-2 
+                    <div className="flex items-center justify-between px-2 h-full
                       bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 
-                      hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors text-left h-full">
-                      <IoCalendarOutline className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mr-1.5 flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[9px] sm:text-[10px] text-gray-500 dark:text-gray-400">Pickup</p>
-                        <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white truncate">
-                          {formatDate(searchParams.pickupDate)}
-                        </p>
+                      hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors">
+                      <div className="flex items-center gap-1.5">
+                        <IoCalendarOutline className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                        <div className="text-left">
+                          <p className="text-[9px] text-gray-500 dark:text-gray-400 leading-none">Pickup</p>
+                          <p className="text-[12px] font-semibold text-gray-900 dark:text-white leading-tight mt-0.5">
+                            {formatDate(searchParams.pickupDate)}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </button>
                   
-                  {/* Time Button */}
-                  <div className="relative" ref={showTimeDropdown === 'pickup' ? timeDropdownRef : undefined}>
+                  <div className="relative">
                     <button
+                      ref={timeButtonRef}
                       onClick={() => setShowTimeDropdown(showTimeDropdown === 'pickup' ? null : 'pickup')}
-                      className="min-h-[44px]"
+                      className="h-[38px] px-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 
+                        hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors flex items-center gap-1"
                     >
-                      <div className="flex items-center px-1.5 sm:px-2 py-1.5 sm:py-2 h-full
-                        bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 
-                        hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
-                        <IoTimeOutline className="w-3.5 h-3.5 text-gray-400 mr-0.5 flex-shrink-0" />
-                        <span className="text-[11px] sm:text-xs font-medium text-gray-900 dark:text-white">
-                          {formatTime(searchParams.pickupTime)}
-                        </span>
-                        <IoChevronDownOutline className="w-3 h-3 text-gray-400 ml-0.5" />
-                      </div>
+                      <span className="text-[11px] font-semibold text-gray-900 dark:text-white whitespace-nowrap">
+                        {formatTime(searchParams.pickupTime)}
+                      </span>
+                      <IoChevronDownOutline className="w-3 h-3 text-gray-400" />
                     </button>
                     {showTimeDropdown === 'pickup' && <TimeDropdown type="pickup" />}
                   </div>
                 </div>
               </div>
               
-              {/* Return Field */}
-              <div className="flex-1 sm:min-w-[180px]">
+              {/* Return Field - COMPACT */}
+              <div className="flex-1 sm:max-w-[200px]">
                 <div className="flex gap-1">
-                  {/* Date Button */}
                   <button
                     onClick={() => {
                       setCalendarType('return')
                       setShowCalendar(true)
                     }}
-                    className="flex-1 min-h-[44px]"
+                    className="flex-1 h-[38px]"
                   >
-                    <div className={`flex items-center px-2 sm:px-2.5 py-1.5 sm:py-2 
-                      bg-white dark:bg-gray-800 border transition-colors text-left h-full rounded-lg
+                    <div className={`flex items-center justify-between px-2 h-full
+                      bg-white dark:bg-gray-800 border transition-colors rounded-md
                       ${dateError 
                         ? 'border-red-500 dark:border-red-400' 
                         : 'border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
                       }`}>
-                      <IoCalendarOutline className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mr-1.5 flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[9px] sm:text-[10px] text-gray-500 dark:text-gray-400">Return</p>
-                        <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white truncate">
-                          {formatDate(searchParams.returnDate)}
-                        </p>
+                      <div className="flex items-center gap-1.5">
+                        <IoCalendarOutline className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                        <div className="text-left">
+                          <p className="text-[9px] text-gray-500 dark:text-gray-400 leading-none">Return</p>
+                          <p className="text-[12px] font-semibold text-gray-900 dark:text-white leading-tight mt-0.5">
+                            {formatDate(searchParams.returnDate)}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </button>
                   
-                  {/* Time Button */}
-                  <div className="relative" ref={showTimeDropdown === 'return' ? timeDropdownRef : undefined}>
+                  <div className="relative">
                     <button
+                      ref={timeButtonRef}
                       onClick={() => setShowTimeDropdown(showTimeDropdown === 'return' ? null : 'return')}
-                      className="min-h-[44px]"
+                      className="h-[38px] px-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 
+                        hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors flex items-center gap-1"
                     >
-                      <div className="flex items-center px-1.5 sm:px-2 py-1.5 sm:py-2 h-full
-                        bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 
-                        hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
-                        <IoTimeOutline className="w-3.5 h-3.5 text-gray-400 mr-0.5 flex-shrink-0" />
-                        <span className="text-[11px] sm:text-xs font-medium text-gray-900 dark:text-white">
-                          {formatTime(searchParams.returnTime)}
-                        </span>
-                        <IoChevronDownOutline className="w-3 h-3 text-gray-400 ml-0.5" />
-                      </div>
+                      <span className="text-[11px] font-semibold text-gray-900 dark:text-white whitespace-nowrap">
+                        {formatTime(searchParams.returnTime)}
+                      </span>
+                      <IoChevronDownOutline className="w-3 h-3 text-gray-400" />
                     </button>
                     {showTimeDropdown === 'return' && <TimeDropdown type="return" />}
                   </div>
                 </div>
               </div>
               
-              {/* Search Button */}
+              {/* Search Button - COMPACT */}
               <button
                 onClick={handleSearch}
                 disabled={isLoading || !searchParams.location || !!dateError}
-                className={`min-h-[44px] px-3 sm:px-4 py-2 font-semibold rounded-lg 
-                  transition-all duration-200 whitespace-nowrap text-xs sm:text-sm flex items-center justify-center gap-1.5 ${
+                className={`h-[38px] px-4 font-semibold rounded-md 
+                  transition-all duration-200 whitespace-nowrap text-[12px] flex items-center justify-center gap-1.5 ${
                   searchParams.location && !dateError
-                    ? 'bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200' 
+                    ? 'bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 shadow-md' 
                     : 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
                 }`}
               >
                 {isLoading ? (
-                  <div className="w-4 h-4 border-2 border-white dark:border-black border-t-transparent rounded-full animate-spin" />
+                  <div className="w-3.5 h-3.5 border-2 border-white dark:border-black border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <>
-                    <IoSearchOutline className="w-4 h-4" />
-                    <span className="hidden sm:inline">Search</span>
+                    <IoSearchOutline className="w-3.5 h-3.5" />
+                    <span>Search</span>
                   </>
                 )}
               </button>
             </div>
             
-            {/* Date Error Message */}
+            {/* Date Error */}
             {dateError && (
-              <div className="mt-1.5 text-xs text-red-600 dark:text-red-400 px-1">
+              <div className="mt-1 text-[10px] text-red-600 dark:text-red-400 px-1">
                 {dateError}
               </div>
             )}
