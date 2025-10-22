@@ -1,5 +1,5 @@
 // app/(guest)/components/hero/search-components/LocationDropdown.tsx
-// Memoized dropdown with PORTAL rendering - floats above everything!
+// Memoized dropdown with PORTAL rendering + Click outside to close!
 
 'use client'
 
@@ -14,6 +14,7 @@ interface LocationDropdownProps {
   onSelect: (location: Location) => void
   isVisible: boolean
   inputRef: React.RefObject<HTMLInputElement>
+  onClose?: () => void
 }
 
 const LocationDropdown = memo(function LocationDropdown({
@@ -21,7 +22,8 @@ const LocationDropdown = memo(function LocationDropdown({
   cities,
   onSelect,
   isVisible,
-  inputRef
+  inputRef,
+  onClose
 }: LocationDropdownProps) {
   const [mounted, setMounted] = useState(false)
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 })
@@ -32,7 +34,7 @@ const LocationDropdown = memo(function LocationDropdown({
     return () => setMounted(false)
   }, [])
 
-  // Update position when dropdown opens or window resizes
+  // Update position ONLY when dropdown opens (not on every render)
   useEffect(() => {
     if (isVisible && inputRef.current) {
       const updatePosition = () => {
@@ -45,8 +47,10 @@ const LocationDropdown = memo(function LocationDropdown({
       }
 
       updatePosition()
+      
+      // Only update on resize/scroll, not on every keystroke
       window.addEventListener('resize', updatePosition)
-      window.addEventListener('scroll', updatePosition)
+      window.addEventListener('scroll', updatePosition, { passive: true })
       
       return () => {
         window.removeEventListener('resize', updatePosition)
@@ -55,20 +59,50 @@ const LocationDropdown = memo(function LocationDropdown({
     }
   }, [isVisible, inputRef])
 
-  if (!isVisible) return null
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    if (!isVisible || !onClose) return
+
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node
+      
+      // Check if click is inside the dropdown
+      const isDropdownClick = dropdownRef.current && dropdownRef.current.contains(target)
+      
+      // Check if click is inside the input
+      const isInputClick = inputRef.current && inputRef.current.contains(target)
+      
+      // If click is outside both, close the dropdown
+      if (!isDropdownClick && !isInputClick) {
+        onClose()
+      }
+    }
+
+    // Add listener with a small delay to prevent immediate closing when opening
+    const timer = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside)
+    }, 100)
+
+    return () => {
+      clearTimeout(timer)
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isVisible, onClose, inputRef])
+
+  if (!isVisible || !mounted) return null
   
   const hasResults = airports.length > 0 || cities.length > 0
 
   const dropdownContent = (
     <div
       ref={dropdownRef}
+      className="location-dropdown-portal bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-[99999] max-h-[340px] overflow-y-auto"
       style={{
         position: 'absolute',
         top: `${dropdownPosition.top + 4}px`,
         left: `${dropdownPosition.left}px`,
         width: `${dropdownPosition.width}px`,
       }}
-      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-[99999] max-h-[360px] sm:max-h-[260px] overflow-y-auto"
     >
       {!hasResults ? (
         <div className="p-3 text-center text-gray-500 dark:text-gray-400 text-xs">
@@ -87,6 +121,7 @@ const LocationDropdown = memo(function LocationDropdown({
                   key={location.id}
                   onClick={() => onSelect(location)}
                   className="w-full min-h-[40px] px-2.5 py-2 text-left rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2.5"
+                  type="button"
                 >
                   <div className="flex-shrink-0 w-7 h-7 bg-blue-100 dark:bg-blue-900/30 rounded-md flex items-center justify-center">
                     <IoAirplaneOutline className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
@@ -115,6 +150,7 @@ const LocationDropdown = memo(function LocationDropdown({
                   key={location.id}
                   onClick={() => onSelect(location)}
                   className="w-full min-h-[40px] px-2.5 py-2 text-left rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2.5"
+                  type="button"
                 >
                   <div className="flex-shrink-0 w-7 h-7 bg-gray-100 dark:bg-gray-700 rounded-md flex items-center justify-center">
                     <IoBusinessOutline className="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" />
@@ -136,7 +172,7 @@ const LocationDropdown = memo(function LocationDropdown({
     </div>
   )
 
-  return mounted ? createPortal(dropdownContent, document.body) : null
+  return createPortal(dropdownContent, document.body)
 })
 
 export default LocationDropdown

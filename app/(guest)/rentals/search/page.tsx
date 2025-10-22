@@ -294,16 +294,49 @@ function SearchResultsContent() {
   return (
     <>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        {/* Search Widget - Sticky on mobile/desktop */}
-        <div className="bg-white dark:bg-gray-800 sticky top-0 md:top-16 z-40 border-b border-gray-200 dark:border-gray-700 py-4">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <RentalSearchCard onSearch={handleSearchUpdate} variant="compact" />
+        {/* Search Widget - NOT sticky, scrolls away - WIDER CONTAINER */}
+        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 py-4">
+          <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
+            <RentalSearchCard 
+              onSearch={handleSearchUpdate} 
+              variant="compact"
+              initialLocation={location}
+              initialPickupDate={pickupDate}
+              initialReturnDate={returnDate}
+              initialPickupTime={pickupTime}
+              initialReturnTime={returnTime}
+            />
           </div>
         </div>
 
-        {/* Filter Bar */}
-        <div className="bg-white dark:bg-gray-800 sticky top-[88px] md:top-[152px] z-30 border-b border-gray-200 dark:border-gray-700">
+        {/* Filter Bar - ADJUSTED MOBILE STICKY - slightly lower to meet header edge perfectly */}
+        <div className="bg-white dark:bg-gray-800 sticky top-[60px] md:top-16 z-40 border-b border-gray-200 dark:border-gray-700">
           <div className="max-w-7xl mx-auto">
+            {/* Results Summary - NOW AT TOP */}
+            <div className="px-4 sm:px-6 lg:px-8 py-2 text-sm text-gray-600 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
+              {!isLoading && (
+                <>
+                  <span className="font-medium text-gray-900 dark:text-white">{filteredCars.length}</span> car{filteredCars.length !== 1 ? 's' : ''} 
+                  {searchMetadata && (
+                    <>
+                      <span className="mx-2">•</span>
+                      <span className="text-green-600 dark:text-green-400">{searchMetadata.fullyAvailable || 0} fully available</span>
+                      {searchMetadata.partiallyAvailable > 0 && (
+                        <>
+                          <span className="mx-2">•</span>
+                          <span className="text-yellow-600 dark:text-yellow-400">{searchMetadata.partiallyAvailable} partial</span>
+                        </>
+                      )}
+                    </>
+                  )}
+                  <span className="mx-2">•</span>
+                  {format(parseISO(pickupDate), 'MMM d')} - {format(parseISO(returnDate), 'MMM d')}
+                  <span className="mx-2">•</span>
+                  {rentalDays} day{rentalDays !== 1 ? 's' : ''}
+                </>
+              )}
+            </div>
+
             {/* Scrollable filter container */}
             <div className="overflow-x-auto">
               <div className="flex items-center gap-2 px-4 sm:px-6 lg:px-8 py-3 min-w-max">
@@ -407,31 +440,6 @@ function SearchResultsContent() {
                 )}
               </div>
             </div>
-
-            {/* Results Summary */}
-            <div className="px-4 sm:px-6 lg:px-8 py-2 text-sm text-gray-600 dark:text-gray-400 border-t border-gray-100 dark:border-gray-700">
-              {!isLoading && (
-                <>
-                  <span className="font-medium text-gray-900 dark:text-white">{filteredCars.length}</span> car{filteredCars.length !== 1 ? 's' : ''} 
-                  {searchMetadata && (
-                    <>
-                      <span className="mx-2">•</span>
-                      <span className="text-green-600 dark:text-green-400">{searchMetadata.fullyAvailable || 0} fully available</span>
-                      {searchMetadata.partiallyAvailable > 0 && (
-                        <>
-                          <span className="mx-2">•</span>
-                          <span className="text-yellow-600 dark:text-yellow-400">{searchMetadata.partiallyAvailable} partial</span>
-                        </>
-                      )}
-                    </>
-                  )}
-                  <span className="mx-2">•</span>
-                  {format(parseISO(pickupDate), 'MMM d')} - {format(parseISO(returnDate), 'MMM d')}
-                  <span className="mx-2">•</span>
-                  {rentalDays} day{rentalDays !== 1 ? 's' : ''}
-                </>
-              )}
-            </div>
           </div>
         </div>
 
@@ -476,7 +484,7 @@ function SearchResultsContent() {
                   {filteredCars.map((car) => (
                     <Link
                       key={car.id}
-                      href={`/rentals/${car.id}`}
+                      href={`/rentals/${car.id}?pickupDate=${pickupDate}&returnDate=${returnDate}`}
                       className="group bg-white dark:bg-gray-800 rounded-lg shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300"
                     >
                       {/* Car Image */}

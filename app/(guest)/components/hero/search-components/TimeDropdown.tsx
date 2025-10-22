@@ -1,8 +1,9 @@
 // app/(guest)/components/hero/search-components/TimeDropdown.tsx
+// WITH CLICK OUTSIDE TO CLOSE!
 
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 interface TimeDropdownProps {
@@ -10,15 +11,23 @@ interface TimeDropdownProps {
   currentTime: string
   onSelect: (time: string) => void
   buttonRef: React.RefObject<HTMLButtonElement>
+  onClose?: () => void
 }
 
 export default function TimeDropdown({
   isOpen,
   currentTime,
   onSelect,
-  buttonRef
+  buttonRef,
+  onClose
 }: TimeDropdownProps) {
+  const [mounted, setMounted] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    setMounted(true)
+    return () => setMounted(false)
+  }, [])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -27,21 +36,32 @@ export default function TimeDropdown({
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node
       
+      // Check if click is outside the dropdown
+      const isDropdownClick = (event.target as Element).closest('.time-dropdown-portal')
+      
       if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(target) &&
         buttonRef.current &&
-        !buttonRef.current.contains(target)
+        !buttonRef.current.contains(target) &&
+        !isDropdownClick
       ) {
-        // Don't close here, let parent handle it
+        if (onClose) {
+          onClose()
+        }
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [isOpen, buttonRef])
+    // Small delay to prevent immediate closing when opening
+    const timer = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside)
+    }, 100)
 
-  if (!isOpen) return null
+    return () => {
+      clearTimeout(timer)
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isOpen, buttonRef, onClose])
+
+  if (!isOpen || !mounted) return null
 
   // Calculate position
   const buttonRect = buttonRef.current?.getBoundingClientRect()
@@ -68,13 +88,13 @@ export default function TimeDropdown({
   const dropdownContent = (
     <div 
       ref={dropdownRef}
+      className="time-dropdown-portal bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-[99999] max-h-[200px] overflow-y-auto"
       style={{
         position: 'absolute',
         top: `${top}px`,
         left: `${left}px`,
         minWidth: `${minWidth}px`,
       }}
-      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-[99999] max-h-[200px] overflow-y-auto"
       onClick={(e) => e.stopPropagation()}
     >
       <div className="p-1">

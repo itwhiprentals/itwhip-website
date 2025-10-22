@@ -1,5 +1,5 @@
 // app/(guest)/components/hero/RentalSearchWidget.tsx
-// Refactored - Clean, modular, TIMEZONE & TIME SELECTION FIXED!
+// Refactored - Clean, modular, TIMEZONE & TIME SELECTION & LOCATION FIXED!
 
 'use client'
 
@@ -17,11 +17,22 @@ import SearchButton from './search-components/SearchButton'
 interface RentalSearchCardProps {
   onSearch?: (params: any) => void
   variant?: 'hero' | 'compact'
+  // NEW: Props for initial values
+  initialLocation?: string
+  initialPickupDate?: string
+  initialReturnDate?: string
+  initialPickupTime?: string
+  initialReturnTime?: string
 }
 
 export default function RentalSearchCard({ 
   onSearch,
-  variant = 'hero'
+  variant = 'hero',
+  initialLocation,
+  initialPickupDate,
+  initialReturnDate,
+  initialPickupTime,
+  initialReturnTime
 }: RentalSearchCardProps) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
@@ -56,13 +67,45 @@ export default function RentalSearchCard({
   
   const defaults = getDefaultDates()
   
+  // Helper to extract date from ISO string (handles "2025-10-22T10:00" format)
+  const extractDate = (dateString?: string) => {
+    if (!dateString) return ''
+    // If it has time component (T), extract just the date part
+    return dateString.split('T')[0]
+  }
+  
+  // Helper to extract time from ISO string (handles "2025-10-22T10:00" format)
+  const extractTime = (dateString?: string, defaultTime: string = '10:00') => {
+    if (!dateString) return defaultTime
+    // If it has time component (T), extract just the time part
+    const parts = dateString.split('T')
+    if (parts.length > 1) {
+      return parts[1].substring(0, 5) // Get HH:MM
+    }
+    return defaultTime
+  }
+  
   const [searchParams, setSearchParams] = useState({
-    location: '',
-    pickupDate: defaults.pickup,
-    pickupTime: '10:00',
-    returnDate: defaults.return,
-    returnTime: '10:00'
+    location: initialLocation || '',
+    pickupDate: extractDate(initialPickupDate) || defaults.pickup,
+    pickupTime: extractTime(initialPickupDate, initialPickupTime || '10:00'),
+    returnDate: extractDate(initialReturnDate) || defaults.return,
+    returnTime: extractTime(initialReturnDate, initialReturnTime || '10:00')
   })
+
+  // Update state when initial props change (for compact variant on search page)
+  useEffect(() => {
+    if (initialLocation !== undefined) {
+      setSearchParams(prev => ({
+        ...prev,
+        location: initialLocation,
+        pickupDate: extractDate(initialPickupDate) || prev.pickupDate,
+        pickupTime: extractTime(initialPickupDate, initialPickupTime || '10:00'),
+        returnDate: extractDate(initialReturnDate) || prev.returnDate,
+        returnTime: extractTime(initialReturnDate, initialReturnTime || '10:00')
+      }))
+    }
+  }, [initialLocation, initialPickupDate, initialReturnDate, initialPickupTime, initialReturnTime])
 
   // Date validation
   useEffect(() => {
@@ -78,8 +121,16 @@ export default function RentalSearchCard({
     }
   }, [searchParams.pickupDate, searchParams.pickupTime, searchParams.returnDate, searchParams.returnTime])
 
-  // Handle location selection
+  // Handle location change (from typing)
+  const handleLocationChange = (value: string) => {
+    console.log('🔄 Parent: Location changed to:', value)
+    setSearchParams(prev => ({ ...prev, location: value }))
+  }
+
+  // Handle location selection (from dropdown)
   const handleLocationSelect = (location: Location) => {
+    console.log('✅ Parent: Location selected:', location.name)
+    // This will update the location, which will flow back to LocationInput via the value prop
     setSearchParams(prev => ({ ...prev, location: location.name }))
   }
 
@@ -97,28 +148,16 @@ export default function RentalSearchCard({
     setShowCalendar(false)
   }
 
-  // Handle time selection - FIXED!
+  // Handle time selection
   const handlePickupTimeSelect = (time: string) => {
-    console.log('✅ PARENT: Pickup time selected:', time)
-    setSearchParams(prev => {
-      const newParams = { ...prev, pickupTime: time }
-      console.log('✅ PARENT: New state:', newParams)
-      return newParams
-    })
-    // Close dropdown after a tiny delay to ensure state updates
+    setSearchParams(prev => ({ ...prev, pickupTime: time }))
     setTimeout(() => {
       setShowTimeDropdown(null)
     }, 50)
   }
 
   const handleReturnTimeSelect = (time: string) => {
-    console.log('✅ PARENT: Return time selected:', time)
-    setSearchParams(prev => {
-      const newParams = { ...prev, returnTime: time }
-      console.log('✅ PARENT: New state:', newParams)
-      return newParams
-    })
-    // Close dropdown after a tiny delay to ensure state updates
+    setSearchParams(prev => ({ ...prev, returnTime: time }))
     setTimeout(() => {
       setShowTimeDropdown(null)
     }, 50)
@@ -172,22 +211,25 @@ export default function RentalSearchCard({
 
   return (
     <>
-      <div className="w-full max-w-5xl mx-auto px-4 sm:px-0 relative z-10">
+      {/* Conditional wrapper based on variant - hero gets max-w-5xl, compact gets full width */}
+      <div className={`w-full relative z-10 ${variant === 'hero' ? 'max-w-5xl mx-auto px-4 sm:px-0' : ''}`}>
         <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700">
           <div className="p-1.5">
-            {/* Single line layout on desktop, stack on mobile */}
+            {/* Single line layout on desktop, stack on mobile - ULTRA MAXIMIZED WIDTHS FOR COMPACT */}
             <div className="flex flex-col sm:flex-row gap-1">
               
-              {/* Location Field */}
-              <LocationInput
-                value={searchParams.location}
-                onChange={(value) => setSearchParams(prev => ({ ...prev, location: value }))}
-                onLocationSelect={handleLocationSelect}
-                placeholder="Where?"
-              />
+              {/* Location Field - ULTRA MAXIMIZED to 460px in compact */}
+              <div className={variant === 'compact' ? 'flex-1 sm:max-w-[460px]' : 'flex-1'}>
+                <LocationInput
+                  value={searchParams.location}
+                  onChange={handleLocationChange}
+                  onLocationSelect={handleLocationSelect}
+                  placeholder="Where?"
+                />
+              </div>
               
-              {/* Pickup Field */}
-              <div className="flex-1 sm:max-w-[200px]">
+              {/* Pickup Field - ULTRA MAXIMIZED to 360px in compact */}
+              <div className={variant === 'compact' ? 'flex-1 sm:max-w-[360px]' : 'flex-1 sm:max-w-[200px]'}>
                 <div className="flex gap-1">
                   <button
                     onClick={() => {
@@ -227,8 +269,8 @@ export default function RentalSearchCard({
                 </div>
               </div>
               
-              {/* Return Field */}
-              <div className="flex-1 sm:max-w-[200px]">
+              {/* Return Field - ULTRA MAXIMIZED to 360px in compact */}
+              <div className={variant === 'compact' ? 'flex-1 sm:max-w-[360px]' : 'flex-1 sm:max-w-[200px]'}>
                 <div className="flex gap-1">
                   <button
                     onClick={() => {
@@ -305,6 +347,7 @@ export default function RentalSearchCard({
         currentTime={searchParams.pickupTime}
         onSelect={handlePickupTimeSelect}
         buttonRef={pickupTimeButtonRef}
+        onClose={() => setShowTimeDropdown(null)}
       />
       
       <TimeDropdown
@@ -312,6 +355,7 @@ export default function RentalSearchCard({
         currentTime={searchParams.returnTime}
         onSelect={handleReturnTimeSelect}
         buttonRef={returnTimeButtonRef}
+        onClose={() => setShowTimeDropdown(null)}
       />
     </>
   )

@@ -2,7 +2,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { 
   IoCalendarOutline,
@@ -76,21 +76,53 @@ function getArizonaDateString(daysToAdd: number = 0): string {
   return `${year}-${month}-${day}`
 }
 
+// Helper to extract date and time from ISO datetime string
+function extractDateAndTime(isoString: string): { date: string; time: string } {
+  if (!isoString) {
+    return { date: '', time: '10:00' }
+  }
+  
+  // Handle both "YYYY-MM-DDTHH:MM" and "YYYY-MM-DD" formats
+  const parts = isoString.split('T')
+  const date = parts[0] || ''
+  const time = parts[1] ? parts[1].substring(0, 5) : '10:00'
+  
+  return { date, time }
+}
+
 export default function BookingWidget({ car, isBookable = true, suspensionMessage }: BookingWidgetProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
   const [showFloatingPrice, setShowFloatingPrice] = useState(false)
   const widgetRef = useRef<HTMLDivElement>(null)
   
-  // Use Arizona dates (local time, not UTC)
+  // Read search params from URL
+  const pickupDateParam = searchParams.get('pickupDate') || ''
+  const returnDateParam = searchParams.get('returnDate') || ''
+  
+  // Extract dates and times from URL params
+  const { date: pickupDateFromUrl, time: pickupTimeFromUrl } = extractDateAndTime(pickupDateParam)
+  const { date: returnDateFromUrl, time: returnTimeFromUrl } = extractDateAndTime(returnDateParam)
+  
+  // Use defaults if no URL params
   const today = getArizonaDateString(0)
   const tomorrow = getArizonaDateString(1)
   const defaultEndDate = getArizonaDateString(3)
   
-  const [startDate, setStartDate] = useState(tomorrow)
-  const [endDate, setEndDate] = useState(defaultEndDate)
-  const [startTime, setStartTime] = useState('10:00')
-  const [endTime, setEndTime] = useState('10:00')
+  // Initialize with URL params or defaults
+  const [startDate, setStartDate] = useState(pickupDateFromUrl || tomorrow)
+  const [endDate, setEndDate] = useState(returnDateFromUrl || defaultEndDate)
+  const [startTime, setStartTime] = useState(pickupTimeFromUrl || '10:00')
+  const [endTime, setEndTime] = useState(returnTimeFromUrl || '10:00')
+  
+  // Update state when URL params change
+  useEffect(() => {
+    if (pickupDateFromUrl) setStartDate(pickupDateFromUrl)
+    if (returnDateFromUrl) setEndDate(returnDateFromUrl)
+    if (pickupTimeFromUrl) setStartTime(pickupTimeFromUrl)
+    if (returnTimeFromUrl) setEndTime(returnTimeFromUrl)
+  }, [pickupDateFromUrl, returnDateFromUrl, pickupTimeFromUrl, returnTimeFromUrl])
   
   // Collapsible sections
   const [showDelivery, setShowDelivery] = useState(false)
