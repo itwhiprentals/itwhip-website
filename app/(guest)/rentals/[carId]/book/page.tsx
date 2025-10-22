@@ -7,17 +7,22 @@ import {
   IoArrowBackOutline,
   IoShieldCheckmarkOutline,
   IoCheckmarkOutline,
+  IoCheckmarkCircle,
   IoDocumentTextOutline,
   IoCameraOutline,
   IoCardOutline,
   IoPersonOutline,
   IoInformationCircleOutline,
   IoLockClosedOutline,
-  IoEyeOutline
+  IoEyeOutline,
+  IoWarningOutline,
+  IoCloseCircle,
+  IoSparklesOutline,
+  IoBanOutline
 } from 'react-icons/io5'
 import { format } from 'date-fns'
 
-// Import ALL modal components from the modals directory
+// Import modal components
 import RentalAgreementModal from '@/app/(guest)/rentals/components/modals/RentalAgreementModal'
 import InsuranceRequirementsModal from '@/app/(guest)/rentals/components/modals/InsuranceRequirementsModal'
 import TrustSafetyModal from '@/app/(guest)/rentals/components/modals/TrustSafetyModal'
@@ -83,6 +88,44 @@ interface SavedBookingDetails {
   }
 }
 
+interface ReviewerProfile {
+  id: string
+  email: string
+  name: string
+  phone?: string
+  driversLicenseUrl?: string
+  selfieUrl?: string
+  documentsVerified: boolean
+  documentVerifiedAt?: string
+  isVerified: boolean
+  fullyVerified: boolean
+  canInstantBook: boolean
+  
+  // Insurance data
+  insuranceProvider?: string
+  insurancePolicyNumber?: string
+  insuranceVerified?: boolean
+  insuranceCardUrl?: string
+  insuranceExpires?: string
+}
+
+interface ModerationStatus {
+  accountStatus: string
+  hasActiveIssues: boolean
+  activeWarningCount: number
+  suspension?: {
+    level: string
+    reason: string
+    isPermanent: boolean
+  }
+  restrictions: {
+    canBookLuxury: boolean
+    canBookPremium: boolean
+    requiresManualApproval: boolean
+    canInstantBook: boolean
+  }
+}
+
 // ============================================
 // MAIN COMPONENT
 // ============================================
@@ -91,10 +134,22 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
   const router = useRouter()
   const { carId } = use(params)
   
+  // ✅ FIXED: Use direct state instead of useCustomSession hook
+  const [session, setSession] = useState<{ user: { id: string; email: string; name: string; role: string } } | null>(null)
+  const [sessionStatus, setSessionStatus] = useState<'loading' | 'authenticated' | 'unauthenticated'>('loading')
+  
+  // Core states
   const [car, setCar] = useState<RentalCarWithDetails | null>(null)
   const [savedBookingDetails, setSavedBookingDetails] = useState<SavedBookingDetails | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isProcessing, setIsProcessing] = useState(false)
+  
+  // User profile states
+  const [userProfile, setUserProfile] = useState<ReviewerProfile | null>(null)
+  const [moderationStatus, setModerationStatus] = useState<ModerationStatus | null>(null)
+  const [profileLoading, setProfileLoading] = useState(true)
+  
+  // Modal states
   const [showRentalAgreement, setShowRentalAgreement] = useState(false)
   const [showInsuranceModal, setShowInsuranceModal] = useState(false)
   const [showTrustSafetyModal, setShowTrustSafetyModal] = useState(false)
@@ -142,8 +197,267 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
   const [driverPhone, setDriverPhone] = useState('')
   const [driverEmail, setDriverEmail] = useState('')
   
-  // Check if all documents are uploaded
-  const allDocumentsUploaded = licenseUploaded && insuranceUploaded && selfieUploaded
+  // ============================================
+  // ✅ FIXED: CHECK AUTHENTICATION DIRECTLY
+  // ============================================
+  
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/auth/verify', {
+          method: 'GET',
+          credentials: 'include',
+        })
+
+        if (response.ok) {
+          const userData = await response.json()
+          setSession({ user: userData.user })
+          setSessionStatus('authenticated')
+        } else {
+          setSession(null)
+          setSessionStatus('unauthenticated')
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error)
+        setSession(null)
+        setSessionStatus('unauthenticated')
+      }
+    }
+
+    checkAuth()
+  }, [])
+  
+  // ============================================
+  // FETCH USER PROFILE AND MODERATION STATUS
+  // ============================================
+  
+  useEffect(() => {
+    const fetchUserData = async () => {
+      console.log('🔍 fetchUserData called')
+      console.log('📧 Session:', session)
+      console.log('⏳ Session status:', sessionStatus)
+      
+      // Wait for session to load
+      if (sessionStatus === 'loading') {
+        console.log('⏳ Session still loading...')
+        return
+      }
+      
+      // Only fetch if user is logged in
+      if (session?.user?.email) {
+        console.log('✅ User is logged in:', session.user.email)
+        
+        try {
+          setProfileLoading(true)
+          
+          console.log('📡 Fetching profile and moderation data...')
+          
+          // Fetch profile and moderation data in parallel
+          const [profileRes, moderationRes] = await Promise.all([
+            fetch('/api/guest/profile', { credentials: 'include' }),
+            fetch('/api/guest/moderation', { credentials: 'include' })
+          ])
+          
+          console.log('📥 Profile response status:', profileRes.status)
+          console.log('📥 Moderation response status:', moderationRes.status)
+          
+          if (profileRes.ok) {
+            const response = await profileRes.json()
+            console.log('📦 Profile API response:', response)
+            
+            const profileData = response.profile
+            console.log('👤 Profile data extracted:', profileData)
+            
+            setUserProfile(profileData)
+            
+            // Auto-fill form fields from profile
+            if (profileData.name) {
+              const nameParts = profileData.name.split(' ')
+              setDriverFirstName(nameParts[0] || '')
+              setDriverLastName(nameParts.slice(1).join(' ') || '')
+              setGuestName(profileData.name)
+              console.log('✅ Name auto-filled:', profileData.name)
+            }
+            if (profileData.email) {
+              setDriverEmail(profileData.email)
+              setGuestEmail(profileData.email)
+              console.log('✅ Email auto-filled:', profileData.email)
+            }
+            if (profileData.phone) {
+              setDriverPhone(profileData.phone)
+              setGuestPhone(profileData.phone)
+              console.log('✅ Phone auto-filled:', profileData.phone)
+            }
+            
+            // Auto-fill document URLs if verified
+            if (profileData.documentsVerified) {
+              console.log('✅ Documents are verified!')
+              if (profileData.driversLicenseUrl) {
+                setLicensePhotoUrl(profileData.driversLicenseUrl)
+                setLicenseUploaded(true)
+                console.log('✅ License URL set:', profileData.driversLicenseUrl)
+              }
+              if (profileData.selfieUrl) {
+                setSelfiePhotoUrl(profileData.selfieUrl)
+                setSelfieUploaded(true)
+                console.log('✅ Selfie URL set:', profileData.selfieUrl)
+              }
+              if (profileData.insuranceCardUrl) {
+                setInsurancePhotoUrl(profileData.insuranceCardUrl)
+                setInsuranceUploaded(true)
+                console.log('✅ Insurance card URL set:', profileData.insuranceCardUrl)
+              }
+            } else {
+              console.log('⚠️ Documents NOT verified')
+            }
+          } else {
+            const errorText = await profileRes.text()
+            console.error('❌ Profile API failed:', profileRes.status, errorText)
+          }
+          
+          if (moderationRes.ok) {
+            const moderationData = await moderationRes.json()
+            console.log('🛡️ Moderation data:', moderationData)
+            setModerationStatus(moderationData)
+          } else {
+            const errorText = await moderationRes.text()
+            console.error('❌ Moderation API failed:', moderationRes.status, errorText)
+          }
+        } catch (error) {
+          console.error('💥 Error fetching user data:', error)
+        } finally {
+          setProfileLoading(false)
+          console.log('✅ Profile loading complete')
+        }
+      } else {
+        console.log('ℹ️ No session found, user not logged in')
+        setProfileLoading(false)
+      }
+    }
+    
+    fetchUserData()
+  }, [session, sessionStatus])
+  
+  // ============================================
+  // DEBUG: Show loaded data after profile loads
+  // ============================================
+  
+  useEffect(() => {
+    if (!profileLoading) {
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+      console.log('📊 FINAL STATE AFTER LOADING:')
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+      console.log('👤 User Profile:', userProfile)
+      console.log('🛡️ Moderation Status:', moderationStatus)
+      console.log('📝 Form Data:', {
+        driverFirstName,
+        driverLastName,
+        driverEmail,
+        driverPhone,
+        guestName,
+        guestEmail,
+        guestPhone
+      })
+      console.log('📄 Documents:', {
+        licenseUploaded,
+        insuranceUploaded,
+        selfieUploaded,
+        licensePhotoUrl: licensePhotoUrl ? 'SET' : 'NOT SET',
+        insurancePhotoUrl: insurancePhotoUrl ? 'SET' : 'NOT SET',
+        selfiePhotoUrl: selfiePhotoUrl ? 'SET' : 'NOT SET'
+      })
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n')
+    }
+  }, [profileLoading, userProfile, moderationStatus, driverFirstName, driverLastName, driverEmail, driverPhone, licenseUploaded, insuranceUploaded, selfieUploaded, licensePhotoUrl, insurancePhotoUrl, selfiePhotoUrl, guestName, guestEmail, guestPhone])
+  
+  // ============================================
+  // BOOKING ELIGIBILITY CHECK
+  // ============================================
+  
+  const checkBookingEligibility = (): { allowed: boolean; reason?: string } => {
+    if (!moderationStatus) return { allowed: true }
+    
+    // Check if banned
+    if (moderationStatus.accountStatus === 'BANNED') {
+      return {
+        allowed: false,
+        reason: 'Your account has been permanently banned. Please contact support for more information.'
+      }
+    }
+    
+    // Check if suspended
+    if (moderationStatus.accountStatus === 'SUSPENDED') {
+      return {
+        allowed: false,
+        reason: moderationStatus.suspension?.isPermanent
+          ? 'Your account is suspended. Please contact support.'
+          : `Your account is temporarily suspended. Reason: ${moderationStatus.suspension?.reason || 'Policy violation'}`
+      }
+    }
+    
+    // ✅ FIXED: Add null check for restrictions
+    if (!moderationStatus.restrictions) return { allowed: true }
+    
+    // Check luxury restrictions
+    if (car?.carType === 'LUXURY' && !moderationStatus.restrictions.canBookLuxury) {
+      return {
+        allowed: false,
+        reason: 'You currently cannot book luxury vehicles. This restriction may be due to active warnings or account issues.'
+      }
+    }
+    
+    // Check premium restrictions
+    if (car?.carType === 'PREMIUM' && !moderationStatus.restrictions.canBookPremium) {
+      return {
+        allowed: false,
+        reason: 'You currently cannot book premium vehicles. This restriction may be due to active warnings or account issues.'
+      }
+    }
+    
+    // Warning about manual approval
+    if (moderationStatus.restrictions.requiresManualApproval) {
+      return {
+        allowed: true,
+        reason: 'Your booking will require manual approval due to account warnings. Processing may take 24-48 hours.'
+      }
+    }
+    
+    // Warning threshold check
+    if (moderationStatus.activeWarningCount >= 3) {
+      return {
+        allowed: true,
+        reason: `You have ${moderationStatus.activeWarningCount} active warnings. Your booking will require manual approval.`
+      }
+    }
+    
+    return { allowed: true }
+  }
+  
+  // ============================================
+  // CALCULATE ADJUSTED DEPOSIT (Insurance Discount)
+  // ============================================
+  
+  const getAdjustedDeposit = () => {
+    if (!savedBookingDetails) return 0
+    
+    const baseDeposit = savedBookingDetails.pricing.deposit
+    
+    // Apply 50% discount if insurance is verified
+    if (userProfile?.insuranceVerified) {
+      return baseDeposit * 0.5
+    }
+    
+    return baseDeposit
+  }
+  
+  // ============================================
+  // VALIDATION CHECKS
+  // ============================================
+  
+  // Check if all documents are uploaded (skip if already verified)
+  const allDocumentsUploaded = userProfile?.documentsVerified 
+    ? true 
+    : (licenseUploaded && insuranceUploaded && selfieUploaded)
   
   // Check if payment form is complete
   const cardValid = cardNumber.length >= 15 && cardExpiry.length === 5 && cardCVC.length >= 3 && cardZip.length === 5
@@ -153,7 +467,10 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
   // Check if can checkout
   const canCheckout = allDocumentsUploaded && paymentComplete
   
-  // Load booking details from sessionStorage
+  // ============================================
+  // LOAD BOOKING DETAILS FROM SESSION STORAGE
+  // ============================================
+  
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const saved = sessionStorage.getItem('rentalBookingDetails')
@@ -172,7 +489,10 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
     }
   }, [carId, router])
   
-  // Fetch car details
+  // ============================================
+  // FETCH CAR DETAILS
+  // ============================================
+  
   useEffect(() => {
     const fetchCarDetails = async () => {
       try {
@@ -191,7 +511,10 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
     fetchCarDetails()
   }, [carId, router])
   
-  // Handle file upload to Cloudinary
+  // ============================================
+  // FILE UPLOAD HANDLER
+  // ============================================
+  
   const handleFileUpload = async (file: File, type: 'license' | 'insurance' | 'selfie') => {
     if (!file) return
     
@@ -220,7 +543,6 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
       const data = await response.json()
       
       if (response.ok && data.url) {
-        // Store the Cloudinary URL
         if (type === 'license') {
           setLicensePhotoUrl(data.url)
           setLicenseUploaded(true)
@@ -244,7 +566,10 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
     }
   }
   
-  // Format card number input
+  // ============================================
+  // FORMAT HELPERS
+  // ============================================
+  
   const formatCardNumber = (value: string) => {
     const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '')
     const matches = v.match(/\d{4,16}/g)
@@ -260,7 +585,6 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
     }
   }
   
-  // Format expiry date
   const formatExpiry = (value: string) => {
     const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '')
     if (v.length >= 2) {
@@ -269,8 +593,24 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
     return v
   }
   
-  // Complete checkout with real API call
+  // ============================================
+  // CHECKOUT HANDLER
+  // ============================================
+  
   const handleCheckoutClick = async () => {
+    // Check eligibility first
+    const eligibility = checkBookingEligibility()
+    if (!eligibility.allowed) {
+      alert(`❌ Booking Restricted\n\n${eligibility.reason}`)
+      return
+    }
+    
+    // Show warning if manual approval required
+    if (eligibility.reason && eligibility.reason.includes('manual approval')) {
+      const proceed = confirm(`⚠️ Manual Approval Required\n\n${eligibility.reason}\n\nDo you want to proceed?`)
+      if (!proceed) return
+    }
+    
     // Validation checks
     if (!allDocumentsUploaded) {
       documentsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -287,30 +627,19 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
     setIsProcessing(true)
     
     try {
-      // Format dates as strings in YYYY-MM-DD format
       const formatDateString = (dateStr: string) => {
         if (!dateStr) return ''
-        // If already in YYYY-MM-DD format, return as is
-        if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-          return dateStr
-        }
-        // Otherwise parse and format
+        if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) return dateStr
         const date = new Date(dateStr)
         return date.toISOString().split('T')[0]
       }
       
-      // Format date of birth properly
       const formatDOB = (dob: string) => {
         if (!dob) return '1990-01-01'
-        // If it's already in YYYY-MM-DD format, use it
-        if (dob.match(/^\d{4}-\d{2}-\d{2}$/)) {
-          return dob
-        }
-        // Otherwise return a default
+        if (dob.match(/^\d{4}-\d{2}-\d{2}$/)) return dob
         return '1990-01-01'
       }
       
-      // Map insurance type correctly
       const mapInsuranceType = (type: string) => {
         switch(type?.toLowerCase()) {
           case 'standard':
@@ -325,9 +654,7 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
         }
       }
       
-      // Map pickup type correctly
       const mapPickupType = (deliveryType: string) => {
-        // Your API expects: 'host', 'delivery', 'airport', 'hotel'
         switch(deliveryType?.toLowerCase()) {
           case 'pickup':
           case 'host':
@@ -344,7 +671,7 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
         }
       }
       
-      // Prepare the booking payload with correct field mappings
+      // Prepare booking payload
       const bookingPayload = {
         carId: savedBookingDetails?.carId || carId,
         
@@ -353,20 +680,23 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
         guestPhone: driverPhone || guestPhone || '',
         guestName: guestName || `${driverFirstName} ${driverLastName}`.trim(),
         
-        // Dates and times - ensure they're strings in correct format
+        // Include reviewerProfileId if logged in
+        ...(userProfile?.id && { reviewerProfileId: userProfile.id }),
+        
+        // Dates and times
         startDate: formatDateString(savedBookingDetails?.startDate || ''),
         endDate: formatDateString(savedBookingDetails?.endDate || ''),
         startTime: savedBookingDetails?.startTime || '10:00',
         endTime: savedBookingDetails?.endTime || '10:00',
         
-        // Pickup details - map correctly
+        // Pickup details
         pickupType: mapPickupType(savedBookingDetails?.deliveryType || 'host'),
         pickupLocation: car?.address || 'Phoenix, AZ',
         
-        // Insurance - map correctly from 'standard' to 'basic'
+        // Insurance
         insurance: mapInsuranceType(savedBookingDetails?.insuranceType || 'basic'),
         
-        // Driver info with actual uploaded documents or empty strings
+        // Driver info
         driverInfo: {
           licenseNumber: driverLicense || '',
           licenseState: 'AZ',
@@ -389,7 +719,7 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
         }
       }
       
-      // Call the booking API
+      // Call booking API
       const response = await fetch('/api/rentals/book', {
         method: 'POST',
         headers: {
@@ -402,15 +732,11 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
       console.log('Booking API response:', data)
       
       if (response.ok && data.booking) {
-        // Clear session storage
         sessionStorage.removeItem('rentalBookingDetails')
         
-        // Show success message
         alert(`✅ Booking successful!\n\nReference: ${data.booking.bookingCode}\nStatus: ${data.status || 'pending_review'}\n\nCheck your email for confirmation.`)
         
-        // Redirect based on response
         if (data.booking.accessToken) {
-          // Use the guest access token for tracking
           router.push(`/rentals/track/${data.booking.accessToken}`)
         } else if (data.booking.bookingCode) {
           router.push(`/rentals/confirmation/${data.booking.bookingCode}`)
@@ -418,7 +744,6 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
           router.push('/rentals')
         }
       } else {
-        // Handle errors
         const errorMessage = data.error || data.message || 'Booking failed'
         console.error('Booking error:', errorMessage)
         
@@ -441,7 +766,11 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
     }
   }
   
-  if (isLoading || !car || !savedBookingDetails) {
+  // ============================================
+  // LOADING STATES
+  // ============================================
+  
+  if (isLoading || !car || !savedBookingDetails || profileLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-600"></div>
@@ -450,6 +779,14 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
   }
   
   const numberOfDays = savedBookingDetails.pricing.days
+  const adjustedDeposit = getAdjustedDeposit()
+  const eligibility = moderationStatus 
+    ? checkBookingEligibility() 
+    : { allowed: true }
+  
+  // ============================================
+  // RENDER
+  // ============================================
   
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -518,6 +855,85 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-4 py-6 pb-32">
         
+        {/* ✅ VERIFIED USER WELCOME BANNER */}
+        {userProfile?.documentsVerified && (
+          <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 border border-green-200 dark:border-green-800 p-4 mb-4 rounded-lg">
+            <div className="flex items-start space-x-3">
+              <IoCheckmarkCircle className="w-6 h-6 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="font-semibold text-green-900 dark:text-green-100 mb-1">
+                  Welcome back, {userProfile.name}! ✨
+                </p>
+                <ul className="space-y-1 text-xs text-green-800 dark:text-green-200">
+                  <li>✓ Your documents are verified - no need to upload again!</li>
+                  <li>✓ Your information has been auto-filled</li>
+                  {userProfile.insuranceVerified && (
+                    <li>✓ Insurance verified - 50% deposit discount applied!</li>
+                  )}
+                  {userProfile.canInstantBook && (
+                    <li>✓ Instant booking enabled</li>
+                  )}
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* ⚠️ ACCOUNT WARNING/RESTRICTION BANNER */}
+        {!eligibility.allowed && (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4 mb-4 rounded-lg">
+            <div className="flex items-start space-x-3">
+              <IoBanOutline className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-red-900 dark:text-red-100 mb-1">
+                  Booking Restricted
+                </p>
+                <p className="text-sm text-red-800 dark:text-red-200">
+                  {eligibility.reason}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* ⚠️ MANUAL APPROVAL WARNING */}
+        {eligibility.allowed && eligibility.reason && (
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 p-4 mb-4 rounded-lg">
+            <div className="flex items-start space-x-3">
+              <IoWarningOutline className="w-6 h-6 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-yellow-900 dark:text-yellow-100 mb-1">
+                  Manual Approval Required
+                </p>
+                <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                  {eligibility.reason}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* 💰 INSURANCE DISCOUNT BANNER */}
+        {userProfile?.insuranceVerified && (
+          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-4 mb-4 rounded-lg">
+            <div className="flex items-start space-x-3">
+              <IoSparklesOutline className="w-6 h-6 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-green-900 dark:text-green-100 mb-1">
+                  Insurance Discount Active! 🎉
+                </p>
+                <p className="text-sm text-green-800 dark:text-green-200">
+                  Your verified insurance ({userProfile.insuranceProvider}) has reduced your deposit by 50%!
+                </p>
+                <p className="text-xs text-green-700 dark:text-green-300 mt-1">
+                  Original: ${savedBookingDetails.pricing.deposit.toLocaleString()} → 
+                  Now: ${adjustedDeposit.toLocaleString()}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        
         {/* P2P Important Notice */}
         <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-4 mb-4 rounded-lg">
           <div className="flex items-start space-x-3">
@@ -583,7 +999,7 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
           </div>
         </div>
         
-        {/* Experience Enhancements Card - Show if any selected */}
+        {/* Experience Enhancements Card */}
         {Object.values(savedBookingDetails.addOns).some(v => v) && (
           <div className="bg-white dark:bg-gray-800 p-4 mb-4 shadow-sm rounded-lg border border-gray-300 dark:border-gray-600">
             <div className="flex items-center justify-between">
@@ -613,6 +1029,11 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
             <IoPersonOutline className="w-5 h-5 mr-2" />
             Primary Driver Information
+            {userProfile?.documentsVerified && (
+              <span className="ml-2 text-xs text-green-600 dark:text-green-400">
+                (Auto-filled)
+              </span>
+            )}
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -681,7 +1102,8 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
                 type="tel"
                 value={driverPhone}
                 onChange={(e) => setDriverPhone(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:text-white"
+                disabled={!!userProfile?.phone}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-600"
                 placeholder="(602) 555-0100"
                 required
               />
@@ -695,7 +1117,8 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
                 type="email"
                 value={driverEmail}
                 onChange={(e) => setDriverEmail(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:text-white"
+                disabled={!!userProfile?.email}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-600"
                 placeholder="john@example.com"
                 required
               />
@@ -705,196 +1128,228 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
         
         {/* Document Upload Section */}
         <div ref={documentsRef} className="bg-white dark:bg-gray-800 p-6 mb-4 shadow-sm rounded-lg border border-gray-300 dark:border-gray-600">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Upload Your Documents</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            Upload Your Documents
+            {userProfile?.documentsVerified && (
+              <span className="ml-2 text-sm text-green-600 dark:text-green-400 font-normal">
+                ✓ Already verified
+              </span>
+            )}
+          </h2>
           
-          {isUploading && (
-            <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <p className="text-sm text-blue-700 dark:text-blue-300 text-center">
-                Uploading document...
-              </p>
-            </div>
-          )}
-          
-          {/* Driver's License */}
-          <div className={`p-4 mb-3 border-2 rounded-lg transition-all ${
-            licenseUploaded ? 'border-green-500 bg-green-50 dark:bg-green-900/10' : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
-          }`}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                  licenseUploaded ? 'bg-green-500' : 'bg-gray-100 dark:bg-gray-700'
-                }`}>
-                  {licenseUploaded ? (
-                    <IoCheckmarkOutline className="w-5 h-5 text-white" />
-                  ) : (
-                    <IoDocumentTextOutline className="w-5 h-5 text-gray-400" />
-                  )}
-                </div>
+          {/* ✅ VERIFIED USER - SKIP DOCUMENTS */}
+          {userProfile?.documentsVerified ? (
+            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-4 rounded-lg">
+              <div className="flex items-start space-x-3">
+                <IoCheckmarkCircle className="w-6 h-6 text-green-600 dark:text-green-400 flex-shrink-0" />
                 <div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">Driver's License</p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">
-                    {licensePhotoUrl ? 'Uploaded successfully' : 'Front and back required'}
+                  <p className="font-medium text-green-900 dark:text-green-100 mb-1">
+                    Documents Verified ✓
                   </p>
+                  <p className="text-sm text-green-800 dark:text-green-200 mb-2">
+                    Your identity documents were verified on {new Date(userProfile.documentVerifiedAt || '').toLocaleDateString()}. No need to upload again!
+                  </p>
+                  <ul className="text-xs text-green-700 dark:text-green-300 space-y-1">
+                    <li>✓ Driver's License - Verified</li>
+                    <li>✓ Selfie Verification - Verified</li>
+                    {userProfile.insuranceVerified && <li>✓ Insurance Card - Verified</li>}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* NON-VERIFIED USER - SHOW UPLOAD FORMS */
+            <>
+              {isUploading && (
+                <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <p className="text-sm text-blue-700 dark:text-blue-300 text-center">
+                    Uploading document...
+                  </p>
+                </div>
+              )}
+              
+              {/* Driver's License */}
+              <div className={`p-4 mb-3 border-2 rounded-lg transition-all ${
+                licenseUploaded ? 'border-green-500 bg-green-50 dark:bg-green-900/10' : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
+              }`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      licenseUploaded ? 'bg-green-500' : 'bg-gray-100 dark:bg-gray-700'
+                    }`}>
+                      {licenseUploaded ? (
+                        <IoCheckmarkOutline className="w-5 h-5 text-white" />
+                      ) : (
+                        <IoDocumentTextOutline className="w-5 h-5 text-gray-400" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">Driver's License</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">
+                        {licensePhotoUrl ? 'Uploaded successfully' : 'Front and back required'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    {licensePhotoUrl && (
+                      <a 
+                        href={licensePhotoUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                      >
+                        <IoEyeOutline className="w-4 h-4" />
+                        View
+                      </a>
+                    )}
+                    
+                    <input
+                      ref={licenseInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) handleFileUpload(file, 'license')
+                      }}
+                      className="hidden"
+                    />
+                    
+                    <button 
+                      onClick={() => licenseInputRef.current?.click()}
+                      disabled={isUploading}
+                      className="px-4 py-2 bg-black text-white text-sm rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
+                    >
+                      {licenseUploaded ? 'Replace' : 'Upload'}
+                    </button>
+                  </div>
                 </div>
               </div>
               
-              <div className="flex items-center gap-2">
-                {licensePhotoUrl && (
-                  <a 
-                    href={licensePhotoUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
-                  >
-                    <IoEyeOutline className="w-4 h-4" />
-                    View
-                  </a>
-                )}
-                
-                <input
-                  ref={licenseInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    if (file) handleFileUpload(file, 'license')
-                  }}
-                  className="hidden"
-                />
-                
-                <button 
-                  onClick={() => licenseInputRef.current?.click()}
-                  disabled={isUploading}
-                  className="px-4 py-2 bg-black text-white text-sm rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
-                >
-                  {licenseUploaded ? 'Replace' : 'Upload'}
-                </button>
-              </div>
-            </div>
-          </div>
-          
-          {/* Insurance Card */}
-          <div className={`p-4 mb-3 border-2 rounded-lg transition-all ${
-            insuranceUploaded ? 'border-green-500 bg-green-50 dark:bg-green-900/10' : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
-          }`}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                  insuranceUploaded ? 'bg-green-500' : 'bg-gray-100 dark:bg-gray-700'
-                }`}>
-                  {insuranceUploaded ? (
-                    <IoCheckmarkOutline className="w-5 h-5 text-white" />
-                  ) : (
-                    <IoShieldCheckmarkOutline className="w-5 h-5 text-gray-400" />
-                  )}
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">Insurance Card</p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">
-                    {insurancePhotoUrl ? 'Uploaded successfully' : 'Proof of coverage'}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                {insurancePhotoUrl && (
-                  <a 
-                    href={insurancePhotoUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
-                  >
-                    <IoEyeOutline className="w-4 h-4" />
-                    View
-                  </a>
-                )}
-                
-                <input
-                  ref={insuranceInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    if (file) handleFileUpload(file, 'insurance')
-                  }}
-                  className="hidden"
-                />
-                
-                <button 
-                  onClick={() => insuranceInputRef.current?.click()}
-                  disabled={isUploading}
-                  className="px-4 py-2 bg-black text-white text-sm rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
-                >
-                  {insuranceUploaded ? 'Replace' : 'Upload'}
-                </button>
-              </div>
-            </div>
-          </div>
-          
-          {/* Selfie */}
-          <div className={`p-4 border-2 rounded-lg transition-all ${
-            selfieUploaded ? 'border-green-500 bg-green-50 dark:bg-green-900/10' : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
-          }`}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                  selfieUploaded ? 'bg-green-500' : 'bg-gray-100 dark:bg-gray-700'
-                }`}>
-                  {selfieUploaded ? (
-                    <IoCheckmarkOutline className="w-5 h-5 text-white" />
-                  ) : (
-                    <IoCameraOutline className="w-5 h-5 text-gray-400" />
-                  )}
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">Verification Selfie</p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">
-                    {selfiePhotoUrl ? 'Uploaded successfully' : 'For identity verification'}
-                  </p>
+              {/* Insurance Card */}
+              <div className={`p-4 mb-3 border-2 rounded-lg transition-all ${
+                insuranceUploaded ? 'border-green-500 bg-green-50 dark:bg-green-900/10' : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
+              }`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      insuranceUploaded ? 'bg-green-500' : 'bg-gray-100 dark:bg-gray-700'
+                    }`}>
+                      {insuranceUploaded ? (
+                        <IoCheckmarkOutline className="w-5 h-5 text-white" />
+                      ) : (
+                        <IoShieldCheckmarkOutline className="w-5 h-5 text-gray-400" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">Insurance Card</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">
+                        {insurancePhotoUrl ? 'Uploaded successfully' : 'Proof of coverage'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    {insurancePhotoUrl && (
+                      <a 
+                        href={insurancePhotoUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                      >
+                        <IoEyeOutline className="w-4 h-4" />
+                        View
+                      </a>
+                    )}
+                    
+                    <input
+                      ref={insuranceInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) handleFileUpload(file, 'insurance')
+                      }}
+                      className="hidden"
+                    />
+                    
+                    <button 
+                      onClick={() => insuranceInputRef.current?.click()}
+                      disabled={isUploading}
+                      className="px-4 py-2 bg-black text-white text-sm rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
+                    >
+                      {insuranceUploaded ? 'Replace' : 'Upload'}
+                    </button>
+                  </div>
                 </div>
               </div>
               
-              <div className="flex items-center gap-2">
-                {selfiePhotoUrl && (
-                  <a 
-                    href={selfiePhotoUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
-                  >
-                    <IoEyeOutline className="w-4 h-4" />
-                    View
-                  </a>
-                )}
-                
-                <input
-                  ref={selfieInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    if (file) handleFileUpload(file, 'selfie')
-                  }}
-                  className="hidden"
-                />
-                
-                <button 
-                  onClick={() => selfieInputRef.current?.click()}
-                  disabled={isUploading}
-                  className="px-4 py-2 bg-black text-white text-sm rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
-                >
-                  {selfieUploaded ? 'Replace' : 'Take Photo'}
-                </button>
+              {/* Selfie */}
+              <div className={`p-4 border-2 rounded-lg transition-all ${
+                selfieUploaded ? 'border-green-500 bg-green-50 dark:bg-green-900/10' : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
+              }`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      selfieUploaded ? 'bg-green-500' : 'bg-gray-100 dark:bg-gray-700'
+                    }`}>
+                      {selfieUploaded ? (
+                        <IoCheckmarkOutline className="w-5 h-5 text-white" />
+                      ) : (
+                        <IoCameraOutline className="w-5 h-5 text-gray-400" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">Verification Selfie</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">
+                        {selfiePhotoUrl ? 'Uploaded successfully' : 'For identity verification'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    {selfiePhotoUrl && (
+                      <a 
+                        href={selfiePhotoUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                      >
+                        <IoEyeOutline className="w-4 h-4" />
+                        View
+                      </a>
+                    )}
+                    
+                    <input
+                      ref={selfieInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) handleFileUpload(file, 'selfie')
+                      }}
+                      className="hidden"
+                    />
+                    
+                    <button 
+                      onClick={() => selfieInputRef.current?.click()}
+                      disabled={isUploading}
+                      className="px-4 py-2 bg-black text-white text-sm rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
+                    >
+                      {selfieUploaded ? 'Replace' : 'Take Photo'}
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-          
-          {allDocumentsUploaded && (
-            <div className="mt-4 p-3 bg-green-100 dark:bg-green-900/20 rounded-lg">
-              <p className="text-xs font-medium text-green-700 dark:text-green-300 text-center">
-                ✓ All documents uploaded - You can now proceed to payment
-              </p>
-            </div>
+              
+              {allDocumentsUploaded && (
+                <div className="mt-4 p-3 bg-green-100 dark:bg-green-900/20 rounded-lg">
+                  <p className="text-xs font-medium text-green-700 dark:text-green-300 text-center">
+                    ✓ All documents uploaded - You can now proceed to payment
+                  </p>
+                </div>
+              )}
+            </>
           )}
         </div>
         
@@ -927,7 +1382,6 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
             </label>
             
             <div className="space-y-3">
-              {/* Card Number */}
               <div className="relative">
                 <input
                   type="text"
@@ -940,7 +1394,6 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
                 <IoCardOutline className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
               </div>
               
-              {/* Expiry and CVC */}
               <div className="grid grid-cols-2 gap-3">
                 <input
                   type="text"
@@ -963,7 +1416,6 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
                 </div>
               </div>
               
-              {/* ZIP Code */}
               <input
                 type="text"
                 value={cardZip}
@@ -974,7 +1426,6 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
               />
             </div>
             
-            {/* Security badge */}
             <div className="flex items-center justify-end gap-1 mt-3">
               <span className="text-xs text-gray-500 flex items-center gap-1">
                 <IoLockClosedOutline className="w-3 h-3" />
@@ -1031,7 +1482,12 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
                       ${savedBookingDetails.pricing.total.toLocaleString()}
                     </span>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Plus ${savedBookingDetails.pricing.deposit.toLocaleString()} security deposit
+                      Plus ${adjustedDeposit.toLocaleString()} security deposit
+                      {userProfile?.insuranceVerified && (
+                        <span className="text-green-600 dark:text-green-400 font-medium ml-1">
+                          (50% off!)
+                        </span>
+                      )}
                     </p>
                   </div>
                 </div>
@@ -1103,12 +1559,17 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
               <p className="text-xs text-gray-500">
                 {numberOfDays} {numberOfDays === 1 ? 'day' : 'days'} • Taxes & fees included
               </p>
+              {userProfile?.insuranceVerified && (
+                <p className="text-xs text-green-600 dark:text-green-400 font-medium">
+                  💚 Deposit reduced to ${adjustedDeposit.toLocaleString()}
+                </p>
+              )}
             </div>
             <button
               onClick={handleCheckoutClick}
-              disabled={isProcessing || isUploading}
+              disabled={isProcessing || isUploading || !eligibility.allowed}
               className={`px-6 py-2.5 font-semibold shadow-lg rounded-lg transition-all ${
-                !isProcessing && !isUploading
+                !isProcessing && !isUploading && eligibility.allowed
                   ? 'bg-black text-white hover:bg-gray-800'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}
@@ -1118,6 +1579,8 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   Processing...
                 </span>
+              ) : !eligibility.allowed ? (
+                'Booking Restricted'
               ) : (
                 'Complete Booking'
               )}
@@ -1126,7 +1589,7 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
         </div>
       </div>
       
-      {/* Modals - Now using the imported components */}
+      {/* Modals */}
       <RentalAgreementModal 
         isOpen={showRentalAgreement}
         onClose={() => setShowRentalAgreement(false)}

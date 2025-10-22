@@ -187,6 +187,7 @@ export default function RootLayout({
         {/* Google Analytics or other tracking scripts can go here */}
       </head>
       <body className={`${inter.className} antialiased`}>
+        {/* ✅ UPDATED: Wrap in SessionProvider for next-auth */}
         <Providers>
           {children}
         </Providers>

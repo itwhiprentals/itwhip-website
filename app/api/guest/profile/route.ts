@@ -102,8 +102,8 @@ export async function GET(request: NextRequest) {
       id: profile.id,
       email: profile.email || user.email,
       name: profile.name,
-      phone: profile.phoneNumber,
-      profilePhoto: profile.profilePhotoUrl || user.email, // Note: Fixed reference
+      phone: profile.phoneNumber,  // ✅ Maps DB field phoneNumber → API field phone
+      profilePhoto: profile.profilePhotoUrl || user.avatar,
       bio: profile.bio,
       city: profile.city,
       state: profile.state,
@@ -127,11 +127,11 @@ export async function GET(request: NextRequest) {
       fullyVerified,
       canInstantBook,
 
-      // Insurance
+      // Insurance - ✅ CORRECTED FIELD NAMES
       insuranceProvider: profile.insuranceProvider,
-      insurancePolicyNumber: profile.insurancePolicyNumber,
-      insuranceExpires: profile.insuranceExpires,
-      insuranceCardUrl: profile.insuranceCardUrl,
+      insurancePolicyNumber: profile.policyNumber,
+      insuranceExpires: profile.expiryDate,
+      insuranceCardUrl: profile.insuranceCardFrontUrl || profile.insuranceCardBackUrl,
       insuranceVerified: profile.insuranceVerified,
       insuranceVerifiedAt: profile.insuranceVerifiedAt,
 
@@ -149,6 +149,28 @@ export async function GET(request: NextRequest) {
       smsNotifications: profile.smsNotifications,
       pushNotifications: profile.pushNotifications
     }
+
+    // 🔍 DEBUG LOGGING - Remove after testing
+    console.log('=' .repeat(80))
+    console.log('🔍 DEBUG: Guest Profile API Response')
+    console.log('=' .repeat(80))
+    console.log('📧 User Email:', user.email)
+    console.log('🆔 User ID:', user.id)
+    console.log('📧 Profile Email:', profile.email)
+    console.log('👤 Profile Name:', profile.name)
+    console.log('📱 DB phoneNumber field value:', profile.phoneNumber)
+    console.log('📱 DB phoneNumber type:', typeof profile.phoneNumber)
+    console.log('📱 DB phoneNumber is null?:', profile.phoneNumber === null)
+    console.log('📱 DB phoneNumber is undefined?:', profile.phoneNumber === undefined)
+    console.log('---')
+    console.log('📱 Mapped "phone" in response:', guestProfile.phone)
+    console.log('📱 Mapped phone type:', typeof guestProfile.phone)
+    console.log('📱 Mapped phone === null?:', guestProfile.phone === null)
+    console.log('📱 Mapped phone === undefined?:', guestProfile.phone === undefined)
+    console.log('---')
+    console.log('📦 Full guestProfile object:')
+    console.log(JSON.stringify(guestProfile, null, 2))
+    console.log('=' .repeat(80))
 
     return NextResponse.json({
       success: true,
@@ -297,8 +319,8 @@ export async function PUT(request: NextRequest) {
       }
     })
 
-    // Also update User.name and User.avatar if changed
-    if (userId && body.name) {
+    // Also update User.name if changed
+    if (userId && body.name && body.name !== user.name) {
       await prisma.user.update({
         where: { id: userId },
         data: { name: body.name }
