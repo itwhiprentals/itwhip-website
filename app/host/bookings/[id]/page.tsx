@@ -30,8 +30,28 @@ import {
   IoSpeedometerOutline,
   IoWaterOutline,
   IoConstructOutline,
-  IoCashOutline
+  IoCashOutline,
+  IoDocumentAttachOutline,
+  IoReceipt
 } from 'react-icons/io5'
+
+interface InsuranceCoverage {
+  level: 'primary' | 'secondary' | 'tertiary'
+  provider: string
+  policyNumber?: string
+  liabilityCoverage: number
+  collisionCoverage: number
+  deductible: number
+}
+
+interface ClaimSummary {
+  id: string
+  type: string
+  status: string
+  estimatedCost: number
+  createdAt: string
+  vehicleDeactivated: boolean
+}
 
 interface BookingDetail {
   id: string
@@ -50,6 +70,8 @@ interface BookingDetail {
     licensePlate: string
     dailyRate: number
     photos: Array<{ url: string }>
+    hasActiveClaim?: boolean
+    activeClaimId?: string
   }
   
   // Guest details
@@ -107,11 +129,31 @@ interface BookingDetail {
   taxes: number
   totalAmount: number
   depositAmount: number
+  securityDeposit: number
+  depositHeld: number
+  
+  // Insurance Coverage
+  insuranceHierarchy?: {
+    primary?: InsuranceCoverage
+    secondary?: InsuranceCoverage
+    tertiary?: InsuranceCoverage
+  }
+  guestInsuranceActive?: boolean
+  
+  // Host earnings info
+  hostEarnings?: {
+    tier: string
+    percentage: number
+    amount: number
+  }
   
   // Post-trip charges
   pendingChargesAmount?: number
   chargesProcessedAt?: string
   chargesNotes?: string
+  
+  // Claims
+  claims?: ClaimSummary[]
   
   // Messages
   messages: Array<{
@@ -132,7 +174,7 @@ interface BookingDetail {
   riskScore?: number
 }
 
-type TabType = 'overview' | 'verification' | 'trip' | 'financial' | 'messages'
+type TabType = 'overview' | 'verification' | 'trip' | 'financial' | 'messages' | 'claims'
 
 export default function BookingDetailPage() {
   const router = useRouter()
@@ -284,15 +326,29 @@ export default function BookingDetailPage() {
   }
 
   const statusColors = {
+    PENDING: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+    CONFIRMED: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+    ACTIVE: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+    COMPLETED: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+    CANCELLED: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+  }
+
+  const claimStatusColors = {
     PENDING: 'bg-yellow-100 text-yellow-800',
-    CONFIRMED: 'bg-green-100 text-green-800',
-    ACTIVE: 'bg-blue-100 text-blue-800',
-    COMPLETED: 'bg-gray-100 text-gray-800',
-    CANCELLED: 'bg-red-100 text-red-800'
+    UNDER_REVIEW: 'bg-blue-100 text-blue-800',
+    APPROVED: 'bg-green-100 text-green-800',
+    DENIED: 'bg-red-100 text-red-800',
+    PAID: 'bg-purple-100 text-purple-800',
+    RESOLVED: 'bg-gray-100 text-gray-800',
+    GUEST_RESPONSE_PENDING: 'bg-orange-100 text-orange-800',
+    GUEST_NO_RESPONSE: 'bg-red-100 text-red-800',
+    VEHICLE_REPAIR_PENDING: 'bg-yellow-100 text-yellow-800',
+    INSURANCE_PROCESSING: 'bg-blue-100 text-blue-800',
+    CLOSED: 'bg-gray-100 text-gray-800'
   }
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 pt-24 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-6">
         <Link 
@@ -309,7 +365,7 @@ export default function BookingDetailPage() {
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
                 Booking #{booking.bookingCode}
               </h1>
-              <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[booking.status as keyof typeof statusColors]}`}>
+              <span className={`px-3 py-1 rounded-lg text-xs font-medium ${statusColors[booking.status as keyof typeof statusColors]}`}>
                 {booking.status}
               </span>
             </div>
@@ -324,13 +380,13 @@ export default function BookingDetailPage() {
               <>
                 <button
                   onClick={handleApprove}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-sm"
                 >
                   Approve Booking
                 </button>
                 <button
                   onClick={handleDecline}
-                  className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
+                  className="px-4 py-2 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors shadow-sm"
                 >
                   Decline
                 </button>
@@ -340,7 +396,7 @@ export default function BookingDetailPage() {
             {booking.status === 'CONFIRMED' && booking.tripStatus === 'NOT_STARTED' && (
               <Link
                 href={`/host/bookings/${bookingId}/checkin`}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
               >
                 Start Check-in
               </Link>
@@ -349,7 +405,7 @@ export default function BookingDetailPage() {
             {booking.tripStatus === 'ACTIVE' && (
               <Link
                 href={`/host/bookings/${bookingId}/checkout`}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors shadow-sm"
               >
                 Complete Check-out
               </Link>
@@ -358,9 +414,42 @@ export default function BookingDetailPage() {
         </div>
       </div>
 
+      {/* PHASE 1: ACTIVE CLAIMS ALERT BANNER */}
+      {booking.claims && booking.claims.length > 0 && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 sm:p-6 mb-6 shadow-sm">
+          <div className="flex items-start gap-3">
+            <IoWarningOutline className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="font-semibold text-red-900 dark:text-red-200 mb-1">
+                Active Claims on This Booking
+              </h3>
+              <p className="text-sm text-red-700 dark:text-red-300 mb-3">
+                {booking.claims.length} {booking.claims.length === 1 ? 'claim' : 'claims'} associated with this booking. 
+                {booking.car.hasActiveClaim && ' Vehicle is currently deactivated.'}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {booking.claims.map((claim) => (
+                  <Link
+                    key={claim.id}
+                    href={`/host/claims/${claim.id}`}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-800 border border-red-200 dark:border-red-700 rounded-lg text-sm text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
+                  >
+                    <IoDocumentAttachOutline className="w-4 h-4" />
+                    Claim #{claim.id.slice(0, 8)}
+                    <span className={`px-2 py-0.5 rounded text-xs ${claimStatusColors[claim.status as keyof typeof claimStatusColors] || 'bg-gray-100 text-gray-800'}`}>
+                      {claim.status.replace(/_/g, ' ')}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Risk Score Alert */}
       {booking.riskScore && booking.riskScore > 50 && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 mb-6">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6 shadow-sm">
           <div className="flex items-start gap-3">
             <IoWarningOutline className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0" />
             <div>
@@ -374,19 +463,20 @@ export default function BookingDetailPage() {
       )}
 
       {/* Tabs */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 mb-6 overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-6 overflow-hidden">
         <div className="flex overflow-x-auto">
           {[
             { key: 'overview', label: 'Overview', icon: IoInformationCircleOutline },
             { key: 'verification', label: 'Verification', icon: IoShieldCheckmarkOutline },
             { key: 'trip', label: 'Trip Details', icon: IoCarOutline },
             { key: 'financial', label: 'Financial', icon: IoWalletOutline },
+            { key: 'claims', label: 'Claims', icon: IoDocumentAttachOutline, badge: booking.claims?.length },
             { key: 'messages', label: 'Messages', icon: IoChatbubbleOutline }
           ].map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as TabType)}
-              className={`flex-1 min-w-[120px] px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+              className={`flex-1 min-w-[120px] px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 relative ${
                 activeTab === tab.key
                   ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 border-b-2 border-purple-600'
                   : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
@@ -394,6 +484,11 @@ export default function BookingDetailPage() {
             >
               <tab.icon className="w-5 h-5" />
               <span className="hidden sm:inline">{tab.label}</span>
+              {tab.badge !== undefined && tab.badge > 0 && (
+                <span className="absolute -top-1 -right-1 sm:relative sm:top-0 sm:right-0 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {tab.badge}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -406,8 +501,8 @@ export default function BookingDetailPage() {
             {/* Guest & Car Info */}
             <div className="grid md:grid-cols-2 gap-6">
               {/* Guest Information */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
                   <IoPersonOutline className="w-5 h-5 text-purple-600" />
                   Guest Information
                 </h3>
@@ -417,58 +512,52 @@ export default function BookingDetailPage() {
                       <Image
                         src={booking.renter.avatar}
                         alt={booking.renter.name}
-                        width={48}
-                        height={48}
+                        width={40}
+                        height={40}
                         className="rounded-full"
                       />
                     ) : (
-                      <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
-                        <IoPersonOutline className="w-6 h-6 text-gray-500" />
+                      <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0">
+                        <IoPersonOutline className="w-5 h-5 text-gray-500" />
                       </div>
                     )}
                     <div>
-                      <p className="font-semibold">{booking.renter?.name || booking.guestName}</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Guest</p>
+                      <p className="font-semibold text-sm">{booking.renter?.name || booking.guestName}</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Guest</p>
                     </div>
                   </div>
                   
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-500">Email</span>
-                      <div className="flex items-center gap-2">
-                        <span>{booking.renter?.email || booking.guestEmail}</span>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex items-center justify-between py-1">
+                      <span className="text-gray-500 dark:text-gray-400">Email</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs truncate max-w-[180px]">{booking.renter?.email || booking.guestEmail}</span>
                         <button
                           onClick={() => copyToClipboard(booking.renter?.email || booking.guestEmail || '')}
-                          className="text-gray-400 hover:text-gray-600"
+                          className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex-shrink-0"
                         >
-                          <IoCopyOutline className="w-4 h-4" />
+                          <IoCopyOutline className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-500">Phone</span>
-                      <div className="flex items-center gap-2">
-                        <span>{booking.renter?.phone || booking.guestPhone || 'Not provided'}</span>
+                    <div className="flex items-center justify-between py-1">
+                      <span className="text-gray-500 dark:text-gray-400">Phone</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs">{booking.renter?.phone || booking.guestPhone || 'Not provided'}</span>
                         {(booking.renter?.phone || booking.guestPhone) && (
                           <a
                             href={`tel:${booking.renter?.phone || booking.guestPhone}`}
-                            className="text-purple-600 hover:text-purple-700"
+                            className="text-purple-600 hover:text-purple-700 flex-shrink-0"
                           >
-                            <IoCallOutline className="w-4 h-4" />
+                            <IoCallOutline className="w-3.5 h-3.5" />
                           </a>
                         )}
                       </div>
                     </div>
-                    {booking.dateOfBirth && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-500">Date of Birth</span>
-                        <span>{formatDate(booking.dateOfBirth)}</span>
-                      </div>
-                    )}
                     {booking.bookingCity && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-500">Location</span>
-                        <span>{booking.bookingCity}, {booking.bookingCountry}</span>
+                      <div className="flex items-center justify-between py-1">
+                        <span className="text-gray-500 dark:text-gray-400">Location</span>
+                        <span className="text-xs">{booking.bookingCity}, {booking.bookingCountry}</span>
                       </div>
                     )}
                   </div>
@@ -476,7 +565,7 @@ export default function BookingDetailPage() {
               </div>
 
               {/* Car Information */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
                 <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                   <IoCarOutline className="w-5 h-5 text-purple-600" />
                   Vehicle Information
@@ -501,11 +590,11 @@ export default function BookingDetailPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
-                      <span className="text-gray-500">Daily Rate</span>
+                      <span className="text-gray-500 dark:text-gray-400">Daily Rate</span>
                       <p className="font-semibold">{formatCurrency(booking.car.dailyRate)}</p>
                     </div>
                     <div>
-                      <span className="text-gray-500">Total Days</span>
+                      <span className="text-gray-500 dark:text-gray-400">Total Days</span>
                       <p className="font-semibold">{booking.numberOfDays}</p>
                     </div>
                   </div>
@@ -514,14 +603,14 @@ export default function BookingDetailPage() {
             </div>
 
             {/* Trip Schedule */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <IoCalendarOutline className="w-5 h-5 text-purple-600" />
                 Trip Schedule
               </h3>
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                  <p className="text-sm text-gray-500 mb-1">Pickup</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Pickup</p>
                   <p className="font-semibold">{formatDate(booking.startDate)}</p>
                   <p className="text-sm">at {booking.startTime}</p>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
@@ -530,7 +619,7 @@ export default function BookingDetailPage() {
                   </p>
                 </div>
                 <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                  <p className="text-sm text-gray-500 mb-1">Return</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Return</p>
                   <p className="font-semibold">{formatDate(booking.endDate)}</p>
                   <p className="text-sm">at {booking.endTime}</p>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
@@ -544,7 +633,7 @@ export default function BookingDetailPage() {
         )}
 
         {activeTab === 'verification' && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
             <h3 className="text-lg font-semibold mb-4">Verification Status</h3>
             
             {/* Verification Status Banner */}
@@ -579,9 +668,9 @@ export default function BookingDetailPage() {
               {/* Driver's License */}
               <div className="flex items-start gap-3">
                 {booking.licenseVerified ? (
-                  <IoCheckmarkCircleOutline className="w-6 h-6 text-green-600 dark:text-green-400 mt-0.5" />
+                  <IoCheckmarkCircleOutline className="w-6 h-6 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
                 ) : (
-                  <IoCloseCircleOutline className="w-6 h-6 text-red-600 dark:text-red-400 mt-0.5" />
+                  <IoCloseCircleOutline className="w-6 h-6 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
                 )}
                 <div className="flex-1">
                   <p className="font-semibold">Driver's License</p>
@@ -609,9 +698,9 @@ export default function BookingDetailPage() {
               {/* Selfie Verification */}
               <div className="flex items-start gap-3">
                 {booking.selfieVerified ? (
-                  <IoCheckmarkCircleOutline className="w-6 h-6 text-green-600 dark:text-green-400 mt-0.5" />
+                  <IoCheckmarkCircleOutline className="w-6 h-6 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
                 ) : (
-                  <IoCloseCircleOutline className="w-6 h-6 text-red-600 dark:text-red-400 mt-0.5" />
+                  <IoCloseCircleOutline className="w-6 h-6 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
                 )}
                 <div className="flex-1">
                   <p className="font-semibold">Selfie Verification</p>
@@ -638,13 +727,13 @@ export default function BookingDetailPage() {
         {activeTab === 'trip' && (
           <div className="space-y-6">
             {/* Trip Status */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
               <h3 className="text-lg font-semibold mb-4">Trip Status</h3>
               <div className="flex items-center gap-4 mb-4">
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  booking.tripStatus === 'NOT_STARTED' ? 'bg-gray-100 text-gray-800' :
-                  booking.tripStatus === 'ACTIVE' ? 'bg-blue-100 text-blue-800' :
-                  'bg-green-100 text-green-800'
+                <span className={`px-3 py-1 rounded-lg text-sm font-medium shadow-sm ${
+                  booking.tripStatus === 'NOT_STARTED' ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' :
+                  booking.tripStatus === 'ACTIVE' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' :
+                  'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
                 }`}>
                   {booking.tripStatus?.replace('_', ' ')}
                 </span>
@@ -656,15 +745,15 @@ export default function BookingDetailPage() {
                   <h4 className="font-semibold mb-3">Check-in Details</h4>
                   <div className="grid sm:grid-cols-2 gap-4 text-sm">
                     <div>
-                      <span className="text-gray-500">Check-in Time</span>
+                      <span className="text-gray-500 dark:text-gray-400">Check-in Time</span>
                       <p className="font-medium">{formatDate(booking.actualStartTime)}</p>
                     </div>
                     <div>
-                      <span className="text-gray-500">Starting Mileage</span>
+                      <span className="text-gray-500 dark:text-gray-400">Starting Mileage</span>
                       <p className="font-medium">{booking.startMileage || 'Not recorded'}</p>
                     </div>
                     <div>
-                      <span className="text-gray-500">Fuel Level</span>
+                      <span className="text-gray-500 dark:text-gray-400">Fuel Level</span>
                       <p className="font-medium">{booking.fuelLevelStart || 'Not recorded'}</p>
                     </div>
                   </div>
@@ -677,19 +766,19 @@ export default function BookingDetailPage() {
                   <h4 className="font-semibold mb-3">Check-out Details</h4>
                   <div className="grid sm:grid-cols-2 gap-4 text-sm">
                     <div>
-                      <span className="text-gray-500">Check-out Time</span>
+                      <span className="text-gray-500 dark:text-gray-400">Check-out Time</span>
                       <p className="font-medium">{formatDate(booking.actualEndTime)}</p>
                     </div>
                     <div>
-                      <span className="text-gray-500">Ending Mileage</span>
+                      <span className="text-gray-500 dark:text-gray-400">Ending Mileage</span>
                       <p className="font-medium">{booking.endMileage || 'Not recorded'}</p>
                     </div>
                     <div>
-                      <span className="text-gray-500">Fuel Level</span>
+                      <span className="text-gray-500 dark:text-gray-400">Fuel Level</span>
                       <p className="font-medium">{booking.fuelLevelEnd || 'Not recorded'}</p>
                     </div>
                     <div>
-                      <span className="text-gray-500">Total Miles Driven</span>
+                      <span className="text-gray-500 dark:text-gray-400">Total Miles Driven</span>
                       <p className="font-medium">
                         {booking.startMileage && booking.endMileage 
                           ? booking.endMileage - booking.startMileage 
@@ -715,18 +804,140 @@ export default function BookingDetailPage() {
 
         {activeTab === 'financial' && (
           <div className="space-y-6">
+            {/* PHASE 1: INSURANCE COVERAGE SECTION */}
+            {booking.insuranceHierarchy && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <IoShieldCheckmarkOutline className="w-5 h-5 text-purple-600" />
+                  Insurance Coverage Hierarchy
+                </h3>
+                
+                <div className="space-y-4">
+                  {/* Primary Coverage */}
+                  {booking.insuranceHierarchy.primary && (
+                    <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-3 h-3 bg-green-600 rounded-full"></div>
+                        <span className="font-semibold text-green-900 dark:text-green-200">Primary Coverage</span>
+                      </div>
+                      <div className="grid sm:grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Provider</span>
+                          <p className="font-medium">{booking.insuranceHierarchy.primary.provider}</p>
+                        </div>
+                        {booking.insuranceHierarchy.primary.policyNumber && (
+                          <div>
+                            <span className="text-gray-600 dark:text-gray-400">Policy Number</span>
+                            <p className="font-medium">{booking.insuranceHierarchy.primary.policyNumber}</p>
+                          </div>
+                        )}
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Liability Coverage</span>
+                          <p className="font-medium">{formatCurrency(booking.insuranceHierarchy.primary.liabilityCoverage)}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Collision Coverage</span>
+                          <p className="font-medium">{formatCurrency(booking.insuranceHierarchy.primary.collisionCoverage)}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Deductible</span>
+                          <p className="font-medium">{formatCurrency(booking.insuranceHierarchy.primary.deductible)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Secondary Coverage */}
+                  {booking.insuranceHierarchy.secondary && (
+                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
+                        <span className="font-semibold text-blue-900 dark:text-blue-200">Secondary Coverage</span>
+                      </div>
+                      <div className="grid sm:grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Provider</span>
+                          <p className="font-medium">{booking.insuranceHierarchy.secondary.provider}</p>
+                        </div>
+                        {booking.insuranceHierarchy.secondary.policyNumber && (
+                          <div>
+                            <span className="text-gray-600 dark:text-gray-400">Policy Number</span>
+                            <p className="font-medium">{booking.insuranceHierarchy.secondary.policyNumber}</p>
+                          </div>
+                        )}
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Liability Coverage</span>
+                          <p className="font-medium">{formatCurrency(booking.insuranceHierarchy.secondary.liabilityCoverage)}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Collision Coverage</span>
+                          <p className="font-medium">{formatCurrency(booking.insuranceHierarchy.secondary.collisionCoverage)}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Deductible</span>
+                          <p className="font-medium">{formatCurrency(booking.insuranceHierarchy.secondary.deductible)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tertiary Coverage */}
+                  {booking.insuranceHierarchy.tertiary && (
+                    <div className="p-4 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-3 h-3 bg-gray-600 dark:bg-gray-400 rounded-full"></div>
+                        <span className="font-semibold text-gray-900 dark:text-gray-200">Tertiary Coverage</span>
+                      </div>
+                      <div className="grid sm:grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Provider</span>
+                          <p className="font-medium">{booking.insuranceHierarchy.tertiary.provider}</p>
+                        </div>
+                        {booking.insuranceHierarchy.tertiary.policyNumber && (
+                          <div>
+                            <span className="text-gray-600 dark:text-gray-400">Policy Number</span>
+                            <p className="font-medium">{booking.insuranceHierarchy.tertiary.policyNumber}</p>
+                          </div>
+                        )}
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Liability Coverage</span>
+                          <p className="font-medium">{formatCurrency(booking.insuranceHierarchy.tertiary.liabilityCoverage)}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Collision Coverage</span>
+                          <p className="font-medium">{formatCurrency(booking.insuranceHierarchy.tertiary.collisionCoverage)}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Deductible</span>
+                          <p className="font-medium">{formatCurrency(booking.insuranceHierarchy.tertiary.deductible)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Context Message */}
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg text-sm text-blue-800 dark:text-blue-300">
+                    <p>
+                      <strong>Coverage Order:</strong> In the event of a claim, insurance will be applied in order: 
+                      Primary → Secondary → Tertiary. Each level covers up to its maximum after the previous level is exhausted.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Payment Summary */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
               <h3 className="text-lg font-semibold mb-4">Payment Details</h3>
               
               {/* Payment Status */}
               <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-semibold">Payment Status</span>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    booking.paymentStatus === 'PAID' ? 'bg-green-100 text-green-800' :
-                    booking.paymentStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-red-100 text-red-800'
+                  <span className={`px-3 py-1 rounded-lg text-xs font-medium shadow-sm ${
+                    booking.paymentStatus === 'PAID' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
+                    booking.paymentStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                    'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
                   }`}>
                     {booking.paymentStatus}
                   </span>
@@ -774,9 +985,24 @@ export default function BookingDetailPage() {
                 </div>
                 
                 <div className="flex justify-between text-sm pt-2">
-                  <span className="text-gray-600 dark:text-gray-400">Security Deposit</span>
-                  <span>{formatCurrency(booking.depositAmount)}</span>
+                  <span className="text-gray-600 dark:text-gray-400">Security Deposit (Held)</span>
+                  <span>{formatCurrency(booking.depositHeld || booking.depositAmount)}</span>
                 </div>
+
+                {/* Host Earnings Info */}
+                {booking.hostEarnings && (
+                  <div className="mt-4 p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-semibold text-purple-900 dark:text-purple-200">Your Earnings</span>
+                      <span className="px-2 py-1 bg-purple-200 dark:bg-purple-800 text-purple-900 dark:text-purple-200 rounded text-xs font-medium">
+                        {booking.hostEarnings.tier} - {booking.hostEarnings.percentage}%
+                      </span>
+                    </div>
+                    <p className="text-2xl font-bold text-purple-900 dark:text-purple-200">
+                      {formatCurrency(booking.hostEarnings.amount)}
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Post-Trip Charges */}
@@ -802,14 +1028,94 @@ export default function BookingDetailPage() {
           </div>
         )}
 
+        {/* PHASE 1: CLAIMS TAB - VIEW ONLY */}
+        {activeTab === 'claims' && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+            <h3 className="text-lg font-semibold mb-4">Claims for This Booking</h3>
+
+            {!booking.claims || booking.claims.length === 0 ? (
+              <div className="text-center py-12">
+                <IoDocumentAttachOutline className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600 dark:text-gray-400 mb-2">No claims filed for this booking</p>
+                <p className="text-sm text-gray-500 dark:text-gray-500 mb-4">
+                  Claims filed for this booking will appear here.
+                </p>
+                <Link
+                  href="/host/claims"
+                  className="inline-flex items-center gap-2 text-purple-600 hover:text-purple-700 text-sm font-medium"
+                >
+                  <IoDocumentTextOutline className="w-4 h-4" />
+                  Go to Claims Center to file a new claim
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {booking.claims.map((claim) => (
+                  <div
+                    key={claim.id}
+                    className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-purple-300 dark:hover:border-purple-700 transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2 flex-wrap">
+                          <h4 className="font-semibold">Claim #{claim.id.slice(0, 8)}</h4>
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${claimStatusColors[claim.status as keyof typeof claimStatusColors] || 'bg-gray-100 text-gray-800'}`}>
+                            {claim.status.replace(/_/g, ' ')}
+                          </span>
+                          {claim.vehicleDeactivated && (
+                            <span className="px-2 py-1 bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 rounded text-xs font-medium">
+                              Vehicle Deactivated
+                            </span>
+                          )}
+                        </div>
+                        <div className="grid sm:grid-cols-3 gap-3 text-sm text-gray-600 dark:text-gray-400">
+                          <div>
+                            <span className="text-gray-500 dark:text-gray-500 block text-xs">Type</span>
+                            <p className="font-medium text-gray-900 dark:text-gray-100">{claim.type}</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-500 dark:text-gray-500 block text-xs">Estimated Cost</span>
+                            <p className="font-medium text-gray-900 dark:text-gray-100">{formatCurrency(claim.estimatedCost)}</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-500 dark:text-gray-500 block text-xs">Filed</span>
+                            <p className="font-medium text-gray-900 dark:text-gray-100">{formatDate(claim.createdAt)}</p>
+                          </div>
+                        </div>
+                      </div>
+                      <Link
+                        href={`/host/claims/${claim.id}`}
+                        className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm shadow-sm whitespace-nowrap"
+                      >
+                        View Details
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+                
+                {/* Link to claims center at bottom */}
+                <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <Link
+                    href="/host/claims"
+                    className="inline-flex items-center gap-2 text-purple-600 hover:text-purple-700 text-sm font-medium"
+                  >
+                    <IoDocumentTextOutline className="w-4 h-4" />
+                    View all claims or file a new claim
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {activeTab === 'messages' && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
             <h3 className="text-lg font-semibold mb-4">Messages</h3>
             
             {/* Messages List */}
             <div className="space-y-4 mb-6 max-h-96 overflow-y-auto">
               {booking.messages.length === 0 ? (
-                <p className="text-center text-gray-500 py-8">No messages yet</p>
+                <p className="text-center text-gray-500 dark:text-gray-400 py-8">No messages yet</p>
               ) : (
                 booking.messages.map((message) => (
                   <div
@@ -843,12 +1149,12 @@ export default function BookingDetailPage() {
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                 placeholder="Type a message..."
-                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700"
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white"
               />
               <button
                 onClick={handleSendMessage}
                 disabled={!newMessage.trim() || sendingMessage}
-                className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
+                className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 shadow-sm"
               >
                 {sendingMessage ? 'Sending...' : 'Send'}
               </button>

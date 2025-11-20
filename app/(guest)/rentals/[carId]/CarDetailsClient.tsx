@@ -88,7 +88,7 @@ interface RentalCarWithDetails {
     responseTime?: number
     isVerified?: boolean
     isCompany?: boolean
-    approvalStatus?: string  // ADDED
+    approvalStatus?: string
   }
   reviews?: any[]
   currentMileage?: number
@@ -533,8 +533,9 @@ export default function CarDetailsClient({ params }: PageProps) {
                   </span>
                 </div>
                 
-                {/* Rating and Trips Display */}
-                {car.rating && car.rating > 0 && car.totalTrips && car.totalTrips > 0 ? (
+                {/* Rating and Trips Display - FIXED TO PREVENT STRAY ZEROS */}
+                {(car.rating !== null && car.rating !== undefined && car.rating > 0) && 
+                 (car.totalTrips !== null && car.totalTrips !== undefined && car.totalTrips > 0) ? (
                   <div className="flex items-center gap-1.5">
                     <div className="flex items-center">
                       <IoStar className="w-4 h-4 text-amber-400 fill-current" />
@@ -612,7 +613,7 @@ export default function CarDetailsClient({ params }: PageProps) {
               </div>
             </div>
 
-            {/* About This Car - Expandable */}
+            {/* About This Car - Expandable - FIXED ALL && TO TERNARY */}
             <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden">
               <button
                 onClick={() => setShowAboutCar(!showAboutCar)}
@@ -628,7 +629,7 @@ export default function CarDetailsClient({ params }: PageProps) {
                 )}
               </button>
               
-              {showAboutCar && (
+              {showAboutCar ? (
                 <div className="px-6 pb-6 space-y-4">
                   {/* Description */}
                   <div>
@@ -639,14 +640,14 @@ export default function CarDetailsClient({ params }: PageProps) {
                       for a smooth driving experience.
                     </p>
                     
-                    {car.mpgCity && car.mpgHighway && (
+                    {car.mpgCity && car.mpgHighway ? (
                       <p className="text-sm text-gray-600 dark:text-gray-400 mt-3">
                         Fuel efficient with {car.mpgCity} MPG in the city and {car.mpgHighway} MPG on the highway, 
                         making it perfect for both urban commutes and road trips.
                       </p>
-                    )}
+                    ) : null}
                     
-                    {car.color && (
+                    {car.color ? (
                       <div className="mt-2">
                         <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
                           Exterior Color
@@ -656,42 +657,42 @@ export default function CarDetailsClient({ params }: PageProps) {
                           <span className="capitalize">{car.color}</span>
                         </div>
                       </div>
-                    )}
+                    ) : null}
                   </div>
 
                   {/* Additional specs if available */}
-                  {(car.engineSize || car.driveType || car.currentMileage) && (
+                  {(car.engineSize || car.driveType || car.currentMileage) ? (
                     <div>
                       <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
                         Additional Specifications
                       </h3>
                       <div className="grid grid-cols-2 gap-3">
-                        {car.engineSize && (
+                        {car.engineSize ? (
                           <div className="flex items-center gap-2 text-sm">
                             <span className="text-gray-600 dark:text-gray-400">Engine:</span>
                             <span className="text-gray-900 dark:text-white">{car.engineSize}</span>
                           </div>
-                        )}
-                        {car.driveType && (
+                        ) : null}
+                        {car.driveType ? (
                           <div className="flex items-center gap-2 text-sm">
                             <span className="text-gray-600 dark:text-gray-400">Drive:</span>
                             <span className="text-gray-900 dark:text-white">{formatDriveType(car.driveType)}</span>
                           </div>
-                        )}
-                        {car.currentMileage && (
+                        ) : null}
+                        {car.currentMileage ? (
                           <div className="flex items-center gap-2 text-sm">
                             <span className="text-gray-600 dark:text-gray-400">Mileage:</span>
                             <span className="text-gray-900 dark:text-white">
                               {car.currentMileage.toLocaleString()} miles
                             </span>
                           </div>
-                        )}
+                        ) : null}
                       </div>
                     </div>
-                  )}
+                  ) : null}
 
-                  {/* Features */}
-                  {features.length > 0 && (
+                  {/* Features - FIXED: Changed from && to ternary */}
+                  {features.length > 0 ? (
                     <div>
                       <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
                         Features
@@ -708,7 +709,7 @@ export default function CarDetailsClient({ params }: PageProps) {
                         ))}
                       </div>
                       
-                      {features.length > 6 && (
+                      {features.length > 6 ? (
                         <button
                           onClick={() => setShowAllAboutFeatures(!showAllAboutFeatures)}
                           className="mt-3 text-sm text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-500 font-medium transition-colors"
@@ -719,29 +720,33 @@ export default function CarDetailsClient({ params }: PageProps) {
                             <>View all {features.length} features →</>
                           )}
                         </button>
-                      )}
+                      ) : null}
                     </div>
-                  )}
+                  ) : null}
 
-                  {/* MPG Info */}
-                  {(car.mpgCity || car.mpgHighway) && (
+                  {/* MPG Info - FIXED TO PREVENT STRAY ZEROS */}
+                  {(car.mpgCity || car.mpgHighway) ? (
                     <div className="flex items-center gap-4 pt-2">
-                      <div className="flex items-center gap-2">
-                        <IoSpeedometerOutline className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm text-gray-600 dark:text-gray-400">
-                          City: {car.mpgCity || 'N/A'} MPG
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <IoSpeedometerOutline className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm text-gray-600 dark:text-gray-400">
-                          Highway: {car.mpgHighway || 'N/A'} MPG
-                        </span>
-                      </div>
+                      {car.mpgCity ? (
+                        <div className="flex items-center gap-2">
+                          <IoSpeedometerOutline className="w-4 h-4 text-gray-400" />
+                          <span className="text-sm text-gray-600 dark:text-gray-400">
+                            City: {car.mpgCity} MPG
+                          </span>
+                        </div>
+                      ) : null}
+                      {car.mpgHighway ? (
+                        <div className="flex items-center gap-2">
+                          <IoSpeedometerOutline className="w-4 h-4 text-gray-400" />
+                          <span className="text-sm text-gray-600 dark:text-gray-400">
+                            Highway: {car.mpgHighway} MPG
+                          </span>
+                        </div>
+                      ) : null}
                     </div>
-                  )}
+                  ) : null}
                 </div>
-              )}
+              ) : null}
             </div>
 
             {/* Rental Guidelines - Expandable */}

@@ -94,15 +94,30 @@ export default function Header({
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
-  // Determine user type
-  const isAdmin = user?.role === 'ADMIN'
-  const isHost = user?.role === 'BUSINESS'
-  const isGuest = isLoggedIn && !isAdmin && !isHost
-
   // Check if we're on specific pages
   const isHostPage = pathname?.startsWith('/host/')
   const isAdminPage = pathname?.startsWith('/admin/')
   const isGuestPage = pathname?.startsWith('/dashboard') || pathname?.startsWith('/profile') || pathname?.startsWith('/messages')
+
+  // ✅ FIXED: Determine user type with fallback logic
+  const isAdmin = user?.role === 'ADMIN'
+  const isHost = user?.role === 'BUSINESS' || (isHostPage && isLoggedIn && !isAdmin)
+  const isGuest = isLoggedIn && !isAdmin && !isHost
+
+  // ✅ DEBUG: Log user detection (can remove later)
+  useEffect(() => {
+    if (user) {
+      console.log('🔍 Header User Detection:', {
+        user,
+        isHost,
+        isGuest,
+        isAdmin,
+        isHostPage,
+        pathname,
+        role: user.role
+      })
+    }
+  }, [user, isHost, isGuest, isAdmin, isHostPage, pathname])
 
   // Handle scroll for header background
   useEffect(() => {
@@ -476,10 +491,14 @@ export default function Header({
                 )}
               </button>
 
-              {/* Notifications - Using NotificationBell component for all user types */}
-              {isGuest && <NotificationBell userRole="GUEST" />}
-              {isHost && <NotificationBell userRole="HOST" />}
-              {isAdmin && <NotificationBell userRole="ADMIN" />}
+              {/* ✅ FIXED: Notifications - Show correct bell based on user type */}
+              {isLoggedIn && !isCheckingAuth && (
+                <>
+                  {isGuest && <NotificationBell userRole="GUEST" />}
+                  {isHost && <NotificationBell userRole="HOST" />}
+                  {isAdmin && <NotificationBell userRole="ADMIN" />}
+                </>
+              )}
               
               {/* Profile/Sign In Button */}
               {!isCheckingAuth && (

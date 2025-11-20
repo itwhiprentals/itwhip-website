@@ -1,8 +1,10 @@
 // app/host/profile/components/insurance/PlatformInsuranceSection.tsx
 'use client'
 
+import { useState } from 'react'
 import { IoCheckmarkCircleOutline, IoWarningOutline, IoTrendingUpOutline, IoArrowForwardOutline } from 'react-icons/io5'
 import { EARNINGS_TIERS } from '@/app/fleet/financial-constants'
+import PolicyDetailsModal from './PolicyDetailsModal'
 
 interface InsuranceProvider {
   id: string
@@ -20,7 +22,7 @@ interface PlatformInsuranceSectionProps {
   policyNumber?: string
   isActive?: boolean
   currentTier: 'BASIC' | 'STANDARD' | 'PREMIUM'
-  onViewPolicy: () => void
+  onViewPolicy?: () => void // Made optional since we'll use modal
 }
 
 export default function PlatformInsuranceSection({
@@ -30,10 +32,19 @@ export default function PlatformInsuranceSection({
   currentTier,
   onViewPolicy
 }: PlatformInsuranceSectionProps) {
+  const [showPolicyModal, setShowPolicyModal] = useState(false)
   const basicTier = EARNINGS_TIERS.BASIC
   const standardTier = EARNINGS_TIERS.STANDARD
   const premiumTier = EARNINGS_TIERS.PREMIUM
   const isBasicTier = currentTier === 'BASIC'
+
+  const handleViewPolicy = () => {
+    if (onViewPolicy) {
+      onViewPolicy()
+    } else {
+      setShowPolicyModal(true)
+    }
+  }
 
   return (
     <div>
@@ -51,7 +62,7 @@ export default function PlatformInsuranceSection({
         </div>
         {provider && (
           <button
-            onClick={onViewPolicy}
+            onClick={handleViewPolicy}
             className="w-full sm:w-auto px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             View Policy Details
@@ -105,7 +116,7 @@ export default function PlatformInsuranceSection({
             </div>
           </div>
 
-          {/* ✅ NEW: Earnings Impact Card (Only show if at Basic tier) */}
+          {/* Earnings Impact Card (Only show if at Basic tier) */}
           {isBasicTier && (
             <div className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-800 border border-blue-200 dark:border-gray-700 rounded-lg p-4">
               <div className="flex items-start gap-3 mb-4">
@@ -244,6 +255,12 @@ export default function PlatformInsuranceSection({
           </div>
         </div>
       )}
+
+      {/* Policy Details Modal */}
+      <PolicyDetailsModal 
+        isOpen={showPolicyModal}
+        onClose={() => setShowPolicyModal(false)}
+      />
     </div>
   )
 }

@@ -8,6 +8,7 @@ import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
 import ClaimCard from './components/ClaimCard'
 import ClaimStatusBadge from './components/ClaimStatusBadge'
+import ClaimBanner from '../dashboard/components/ClaimBanner'
 import {
   IoAddOutline,
   IoFilterOutline,
@@ -15,12 +16,14 @@ import {
   IoAlertCircleOutline,
   IoRefreshOutline,
   IoLockClosedOutline,
-  IoCheckmarkCircleOutline
+  IoCheckmarkCircleOutline,
+  IoTimeOutline,
+  IoShieldCheckmarkOutline
 } from 'react-icons/io5'
 
 interface Claim {
   id: string
-  claimType: 'insurance' | 'trip_charges' // NEW: Distinguish claim types
+  claimType: 'insurance' | 'trip_charges'
   type: string
   status: string
   description: string
@@ -30,12 +33,16 @@ interface Claim {
   incidentDate: string | null
   createdAt: string
   damagePhotos?: string[]
+  vehicleDeactivated?: boolean
+  canCancel?: boolean
   booking: {
     id: string
     bookingCode: string
     car: {
+      id?: string
       displayName: string
       heroPhoto: string | null
+      isActive?: boolean
     } | null
     guest: {
       name: string
@@ -45,6 +52,24 @@ interface Claim {
   isPending?: boolean
   isApproved?: boolean
   isPaid?: boolean
+}
+
+interface ClaimNotification {
+  id: string
+  type: 'CLAIM_FILED' | 'CLAIM_APPROVED' | 'CLAIM_REJECTED' | 'GUEST_RESPONSE' | 'GUEST_NO_RESPONSE'
+  claimId: string
+  bookingCode: string
+  guestName?: string
+  message: string
+  actionUrl?: string
+  createdAt: string
+  metadata?: {
+    reviewNotes?: string
+    rejectionReason?: string
+    responseDeadline?: string
+    guestResponse?: string
+    estimatedCost?: number
+  }
 }
 
 interface Summary {
@@ -57,30 +82,44 @@ interface Summary {
   totalEstimated: number
   totalApproved: number
   totalPaid: number
-  insuranceClaims: number // NEW
-  tripCharges: number // NEW
+  insuranceClaims: number
+  tripCharges: number
 }
 
 function ClaimsContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   
-  // Check if redirected due to approval requirement
   const approvalRequired = searchParams.get('approval_required') === 'true'
   const action = searchParams.get('action')
 
-  // State
   const [claims, setClaims] = useState<Claim[]>([])
   const [summary, setSummary] = useState<Summary | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [statusFilter, setStatusFilter] = useState('ALL')
   const [refreshing, setRefreshing] = useState(false)
+  const [claimNotifications, setClaimNotifications] = useState<ClaimNotification[]>([])
 
-  // Fetch claims on mount and when filter changes
   useEffect(() => {
     fetchClaims()
+    fetchNotifications()
   }, [statusFilter])
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await fetch('/api/host/notifications?type=claim')
+      if (response.ok) {
+        const data = await response.json()
+        const claimNotifs = data.notifications?.filter((n: any) => 
+          ['CLAIM_FILED', 'CLAIM_APPROVED', 'CLAIM_REJECTED', 'GUEST_RESPONSE', 'GUEST_NO_RESPONSE'].includes(n.type)
+        ) || []
+        setClaimNotifications(claimNotifs)
+      }
+    } catch (err) {
+      console.error('Error fetching notifications:', err)
+    }
+  }
 
   const fetchClaims = async (showRefresh = false) => {
     try {
@@ -115,9 +154,25 @@ function ClaimsContent() {
 
   const handleRefresh = () => {
     fetchClaims(true)
+    fetchNotifications()
   }
 
-  // Status filter options
+  const handleDismissNotification = async (notificationId: string) => {
+    try {
+      await fetch(`/api/host/notifications`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          notificationIds: [notificationId],
+          action: 'mark_read'
+        })
+      })
+      setClaimNotifications(prev => prev.filter(n => n.id !== notificationId))
+    } catch (err) {
+      console.error('Failed to dismiss notification:', err)
+    }
+  }
+
   const statusFilters = [
     { value: 'ALL', label: 'All Claims', count: summary?.total || 0 },
     { value: 'PENDING', label: 'Pending', count: summary?.pending || 0 },
@@ -127,11 +182,29 @@ function ClaimsContent() {
     { value: 'PAID', label: 'Paid', count: summary?.paid || 0 }
   ]
 
+  // Get highest priority notification
+  const priorityNotification = 
+    claimNotifications.find(n => n.type === 'CLAIM_APPROVED') ||
+    claimNotifications.find(n => n.type === 'GUEST_RESPONSE') ||
+    claimNotifications.find(n => n.type === 'CLAIM_REJECTED') ||
+    claimNotifications.find(n => n.type === 'GUEST_NO_RESPONSE') ||
+    claimNotifications.find(n => n.type === 'CLAIM_FILED')
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       <Header />
 
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 w-full">
+      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8 w-full">
+        {/* Show claim banner if there's a priority notification */}
+        {priorityNotification && (
+          <div className="mb-6">
+            <ClaimBanner 
+              notification={priorityNotification} 
+              onDismiss={handleDismissNotification}
+            />
+          </div>
+        )}
+
         {/* Page header */}
         <div className="mb-6 sm:mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
@@ -148,169 +221,166 @@ function ClaimsContent() {
               <button
                 onClick={handleRefresh}
                 disabled={refreshing}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center gap-2"
+                className={`px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium text-sm transition-colors flex items-center gap-2 ${
+                  refreshing ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
               >
-                <IoRefreshOutline className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
-                <span className="hidden sm:inline">Refresh</span>
+                <IoRefreshOutline className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+                Refresh
               </button>
 
               <Link
                 href="/host/claims/new"
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2 font-medium"
+                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium text-sm flex items-center gap-2 transition-colors"
               >
                 <IoAddOutline className="w-5 h-5" />
-                <span>File Claim</span>
+                <span className="hidden sm:inline">File New Claim</span>
+                <span className="sm:hidden">New</span>
               </Link>
             </div>
           </div>
 
-          {/* Approval required alert */}
-          {approvalRequired && action === 'create_claim' && (
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-4">
-              <div className="flex items-start gap-3">
-                <IoLockClosedOutline className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <h4 className="text-sm font-medium text-yellow-900 dark:text-yellow-200 mb-1">
-                    Account Approval Required
-                  </h4>
-                  <p className="text-sm text-yellow-800 dark:text-yellow-300">
-                    Only approved hosts can file new claims. You can still view your existing claims below.
-                  </p>
+          {/* Summary Cards */}
+          {summary && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 mb-6">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 sm:p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Total Claims</p>
+                    <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+                      {summary.total}
+                    </p>
+                  </div>
+                  <IoDocumentTextOutline className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400 opacity-60" />
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 sm:p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Pending</p>
+                    <p className="text-xl sm:text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                      {summary.pending}
+                    </p>
+                  </div>
+                  <IoTimeOutline className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-500 opacity-60" />
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 sm:p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Under Review</p>
+                    <p className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400">
+                      {summary.underReview}
+                    </p>
+                  </div>
+                  <IoShieldCheckmarkOutline className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500 opacity-60" />
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 sm:p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Approved</p>
+                    <p className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400">
+                      {summary.approved}
+                    </p>
+                  </div>
+                  <IoCheckmarkCircleOutline className="w-6 h-6 sm:w-8 sm:h-8 text-green-500 opacity-60" />
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 sm:p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Total Est.</p>
+                    <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+                      ${summary.totalEstimated.toLocaleString()}
+                    </p>
+                  </div>
+                  <IoAlertCircleOutline className="w-6 h-6 sm:w-8 sm:h-8 text-orange-500 opacity-60" />
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 sm:p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Total Paid</p>
+                    <p className="text-lg sm:text-xl font-bold text-purple-600 dark:text-purple-400">
+                      ${summary.totalPaid.toLocaleString()}
+                    </p>
+                  </div>
+                  <IoCheckmarkCircleOutline className="w-6 h-6 sm:w-8 sm:h-8 text-purple-500 opacity-60" />
                 </div>
               </div>
             </div>
           )}
 
-          {/* Summary stats */}
-          {summary && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total Claims</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {summary.total}
-                </p>
-              </div>
-
-              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Pending</p>
-                <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-                  {summary.pending}
-                </p>
-              </div>
-
-              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Approved</p>
-                <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                  {summary.approved}
-                </p>
-              </div>
-
-              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total Approved</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  ${summary.totalApproved.toLocaleString()}
-                </p>
-              </div>
-
-              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total Paid</p>
-                <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                  ${summary.totalPaid.toLocaleString()}
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Status filter tabs */}
-        <div className="mb-6">
-          <div className="flex items-center gap-2 mb-3">
-            <IoFilterOutline className="w-5 h-5 text-gray-400 dark:text-gray-500" />
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Filter by Status
-            </span>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
+          {/* Status Filters */}
+          <div className="flex gap-2 overflow-x-auto pb-2">
             {statusFilters.map(filter => (
               <button
                 key={filter.value}
                 onClick={() => setStatusFilter(filter.value)}
-                className={`
-                  px-4 py-2 rounded-lg border text-sm font-medium transition-all
-                  ${statusFilter === filter.value
-                    ? 'bg-purple-600 text-white border-purple-600'
-                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-700'
-                  }
-                `}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                  statusFilter === filter.value
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                }`}
               >
-                {filter.label}
-                {filter.count > 0 && (
-                  <span className={`ml-2 ${statusFilter === filter.value ? 'text-purple-100' : 'text-gray-500 dark:text-gray-400'}`}>
-                    ({filter.count})
-                  </span>
-                )}
+                {filter.label} ({filter.count})
               </button>
             ))}
           </div>
         </div>
 
-        {/* Error state */}
-        {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
-            <div className="flex items-start gap-3">
-              <IoAlertCircleOutline className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <h4 className="text-sm font-medium text-red-900 dark:text-red-200 mb-1">
-                  Error Loading Claims
-                </h4>
-                <p className="text-sm text-red-800 dark:text-red-300">{error}</p>
-              </div>
-            </div>
+        {/* Claims List */}
+        {loading ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
           </div>
-        )}
-
-        {/* Loading state */}
-        {loading && (
-          <div className="text-center py-12">
-            <div className="inline-block w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400">Loading claims...</p>
+        ) : error ? (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
+            <IoAlertCircleOutline className="w-12 h-12 text-red-600 dark:text-red-400 mx-auto mb-3" />
+            <p className="text-red-800 dark:text-red-300">{error}</p>
+            <button
+              onClick={handleRefresh}
+              className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium text-sm transition-colors"
+            >
+              Try Again
+            </button>
           </div>
-        )}
-
-        {/* Claims list */}
-        {!loading && !error && (
-          <>
-            {claims.length === 0 ? (
-              <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                <IoDocumentTextOutline className="w-16 h-16 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                  {statusFilter === 'ALL' ? 'No Claims Yet' : `No ${statusFilter.toLowerCase().replace('_', ' ')} claims`}
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
-                  {statusFilter === 'ALL' 
-                    ? 'File your first claim when you need to report damage or issues with your rental vehicles.'
-                    : 'No claims match this status filter.'
-                  }
-                </p>
-                {statusFilter === 'ALL' && (
-                  <Link
-                    href="/host/claims/new"
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
-                  >
-                    <IoAddOutline className="w-5 h-5" />
-                    <span>File Your First Claim</span>
-                  </Link>
-                )}
-              </div>
-            ) : (
-              <div className="grid gap-4">
-                {claims.map(claim => (
-                  <ClaimCard key={claim.id} claim={claim} />
-                ))}
-              </div>
+        ) : claims.length === 0 ? (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
+            <IoDocumentTextOutline className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              No Claims Found
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              {statusFilter === 'ALL' 
+                ? "You haven't filed any insurance claims yet"
+                : `No claims with status "${statusFilters.find(f => f.value === statusFilter)?.label}"`}
+            </p>
+            {statusFilter !== 'ALL' && (
+              <button
+                onClick={() => setStatusFilter('ALL')}
+                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium text-sm transition-colors"
+              >
+                View All Claims
+              </button>
             )}
-          </>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {claims.map(claim => (
+              <ClaimCard 
+                key={claim.id} 
+                claim={claim} 
+                onStatusChange={handleRefresh}
+              />
+            ))}
+          </div>
         )}
       </main>
 
@@ -322,15 +392,8 @@ function ClaimsContent() {
 export default function HostClaimsPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
-        <Header />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="inline-block w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400">Loading claims...</p>
-          </div>
-        </div>
-        <Footer />
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
       </div>
     }>
       <ClaimsContent />

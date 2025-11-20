@@ -1,7 +1,7 @@
 // app/host/cars/add/page.tsx
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -17,7 +17,9 @@ import {
   IoAlertCircleOutline,
   IoAddOutline,
   IoCloseOutline,
-  IoCloudUploadOutline
+  IoCloudUploadOutline,
+  IoShieldCheckmarkOutline,
+  IoWarningOutline
 } from 'react-icons/io5'
 
 interface CarFormData {
@@ -75,6 +77,25 @@ interface CarFormData {
   rules: string[]
 }
 
+interface InsuranceClassification {
+  category: string
+  riskLevel: string
+  estimatedValue: number
+  isInsurable: boolean
+  insurabilityReason?: string
+  requiresManualReview: boolean
+}
+
+interface InsuranceEligibility {
+  eligible: boolean
+  reason?: string
+  tier?: string
+  dailyRate?: number
+  deductible?: number
+  requiresManualReview: boolean
+  recommendations?: string[]
+}
+
 const CAR_TYPES = [
   { value: 'economy', label: 'Economy' },
   { value: 'compact', label: 'Compact' },
@@ -99,6 +120,30 @@ const DEFAULT_RULES = [
   'Must be 21+ to rent', 'Valid driver\'s license required', 'Report any damage immediately'
 ]
 
+// Helper function to get category label
+const getCategoryLabel = (category: string): string => {
+  const labels: Record<string, string> = {
+    'ECONOMY': 'Economy',
+    'STANDARD': 'Standard',
+    'PREMIUM': 'Premium',
+    'LUXURY': 'Luxury',
+    'EXOTIC': 'Exotic',
+    'SUPERCAR': 'Supercar'
+  }
+  return labels[category] || category
+}
+
+// Helper function to get risk level styling
+const getRiskLevelStyle = (level: string): string => {
+  const styles: Record<string, string> = {
+    'LOW': 'text-green-600 bg-green-50',
+    'MEDIUM': 'text-yellow-600 bg-yellow-50',
+    'HIGH': 'text-orange-600 bg-orange-50',
+    'EXTREME': 'text-red-600 bg-red-50'
+  }
+  return styles[level] || 'text-gray-600 bg-gray-50'
+}
+
 export default function AddCarPage() {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
@@ -106,6 +151,11 @@ export default function AddCarPage() {
   const [uploadingPhotos, setUploadingPhotos] = useState(false)
   const [photos, setPhotos] = useState<string[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
+  
+  // Insurance states
+  const [checkingInsurance, setCheckingInsurance] = useState(false)
+  const [classification, setClassification] = useState<InsuranceClassification | null>(null)
+  const [eligibility, setEligibility] = useState<InsuranceEligibility | null>(null)
   
   const [formData, setFormData] = useState<CarFormData>({
     make: '',
@@ -150,6 +200,39 @@ export default function AddCarPage() {
   })
   
   const [errors, setErrors] = useState<Record<string, string>>({})
+
+  // Check insurance classification when make/model/year changes
+  useEffect(() => {
+    if (formData.make && formData.model && formData.year) {
+      checkInsuranceClassification()
+    }
+  }, [formData.make, formData.model, formData.year])
+
+  const checkInsuranceClassification = async () => {
+    setCheckingInsurance(true)
+    try {
+      const response = await fetch('/api/insurance/classify-vehicle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          make: formData.make,
+          model: formData.model,
+          year: formData.year,
+          trim: formData.trim
+        })
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        setClassification(data.classification)
+        setEligibility(data.eligibility)
+      }
+    } catch (error) {
+      console.error('Failed to check insurance:', error)
+    } finally {
+      setCheckingInsurance(false)
+    }
+  }
 
   const validateStep = (step: number): boolean => {
     const newErrors: Record<string, string> = {}
@@ -379,6 +462,120 @@ export default function AddCarPage() {
                 placeholder="1234"
               />
             </div>
+            
+            {/* Insurance Classification Section */}
+            {(classification || checkingInsurance) && (
+              <div className="border-t pt-6">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                  <IoShieldCheckmarkOutline className="w-5 h-5" />
+                  Insurance Classification
+                </h3>
+                
+                {checkingInsurance ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-2 border-purple-600 border-t-transparent" />
+                  </div>
+                ) : classification ? (
+                  <div className="space-y-4">
+                    {/* Classification Details */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Category</p>
+                        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm font-medium">
+                          {getCategoryLabel(classification.category)}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Risk Level</p>
+                        <span className={`px-2 py-1 rounded text-sm font-medium ${getRiskLevelStyle(classification.riskLevel)}`}>
+                          {classification.riskLevel}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Est. Value</p>
+                        <p className="text-sm font-medium">${classification.estimatedValue.toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Status</p>
+                        <div className="flex items-center gap-1">
+                          {classification.isInsurable ? (
+                            <>
+                              <IoCheckmarkCircleOutline className="w-4 h-4 text-green-500" />
+                              <span className="text-sm text-green-600">Insurable</span>
+                            </>
+                          ) : (
+                            <>
+                              <IoCloseOutline className="w-4 h-4 text-red-500" />
+                              <span className="text-sm text-red-600">Not Insurable</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Warnings or Notes */}
+                    {classification.requiresManualReview && (
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                        <div className="flex gap-2">
+                          <IoWarningOutline className="w-5 h-5 text-yellow-600 flex-shrink-0" />
+                          <div>
+                            <p className="text-sm font-medium text-yellow-800">Manual Review Required</p>
+                            <p className="text-xs text-yellow-700 mt-1">
+                              This vehicle requires manual underwriting before insurance can be approved.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {classification.insurabilityReason && (
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                        <div className="flex gap-2">
+                          <IoAlertCircleOutline className="w-5 h-5 text-red-600 flex-shrink-0" />
+                          <p className="text-sm text-red-800">{classification.insurabilityReason}</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Eligibility Details */}
+                    {eligibility && eligibility.eligible && (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                        <p className="text-sm font-medium text-green-800 mb-2">Insurance Coverage Available</p>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div>
+                            <span className="text-green-600">Tier:</span>
+                            <span className="ml-1 font-medium">{eligibility.tier}</span>
+                          </div>
+                          <div>
+                            <span className="text-green-600">Daily Rate:</span>
+                            <span className="ml-1 font-medium">${eligibility.dailyRate}/day</span>
+                          </div>
+                          <div>
+                            <span className="text-green-600">Deductible:</span>
+                            <span className="ml-1 font-medium">${eligibility.deductible}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Recommendations */}
+                    {eligibility?.recommendations && eligibility.recommendations.length > 0 && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                        <p className="text-sm font-medium text-blue-800 mb-2">Recommendations</p>
+                        <ul className="space-y-1">
+                          {eligibility.recommendations.map((rec, index) => (
+                            <li key={index} className="text-xs text-blue-700 flex items-start gap-1">
+                              <span>•</span>
+                              <span>{rec}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                ) : null}
+              </div>
+            )}
           </div>
         )
         
@@ -924,6 +1121,31 @@ export default function AddCarPage() {
                 </div>
               </div>
             </div>
+            
+            {/* Insurance Summary */}
+            {classification && (
+              <div className="bg-gray-50 rounded-lg p-6 space-y-4">
+                <h3 className="font-medium text-gray-900">Insurance Classification</h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-500">Category:</span>
+                    <p className="font-medium">{getCategoryLabel(classification.category)}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Risk Level:</span>
+                    <p className="font-medium">{classification.riskLevel}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Estimated Value:</span>
+                    <p className="font-medium">${classification.estimatedValue.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Insurance Status:</span>
+                    <p className="font-medium">{classification.isInsurable ? 'Eligible' : 'Not Eligible'}</p>
+                  </div>
+                </div>
+              </div>
+            )}
             
             <div className="bg-gray-50 rounded-lg p-6 space-y-4">
               <h3 className="font-medium text-gray-900">Location</h3>

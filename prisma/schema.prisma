@@ -6,8 +6,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // ============================================================================
@@ -27,12 +28,12 @@ model User {
   isActive         Boolean @default(true)
   twoFactorEnabled Boolean @default(false)
 
-  // 🆕 PASSWORD RESET FIELDS
-  resetToken              String?   @unique
-  resetTokenExpiry        DateTime?
-  resetTokenUsed          Boolean   @default(false)
-  lastPasswordReset       DateTime?
-  passwordResetAttempts   Int       @default(0)
+  // PASSWORD RESET FIELDS
+  resetToken               String?   @unique
+  resetTokenExpiry         DateTime?
+  resetTokenUsed           Boolean   @default(false)
+  lastPasswordReset        DateTime?
+  passwordResetAttempts    Int       @default(0)
   passwordResetLastAttempt DateTime?
 
   // Profile
@@ -58,6 +59,7 @@ model User {
 
   // Notifications
   notificationDismissals NotificationDismissal[]
+  notificationSettings   UserNotificationSettings?
 
   // Payment methods
   paymentMethods PaymentMethod[] @relation("UserPaymentMethods")
@@ -73,13 +75,32 @@ model User {
   @@index([resetToken])
 }
 
+model UserNotificationSettings {
+  id               String  @id @default(cuid())
+  userId           String  @unique
+  user             User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  claimFiled       Boolean @default(true)
+  claimApproved    Boolean @default(true)
+  claimDenied      Boolean @default(true)
+  fnolSubmitted    Boolean @default(true)
+  guestHoldNotice  Boolean @default(true)
+  responseReminder Boolean @default(true)
+  claimResolved    Boolean @default(true)
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  @@index([userId])
+}
+
 model NotificationDismissal {
   id               String    @id @default(cuid())
   userId           String
-  notificationType String // PAYMENT_REQUIRED, LICENSE_REQUIRED, INSURANCE_REQUIRED, EMERGENCY_CONTACT, PROFILE_INCOMPLETE, TWO_FACTOR_DISABLED
+  notificationType String
   dismissedAt      DateTime  @default(now())
   dismissCount     Int       @default(1)
-  completedAt      DateTime? // When the action was actually completed
+  completedAt      DateTime?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -509,7 +530,7 @@ model RentalHost {
   documentsVerified Boolean @default(false)
 
   // Additional host settings
-  autoApproveBookings Boolean @default(false)
+  autoApproveBookings Boolean @default(true)
   requireDeposit      Boolean @default(true)
   depositAmount       Float   @default(500)
 
@@ -677,6 +698,10 @@ model RentalHost {
   // Active Earnings Tier (determines platform fee)
   earningsTier EarningsTier @default(BASIC)
 
+  // ===== PHASE 2A: NEW INSURANCE TYPE & REVENUE SPLIT FIELDS =====
+  insuranceType String @default("none") // "none" | "p2p" | "commercial"
+  revenueSplit  Int    @default(40) // 40, 75, 90
+
   // Tier Change Tracking
   lastTierChange   DateTime?
   tierChangeReason String?
@@ -697,6 +722,7 @@ model RentalHost {
   paymentMethods        PaymentMethod[]      @relation("HostPaymentMethods")
   hostCharges           HostCharge[]
   claims                Claim[]
+  esgProfile            HostESGProfile?      @relation("HostESGProfile")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -972,7 +998,7 @@ model HostDocumentStatus {
 }
 
 // ============================================================================
-// INSURANCE PROVIDER MODEL (NEW)
+// INSURANCE PROVIDER MODEL (UPDATED WITH VEHICLE RULES)
 // ============================================================================
 
 model InsuranceProvider {
@@ -987,6 +1013,9 @@ model InsuranceProvider {
   // Coverage Configuration (JSON)
   coverageTiers Json
   pricingRules  Json
+
+  // ===== NEW: VEHICLE-BASED COVERAGE RULES =====
+  vehicleRules Json? // Stores complex vehicle eligibility rules
 
   // API Integration (for providers like Tint)
   apiKey                 String? @db.Text
@@ -1016,10 +1045,14 @@ model InsuranceProvider {
   contactPhone  String?
 
   // Relations
-  assignedHosts    RentalHost[]               @relation("HostInsurance")
-  policies         InsurancePolicy[]
-  rateHistory      InsuranceRateHistory[]
-  vehicleOverrides VehicleInsuranceOverride[]
+  assignedHosts          RentalHost[]               @relation("HostInsurance")
+  policies               InsurancePolicy[]
+  rateHistory            InsuranceRateHistory[]
+  vehicleOverrides       VehicleInsuranceOverride[]
+  vehicleClassifications VehicleClassification[]    @relation("ProviderVehicleClassifications")
+  coverageOverrides      VehicleCoverageOverride[]
+  providerMessages       ProviderMessage[]
+  providerDocuments      ProviderDocument[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1029,7 +1062,168 @@ model InsuranceProvider {
 }
 
 // ============================================================================
-// INSURANCE POLICY MODEL (NEW)
+// PHASE 2A: NEW PROVIDER MESSAGE MODEL
+// ============================================================================
+
+model ProviderMessage {
+  id         String            @id @default(cuid())
+  providerId String
+  provider   InsuranceProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  subject  String
+  message  String @db.Text
+  category String // "general", "claim_inquiry", "policy_question", "technical"
+  priority String @default("normal") // "low", "normal", "high", "urgent"
+
+  sentBy     String
+  sentByName String
+  direction  String // "outbound", "inbound"
+
+  attachments    Json?
+  relatedClaimId String?
+
+  status    String    @default("sent") // "sent", "delivered", "read", "replied"
+  readAt    DateTime?
+  replyToId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([providerId])
+  @@index([category])
+  @@index([status])
+  @@index([relatedClaimId])
+}
+
+// ============================================================================
+// PHASE 2A: NEW PROVIDER DOCUMENT MODEL
+// ============================================================================
+
+model ProviderDocument {
+  id         String            @id @default(cuid())
+  providerId String
+  provider   InsuranceProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  name              String
+  category          String // "contract", "policy_template", "rate_sheet", "compliance", "w9", "certificate"
+  fileUrl           String
+  fileSize          Int
+  fileType          String
+  version           String  @default("1.0")
+  previousVersionId String?
+  description       String? @db.Text
+  uploadedBy        String
+
+  expiresAt    DateTime?
+  reminderSent Boolean  @default(false)
+  status       String   @default("active") // "active", "archived", "expired"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([providerId])
+  @@index([category])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+// ============================================================================
+// NEW: VEHICLE CLASSIFICATION MODEL - DETERMINES COVERAGE ELIGIBILITY
+// ============================================================================
+
+model VehicleClassification {
+  id    String @id @default(cuid())
+  make  String
+  model String
+  year  Int
+
+  // Vehicle categorization
+  category  VehicleCategory
+  riskLevel RiskCategory
+
+  // Value information
+  baseValue      Decimal   @db.Decimal(12, 2)
+  currentValue   Decimal   @db.Decimal(12, 2)
+  valueSource    String? // "KBB", "NADA", "Manual", etc.
+  lastValueCheck DateTime?
+
+  // Vehicle characteristics (JSON for flexibility)
+  features Json? // convertible, turbo, electric, performance, etc.
+
+  // Insurance eligibility
+  isInsurable          Boolean @default(true)
+  insurabilityReason   String? @db.Text
+  requiresManualReview Boolean @default(false)
+
+  // Rate multipliers
+  baseRateMultiplier Decimal @default(1.0) @db.Decimal(5, 2)
+  riskMultiplier     Decimal @default(1.0) @db.Decimal(5, 2)
+
+  // Provider-specific rules
+  providerId            String?
+  provider              InsuranceProvider? @relation("ProviderVehicleClassifications", fields: [providerId], references: [id])
+  providerSpecificRules Json?
+
+  // Relations to actual rental cars
+  rentalCars RentalCar[] @relation("CarClassification")
+
+  // Metadata
+  notes     String? @db.Text
+  createdBy String?
+  updatedBy String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([make, model, year, providerId])
+  @@index([make, model])
+  @@index([category])
+  @@index([riskLevel])
+  @@index([baseValue])
+  @@index([isInsurable])
+  @@index([providerId])
+}
+
+// ============================================================================
+// NEW: VEHICLE COVERAGE OVERRIDE MODEL - SPECIAL CASES
+// ============================================================================
+
+model VehicleCoverageOverride {
+  id    String  @id @default(cuid())
+  carId String
+  vin   String?
+
+  providerId String
+  provider   InsuranceProvider @relation(fields: [providerId], references: [id])
+
+  // Override details
+  overrideType CoverageOverrideType
+  customRules  Json // Custom eligibility/pricing rules
+  reason       String               @db.Text
+
+  // Approval tracking
+  approvedBy String
+  approvedAt DateTime  @default(now())
+  expiresAt  DateTime?
+
+  // Status
+  isActive Boolean @default(true)
+
+  // Relations
+  car RentalCar @relation(fields: [carId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([carId, providerId])
+  @@index([carId])
+  @@index([providerId])
+  @@index([vin])
+  @@index([expiresAt])
+}
+
+// ============================================================================
+// INSURANCE POLICY MODEL (UPDATED WITH NEW ROUTING FIELDS)
 // ============================================================================
 
 model InsurancePolicy {
@@ -1061,6 +1255,14 @@ model InsurancePolicy {
   effectiveDate DateTime
   expiryDate    DateTime
 
+  // ===== NEW: POLICY BINDING & ROUTING =====
+  policySource     String? // "liberty_api", "host_p2p", "guest_personal", "platform"
+  boundViaApi      Boolean @default(false)
+  externalPolicyId String? // Liberty/Tint policy ID
+  primaryParty     String? // "host", "guest", "platform"
+  hostTier         String? // "40%", "75%", "90%"
+  policySnapshot   Json? // Complete policy details at binding time
+
   // Relations
   provider InsuranceProvider @relation(fields: [providerId], references: [id])
   booking  RentalBooking     @relation(fields: [bookingId], references: [id], onDelete: Cascade)
@@ -1075,7 +1277,7 @@ model InsurancePolicy {
 }
 
 // ============================================================================
-// CLAIM MODEL (NEW)
+// CLAIM MODEL - COMPLETE WITH ALL WORKFLOW FIELDS + NEW ROUTING FIELDS + INCIDENT LOCATION + FNOL
 // ============================================================================
 
 model Claim {
@@ -1085,11 +1287,69 @@ model Claim {
   hostId    String
 
   // Claim Type & Incident
-  type         ClaimType
-  reportedBy   String
-  description  String    @db.Text
-  incidentDate DateTime
-  damagePhotos Json
+  type               ClaimType
+  reportedBy         String
+  description        String    @db.Text
+  incidentDate       DateTime
+  damagePhotosLegacy Json? // LEGACY: Old JSON storage (optional for backward compatibility)
+
+  // ===== INCIDENT LOCATION & CONDITIONS =====
+  incidentAddress     String?
+  incidentCity        String?
+  incidentState       String?
+  incidentZip         String?
+  incidentLatitude    Float?
+  incidentLongitude   Float?
+  incidentDescription String?   @db.Text // Additional location details
+  weatherConditions   String? // "Clear", "Rain", "Snow", "Fog", etc.
+  roadConditions      String? // "Dry", "Wet", "Icy", "Construction", etc.
+  policeReportNumber  String?
+  witnesses           Json? // Array: [{name, phone, email}]
+
+  // ===== NEW: FNOL INCIDENT-SPECIFIC FIELDS =====
+
+  // Odometer & Vehicle Condition
+  odometerAtIncident Int?    // Odometer reading at time of incident
+  vehicleDrivable    Boolean @default(true) // Can vehicle be driven?
+  vehicleLocation    String? // Current location if not drivable
+
+  // Weather & Road Conditions (Enhanced)
+  weatherDescription String? // Additional weather details
+  roadDescription    String? // Additional road details
+  estimatedSpeed     Int? // Speed at time of impact (mph)
+  trafficConditions  String? // "LIGHT", "MODERATE", "HEAVY", "STOPPED"
+
+  // Police Report (Enhanced)
+  wasPoliceContacted Boolean   @default(false)
+  policeDepartment   String?
+  officerName        String?
+  officerBadge       String?
+  policeReportFiled  Boolean   @default(false)
+  policeReportDate   DateTime?
+
+  // Other Party (JSON Object - if collision)
+  otherPartyInvolved Boolean @default(false)
+  otherParty         Json? // {driver: {name, phone, license}, vehicle: {year, make, model, plate, vin}, insurance: {carrier, policy}}
+
+  // Injuries (JSON Array)
+  wereInjuries Boolean @default(false)
+  injuries     Json? // [{person, description, severity, medicalAttention, hospital}]
+
+  // ===== NEW: FNOL WORKFLOW FIELDS =====
+  fnolStatus         String?   @default("NOT_STARTED") // "NOT_STARTED" | "PARTIAL" | "SUBMITTED" | "COMPLETE"
+  fnolSubmittedAt    DateTime?
+  fnolSubmittedBy    String?
+  fnolNumber         String?   @unique
+
+  adjusterAssigned   Boolean   @default(false)
+  adjusterName       String?
+  adjusterEmail      String?
+  adjusterPhone      String?
+  adjusterAssignedAt DateTime?
+
+  claimOpenedAt              DateTime?
+  claimSubmittedToInsurer    DateTime?
+  claimClosedAt              DateTime?
 
   // Assessment
   estimatedCost Float
@@ -1121,25 +1381,168 @@ model Claim {
   guestAtFault    Boolean @default(false)
   faultPercentage Int?
 
+  // ===== INSURANCE ROUTING & SEVERITY =====
+  primaryParty         String? // "host", "guest", "platform"
+  severity             String? // "minor", "major", "total_loss", "injury"
+  guestRespondedAt     DateTime?
+  lockedCarState       String? // "deactivated_by_host", "deactivated_by_fleet", "active"
+  submittedToInsurerAt DateTime?
+  insurerClaimId       String?
+  insurerStatus        String?
+  insurerPaidAt        DateTime?
+  insurerPaidAmount    Float?
+  insurerDenialReason  String?
+
+  // ===== GUEST RESPONSE SYSTEM =====
+  guestResponseText     String?   @db.Text
+  guestResponseDate     DateTime?
+  guestResponseDeadline DateTime?
+  guestResponsePhotos   Json?
+  accountHoldApplied    Boolean   @default(false)
+
+  // ===== VEHICLE DEACTIVATION TRACKING =====
+  vehicleDeactivated   Boolean   @default(false)
+  vehicleReactivatedAt DateTime?
+  vehicleReactivatedBy String?
+
+  // ===== EMAIL NOTIFICATION TRACKING =====
+  hostNotifiedAt   DateTime?
+  guestNotifiedAt  DateTime?
+  reminderSentAt   DateTime?
+  escalationSentAt DateTime?
+
+  // ===== TIMELINE/ACTIVITY TRACKING =====
+  activityLog   Json? // Complete history of all actions
+  statusHistory Json? // All status changes
+
+  // ===== PHASE 5 - VEHICLE REACTIVATION WORKFLOW =====
+  repairDocumentUrls  Json?   // Photos of repairs
+  safetyChecklistData Json?   // Verification checklist
+  reactivationNotes   String? @db.Text
+
+  // ===== PHASE 7 - CLAIMS MESSAGING (FUTURE) =====
+  unreadMessagesCount Int       @default(0)
+  lastMessageAt       DateTime?
+
   // Relations
-  policy  InsurancePolicy @relation(fields: [policyId], references: [id])
-  booking RentalBooking   @relation(fields: [bookingId], references: [id])
-  host    RentalHost      @relation(fields: [hostId], references: [id])
+  policy       InsurancePolicy    @relation(fields: [policyId], references: [id])
+  booking      RentalBooking      @relation(fields: [bookingId], references: [id])
+  host         RentalHost         @relation(fields: [hostId], references: [id])
+  messages     ClaimMessage[]
+  edits        ClaimEdit[]
+  damagePhotos ClaimDamagePhoto[] // NEW: Structured photo records
 
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
   resolvedAt DateTime?
 
+  @@unique([bookingId, hostId])
   @@index([hostId])
   @@index([bookingId])
   @@index([policyId])
   @@index([status])
   @@index([type])
   @@index([payoutId])
+  @@index([guestResponseDeadline])
+  @@index([vehicleDeactivated])
+  @@index([lastMessageAt])
+  @@index([incidentCity])
+  @@index([incidentState])
+  @@index([policeReportNumber])
+  @@index([wasPoliceContacted])
+  @@index([otherPartyInvolved])
+  @@index([wereInjuries])
+  @@index([vehicleDrivable])
+  @@index([fnolStatus])
+  @@index([fnolNumber])
 }
 
 // ============================================================================
-// INSURANCE RATE HISTORY MODEL (NEW)
+// CLAIM MESSAGE MODEL - IN-CLAIM COMMUNICATION
+// ============================================================================
+
+model ClaimMessage {
+  id      String @id @default(cuid())
+  claimId String
+  claim   Claim  @relation(fields: [claimId], references: [id], onDelete: Cascade)
+
+  // Sender Information
+  senderId   String
+  senderType String  // "HOST", "GUEST", "FLEET_ADMIN"
+  senderName String?
+
+  // Message Content
+  message     String @db.Text
+  attachments Json? // Array of file URLs
+
+  // Read Tracking
+  readBy Json?   // Array of user IDs who read it
+  isRead Boolean @default(false)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([claimId])
+  @@index([createdAt])
+  @@index([senderType])
+}
+
+// ============================================================================
+// CLAIM EDIT TRACKING MODEL - AUDIT TRAIL FOR CLAIM MODIFICATIONS
+// ============================================================================
+
+model ClaimEdit {
+  id           String   @id @default(cuid())
+  claimId      String
+  claim        Claim    @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  
+  fieldChanged String   // "description", "photos", "estimatedCost", etc.
+  oldValue     String?  @db.Text
+  newValue     String?  @db.Text
+  
+  editedAt     DateTime @default(now())
+  editedBy     String   // hostId or adminId
+  editedByType String   // "HOST" or "ADMIN"
+  reason       String?  @db.Text // Optional: why they edited
+  
+  createdAt    DateTime @default(now())
+  
+  @@index([claimId])
+  @@index([editedBy])
+  @@index([editedAt])
+  @@index([fieldChanged])
+}
+
+// ============================================================================
+// CLAIM DAMAGE PHOTO MODEL - SEPARATE PHOTO MANAGEMENT
+// ============================================================================
+
+model ClaimDamagePhoto {
+  id      String @id @default(cuid())
+  claimId String
+  claim   Claim  @relation(fields: [claimId], references: [id], onDelete: Cascade)
+
+  url     String
+  caption String?
+  order   Int     @default(0)
+
+  uploadedBy String   // "HOST" or "GUEST"
+  uploadedAt DateTime @default(now())
+
+  deletedAt DateTime?
+  deletedBy String?
+
+  createdAt DateTime @default(now())
+
+  @@index([claimId])
+  @@index([uploadedBy])
+  @@index([uploadedAt])
+  @@index([deletedAt])
+}
+
+// ============================================================================
+// INSURANCE RATE HISTORY MODEL
 // ============================================================================
 
 model InsuranceRateHistory {
@@ -1167,7 +1570,7 @@ model InsuranceRateHistory {
 }
 
 // ============================================================================
-// VEHICLE INSURANCE OVERRIDE MODEL (NEW)
+// VEHICLE INSURANCE OVERRIDE MODEL (EXISTING - KEPT FOR COMPATIBILITY)
 // ============================================================================
 
 model VehicleInsuranceOverride {
@@ -1188,7 +1591,7 @@ model VehicleInsuranceOverride {
 }
 
 // ============================================================================
-// INSURANCE NOTIFICATION MODEL (NEW)
+// INSURANCE NOTIFICATION MODEL
 // ============================================================================
 
 model InsuranceNotification {
@@ -1206,7 +1609,7 @@ model InsuranceNotification {
 }
 
 // ============================================================================
-// RENTAL CAR MODELS
+// RENTAL CAR MODELS (UPDATED WITH CLAIM LOCKING FIELDS + LIENHOLDER ADDRESS + NEW DOCUMENT VERIFICATION)
 // ============================================================================
 
 model RentalCar {
@@ -1221,8 +1624,112 @@ model RentalCar {
   year         Int
   trim         String?
   color        String
-  licensePlate String?
-  vin          String?
+  licensePlate String? // ✅ OPTIONAL - Will backfill
+  vin          String? // ✅ OPTIONAL - Will backfill
+
+  // ===== NEW: VEHICLE CLASSIFICATION LINK =====
+  classificationId String?
+  classification   VehicleClassification? @relation("CarClassification", fields: [classificationId], references: [id])
+
+  // ===== NEW: INSURANCE ELIGIBILITY FIELDS =====
+  insuranceEligible          Boolean  @default(true)
+  insuranceCategory          String? // Cached from classification
+  insuranceRiskLevel         String? // Cached from classification
+  estimatedValue             Decimal? @db.Decimal(12, 2)
+  requiresManualUnderwriting Boolean  @default(false)
+  insuranceNotes             String?  @db.Text
+
+  // ===== INSURANCE-REQUIRED VEHICLE INFORMATION =====
+
+  // Ownership Information (Optional for now, backfill later)
+  registeredOwner String? // ✅ OPTIONAL - Legal owner name
+  titleStatus     String  @default("Clean") // "Clean", "Salvage", "Rebuilt"
+
+  // Garage Location (Optional for now, backfill later)
+  garageAddress String? // ✅ OPTIONAL - Where vehicle is garaged overnight
+  garageCity    String? // ✅ OPTIONAL
+  garageState   String? // ✅ OPTIONAL
+  garageZip     String? // ✅ OPTIONAL
+
+  // Safety & Security Features (affects premium)
+  hasAlarm       Boolean @default(false)
+  hasTracking    Boolean @default(false)
+  hasImmobilizer Boolean @default(false)
+
+  // Modifications (affects coverage)
+  isModified    Boolean @default(false)
+  modifications String? @db.Text // Turbo, lift kit, body kit, etc.
+
+  // Usage Information
+  annualMileage Int?    @default(12000) // Expected yearly miles
+  primaryUse    String  @default("Rental") // "Rental", "Personal", "Commercial"
+
+  // ===== NEW: DECLARATION-BASED INSURANCE INTEGRITY SYSTEM =====
+  declarationType String @default("Rental") // "Rental", "Rental+Personal", "Commercial"
+  // ===== END DECLARATION SYSTEM =====
+
+  // Lienholder Information (if financed)
+  hasLien           Boolean @default(false)
+  lienholderName    String?
+  lienholderAddress String? // ✅ NEW FIELD ADDED
+
+  // ===== NEW: DOCUMENT VERIFICATION TRACKING =====
+  vinVerifiedBy         String?   // adminId who verified VIN
+  vinVerifiedAt         DateTime? // When VIN was verified
+  vinVerificationMethod String?   // "MANUAL", "API", "PHOTO_OCR"
+
+  registrationVerifiedBy String?   // adminId who verified registration
+  registrationVerifiedAt DateTime? // When registration verified
+  registrationExpiryDate DateTime? // Registration expiration
+  registrationState      String? // Registration state
+
+  insuranceVerifiedBy String?   // adminId who verified insurance
+  insuranceVerifiedAt DateTime? // When insurance verified
+  insuranceExpiryDate DateTime? // Insurance policy expiration
+
+  titleVerifiedBy String?   // adminId who verified title
+  titleVerifiedAt DateTime? // When title verified
+  // ===== END DOCUMENT VERIFICATION FIELDS =====
+
+  // ===== END INSURANCE-REQUIRED FIELDS =====
+
+  // ===== NEW: CLAIM BLOCKING FIELDS =====
+  hasActiveClaim     Boolean   @default(false)
+  activeClaimId      String?
+  claimDeactivatedAt DateTime?
+
+  // ===== NEW: CLAIM METRICS TRACKING =====
+  totalClaimsCount Int       @default(0)
+  lastClaimDate    DateTime?
+  claimFreeMonths  Int       @default(0)
+
+  // ===== NEW: CLAIM LOCKING & SAFETY =====
+  claimLockUntil     DateTime?
+  safetyHold         Boolean @default(false)
+  safetyHoldReason   String?
+  requiresInspection Boolean @default(false)
+
+  // ===== PHASE 2A: REPAIR VERIFICATION =====
+  repairVerified Boolean @default(false)
+
+  // ===== NEW: PER-VEHICLE ESG TRACKING =====
+  esgScore              Int?      @default(50)
+  esgLastCalculated     DateTime?
+  esgEnvironmentalScore Int?
+  esgSafetyScore        Int?
+  esgMaintenanceScore   Int?
+
+  // ===== NEW: TELEMATICS PROXY =====
+  avgMilesPerTrip       Float?    @default(0)
+  mileageVariance       Float?    @default(0)
+  lastOdometerCheck     DateTime?
+  suspiciousMileageFlag Boolean   @default(false)
+
+  // ===== NEW: BEHAVIORAL SIGNALS =====
+  maintenanceCadence Int?   @default(90) // Days between service
+  avgResponseTime    Int?   @default(0) // Hours to respond
+  guestRatingAvg     Float? @default(5.0)
+  // ===== END NEW ESG & BEHAVIORAL FIELDS =====
 
   // Specifications
   carType        String
@@ -1233,6 +1740,10 @@ model RentalCar {
   mpgCity        Int?
   mpgHighway     Int?
   currentMileage Int?
+
+  // Mileage Intelligence Fields
+  lastRentalEndMileage Int? // Mileage at end of last rental
+  lastRentalEndDate    DateTime? // When last rental ended
 
   // Pricing (daily rates)
   dailyRate   Float
@@ -1300,6 +1811,17 @@ model RentalCar {
   totalTrips Int   @default(0)
   rating     Float @default(5.0)
 
+  // ===== SERVICE TRACKING =====
+  lastOilChange             DateTime?
+  lastInspection            DateTime?
+  inspectionExpiresAt       DateTime?
+  nextOilChangeDue          DateTime?
+  nextInspectionDue         DateTime?
+  serviceOverdue            Boolean   @default(false)
+  inspectionExpired         Boolean   @default(false)
+  highUsageInspectionNeeded Boolean   @default(false)
+  // ===== END SERVICE TRACKING =====
+
   // Relations
   host               RentalHost                 @relation(fields: [hostId], references: [id])
   photos             RentalCarPhoto[]
@@ -1307,6 +1829,9 @@ model RentalCar {
   availability       RentalAvailability[]
   reviews            RentalReview[]
   insuranceOverrides VehicleInsuranceOverride[]
+  coverageOverrides  VehicleCoverageOverride[]
+  serviceRecords     VehicleServiceRecord[]
+  mileageAnomalies   MileageAnomaly[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1315,7 +1840,28 @@ model RentalCar {
   @@index([city, state])
   @@index([carType])
   @@index([isActive, instantBook])
+  @@index([classificationId])
+  @@index([make, model, year])
+  @@index([vin])
+  @@index([insuranceEligible])
+  @@index([hasActiveClaim])
+  @@index([activeClaimId])
+  @@index([totalClaimsCount])
+  @@index([lastClaimDate])
+  @@index([titleStatus])
+  @@index([hasAlarm])
+  @@index([hasTracking])
+  @@index([isModified])
+  @@index([hasLien])
+  @@index([registeredOwner])
+  @@index([vinVerifiedBy])
+  @@index([registrationVerifiedBy])
+  @@index([insuranceVerifiedBy])
 }
+
+// ============================================================================
+// RENTAL CAR PHOTO MODEL - WITH ENHANCED METADATA & TRACKING
+// ============================================================================
 
 model RentalCarPhoto {
   id      String  @id @default(cuid())
@@ -1325,11 +1871,118 @@ model RentalCarPhoto {
   isHero  Boolean @default(false)
   order   Int     @default(0)
 
+  // ===== NEW: PHOTO METADATA & TRACKING =====
+  uploadedBy     String?   // hostId or adminId who uploaded
+  uploadedByType String? // "HOST", "ADMIN", "GUEST"
+
+  // EXIF Data (from photo metadata)
+  metadata       Json?     // Complete EXIF data
+  photoTimestamp DateTime? // Original photo timestamp
+  gpsLatitude    Float? // GPS coordinates from EXIF
+  gpsLongitude   Float? // GPS coordinates from EXIF
+  deviceMake     String? // Camera/phone make
+  deviceModel    String? // Camera/phone model
+
+  // Verification
+  verified   Boolean   @default(false)
+  verifiedBy String? // adminId who verified authenticity
+  verifiedAt DateTime?
+  photoHash  String? // Hash for duplicate detection
+
+  // Soft Delete
+  deletedAt DateTime?
+  deletedBy String? // Who deleted it
+
+  // ===== NEW: CLAIM PHOTO CONTEXT =====
+  relatedClaimId String? // If photo is for a claim
+  photoContext   String? // "LISTING", "DAMAGE", "REPAIR", "INSPECTION"
+  // ===== END NEW FIELDS =====
+
   car RentalCar @relation(fields: [carId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 
   @@index([carId])
+  @@index([uploadedBy])
+  @@index([verified])
+  @@index([photoHash])
+  @@index([deletedAt])
+  @@index([relatedClaimId])
+  @@index([photoContext])
+}
+
+// ============================================================================
+// VEHICLE SERVICE RECORD MODEL - WITH ATTRIBUTION TRACKING
+// ============================================================================
+
+model VehicleServiceRecord {
+  id               String      @id @default(cuid())
+  carId            String
+  car              RentalCar   @relation(fields: [carId], references: [id], onDelete: Cascade)
+  
+  // Service Type
+  serviceType      ServiceType
+  serviceDate      DateTime
+  mileageAtService Int
+  nextServiceDue   DateTime?
+  nextServiceMileage Int?
+  
+  // Service Provider
+  shopName         String
+  shopAddress      String
+  technicianName   String?
+  invoiceNumber    String?
+  
+  // Documentation (REQUIRED)
+  receiptUrl          String  // Uploaded receipt/invoice
+  inspectionReportUrl String? // For inspections
+  
+  // Service Details
+  itemsServiced String[] // Array of items
+  costTotal     Float
+  notes         String?
+  
+  // ===== NEW: WHO ADDED THIS RECORD (OPTIONAL FOR BACKFILL) =====
+  addedBy     String? @default("SYSTEM") // ⭐ OPTIONAL with default for existing records
+  addedByType String? @default("HOST") // ⭐ OPTIONAL with default for existing records
+  // ===== END NEW FIELDS =====
+  
+  // Verification
+  verifiedByFleet Boolean   @default(false)
+  verifiedAt      DateTime?
+  verifiedBy      String? // Fleet admin ID
+  
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([carId, serviceDate])
+  @@index([carId, serviceType])
+  @@index([addedBy])
+  @@index([addedByType])
+}
+
+// ============================================================================
+// MILEAGE ANOMALY MODEL
+// ============================================================================
+
+model MileageAnomaly {
+  id               String    @id @default(cuid())
+  carId            String
+  car              RentalCar @relation(fields: [carId], references: [id], onDelete: Cascade)
+  detectedAt       DateTime  @default(now())
+  lastKnownMileage Int
+  currentMileage   Int
+  gapMiles         Int
+  severity         String // NORMAL | WARNING | CRITICAL
+  explanation      String?
+  resolved         Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+
+  @@index([carId])
+  @@index([severity])
+  @@index([resolved])
+  @@index([detectedAt])
 }
 
 model RentalAvailability {
@@ -1344,6 +1997,36 @@ model RentalAvailability {
 
   @@unique([carId, date])
   @@index([carId, date, isAvailable])
+}
+
+// ============================================================================
+// NEW: TRIP INSPECTION PHOTO MODEL
+// ============================================================================
+
+model TripInspectionPhoto {
+  id         String   @id @default(cuid())
+  bookingId  String
+  booking    RentalBooking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  
+  photoType  String   // "CHECK_IN" | "CHECK_OUT"
+  category   String   // "EXTERIOR_FRONT" | "EXTERIOR_BACK" | "INTERIOR" | "ODOMETER" | "FUEL"
+  url        String
+  caption    String?
+  
+  uploadedBy     String
+  uploadedByType String // "HOST" | "GUEST"
+  uploadedAt     DateTime @default(now())
+  
+  // EXIF metadata
+  gpsLatitude  Float?
+  gpsLongitude Float?
+  photoTimestamp DateTime?
+  
+  createdAt DateTime @default(now())
+  
+  @@index([bookingId])
+  @@index([photoType])
+  @@index([uploadedAt])
 }
 
 model RentalBooking {
@@ -1405,6 +2088,30 @@ model RentalBooking {
   depositRefundedAt   DateTime?
   depositUsedForClaim Float?
   // ===== END INSURANCE DEPOSIT FIELDS =====
+
+  // ===== NEW: GUEST INSURANCE INFORMATION =====
+  guestInsuranceProvider     String?
+  guestInsurancePolicyNumber String?
+  guestInsuranceActive       Boolean @default(false)
+  insuranceHierarchy         Json? // Primary/Secondary/Tertiary breakdown
+
+  // ===== NEW: TRIP INSURANCE POSTURE & BINDING =====
+  insuranceSelection     String? // "minimal", "premium", "luxury", "basic"
+  insuranceStatus        String? // "guest_provided", "guest_purchased", "host_primary", "platform_primary", "uninsured_blocked"
+  insurancePolicyId      String? // Policy ID from Tint/Liberty or internal
+  insuranceProvider      String? // "Liberty Mutual", "Host P2P", "Guest Personal", etc.
+  insuranceBoundAt       DateTime? // When policy was bound
+  depositDiscountApplied Boolean @default(false) // 50% discount if guest provided insurance
+  policySnapshot         Json? // IMMUTABLE snapshot of policy at booking time
+
+  // Insurance tier info
+  insuranceTier        String? // "40%", "75%", "90%"
+  platformPolicyActive Boolean @default(false) // Is ItWhip/Liberty policy active?
+
+  // ===== PHASE 2A: HOST REVENUE SPLIT & GUEST INSURANCE =====
+  hostRevenueSplit       Int?
+  guestInsuranceApplied  Boolean @default(false)
+  guestInsuranceVerified Boolean @default(false)
 
   // CHARGE TRACKING FIELDS - FIXED WITH NEW FIELD
   pendingChargesAmount Decimal?  @db.Decimal(10, 2)
@@ -1490,6 +2197,11 @@ model RentalBooking {
   tripStartedAt DateTime?
   tripEndedAt   DateTime?
 
+  // ===== TRIP COMPLETION TRACKING =====
+  tripCompletedBy      String? // "GUEST" | "ADMIN" | "SYSTEM"
+  adminCompletedById   String?
+  adminCompletionNotes String? @db.Text
+
   // Check-in/out
   actualStartTime DateTime?
   actualEndTime   DateTime?
@@ -1510,22 +2222,23 @@ model RentalBooking {
   notes  String?
 
   // Relations
-  car               RentalCar          @relation(fields: [carId], references: [id])
-  host              RentalHost         @relation(fields: [hostId], references: [id])
-  renter            User?              @relation("RenterBookings", fields: [renterId], references: [id])
-  messages          RentalMessage[]
-  review            RentalReview?
-  guestAccessTokens GuestAccessToken[]
-  hostPayouts       HostPayout[]
-  disputes          RentalDispute[]
-  bookingSession    BookingSession?
-  fraudIndicators   FraudIndicator[]
-  inspectionPhotos  InspectionPhoto[]
-  tripCharges       TripCharge[]
-  chargeAdjustments ChargeAdjustment[]
-  rentalPayouts     RentalPayout[]
-  insurancePolicy   InsurancePolicy?
-  claims            Claim[]
+  car                  RentalCar             @relation(fields: [carId], references: [id])
+  host                 RentalHost            @relation(fields: [hostId], references: [id])
+  renter               User?                 @relation("RenterBookings", fields: [renterId], references: [id])
+  messages             RentalMessage[]
+  review               RentalReview?
+  guestAccessTokens    GuestAccessToken[]
+  hostPayouts          HostPayout[]
+  disputes             RentalDispute[]
+  bookingSession       BookingSession?
+  fraudIndicators      FraudIndicator[]
+  inspectionPhotos     InspectionPhoto[]
+  tripCharges          TripCharge[]
+  chargeAdjustments    ChargeAdjustment[]
+  rentalPayouts        RentalPayout[]
+  insurancePolicy      InsurancePolicy?
+  claims               Claim[]
+  tripInspectionPhotos TripInspectionPhoto[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1545,10 +2258,12 @@ model RentalBooking {
   @@index([tripStatus])
   @@index([verificationStatus])
   @@index([reviewerProfileId])
+  @@index([tripCompletedBy])
+  @@index([adminCompletedById])
 }
 
 // ============================================================================
-// REVIEW SYSTEM MODELS - ✅ UPDATED WITH ENHANCED GUEST PROFILE & INSURANCE & PASSWORD RESET
+// REVIEW SYSTEM MODELS
 // ============================================================================
 
 model ReviewerProfile {
@@ -1587,45 +2302,34 @@ model ReviewerProfile {
   documentVerifiedAt DateTime?
   documentVerifiedBy String?
 
-  // ============================================================================
-  // 🆕 GUEST INSURANCE FIELDS - CURRENT ACTIVE INSURANCE
-  // ============================================================================
-  
-  // Basic Insurance Info
-  insuranceProvider       String?
-  policyNumber            String?
-  expiryDate              DateTime?
-  hasRideshare            Boolean   @default(false)
-  coverageType            String?   // "State Minimum (25/50/25)", "Basic (50/100/50)", etc.
-  customCoverage          String?   // If user selects "Custom/Other"
-  
-  // Insurance Card Images
-  insuranceCardFrontUrl   String?
-  insuranceCardBackUrl    String?
-  
-  // Insurance Verification
-  insuranceVerified       Boolean   @default(false)
-  insuranceVerifiedAt     DateTime?
-  insuranceVerifiedBy     String?   // Admin user ID who verified
-  
-  // Insurance Tracking
-  insuranceNotes          String?   @db.Text
-  insuranceAddedAt        DateTime?
-  insuranceUpdatedAt      DateTime?
-  
-  // LEGACY FIELD - Keep for backward compatibility
-  insuranceCardUrl        String?
+  // ===== NEW: DRIVER LICENSE INFO FOR FNOL =====
+  driverLicenseNumber String?
+  driverLicenseState  String?
+  driverLicenseExpiry DateTime?
 
-  // ============================================================================
-  // END GUEST INSURANCE FIELDS
-  // ============================================================================
+  // GUEST INSURANCE FIELDS - CURRENT ACTIVE INSURANCE
+  insuranceProvider     String?
+  policyNumber          String?
+  expiryDate            DateTime?
+  hasRideshare          Boolean   @default(false)
+  coverageType          String?
+  customCoverage        String?
+  insuranceCardFrontUrl String?
+  insuranceCardBackUrl  String?
+  insuranceVerified     Boolean   @default(false)
+  insuranceVerifiedAt   DateTime?
+  insuranceVerifiedBy   String?
+  insuranceNotes        String?   @db.Text
+  insuranceAddedAt      DateTime?
+  insuranceUpdatedAt    DateTime?
+  insuranceCardUrl      String?
 
-  // 🆕 PASSWORD RESET FIELDS (for guest login)
-  resetToken              String?   @unique
-  resetTokenExpiry        DateTime?
-  resetTokenUsed          Boolean   @default(false)
-  lastPasswordReset       DateTime?
-  passwordResetAttempts   Int       @default(0)
+  // PASSWORD RESET FIELDS (for guest login)
+  resetToken               String?   @unique
+  resetTokenExpiry         DateTime?
+  resetTokenUsed           Boolean   @default(false)
+  lastPasswordReset        DateTime?
+  passwordResetAttempts    Int       @default(0)
   passwordResetLastAttempt DateTime?
 
   // Preferences
@@ -1655,15 +2359,11 @@ model ReviewerProfile {
   // Verification Status
   isVerified Boolean @default(false)
 
-  // ============================================================================
-  // 🆕 SUSPENSION & BAN SYSTEM - GUEST MODERATION
-  // ============================================================================
-
-  // Suspension System
+  // SUSPENSION & BAN SYSTEM - GUEST MODERATION
   suspensionLevel     SuspensionLevel?
   suspendedAt         DateTime?
-  suspendedReason     String? // Public reason shown to guest
-  suspendedBy         String? // Admin email/ID
+  suspendedReason     String?
+  suspendedBy         String?
   suspensionExpiresAt DateTime?
   autoReactivate      Boolean          @default(false)
   notifiedAt          DateTime?
@@ -1672,23 +2372,23 @@ model ReviewerProfile {
   // Ban System (severe - complete block)
   bannedAt  DateTime?
   banReason String?
-  bannedBy  String? // Admin email/ID
+  bannedBy  String?
 
   // Warning System
   warningCount  Int       @default(0)
   lastWarningAt DateTime?
 
-  // ============================================================================
-  // 🆕 NEW FIELDS FOR WARNING CATEGORIZATION & FEATURE RESTRICTIONS
-  // ============================================================================
-
-  // Feature Restrictions (from warnings)
+  // NEW FIELDS FOR WARNING CATEGORIZATION & FEATURE RESTRICTIONS
   canBookLuxury          Boolean @default(true)
   canBookPremium         Boolean @default(true)
   requiresManualApproval Boolean @default(false)
+  activeWarningCount     Int     @default(0)
 
-  // Active Warning Tracking (separate from total)
-  activeWarningCount Int @default(0)
+  // ===== NEW: ACCOUNT HOLD SYSTEM (FOR CLAIMS) =====
+  accountOnHold        Boolean   @default(false)
+  accountHoldReason    String?
+  accountHoldClaimId   String?
+  accountHoldAppliedAt DateTime?
 
   // Relations
   reviews             RentalReview[]
@@ -1698,6 +2398,8 @@ model ReviewerProfile {
   profileStatus       GuestProfileStatus?
   appealNotifications AppealNotification[] @relation("GuestAppealNotifications")
   insuranceHistory    InsuranceHistory[]
+  guestInsurance      GuestInsurance[]
+  accountHolds        AccountHold[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1722,24 +2424,76 @@ model ReviewerProfile {
   @@index([insuranceVerified])
   @@index([expiryDate])
   @@index([resetToken])
+  @@index([accountOnHold])
+  @@index([accountHoldClaimId])
+  @@index([driverLicenseNumber])
+  @@index([driverLicenseExpiry])
 }
 
 // ============================================================================
-// 🆕 NEW MODEL: INSURANCE HISTORY - COMPLETE AUDIT TRAIL
+// PHASE 2A: NEW GUEST INSURANCE MODEL
+// ============================================================================
+
+model GuestInsurance {
+  id           String          @id @default(cuid())
+  guestId      String
+  guest        ReviewerProfile @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  
+  providerName String
+  policyNumber String
+  verified     Boolean   @default(false)
+  verifiedAt   DateTime?
+  expiresAt    DateTime?
+  
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  
+  @@index([guestId])
+  @@index([verified])
+  @@index([expiresAt])
+}
+
+// ============================================================================
+// PHASE 2A: NEW ACCOUNT HOLD MODEL
+// ============================================================================
+
+model AccountHold {
+  id      String          @id @default(cuid())
+  guestId String
+  guest   ReviewerProfile @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  
+  reason  String
+  amount  Decimal @db.Decimal(10, 2)
+  claimId String?
+  
+  active    Boolean  @default(true)
+  startedAt DateTime @default(now())
+  endedAt   DateTime?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([guestId])
+  @@index([active])
+  @@index([claimId])
+}
+
+// ============================================================================
+// INSURANCE HISTORY MODEL - COMPLETE AUDIT TRAIL
 // ============================================================================
 
 model InsuranceHistory {
-  id                    String   @id @default(cuid())
-  
-  // 🔗 Relations
-  reviewerProfileId     String
-  reviewerProfile       ReviewerProfile @relation(fields: [reviewerProfileId], references: [id], onDelete: Cascade)
-  
-  // 📋 Action & Status
-  action                String    // "ADDED", "UPDATED", "REMOVED", "VERIFIED", "EXPIRED"
-  status                String    // "ACTIVE", "NOT_ACTIVE", "EXPIRED", "PENDING"
-  
-  // 🏢 Insurance Details (Snapshot at time of change)
+  id String @id @default(cuid())
+
+  // Relations
+  reviewerProfileId String
+  reviewerProfile   ReviewerProfile @relation(fields: [reviewerProfileId], references: [id], onDelete: Cascade)
+
+  // Action & Status
+  action String
+  status String
+
+  // Insurance Details (Snapshot at time of change)
   insuranceProvider     String?
   policyNumber          String?
   expiryDate            DateTime?
@@ -1749,24 +2503,24 @@ model InsuranceHistory {
   insuranceCardFrontUrl String?
   insuranceCardBackUrl  String?
   insuranceNotes        String?   @db.Text
-  
-  // ✅ Verification Details
-  verificationStatus    String    @default("UNVERIFIED") // "UNVERIFIED", "PENDING", "VERIFIED"
-  verifiedBy            String?   // Admin user ID
-  verifiedAt            DateTime?
-  
-  // 👤 Change Tracking
-  changedBy             String    // User or Admin ID who made the change
-  changedAt             DateTime  @default(now())
-  
-  // 📝 Additional Metadata
-  changeReason          String?   @db.Text  // Why was this change made (optional)
-  ipAddress             String?   // Track where change came from
-  userAgent             String?   @db.Text  // Browser/device info
-  
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-  
+
+  // Verification Details
+  verificationStatus String    @default("UNVERIFIED")
+  verifiedBy         String?
+  verifiedAt         DateTime?
+
+  // Change Tracking
+  changedBy String
+  changedAt DateTime @default(now())
+
+  // Additional Metadata
+  changeReason String? @db.Text
+  ipAddress    String?
+  userAgent    String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([reviewerProfileId])
   @@index([reviewerProfileId, status])
   @@index([expiryDate])
@@ -1775,7 +2529,7 @@ model InsuranceHistory {
 }
 
 // ============================================================================
-// 🆕 GUEST PROFILE STATUS MODEL - COMPREHENSIVE STATUS TRACKING
+// GUEST PROFILE STATUS MODEL
 // ============================================================================
 
 model GuestProfileStatus {
@@ -1811,7 +2565,7 @@ model GuestProfileStatus {
 }
 
 // ============================================================================
-// 🆕 GUEST MODERATION MODEL - AUDIT TRAIL FOR ALL MODERATION ACTIONS
+// GUEST MODERATION MODEL
 // ============================================================================
 
 model GuestModeration {
@@ -1821,29 +2575,23 @@ model GuestModeration {
 
   // Action details
   actionType      ModerationType
-  suspensionLevel SuspensionLevel? // NULL for warnings/notes
-
-  // ============================================================================
-  // 🆕 NEW FIELD FOR WARNING CATEGORIZATION
-  // ============================================================================
+  suspensionLevel SuspensionLevel?
   warningCategory WarningCategory?
 
   // Reason tracking (dual visibility)
-  publicReason      String // What guest sees
-  internalNotes     String? @db.Text // Admin-only notes
-  internalNotesOnly Boolean @default(false) // Hide publicReason from guest if true
+  publicReason      String
+  internalNotes     String? @db.Text
+  internalNotesOnly Boolean @default(false)
 
   // Admin tracking
-  takenBy String // Admin email/ID
+  takenBy String
   takenAt DateTime @default(now())
 
   // Expiry (for temporary suspensions and warnings)
   expiresAt DateTime?
 
-  // ============================================================================
-  // 🆕 NEW FIELD FOR FEATURE RESTRICTIONS
-  // ============================================================================
-  restrictionsApplied Json? // Array of restrictions: ["INSTANT_BOOK", "LUXURY_CARS", etc.]
+  // Feature restrictions
+  restrictionsApplied Json?
 
   // Related entities (strings - no foreign keys for audit permanence)
   relatedBookingId String?
@@ -1860,7 +2608,7 @@ model GuestModeration {
 }
 
 // ============================================================================
-// 🆕 GUEST APPEAL MODEL - APPEAL SYSTEM FOR SUSPENDED/BANNED GUESTS
+// GUEST APPEAL MODEL
 // ============================================================================
 
 model GuestAppeal {
@@ -1873,11 +2621,11 @@ model GuestAppeal {
 
   // Appeal content
   reason   String @db.Text
-  evidence Json? // Photos, documents, supporting evidence
+  evidence Json?
 
   // Appeal status
   status      AppealStatus @default(PENDING)
-  reviewedBy  String? // Admin email/ID
+  reviewedBy  String?
   reviewedAt  DateTime?
   reviewNotes String?      @db.Text
 
@@ -1885,7 +2633,7 @@ model GuestAppeal {
   submittedAt DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  // ADD RELATION TO NOTIFICATIONS
+  // Relations
   notifications AppealNotification[] @relation("AppealNotifications")
 
   @@index([guestId])
@@ -1894,20 +2642,20 @@ model GuestAppeal {
 }
 
 // ============================================================================
-// 🆕 APPEAL NOTIFICATION MODEL - TRACK APPEAL DECISION NOTIFICATIONS
+// APPEAL NOTIFICATION MODEL
 // ============================================================================
 
 model AppealNotification {
   id          String    @id @default(cuid())
   guestId     String
   appealId    String
-  type        String // "APPROVED" or "DENIED"
+  type        String
   message     String?   @db.Text
   seen        Boolean   @default(false)
   dismissedAt DateTime?
   createdAt   DateTime  @default(now())
 
-  // ADD RELATIONS
+  // Relations
   guest  ReviewerProfile @relation("GuestAppealNotifications", fields: [guestId], references: [id], onDelete: Cascade)
   appeal GuestAppeal     @relation("AppealNotifications", fields: [appealId], references: [id], onDelete: Cascade)
 
@@ -2040,7 +2788,7 @@ model TripCharge {
   failureReason  String?
   failureCode    String?
 
-  // Waive/Adjustment tracking - INCLUDING MISSING FIELD
+  // Waive/Adjustment tracking
   originalAmount     Decimal?  @db.Decimal(10, 2)
   adjustedAmount     Decimal?  @db.Decimal(10, 2)
   waivedAt           DateTime?
@@ -2252,7 +3000,7 @@ model RentalMessage {
 }
 
 // ============================================================================
-// PAYOUT & FINANCIAL MODELS - UPDATED FOR PER-BOOKING PAYOUTS
+// PAYOUT & FINANCIAL MODELS
 // ============================================================================
 
 model RentalPayout {
@@ -2291,7 +3039,6 @@ model RentalPayout {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // UPDATED INDEXES - Optimized for cron job and host dashboard
   @@index([hostId])
   @@index([status])
   @@index([eligibleAt, status])
@@ -2316,7 +3063,7 @@ model HostPayout {
 }
 
 // ============================================================================
-// HOST INQUIRY & ADMIN MODELS - ✅ UPDATED WITH REPLY TRACKING
+// HOST INQUIRY & ADMIN MODELS
 // ============================================================================
 
 model HostInquiry {
@@ -2356,7 +3103,7 @@ model HostInquiry {
   convertedToHostId String?
   convertedAt       DateTime?
 
-  // ✅ NEW: Store replies as JSON array
+  // Store replies as JSON array
   replies    Json? @default("[]")
   replyCount Int   @default(0)
 
@@ -2419,7 +3166,7 @@ model ContactMessage {
   repliedAt DateTime?
   repliedBy String?
 
-  // ✅ NEW: Store replies as JSON array
+  // Store replies as JSON array
   replies    Json? @default("[]")
   replyCount Int   @default(0)
 
@@ -2450,6 +3197,10 @@ model RentalDispute {
   @@index([status])
 }
 
+// ============================================================================
+// ACTIVITY LOG MODEL - WITH ENHANCED TRACKING
+// ============================================================================
+
 model ActivityLog {
   id         String   @id @default(cuid())
   userId     String?
@@ -2460,11 +3211,30 @@ model ActivityLog {
   ipAddress  String?
   createdAt  DateTime @default(now())
 
+  // ===== NEW: ENHANCED TRACKING =====
+  userAgent String? // Browser/device info
+  adminId   String? // If action by admin
+  hostId    String? // If action by host
+  guestId   String? // If action by guest
+
+  // Change tracking
+  oldValue String? @db.Text // Before change
+  newValue String? @db.Text // After change
+
+  // Impact tracking
+  severity String? @default("INFO") // INFO, WARNING, ERROR, CRITICAL
+  category String? // DOCUMENT, PHOTO, SERVICE, STATUS, COMPLIANCE
+  // ===== END NEW FIELDS =====
+
   user User? @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([entityType])
   @@index([createdAt])
+  @@index([adminId])
+  @@index([hostId])
+  @@index([severity])
+  @@index([category])
 }
 
 model AmadeusCarCache {
@@ -2886,7 +3656,229 @@ model LoginAttempt {
 }
 
 // ============================================================================
-// ENUMS - INCLUDING NEW INSURANCE & CLAIMS ENUMS + GUEST ENUMS + MODERATION ENUMS + WARNING CATEGORY
+// ESG (Environmental, Safety, Governance) SYSTEM
+// ============================================================================
+
+// Main ESG Profile for each Host
+model HostESGProfile {
+  id     String @id @default(cuid())
+  hostId String @unique
+
+  // ============================================================================
+  // COMPOSITE SCORES (0-100 scale)
+  // ============================================================================
+  compositeScore     Int @default(50) // Overall ESG score
+  drivingImpactScore Int @default(50) // Usage health
+  emissionsScore     Int @default(50) // Environmental impact
+  maintenanceScore   Int @default(50) // Maintenance compliance
+  safetyScore        Int @default(50) // Safety & incident history
+  complianceScore    Int @default(50) // Policy compliance
+
+  // ============================================================================
+  // SAFETY METRICS
+  // ============================================================================
+  totalTrips            Int       @default(0) // Total completed trips
+  incidentFreeTrips     Int       @default(0) // Trips without incidents
+  totalClaimsFiled      Int       @default(0) // Total claims filed
+  currentIncidentStreak Int       @default(0) // Current streak of incident-free trips
+  longestIncidentStreak Int       @default(0) // Longest incident-free streak ever
+  lastIncidentDate      DateTime? // Date of last incident
+
+  // ============================================================================
+  // ENVIRONMENTAL METRICS
+  // ============================================================================
+  totalEVTrips         Int    @default(0) // Total EV trips
+  evTripPercentage     Float  @default(0) // % of trips using EV
+  estimatedCO2Saved    Float  @default(0) // Estimated CO2 savings (kg)
+  totalCO2Impact       Float  @default(0) // ✅ NEW: Total CO2 emitted (kg)
+  avgCO2PerMile        Float  @default(0) // ✅ NEW: Average CO2 per mile
+  fuelEfficiencyRating String @default("UNKNOWN") // EXCELLENT, GOOD, FAIR, POOR, UNKNOWN
+
+  // ============================================================================
+  // COMPLIANCE METRICS
+  // ============================================================================
+  maintenanceOnTime       Boolean   @default(true) // Is maintenance up to date?
+  lastMaintenanceDate     DateTime? // Last maintenance recorded
+  overdueMaintenanceCount Int       @default(0) // Number of overdue maintenance items
+  fnolCompletionRate      Float     @default(100) // % of claims with complete FNOL
+  avgResponseTimeHours    Float     @default(0) // Avg time to respond to claims (hours)
+
+  // ============================================================================
+  // FRAUD DETECTION METRICS
+  // ============================================================================
+  unauthorizedMileage     Float  @default(0) // Detected off-trip mileage
+  suspiciousActivityCount Int    @default(0) // Number of flagged activities
+  verificationFailures    Int    @default(0) // Failed verification checks
+  fraudRiskLevel          String @default("LOW") // LOW, MEDIUM, HIGH, CRITICAL
+
+  // ============================================================================
+  // USAGE PATTERN METRICS
+  // ============================================================================
+  totalMilesDriven   Float @default(0) // Total miles across all trips
+  avgMilesPerTrip    Float @default(0) // Average miles per trip
+  tripCompletionRate Float @default(100) // % of trips completed successfully
+  idleTimeEfficiency Float @default(100) // Idle time vs active time ratio
+
+  // ============================================================================
+  // TRIP QUALITY METRICS
+  // ============================================================================
+  tripCancellationRate Float @default(0) // % of trips cancelled
+  lateReturnCount      Int   @default(0) // Number of late returns
+  earlyReturnCount     Int   @default(0) // Number of early returns
+  guestRatingAverage   Float @default(5.0) // Average guest rating (1-5)
+
+  // ============================================================================
+  // VEHICLE FLEET METRICS
+  // ============================================================================
+  totalVehicles  Int   @default(0) // Total vehicles in fleet
+  activeVehicles Int   @default(0) // Currently active vehicles
+  evVehicleCount Int   @default(0) // Number of EV vehicles
+  avgVehicleAge  Float @default(0) // Average vehicle age (years)
+
+  // ============================================================================
+  // INSURANCE & RISK METRICS
+  // ============================================================================
+  hasCommercialInsurance Boolean @default(false) // Has commercial insurance?
+  hasP2PInsurance        Boolean @default(false) // Has P2P insurance?
+  insuranceTier          String  @default("PLATFORM") // PLATFORM, P2P, COMMERCIAL
+  claimApprovalRate      Float   @default(0) // % of claims approved
+  avgClaimProcessingDays Float   @default(0) // Avg days to process claims
+
+  // ============================================================================
+  // GAMIFICATION & BADGES
+  // ============================================================================
+  achievedBadges   String[] @default([]) // Array of badge IDs earned
+  milestoneReached String[] @default([]) // Milestones achieved
+  nextMilestone    String? // Next milestone to reach
+
+  // ============================================================================
+  // SCORE HISTORY (JSON for trend tracking)
+  // ============================================================================
+  scoreHistory Json @default("[]") // Array of {date, score, breakdown}
+
+  // ============================================================================
+  // CALCULATION METADATA
+  // ============================================================================
+  lastCalculatedAt   DateTime @updatedAt // When scores were last calculated
+  calculationVersion String   @default("1.0") // Algorithm version used
+  dataConfidence     String   @default("HIGH") // HIGH, MEDIUM, LOW (data quality)
+
+  // ============================================================================
+  // TIMESTAMPS
+  // ============================================================================
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // ============================================================================
+  // RELATIONS
+  // ============================================================================
+  host      RentalHost    @relation("HostESGProfile", fields: [hostId], references: [id], onDelete: Cascade)
+  snapshots ESGSnapshot[]
+
+  @@index([hostId])
+  @@index([compositeScore])
+  @@index([safetyScore])
+  @@index([fraudRiskLevel])
+}
+
+// ============================================================================
+// ESG SNAPSHOTS (Historical records for trend analysis)
+// ============================================================================
+model ESGSnapshot {
+  id        String @id @default(cuid())
+  profileId String
+
+  // Snapshot of scores at this point in time
+  compositeScore     Int
+  drivingImpactScore Int
+  emissionsScore     Int
+  maintenanceScore   Int
+  safetyScore        Int
+  complianceScore    Int
+
+  // Snapshot metadata
+  snapshotDate   DateTime @default(now())
+  snapshotReason String // DAILY_UPDATE, TRIP_COMPLETED, CLAIM_FILED, MANUAL_REFRESH
+  triggerEventId String? // ID of trip/claim that triggered this
+
+  // Relations
+  profile HostESGProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId])
+  @@index([snapshotDate])
+}
+
+// ============================================================================
+// ESG EVENTS LOG (Audit trail for score changes)
+// ============================================================================
+model ESGEvent {
+  id               String   @id @default(cuid())
+  hostId           String
+  eventType        String // TRIP_COMPLETED, CLAIM_FILED, etc.
+  eventCategory    String // SAFETY, ENVIRONMENTAL, COMPLIANCE, etc.
+  scoreBefore      Int?
+  scoreAfter       Int?
+  scoreChange      Int?
+  description      String
+  metadata         Json     @default("{}")
+  relatedTripId    String?
+  relatedClaimId   String?
+  relatedBookingId String?
+  createdAt        DateTime @default(now())
+
+  @@index([hostId])
+  @@index([eventType])
+  @@index([eventCategory])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// ESG BADGES & ACHIEVEMENTS
+// ============================================================================
+model ESGBadge {
+  id String @id @default(cuid())
+
+  // Badge details
+  badgeCode        String @unique // ECO_WARRIOR, SAFETY_CHAMPION, etc.
+  badgeName        String // Display name
+  badgeDescription String // What it represents
+  badgeIcon        String // Icon/emoji
+  badgeCategory    String // SAFETY, ENVIRONMENTAL, COMPLIANCE, MILESTONE
+
+  // Requirements
+  requiredScore  Int? // Minimum score needed
+  requiredTrips  Int? // Minimum trips needed
+  requiredStreak Int? // Minimum streak needed
+  requiredMetric String? // Specific metric requirement
+  requiredValue  Float? // Required value for metric
+
+  // Metadata
+  rarity String @default("COMMON") // COMMON, RARE, EPIC, LEGENDARY
+  points Int    @default(0) // Gamification points
+
+  // Timestamps
+  createdAt DateTime @default(now())
+
+  @@index([badgeCode])
+}
+
+// ============================================================================
+// HOST-BADGE JUNCTION (Many-to-many)
+// ============================================================================
+model HostBadgeEarned {
+  id        String @id @default(cuid())
+  hostId    String
+  badgeCode String
+
+  earnedAt DateTime @default(now())
+
+  @@unique([hostId, badgeCode])
+  @@index([hostId])
+  @@index([badgeCode])
+}
+
+// ============================================================================
+// ENUMS
 // ============================================================================
 
 enum UserRole {
@@ -3032,6 +4024,12 @@ enum ClaimStatus {
   PAID
   DISPUTED
   RESOLVED
+  GUEST_RESPONSE_PENDING
+  GUEST_RESPONDED
+  GUEST_NO_RESPONSE
+  VEHICLE_REPAIR_PENDING
+  INSURANCE_PROCESSING
+  CLOSED
 }
 
 enum HostInsuranceStatus {
@@ -3288,10 +4286,6 @@ enum InsuranceStatus {
   SUSPENDED
 }
 
-// ============================================================================
-// NEW ENUMS FOR ENHANCED GUEST PROFILE
-// ============================================================================
-
 enum GovernmentIdType {
   PASSPORT
   STATE_ID
@@ -3307,14 +4301,10 @@ enum MemberTier {
   DIAMOND
 }
 
-// ============================================================================
-// 🆕 NEW ENUMS FOR GUEST SUSPENSION & MODERATION SYSTEM
-// ============================================================================
-
 enum SuspensionLevel {
-  SOFT // Can view, can't book
-  HARD // Limited access, must resolve issues
-  BANNED // Complete block
+  SOFT
+  HARD
+  BANNED
 }
 
 enum ModerationType {
@@ -3336,10 +4326,6 @@ enum AppealStatus {
   WITHDRAWN
 }
 
-// ============================================================================
-// 🆕 NEW WARNING CATEGORY ENUM - FOR CATEGORIZING GUEST WARNINGS
-// ============================================================================
-
 enum WarningCategory {
   LATE_RETURNS
   VEHICLE_DAMAGE
@@ -3356,4 +4342,43 @@ enum WarningCategory {
   FUEL_VIOLATIONS
   DOCUMENTATION_ISSUES
   OTHER
+}
+
+enum VehicleCategory {
+  ECONOMY
+  STANDARD
+  PREMIUM
+  LUXURY
+  EXOTIC
+  SUPERCAR
+}
+
+enum RiskCategory {
+  LOW
+  MEDIUM
+  HIGH
+  EXTREME
+}
+
+enum CoverageOverrideType {
+  FULL_APPROVAL
+  PARTIAL_APPROVAL
+  CUSTOM_PRICING
+  TIER_RESTRICTION
+  TEMPORARY_APPROVAL
+  MANUAL_REVIEW
+}
+
+enum ServiceType {
+  OIL_CHANGE
+  STATE_INSPECTION
+  TIRE_ROTATION
+  BRAKE_CHECK
+  FLUID_CHECK
+  BATTERY_CHECK
+  AIR_FILTER
+  MAJOR_SERVICE_30K
+  MAJOR_SERVICE_60K
+  MAJOR_SERVICE_90K
+  CUSTOM
 }

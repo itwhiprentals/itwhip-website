@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
+import { format, formatDistance } from 'date-fns'
 import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
 import PendingBanner from '../components/PendingBanner'
@@ -29,7 +30,9 @@ import {
   IoCameraOutline,
   IoWarningOutline,
   IoInformationCircleOutline,
-  IoSchoolOutline
+  IoSchoolOutline,
+  IoArrowBackOutline,
+  IoStarOutline
 } from 'react-icons/io5'
 
 interface Booking {
@@ -75,7 +78,7 @@ interface Booking {
   }>
 }
 
-type TabType = 'upcoming' | 'active' | 'past' | 'cancelled' | 'pending'
+type TabType = 'all' | 'upcoming' | 'active' | 'past' | 'cancelled' | 'pending'
 
 interface HostStatus {
   approvalStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED' | 'NEEDS_ATTENTION'
@@ -90,47 +93,45 @@ export default function HostBookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [hostStatus, setHostStatus] = useState<HostStatus | null>(null)
   const [loading, setLoading] = useState(true)
-  const [statusLoading, setStatusLoading] = useState(true) // NEW: Separate loading for status
-  const [activeTab, setActiveTab] = useState<TabType>('upcoming')
+  const [statusLoading, setStatusLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState<TabType>('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedBooking, setSelectedBooking] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
+  const [sortBy, setSortBy] = useState<'date' | 'amount' | 'status'>('date')
 
   useEffect(() => {
     checkHostStatus()
-  }, []) // Run once on mount
+  }, [])
 
   useEffect(() => {
-    // Only fetch bookings if host is approved
     if (hostStatus?.approvalStatus === 'APPROVED') {
       fetchBookings()
     } else {
       setLoading(false)
     }
-  }, [activeTab, hostStatus?.approvalStatus]) // Depend on status
+  }, [hostStatus?.approvalStatus])
 
   const checkHostStatus = async () => {
     try {
       setStatusLoading(true)
       const response = await fetch('/api/host/verification-status', {
-        credentials: 'include'
+        credentials: 'include',
+        cache: 'no-store'
       })
       
       if (response.ok) {
         const result = await response.json()
         
-        // ✅ FIX: Access nested data structure correctly
         if (result.success && result.data) {
           setHostStatus({
-            approvalStatus: result.data.overallStatus, // ✅ Correct field
+            approvalStatus: result.data.overallStatus,
             pendingActions: result.data.nextSteps?.map((step: any) => step.action) || [],
             restrictionReasons: result.data.restrictions || [],
             verificationProgress: result.data.verificationProgress,
             statusMessage: result.data.statusMessage
           })
         } else {
-          console.error('Invalid response structure:', result)
-          // Default to PENDING if structure is wrong
           setHostStatus({
             approvalStatus: 'PENDING',
             pendingActions: [],
@@ -138,8 +139,6 @@ export default function HostBookingsPage() {
           })
         }
       } else {
-        console.error('Status check failed:', response.status)
-        // Default to PENDING on error
         setHostStatus({
           approvalStatus: 'PENDING',
           pendingActions: [],
@@ -148,7 +147,6 @@ export default function HostBookingsPage() {
       }
     } catch (error) {
       console.error('Failed to check host status:', error)
-      // Default to PENDING on error
       setHostStatus({
         approvalStatus: 'PENDING',
         pendingActions: [],
@@ -162,13 +160,16 @@ export default function HostBookingsPage() {
   const fetchBookings = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/host/bookings?status=${activeTab}`, {
-        credentials: 'include'
+      
+      // Fetch all bookings without status filter
+      const response = await fetch('/api/host/bookings', {
+        credentials: 'include',
+        cache: 'no-store'
       })
       
       if (response.ok) {
         const data = await response.json()
-        setBookings(data.bookings)
+        setBookings(data.bookings || [])
       }
     } catch (error) {
       console.error('Failed to fetch bookings:', error)
@@ -231,18 +232,20 @@ export default function HostBookingsPage() {
   }
 
   const getStatusBadge = (booking: Booking) => {
-    const statusColors = {
-      PENDING: 'bg-yellow-100 text-yellow-800',
-      CONFIRMED: 'bg-green-100 text-green-800',
-      ACTIVE: 'bg-blue-100 text-blue-800',
-      COMPLETED: 'bg-gray-100 text-gray-800',
-      CANCELLED: 'bg-red-100 text-red-800',
-      NO_SHOW: 'bg-orange-100 text-orange-800'
+    const statusConfig = {
+      PENDING: { bg: 'bg-yellow-100 dark:bg-yellow-900/30', text: 'text-yellow-800 dark:text-yellow-400', label: 'Pending' },
+      CONFIRMED: { bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-800 dark:text-green-400', label: 'Confirmed' },
+      ACTIVE: { bg: 'bg-blue-100 dark:bg-blue-900/30', text: 'text-blue-800 dark:text-blue-400', label: 'Active' },
+      COMPLETED: { bg: 'bg-gray-100 dark:bg-gray-700', text: 'text-gray-800 dark:text-gray-300', label: 'Completed' },
+      CANCELLED: { bg: 'bg-red-100 dark:bg-red-900/30', text: 'text-red-800 dark:text-red-400', label: 'Cancelled' },
+      NO_SHOW: { bg: 'bg-orange-100 dark:bg-orange-900/30', text: 'text-orange-800 dark:text-orange-400', label: 'No Show' }
     }
 
+    const config = statusConfig[booking.status as keyof typeof statusConfig] || statusConfig.PENDING
+
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[booking.status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800'}`}>
-        {booking.status}
+      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${config.bg} ${config.text}`}>
+        {config.label}
       </span>
     )
   }
@@ -250,21 +253,21 @@ export default function HostBookingsPage() {
   const getVerificationBadge = (booking: Booking) => {
     if (booking.licenseVerified && booking.selfieVerified) {
       return (
-        <span className="flex items-center gap-1 text-xs text-green-600">
+        <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 font-medium">
           <IoCheckmarkCircleOutline className="w-4 h-4" />
           Verified
         </span>
       )
     } else if (booking.verificationStatus === 'PENDING') {
       return (
-        <span className="flex items-center gap-1 text-xs text-yellow-600">
+        <span className="flex items-center gap-1 text-xs text-yellow-600 dark:text-yellow-400 font-medium">
           <IoTimeOutline className="w-4 h-4" />
-          Pending Verification
+          Pending
         </span>
       )
     } else {
       return (
-        <span className="flex items-center gap-1 text-xs text-red-600">
+        <span className="flex items-center gap-1 text-xs text-red-600 dark:text-red-400 font-medium">
           <IoWarningOutline className="w-4 h-4" />
           Not Verified
         </span>
@@ -273,50 +276,93 @@ export default function HostBookingsPage() {
   }
 
   const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    })
+    return format(new Date(date), 'MMM d, yyyy')
+  }
+
+  const formatDateShort = (date: string) => {
+    return format(new Date(date), 'MMM d')
   }
 
   const calculateDaysUntil = (date: string) => {
     const days = Math.ceil((new Date(date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
     if (days === 0) return 'Today'
     if (days === 1) return 'Tomorrow'
-    if (days < 0) return 'Past'
+    if (days < 0) return `${Math.abs(days)} days ago`
     return `In ${days} days`
   }
 
-  const filteredBookings = bookings.filter(booking => {
-    if (!searchTerm) return true
-    const searchLower = searchTerm.toLowerCase()
-    return (
-      booking.bookingCode.toLowerCase().includes(searchLower) ||
-      booking.car.make.toLowerCase().includes(searchLower) ||
-      booking.car.model.toLowerCase().includes(searchLower) ||
-      booking.guestName?.toLowerCase().includes(searchLower) ||
-      booking.guestEmail?.toLowerCase().includes(searchLower) ||
-      booking.renter?.name.toLowerCase().includes(searchLower) ||
-      booking.renter?.email.toLowerCase().includes(searchLower)
-    )
-  })
+  // Enhanced filtering logic
+  const getFilteredBookings = () => {
+    let filtered = bookings
 
-  const tabCounts = {
-    pending: bookings.filter(b => b.status === 'PENDING').length,
-    upcoming: bookings.filter(b => b.status === 'CONFIRMED' && new Date(b.startDate) > new Date()).length,
-    active: bookings.filter(b => b.tripStatus === 'ACTIVE').length,
-    past: bookings.filter(b => b.status === 'COMPLETED').length,
-    cancelled: bookings.filter(b => b.status === 'CANCELLED').length
+    // Apply tab filter
+    if (activeTab !== 'all') {
+      filtered = filtered.filter(booking => {
+        switch (activeTab) {
+          case 'pending':
+            return booking.status === 'PENDING'
+          case 'upcoming':
+            return booking.status === 'CONFIRMED' && new Date(booking.startDate) > new Date()
+          case 'active':
+            return booking.tripStatus === 'ACTIVE' || booking.status === 'ACTIVE'
+          case 'past':
+            return booking.status === 'COMPLETED'
+          case 'cancelled':
+            return booking.status === 'CANCELLED' || booking.status === 'NO_SHOW'
+          default:
+            return true
+        }
+      })
+    }
+
+    // Apply search filter
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase()
+      filtered = filtered.filter(booking =>
+        booking.bookingCode.toLowerCase().includes(searchLower) ||
+        booking.car.make.toLowerCase().includes(searchLower) ||
+        booking.car.model.toLowerCase().includes(searchLower) ||
+        booking.guestName?.toLowerCase().includes(searchLower) ||
+        booking.guestEmail?.toLowerCase().includes(searchLower) ||
+        booking.renter?.name.toLowerCase().includes(searchLower) ||
+        booking.renter?.email.toLowerCase().includes(searchLower)
+      )
+    }
+
+    // Apply sorting
+    filtered = [...filtered].sort((a, b) => {
+      switch (sortBy) {
+        case 'date':
+          return new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+        case 'amount':
+          return b.totalAmount - a.totalAmount
+        case 'status':
+          return a.status.localeCompare(b.status)
+        default:
+          return 0
+      }
+    })
+
+    return filtered
   }
 
-  // ✅ FIX: Use explicit status checks
+  const filteredBookings = getFilteredBookings()
+
+  // Calculate tab counts
+  const tabCounts = {
+    all: bookings.length,
+    pending: bookings.filter(b => b.status === 'PENDING').length,
+    upcoming: bookings.filter(b => b.status === 'CONFIRMED' && new Date(b.startDate) > new Date()).length,
+    active: bookings.filter(b => b.tripStatus === 'ACTIVE' || b.status === 'ACTIVE').length,
+    past: bookings.filter(b => b.status === 'COMPLETED').length,
+    cancelled: bookings.filter(b => b.status === 'CANCELLED' || b.status === 'NO_SHOW').length
+  }
+
   const isApproved = hostStatus?.approvalStatus === 'APPROVED'
   const isPending = hostStatus?.approvalStatus === 'PENDING' || hostStatus?.approvalStatus === 'NEEDS_ATTENTION'
 
   const renderEducationalContent = () => (
     <div className="space-y-6">
-      {/* Educational Banner */}
       <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6">
         <div className="flex items-start gap-4">
           <IoSchoolOutline className="w-8 h-8 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-1" />
@@ -361,7 +407,6 @@ export default function HostBookingsPage() {
         </div>
       </div>
 
-      {/* Feature Preview Cards */}
       <div className="grid md:grid-cols-2 gap-4">
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
           <IoCalendarOutline className="w-8 h-8 text-purple-600 dark:text-purple-400 mb-3" />
@@ -409,18 +454,18 @@ export default function HostBookingsPage() {
   const renderBookingCard = (booking: Booking) => (
     <div 
       key={booking.id} 
-      className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow"
+      className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg hover:border-purple-300 dark:hover:border-purple-700 transition-all"
     >
       <div className="p-4 sm:p-6">
-        {/* Header with status and code */}
+        {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs text-gray-500 dark:text-gray-400">Booking #{booking.bookingCode}</span>
+              <span className="text-sm font-mono text-gray-600 dark:text-gray-400">#{booking.bookingCode}</span>
               {getStatusBadge(booking)}
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Booked {formatDate(booking.createdAt)}
+              Booked {formatDistance(new Date(booking.createdAt), new Date(), { addSuffix: true })}
             </p>
           </div>
           {getVerificationBadge(booking)}
@@ -428,23 +473,25 @@ export default function HostBookingsPage() {
 
         {/* Car and Guest Info */}
         <div className="grid sm:grid-cols-2 gap-4 mb-4">
-          {/* Car Info */}
           <div className="flex items-start gap-3">
             {booking.car.photos?.[0] ? (
-              <Image
-                src={booking.car.photos[0].url}
-                alt={`${booking.car.year} ${booking.car.make} ${booking.car.model}`}
-                width={80}
-                height={60}
-                className="rounded-lg object-cover"
-              />
+              <div className="relative w-20 h-15 rounded-lg overflow-hidden flex-shrink-0">
+                <Image
+                  src={booking.car.photos[0].url}
+                  alt={`${booking.car.year} ${booking.car.make} ${booking.car.model}`}
+                  width={80}
+                  height={60}
+                  className="object-cover"
+                  sizes="80px"
+                />
+              </div>
             ) : (
-              <div className="w-20 h-15 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+              <div className="w-20 h-15 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0">
                 <IoCarOutline className="w-8 h-8 text-gray-400 dark:text-gray-500" />
               </div>
             )}
-            <div>
-              <p className="font-semibold text-sm text-gray-900 dark:text-white">
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-sm text-gray-900 dark:text-white truncate">
                 {booking.car.year} {booking.car.make} {booking.car.model}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -453,9 +500,8 @@ export default function HostBookingsPage() {
             </div>
           </div>
 
-          {/* Guest Info */}
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
               {booking.renter?.avatar ? (
                 <Image
                   src={booking.renter.avatar}
@@ -463,9 +509,12 @@ export default function HostBookingsPage() {
                   width={40}
                   height={40}
                   className="rounded-full"
+                  sizes="40px"
                 />
               ) : (
-                <IoPersonOutline className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                <span className="text-sm">
+                  {(booking.renter?.name || booking.guestName || 'G').charAt(0).toUpperCase()}
+                </span>
               )}
             </div>
             <div className="flex-1 min-w-0">
@@ -485,27 +534,36 @@ export default function HostBookingsPage() {
         </div>
 
         {/* Trip Details */}
-        <div className="space-y-2 mb-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+        <div className="space-y-2 mb-4 p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-100 dark:border-gray-700">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-500 dark:text-gray-400">Pickup</span>
+            <span className="text-gray-600 dark:text-gray-400 flex items-center gap-1">
+              <IoCalendarOutline className="w-4 h-4" />
+              Pickup
+            </span>
             <span className="font-medium text-gray-900 dark:text-white">
-              {formatDate(booking.startDate)} at {booking.startTime}
+              {formatDateShort(booking.startDate)} at {booking.startTime}
             </span>
           </div>
           <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-500 dark:text-gray-400">Return</span>
+            <span className="text-gray-600 dark:text-gray-400 flex items-center gap-1">
+              <IoCalendarOutline className="w-4 h-4" />
+              Return
+            </span>
             <span className="font-medium text-gray-900 dark:text-white">
-              {formatDate(booking.endDate)} at {booking.endTime}
+              {formatDateShort(booking.endDate)} at {booking.endTime}
             </span>
           </div>
           <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-500 dark:text-gray-400">Location</span>
+            <span className="text-gray-600 dark:text-gray-400 flex items-center gap-1">
+              <IoLocationOutline className="w-4 h-4" />
+              Location
+            </span>
             <span className="font-medium capitalize text-gray-900 dark:text-white">{booking.pickupType}</span>
           </div>
-          {activeTab === 'upcoming' && (
+          {(activeTab === 'upcoming' || activeTab === 'all') && new Date(booking.startDate) > new Date() && (
             <div className="flex items-center justify-between text-sm pt-2 border-t border-gray-200 dark:border-gray-600">
-              <span className="text-gray-500 dark:text-gray-400">Starts</span>
-              <span className="font-medium text-purple-600 dark:text-purple-400">
+              <span className="text-gray-600 dark:text-gray-400">Starts</span>
+              <span className="font-semibold text-purple-600 dark:text-purple-400">
                 {calculateDaysUntil(booking.startDate)}
               </span>
             </div>
@@ -513,19 +571,19 @@ export default function HostBookingsPage() {
         </div>
 
         {/* Financial Info */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-100 dark:border-gray-700">
           <div className="text-sm">
             <span className="text-gray-500 dark:text-gray-400">Total: </span>
-            <span className="font-bold text-lg text-gray-900 dark:text-white">${booking.totalAmount}</span>
+            <span className="font-bold text-xl text-gray-900 dark:text-white">${booking.totalAmount.toLocaleString()}</span>
           </div>
           <div className="flex items-center gap-2">
             {booking.paymentStatus === 'PAID' ? (
-              <span className="text-green-600 dark:text-green-400 text-sm flex items-center gap-1">
+              <span className="text-green-600 dark:text-green-400 text-sm font-medium flex items-center gap-1">
                 <IoCheckmarkCircleOutline className="w-4 h-4" />
                 Paid
               </span>
             ) : (
-              <span className="text-yellow-600 dark:text-yellow-400 text-sm flex items-center gap-1">
+              <span className="text-yellow-600 dark:text-yellow-400 text-sm font-medium flex items-center gap-1">
                 <IoTimeOutline className="w-4 h-4" />
                 {booking.paymentStatus}
               </span>
@@ -537,7 +595,7 @@ export default function HostBookingsPage() {
         <div className="flex flex-wrap gap-2">
           <Link
             href={`/host/bookings/${booking.id}`}
-            className="flex-1 min-w-[100px] px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm text-center"
+            className="flex-1 min-w-[120px] px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm font-medium text-center"
           >
             View Details
           </Link>
@@ -546,13 +604,13 @@ export default function HostBookingsPage() {
             <>
               <button
                 onClick={() => handleApproveBooking(booking.id)}
-                className="flex-1 min-w-[100px] px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+                className="px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm font-medium"
               >
                 Approve
               </button>
               <button
                 onClick={() => handleDeclineBooking(booking.id)}
-                className="flex-1 min-w-[100px] px-3 py-2 bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/30 transition-colors text-sm"
+                className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm font-medium"
               >
                 Decline
               </button>
@@ -563,7 +621,7 @@ export default function HostBookingsPage() {
            new Date(booking.startDate) <= new Date() && (
             <button
               onClick={() => handleStartTrip(booking.id)}
-              className="flex-1 min-w-[100px] px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+              className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
             >
               Start Check-in
             </button>
@@ -572,15 +630,15 @@ export default function HostBookingsPage() {
           {booking.tripStatus === 'ACTIVE' && (
             <button
               onClick={() => handleEndTrip(booking.id)}
-              className="flex-1 min-w-[100px] px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm"
+              className="px-4 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors text-sm font-medium"
             >
               End Trip
             </button>
           )}
 
           <Link
-            href={`/host/bookings/${booking.id}/messages`}
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm flex items-center gap-1"
+            href={`/host/messages`}
+            className="px-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-purple-500 dark:hover:border-purple-500 rounded-lg transition-colors text-sm font-medium flex items-center gap-2"
           >
             <IoChatbubbleOutline className="w-4 h-4" />
             Message
@@ -590,7 +648,6 @@ export default function HostBookingsPage() {
     </div>
   )
 
-  // ✅ FIX: Show loading state while checking status
   if (statusLoading) {
     return (
       <>
@@ -608,7 +665,6 @@ export default function HostBookingsPage() {
     )
   }
 
-  // ✅ FIX: Show loading for bookings only if approved
   if (loading && !refreshing && isApproved) {
     return (
       <>
@@ -632,19 +688,38 @@ export default function HostBookingsPage() {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-16">
         <div className="p-4 sm:p-6 max-w-7xl mx-auto">
           {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              {isApproved ? 'Bookings Management' : 'Bookings (Preview)'}
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              {isApproved 
-                ? 'Manage your rental bookings and guest communications'
-                : 'Learn about booking management features'
-              }
-            </p>
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <button
+                  onClick={() => router.push('/host/dashboard')}
+                  className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  <IoArrowBackOutline className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                </button>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+                  {isApproved ? 'Bookings' : 'Bookings (Preview)'}
+                </h1>
+              </div>
+              <p className="text-gray-600 dark:text-gray-400 ml-14">
+                {isApproved 
+                  ? `${tabCounts.all} total bookings`
+                  : 'Learn about booking management features'
+                }
+              </p>
+            </div>
+
+            {isApproved && tabCounts.all > 0 && (
+              <div className="hidden sm:flex items-center gap-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-2">
+                <IoStarOutline className="w-5 h-5 text-yellow-500" />
+                <div className="text-sm">
+                  <p className="font-semibold text-gray-900 dark:text-white">${bookings.reduce((sum, b) => sum + b.totalAmount, 0).toLocaleString()}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Total Revenue</p>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Pending Banner - Only show if NOT approved */}
           {!isApproved && hostStatus && (
             <PendingBanner
               approvalStatus={hostStatus.approvalStatus}
@@ -655,14 +730,11 @@ export default function HostBookingsPage() {
             />
           )}
 
-          {/* ✅ FIX: Clear conditional rendering */}
           {!isApproved ? (
-            // PENDING/NEEDS_ATTENTION → Show educational content
             renderEducationalContent()
           ) : (
-            // APPROVED → Show real bookings interface
             <>
-              {/* Search and Filters */}
+              {/* Search and Controls */}
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
                 <div className="flex flex-col sm:flex-row gap-3">
                   <div className="flex-1 relative">
@@ -672,16 +744,27 @@ export default function HostBookingsPage() {
                       placeholder="Search by booking code, car, or guest..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                      className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white"
                     />
                   </div>
+                  
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as any)}
+                    className="px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  >
+                    <option value="date">Sort by Date</option>
+                    <option value="amount">Sort by Amount</option>
+                    <option value="status">Sort by Status</option>
+                  </select>
+
                   <button
                     onClick={handleRefresh}
                     disabled={refreshing}
-                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
+                    className="px-4 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
                   >
                     <IoRefreshOutline className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
-                    Refresh
+                    <span className="hidden sm:inline">Refresh</span>
                   </button>
                 </div>
               </div>
@@ -690,7 +773,8 @@ export default function HostBookingsPage() {
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 mb-6 overflow-hidden">
                 <div className="flex overflow-x-auto">
                   {[
-                    { key: 'pending', label: 'Pending Approval', icon: IoTimeOutline },
+                    { key: 'all', label: 'All', icon: IoCalendarOutline },
+                    { key: 'pending', label: 'Pending', icon: IoTimeOutline },
                     { key: 'upcoming', label: 'Upcoming', icon: IoCalendarOutline },
                     { key: 'active', label: 'Active', icon: IoCarOutline },
                     { key: 'past', label: 'Past', icon: IoCheckmarkCircleOutline },
@@ -699,7 +783,7 @@ export default function HostBookingsPage() {
                     <button
                       key={tab.key}
                       onClick={() => setActiveTab(tab.key as TabType)}
-                      className={`flex-1 min-w-[120px] px-4 py-3 text-sm font-medium transition-colors flex flex-col items-center gap-1 ${
+                      className={`flex-1 min-w-[100px] px-4 py-3 text-sm font-medium transition-all flex flex-col items-center gap-1 ${
                         activeTab === tab.key
                           ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 border-b-2 border-purple-600'
                           : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
@@ -708,7 +792,11 @@ export default function HostBookingsPage() {
                       <tab.icon className="w-5 h-5" />
                       <span>{tab.label}</span>
                       {tabCounts[tab.key as keyof typeof tabCounts] > 0 && (
-                        <span className="text-xs bg-gray-200 dark:bg-gray-600 px-2 py-0.5 rounded-full">
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${
+                          activeTab === tab.key
+                            ? 'bg-purple-600 text-white'
+                            : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300'
+                        }`}>
                           {tabCounts[tab.key as keyof typeof tabCounts]}
                         </span>
                       )}
@@ -720,20 +808,29 @@ export default function HostBookingsPage() {
               {/* Bookings List */}
               {filteredBookings.length === 0 ? (
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
-                  <IoCalendarOutline className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                    No {activeTab} bookings
+                  <IoCalendarOutline className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                    {searchTerm ? 'No bookings found' : `No ${activeTab === 'all' ? '' : activeTab} bookings`}
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    {activeTab === 'pending' && 'No bookings waiting for your approval'}
-                    {activeTab === 'upcoming' && 'No upcoming trips scheduled'}
-                    {activeTab === 'active' && 'No trips currently in progress'}
-                    {activeTab === 'past' && 'No completed trips yet'}
-                    {activeTab === 'cancelled' && 'No cancelled bookings'}
+                  <p className="text-gray-600 dark:text-gray-400 mb-6">
+                    {searchTerm 
+                      ? 'Try adjusting your search terms'
+                      : activeTab === 'all'
+                      ? 'Your bookings will appear here once guests make reservations'
+                      : `No ${activeTab} bookings at this time`
+                    }
                   </p>
+                  {searchTerm && (
+                    <button
+                      onClick={() => setSearchTerm('')}
+                      className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
+                    >
+                      Clear Search
+                    </button>
+                  )}
                 </div>
               ) : (
-                <div className="grid gap-4 lg:grid-cols-2">
+                <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-2">
                   {filteredBookings.map(renderBookingCard)}
                 </div>
               )}

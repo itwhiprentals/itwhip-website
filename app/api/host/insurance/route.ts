@@ -6,6 +6,9 @@ import { verify } from 'jsonwebtoken'
 import { validateNewInsurance } from '@/app/lib/insurance/validation'
 import { calculateHostTier } from '@/app/lib/insurance/tier-calculator'
 
+// ========== ✅ NEW: ESG EVENT HOOK IMPORT ==========
+import { handleInsuranceUpdated } from '@/app/lib/esg/event-hooks'
+
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 
 // Helper function to verify host token
@@ -287,6 +290,31 @@ export async function POST(request: NextRequest) {
     
     // Calculate current tier
     const currentTier = calculateHostTier(result)
+    
+    // ========================================================================
+    // ✅ NEW: TRIGGER ESG EVENT - INSURANCE UPDATED
+    // ========================================================================
+    
+    try {
+      await handleInsuranceUpdated(host.id, {
+        insuranceType: insuranceType as 'P2P' | 'COMMERCIAL' | 'NONE',
+        provider,
+        policyNumber,
+        expiresAt: expiryDate,
+        newTier: currentTier.tier as 'BASIC' | 'STANDARD' | 'PREMIUM',
+        newEarningsRate: currentTier.hostEarnings
+      })
+
+      console.log('✅ ESG insurance update event triggered:', {
+        hostId: host.id,
+        insuranceType,
+        newTier: currentTier.tier,
+        newEarningsRate: currentTier.hostEarnings
+      })
+    } catch (esgError) {
+      // Don't fail insurance submission if ESG update fails
+      console.error('❌ ESG event failed (non-critical):', esgError)
+    }
     
     const responseMessage = (hasActiveP2P || hasActiveCommercial)
       ? `${insuranceType} insurance submitted. Your current ${Math.round(currentTier.hostEarnings * 100)}% earnings remain unchanged until approved.`

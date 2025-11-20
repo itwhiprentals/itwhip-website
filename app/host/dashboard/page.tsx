@@ -9,20 +9,20 @@ import {
   IoStatsChartOutline, 
   IoCalendarOutline, 
   IoWalletOutline,
-  IoCheckmarkCircleOutline,
-  IoTimeOutline,
-  IoAlertCircleOutline,
-  IoCloseCircleOutline,
   IoAddCircleOutline,
   IoDocumentTextOutline,
   IoPersonOutline,
   IoLogOutOutline,
   IoHomeOutline,
   IoStarOutline,
-  IoNotificationsOutline
+  IoChatbubbleOutline,
+  IoShieldCheckmarkOutline
 } from 'react-icons/io5'
 import VerificationProgress from '../components/VerificationProgress'
 import PendingBanner from '../components/PendingBanner'
+import ClaimBanner from './components/ClaimBanner'
+import ESGDashboardCard from '@/app/components/host/ESGDashboardCard'
+import ServiceMetricsDashboardCard from '@/app/components/host/ServiceMetricsDashboardCard'
 
 interface HostData {
   id: string
@@ -49,6 +49,10 @@ interface HostData {
     totalTrips: number
     rating: number
     totalEarnings: number
+    unreadMessages?: number
+    pendingClaims?: number
+    approvedClaims?: number
+    totalClaims?: number
   }
   cars?: Array<{
     id: string
@@ -74,13 +78,27 @@ interface Notification {
   actionRequired: boolean
   actionUrl?: string
   createdAt: Date
+  metadata?: any
+}
+
+interface ClaimNotification extends Notification {
+  type: 'CLAIM_FILED' | 'CLAIM_APPROVED' | 'CLAIM_REJECTED' | 'GUEST_RESPONSE' | 'GUEST_NO_RESPONSE'
+  claimId?: string
+  bookingCode?: string
+  guestName?: string
+  metadata?: {
+    reviewNotes?: string
+    rejectionReason?: string
+    responseDeadline?: string
+    guestResponse?: string
+    estimatedCost?: number
+  }
 }
 
 export default function HostDashboardPage() {
   const router = useRouter()
   const [hostData, setHostData] = useState<HostData | null>(null)
   const [notifications, setNotifications] = useState<Notification[]>([])
-  const [unreadCount, setUnreadCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -134,14 +152,41 @@ export default function HostDashboardPage() {
 
   const fetchNotifications = async (hostId: string) => {
     try {
-      const response = await fetch(`/api/host/notifications?hostId=${hostId}&limit=5`, {
+      const response = await fetch(`/api/host/notifications?hostId=${hostId}&limit=10&status=unread`, {
         credentials: 'include'
       })
       
       if (response.ok) {
-        const data = await response.json()
-        setNotifications(data.notifications || [])
-        setUnreadCount(data.summary?.unreadCount || 0)
+        const result = await response.json()
+        
+        if (result.success && result.data) {
+          const notifications = result.data.notifications || []
+          
+          const mappedNotifications = notifications.map((n: any) => {
+            const claimId = n.actionUrl ? n.actionUrl.split('/').pop() : null
+            const bookingCodeMatch = n.message.match(/booking ([A-Z0-9-]+)/)
+            const costMatch = n.message.match(/\$([0-9,]+\.?\d*)/)
+            
+            return {
+              id: n.id,
+              type: n.type,
+              title: n.subject,
+              message: n.message,
+              priority: n.priority,
+              isRead: !!n.readAt,
+              actionRequired: n.actionRequired || false,
+              actionUrl: n.actionUrl,
+              createdAt: n.createdAt,
+              claimId: claimId,
+              bookingCode: bookingCodeMatch ? bookingCodeMatch[1] : undefined,
+              metadata: {
+                estimatedCost: costMatch ? parseFloat(costMatch[1].replace(',', '')) : 0
+              }
+            }
+          })
+          
+          setNotifications(mappedNotifications)
+        }
       }
     } catch (err) {
       console.error('Failed to fetch notifications:', err)
@@ -156,14 +201,13 @@ export default function HostDashboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           notificationIds: [notificationId],
-          action: 'mark_read'
+          action: 'read'
         })
       })
 
       setNotifications(prev => 
         prev.map(n => n.id === notificationId ? { ...n, isRead: true } : n)
       )
-      setUnreadCount(prev => Math.max(0, prev - 1))
     } catch (err) {
       console.error('Failed to mark notification as read:', err)
     }
@@ -201,13 +245,13 @@ export default function HostDashboardPage() {
   const isApproved = hostData?.approvalStatus === 'APPROVED'
   const isPending = hostData?.approvalStatus === 'PENDING'
   const needsAttention = hostData?.approvalStatus === 'NEEDS_ATTENTION'
-  const isSuspended = hostData?.approvalStatus === 'SUSPENDED'
-  const isRejected = hostData?.approvalStatus === 'REJECTED'
 
   const navigationItems = [
     { name: 'Dashboard', href: '/host/dashboard', icon: IoHomeOutline, current: true },
     { name: 'My Cars', href: '/host/cars', icon: IoCarOutline, current: false },
     { name: 'Bookings', href: '/host/bookings', icon: IoCalendarOutline, current: false },
+    { name: 'Claims', href: '/host/claims', icon: IoShieldCheckmarkOutline, current: false },
+    { name: 'Messages', href: '/host/messages', icon: IoChatbubbleOutline, current: false },
     { name: 'Earnings', href: '/host/earnings', icon: IoWalletOutline, current: false },
     { name: 'Profile', href: '/host/profile', icon: IoPersonOutline, current: false },
   ]
@@ -235,6 +279,16 @@ export default function HostDashboardPage() {
                   >
                     <item.icon className="w-5 h-5" />
                     {item.name}
+                    {item.name === 'Messages' && (hostData?.stats.unreadMessages || 0) > 0 && (
+                      <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                        {hostData?.stats.unreadMessages}
+                      </span>
+                    )}
+                    {item.name === 'Claims' && (hostData?.stats.pendingClaims || 0) > 0 && (
+                      <span className="ml-auto bg-yellow-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                        {hostData?.stats.pendingClaims}
+                      </span>
+                    )}
                   </Link>
                 ))}
               </nav>
@@ -274,19 +328,40 @@ export default function HostDashboardPage() {
               )}
             </div>
 
-            {/* Pending/Needs Attention/Suspended/Rejected Banner */}
-            {!isApproved && (
-              <PendingBanner
-                approvalStatus={hostData?.approvalStatus || 'PENDING'}
-                page="dashboard"
-                pendingActions={hostData?.pendingActions}
-                restrictionReasons={hostData?.restrictionReasons}
-                onActionClick={() => router.push('/host/profile')}
-              />
-            )}
+            {/* Priority Banner System */}
+            {(() => {
+              const claimNotifications = notifications.filter(n => 
+                ['CLAIM_FILED', 'CLAIM_APPROVED', 'CLAIM_REJECTED', 'GUEST_RESPONSE', 'GUEST_NO_RESPONSE'].includes(n.type)
+              ) as ClaimNotification[]
+              
+              const priority = 
+                claimNotifications.find(n => n.type === 'CLAIM_APPROVED') ||
+                claimNotifications.find(n => n.type === 'GUEST_RESPONSE') ||
+                claimNotifications.find(n => n.type === 'CLAIM_REJECTED') ||
+                claimNotifications.find(n => n.type === 'GUEST_NO_RESPONSE') ||
+                claimNotifications.find(n => n.type === 'CLAIM_FILED')
+              
+              if (priority) {
+                return <ClaimBanner notification={priority} onDismiss={markNotificationAsRead} />
+              }
+              
+              if (!isApproved) {
+                return (
+                  <PendingBanner
+                    approvalStatus={hostData?.approvalStatus || 'PENDING'}
+                    page="dashboard"
+                    pendingActions={hostData?.pendingActions}
+                    restrictionReasons={hostData?.restrictionReasons}
+                    onActionClick={() => router.push('/host/profile')}
+                  />
+                )
+              }
+              
+              return null
+            })()}
 
-            {/* Verification Progress for Pending/Needs Attention */}
-            {(isPending || needsAttention) && hostData && (
+            {/* Verification Progress */}
+            {(isPending || needsAttention) && hostData && !notifications.some(n => n.type.includes('CLAIM')) && (
               <div className="mb-8">
                 <VerificationProgress
                   hostId={hostData.id}
@@ -303,154 +378,109 @@ export default function HostDashboardPage() {
               </div>
             )}
 
-            {/* Notification Center */}
-            {unreadCount > 0 && (
-              <div className="mb-8 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                    <IoNotificationsOutline className="w-5 h-5" />
-                    Notifications
-                    {unreadCount > 0 && (
-                      <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                        {unreadCount}
-                      </span>
-                    )}
-                  </h3>
-                  <Link 
-                    href="/host/notifications"
-                    className="text-sm text-purple-600 dark:text-purple-400 hover:underline"
-                  >
-                    View All
-                  </Link>
-                </div>
-                <div className="space-y-3">
-                  {notifications.slice(0, 3).map(notification => (
-                    <div
-                      key={notification.id}
-                      onClick={() => {
-                        if (!notification.isRead) {
-                          markNotificationAsRead(notification.id)
-                        }
-                        if (notification.actionUrl) {
-                          router.push(notification.actionUrl)
-                        }
-                      }}
-                      className={`p-4 rounded-lg border cursor-pointer transition-colors ${
-                        notification.isRead
-                          ? 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700'
-                          : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1">
-                          <p className="font-semibold text-gray-900 dark:text-white text-sm">
-                            {notification.title}
-                          </p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                            {notification.message}
-                          </p>
-                          {notification.actionRequired && (
-                            <span className="inline-block mt-2 text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 px-2 py-1 rounded">
-                              Action Required
-                            </span>
-                          )}
-                        </div>
-                        {!notification.isRead && (
-                          <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1.5" />
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Stats Grid - Updated with clickable cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-              {/* Earnings Card - Clickable */}
-              <Link
-                href="/host/earnings"
-                className="bg-white dark:bg-gray-800 p-4 lg:p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-purple-300 dark:hover:border-purple-700 transition-all cursor-pointer"
-              >
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 mb-8">
+              <Link href="/host/earnings" className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-3 sm:p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-purple-300 dark:hover:border-purple-700 transition-all cursor-pointer">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">Earnings</p>
-                    <p className="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 truncate">Earnings</p>
+                    <p className="text-xl sm:text-2xl font-bold mt-1 text-gray-900 dark:text-white">
                       ${hostData?.stats.totalEarnings?.toLocaleString() || '0'}
                     </p>
                   </div>
-                  <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                    <IoWalletOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
-                  </div>
+                  <IoWalletOutline className="w-6 h-6 sm:w-8 sm:h-8 text-green-500 opacity-60 flex-shrink-0 ml-2" />
                 </div>
               </Link>
               
-              {/* Total Trips Card - Clickable */}
-              <Link
-                href="/host/trips"
-                className="bg-white dark:bg-gray-800 p-4 lg:p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-purple-300 dark:hover:border-purple-700 transition-all cursor-pointer"
-              >
+              <Link href="/host/bookings" className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-3 sm:p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-purple-300 dark:hover:border-purple-700 transition-all cursor-pointer">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">Total Trips</p>
-                    <p className="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 truncate">Total Trips</p>
+                    <p className="text-xl sm:text-2xl font-bold mt-1 text-gray-900 dark:text-white">
                       {hostData?.stats.totalTrips || 0}
                     </p>
                   </div>
-                  <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                    <IoStatsChartOutline className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                  </div>
+                  <IoStatsChartOutline className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500 opacity-60 flex-shrink-0 ml-2" />
                 </div>
               </Link>
               
-              {/* Rating Card - Clickable */}
-              <Link
-                href="/host/reviews"
-                className="bg-white dark:bg-gray-800 p-4 lg:p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-purple-300 dark:hover:border-purple-700 transition-all cursor-pointer"
-              >
+              <Link href="/host/reviews" className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-3 sm:p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-purple-300 dark:hover:border-purple-700 transition-all cursor-pointer">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">Rating</p>
-                    <p className="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 truncate">Rating</p>
+                    <p className="text-xl sm:text-2xl font-bold mt-1 text-gray-900 dark:text-white">
                       {hostData?.stats.rating?.toFixed(1) || 'N/A'}
                     </p>
                   </div>
-                  <div className="p-2 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg">
-                    <IoStarOutline className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
-                  </div>
+                  <IoStarOutline className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-500 opacity-60 flex-shrink-0 ml-2" />
                 </div>
               </Link>
               
-              {/* Active Cars Card - Clickable */}
-              <Link
-                href="/host/cars"
-                className="bg-white dark:bg-gray-800 p-4 lg:p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-purple-300 dark:hover:border-purple-700 transition-all cursor-pointer"
-              >
+              <Link href="/host/cars" className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-3 sm:p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-purple-300 dark:hover:border-purple-700 transition-all cursor-pointer">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">Active Cars</p>
-                    <p className="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 truncate">Active Cars</p>
+                    <p className="text-xl sm:text-2xl font-bold mt-1 text-gray-900 dark:text-white">
                       {hostData?.stats.activeCars || 0}
                     </p>
                   </div>
-                  <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
-                    <IoCarOutline className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                  </div>
+                  <IoCarOutline className="w-6 h-6 sm:w-8 sm:h-8 text-purple-500 opacity-60 flex-shrink-0 ml-2" />
                 </div>
+              </Link>
+
+              <Link href="/host/claims" className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-3 sm:p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-purple-300 dark:hover:border-purple-700 transition-all cursor-pointer relative">
+                <div className="flex items-center justify-between">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 truncate">Claims</p>
+                    <p className="text-xl sm:text-2xl font-bold mt-1 text-gray-900 dark:text-white">
+                      {hostData?.stats.pendingClaims || 0}
+                    </p>
+                  </div>
+                  <IoShieldCheckmarkOutline className="w-6 h-6 sm:w-8 sm:h-8 text-orange-500 opacity-60 flex-shrink-0 ml-2" />
+                </div>
+                {(hostData?.stats.pendingClaims || 0) > 0 && (
+                  <div className="absolute top-2 right-2 w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
+                )}
+              </Link>
+
+              <Link href="/host/messages" className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-3 sm:p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-purple-300 dark:hover:border-purple-700 transition-all cursor-pointer relative">
+                <div className="flex items-center justify-between">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 truncate">Messages</p>
+                    <p className="text-xl sm:text-2xl font-bold mt-1 text-gray-900 dark:text-white">
+                      {hostData?.stats.unreadMessages || 0}
+                    </p>
+                  </div>
+                  <IoChatbubbleOutline className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500 opacity-60 flex-shrink-0 ml-2" />
+                </div>
+                {(hostData?.stats.unreadMessages || 0) > 0 && (
+                  <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></div>
+                )}
               </Link>
             </div>
 
+            {/* ESG DASHBOARD CARD */}
+            {isApproved && hostData && (
+              <div className="mb-8">
+                <ESGDashboardCard hostId={hostData.id} />
+              </div>
+            )}
+
+            {/* SERVICE METRICS DASHBOARD CARD - NEW */}
+            {isApproved && hostData && (
+              <div className="mb-8">
+                <ServiceMetricsDashboardCard hostId={hostData.id} />
+              </div>
+            )}
+
             {/* My Cars Section */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 lg:p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6 mb-8">
               <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-4">My Cars</h2>
               
               {hostData?.cars && hostData.cars.length > 0 ? (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {hostData.cars.map(car => (
-                    <div 
-                      key={car.id} 
-                      className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow"
-                    >
+                    <div key={car.id} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow">
                       <h3 className="font-semibold text-gray-900 dark:text-white">
                         {car.year} {car.make} {car.model}
                       </h3>
@@ -460,10 +490,7 @@ export default function HostDashboardPage() {
                         </span>
                       </p>
                       {isApproved && (
-                        <Link 
-                          href={`/host/cars/${car.id}/edit`}
-                          className="mt-3 text-purple-600 dark:text-purple-400 text-sm hover:underline inline-block"
-                        >
+                        <Link href={`/host/cars/${car.id}/edit`} className="mt-3 text-purple-600 dark:text-purple-400 text-sm hover:underline inline-block">
                           Manage →
                         </Link>
                       )}
@@ -477,10 +504,7 @@ export default function HostDashboardPage() {
                     {!isApproved ? 'Your cars will appear here after approval' : 'No cars listed yet'}
                   </p>
                   {isApproved && (
-                    <Link 
-                      href="/host/cars/add"
-                      className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors"
-                    >
+                    <Link href="/host/cars/add" className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors">
                       <IoAddCircleOutline className="w-5 h-5" />
                       Add Your First Car
                     </Link>
@@ -489,40 +513,52 @@ export default function HostDashboardPage() {
               )}
             </div>
 
-            {/* Quick Actions - Only show for approved hosts */}
+            {/* Quick Actions */}
             {isApproved && (
-              <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <Link 
-                  href="/host/calendar"
-                  className="block p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow"
-                >
-                  <IoCalendarOutline className="w-8 h-8 text-purple-600 dark:text-purple-400 mb-3" />
-                  <h3 className="font-semibold text-gray-900 dark:text-white">Manage Calendar</h3>
-                  <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                    Set availability and pricing
-                  </p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                <Link href="/host/calendar" className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="p-2 sm:p-3 rounded-full bg-purple-500 bg-opacity-10 mb-2 sm:mb-3">
+                      <IoCalendarOutline className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-1 text-sm sm:text-base">Manage Calendar</h3>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 hidden sm:block">Set availability and pricing</p>
+                  </div>
                 </Link>
                 
-                <Link
-                  href="/host/earnings"
-                  className="block p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow"
-                >
-                  <IoWalletOutline className="w-8 h-8 text-green-600 dark:text-green-400 mb-3" />
-                  <h3 className="font-semibold text-gray-900 dark:text-white">View Earnings</h3>
-                  <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                    Track income and payouts
-                  </p>
+                <Link href="/host/earnings" className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="p-2 sm:p-3 rounded-full bg-green-500 bg-opacity-10 mb-2 sm:mb-3">
+                      <IoWalletOutline className="w-5 h-5 sm:w-6 sm:h-6 text-green-600 dark:text-green-400" />
+                    </div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-1 text-sm sm:text-base">View Earnings</h3>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 hidden sm:block">Track income and payouts</p>
+                  </div>
+                </Link>
+
+                <Link href="/host/messages" className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow relative">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="p-2 sm:p-3 rounded-full bg-blue-500 bg-opacity-10 mb-2 sm:mb-3">
+                      <IoChatbubbleOutline className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-1 text-sm sm:text-base">Messages</h3>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 hidden sm:block">Communicate with guests</p>
+                    {(hostData?.stats.unreadMessages || 0) > 0 && (
+                      <span className="absolute top-4 right-4 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                        {hostData?.stats.unreadMessages}
+                      </span>
+                    )}
+                  </div>
                 </Link>
                 
-                <Link 
-                  href="/host/profile"
-                  className="block p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow sm:col-span-2 lg:col-span-1"
-                >
-                  <IoDocumentTextOutline className="w-8 h-8 text-blue-600 dark:text-blue-400 mb-3" />
-                  <h3 className="font-semibold text-gray-900 dark:text-white">Documents</h3>
-                  <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                    Update insurance and licenses
-                  </p>
+                <Link href="/host/profile" className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="p-2 sm:p-3 rounded-full bg-orange-500 bg-opacity-10 mb-2 sm:mb-3">
+                      <IoDocumentTextOutline className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600 dark:text-orange-400" />
+                    </div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-1 text-sm sm:text-base">Documents</h3>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 hidden sm:block">Update insurance and licenses</p>
+                  </div>
                 </Link>
               </div>
             )}

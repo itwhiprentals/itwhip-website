@@ -110,10 +110,10 @@ export default function InsuranceClaimPage() {
 
   // Approved - show form
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 pt-20">
       <Header />
 
-      <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 w-full">
+      <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 w-full overflow-x-hidden">
         {/* Back button */}
         <Link
           href="/host/claims/new"
@@ -179,20 +179,18 @@ export default function InsuranceClaimPage() {
           </div>
         </div>
 
-        {/* Claim form */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 sm:p-8">
-          <ClaimForm
-            hostId={hostId || ''}
-            onSuccess={handleSuccess}
-            onCancel={handleCancel}
-          />
-        </div>
+        {/* Claim form - NO WRAPPER */}
+        <ClaimForm
+          hostId={hostId || ''}
+          onSuccess={handleSuccess}
+          onCancel={handleCancel}
+        />
 
         {/* Help section */}
-        <div className="mt-6 bg-gray-100 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+        <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
           <div className="flex items-start gap-3">
             <IoDocumentTextOutline className="w-5 h-5 text-gray-600 dark:text-gray-400 flex-shrink-0 mt-0.5" />
-            <div className="text-sm">
+            <div className="text-xs">
               <p className="font-medium text-gray-900 dark:text-white mb-1">
                 Need Help?
               </p>

@@ -42,6 +42,7 @@ const HOST_ACCESSIBLE_ROUTES = [
   '/host/profile',
   '/host/cars',
   '/host/bookings',
+  '/host/messages',           // ✅ ADDED
   '/host/earnings',
   '/host/calendar',
   '/host/trips',
@@ -49,6 +50,7 @@ const HOST_ACCESSIBLE_ROUTES = [
   '/host/notifications',
   '/host/claims',
   '/host/logout',
+  '/api/host/messages',       // ✅ ADDED
   '/api/host/profile',
   '/api/host/documents/upload',
   '/api/host/verification-status',
@@ -91,17 +93,17 @@ const publicRoutes = [
   '/admin/auth',
   '/api/admin/auth',
   '/host/signup',
-  '/host/forgot-password',        // ✅ ADDED
-  '/host/reset-password',         // ✅ ADDED
-  '/auth/forgot-password',        // ✅ ADDED (guest)
-  '/auth/reset-password',         // ✅ ADDED (guest)
+  '/host/forgot-password',
+  '/host/reset-password',
+  '/auth/forgot-password',
+  '/auth/reset-password',
   '/api/host/signup',
   '/api/host/login',
   '/api/host/verify',
-  '/api/host/forgot-password',    // ✅ ADDED
-  '/api/host/reset-password',     // ✅ ADDED
-  '/api/auth/forgot-password',    // ✅ ADDED (guest)
-  '/api/auth/reset-password',     // ✅ ADDED (guest)
+  '/api/host/forgot-password',
+  '/api/host/reset-password',
+  '/api/auth/forgot-password',
+  '/api/auth/reset-password',
   '/verify',
 ]
 
@@ -360,8 +362,8 @@ export async function middleware(request: NextRequest) {
       !pathname.startsWith('/api/host/login') && 
       !pathname.startsWith('/api/host/signup') && 
       !pathname.startsWith('/api/host/verify') &&
-      !pathname.startsWith('/api/host/forgot-password') &&   // ✅ ADDED
-      !pathname.startsWith('/api/host/reset-password')) {    // ✅ ADDED
+      !pathname.startsWith('/api/host/forgot-password') &&
+      !pathname.startsWith('/api/host/reset-password')) {
     const hostToken = request.cookies.get('hostAccessToken')?.value || 
                      request.cookies.get('accessToken')?.value
     

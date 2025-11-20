@@ -45,6 +45,7 @@ import MessagesTab from './components/tabs/MessagesTab'
 import SystemTab from './components/tabs/SystemTab'
 import PayoutsTab from './components/tabs/PayoutsTab'
 import AnalyticsTab from './components/tabs/AnalyticsTab'
+import InsuranceTab from './components/tabs/InsuranceTab'
 
 interface RentalStats {
   totalBookings: number
@@ -269,6 +270,7 @@ export default function RentalsManagementPage() {
     { id: 'charges', label: 'Charges', icon: IoCashOutline, badge: stats.pendingCharges },
     { id: 'cancellations', label: 'Cancellations', icon: IoBanOutline, badge: stats.totalCancellations },
     { id: 'disputes', label: 'Disputes', icon: IoWarningOutline, badge: stats.openDisputes },
+    { id: 'insurance', label: 'Insurance', icon: IoShieldCheckmarkOutline },
     { id: 'cars', label: 'Cars', icon: IoCarSportOutline, badge: stats.totalCars, isLink: true, href: '/admin/rentals/cars' },
     { id: 'hosts', label: 'Hosts', icon: IoPeopleOutline, badge: stats.totalHosts, isLink: true, href: '/admin/rentals/hosts' },
     { id: 'payouts', label: 'Payouts', icon: IoWalletOutline, badge: stats.pendingPayouts },
@@ -792,6 +794,10 @@ export default function RentalsManagementPage() {
 
           {activeTab === 'messages' && <MessagesTab />}
 
+          {activeTab === 'analytics' && <AnalyticsTab />}
+
+          {activeTab === 'insurance' && <InsuranceTab />}
+
           {activeTab === 'system' && (
             <SystemTab
               systemHealth={systemHealth}
@@ -800,8 +806,6 @@ export default function RentalsManagementPage() {
           )}
 
           {activeTab === 'payouts' && <PayoutsTab />}
-
-          {activeTab === 'analytics' && <AnalyticsTab />}
         </div>
       </main>
 

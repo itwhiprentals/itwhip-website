@@ -45,31 +45,61 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const statusFilter = searchParams.get('status') || 'all'
     const search = searchParams.get('search') || ''
+    const hasInsurance = searchParams.get('hasInsurance') === 'true'
     
-    // Build where clause based on status filter
-    const now = new Date()
+    // Build where clause - fetch ALL bookings, filter in memory for "all" tab
     let whereClause: any = {
       hostId: host.id
     }
     
-    // Apply status filters
-    switch (statusFilter) {
-      case 'pending':
-        whereClause.status = 'PENDING'
-        break
-      case 'upcoming':
-        whereClause.status = 'CONFIRMED'
-        whereClause.startDate = { gt: now }
-        break
-      case 'active':
-        whereClause.tripStatus = 'ACTIVE'
-        break
-      case 'past':
-        whereClause.status = 'COMPLETED'
-        break
-      case 'cancelled':
-        whereClause.status = 'CANCELLED'
-        break
+    const now = new Date()
+    
+    // Parse multiple statuses (e.g., "COMPLETED,ACTIVE")
+    if (statusFilter !== 'all') {
+      const statuses = statusFilter.split(',').map(s => s.trim())
+      
+      // If multiple statuses provided
+      if (statuses.length > 1) {
+        whereClause.OR = statuses.map(status => {
+          switch (status.toUpperCase()) {
+            case 'PENDING':
+              return { status: 'PENDING' }
+            case 'CONFIRMED':
+            case 'UPCOMING':
+              return { status: 'CONFIRMED', startDate: { gt: now } }
+            case 'ACTIVE':
+              return { tripStatus: 'ACTIVE' }
+            case 'COMPLETED':
+            case 'PAST':
+              return { status: 'COMPLETED' }
+            case 'CANCELLED':
+              return { status: 'CANCELLED' }
+            default:
+              return {}
+          }
+        }).filter(condition => Object.keys(condition).length > 0)
+      } else {
+        // Single status
+        switch (statuses[0].toLowerCase()) {
+          case 'pending':
+            whereClause.status = 'PENDING'
+            break
+          case 'upcoming':
+            whereClause.status = 'CONFIRMED'
+            whereClause.startDate = { gt: now }
+            break
+          case 'active':
+            whereClause.tripStatus = 'ACTIVE'
+            break
+          case 'past':
+          case 'completed':
+            whereClause.status = 'COMPLETED'
+            break
+          case 'cancelled':
+            whereClause.status = 'CANCELLED'
+            break
+        }
+      }
     }
     
     // Apply search filter
@@ -100,8 +130,10 @@ export async function GET(request: NextRequest) {
         car: {
           include: {
             photos: {
-              where: { isHero: true },
-              take: 1
+              take: 1,
+              orderBy: {
+                createdAt: 'asc'
+              }
             }
           }
         },
@@ -112,6 +144,15 @@ export async function GET(request: NextRequest) {
             email: true,
             phone: true,
             avatar: true
+          }
+        },
+        insurancePolicy: {
+          select: {
+            id: true,
+            tier: true,
+            deductible: true,
+            collisionCoverage: true,
+            liabilityCoverage: true
           }
         },
         messages: {
@@ -132,8 +173,14 @@ export async function GET(request: NextRequest) {
       ]
     })
     
+    // Filter by insurance if requested
+    let filteredBookings = bookings
+    if (hasInsurance) {
+      filteredBookings = bookings.filter(b => b.insurancePolicy !== null)
+    }
+    
     // Format bookings for response
-    const formattedBookings = bookings.map(booking => ({
+    const formattedBookings = filteredBookings.map(booking => ({
       id: booking.id,
       bookingCode: booking.bookingCode,
       car: {
@@ -162,14 +209,21 @@ export async function GET(request: NextRequest) {
       pickupType: booking.pickupType,
       pickupLocation: booking.pickupLocation,
       numberOfDays: booking.numberOfDays,
-      totalAmount: booking.totalAmount.toNumber(),
-      depositAmount: booking.depositAmount.toNumber(),
+      totalAmount: Number(booking.totalAmount),
+      depositAmount: Number(booking.depositAmount),
       status: booking.status,
       paymentStatus: booking.paymentStatus,
       verificationStatus: booking.verificationStatus,
       tripStatus: booking.tripStatus,
       licenseVerified: booking.licenseVerified,
       selfieVerified: booking.selfieVerified,
+      insurancePolicy: booking.insurancePolicy ? {
+        id: booking.insurancePolicy.id,
+        tier: booking.insurancePolicy.tier,
+        deductible: booking.insurancePolicy.deductible,
+        collisionCoverage: booking.insurancePolicy.collisionCoverage,
+        liabilityCoverage: booking.insurancePolicy.liabilityCoverage
+      } : null,
       createdAt: booking.createdAt.toISOString(),
       messages: booking.messages
     }))
@@ -295,8 +349,8 @@ export async function POST(request: NextRequest) {
         deliveryAddress: body.deliveryAddress,
         
         // Financial details
-        dailyRate: car.dailyRate.toNumber(),
-        subtotal: car.dailyRate.toNumber() * numberOfDays,
+        dailyRate: Number(car.dailyRate),
+        subtotal: Number(car.dailyRate) * numberOfDays,
         deliveryFee: body.deliveryFee || 0,
         insuranceFee: body.insuranceFee || 0,
         serviceFee: body.serviceFee || 0,
@@ -305,9 +359,9 @@ export async function POST(request: NextRequest) {
         depositAmount: body.depositAmount || 500,
         
         // Status
-        status: 'CONFIRMED', // Manual bookings are auto-confirmed
+        status: 'CONFIRMED',
         paymentStatus: body.paymentStatus || 'PENDING',
-        verificationStatus: 'APPROVED', // Skip verification for manual bookings
+        verificationStatus: 'APPROVED',
         tripStatus: 'NOT_STARTED',
         
         // Session info

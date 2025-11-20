@@ -48,7 +48,13 @@ export default function CoveragePage() {
   const fetchCoverageData = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/fleet/insurance/coverage/gaps')
+      // FIX: Added authentication key to the API call
+      const response = await fetch('/api/fleet/insurance/coverage/gaps?key=phoenix-fleet-2847')
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch: ${response.status}`)
+      }
+      
       const data = await response.json()
 
       // Combine covered and gap vehicles
@@ -117,7 +123,7 @@ export default function CoveragePage() {
             </div>
             
             <Link
-              href="/fleet/insurance/coverage/gaps"
+              href="/fleet/insurance/coverage/gaps?key=phoenix-fleet-2847"
               className="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white text-sm font-medium rounded-lg transition-colors text-center whitespace-nowrap"
             >
               View Coverage Gaps

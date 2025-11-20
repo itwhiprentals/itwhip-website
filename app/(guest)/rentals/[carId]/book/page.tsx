@@ -18,7 +18,8 @@ import {
   IoWarningOutline,
   IoCloseCircle,
   IoSparklesOutline,
-  IoBanOutline
+  IoBanOutline,
+  IoCloseCircleOutline
 } from 'react-icons/io5'
 import { format } from 'date-fns'
 
@@ -42,6 +43,7 @@ interface RentalCarWithDetails {
   rating?: number
   totalTrips?: number
   address?: string
+  isActive: boolean // ✅ ADDED: Vehicle availability status
   photos?: Array<{
     url: string
     alt?: string
@@ -375,6 +377,14 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
   // ============================================
   
   const checkBookingEligibility = (): { allowed: boolean; reason?: string } => {
+    // ✅ NEW: Check if vehicle is available
+    if (car && !car.isActive) {
+      return {
+        allowed: false,
+        reason: 'This vehicle is currently unavailable for booking. It may be undergoing maintenance, involved in an insurance claim, or temporarily deactivated by the owner.'
+      }
+    }
+    
     if (!moderationStatus) return { allowed: true }
     
     // Check if banned
@@ -500,6 +510,13 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
         if (!response.ok) throw new Error('Car not found')
         const data = await response.json()
         setCar(data)
+        
+        // ✅ NEW: Log vehicle availability status
+        console.log('🚗 Vehicle loaded:', {
+          id: data.id,
+          name: `${data.year} ${data.make} ${data.model}`,
+          isActive: data.isActive
+        })
       } catch (error) {
         console.error('Error fetching car:', error)
         router.push('/rentals')
@@ -772,7 +789,7 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
   
   if (isLoading || !car || !savedBookingDetails || profileLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-600"></div>
       </div>
     )
@@ -855,9 +872,34 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-4 py-6 pb-32">
         
+        {/* ✅ NEW: VEHICLE UNAVAILABLE BANNER - HIGHEST PRIORITY */}
+        {!car.isActive && (
+          <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-300 dark:border-red-700 rounded-lg p-4 mb-6 shadow-sm">
+            <div className="flex items-start gap-3">
+              <IoCloseCircleOutline className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="font-semibold text-red-900 dark:text-red-100 mb-2 text-base">
+                  Vehicle Currently Unavailable
+                </p>
+                <p className="text-sm text-red-800 dark:text-red-200 mb-3">
+                  This vehicle is temporarily unavailable for booking. This may be due to:
+                </p>
+                <ul className="text-sm text-red-800 dark:text-red-200 space-y-1 ml-4">
+                  <li>• Active insurance claim being processed</li>
+                  <li>• Scheduled maintenance or repairs</li>
+                  <li>• Owner temporarily deactivated the listing</li>
+                </ul>
+                <p className="text-sm text-red-700 dark:text-red-300 mt-3 font-medium">
+                  Please browse other available vehicles or check back later.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        
         {/* ✅ VERIFIED USER WELCOME BANNER */}
         {userProfile?.documentsVerified && (
-          <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 border border-green-200 dark:border-green-800 p-4 mb-4 rounded-lg">
+          <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-4 shadow-sm">
             <div className="flex items-start space-x-3">
               <IoCheckmarkCircle className="w-6 h-6 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
@@ -880,8 +922,8 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
         )}
         
         {/* ⚠️ ACCOUNT WARNING/RESTRICTION BANNER */}
-        {!eligibility.allowed && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4 mb-4 rounded-lg">
+        {!eligibility.allowed && car.isActive && (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4 shadow-sm">
             <div className="flex items-start space-x-3">
               <IoBanOutline className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
               <div>
@@ -897,8 +939,8 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
         )}
         
         {/* ⚠️ MANUAL APPROVAL WARNING */}
-        {eligibility.allowed && eligibility.reason && (
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 p-4 mb-4 rounded-lg">
+        {eligibility.allowed && eligibility.reason && car.isActive && (
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-4 shadow-sm">
             <div className="flex items-start space-x-3">
               <IoWarningOutline className="w-6 h-6 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
               <div>
@@ -914,8 +956,8 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
         )}
         
         {/* 💰 INSURANCE DISCOUNT BANNER */}
-        {userProfile?.insuranceVerified && (
-          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-4 mb-4 rounded-lg">
+        {userProfile?.insuranceVerified && car.isActive && (
+          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-4 shadow-sm">
             <div className="flex items-start space-x-3">
               <IoSparklesOutline className="w-6 h-6 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
               <div>
@@ -935,7 +977,7 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
         )}
         
         {/* P2P Important Notice */}
-        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-4 mb-4 rounded-lg">
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-4 shadow-sm">
           <div className="flex items-start space-x-3">
             <IoInformationCircleOutline className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
             <div className="text-sm">
@@ -950,7 +992,7 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
         </div>
         
         {/* Selected Dates Card */}
-        <div className="bg-white dark:bg-gray-800 p-4 mb-4 shadow-sm rounded-lg border border-gray-300 dark:border-gray-600">
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-4 shadow-sm border border-gray-300 dark:border-gray-600">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
@@ -975,7 +1017,7 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
         </div>
         
         {/* Selected Insurance Card */}
-        <div className="bg-white dark:bg-gray-800 p-4 mb-4 shadow-sm rounded-lg border border-gray-300 dark:border-gray-600">
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-4 shadow-sm border border-gray-300 dark:border-gray-600">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
@@ -1001,7 +1043,7 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
         
         {/* Experience Enhancements Card */}
         {Object.values(savedBookingDetails.addOns).some(v => v) && (
-          <div className="bg-white dark:bg-gray-800 p-4 mb-4 shadow-sm rounded-lg border border-gray-300 dark:border-gray-600">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-4 shadow-sm border border-gray-300 dark:border-gray-600">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
@@ -1025,7 +1067,7 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
         )}
         
         {/* Primary Driver Information Section */}
-        <div className="bg-white dark:bg-gray-800 p-6 mb-4 shadow-sm rounded-lg border border-gray-300 dark:border-gray-600">
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 mb-4 shadow-sm border border-gray-300 dark:border-gray-600">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
             <IoPersonOutline className="w-5 h-5 mr-2" />
             Primary Driver Information
@@ -1127,7 +1169,7 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
         </div>
         
         {/* Document Upload Section */}
-        <div ref={documentsRef} className="bg-white dark:bg-gray-800 p-6 mb-4 shadow-sm rounded-lg border border-gray-300 dark:border-gray-600">
+        <div ref={documentsRef} className="bg-white dark:bg-gray-800 rounded-lg p-6 mb-4 shadow-sm border border-gray-300 dark:border-gray-600">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Upload Your Documents
             {userProfile?.documentsVerified && (
@@ -1139,7 +1181,7 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
           
           {/* ✅ VERIFIED USER - SKIP DOCUMENTS */}
           {userProfile?.documentsVerified ? (
-            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-4 rounded-lg">
+            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
               <div className="flex items-start space-x-3">
                 <IoCheckmarkCircle className="w-6 h-6 text-green-600 dark:text-green-400 flex-shrink-0" />
                 <div>
@@ -1356,7 +1398,7 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
         {/* Payment Section */}
         <div 
           ref={paymentRef}
-          className="bg-white dark:bg-gray-800 p-6 shadow-sm rounded-lg border border-gray-300 dark:border-gray-600"
+          className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-300 dark:border-gray-600"
         >
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Payment Information</h2>
           
@@ -1580,7 +1622,7 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
                   Processing...
                 </span>
               ) : !eligibility.allowed ? (
-                'Booking Restricted'
+                'Unavailable'
               ) : (
                 'Complete Booking'
               )}

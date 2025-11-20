@@ -1,4 +1,4 @@
-// app/api/host/cars/[id]/route.ts
+// app/api/host/cars/[id]/route.ts - ENHANCED WITH ACTIVITY LOGGING
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
@@ -18,6 +18,8 @@ async function getHostFromHeaders() {
     where: { id: hostId },
     select: {
       id: true,
+      name: true,
+      email: true,
       approvalStatus: true,
       canEditCalendar: true,
       minDailyRate: true,
@@ -26,6 +28,130 @@ async function getHostFromHeaders() {
   })
 
   return host
+}
+
+// Helper to check for active claims
+async function checkActiveClaims(carId: string) {
+  const activeClaims = await prisma.claim.findMany({
+    where: {
+      booking: {
+        carId: carId
+      },
+      status: {
+        in: ['PENDING', 'UNDER_REVIEW']
+      }
+    },
+    include: {
+      booking: {
+        select: {
+          bookingCode: true
+        }
+      }
+    },
+    orderBy: {
+      createdAt: 'desc'
+    }
+  })
+
+  return {
+    hasActiveClaims: activeClaims.length > 0,
+    claimCount: activeClaims.length,
+    claims: activeClaims,
+    mostRecentClaim: activeClaims[0] || null
+  }
+}
+
+// ✅ NEW: Helper to track field changes
+function detectChanges(oldData: any, newData: any, fields: string[]) {
+  const changes: any = {
+    updated: [],
+    oldValues: {},
+    newValues: {}
+  }
+
+  for (const field of fields) {
+    if (newData[field] !== undefined && oldData[field] !== newData[field]) {
+      changes.updated.push(field)
+      changes.oldValues[field] = oldData[field]
+      changes.newValues[field] = newData[field]
+    }
+  }
+
+  return changes
+}
+
+// ✅ NEW: Helper to create detailed activity log
+async function logVehicleActivity(params: {
+  carId: string
+  hostId: string
+  hostName: string
+  action: string
+  category: string
+  changes?: any
+  metadata?: any
+}) {
+  const { carId, hostId, hostName, action, category, changes, metadata } = params
+
+  // Build description based on action
+  let description = ''
+  switch (action) {
+    case 'UPDATE_PRICING':
+      const priceDiff = changes?.newValues.dailyRate - changes?.oldValues.dailyRate
+      const percentChange = ((priceDiff / changes?.oldValues.dailyRate) * 100).toFixed(1)
+      description = `Pricing updated: $${changes?.oldValues.dailyRate} → $${changes?.newValues.dailyRate} (${priceDiff > 0 ? '+' : ''}${percentChange}%)`
+      break
+    case 'UPDATE_AVAILABILITY':
+      description = `Availability settings updated`
+      break
+    case 'UPDATE_DELIVERY':
+      description = `Delivery options updated`
+      break
+    case 'UPDATE_FEATURES':
+      const addedFeatures = metadata?.added || []
+      const removedFeatures = metadata?.removed || []
+      if (addedFeatures.length > 0) {
+        description = `Added features: ${addedFeatures.join(', ')}`
+      } else if (removedFeatures.length > 0) {
+        description = `Removed features: ${removedFeatures.join(', ')}`
+      } else {
+        description = `Features updated`
+      }
+      break
+    case 'UPDATE_REGISTRATION':
+      description = `Registration information updated`
+      break
+    case 'VEHICLE_ACTIVATED':
+      description = `Vehicle activated and available for booking`
+      break
+    case 'VEHICLE_DEACTIVATED':
+      description = `Vehicle deactivated`
+      break
+    default:
+      description = `Vehicle ${action.toLowerCase().replace(/_/g, ' ')}`
+  }
+
+  await prisma.activityLog.create({
+    data: {
+      entityType: 'CAR',
+      entityId: carId,
+      hostId: hostId,
+      action: action,
+      category: category,
+      severity: 'INFO',
+      description: description,
+      oldValue: changes?.oldValues ? JSON.stringify(changes.oldValues) : null,
+      newValue: changes?.newValues ? JSON.stringify(changes.newValues) : null,
+      metadata: metadata ? JSON.stringify({
+        ...metadata,
+        hostName,
+        timestamp: new Date().toISOString()
+      }) : JSON.stringify({
+        hostName,
+        timestamp: new Date().toISOString()
+      }),
+      createdAt: new Date()
+    }
+  })
 }
 
 // GET - Fetch single car details
@@ -44,45 +170,12 @@ export async function GET(
       )
     }
 
+    console.log('🔍 Fetching car:', carId, 'for host:', host.id)
+
     const car = await prisma.rentalCar.findFirst({
       where: {
         id: carId,
         hostId: host.id
-      },
-      include: {
-        photos: {
-          orderBy: { order: 'asc' }
-        },
-        bookings: {
-          where: {
-            status: {
-              in: ['CONFIRMED', 'ACTIVE']
-            },
-            startDate: {
-              gte: new Date()
-            }
-          },
-          select: {
-            id: true,
-            startDate: true,
-            endDate: true
-          }
-        },
-        availability: {
-          where: {
-            date: {
-              gte: new Date()
-            }
-          },
-          orderBy: {
-            date: 'asc'
-          }
-        },
-        reviews: {
-          select: {
-            rating: true
-          }
-        }
       }
     })
 
@@ -93,29 +186,80 @@ export async function GET(
       )
     }
 
-    // Calculate average rating
-    const avgRating = car.reviews.length > 0
-      ? car.reviews.reduce((acc, r) => acc + r.rating, 0) / car.reviews.length
+    const [photos, bookings, availability, reviews, claimInfo] = await Promise.all([
+      prisma.rentalCarPhoto.findMany({
+        where: { carId },
+        orderBy: { order: 'asc' }
+      }),
+      prisma.rentalBooking.findMany({
+        where: {
+          carId,
+          status: {
+            in: ['CONFIRMED', 'ACTIVE']
+          },
+          startDate: {
+            gte: new Date()
+          }
+        },
+        select: {
+          id: true,
+          startDate: true,
+          endDate: true
+        }
+      }),
+      prisma.rentalAvailability.findMany({
+        where: {
+          carId,
+          date: {
+            gte: new Date()
+          }
+        },
+        orderBy: {
+          date: 'asc'
+        }
+      }),
+      prisma.rentalReview.findMany({
+        where: { carId },
+        select: {
+          rating: true
+        }
+      }),
+      checkActiveClaims(carId)
+    ])
+
+    const avgRating = reviews.length > 0
+      ? reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length
       : 0
 
-    // Parse JSON fields
-    const features = car.features ? JSON.parse(car.features) : []
-    const rules = car.rules ? JSON.parse(car.rules) : []
+    const features = car.features ? JSON.parse(car.features as string) : []
+    const rules = car.rules ? JSON.parse(car.rules as string) : []
 
-    // ✅ FIX: Wrap in consistent response structure
     return NextResponse.json({
       success: true,
-      car: {
+      car: JSON.parse(JSON.stringify({
         ...car,
         features,
         rules,
+        photos,
+        bookings,
+        availability,
+        reviews,
         avgRating: parseFloat(avgRating.toFixed(1)),
-        upcomingBookings: car.bookings.length
-      }
+        upcomingBookings: bookings.length,
+        hasActiveClaim: claimInfo.hasActiveClaims,
+        activeClaimCount: claimInfo.claimCount,
+        activeClaim: claimInfo.mostRecentClaim ? {
+          id: claimInfo.mostRecentClaim.id,
+          type: claimInfo.mostRecentClaim.type,
+          status: claimInfo.mostRecentClaim.status,
+          createdAt: claimInfo.mostRecentClaim.createdAt.toISOString(),
+          bookingCode: claimInfo.mostRecentClaim.booking.bookingCode
+        } : null
+      }))
     })
 
   } catch (error) {
-    console.error('Error fetching car:', error)
+    console.error('❌ Error fetching car:', error)
     return NextResponse.json(
       { error: 'Failed to fetch car details' },
       { status: 500 }
@@ -123,7 +267,7 @@ export async function GET(
   }
 }
 
-// PUT - Update car details
+// PUT - Update car details (ENHANCED WITH ACTIVITY LOGGING)
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -146,9 +290,26 @@ export async function PUT(
       )
     }
 
+    // Check for active claims
+    const claimInfo = await checkActiveClaims(carId)
+    
+    if (claimInfo.hasActiveClaims) {
+      return NextResponse.json({
+        error: 'Cannot modify vehicle while claim is active',
+        reason: 'ACTIVE_CLAIM',
+        claimCount: claimInfo.claimCount,
+        activeClaim: {
+          id: claimInfo.mostRecentClaim!.id,
+          type: claimInfo.mostRecentClaim!.type,
+          status: claimInfo.mostRecentClaim!.status,
+          bookingCode: claimInfo.mostRecentClaim!.booking.bookingCode
+        }
+      }, { status: 403 })
+    }
+
     const body = await request.json()
 
-    // Verify car belongs to host
+    // ✅ FETCH EXISTING CAR FOR COMPARISON
     const existingCar = await prisma.rentalCar.findFirst({
       where: {
         id: carId,
@@ -163,7 +324,7 @@ export async function PUT(
       )
     }
 
-    // Validate daily rate if changing
+    // Validate daily rate
     if (body.dailyRate) {
       if (host.minDailyRate && body.dailyRate < host.minDailyRate) {
         return NextResponse.json(
@@ -216,7 +377,7 @@ export async function PUT(
     if (body.freeDeliveryRadius !== undefined) updateData.freeDeliveryRadius = body.freeDeliveryRadius
     if (body.deliveryInstructions !== undefined) updateData.deliveryInstructions = body.deliveryInstructions
     
-    // Features and rules (JSON)
+    // Features and rules
     if (body.features !== undefined) {
       updateData.features = JSON.stringify(body.features)
     }
@@ -259,41 +420,175 @@ export async function PUT(
     if (body.insuranceIncluded !== undefined) updateData.insuranceIncluded = body.insuranceIncluded
     if (body.insuranceDaily !== undefined) updateData.insuranceDaily = body.insuranceDaily
     
+    // Registration & Title
+    if (body.registrationState !== undefined) updateData.registrationState = body.registrationState
+    if (body.registrationExpiryDate !== undefined) {
+      try {
+        updateData.registrationExpiryDate = body.registrationExpiryDate ? new Date(body.registrationExpiryDate) : null
+      } catch (e) {
+        console.warn('Invalid registration expiry date:', body.registrationExpiryDate)
+      }
+    }
+    if (body.titleStatus !== undefined) updateData.titleStatus = body.titleStatus
+    if (body.registeredOwner !== undefined) updateData.registeredOwner = body.registeredOwner
+    if (body.estimatedValue !== undefined) updateData.estimatedValue = body.estimatedValue
+    if (body.annualMileage !== undefined) updateData.annualMileage = body.annualMileage
+    if (body.primaryUse !== undefined) updateData.primaryUse = body.primaryUse
+    
+    // Garage Location
+    if (body.garageAddress !== undefined) updateData.garageAddress = body.garageAddress
+    if (body.garageCity !== undefined) updateData.garageCity = body.garageCity
+    if (body.garageState !== undefined) updateData.garageState = body.garageState
+    if (body.garageZip !== undefined) updateData.garageZip = body.garageZip
+    
+    // Lien Information
+    if (body.hasLien !== undefined) updateData.hasLien = body.hasLien
+    if (body.lienholderName !== undefined) updateData.lienholderName = body.lienholderName
+    if (body.lienholderAddress !== undefined) updateData.lienholderAddress = body.lienholderAddress
+    
+    // Safety Features
+    if (body.hasAlarm !== undefined) updateData.hasAlarm = body.hasAlarm
+    if (body.hasTracking !== undefined) updateData.hasTracking = body.hasTracking
+    if (body.hasImmobilizer !== undefined) updateData.hasImmobilizer = body.hasImmobilizer
+    
+    // Modifications
+    if (body.isModified !== undefined) updateData.isModified = body.isModified
+    if (body.modifications !== undefined) updateData.modifications = body.modifications
+
+    console.log('🔧 Update data:', JSON.stringify(updateData, null, 2))
+    
+    // ===== ACTIVITY LOGGING LOGIC =====
+    
+    // 1. PRICING CHANGES
+    const pricingFields = ['dailyRate', 'weeklyRate', 'monthlyRate', 'weeklyDiscount', 'monthlyDiscount']
+    const pricingChanges = detectChanges(existingCar, updateData, pricingFields)
+    if (pricingChanges.updated.length > 0) {
+      await logVehicleActivity({
+        carId,
+        hostId: host.id,
+        hostName: host.name || host.email,
+        action: 'UPDATE_PRICING',
+        category: 'VEHICLE',
+        changes: pricingChanges,
+        metadata: {
+          fields: pricingChanges.updated,
+          priceChange: updateData.dailyRate ? updateData.dailyRate - existingCar.dailyRate : 0,
+          percentChange: updateData.dailyRate ? 
+            (((updateData.dailyRate - existingCar.dailyRate) / existingCar.dailyRate) * 100).toFixed(2) : 
+            0
+        }
+      })
+    }
+
+    // 2. AVAILABILITY CHANGES
+    const availabilityFields = ['instantBook', 'advanceNotice', 'minTripDuration', 'maxTripDuration']
+    const availabilityChanges = detectChanges(existingCar, updateData, availabilityFields)
+    if (availabilityChanges.updated.length > 0) {
+      await logVehicleActivity({
+        carId,
+        hostId: host.id,
+        hostName: host.name || host.email,
+        action: 'UPDATE_AVAILABILITY',
+        category: 'VEHICLE',
+        changes: availabilityChanges,
+        metadata: {
+          fields: availabilityChanges.updated
+        }
+      })
+    }
+
+    // 3. DELIVERY SETTINGS CHANGES
+    const deliveryFields = ['airportPickup', 'hotelDelivery', 'homeDelivery', 'airportFee', 'hotelFee', 'homeFee', 'deliveryRadius']
+    const deliveryChanges = detectChanges(existingCar, updateData, deliveryFields)
+    if (deliveryChanges.updated.length > 0) {
+      await logVehicleActivity({
+        carId,
+        hostId: host.id,
+        hostName: host.name || host.email,
+        action: 'UPDATE_DELIVERY',
+        category: 'VEHICLE',
+        changes: deliveryChanges,
+        metadata: {
+          fields: deliveryChanges.updated
+        }
+      })
+    }
+
+    // 4. FEATURES CHANGES
+    if (body.features !== undefined) {
+      const oldFeatures = existingCar.features ? JSON.parse(existingCar.features as string) : []
+      const newFeatures = body.features
+      const added = newFeatures.filter((f: string) => !oldFeatures.includes(f))
+      const removed = oldFeatures.filter((f: string) => !newFeatures.includes(f))
+      
+      if (added.length > 0 || removed.length > 0) {
+        await logVehicleActivity({
+          carId,
+          hostId: host.id,
+          hostName: host.name || host.email,
+          action: 'UPDATE_FEATURES',
+          category: 'VEHICLE',
+          changes: {
+            updated: ['features'],
+            oldValues: { features: oldFeatures },
+            newValues: { features: newFeatures }
+          },
+          metadata: {
+            added,
+            removed
+          }
+        })
+      }
+    }
+
+    // 5. REGISTRATION CHANGES
+    const registrationFields = ['registrationState', 'registrationExpiryDate', 'titleStatus', 'registeredOwner', 'vin', 'licensePlate']
+    const registrationChanges = detectChanges(existingCar, updateData, registrationFields)
+    if (registrationChanges.updated.length > 0) {
+      await logVehicleActivity({
+        carId,
+        hostId: host.id,
+        hostName: host.name || host.email,
+        action: 'UPDATE_REGISTRATION',
+        category: 'DOCUMENT',
+        changes: registrationChanges,
+        metadata: {
+          fields: registrationChanges.updated
+        }
+      })
+    }
+
+    // ===== END ACTIVITY LOGGING =====
+    
     // Update car
     const updatedCar = await prisma.rentalCar.update({
       where: { id: carId },
-      data: updateData,
-      include: {
-        photos: {
-          orderBy: { order: 'asc' }
-        }
-      }
+      data: updateData
     })
 
-    // Parse JSON fields for response
-    const features = updatedCar.features ? JSON.parse(updatedCar.features) : []
-    const rules = updatedCar.rules ? JSON.parse(updatedCar.rules) : []
-
-    // Log activity
-    await prisma.activityLog.create({
-      data: {
-        action: 'UPDATE_CAR',
-        entityType: 'CAR',
-        entityId: carId,
-        metadata: {
-          hostId: host.id,
-          changes: Object.keys(updateData)
-        }
-      }
+    // Fetch photos
+    const photos = await prisma.rentalCarPhoto.findMany({
+      where: { carId },
+      orderBy: { order: 'asc' }
     })
+
+    const features = updatedCar.features ? JSON.parse(updatedCar.features as string) : []
+    const rules = updatedCar.rules ? JSON.parse(updatedCar.rules as string) : []
+
+    const serializedCar = {
+      ...updatedCar,
+      registrationExpiryDate: updatedCar.registrationExpiryDate?.toISOString() || null,
+      insuranceExpiryDate: updatedCar.insuranceExpiryDate?.toISOString() || null,
+      createdAt: updatedCar.createdAt.toISOString(),
+      updatedAt: updatedCar.updatedAt.toISOString(),
+      features,
+      rules,
+      photos
+    }
 
     return NextResponse.json({
       success: true,
-      car: {
-        ...updatedCar,
-        features,
-        rules
-      }
+      car: serializedCar
     })
 
   } catch (error) {
@@ -305,7 +600,7 @@ export async function PUT(
   }
 }
 
-// PATCH - Toggle car active status
+// PATCH - Toggle car active status (ENHANCED)
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -323,7 +618,25 @@ export async function PATCH(
 
     const { isActive } = await request.json()
 
-    // Verify car belongs to host
+    if (isActive === true) {
+      const claimInfo = await checkActiveClaims(carId)
+      
+      if (claimInfo.hasActiveClaims) {
+        return NextResponse.json({
+          error: 'Cannot activate vehicle with active claim',
+          reason: 'ACTIVE_CLAIM',
+          message: 'Vehicle cannot be activated while a claim is pending.',
+          claimCount: claimInfo.claimCount,
+          activeClaim: {
+            id: claimInfo.mostRecentClaim!.id,
+            type: claimInfo.mostRecentClaim!.type,
+            status: claimInfo.mostRecentClaim!.status,
+            bookingCode: claimInfo.mostRecentClaim!.booking.bookingCode
+          }
+        }, { status: 403 })
+      }
+    }
+
     const car = await prisma.rentalCar.findFirst({
       where: {
         id: carId,
@@ -348,7 +661,6 @@ export async function PATCH(
       )
     }
 
-    // Check for active bookings before deactivating
     if (!isActive && car.bookings.length > 0) {
       return NextResponse.json(
         { error: 'Cannot deactivate car with active bookings' },
@@ -356,31 +668,29 @@ export async function PATCH(
       )
     }
 
-    // Update status
     const updatedCar = await prisma.rentalCar.update({
       where: { id: carId },
       data: { isActive }
     })
 
-    // Log activity
-    await prisma.activityLog.create({
-      data: {
-        action: isActive ? 'ACTIVATE_CAR' : 'DEACTIVATE_CAR',
-        entityType: 'CAR',
-        entityId: carId,
-        metadata: {
-          hostId: host.id
-        }
+    // ✅ ENHANCED ACTIVITY LOGGING
+    await logVehicleActivity({
+      carId,
+      hostId: host.id,
+      hostName: host.name || host.email,
+      action: isActive ? 'VEHICLE_ACTIVATED' : 'VEHICLE_DEACTIVATED',
+      category: 'VEHICLE',
+      metadata: {
+        carInfo: `${car.year} ${car.make} ${car.model}`
       }
     })
 
-    // Create admin notification for deactivation
     if (!isActive) {
       await prisma.adminNotification.create({
         data: {
           type: 'CAR_DEACTIVATED',
           title: 'Car Deactivated',
-          message: `Host ${host.id} deactivated car: ${car.year} ${car.make} ${car.model}`,
+          message: `Host ${host.name || host.email} deactivated car: ${car.year} ${car.make} ${car.model}`,
           priority: 'LOW',
           status: 'UNREAD',
           relatedId: carId,
@@ -403,7 +713,7 @@ export async function PATCH(
   }
 }
 
-// DELETE - Delete car
+// DELETE - Delete car (ENHANCED)
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -419,7 +729,17 @@ export async function DELETE(
       )
     }
 
-    // Verify car belongs to host and check for bookings
+    const claimInfo = await checkActiveClaims(carId)
+    
+    if (claimInfo.hasActiveClaims) {
+      return NextResponse.json({
+        error: 'Cannot delete vehicle with active claim',
+        reason: 'ACTIVE_CLAIM',
+        message: 'Vehicle cannot be deleted while a claim is pending.',
+        claimCount: claimInfo.claimCount
+      }, { status: 403 })
+    }
+
     const car = await prisma.rentalCar.findFirst({
       where: {
         id: carId,
@@ -444,7 +764,6 @@ export async function DELETE(
       )
     }
 
-    // Check for active bookings
     if (car.bookings.length > 0) {
       return NextResponse.json(
         { error: 'Cannot delete car with active bookings' },
@@ -452,7 +771,6 @@ export async function DELETE(
       )
     }
 
-    // Check for past bookings (soft delete instead)
     const pastBookings = await prisma.rentalBooking.count({
       where: {
         carId,
@@ -461,12 +779,24 @@ export async function DELETE(
     })
 
     if (pastBookings > 0) {
-      // Soft delete - just deactivate
       await prisma.rentalCar.update({
         where: { id: carId },
         data: { 
           isActive: false,
           updatedAt: new Date()
+        }
+      })
+
+      // ✅ LOG SOFT DELETE
+      await logVehicleActivity({
+        carId,
+        hostId: host.id,
+        hostName: host.name || host.email,
+        action: 'VEHICLE_DEACTIVATED',
+        category: 'VEHICLE',
+        metadata: {
+          reason: 'soft_delete_has_history',
+          pastBookings
         }
       })
 
@@ -476,8 +806,7 @@ export async function DELETE(
       })
     }
 
-    // Hard delete - no booking history
-    // Delete related records first
+    // Hard delete
     await prisma.rentalCarPhoto.deleteMany({
       where: { carId }
     })
@@ -490,30 +819,28 @@ export async function DELETE(
       where: { carId }
     })
 
-    // Delete the car
     await prisma.rentalCar.delete({
       where: { id: carId }
     })
 
-    // Log activity
-    await prisma.activityLog.create({
-      data: {
-        action: 'DELETE_CAR',
-        entityType: 'CAR',
-        entityId: carId,
-        metadata: {
-          hostId: host.id,
-          car: `${car.year} ${car.make} ${car.model}`
-        }
+    // ✅ LOG HARD DELETE
+    await logVehicleActivity({
+      carId,
+      hostId: host.id,
+      hostName: host.name || host.email,
+      action: 'VEHICLE_DELETED',
+      category: 'VEHICLE',
+      metadata: {
+        carInfo: `${car.year} ${car.make} ${car.model}`,
+        reason: 'hard_delete_no_history'
       }
     })
 
-    // Notify admin
     await prisma.adminNotification.create({
       data: {
         type: 'CAR_DELETED',
         title: 'Car Deleted',
-        message: `Host ${host.id} deleted car: ${car.year} ${car.make} ${car.model}`,
+        message: `Host ${host.name || host.email} deleted car: ${car.year} ${car.make} ${car.model}`,
         priority: 'MEDIUM',
         status: 'UNREAD',
         relatedId: carId,

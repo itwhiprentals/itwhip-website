@@ -1,4 +1,4 @@
-// app/api/host/dashboard/route.ts
+// app/api/host/dashboard/route.ts - FIXED VERSION
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
@@ -87,6 +87,37 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // ✅ FIXED: Get claims count
+    const claimsCount = await prisma.claim.count({
+      where: {
+        hostId: hostId,
+        status: 'PENDING' // Only count pending claims
+      }
+    })
+
+    // ✅ FIXED: Get unread messages count - using correct field structure
+    // RentalMessage doesn't have receiverId, we need to find messages where:
+    // - The booking belongs to this host
+    // - The sender is NOT the host (messages from guests)
+    // - Message is not read
+    let unreadMessagesCount = 0
+    try {
+      unreadMessagesCount = await prisma.rentalMessage.count({
+        where: {
+          booking: {
+            hostId: hostId
+          },
+          senderId: {
+            not: hostId
+          },
+          isRead: false
+        }
+      })
+    } catch (err) {
+      console.error('Error fetching unread messages:', err)
+      // Continue without failing the whole request
+    }
+
     // Calculate additional stats
     const stats = {
       totalCars: host.cars.length,
@@ -96,7 +127,10 @@ export async function GET(request: NextRequest) {
       responseRate: host.responseRate || 0,
       acceptanceRate: host.acceptanceRate || 0,
       totalBookings: host.bookings.length,
-      monthlyEarnings: 0 // Calculate from recent bookings if needed
+      totalEarnings: host.totalEarnings || 0,
+      monthlyEarnings: 0, // Calculate from recent bookings if needed
+      pendingClaims: claimsCount, // ✅ NEW
+      unreadMessages: unreadMessagesCount // ✅ NEW
     }
 
     // Format response

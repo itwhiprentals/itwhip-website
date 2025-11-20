@@ -18,7 +18,8 @@ import {
 interface NotificationDropdownProps {
   notifications: Notification[]
   onDismiss: (notificationId: string) => void
-  onNotificationClick?: (notification: Notification) => void
+  onNotificationClick?: (actionUrl: string) => void // ✅ CHANGED: Takes string not Notification
+  dismissing?: string | null // ✅ ADDED: For external loading state
 }
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -27,7 +28,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   'IoCallOutline': IoCallOutline,
   'IoPersonOutline': IoPersonOutline,
   'IoLockClosedOutline': IoLockClosedOutline,
-  'CREDIT_CARD': IoCardOutline, // Changed from IoCreditCardOutline
+  'CREDIT_CARD': IoCardOutline,
   'CARD': IoCardOutline,
   'SHIELD': IoShieldCheckmarkOutline,
   'PHONE': IoCallOutline,
@@ -35,7 +36,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   'PERSON': IoPersonOutline,
   'LOCK': IoLockClosedOutline,
   'ALERT': IoAlertCircleOutline,
-  'payment': IoCardOutline, // Changed from IoCreditCardOutline
+  'payment': IoCardOutline,
   'license': IoCardOutline,
   'insurance': IoShieldCheckmarkOutline,
   'emergency': IoCallOutline,
@@ -46,22 +47,25 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
 export default function NotificationDropdown({
   notifications,
   onDismiss,
-  onNotificationClick
+  onNotificationClick,
+  dismissing // ✅ ADDED: Accept dismissing prop
 }: NotificationDropdownProps) {
-  const [dismissing, setDismissing] = useState<string | null>(null)
+  const [localDismissing, setLocalDismissing] = useState<string | null>(null)
 
   const handleDismiss = async (notificationId: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    setDismissing(notificationId)
+    setLocalDismissing(notificationId)
     await onDismiss(notificationId)
-    setDismissing(null)
+    setLocalDismissing(null)
   }
 
   const handleNotificationClick = (notification: Notification) => {
-    if (onNotificationClick) {
-      onNotificationClick(notification)
-    } else if (notification.actionUrl) {
-      window.location.href = notification.actionUrl
+    if (notification.actionUrl) {
+      if (onNotificationClick) {
+        onNotificationClick(notification.actionUrl) // ✅ CHANGED: Pass actionUrl string
+      } else {
+        window.location.href = notification.actionUrl
+      }
     }
   }
 
@@ -109,7 +113,8 @@ export default function NotificationDropdown({
             IconComponent = IoAlertCircleOutline
           }
           
-          const isDismissing = dismissing === notification.id
+          // ✅ CHANGED: Check both external and local dismissing state
+          const isDismissing = dismissing === notification.id || localDismissing === notification.id
 
           const priorityColors = {
             1: { bg: 'bg-red-500', icon: 'text-red-500' },
@@ -120,8 +125,13 @@ export default function NotificationDropdown({
             6: { bg: 'bg-gray-400', icon: 'text-gray-400' }
           }
 
-          const colors = priorityColors[notification.priority as keyof typeof priorityColors] || priorityColors[6]
+          // ✅ CHANGED: Support both priority and level fields
+          const priorityLevel = notification.priority || notification.level || 5
+          const colors = priorityColors[priorityLevel as keyof typeof priorityColors] || priorityColors[5]
           const iconColor = notification.iconColor || colors.icon
+
+          // ✅ ADDED: Support both description and message fields
+          const displayText = notification.description || notification.message || 'No details available'
 
           return (
             <div
@@ -137,15 +147,16 @@ export default function NotificationDropdown({
                   <button
                     onClick={() => handleNotificationClick(notification)}
                     className="text-left w-full group"
-                    disabled={isDismissing}
+                    disabled={isDismissing || !notification.actionUrl} // ✅ ADDED: Disable if no URL
                   >
                     <p className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
                       {notification.title}
                     </p>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
-                      {notification.description}
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5 line-clamp-2">
+                      {displayText}
                     </p>
-                    {notification.actionLabel && (
+                    {/* ✅ CHANGED: Only show if both actionLabel AND actionUrl exist */}
+                    {notification.actionLabel && notification.actionUrl && (
                       <div className="flex items-center mt-1.5 text-xs text-green-600 dark:text-green-400">
                         <span className="font-medium">{notification.actionLabel}</span>
                         <IoChevronForwardOutline className="w-3 h-3 ml-0.5 group-hover:translate-x-0.5 transition-transform" />
@@ -154,7 +165,8 @@ export default function NotificationDropdown({
                   </button>
                 </div>
 
-                {notification.isDismissible && (
+                {/* ✅ CHANGED: Check !== false to allow undefined (defaults to true) */}
+                {notification.isDismissible !== false && (
                   <button
                     onClick={(e) => handleDismiss(notification.id, e)}
                     disabled={isDismissing}
@@ -188,6 +200,13 @@ export default function NotificationDropdown({
         
         .animate-fadeIn {
           animation: fadeIn 0.2s ease-out;
+        }
+
+        .line-clamp-2 {
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
         }
       `}</style>
     </div>

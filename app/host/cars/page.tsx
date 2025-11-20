@@ -29,7 +29,11 @@ import {
   IoFlashOutline,
   IoTimeOutline,
   IoPeopleOutline,
-  IoLockClosedOutline
+  IoLockClosedOutline,
+  IoWarningOutline,
+  IoShieldOutline,
+  IoEyeOutline,
+  IoChevronForwardOutline
 } from 'react-icons/io5'
 
 interface Car {
@@ -82,6 +86,17 @@ interface Car {
   heroPhoto?: string
   activeBookings?: number
   upcomingBookings?: number
+  
+  // ✅ NEW: Claim information
+  hasActiveClaim?: boolean
+  activeClaimCount?: number
+  activeClaim?: {
+    id: string
+    type: string
+    status: string
+    createdAt: string
+    bookingCode: string
+  }
 }
 
 interface FilterOptions {
@@ -132,7 +147,6 @@ export default function HostCarsPage() {
       if (response.ok) {
         const result = await response.json()
         
-        // ✅ FIX: Access nested data structure correctly
         if (result.success && result.data) {
           setHostStatus({
             approvalStatus: result.data.overallStatus,
@@ -142,7 +156,6 @@ export default function HostCarsPage() {
             statusMessage: result.data.statusMessage
           })
         } else {
-          // Default to PENDING if structure is wrong
           setHostStatus({
             approvalStatus: 'PENDING',
             pendingActions: [],
@@ -150,7 +163,6 @@ export default function HostCarsPage() {
           })
         }
       } else {
-        // Default to PENDING on error
         setHostStatus({
           approvalStatus: 'PENDING',
           pendingActions: [],
@@ -159,7 +171,6 @@ export default function HostCarsPage() {
       }
     } catch (error) {
       console.error('Failed to check host status:', error)
-      // Default to PENDING on error
       setHostStatus({
         approvalStatus: 'PENDING',
         pendingActions: [],
@@ -194,10 +205,16 @@ export default function HostCarsPage() {
     }
   }
 
-  const toggleCarStatus = async (carId: string, currentStatus: boolean) => {
+  const toggleCarStatus = async (carId: string, currentStatus: boolean, hasActiveClaim: boolean) => {
     // Check if host is approved
     if (hostStatus?.approvalStatus !== 'APPROVED') {
       alert('Complete verification to modify car status')
+      return
+    }
+
+    // ✅ NEW: Check for active claims
+    if (hasActiveClaim) {
+      alert('Cannot activate vehicle with active claim. Please wait for claim resolution or contact support.')
       return
     }
 
@@ -215,16 +232,26 @@ export default function HostCarsPage() {
             ? { ...car, isActive: !currentStatus }
             : car
         ))
+      } else {
+        const error = await response.json()
+        alert(error.message || error.error || 'Failed to update car status')
       }
     } catch (error) {
       console.error('Failed to toggle car status:', error)
+      alert('Failed to update car status')
     }
   }
 
-  const deleteCar = async (carId: string) => {
+  const deleteCar = async (carId: string, hasActiveClaim: boolean) => {
     // Check if host is approved
     if (hostStatus?.approvalStatus !== 'APPROVED') {
       alert('Complete verification to delete cars')
+      return
+    }
+
+    // ✅ NEW: Check for active claims
+    if (hasActiveClaim) {
+      alert('Cannot delete vehicle with active claim. Please wait for claim resolution.')
       return
     }
 
@@ -240,9 +267,13 @@ export default function HostCarsPage() {
       
       if (response.ok) {
         setCars(cars.filter(car => car.id !== carId))
+      } else {
+        const error = await response.json()
+        alert(error.message || error.error || 'Failed to delete car')
       }
     } catch (error) {
       console.error('Failed to delete car:', error)
+      alert('Failed to delete car')
     }
   }
 
@@ -278,12 +309,10 @@ export default function HostCarsPage() {
       }
     })
 
-  // ✅ FIX: Explicit status checks
   const isApproved = hostStatus?.approvalStatus === 'APPROVED'
   const isPending = hostStatus?.approvalStatus === 'PENDING' || hostStatus?.approvalStatus === 'NEEDS_ATTENTION'
   const canAddCars = isApproved
 
-  // ✅ FIX: Show loading state while checking status
   if (statusLoading) {
     return (
       <>
@@ -321,7 +350,7 @@ export default function HostCarsPage() {
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-16">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
           <div className="mb-8">
@@ -379,7 +408,7 @@ export default function HostCarsPage() {
 
           {/* Stats Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Total Cars</p>
@@ -389,7 +418,7 @@ export default function HostCarsPage() {
               </div>
             </div>
             
-            <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -403,7 +432,7 @@ export default function HostCarsPage() {
               </div>
             </div>
             
-            <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Avg Rating</p>
@@ -417,7 +446,7 @@ export default function HostCarsPage() {
               </div>
             </div>
             
-            <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Total Trips</p>
@@ -431,7 +460,7 @@ export default function HostCarsPage() {
           </div>
 
           {/* Search and Filters */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1 relative">
                 <IoSearchOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -472,7 +501,7 @@ export default function HostCarsPage() {
 
           {/* Cars Grid */}
           {filteredCars.length === 0 ? (
-            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-12 text-center">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
               <IoCarOutline className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                 {cars.length === 0 ? 'No cars yet' : 'No cars match your filters'}
@@ -515,7 +544,8 @@ export default function HostCarsPage() {
               {filteredCars.map((car) => (
                 <div
                   key={car.id}
-                  className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-shadow"
+                  className="group bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-all cursor-pointer"
+                  onClick={() => router.push(`/host/cars/${car.id}`)}
                 >
                   {/* Car Image */}
                   <div className="relative h-48 bg-gray-200 dark:bg-gray-700">
@@ -533,13 +563,21 @@ export default function HostCarsPage() {
                     )}
                     
                     {/* Status Badge */}
-                    <div className="absolute top-2 right-2">
+                    <div className="absolute top-2 right-2 flex flex-col gap-2">
+                      {/* ✅ NEW: Claim Badge (Highest Priority) */}
+                      {car.hasActiveClaim && (
+                        <span className="px-2 py-1 rounded-lg text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400 flex items-center gap-1 shadow-sm">
+                          <IoWarningOutline className="w-3 h-3" />
+                          Claim Pending
+                        </span>
+                      )}
+                      
                       {!isApproved ? (
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-400">
+                        <span className="px-2 py-1 rounded-lg text-xs font-medium bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-400">
                           Draft
                         </span>
                       ) : (
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        <span className={`px-2 py-1 rounded-lg text-xs font-medium ${
                           car.isActive
                             ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400'
                             : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400'
@@ -550,15 +588,51 @@ export default function HostCarsPage() {
                     </div>
                     
                     {/* Instant Book Badge */}
-                    {car.instantBook && isApproved && (
+                    {car.instantBook && isApproved && !car.hasActiveClaim && (
                       <div className="absolute top-2 left-2">
-                        <span className="px-2 py-1 bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-400 rounded-full text-xs font-medium flex items-center gap-1">
+                        <span className="px-2 py-1 bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-400 rounded-lg text-xs font-medium flex items-center gap-1">
                           <IoFlashOutline className="w-3 h-3" />
                           Instant
                         </span>
                       </div>
                     )}
+
+                    {/* Hover Overlay */}
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-opacity flex items-center justify-center">
+                      <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-gray-800 px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-white">
+                        <IoEyeOutline className="w-4 h-4" />
+                        View Intelligence
+                      </span>
+                    </div>
                   </div>
+
+                  {/* ✅ NEW: Claim Warning Banner */}
+                  {car.hasActiveClaim && car.activeClaim && (
+                    <div className="bg-red-50 dark:bg-red-900/20 border-b border-red-200 dark:border-red-800 p-3">
+                      <div className="flex items-start gap-2">
+                        <IoShieldOutline className="w-4 h-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-red-800 dark:text-red-300">
+                            Vehicle Locked - Claim Active
+                          </p>
+                          <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                            {car.activeClaimCount && car.activeClaimCount > 1 
+                              ? `${car.activeClaimCount} claims pending`
+                              : `${car.activeClaim.status.replace('_', ' ')} • ${car.activeClaim.bookingCode}`}
+                          </p>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              router.push(`/host/claims/${car.activeClaim.id}`)
+                            }}
+                            className="text-xs text-red-700 dark:text-red-300 underline hover:no-underline mt-1 inline-block"
+                          >
+                            View Claim →
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Car Info */}
                   <div className="p-4">
@@ -616,62 +690,106 @@ export default function HostCarsPage() {
 
                     {/* Actions */}
                     <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                      <button
-                        onClick={() => toggleCarStatus(car.id, car.isActive)}
-                        disabled={!isApproved}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                          !isApproved
-                            ? 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500 cursor-not-allowed'
-                            : car.isActive
-                            ? 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-                            : 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/50 dark:text-green-400 dark:hover:bg-green-900/70'
-                        }`}
-                        title={!isApproved ? 'Complete verification to activate' : ''}
-                      >
-                        {car.isActive ? (
-                          <>
-                            <IoToggle className="w-5 h-5" />
-                            Deactivate
-                          </>
-                        ) : (
-                          <>
-                            <IoToggleOutline className="w-5 h-5" />
-                            Activate
-                          </>
-                        )}
-                      </button>
-                      
-                      <div className="flex gap-2">
-                        <Link
-                          href={isApproved ? `/host/cars/${car.id}/edit` : '#'}
-                          className={`p-2 transition-colors ${
-                            isApproved
-                              ? 'text-gray-600 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400'
-                              : 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
-                          }`}
-                          onClick={(e) => {
-                            if (!isApproved) {
-                              e.preventDefault()
-                              alert('Complete verification to edit vehicles')
-                            }
-                          }}
-                          title={!isApproved ? 'Complete verification to edit' : 'Edit vehicle'}
-                        >
-                          <IoPencilOutline className="w-5 h-5" />
-                        </Link>
-                        
+                      {/* ✅ UPDATED: Toggle button with claim blocking */}
+                      <div className="relative group/toggle">
                         <button
-                          onClick={() => deleteCar(car.id)}
-                          disabled={!isApproved}
-                          className={`p-2 transition-colors ${
-                            isApproved
-                              ? 'text-gray-600 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400'
-                              : 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                          onClick={(e) => {
+                            e.stopPropagation() // Prevent navigation
+                            toggleCarStatus(car.id, car.isActive, car.hasActiveClaim || false)
+                          }}
+                          disabled={!isApproved || car.hasActiveClaim}
+                          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                            !isApproved || car.hasActiveClaim
+                              ? 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500 cursor-not-allowed'
+                              : car.isActive
+                              ? 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                              : 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/50 dark:text-green-400 dark:hover:bg-green-900/70'
                           }`}
-                          title={!isApproved ? 'Complete verification to delete' : 'Delete vehicle'}
                         >
-                          <IoTrashOutline className="w-5 h-5" />
+                          {car.hasActiveClaim ? (
+                            <>
+                              <IoLockClosedOutline className="w-4 h-4" />
+                              <span className="hidden sm:inline">Locked</span>
+                            </>
+                          ) : car.isActive ? (
+                            <>
+                              <IoToggle className="w-4 h-4" />
+                              <span className="hidden sm:inline">Deactivate</span>
+                            </>
+                          ) : (
+                            <>
+                              <IoToggleOutline className="w-4 h-4" />
+                              <span className="hidden sm:inline">Activate</span>
+                            </>
+                          )}
                         </button>
+                        {car.hasActiveClaim && (
+                          <div className="absolute bottom-full mb-2 left-0 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover/toggle:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 shadow-lg">
+                            Locked due to active claim
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        {/* View Details Indicator */}
+                        <span className="text-xs text-purple-600 dark:text-purple-400 font-medium flex items-center gap-1">
+                          View Details
+                          <IoChevronForwardOutline className="w-3 h-3" />
+                        </span>
+                        
+                        {/* ✅ UPDATED: Edit button with claim blocking */}
+                        <div className="relative group/edit">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation() // Prevent navigation
+                              if (isApproved && !car.hasActiveClaim) {
+                                router.push(`/host/cars/${car.id}/edit`)
+                              } else if (car.hasActiveClaim) {
+                                alert('Cannot edit vehicle with active claim')
+                              } else {
+                                alert('Complete verification to edit vehicles')
+                              }
+                            }}
+                            disabled={!isApproved || car.hasActiveClaim}
+                            className={`flex items-center justify-center w-9 h-9 rounded-lg transition-colors ${
+                              isApproved && !car.hasActiveClaim
+                                ? 'text-gray-600 hover:text-purple-600 hover:bg-purple-50 dark:text-gray-400 dark:hover:text-purple-400 dark:hover:bg-purple-900/20'
+                                : 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                            }`}
+                            title={!isApproved ? 'Complete verification to edit' : car.hasActiveClaim ? 'Locked due to active claim' : 'Edit vehicle'}
+                          >
+                            <IoPencilOutline className="w-5 h-5" />
+                          </button>
+                          {car.hasActiveClaim && (
+                            <div className="absolute bottom-full mb-2 right-0 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover/edit:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 shadow-lg">
+                              Locked due to active claim
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* ✅ UPDATED: Delete button with claim blocking */}
+                        <div className="relative group/delete">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation() // Prevent navigation
+                              deleteCar(car.id, car.hasActiveClaim || false)
+                            }}
+                            disabled={!isApproved || car.hasActiveClaim}
+                            className={`flex items-center justify-center w-9 h-9 rounded-lg transition-colors ${
+                              isApproved && !car.hasActiveClaim
+                                ? 'text-gray-600 hover:text-red-600 hover:bg-red-50 dark:text-gray-400 dark:hover:text-red-400 dark:hover:bg-red-900/20'
+                                : 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                            }`}
+                            title={!isApproved ? 'Complete verification to delete' : car.hasActiveClaim ? 'Locked due to active claim' : 'Delete vehicle'}
+                          >
+                            <IoTrashOutline className="w-5 h-5" />
+                          </button>
+                          {car.hasActiveClaim && (
+                            <div className="absolute bottom-full mb-2 right-0 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover/delete:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 shadow-lg">
+                              Locked due to active claim
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>

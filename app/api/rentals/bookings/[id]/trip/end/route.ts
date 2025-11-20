@@ -19,6 +19,9 @@ import {
 // ========== 🆕 ACTIVITY TRACKING IMPORT ==========
 import { trackActivity } from '@/lib/helpers/guestProfileStatus'
 
+// ========== ✅ NEW: ESG EVENT HOOK IMPORT ==========
+import { handleTripCompleted } from '@/app/lib/esg/event-hooks'
+
 // Status transition constants using proper enum values
 const STATUS_TRANSITIONS = {
   NO_CHARGES: {
@@ -660,6 +663,51 @@ export async function POST(
       // Continue without breaking - tracking is non-critical
     }
     // ========== END ACTIVITY TRACKING ==========
+
+    // ========================================================================
+    // ✅ NEW: TRIGGER ESG EVENT - TRIP COMPLETED
+    // ========================================================================
+    
+    try {
+      // Determine if trip was incident-free (no claims filed)
+      const hasActiveClaim = await prisma.claim.findFirst({
+        where: {
+          bookingId: booking.id,
+          status: { in: ['PENDING', 'UNDER_REVIEW', 'APPROVED'] }
+        },
+        select: { id: true }
+      })
+
+      const wasIncidentFree = !hasActiveClaim
+
+      // Get guest rating if available
+      const review = await prisma.rentalReview.findFirst({
+        where: { bookingId: booking.id },
+        select: { rating: true }
+      })
+
+      await handleTripCompleted(booking.hostId, {
+        bookingId: booking.id,
+        bookingCode: booking.bookingCode,
+        carId: booking.carId,
+        startDate: new Date(booking.startDate),
+        endDate: new Date(),
+        totalMiles: endMileage - (booking.startMileage || 0),
+        fuelType: booking.car.fuelType || 'GASOLINE',
+        wasIncidentFree,
+        guestRating: review?.rating
+      })
+
+      console.log('✅ ESG trip completion event triggered:', {
+        hostId: booking.hostId,
+        bookingCode: booking.bookingCode,
+        wasIncidentFree,
+        miles: endMileage - (booking.startMileage || 0)
+      })
+    } catch (esgError) {
+      // Don't fail trip completion if ESG update fails
+      console.error('❌ ESG event failed (non-critical):', esgError)
+    }
 
     // Send notifications (outside transaction)
     try {

@@ -287,7 +287,9 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
     return names[tier] || tier
   }
 
-  // If car is not bookable, show unavailable state
+  // ============================================================================
+  // 🔒 UNAVAILABLE STATE - PRIVACY PROTECTED
+  // ============================================================================
   if (!isBookable) {
     return (
       <div ref={widgetRef} className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 sticky top-20">
@@ -296,15 +298,10 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
             Currently Unavailable
           </h3>
-          {suspensionMessage ? (
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              {suspensionMessage}
-            </p>
-          ) : (
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              This vehicle is temporarily unavailable for booking.
-            </p>
-          )}
+          {/* 🔒 PRIVACY: Always show generic message - NEVER expose operational details */}
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            This vehicle is currently unavailable.
+          </p>
         </div>
 
         <div className="pb-4 mb-4 border-b border-gray-200 dark:border-gray-700">
@@ -333,10 +330,14 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
             Browse Similar Cars
           </Link>
 
-          <button className="w-full py-2 text-sm text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-500 font-medium flex items-center justify-center gap-1">
+          {/* ✅ FUNCTIONAL: Email support with vehicle context */}
+          <a
+            href={`mailto:support@itwhip.com?subject=Vehicle Unavailable - ${car?.year} ${car?.make} ${car?.model}&body=Hello ItWhip Support,%0A%0AI'm interested in this vehicle but it shows as unavailable:%0A%0AVehicle: ${car?.year} ${car?.make} ${car?.model}%0ACar ID: ${car?.id}%0ALocation: ${car?.city}, ${car?.state}%0A%0ACould you please let me know when it becomes available or suggest similar options?%0A%0AThank you!`}
+            className="w-full py-2 text-sm text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-500 font-medium flex items-center justify-center gap-1 hover:bg-amber-50 dark:hover:bg-amber-900/10 rounded-lg transition-colors"
+          >
             <IoInformationCircleOutline className="w-4 h-4" />
-            Contact Support for Assistance
-          </button>
+            Email Support for Assistance
+          </a>
         </div>
 
         <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
@@ -349,7 +350,9 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
     )
   }
 
-  // Normal bookable widget content
+  // ============================================================================
+  // NORMAL BOOKABLE WIDGET
+  // ============================================================================
   return (
     <>
       <div ref={widgetRef} className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 sticky top-20">

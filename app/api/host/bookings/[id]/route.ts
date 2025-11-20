@@ -37,7 +37,7 @@ export async function GET(
       )
     }
     
-    // Fetch booking with all related data
+    // Fetch booking with all related data INCLUDING CLAIMS
     const booking = await prisma.rentalBooking.findFirst({
       where: {
         id: bookingId,
@@ -72,6 +72,20 @@ export async function GET(
             createdAt: true,
             isRead: true
           }
+        },
+        // ADD CLAIMS DATA
+        claims: {
+          orderBy: {
+            createdAt: 'desc'
+          },
+          select: {
+            id: true,
+            type: true,
+            status: true,
+            estimatedCost: true,
+            createdAt: true,
+            vehicleDeactivated: true
+          }
         }
       }
     })
@@ -99,10 +113,12 @@ export async function GET(
         model: booking.car.model,
         year: booking.car.year,
         licensePlate: booking.car.licensePlate,
-        dailyRate: booking.car.dailyRate.toNumber(),
+        dailyRate: Number(booking.car.dailyRate),
         photos: booking.car.photos.map(p => ({
           url: p.url
-        }))
+        })),
+        hasActiveClaim: booking.car.hasActiveClaim,
+        activeClaimId: booking.car.activeClaimId
       },
       
       // Guest details
@@ -152,22 +168,34 @@ export async function GET(
       damageDescription: booking.damageDescription,
       
       // Financial
-      dailyRate: booking.dailyRate.toNumber(),
-      subtotal: booking.subtotal.toNumber(),
-      deliveryFee: booking.deliveryFee.toNumber(),
-      insuranceFee: booking.insuranceFee.toNumber(),
-      serviceFee: booking.serviceFee.toNumber(),
-      taxes: booking.taxes.toNumber(),
-      totalAmount: booking.totalAmount.toNumber(),
-      depositAmount: booking.depositAmount.toNumber(),
+      dailyRate: Number(booking.dailyRate),
+      subtotal: Number(booking.subtotal),
+      deliveryFee: Number(booking.deliveryFee),
+      insuranceFee: Number(booking.insuranceFee),
+      serviceFee: Number(booking.serviceFee),
+      taxes: Number(booking.taxes),
+      totalAmount: Number(booking.totalAmount),
+      depositAmount: Number(booking.depositAmount),
+      securityDeposit: Number(booking.securityDeposit),
+      depositHeld: Number(booking.depositHeld),
       
       // Post-trip charges
-      pendingChargesAmount: booking.pendingChargesAmount?.toNumber(),
+      pendingChargesAmount: booking.pendingChargesAmount ? Number(booking.pendingChargesAmount) : null,
       chargesProcessedAt: booking.chargesProcessedAt?.toISOString(),
       chargesNotes: booking.chargesNotes,
       
       // Messages
       messages: booking.messages,
+      
+      // CLAIMS DATA
+      claims: booking.claims?.map(claim => ({
+        id: claim.id,
+        type: claim.type,
+        status: claim.status,
+        estimatedCost: Number(claim.estimatedCost),
+        createdAt: claim.createdAt.toISOString(),
+        vehicleDeactivated: claim.vehicleDeactivated
+      })) || [],
       
       // Metadata
       createdAt: booking.createdAt.toISOString(),

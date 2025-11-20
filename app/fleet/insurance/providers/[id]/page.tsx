@@ -2,8 +2,30 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter, useParams } from 'next/navigation'
+import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { 
+  IoArrowBackOutline,
+  IoBusinessOutline,
+  IoShieldCheckmarkOutline,
+  IoDocumentTextOutline,
+  IoChatbubbleOutline,
+  IoFolderOutline,
+  IoLayersOutline,
+  IoSettingsOutline,
+  IoRefreshOutline,
+  IoCheckmarkCircleOutline,
+  IoCloseCircleOutline
+} from 'react-icons/io5'
+
+// Import tab components
+import OverviewTab from './components/OverviewTab'
+import ClaimsTab from './components/ClaimsTab'
+import FnolActivityTab from './components/FnolActivityTab'
+import MessagesTab from './components/MessagesTab'
+import DocumentsTab from './components/DocumentsTab'
+import CoverageTab from './components/CoverageTab'
+import SettingsTab from './components/SettingsTab'
 
 interface Provider {
   id: string
@@ -21,6 +43,7 @@ interface Provider {
   contactPhone: string | null
   apiEndpoint: string | null
   apiEndpointPlaceholder: string | null
+  apiKey: string | null
   webhookUrl: string | null
   contractStart: string | null
   contractEnd: string | null
@@ -39,12 +62,25 @@ interface Provider {
   vehicleOverrides: any[]
 }
 
+type TabId = 'overview' | 'claims' | 'fnol' | 'messages' | 'documents' | 'coverage' | 'settings'
+
 export default function ProviderDetailPage() {
   const router = useRouter()
   const params = useParams()
+  const searchParams = useSearchParams()
   const [provider, setProvider] = useState<Provider | null>(null)
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'overview' | 'coverage' | 'rates' | 'policies'>('overview')
+  const [activeTab, setActiveTab] = useState<TabId>('overview')
+  const [refreshing, setRefreshing] = useState(false)
+
+  // Check for tab in URL hash
+  useEffect(() => {
+    const hash = window.location.hash.replace('#', '') as TabId
+    const validTabs: TabId[] = ['overview', 'claims', 'fnol', 'messages', 'documents', 'coverage', 'settings']
+    if (hash && validTabs.includes(hash)) {
+      setActiveTab(hash)
+    }
+  }, [])
 
   useEffect(() => {
     if (params.id) {
@@ -68,6 +104,12 @@ export default function ProviderDetailPage() {
     }
   }
 
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    await fetchProvider()
+    setRefreshing(false)
+  }
+
   const toggleStatus = async () => {
     if (!provider) return
     
@@ -79,7 +121,7 @@ export default function ProviderDetailPage() {
       })
 
       if (!response.ok) throw new Error('Failed to update status')
-      fetchProvider()
+      await fetchProvider()
     } catch (error) {
       alert('Failed to update provider status')
     }
@@ -96,10 +138,15 @@ export default function ProviderDetailPage() {
       })
 
       if (!response.ok) throw new Error('Failed to set primary')
-      fetchProvider()
+      await fetchProvider()
     } catch (error) {
       alert('Failed to set as primary provider')
     }
+  }
+
+  const changeTab = (tab: TabId) => {
+    setActiveTab(tab)
+    window.location.hash = tab
   }
 
   if (loading) {
@@ -127,6 +174,16 @@ export default function ProviderDetailPage() {
     )
   }
 
+  const tabs: Array<{ id: TabId; label: string; icon: any; badge?: number }> = [
+    { id: 'overview', label: 'Overview', icon: IoBusinessOutline },
+    { id: 'claims', label: 'Claims', icon: IoDocumentTextOutline, badge: 0 }, // TODO: Get count from API
+    { id: 'fnol', label: 'FNOL Activity', icon: IoShieldCheckmarkOutline },
+    { id: 'messages', label: 'Messages', icon: IoChatbubbleOutline },
+    { id: 'documents', label: 'Documents', icon: IoFolderOutline },
+    { id: 'coverage', label: 'Coverage', icon: IoLayersOutline },
+    { id: 'settings', label: 'Settings', icon: IoSettingsOutline },
+  ]
+
   const contractActive = provider.contractStart && provider.contractEnd
     ? new Date() >= new Date(provider.contractStart) && new Date() <= new Date(provider.contractEnd)
     : true
@@ -151,36 +208,46 @@ export default function ProviderDetailPage() {
         {/* Header */}
         <div className="mb-6 sm:mb-8">
           <div className="flex flex-col gap-4">
-            <div>
-              <div className="flex flex-wrap items-center gap-2 mb-2">
-                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
-                  {provider.name}
-                </h1>
-                
-                {provider.isPrimary && (
-                  <span className="px-2 sm:px-3 py-0.5 sm:py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs sm:text-sm font-bold rounded whitespace-nowrap">
-                    PRIMARY
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
+                    {provider.name}
+                  </h1>
+                  
+                  {provider.isPrimary && (
+                    <span className="px-2 sm:px-3 py-0.5 sm:py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs sm:text-sm font-bold rounded whitespace-nowrap">
+                      PRIMARY
+                    </span>
+                  )}
+                  
+                  <span className={`px-2 sm:px-3 py-0.5 sm:py-1 text-xs sm:text-sm font-medium rounded whitespace-nowrap ${
+                    provider.isActive
+                      ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
+                  }`}>
+                    {provider.isActive ? 'ACTIVE' : 'INACTIVE'}
                   </span>
-                )}
-                
-                <span className={`px-2 sm:px-3 py-0.5 sm:py-1 text-xs sm:text-sm font-medium rounded whitespace-nowrap ${
-                  provider.isActive
-                    ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
-                }`}>
-                  {provider.isActive ? 'ACTIVE' : 'INACTIVE'}
-                </span>
 
-                <span className="px-2 sm:px-3 py-0.5 sm:py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 text-xs sm:text-sm font-medium rounded uppercase whitespace-nowrap">
-                  {provider.type}
-                </span>
+                  <span className="px-2 sm:px-3 py-0.5 sm:py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 text-xs sm:text-sm font-medium rounded uppercase whitespace-nowrap">
+                    {provider.type}
+                  </span>
+                </div>
+
+                {provider.coverageNotes && (
+                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    {provider.coverageNotes}
+                  </p>
+                )}
               </div>
 
-              {provider.coverageNotes && (
-                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  {provider.coverageNotes}
-                </p>
-              )}
+              <button
+                onClick={handleRefresh}
+                className="p-2 text-gray-600 hover:text-blue-600 transition-colors"
+                title="Refresh"
+              >
+                <IoRefreshOutline className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
+              </button>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
@@ -203,13 +270,6 @@ export default function ProviderDetailPage() {
               >
                 {provider.isActive ? 'Deactivate' : 'Activate'}
               </button>
-
-              <Link
-                href={`/fleet/insurance/providers/${provider.id}/edit?key=phoenix-fleet-2847`}
-                className="px-4 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 active:bg-gray-700 dark:active:bg-gray-200 transition-colors text-center"
-              >
-                Edit Provider
-              </Link>
             </div>
           </div>
         </div>
@@ -245,249 +305,68 @@ export default function ProviderDetailPage() {
           </div>
         </div>
 
-        {/* Tabs - Scrollable on mobile */}
-        <div className="mb-4 sm:mb-6 border-b border-gray-200 dark:border-gray-700 -mx-4 sm:mx-0">
+        {/* Tab Navigation */}
+        <div className="mb-6 border-b border-gray-200 dark:border-gray-700 -mx-4 sm:mx-0">
           <div className="px-4 sm:px-0 flex gap-4 sm:gap-6 overflow-x-auto">
-            {(['overview', 'coverage', 'rates', 'policies'] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`pb-3 px-1 text-sm font-medium capitalize transition-colors border-b-2 whitespace-nowrap ${
-                  activeTab === tab
-                    ? 'border-gray-900 dark:border-white text-gray-900 dark:text-white'
-                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 active:text-gray-900 dark:active:text-white'
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
+            {tabs.map((tab) => {
+              const Icon = tab.icon
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => changeTab(tab.id)}
+                  className={`pb-3 px-1 text-sm font-medium transition-colors border-b-2 whitespace-nowrap flex items-center space-x-2 ${
+                    activeTab === tab.id
+                      ? 'border-gray-900 dark:border-white text-gray-900 dark:text-white'
+                      : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span>{tab.label}</span>
+                  {tab.badge !== undefined && tab.badge > 0 && (
+                    <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs font-medium rounded-full">
+                      {tab.badge}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
           </div>
         </div>
 
         {/* Tab Content */}
-        {activeTab === 'overview' && (
-          <div className="space-y-4 sm:space-y-6">
-            
-            {/* Contact Information */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-              <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Contact Information</h2>
-              </div>
-              <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                <div>
-                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">Email</p>
-                  <p className="text-sm sm:text-base font-medium text-gray-900 dark:text-white break-all">
-                    {provider.contactEmail || 'Not provided'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">Phone</p>
-                  <p className="text-sm sm:text-base font-medium text-gray-900 dark:text-white">
-                    {provider.contactPhone || 'Not provided'}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* API Integration */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-              <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">API Integration</h2>
-              </div>
-              <div className="p-4 sm:p-6 space-y-4">
-                <div>
-                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">API Endpoint</p>
-                  <p className="font-mono text-xs sm:text-sm bg-gray-100 dark:bg-gray-700 px-3 py-2 rounded text-gray-900 dark:text-white break-all">
-                    {provider.apiEndpoint || provider.apiEndpointPlaceholder || 'Not configured'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">Webhook URL</p>
-                  <p className="font-mono text-xs sm:text-sm bg-gray-100 dark:bg-gray-700 px-3 py-2 rounded text-gray-900 dark:text-white break-all">
-                    {provider.webhookUrl || 'Not configured'}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Contract Information */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-              <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Contract Details</h2>
-              </div>
-              <div className="p-4 sm:p-6 space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                  <div>
-                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">Contract Start</p>
-                    <p className="text-sm sm:text-base font-medium text-gray-900 dark:text-white">
-                      {provider.contractStart 
-                        ? new Date(provider.contractStart).toLocaleDateString()
-                        : 'Not set'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">Contract End</p>
-                    <p className="text-sm sm:text-base font-medium text-gray-900 dark:text-white">
-                      {provider.contractEnd 
-                        ? new Date(provider.contractEnd).toLocaleDateString()
-                        : 'Not set'}
-                    </p>
-                  </div>
-                </div>
-                
-                {provider.contractStart && provider.contractEnd && (
-                  <div>
-                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">Status</p>
-                    <p className={`text-sm sm:text-base font-medium ${contractActive ? 'text-green-600' : 'text-red-600'}`}>
-                      {contractActive ? 'Active Contract' : 'Contract Expired'}
-                    </p>
-                  </div>
-                )}
-
-                {provider.contractTerms && (
-                  <div>
-                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">Terms</p>
-                    <p className="text-xs sm:text-sm text-gray-900 dark:text-white whitespace-pre-wrap">
-                      {provider.contractTerms}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-          </div>
-        )}
-
-        {activeTab === 'coverage' && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-            <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Coverage Rules</h2>
-            </div>
-            <div className="p-4 sm:p-6 space-y-6">
-              
-              {/* Vehicle Value Range */}
-              <div>
-                <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white mb-3">Vehicle Value Range</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">Minimum Value</p>
-                    <p className="text-base sm:text-lg font-medium text-gray-900 dark:text-white">
-                      {provider.vehicleValueMin !== null 
-                        ? `$${provider.vehicleValueMin.toLocaleString()}`
-                        : 'No minimum'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">Maximum Value</p>
-                    <p className="text-base sm:text-lg font-medium text-gray-900 dark:text-white">
-                      {provider.vehicleValueMax !== null 
-                        ? `$${provider.vehicleValueMax.toLocaleString()}`
-                        : 'No maximum'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Excluded Makes */}
-              <div>
-                <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white mb-3">Excluded Makes</h3>
-                {provider.excludedMakes.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {provider.excludedMakes.map((make) => (
-                      <span
-                        key={make}
-                        className="px-2 sm:px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 text-xs sm:text-sm font-medium rounded"
-                      >
-                        {make}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">No makes excluded</p>
-                )}
-              </div>
-
-              {/* Excluded Models */}
-              <div>
-                <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white mb-3">Excluded Models</h3>
-                {provider.excludedModels.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {provider.excludedModels.map((model) => (
-                      <span
-                        key={model}
-                        className="px-2 sm:px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 text-xs sm:text-sm font-medium rounded"
-                      >
-                        {model}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">No models excluded</p>
-                )}
-              </div>
-
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'rates' && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-            <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Current Rates</h2>
-                <Link
-                  href={`/fleet/insurance/providers/${provider.id}/edit?key=phoenix-fleet-2847#rates`}
-                  className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors text-center"
-                >
-                  Update Rates
-                </Link>
-              </div>
-            </div>
-            <div className="p-4 sm:p-6">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Rate configuration available in edit mode
-              </p>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'policies' && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-            <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Recent Policies</h2>
-            </div>
-            <div className="divide-y divide-gray-200 dark:divide-gray-700">
-              {provider.policies.length === 0 ? (
-                <div className="p-8 sm:p-12 text-center">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">No policies issued yet</p>
-                </div>
-              ) : (
-                provider.policies.map((policy) => (
-                  <div key={policy.id} className="p-4 sm:p-6">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                      <div>
-                        <p className="text-sm sm:text-base font-medium text-gray-900 dark:text-white">
-                          Policy #{policy.policyNumber || policy.id.slice(0, 8)}
-                        </p>
-                        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                          {policy.booking?.bookingCode || 'No booking code'}
-                        </p>
-                      </div>
-                      <div className="text-left sm:text-right">
-                        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                          {new Date(policy.effectiveDate).toLocaleDateString()}
-                        </p>
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">
-                          ${policy.totalPremium.toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        )}
+        <div className="min-h-[400px]">
+          {activeTab === 'overview' && (
+            <OverviewTab 
+              provider={provider} 
+              contractActive={contractActive}
+              onRefresh={fetchProvider}
+            />
+          )}
+          
+          {activeTab === 'claims' && (
+            <ClaimsTab providerId={provider.id} providerName={provider.name} />
+          )}
+          
+          {activeTab === 'fnol' && (
+            <FnolActivityTab providerId={provider.id} />
+          )}
+          
+          {activeTab === 'messages' && (
+            <MessagesTab providerId={provider.id} providerName={provider.name} />
+          )}
+          
+          {activeTab === 'documents' && (
+            <DocumentsTab providerId={provider.id} provider={provider} />
+          )}
+          
+          {activeTab === 'coverage' && (
+            <CoverageTab provider={provider} />
+          )}
+          
+          {activeTab === 'settings' && (
+            <SettingsTab provider={provider} onUpdate={fetchProvider} />
+          )}
+        </div>
 
       </div>
     </div>

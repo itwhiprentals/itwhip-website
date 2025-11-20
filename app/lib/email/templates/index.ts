@@ -25,6 +25,17 @@ export { getHostActionRequiredTemplate } from './host-action-required'
 export { getHostRejectionTemplate } from './host-rejection'
 export { getHostApprovalTemplate } from './host-approval'
 
+// CLAIMS EMAIL TEMPLATES - PHASE 2C
+export { getClaimFiledHostTemplate } from './claim-filed-host'
+export { getClaimNotificationGuestTemplate } from './claim-notification-guest'
+export { getClaimNotificationFleetTemplate } from './claim-notification-fleet'
+export { getClaimApprovedHostTemplate } from './claim-approved-host'
+export { getClaimDecisionGuestTemplate } from './claim-decision-guest'
+export { getClaimReminderGuestTemplate } from './claim-reminder-guest'
+
+// ✅ NEW: DECLARATION SYSTEM TEMPLATE - PHASE 2D
+export { declarationUpdatedTemplate } from './declaration-updated'
+
 // Re-export all types for convenience
 export type {
   // Base types
@@ -53,5 +64,13 @@ export type {
   HostActionRequiredData,
   HostRejectionData,
   RejectionReason,
-  HostApprovalData
+  HostApprovalData,
+  
+  // Claims types - Phase 2C
+  ClaimFiledHostData,
+  ClaimNotificationGuestData,
+  ClaimNotificationFleetData,
+  ClaimApprovedHostData,
+  ClaimDecisionGuestData,
+  ClaimReminderGuestData
 } from '../types'

@@ -3,6 +3,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { headers } from 'next/headers'
+import { classifyVehicle } from '@/app/lib/insurance/classification-service'
+import { checkVehicleEligibility } from '@/app/lib/insurance/eligibility-engine'
+
+// ========== ✅ NEW: ESG EVENT HOOK IMPORT ==========
+import { handleVehicleAdded } from '@/app/lib/esg/event-hooks'
 
 // Helper to get host from headers
 async function getHostFromHeaders() {
@@ -50,6 +55,7 @@ export async function GET(request: NextRequest) {
         photos: {
           orderBy: { order: 'asc' }
         },
+        classification: true, // Include insurance classification
         bookings: {
           where: {
             OR: [
@@ -85,6 +91,40 @@ export async function GET(request: NextRequest) {
       }
     })
     
+    // ✅ NEW: Get all active claims for all cars in one query
+    const carIds = cars.map(car => car.id)
+    const activeClaims = await prisma.claim.findMany({
+      where: {
+        booking: {
+          carId: { in: carIds }
+        },
+        status: {
+          in: ['PENDING', 'UNDER_REVIEW']
+        }
+      },
+      include: {
+        booking: {
+          select: {
+            bookingCode: true,
+            carId: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    })
+    
+    // ✅ NEW: Create a map of carId -> active claims
+    const claimsByCarId = new Map<string, typeof activeClaims>()
+    activeClaims.forEach(claim => {
+      const carId = claim.booking.carId
+      if (!claimsByCarId.has(carId)) {
+        claimsByCarId.set(carId, [])
+      }
+      claimsByCarId.get(carId)!.push(claim)
+    })
+    
     // Format car data with calculated fields
     const formattedCars = cars.map(car => {
       // Find hero photo
@@ -98,6 +138,11 @@ export async function GET(request: NextRequest) {
       // Count active and upcoming bookings
       const activeBookings = car.bookings.filter(b => b.status === 'ACTIVE').length
       const upcomingBookings = car.bookings.filter(b => b.status === 'CONFIRMED').length
+      
+      // ✅ NEW: Get active claims for this car
+      const carClaims = claimsByCarId.get(car.id) || []
+      const hasActiveClaim = carClaims.length > 0
+      const mostRecentClaim = carClaims[0] // Already sorted by createdAt desc
       
       return {
         id: car.id,
@@ -134,6 +179,13 @@ export async function GET(request: NextRequest) {
         instantBook: car.instantBook,
         minTripDuration: car.minTripDuration,
         
+        // Insurance Classification
+        insuranceCategory: car.insuranceCategory,
+        insuranceRiskLevel: car.insuranceRiskLevel,
+        insuranceEligible: car.insuranceEligible,
+        estimatedValue: car.estimatedValue,
+        requiresManualUnderwriting: car.requiresManualUnderwriting,
+        
         // Stats
         totalTrips: car._count.bookings,
         rating: avgRating,
@@ -148,7 +200,18 @@ export async function GET(request: NextRequest) {
         
         // Booking status
         activeBookings: activeBookings,
-        upcomingBookings: upcomingBookings
+        upcomingBookings: upcomingBookings,
+        
+        // ✅ NEW: Active claim information
+        hasActiveClaim: hasActiveClaim,
+        activeClaimCount: carClaims.length,
+        activeClaim: mostRecentClaim ? {
+          id: mostRecentClaim.id,
+          type: mostRecentClaim.type,
+          status: mostRecentClaim.status,
+          createdAt: mostRecentClaim.createdAt.toISOString(),
+          bookingCode: mostRecentClaim.booking.bookingCode
+        } : null
       }
     })
     
@@ -156,7 +219,10 @@ export async function GET(request: NextRequest) {
       cars: formattedCars,
       total: formattedCars.length,
       active: formattedCars.filter(c => c.isActive).length,
-      inactive: formattedCars.filter(c => !c.isActive).length
+      inactive: formattedCars.filter(c => !c.isActive).length,
+      insured: formattedCars.filter(c => c.insuranceEligible).length,
+      uninsured: formattedCars.filter(c => !c.insuranceEligible).length,
+      withActiveClaims: formattedCars.filter(c => c.hasActiveClaim).length // ✅ NEW
     })
     
   } catch (error) {
@@ -229,7 +295,15 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    // Create the car
+    // Classify the vehicle for insurance
+    const classification = await classifyVehicle({
+      make: body.make,
+      model: body.model,
+      year: body.year,
+      trim: body.trim
+    })
+    
+    // Create the car with classification
     const newCar = await prisma.rentalCar.create({
       data: {
         hostId: host.id,
@@ -250,6 +324,15 @@ export async function POST(request: NextRequest) {
         mpgCity: body.mpgCity,
         mpgHighway: body.mpgHighway,
         currentMileage: body.currentMileage,
+        
+        // Insurance Classification
+        classificationId: classification.classificationId,
+        insuranceEligible: classification.isInsurable,
+        insuranceCategory: classification.category,
+        insuranceRiskLevel: classification.riskLevel,
+        estimatedValue: classification.estimatedValue,
+        requiresManualUnderwriting: classification.requiresManualReview,
+        insuranceNotes: classification.insurabilityReason,
         
         // Pricing
         dailyRate: body.dailyRate,
@@ -297,9 +380,39 @@ export async function POST(request: NextRequest) {
         
         // Insurance
         insuranceIncluded: body.insuranceIncluded || false,
-        insuranceDaily: body.insuranceDaily || 25
+        insuranceDaily: body.insuranceDaily || classification.baseRateMultiplier * 25
       }
     })
+    
+    // Check eligibility with active provider
+    const eligibility = await checkVehicleEligibility(newCar)
+    
+    // If car requires manual underwriting, create admin notification
+    if (classification.requiresManualReview) {
+      await prisma.adminNotification.create({
+        data: {
+          type: 'MANUAL_UNDERWRITING_REQUIRED',
+          title: 'Manual Insurance Review Required',
+          message: `${newCar.year} ${newCar.make} ${newCar.model} requires manual insurance underwriting`,
+          priority: 'HIGH',
+          status: 'UNREAD',
+          relatedId: newCar.id,
+          relatedType: 'car',
+          actionRequired: true,
+          metadata: {
+            carId: newCar.id,
+            hostName: host.name,
+            classification: {
+              category: classification.category,
+              riskLevel: classification.riskLevel,
+              estimatedValue: classification.estimatedValue,
+              reason: classification.insurabilityReason
+            },
+            eligibility: eligibility
+          }
+        }
+      })
+    }
     
     // Log activity
     await prisma.activityLog.create({
@@ -309,18 +422,23 @@ export async function POST(request: NextRequest) {
         entityType: 'car',
         entityId: newCar.id,
         metadata: {
-          carDetails: `${newCar.year} ${newCar.make} ${newCar.model}`
+          carDetails: `${newCar.year} ${newCar.make} ${newCar.model}`,
+          insuranceClassification: {
+            category: classification.category,
+            riskLevel: classification.riskLevel,
+            eligible: classification.isInsurable
+          }
         }
       }
     })
     
-    // Create admin notification
+    // Create standard admin notification
     await prisma.adminNotification.create({
       data: {
         type: 'NEW_CAR',
         title: 'New Car Added',
         message: `${host.name} added a ${newCar.year} ${newCar.make} ${newCar.model}`,
-        priority: 'LOW',
+        priority: classification.requiresManualReview ? 'MEDIUM' : 'LOW',
         status: 'UNREAD',
         relatedId: newCar.id,
         relatedType: 'car',
@@ -331,15 +449,65 @@ export async function POST(request: NextRequest) {
             make: newCar.make,
             model: newCar.model,
             year: newCar.year,
-            dailyRate: newCar.dailyRate
+            dailyRate: newCar.dailyRate,
+            insuranceCategory: classification.category,
+            insuranceRiskLevel: classification.riskLevel,
+            insuranceEligible: classification.isInsurable
           }
         }
       }
     })
     
+    // Add photos if provided
+    if (body.photos && Array.isArray(body.photos)) {
+      const photoData = body.photos.map((url: string, index: number) => ({
+        carId: newCar.id,
+        url: url,
+        isHero: index === 0,
+        order: index
+      }))
+      
+      await prisma.rentalCarPhoto.createMany({
+        data: photoData
+      })
+    }
+
+    // ========================================================================
+    // ✅ NEW: TRIGGER ESG EVENT - VEHICLE ADDED
+    // ========================================================================
+    
+    try {
+      await handleVehicleAdded(host.id, {
+        carId: newCar.id,
+        make: newCar.make,
+        model: newCar.model,
+        year: newCar.year,
+        fuelType: newCar.fuelType,
+        isElectric: newCar.fuelType === 'ELECTRIC',
+        isHybrid: newCar.fuelType === 'HYBRID',
+        estimatedValue: newCar.estimatedValue || classification.estimatedValue,
+        insuranceEligible: newCar.insuranceEligible
+      })
+
+      console.log('✅ ESG vehicle added event triggered:', {
+        hostId: host.id,
+        carId: newCar.id,
+        vehicle: `${newCar.year} ${newCar.make} ${newCar.model}`,
+        fuelType: newCar.fuelType,
+        insuranceEligible: newCar.insuranceEligible
+      })
+    } catch (esgError) {
+      // Don't fail car creation if ESG update fails
+      console.error('❌ ESG event failed (non-critical):', esgError)
+    }
+    
     return NextResponse.json({
       success: true,
-      car: newCar
+      car: {
+        ...newCar,
+        classification: classification,
+        eligibility: eligibility
+      }
     })
     
   } catch (error) {

@@ -1,10 +1,10 @@
-// app/api/host/profile/route.ts
+// app/api/host/profile/route.ts - ENHANCED WITH INSURANCE ACTIVITY LOGGING
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { headers } from 'next/headers'
 
-// Helper to get host ID from session/token
+// Helper to get host from headers
 async function getHostFromHeaders() {
   const headersList = await headers()
   const hostId = headersList.get('x-host-id')
@@ -14,7 +14,6 @@ async function getHostFromHeaders() {
     return null
   }
   
-  // Get host by user ID or host ID with insurance provider
   const host = await prisma.rentalHost.findFirst({
     where: hostId ? { id: hostId } : { userId: userId },
     include: {
@@ -44,6 +43,65 @@ async function getHostFromHeaders() {
   return host
 }
 
+// ✅ NEW: Log profile/insurance activity
+async function logProfileActivity(params: {
+  hostId: string
+  hostName: string
+  action: string
+  category: string
+  changes?: any
+  metadata?: any
+}) {
+  const { hostId, hostName, action, category, changes, metadata } = params
+
+  let description = ''
+  switch (action) {
+    case 'PROFILE_UPDATED':
+      description = `Profile information updated`
+      break
+    case 'INSURANCE_ADDED':
+      description = `${metadata?.insuranceType || 'Insurance'} added`
+      break
+    case 'INSURANCE_UPDATED':
+      description = `${metadata?.insuranceType || 'Insurance'} updated`
+      break
+    case 'INSURANCE_REMOVED':
+      description = `${metadata?.insuranceType || 'Insurance'} removed`
+      break
+    case 'BANK_ACCOUNT_ADDED':
+      description = `Bank account added`
+      break
+    case 'BANK_ACCOUNT_UPDATED':
+      description = `Bank account updated`
+      break
+    case 'SETTINGS_UPDATED':
+      description = `Settings updated`
+      break
+    default:
+      description = action.toLowerCase().replace(/_/g, ' ')
+  }
+
+  await prisma.activityLog.create({
+    data: {
+      entityType: 'HOST',
+      entityId: hostId,
+      hostId: hostId,
+      action: action,
+      category: category,
+      severity: 'INFO',
+      description: description,
+      oldValue: changes?.oldValues ? JSON.stringify(changes.oldValues) : null,
+      newValue: changes?.newValues ? JSON.stringify(changes.newValues) : null,
+      metadata: JSON.stringify({
+        ...metadata,
+        hostName,
+        timestamp: new Date().toISOString()
+      }),
+      createdAt: new Date()
+    }
+  })
+}
+
 // GET - Fetch host profile
 export async function GET(request: NextRequest) {
   try {
@@ -56,7 +114,6 @@ export async function GET(request: NextRequest) {
       )
     }
     
-    // Calculate performance metrics
     const bookingStats = await prisma.rentalBooking.groupBy({
       by: ['hostId'],
       where: {
@@ -70,7 +127,6 @@ export async function GET(request: NextRequest) {
     
     const totalBookings = bookingStats[0]?._count || 0
     
-    // Format profile response
     const profile = {
       id: host.id,
       email: host.email,
@@ -78,76 +134,52 @@ export async function GET(request: NextRequest) {
       phone: host.phone,
       profilePhoto: host.profilePhoto,
       bio: host.bio,
-      
-      // Location
       city: host.city,
       state: host.state,
       zipCode: host.zipCode,
-      
-      // Verification
       isVerified: host.isVerified,
       verifiedAt: host.verifiedAt,
       verificationLevel: host.verificationLevel,
-      
-      // Performance
       responseTime: host.responseTime,
       responseRate: host.responseRate,
       acceptanceRate: host.acceptanceRate,
       totalTrips: host.totalTrips || totalBookings,
       rating: host.rating,
-      
-      // Documents
       governmentIdUrl: host.governmentIdUrl,
       driversLicenseUrl: host.driversLicenseUrl,
       insuranceDocUrl: host.insuranceDocUrl,
       documentsVerified: host.documentsVerified,
       documentStatuses: host.documentStatuses,
-      
-      // Earnings Tier
       earningsTier: host.earningsTier,
       usingLegacyInsurance: host.usingLegacyInsurance,
-      
-      // Platform Insurance (assigned by admin)
       insuranceProviderId: host.insuranceProviderId,
       insuranceProvider: host.insuranceProvider,
       insurancePolicyNumber: host.insurancePolicyNumber,
       insuranceActive: host.insuranceActive,
       insuranceAssignedAt: host.insuranceAssignedAt,
       insuranceAssignedBy: host.insuranceAssignedBy,
-      
-      // Legacy Host Insurance (for backward compatibility)
       hostInsuranceProvider: host.hostInsuranceProvider,
       hostPolicyNumber: host.hostPolicyNumber,
       hostInsuranceExpires: host.hostInsuranceExpires,
       hostInsuranceStatus: host.hostInsuranceStatus,
       hostInsuranceDeactivatedAt: host.hostInsuranceDeactivatedAt,
       deactivationReason: host.deactivationReason,
-      
-      // NEW: P2P Insurance Fields
       p2pInsuranceStatus: host.p2pInsuranceStatus,
       p2pInsuranceProvider: host.p2pInsuranceProvider,
       p2pPolicyNumber: host.p2pPolicyNumber,
       p2pInsuranceExpires: host.p2pInsuranceExpires,
       p2pInsuranceActive: host.p2pInsuranceActive,
-      
-      // NEW: Commercial Insurance Fields
       commercialInsuranceStatus: host.commercialInsuranceStatus,
       commercialInsuranceProvider: host.commercialInsuranceProvider,
       commercialPolicyNumber: host.commercialPolicyNumber,
       commercialInsuranceExpires: host.commercialInsuranceExpires,
       commercialInsuranceActive: host.commercialInsuranceActive,
-      
-      // Banking
       bankAccountInfo: host.bankVerified ? { verified: true } : null,
       bankVerified: host.bankVerified,
-      
-      // Settings
       autoApproveBookings: host.autoApproveBookings,
       requireDeposit: host.requireDeposit,
       depositAmount: host.depositAmount,
       commissionRate: host.commissionRate,
-      
-      // Status
       approvalStatus: host.approvalStatus,
       pendingActions: host.pendingActions,
       restrictionReasons: host.restrictionReasons,
@@ -157,8 +189,6 @@ export async function GET(request: NextRequest) {
       joinedAt: host.joinedAt,
       approvedAt: host.approvedAt,
       approvedBy: host.approvedBy,
-      
-      // Permissions
       canViewBookings: host.canViewBookings,
       canEditCalendar: host.canEditCalendar,
       canSetPricing: host.canSetPricing,
@@ -177,7 +207,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// PUT - Update host profile
+// PUT - Update host profile (ENHANCED WITH ACTIVITY LOGGING)
 export async function PUT(request: NextRequest) {
   try {
     const host = await getHostFromHeaders()
@@ -211,6 +241,16 @@ export async function PUT(request: NextRequest) {
         updateData[field] = body[field]
       }
     }
+
+    // ✅ TRACK CHANGES FOR ACTIVITY LOG
+    const changedFields = Object.keys(updateData)
+    const oldValues: any = {}
+    const newValues: any = {}
+
+    for (const field of changedFields) {
+      oldValues[field] = (host as any)[field]
+      newValues[field] = updateData[field]
+    }
     
     // Update host profile
     const updatedHost = await prisma.rentalHost.update({
@@ -242,22 +282,26 @@ export async function PUT(request: NextRequest) {
         data: { name: updateData.name }
       })
     }
-    
-    // Log the update in activity log
-    await prisma.activityLog.create({
-      data: {
-        userId: host.userId,
-        action: 'profile_updated',
-        entityType: 'host',
-        entityId: host.id,
+
+    // ✅ LOG PROFILE UPDATE
+    if (changedFields.length > 0) {
+      await logProfileActivity({
+        hostId: host.id,
+        hostName: host.name || host.email,
+        action: 'PROFILE_UPDATED',
+        category: 'DOCUMENT',
+        changes: {
+          updated: changedFields,
+          oldValues,
+          newValues
+        },
         metadata: {
-          fields: Object.keys(updateData),
-          updatedBy: 'host'
+          fields: changedFields
         }
-      }
-    })
+      })
+    }
     
-    // Return updated profile with ALL insurance fields
+    // Return updated profile
     const profile = {
       id: updatedHost.id,
       email: updatedHost.email,
@@ -281,40 +325,29 @@ export async function PUT(request: NextRequest) {
       insuranceDocUrl: updatedHost.insuranceDocUrl,
       documentsVerified: updatedHost.documentsVerified,
       documentStatuses: updatedHost.documentStatuses,
-      
-      // Earnings Tier
       earningsTier: updatedHost.earningsTier,
       usingLegacyInsurance: updatedHost.usingLegacyInsurance,
-      
-      // Platform Insurance
       insuranceProviderId: updatedHost.insuranceProviderId,
       insuranceProvider: updatedHost.insuranceProvider,
       insurancePolicyNumber: updatedHost.insurancePolicyNumber,
       insuranceActive: updatedHost.insuranceActive,
       insuranceAssignedAt: updatedHost.insuranceAssignedAt,
       insuranceAssignedBy: updatedHost.insuranceAssignedBy,
-      
-      // Legacy Host Insurance
       hostInsuranceProvider: updatedHost.hostInsuranceProvider,
       hostPolicyNumber: updatedHost.hostPolicyNumber,
       hostInsuranceExpires: updatedHost.hostInsuranceExpires,
       hostInsuranceStatus: updatedHost.hostInsuranceStatus,
       hostInsuranceDeactivatedAt: updatedHost.hostInsuranceDeactivatedAt,
-      
-      // NEW: P2P Insurance
       p2pInsuranceStatus: updatedHost.p2pInsuranceStatus,
       p2pInsuranceProvider: updatedHost.p2pInsuranceProvider,
       p2pPolicyNumber: updatedHost.p2pPolicyNumber,
       p2pInsuranceExpires: updatedHost.p2pInsuranceExpires,
       p2pInsuranceActive: updatedHost.p2pInsuranceActive,
-      
-      // NEW: Commercial Insurance
       commercialInsuranceStatus: updatedHost.commercialInsuranceStatus,
       commercialInsuranceProvider: updatedHost.commercialInsuranceProvider,
       commercialPolicyNumber: updatedHost.commercialPolicyNumber,
       commercialInsuranceExpires: updatedHost.commercialInsuranceExpires,
       commercialInsuranceActive: updatedHost.commercialInsuranceActive,
-      
       bankVerified: updatedHost.bankVerified,
       autoApproveBookings: updatedHost.autoApproveBookings,
       requireDeposit: updatedHost.requireDeposit,
@@ -339,7 +372,7 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// DELETE - Deactivate host account
+// DELETE - Deactivate host account (ENHANCED)
 export async function DELETE(request: NextRequest) {
   try {
     const host = await getHostFromHeaders()
@@ -351,7 +384,6 @@ export async function DELETE(request: NextRequest) {
       )
     }
     
-    // Check for active bookings
     const activeBookings = await prisma.rentalBooking.count({
       where: {
         hostId: host.id,
@@ -368,7 +400,6 @@ export async function DELETE(request: NextRequest) {
       )
     }
     
-    // Deactivate host account
     await prisma.rentalHost.update({
       where: { id: host.id },
       data: {
@@ -377,7 +408,6 @@ export async function DELETE(request: NextRequest) {
       }
     })
     
-    // Deactivate all cars
     await prisma.rentalCar.updateMany({
       where: { hostId: host.id },
       data: {
@@ -385,17 +415,16 @@ export async function DELETE(request: NextRequest) {
         updatedAt: new Date()
       }
     })
-    
-    // Log deactivation
-    await prisma.activityLog.create({
-      data: {
-        userId: host.userId,
-        action: 'account_deactivated',
-        entityType: 'host',
-        entityId: host.id,
-        metadata: {
-          reason: 'host_requested'
-        }
+
+    // ✅ LOG ACCOUNT DEACTIVATION
+    await logProfileActivity({
+      hostId: host.id,
+      hostName: host.name || host.email,
+      action: 'ACCOUNT_DEACTIVATED',
+      category: 'DOCUMENT',
+      metadata: {
+        reason: 'host_requested',
+        activeBookings: 0
       }
     })
     
