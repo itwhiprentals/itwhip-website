@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/app/lib/database/prisma'
 import { getDeclarationConfig, DECLARATION_CONFIGS } from '@/app/lib/constants/declarations'
-import { sendEmail } from '@/app/lib/email/sendEmail'
+import { sendEmail } from '@/app/lib/email/sender'
 import type { DeclarationType } from '@/app/types/compliance'
 
 /**
@@ -93,62 +93,102 @@ export async function PATCH(
     })
 
     // Log the activity
-    try {
-      await prisma.activityLog.create({
-        data: {
-          entityType: 'CAR',
-          entityId: carId,
-          hostId,
-          action: 'DECLARATION_UPDATED',
-          category: 'VEHICLE',
-          severity: 'INFO',
-          description: `Usage declaration changed from "${oldConfig.label}" to "${newConfig.label}"`,
-          oldValue: {
-            declaration: oldDeclaration,
-            label: oldConfig.label,
-            maxGap: oldConfig.maxGap
-          },
-          newValue: {
-            declaration,
-            label: newConfig.label,
-            maxGap: newConfig.maxGap
-          },
-          metadata: {
-            oldAllowedGap: oldConfig.maxGap,
-            newAllowedGap: newConfig.maxGap,
-            earningsTier: car.revenueSplit,
-            insuranceType: car.insuranceType,
-            note: 'Earnings tier unchanged - based on insurance level'
-          }
-        }
-      })
-    } catch (logError) {
-      console.error('Failed to log declaration change:', logError)
-      // Continue even if logging fails
-    }
-
-    // Send confirmation email to host
-    try {
-      await sendEmail({
-        to: car.host.email,
-        subject: `Declaration Updated: ${car.year} ${car.make} ${car.model}`,
-        template: 'declaration-updated',
-        data: {
-          hostName: car.host.firstName,
-          vehicleName: `${car.year} ${car.make} ${car.model}`,
-          oldDeclaration: oldConfig.label,
-          newDeclaration: newConfig.label,
-          oldMaxGap: oldConfig.maxGap,
-          newMaxGap: newConfig.maxGap,
+    await prisma.activityLog.create({
+      data: {
+        entityType: 'CAR',
+        entityId: carId,
+        hostId,
+        action: 'DECLARATION_UPDATED',
+        category: 'VEHICLE',
+        severity: 'INFO',
+        description: `Usage declaration changed from "${oldConfig.label}" to "${newConfig.label}"`,
+        oldValue: {
+          declaration: oldDeclaration,
+          label: oldConfig.label,
+          maxGap: oldConfig.maxGap
+        },
+        newValue: {
+          declaration,
+          label: newConfig.label,
+          maxGap: newConfig.maxGap
+        },
+        metadata: {
+          oldAllowedGap: oldConfig.maxGap,
+          newAllowedGap: newConfig.maxGap,
           earningsTier: car.revenueSplit,
-          insuranceNote: newConfig.insuranceNote,
-          taxImplication: newConfig.taxImplication,
-          claimImpact: newConfig.claimImpact
+          insuranceType: car.insuranceType,
+          note: 'Earnings tier unchanged - based on insurance level'
         }
-      })
+      }
+    })
+
+    // Send confirmation email to host (optional - fails gracefully)
+    try {
+      const emailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #4F46E5;">Declaration Updated</h2>
+          <p>Hi ${car.host.firstName},</p>
+          
+          <p>Your vehicle declaration has been updated:</p>
+          
+          <div style="background: #F3F4F6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <p><strong>Vehicle:</strong> ${car.year} ${car.make} ${car.model}</p>
+            <p><strong>Old Declaration:</strong> ${oldConfig.label} (${oldConfig.maxGap} miles allowed)</p>
+            <p><strong>New Declaration:</strong> ${newConfig.label} (${newConfig.maxGap} miles allowed)</p>
+          </div>
+
+          <div style="background: #FEF3C7; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <p><strong>⚠️ Important:</strong></p>
+            <p>${newConfig.insuranceNote}</p>
+            <p><strong>Tax Implication:</strong> ${newConfig.taxImplication}</p>
+            <p><strong>Claim Impact:</strong> ${newConfig.claimImpact}</p>
+          </div>
+
+          <p><strong>Your Earnings Tier:</strong> ${car.revenueSplit}%</p>
+          <p style="color: #6B7280; font-size: 14px;">
+            <em>Note: Your earnings tier is based on your insurance level and remains unchanged.</em>
+          </p>
+
+          <p>If you have any questions, please contact support.</p>
+          
+          <p>Best regards,<br>The ItWhip Team</p>
+        </div>
+      `
+
+      const emailText = `
+Declaration Updated
+
+Hi ${car.host.firstName},
+
+Your vehicle declaration has been updated:
+
+Vehicle: ${car.year} ${car.make} ${car.model}
+Old Declaration: ${oldConfig.label} (${oldConfig.maxGap} miles allowed)
+New Declaration: ${newConfig.label} (${newConfig.maxGap} miles allowed)
+
+Important:
+${newConfig.insuranceNote}
+Tax Implication: ${newConfig.taxImplication}
+Claim Impact: ${newConfig.claimImpact}
+
+Your Earnings Tier: ${car.revenueSplit}%
+Note: Your earnings tier is based on your insurance level and remains unchanged.
+
+If you have any questions, please contact support.
+
+Best regards,
+The ItWhip Team
+      `
+
+      await sendEmail(
+        car.host.email,
+        `Declaration Updated: ${car.year} ${car.make} ${car.model}`,
+        emailHtml,
+        emailText
+      )
     } catch (emailError) {
       console.error('Failed to send declaration update email:', emailError)
-      // Continue even if email fails
+      // Continue even if email fails - declaration update is more important
     }
 
     return NextResponse.json({

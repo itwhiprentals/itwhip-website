@@ -251,7 +251,7 @@ export async function GET(request: NextRequest) {
 
     // Separate earned and unearned badges
     const earnedBadges: Array<BadgeDefinition & { earnedAt?: Date }> = []
-    const unearnedBadges: Array
+    const unearnedBadges: Array<
       BadgeDefinition & { progress: number; nextMilestone?: any }
     > = []
 

@@ -20,7 +20,8 @@ export { getHostVerificationTemplate } from './host-verification'
 
 // NEW HOST LIFECYCLE TEMPLATES - PHASE 2
 export { getHostDocumentRequestTemplate } from './host-document-request'
-export { getHostBackgroundCheckTemplate } from './host-background-check-status'
+// Fix: Export the actual function name and alias it
+export { getHostBackgroundCheckStatusTemplate as getHostBackgroundCheckTemplate } from './host-background-check-status'
 export { getHostActionRequiredTemplate } from './host-action-required'
 export { getHostRejectionTemplate } from './host-rejection'
 export { getHostApprovalTemplate } from './host-approval'
