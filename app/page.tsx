@@ -900,28 +900,75 @@ export default function RentalsPage() {
   useEffect(() => {
     const init = async () => {
       try {
+        console.log('🚀 [Homepage] Starting initialization...')
+        
+        // Get geolocation
         const geo = await (await fetch('https://ipapi.co/json/')).json()
-        const city = geo.city || 'Phoenix'
-        setUserCity(city in CITY_COORDS ? city : 'Phoenix')
+        const detectedCity = geo.city || 'Phoenix'
+        console.log('📍 [Homepage] Detected location:', detectedCity, geo.region)
+        
+        // ✅ FIX: Only use detected city if it's in Arizona, otherwise default to Phoenix
+        const isArizonaCity = detectedCity in CITY_COORDS
+        const city = isArizonaCity ? detectedCity : 'Phoenix'
+        setUserCity(city)
+        
+        if (!isArizonaCity) {
+          console.log('⚠️ [Homepage] City not in Arizona, defaulting to Phoenix')
+        }
 
-        const coords = CITY_COORDS[city] || CITY_COORDS.Phoenix
+        const coords = CITY_COORDS[city]
         const weather = await (await fetch(
           `https://api.openweathermap.org/data/2.5/weather?lat=${coords.lat}&lon=${coords.lng}&appid=${process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY}&units=imperial`
         )).json()
         setTemp(Math.round(weather.main.temp))
+        console.log('🌡️ [Homepage] Temperature:', weather.main.temp)
 
+        console.log('🚗 [Homepage] Fetching cars from API...')
+        console.log('🔍 [Homepage] Search city:', city)
+        
+        // ✅ FIX: Always search Phoenix area for cars (Arizona-only platform)
         const [esgRes, cityRes] = await Promise.all([
-          fetch('/api/rentals/search?sortBy=impactScore&limit=6'),
-          fetch(`/api/rentals/search?city=${city}&limit=6`)
+          fetch('/api/rentals/search?location=Phoenix,AZ&sortBy=impactScore&limit=6'),
+          fetch(`/api/rentals/search?location=${city},AZ&limit=6`)
         ])
+        
+        console.log('📡 [Homepage] ESG API Status:', esgRes.status, esgRes.ok ? 'OK' : 'FAILED')
+        console.log('📡 [Homepage] City API Status:', cityRes.status, cityRes.ok ? 'OK' : 'FAILED')
+        
         const [esgData, cityData] = await Promise.all([esgRes.json(), cityRes.json()])
+
+        // 🔍 TEMPORARY DEBUG LOGGING
+        console.log('🔍 ESG API Response:', {
+          success: esgData.success,
+          location: esgData.location,
+          total: esgData.total,
+          resultsLength: esgData.results?.length,
+          resultsIsArray: Array.isArray(esgData.results),
+          firstCar: esgData.results?.[0]
+        })
+
+        console.log('🔍 City API Response:', {
+          success: cityData.success,
+          location: cityData.location, 
+          total: cityData.total,
+          resultsLength: cityData.results?.length,
+          resultsIsArray: Array.isArray(cityData.results),
+          firstCar: cityData.results?.[0]
+        })
+
         setEsgCars(esgData.results?.slice(0, 6) || [])
         setCityCars(cityData.results?.slice(0, 6) || [])
+        
+        console.log('✅ [Homepage] Cars set in state:', {
+          esgCarsCount: esgData.results?.length || 0,
+          cityCarsCount: cityData.results?.length || 0
+        })
       } catch (err) {
-        console.error('Initialization error:', err)
+        console.error('❌ [Homepage] Initialization error:', err)
         setUserCity('Phoenix')
       } finally {
         setIsLoading(false)
+        console.log('✅ [Homepage] Initialization complete')
       }
     }
     init()
