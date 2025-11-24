@@ -93,36 +93,41 @@ export async function PATCH(
     })
 
     // Log the activity
-    await prisma.activityLog.create({
-      data: {
-        entityType: 'CAR',
-        entityId: carId,
-        hostId,
-        action: 'DECLARATION_UPDATED',
-        category: 'VEHICLE',
-        severity: 'INFO',
-        description: `Usage declaration changed from "${oldConfig.label}" to "${newConfig.label}"`,
-        oldValue: {
-          declaration: oldDeclaration,
-          label: oldConfig.label,
-          maxGap: oldConfig.maxGap
-        },
-        newValue: {
-          declaration,
-          label: newConfig.label,
-          maxGap: newConfig.maxGap
-        },
-        metadata: {
-          oldAllowedGap: oldConfig.maxGap,
-          newAllowedGap: newConfig.maxGap,
-          earningsTier: car.revenueSplit,
-          insuranceType: car.insuranceType,
-          note: 'Earnings tier unchanged - based on insurance level'
+    try {
+      await prisma.activityLog.create({
+        data: {
+          entityType: 'CAR',
+          entityId: carId,
+          hostId,
+          action: 'DECLARATION_UPDATED',
+          category: 'VEHICLE',
+          severity: 'INFO',
+          description: `Usage declaration changed from "${oldConfig.label}" to "${newConfig.label}"`,
+          oldValue: {
+            declaration: oldDeclaration,
+            label: oldConfig.label,
+            maxGap: oldConfig.maxGap
+          },
+          newValue: {
+            declaration,
+            label: newConfig.label,
+            maxGap: newConfig.maxGap
+          },
+          metadata: {
+            oldAllowedGap: oldConfig.maxGap,
+            newAllowedGap: newConfig.maxGap,
+            earningsTier: car.revenueSplit,
+            insuranceType: car.insuranceType,
+            note: 'Earnings tier unchanged - based on insurance level'
+          }
         }
-      }
-    })
+      })
+    } catch (logError) {
+      console.error('Failed to log declaration change:', logError)
+      // Continue even if logging fails
+    }
 
-    // Send confirmation email to host (optional - fails gracefully)
+    // Send confirmation email to host
     try {
       const emailHtml = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -155,40 +160,14 @@ export async function PATCH(
         </div>
       `
 
-      const emailText = `
-Declaration Updated
-
-Hi ${car.host.firstName},
-
-Your vehicle declaration has been updated:
-
-Vehicle: ${car.year} ${car.make} ${car.model}
-Old Declaration: ${oldConfig.label} (${oldConfig.maxGap} miles allowed)
-New Declaration: ${newConfig.label} (${newConfig.maxGap} miles allowed)
-
-Important:
-${newConfig.insuranceNote}
-Tax Implication: ${newConfig.taxImplication}
-Claim Impact: ${newConfig.claimImpact}
-
-Your Earnings Tier: ${car.revenueSplit}%
-Note: Your earnings tier is based on your insurance level and remains unchanged.
-
-If you have any questions, please contact support.
-
-Best regards,
-The ItWhip Team
-      `
-
-      await sendEmail(
-        car.host.email,
-        `Declaration Updated: ${car.year} ${car.make} ${car.model}`,
-        emailHtml,
-        emailText
-      )
+      await sendEmail({
+        to: car.host.email,
+        subject: `Declaration Updated: ${car.year} ${car.make} ${car.model}`,
+        html: emailHtml
+      })
     } catch (emailError) {
       console.error('Failed to send declaration update email:', emailError)
-      // Continue even if email fails - declaration update is more important
+      // Continue even if email fails
     }
 
     return NextResponse.json({
