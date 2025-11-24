@@ -24,7 +24,8 @@ export default function CarCard({ car }: CarCardProps) {
   const tripCount = car.trips || car.totalTrips || car.rating?.count || 0
   const carUrl = generateCarUrl(car)
   const esgScore = car.esgScore || car.impactScore || car.esg_score || null
-  const showEcoElite = esgScore && esgScore >= 85
+  const showEcoElite = esgScore && esgScore >= 50  // ✅ CHANGED FROM 85 TO 50
+  const isElectric = car.fuelType === 'ELECTRIC' || car.fuelType === 'electric' || car.isElectric
 
   return (
     <Link href={carUrl} className="group block">
@@ -33,6 +34,7 @@ export default function CarCard({ car }: CarCardProps) {
           <CarImage car={car} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
+          {/* Top-left badges */}
           <div className="absolute top-3 left-3 flex flex-col gap-2">
             {showLocalHostBadge && (
               <span className="px-3 py-1 bg-black/80 text-white text-xs font-bold rounded-full shadow-lg flex items-center gap-1">
@@ -44,6 +46,11 @@ export default function CarCard({ car }: CarCardProps) {
                 <IoFlashOutline className="w-3 h-3" /> INSTANT
               </span>
             )}
+            {isElectric && (
+              <span className="px-3 py-1 bg-cyan-500 text-white text-xs font-bold rounded-full shadow-lg flex items-center gap-1">
+                <IoFlashOutline className="w-3 h-3" /> EV
+              </span>
+            )}
             {isTraditional && car.provider && (
               <span className="px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded-full shadow-lg">
                 {car.provider.toUpperCase()}
@@ -51,6 +58,7 @@ export default function CarCard({ car }: CarCardProps) {
             )}
           </div>
 
+          {/* Bottom-right price */}
           <div className="absolute bottom-3 right-3">
             <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-lg px-4 py-2.5 shadow-xl border border-white/20">
               <div className="flex items-baseline gap-1">

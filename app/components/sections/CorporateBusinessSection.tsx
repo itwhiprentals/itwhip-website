@@ -65,7 +65,7 @@ export default function CorporateBusinessSection() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg mb-8">
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg">
           <div className="flex items-start gap-4 mb-4">
             <IoStatsChartOutline className="w-6 h-6 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
             <div>
@@ -95,12 +95,17 @@ export default function CorporateBusinessSection() {
           </div>
         </div>
 
-        <div className="text-center">
-          <Link href="/business" className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 transition-colors shadow-lg">
-            Learn About Corporate Solutions <IoArrowForwardOutline className="w-5 h-5" />
-          </Link>
-          <p className="mt-3 text-xs text-gray-600 dark:text-gray-400">
-            Join S&P 500 companies using ItWhip for verified ESG travel reporting
+        {/* CTA Line */}
+        <div className="text-center mt-8">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            ESG-compliant fleet for your business.{' '}
+            <Link 
+              href="/corporate" 
+              className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium hover:underline"
+            >
+              Corporate solutions
+              <IoArrowForwardOutline className="w-4 h-4" />
+            </Link>
           </p>
         </div>
       </div>

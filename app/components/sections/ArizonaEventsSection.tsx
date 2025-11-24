@@ -1,10 +1,12 @@
 // app/components/sections/ArizonaEventsSection.tsx
 'use client'
 
+import Link from 'next/link'
 import {
   IoCashOutline,
   IoCalendarOutline,
-  IoTrophyOutline
+  IoTrophyOutline,
+  IoArrowForwardOutline
 } from 'react-icons/io5'
 
 interface Event {
@@ -70,10 +72,17 @@ export default function ArizonaEventsSection() {
           })}
         </div>
 
-        <div className="mt-8 bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4 text-center">
-          <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-1">Summer Special</h3>
-          <p className="text-xs text-gray-700 dark:text-gray-300">
-            June-August: 20% discount automatically applied. Help guests beat the heat while maintaining steady bookings.
+        {/* CTA Line */}
+        <div className="text-center mt-8">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            <span className="font-semibold text-amber-600 dark:text-amber-400">Summer:</span> 20% auto-discount applied. Premium vehicles for every event.{' '}
+            <Link 
+              href="/coverage" 
+              className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 font-medium hover:underline"
+            >
+              View coverage areas
+              <IoArrowForwardOutline className="w-4 h-4" />
+            </Link>
           </p>
         </div>
       </div>

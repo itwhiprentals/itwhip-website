@@ -30,21 +30,14 @@ export default function RentalsPage() {
   useEffect(() => {
     const init = async () => {
       try {
-        console.log('🚀 [Homepage] Starting initialization...')
-        
         const city = 'Phoenix'
         setUserCity(city)
         setTemp(75)
-        
-        console.log('🚗 [Homepage] Fetching cars from API...')
         
         const [esgRes, cityRes] = await Promise.all([
           fetch('/api/rentals/search?location=Phoenix,AZ&sortBy=impactScore&limit=6'),
           fetch('/api/rentals/search?location=Phoenix,AZ&limit=6')
         ])
-        
-        console.log('📡 [Homepage] ESG API Status:', esgRes.status, esgRes.ok ? 'OK' : 'FAILED')
-        console.log('📡 [Homepage] City API Status:', cityRes.status, cityRes.ok ? 'OK' : 'FAILED')
         
         if (!esgRes.ok || !cityRes.ok) {
           throw new Error(`API failed: ESG=${esgRes.status}, City=${cityRes.status}`)
@@ -52,44 +45,18 @@ export default function RentalsPage() {
         
         const [esgData, cityData] = await Promise.all([esgRes.json(), cityRes.json()])
 
-        console.log('🔍 ESG API Response:', {
-          success: esgData.success,
-          location: esgData.location,
-          total: esgData.total,
-          resultsLength: esgData.results?.length,
-          firstCar: esgData.results?.[0]?.make + ' ' + esgData.results?.[0]?.model
-        })
-
-        console.log('🔍 City API Response:', {
-          success: cityData.success,
-          location: cityData.location, 
-          total: cityData.total,
-          resultsLength: cityData.results?.length,
-          firstCar: cityData.results?.[0]?.make + ' ' + cityData.results?.[0]?.model
-        })
-
         const esgCarsData = esgData.results?.slice(0, 6) || []
         const cityCarsData = cityData.results?.slice(0, 6) || []
         
         setEsgCars(esgCarsData)
         setCityCars(cityCarsData)
         
-        console.log('✅ [Homepage] Cars set in state:', {
-          esgCarsCount: esgCarsData.length,
-          cityCarsCount: cityCarsData.length
-        })
-        
-        if (esgCarsData.length === 0 && cityCarsData.length === 0) {
-          console.error('⚠️ WARNING: No cars returned from API!')
-        }
-        
       } catch (err) {
-        console.error('❌ [Homepage] Initialization error:', err)
+        console.error('[Homepage] Initialization error:', err)
         setUserCity('Phoenix')
         setTemp(75)
       } finally {
         setIsLoading(false)
-        console.log('✅ [Homepage] Initialization complete')
       }
     }
     init()
@@ -173,36 +140,13 @@ export default function RentalsPage() {
           </div>
         </section>
 
-        {/* All Section Components */}
+        {/* Section Components */}
         <BenefitsSection />
         <HotelDeliverySection />
         <InsuranceTiersSection />
         <MileageForensicsSection />
         <MaxACSection />
         <ArizonaEventsSection />
-
-        {/* Final CTA Section */}
-        <section className="py-16 bg-black text-white">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-6">
-              Ready to Experience the Difference?
-            </h2>
-            <p className="text-xl text-gray-300 mb-8">
-              Join Arizona's only verified, transparent, insurance-backed car rental platform.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/rentals/search" className="px-8 py-4 bg-white text-black rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors">
-                Browse Cars
-              </Link>
-              <Link href="/host/register" className="px-8 py-4 bg-amber-500 text-black rounded-lg font-semibold text-lg hover:bg-amber-400 transition-colors">
-                Become a Host
-              </Link>
-              <Link href="/business" className="px-8 py-4 bg-emerald-600 text-white rounded-lg font-semibold text-lg hover:bg-emerald-700 transition-colors">
-                Corporate Solutions
-              </Link>
-            </div>
-          </div>
-        </section>
       </div>
 
       <Footer />

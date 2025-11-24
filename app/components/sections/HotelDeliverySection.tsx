@@ -2,6 +2,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import {
   IoBedOutline,
   IoCheckmarkCircle,
@@ -103,7 +104,7 @@ export default function HotelDeliverySection() {
             const visibleHotels = isExpanded ? hotelList : hotelList.slice(0, 4)
             
             return (
-              <div key={category} className="bg-gray-50 dark:bg-gray-900 rounded-lg p-6">
+              <div key={category} className="bg-gray-50 dark:bg-gray-900 rounded-lg p-6 hover:shadow-lg transition-shadow">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                   <IoBedOutline className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                   {category}
@@ -133,9 +134,23 @@ export default function HotelDeliverySection() {
           })}
         </div>
 
-        <div className="mt-10 bg-amber-50 dark:bg-amber-900/20 rounded-lg p-6 text-center">
-          <p className="text-gray-800 dark:text-gray-200 font-medium">
-            Not seeing your hotel? We likely deliver there too. Contact us for confirmation.
+        {/* CTA Line */}
+        <div className="text-center mt-8">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Not seeing your hotel? We likely deliver there too.{' '}
+            <Link 
+              href="/hotel-solutions" 
+              className="text-amber-600 dark:text-amber-400 font-semibold hover:underline"
+            >
+              View all partners
+            </Link>
+            <span className="mx-2 text-gray-400">·</span>
+            <Link 
+              href="/contact" 
+              className="text-gray-600 dark:text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 hover:underline"
+            >
+              Contact us
+            </Link>
           </p>
         </div>
       </div>

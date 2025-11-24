@@ -1,9 +1,11 @@
 // app/components/sections/MileageForensicsSection.tsx
 'use client'
 
+import Link from 'next/link'
 import {
   IoSpeedometerOutline,
-  IoCheckmarkCircle
+  IoCheckmarkCircle,
+  IoArrowForwardOutline
 } from 'react-icons/io5'
 
 export default function MileageForensicsSection() {
@@ -23,7 +25,7 @@ export default function MileageForensicsSection() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg hover:shadow-xl transition-shadow">
             <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-lg flex items-center justify-center text-white mb-4">
               <IoSpeedometerOutline className="w-6 h-6" />
             </div>
@@ -49,7 +51,7 @@ export default function MileageForensicsSection() {
             </ul>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg hover:shadow-xl transition-shadow">
             <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-amber-600 rounded-lg flex items-center justify-center text-white mb-4">
               <IoSpeedometerOutline className="w-6 h-6" />
             </div>
@@ -75,7 +77,7 @@ export default function MileageForensicsSection() {
             </ul>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg hover:shadow-xl transition-shadow">
             <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center text-white mb-4">
               <IoSpeedometerOutline className="w-6 h-6" />
             </div>
@@ -102,11 +104,17 @@ export default function MileageForensicsSection() {
           </div>
         </div>
 
-        <div className="mt-10 bg-black text-white rounded-lg p-8 text-center">
-          <h3 className="text-xl font-bold mb-3">Why This Matters</h3>
-          <p className="text-gray-300 max-w-3xl mx-auto">
-            Insurance carriers finally get truthful usage data. Every mile is tracked, gaps are analyzed, and fraud is prevented. 
-            This transparency creates trust, reduces claims disputes, and ensures accurate underwriting.
+        {/* CTA Line */}
+        <div className="text-center mt-8">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Every mile tracked, verified, protected.{' '}
+            <Link 
+              href="/how-it-works" 
+              className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 font-medium hover:underline"
+            >
+              How it works
+              <IoArrowForwardOutline className="w-4 h-4" />
+            </Link>
           </p>
         </div>
       </div>

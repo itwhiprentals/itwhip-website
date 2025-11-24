@@ -115,6 +115,8 @@ export async function GET(request: NextRequest) {
         instantBook: true,
         mpgCity: true,
         mpgHighway: true,
+        esgScore: true,        // ✅ ADDED FOR ECO ELITE BADGE
+        fuelType: true,        // ✅ ADDED FOR EV BADGE DETECTION
         
         // Location
         address: true,
@@ -391,6 +393,8 @@ export async function GET(request: NextRequest) {
         totalDaily,
         totalPrice,
         instantBook: car.instantBook,
+        esgScore: car.esgScore,     // ✅ PASS ESG SCORE TO FRONTEND
+        fuelType: car.fuelType,     // ✅ PASS FUEL TYPE FOR EV DETECTION
         location: {
           address: car.address,
           city: car.city,

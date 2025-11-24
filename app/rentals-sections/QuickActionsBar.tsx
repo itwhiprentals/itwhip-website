@@ -7,37 +7,20 @@ import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { 
   IoSearchOutline,
-  IoDocumentTextOutline,
-  IoKeyOutline,
-  IoHeartOutline,
-  IoHeartSharp,
   IoMapOutline,
-  IoCalendarOutline,
-  IoSparklesOutline,
   IoLocationOutline,
-  IoAirplaneOutline,
-  IoFlashOutline
+  IoBedOutline,
+  IoFlashOutline,
+  IoSparklesOutline
 } from 'react-icons/io5'
 
 export default function QuickActionsBar() {
-  const [hasFavorites, setHasFavorites] = useState(false)
   const [isSticky, setIsSticky] = useState(false)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
-
-  // Check for favorites in localStorage
-  useEffect(() => {
-    const favorites = localStorage.getItem('favoritesCars')
-    if (favorites) {
-      const favList = JSON.parse(favorites)
-      setHasFavorites(favList.length > 0)
-    }
-  }, [])
 
   // Smart sticky logic - only stick when scrolled past hero
   useEffect(() => {
     const handleScroll = () => {
-      // Hero section is roughly 40vh = ~300-400px
-      // Make sticky after scrolling 250px (just before hero ends)
       const scrollPosition = window.scrollY
       const shouldBeSticky = scrollPosition > 250
       
@@ -46,10 +29,7 @@ export default function QuickActionsBar() {
       }
     }
 
-    // Initial check
     handleScroll()
-
-    // Listen to scroll events
     window.addEventListener('scroll', handleScroll, { passive: true })
     
     return () => {
@@ -101,18 +81,16 @@ export default function QuickActionsBar() {
               className="flex items-center gap-1.5 px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all hover:scale-105 font-medium text-sm whitespace-nowrap flex-shrink-0"
             >
               <IoLocationOutline className="w-4 h-4" />
-              <span className="hidden sm:inline">Cities</span>
-              <span className="sm:hidden">Cities</span>
+              <span>Cities</span>
             </Link>
 
-            {/* Airport */}
+            {/* Hotels */}
             <Link 
-              href="/rentals/airport" 
+              href="/hotel-solutions" 
               className="flex items-center gap-1.5 px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all hover:scale-105 font-medium text-sm whitespace-nowrap flex-shrink-0"
             >
-              <IoAirplaneOutline className="w-4 h-4" />
-              <span className="hidden sm:inline">Airport</span>
-              <span className="sm:hidden">Airport</span>
+              <IoBedOutline className="w-4 h-4" />
+              <span>Hotels</span>
             </Link>
 
             {/* Instant Book */}
@@ -123,33 +101,6 @@ export default function QuickActionsBar() {
               <IoFlashOutline className="w-4 h-4" />
               <span className="hidden sm:inline">Instant Book</span>
               <span className="sm:hidden">Instant</span>
-            </Link>
-
-            {/* Favorites */}
-            <Link 
-              href="/favorites" 
-              className="relative flex items-center gap-1.5 px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all hover:scale-105 font-medium text-sm whitespace-nowrap flex-shrink-0"
-            >
-              {hasFavorites ? (
-                <IoHeartSharp className="w-4 h-4 text-red-500" />
-              ) : (
-                <IoHeartOutline className="w-4 h-4" />
-              )}
-              <span className="hidden sm:inline">Favorites</span>
-              <span className="sm:hidden">Favs</span>
-              {hasFavorites && (
-                <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-              )}
-            </Link>
-
-            {/* Trip Planner */}
-            <Link 
-              href="/trip-planner" 
-              className="flex items-center gap-1.5 px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all hover:scale-105 font-medium text-sm whitespace-nowrap flex-shrink-0"
-            >
-              <IoCalendarOutline className="w-4 h-4" />
-              <span className="hidden lg:inline">Trip Planner</span>
-              <span className="lg:hidden">Plan</span>
             </Link>
 
             {/* List Your Car */}
@@ -169,7 +120,7 @@ export default function QuickActionsBar() {
         <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white dark:from-gray-800 to-transparent pointer-events-none sm:hidden" />
       </div>
 
-      {/* Add CSS for hiding scrollbar */}
+      {/* CSS for hiding scrollbar */}
       <style jsx>{`
         .scrollbar-hide::-webkit-scrollbar {
           display: none;
