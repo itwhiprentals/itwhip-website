@@ -1,3 +1,121 @@
+# ============================================
+# ITWHIP ROBOTS.TXT
+# Peer-to-Peer Car Sharing Platform - Arizona
+# Updated: November 2025
+# ============================================
+
 User-agent: *
+
+# ============================================
+# ALLOW: Public SEO Pages
+# ============================================
 Allow: /
+Allow: /about
+Allow: /contact
+Allow: /legal
+Allow: /terms
+Allow: /privacy
+Allow: /how-it-works
+Allow: /pricing
+Allow: /careers
+Allow: /coverage
+Allow: /accessibility
+Allow: /calculator
+Allow: /book
+Allow: /phoenix
+
+# Host Acquisition Pages (Public)
+Allow: /host/signup
+Allow: /host/login
+Allow: /list-your-car
+Allow: /host-benefits
+Allow: /host-earnings
+Allow: /host-insurance
+Allow: /host-requirements
+
+# Guest Rental Pages (Public)
+Allow: /rentals
+Allow: /rentals/search
+Allow: /rentals/cities
+
+# ============================================
+# BLOCK: Admin & Fleet Portals
+# ============================================
+Disallow: /admin/
+Disallow: /fleet/
+Disallow: /sys-2847/
+Disallow: /portal/
+
+# ============================================
+# BLOCK: All API Routes
+# ============================================
+Disallow: /api/
+
+# ============================================
+# BLOCK: Authentication Pages
+# ============================================
+Disallow: /auth/
+
+# ============================================
+# BLOCK: Private Host Pages (After Login)
+# ============================================
+Disallow: /host/dashboard
+Disallow: /host/bookings
+Disallow: /host/cars
+Disallow: /host/earnings
+Disallow: /host/profile
+Disallow: /host/claims
+Disallow: /host/messages
+Disallow: /host/settings
+Disallow: /host/calendar
+Disallow: /host/reviews
+Disallow: /host/trips
+Disallow: /host/forgot-password
+Disallow: /host/reset-password
+
+# ============================================
+# BLOCK: Private Guest Pages (After Login)
+# ============================================
+Disallow: /dashboard
+Disallow: /messages
+Disallow: /profile
+Disallow: /rentals/dashboard
+Disallow: /rentals/manage
+Disallow: /rentals/track
+Disallow: /rentals/trip
+Disallow: /rentals/verify
+Disallow: /hotels
+
+# ============================================
+# BLOCK: Wrong Positioning (Hotel/Corporate)
+# ============================================
+Disallow: /corporate
+Disallow: /hotel-portal
+Disallow: /hotel-solutions
+Disallow: /gds
+Disallow: /developers
+Disallow: /sdk
+Disallow: /integrations
+Disallow: /investors
+Disallow: /press
+
+# ============================================
+# BLOCK: Rideshare Positioning (Old)
+# ============================================
+Disallow: /drive
+Disallow: /driver-portal
+Disallow: /driver-requirements
+Disallow: /rides
+
+# ============================================
+# BLOCK: Internal/Demo Pages
+# ============================================
+Disallow: /demo
+Disallow: /private-club
+Disallow: /security
+Disallow: /verify
+
+# ============================================
+# SITEMAP
+# ============================================
 Sitemap: https://itwhip.com/sitemap.xml

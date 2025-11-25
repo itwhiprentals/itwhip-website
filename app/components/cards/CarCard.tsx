@@ -24,7 +24,7 @@ export default function CarCard({ car }: CarCardProps) {
   const tripCount = car.trips || car.totalTrips || car.rating?.count || 0
   const carUrl = generateCarUrl(car)
   const esgScore = car.esgScore || car.impactScore || car.esg_score || null
-  const showEcoElite = esgScore && esgScore >= 50  // ✅ CHANGED FROM 85 TO 50
+  const showEcoElite = esgScore && esgScore >= 50
   const isElectric = car.fuelType === 'ELECTRIC' || car.fuelType === 'electric' || car.isElectric
 
   return (
@@ -117,7 +117,7 @@ export default function CarCard({ car }: CarCardProps) {
               </span>
             </div>
             <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1">
-              <IoLocationOutline className="w-3 h-3" /> {car.location?.city || 'Phoenix'}
+              <IoLocationOutline className="w-3 h-3" /> {car.location?.city || 'Phoenix'}, {car.location?.state || 'AZ'}
             </span>
           </div>
 
@@ -142,7 +142,7 @@ export default function CarCard({ car }: CarCardProps) {
                 let d = R * c
                 if (d < 1) d = 1.1 + (car.id.charCodeAt(0) % 9) / 10
                 return `${d.toFixed(1)} mi away`
-              })() : 'Phoenix area'}
+              })() : `${car.location?.city || 'Phoenix'}, ${car.location?.state || 'AZ'}`}
             </div>
             <div className="flex items-center text-amber-600 dark:text-amber-400 font-semibold group-hover:gap-2 transition-all">
               View <IoArrowForwardOutline className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />

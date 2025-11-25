@@ -43,17 +43,23 @@ import {
   IoWifiOutline,
   IoDiamondOutline,
   IoRibbonOutline,
-  IoMedalOutline
+  IoMedalOutline,
+  IoLeafOutline,
+  IoLockClosedOutline,
+  IoSwapHorizontalOutline,
+  IoLayersOutline,
+  IoCheckmarkDoneOutline,
+  IoWarningOutline,
+  IoGlobeOutline,
+  IoPeopleOutline,
+  IoStatsChartOutline
 } from 'react-icons/io5'
 
 export default function HowItWorksPage() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<'guest' | 'host'>('guest')
-  
-  // Header state management
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
-  // Header handlers
   const handleGetAppClick = () => {
     window.open('https://testflight.apple.com/join/ygzsQbNf', '_blank')
   }
@@ -66,35 +72,38 @@ export default function HowItWorksPage() {
     {
       icon: IoSearchOutline,
       title: 'Find Your Perfect Car',
-      description: 'Browse our curated fleet. Filter by type, price, and features. No account required.',
+      description: 'Browse cars from local Phoenix owners. Filter by type, price, features, and ESG impact score.',
       details: [
-        'Economy to exotic vehicles available',
+        'Economy to exotic vehicles from local hosts',
         'Real photos and verified reviews',
-        'Transparent pricing with all fees shown',
+        'Transparent pricing - all fees shown upfront',
+        'ESG Impact scores on every vehicle',
         'Instant availability calendar'
       ],
       cta: { text: 'Browse Cars', link: '/' }
     },
     {
-      icon: IoMailOutline,
-      title: 'Book in 60 Seconds',
-      description: 'Book with just your email - no signup hassles. Guest checkout available.',
+      icon: IoFingerPrintOutline,
+      title: 'Quick Verification',
+      description: 'Complete our streamlined verification process. Just driver\'s license and selfie required.',
       details: [
-        'No app download required',
-        'Email confirmation instantly',
-        'Secure payment processing',
-        'Manage booking via email link'
+        'Upload driver\'s license photo',
+        'Quick selfie for identity match',
+        'Instant background check',
+        'Add personal insurance for 50% off deposits',
+        'One-time setup for all future rentals'
       ]
     },
     {
       icon: IoKeyOutline,
       title: 'Pick Up & Drive',
-      description: 'Multiple convenient pickup options. Full protection included automatically.',
+      description: 'Meet your host or use contactless pickup. $1M liability coverage included on every trip.',
       details: [
-        'Hotel lobby pickup available',
-        'Airport location (Sky Harbor)',
-        'Optional delivery to your location',
-        'Comprehensive insurance included'
+        'Hotel lobby pickup at 50+ Arizona hotels',
+        'Phoenix Sky Harbor Airport location',
+        'Optional delivery to your address',
+        '$1M liability coverage included',
+        '24/7 roadside assistance'
       ]
     }
   ]
@@ -102,217 +111,278 @@ export default function HowItWorksPage() {
   const hostSteps = [
     {
       icon: IoDocumentTextOutline,
-      title: 'Quick Application',
-      description: '5-minute online application. Instant approval for qualifying vehicles.',
+      title: 'List Your Vehicle',
+      description: '5-minute application. Upload photos, set your price, choose your insurance tier.',
       details: [
         '2015 or newer vehicles qualify',
         'Under 130,000 miles required',
         'Clean title verification',
-        'Free 20-minute inspection'
+        'Professional photo guidelines provided',
+        'Smart pricing suggestions included'
       ],
-      cta: { text: 'Start Application', link: '/list-your-car' }
+      cta: { text: 'Start Application', link: '/host/signup' }
     },
     {
       icon: IoShieldCheckmarkOutline,
-      title: 'We Handle Everything',
-      description: 'Complete protection included. Guest screening, payments, and support managed.',
+      title: 'Choose Your Insurance Tier',
+      description: 'Pick your tier based on the insurance you bring. More coverage = higher earnings.',
       details: [
-        'Up to $2M liability coverage',
-        'Multi-point guest verification',
-        'All communication handled',
-        '48-72 hour claims resolution'
+        'BASIC (40%): We provide all insurance',
+        'STANDARD (75%): You bring P2P insurance',
+        'PREMIUM (90%): You bring commercial insurance',
+        '$1M liability on all tiers',
+        'Platform insurance always backs you up'
       ],
-      cta: { text: 'View Protection Details', link: '/host-protection' }
+      cta: { text: 'View Insurance Details', link: '/insurance-guide' }
     },
     {
       icon: IoCashOutline,
       title: 'Get Paid in 48 Hours',
       description: 'Industry\'s fastest payments via direct deposit. Track earnings in real-time.',
       details: [
-        '48-hour payment guarantee',
-        'Keep 78-85% of rental revenue',
-        'No payment processing fees',
-        'Automated tax documentation'
+        '48-hour payment after trip completion',
+        'Keep 40-90% based on your tier',
+        'Real-time earnings dashboard',
+        'Automated tax documentation (1099)',
+        'Loss of use compensation if damaged'
       ],
-      cta: { text: 'Calculate Earnings', link: '/host-earnings' }
+      cta: { text: 'Calculate Earnings', link: '/host-protection' }
     }
   ]
 
   const guestBenefits = [
     {
+      icon: IoPeopleOutline,
+      title: 'Rent From Real People',
+      description: 'Connect directly with local Phoenix car owners. Better cars, better prices, better experience.',
+      highlight: 'P2P car sharing'
+    },
+    {
       icon: IoWalletOutline,
-      title: 'Better Prices',
-      description: 'Save 20-35% compared to traditional rentals. No surge pricing ever.',
+      title: 'Save 20-35%',
+      description: 'No rental counter markup. No surge pricing. Transparent fees shown before you book.',
       highlight: 'Starting at $45/day'
     },
     {
-      icon: IoPhonePortraitOutline,
-      title: 'No Account Required',
-      description: 'Book with just email. Access booking anytime via secure link.',
-      highlight: 'Guest checkout available'
+      icon: IoShieldCheckmarkOutline,
+      title: '$1M Coverage Included',
+      description: 'Every rental includes comprehensive liability insurance. Add your own for 50% off deposits.',
+      highlight: 'Fully insured trips'
     },
     {
       icon: IoLocationOutline,
-      title: 'Convenient Locations',
-      description: 'Vehicles at major hotels and Sky Harbor Airport.',
+      title: 'Convenient Pickup',
+      description: 'Pick up at 50+ Arizona hotels, Sky Harbor Airport, or get it delivered.',
       highlight: 'Free hotel delivery'
     },
     {
-      icon: IoShieldCheckmarkOutline,
-      title: 'Full Protection',
-      description: 'Every rental includes comprehensive insurance coverage.',
-      highlight: 'Peace of mind included'
-    },
-    {
-      icon: IoTimeOutline,
-      title: 'Flexible Rentals',
-      description: 'Daily or weekly rentals. Extend easily through our platform.',
-      highlight: 'Instant booking'
+      icon: IoLeafOutline,
+      title: 'ESG Impact Tracking',
+      description: 'See the environmental impact of your rental. Choose eco-friendly vehicles.',
+      highlight: 'CSRD compliant'
     },
     {
       icon: IoStarOutline,
-      title: 'Quality Vehicles',
-      description: 'All cars inspected and maintained. Wide selection available.',
-      highlight: 'Verified reviews'
+      title: 'Verified Hosts',
+      description: 'All hosts are verified. Read real reviews from previous guests.',
+      highlight: 'Trusted community'
     }
   ]
 
   const hostBenefits = [
     {
       icon: IoTrendingUpOutline,
-      title: 'Higher Earnings',
-      description: 'Keep 78-85% of rental revenue. Simple, transparent commission.',
+      title: 'Earn Up to 90%',
+      description: 'Keep 40-90% of each rental based on your insurance tier. You choose your earnings.',
       highlight: '$600-3,000/month average',
-      link: '/host-earnings'
+      link: '/host-protection'
     },
     {
       icon: IoShieldCheckmarkOutline,
-      title: '$0 Insurance Cost',
-      description: 'Protection included - save $3,000-6,000/year vs commercial insurance.',
-      highlight: 'Up to $2M coverage',
-      link: '/host-protection'
+      title: 'Complete Protection',
+      description: '$1M liability coverage on every trip. Platform insurance always backs you up.',
+      highlight: 'All tiers protected',
+      link: '/insurance-guide'
     },
     {
       icon: IoFlashOutline,
       title: '48-Hour Payments',
-      description: 'Fastest in the industry. Direct deposit after each trip.',
+      description: 'Fastest in the industry. Direct deposit after each completed trip.',
       highlight: 'Get paid quickly'
     },
     {
       icon: IoAnalyticsOutline,
-      title: 'Smart Tools',
-      description: 'GPS tracking, pricing optimization, and earnings analytics.',
-      highlight: 'Professional platform'
+      title: 'Mileage Forensics™',
+      description: 'Our proprietary system tracks usage patterns, prevents fraud, and verifies trips.',
+      highlight: 'Advanced protection'
+    },
+    {
+      icon: IoLeafOutline,
+      title: 'ESG Dashboard',
+      description: 'Track your vehicle\'s environmental impact. Earn badges and attract eco-conscious guests.',
+      highlight: 'Sustainability metrics'
     },
     {
       icon: IoReceiptOutline,
       title: 'Tax Benefits',
-      description: 'Deduct expenses and depreciation. Save $8,000-25,000 annually.',
+      description: 'Deduct expenses and depreciation. Potential savings of $8,000-25,000 annually.',
       highlight: 'Maximize deductions'
+    }
+  ]
+
+  const insuranceTiers = [
+    {
+      tier: 'BASIC',
+      percentage: '40%',
+      color: 'gray',
+      insurance: 'Platform Insurance',
+      deductible: '$2,500',
+      description: 'No insurance needed from you. We handle everything.',
+      best: 'New hosts, occasional renters'
     },
     {
-      icon: IoHeartOutline,
-      title: 'Full Support',
-      description: 'We handle guest communication and claims. You just provide the car.',
-      highlight: 'Hassle-free hosting'
+      tier: 'STANDARD',
+      percentage: '75%',
+      color: 'amber',
+      insurance: 'P2P Insurance',
+      deductible: '$1,500',
+      description: 'You bring peer-to-peer coverage, your insurance is primary.',
+      best: 'Hosts with Getaround, State Farm P2P'
+    },
+    {
+      tier: 'PREMIUM',
+      percentage: '90%',
+      color: 'emerald',
+      insurance: 'Commercial Insurance',
+      deductible: '$1,000',
+      description: 'You bring commercial auto insurance, maximum earnings.',
+      best: 'Fleet operators, serious hosts'
+    }
+  ]
+
+  const guestVerification = [
+    {
+      step: 1,
+      title: 'Driver\'s License',
+      description: 'Upload a photo of your valid driver\'s license',
+      icon: IoDocumentTextOutline
+    },
+    {
+      step: 2,
+      title: 'Selfie Verification',
+      description: 'Quick selfie to match your ID photo',
+      icon: IoCameraOutline
+    },
+    {
+      step: 3,
+      title: 'Background Check',
+      description: 'Automated driving record and background verification',
+      icon: IoFingerPrintOutline
+    },
+    {
+      step: 4,
+      title: 'Payment Method',
+      description: 'Add a valid credit or debit card',
+      icon: IoWalletOutline
     }
   ]
 
   const requirements = {
     guest: [
-      { text: 'Valid driver\'s license', required: true },
+      { text: 'Valid driver\'s license (US or international)', required: true },
       { text: '21+ years old (25+ for luxury/exotic)', required: true },
-      { text: 'Valid payment method', required: true },
-      { text: 'Pass verification check', required: true },
-      { text: 'Smartphone for best experience', required: false }
+      { text: 'Valid payment method (credit/debit card)', required: true },
+      { text: 'Pass background & driving record check', required: true },
+      { text: 'Personal auto insurance (optional, 50% off deposit)', required: false }
     ],
     host: [
       { text: 'Vehicle 2015 or newer', required: true },
       { text: 'Under 130,000 miles', required: true },
-      { text: 'Clean title (no salvage)', required: true },
-      { text: 'Pass safety inspection', required: true },
-      { text: 'Phoenix metro location', required: true }
+      { text: 'Clean title (no salvage/rebuilt)', required: true },
+      { text: 'Pass vehicle safety inspection', required: true },
+      { text: 'Phoenix metro area location', required: true },
+      { text: 'P2P or commercial insurance (for higher tiers)', required: false }
     ]
   }
 
-  const hostTiers = [
+  const platformFeatures = [
     {
-      tier: 'Standard Host',
-      trips: 'Starting out',
-      commission: '15-20%',
-      benefits: 'Full protection, 48hr payments'
+      title: 'Mileage Forensics™',
+      description: 'Proprietary system tracks odometer readings between trips to verify usage and prevent fraud.',
+      icon: IoStatsChartOutline
     },
     {
-      tier: 'Silver Host',
-      trips: '10+ trips',
-      commission: '14-19%',
-      benefits: 'Priority placement, dedicated support'
+      title: 'ESG Scoring',
+      description: 'Every vehicle has an environmental impact score. Hosts earn badges, guests make informed choices.',
+      icon: IoLeafOutline
     },
     {
-      tier: 'Gold Host',
-      trips: '25+ trips',
-      commission: '13-18%',
-      benefits: 'Featured listings, instant payouts'
+      title: 'FNOL-Ready Claims',
+      description: 'First Notice of Loss system captures all data insurers need. Claims resolved in 48-72 hours.',
+      icon: IoClipboardOutline
     },
     {
-      tier: 'Platinum Host',
-      trips: '50+ trips',
-      commission: '12-17%',
-      benefits: 'Homepage features, API access'
+      title: 'Smart Guest Screening',
+      description: 'Multi-point verification including identity, driving history, and background checks.',
+      icon: IoFingerPrintOutline
     }
   ]
 
   const faqs = [
     {
-      question: 'How is this different from traditional car rental?',
-      answer: 'We offer a curated fleet at better prices with more convenient pickup locations. No rental counter lines, transparent pricing, and the option to book without creating an account.',
+      question: 'How is ITWhip different from Turo?',
+      answer: 'ITWhip is a peer-to-peer car sharing platform focused on Arizona. We offer transparent insurance tiers where YOU choose your earnings (40-90%), $1M liability coverage on all trips, advanced Mileage Forensics™ fraud prevention, and ESG impact tracking. We also partner directly with 50+ Arizona hotels for convenient guest pickup.',
       category: 'general'
     },
     {
-      question: 'What protection is included?',
-      answer: 'Every rental includes liability insurance up to $2M and physical damage protection. Both guests and hosts are fully protected during the rental period.',
+      question: 'What insurance is included?',
+      answer: 'Every trip includes $1M liability coverage regardless of your tier. Physical damage coverage (collision & comprehensive), roadside assistance, and loss of use compensation are also included. Your tier determines who\'s primary: BASIC uses platform insurance, STANDARD/PREMIUM use your insurance with platform as backup.',
       category: 'general'
     },
     {
-      question: 'Can I book without an account?',
-      answer: 'Yes! Book with just your email address. We\'ll send confirmation and a secure link to manage your booking. No app download required.',
+      question: 'How does guest verification work?',
+      answer: 'Guests complete a simple 4-step verification: upload driver\'s license, take a selfie for ID matching, pass automated background/driving record check, and add a payment method. This is a one-time process for all future rentals. Guests who add personal insurance get 50% off security deposits.',
       category: 'guest'
     },
     {
-      question: 'How do I pick up the car?',
-      answer: 'Multiple options: hotel lobby pickup, airport location, or delivery to your address. You\'ll receive detailed pickup instructions via email.',
+      question: 'What are the pickup options?',
+      answer: 'Multiple convenient options: meet your host at one of 50+ partner hotel lobbies, pick up at our Phoenix Sky Harbor Airport location, or request delivery to your address (fees may apply). You\'ll receive detailed instructions after booking.',
       category: 'guest'
     },
     {
-      question: 'How much can I earn as a host?',
-      answer: 'Earnings vary by vehicle: Economy cars average $600-1,100/month, standard vehicles $900-1,500/month, luxury $1,500-3,000/month based on 15-20 rental days.',
+      question: 'How do the insurance tiers work?',
+      answer: 'Your earnings are determined by the insurance you bring: BASIC (40%) - we provide all coverage, STANDARD (75%) - you bring P2P insurance like State Farm or Getaround coverage, PREMIUM (90%) - you bring commercial auto insurance. Higher tiers also get lower deductibles ($2,500 → $1,500 → $1,000).',
+      category: 'host'
+    },
+    {
+      question: 'How much can I earn?',
+      answer: 'Earnings vary by vehicle and tier. At the 90% tier: Economy cars average $800-1,400/month, standard vehicles $1,200-2,000/month, luxury $2,000-4,000/month based on 15-20 rental days. Use our earnings calculator to estimate your specific vehicle.',
       category: 'host'
     },
     {
       question: 'When do hosts get paid?',
-      answer: 'Within 48 hours of trip completion via direct deposit - the fastest in the industry. Choose daily or weekly payout schedules.',
+      answer: 'Within 48 hours of trip completion via direct deposit - the fastest in the industry. You can track all earnings in real-time through your host dashboard. We also provide automated 1099 tax documentation.',
       category: 'host'
     },
     {
-      question: 'What are the vehicle requirements?',
-      answer: 'Vehicles must be 2015 or newer, have under 130,000 miles, clean title, and pass our safety inspection. All types welcome from economy to exotic.',
+      question: 'What is Mileage Forensics™?',
+      answer: 'Our proprietary system that tracks odometer readings between trips to verify usage patterns, detect potential fraud, and ensure hosts are using vehicles according to their declared usage type. This protects both hosts and insurance partners.',
       category: 'host'
     },
     {
-      question: 'How does pricing work?',
-      answer: 'Hosts set competitive daily rates. We add a 15-20% platform fee that covers insurance and support. Guests see the total price upfront with no hidden fees.',
+      question: 'What happens if there\'s damage?',
+      answer: 'Our FNOL (First Notice of Loss) system captures all information insurers need. Report damage within 24 hours through the app with photos. Claims are typically resolved within 48-72 hours. Your deductible depends on your tier: BASIC $2,500, STANDARD $1,500, PREMIUM $1,000.',
       category: 'general'
     },
     {
-      question: 'What if something goes wrong?',
-      answer: 'Our support team responds within 1-2 hours during business hours. For accidents or urgent issues, we have priority handling with typical response in minutes.',
+      question: 'Is ITWhip available outside Arizona?',
+      answer: 'Currently, we\'re focused on the Phoenix metro area and Arizona. We operate under Arizona\'s P2P car sharing legislation (A.R.S. § 28-9601). Expansion to other states is planned for 2025.',
       category: 'general'
     }
   ]
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col">
-      {/* Header */}
       <div className="fixed top-0 left-0 right-0 z-50">
         <Header
           isMobileMenuOpen={isMobileMenuOpen}
@@ -333,8 +403,11 @@ export default function HowItWorksPage() {
               </h1>
             </div>
             <div className="hidden md:flex items-center space-x-4">
-              <Link href="/list-your-car" className="text-sm text-gray-600 dark:text-gray-300 hover:text-purple-600">
+              <Link href="/host/signup" className="text-sm text-gray-600 dark:text-gray-300 hover:text-purple-600">
                 Become a Host
+              </Link>
+              <Link href="/insurance-guide" className="text-sm text-gray-600 dark:text-gray-300 hover:text-purple-600">
+                Insurance Guide
               </Link>
               <Link href="/" className="text-sm text-purple-600 font-semibold hover:text-purple-700">
                 Find a Car
@@ -351,13 +424,19 @@ export default function HowItWorksPage() {
         <section className="bg-gradient-to-b from-purple-50 to-white dark:from-gray-950 dark:to-gray-900 py-12 sm:py-16 lg:py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-4xl mx-auto">
+              <div className="inline-flex items-center px-4 py-2 bg-purple-100 dark:bg-purple-900/30 rounded-full mb-4">
+                <IoPeopleOutline className="w-4 h-4 text-purple-600 mr-2" />
+                <span className="text-sm font-medium text-purple-600">Peer-to-Peer Car Sharing</span>
+              </div>
+              
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-6">
-                Car Rentals Made Simple
-                <span className="block text-purple-600 mt-2">For Phoenix</span>
+                Rent Cars From Local Owners
+                <span className="block text-purple-600 mt-2">In Phoenix, Arizona</span>
               </h1>
               
               <p className="text-base sm:text-lg lg:text-xl text-gray-600 dark:text-gray-400 mb-8">
-                Whether you need a car or want to earn from yours, we've made it simple.
+                Skip the rental counter. Connect directly with local hosts. 
+                Fully insured, transparent pricing, hosts earn up to 90%.
               </p>
 
               {/* Tab Selector */}
@@ -394,12 +473,12 @@ export default function HowItWorksPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
-                {activeTab === 'guest' ? '3 Simple Steps to Your Perfect Rental' : 'Start Earning in 24 Hours'}
+                {activeTab === 'guest' ? '3 Simple Steps to Rent' : '3 Steps to Start Earning'}
               </h2>
               <p className="text-gray-600 dark:text-gray-400">
                 {activeTab === 'guest' 
-                  ? 'Book in under 60 seconds. No account required.' 
-                  : 'Quick approval. Complete protection. Fast payments.'}
+                  ? 'Rent from local owners with full insurance coverage' 
+                  : 'Choose your tier, set your price, get paid fast'}
               </p>
             </div>
 
@@ -412,13 +491,16 @@ export default function HowItWorksPage() {
                     </div>
                   )}
                   
-                  <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
-                    <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center mb-4">
-                      <step.icon className="w-6 h-6 text-purple-600" />
+                  <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow h-full">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+                        <step.icon className="w-6 h-6 text-purple-600" />
+                      </div>
+                      <span className="text-sm font-bold text-purple-600">Step {idx + 1}</span>
                     </div>
                     
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                      Step {idx + 1}: {step.title}
+                      {step.title}
                     </h3>
                     
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
@@ -450,17 +532,133 @@ export default function HowItWorksPage() {
           </div>
         </section>
 
+        {/* Insurance Tiers Section - Host Only */}
+        {activeTab === 'host' && (
+          <section className="py-12 sm:py-16 bg-gray-50 dark:bg-gray-950">
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="text-center mb-10">
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
+                  Choose Your Earnings Tier
+                </h2>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Your earnings are determined by the insurance you bring
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                {insuranceTiers.map((tier, idx) => (
+                  <div 
+                    key={idx}
+                    className={`relative rounded-xl p-6 border-2 ${
+                      tier.color === 'emerald' 
+                        ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-500'
+                        : tier.color === 'amber'
+                        ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-500'
+                        : 'bg-gray-50 dark:bg-gray-800 border-gray-400'
+                    }`}
+                  >
+                    {tier.color === 'amber' && (
+                      <div className="absolute -top-3 right-4 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                        POPULAR
+                      </div>
+                    )}
+                    <div className={`text-sm font-bold mb-2 ${
+                      tier.color === 'emerald' ? 'text-emerald-600'
+                      : tier.color === 'amber' ? 'text-amber-600'
+                      : 'text-gray-600'
+                    }`}>
+                      {tier.tier} TIER
+                    </div>
+                    <div className={`text-4xl font-black mb-1 ${
+                      tier.color === 'emerald' ? 'text-emerald-600'
+                      : tier.color === 'amber' ? 'text-amber-600'
+                      : 'text-gray-600'
+                    }`}>
+                      {tier.percentage}
+                    </div>
+                    <div className="text-sm text-gray-500 mb-3">You Keep</div>
+                    <div className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                      {tier.insurance}
+                    </div>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                      {tier.description}
+                    </p>
+                    <div className="text-xs text-gray-500">
+                      Deductible: {tier.deductible}
+                    </div>
+                    <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                      <div className="text-xs text-gray-500">Best for:</div>
+                      <div className="text-xs font-medium text-gray-700 dark:text-gray-300">{tier.best}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="text-center">
+                <Link 
+                  href="/insurance-guide"
+                  className="inline-flex items-center text-purple-600 hover:text-purple-700 font-medium"
+                >
+                  Learn more about insurance tiers
+                  <IoArrowForwardOutline className="w-4 h-4 ml-1" />
+                </Link>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Guest Verification Section - Guest Only */}
+        {activeTab === 'guest' && (
+          <section className="py-12 sm:py-16 bg-gray-50 dark:bg-gray-950">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="text-center mb-10">
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
+                  Simple Verification Process
+                </h2>
+                <p className="text-gray-600 dark:text-gray-400">
+                  One-time setup, then rent any car on the platform
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                {guestVerification.map((item, idx) => (
+                  <div key={idx} className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6 text-center">
+                    <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <item.icon className="w-6 h-6 text-purple-600" />
+                    </div>
+                    <div className="text-xs font-bold text-purple-600 mb-1">Step {item.step}</div>
+                    <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
+                      {item.title}
+                    </h4>
+                    <p className="text-xs text-gray-500">{item.description}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-8 bg-green-50 dark:bg-green-900/20 rounded-xl p-6 text-center">
+                <IoShieldCheckmarkOutline className="w-8 h-8 text-green-600 mx-auto mb-3" />
+                <h4 className="font-semibold text-green-800 dark:text-green-400 mb-2">
+                  Add Your Insurance, Save 50%
+                </h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Guests who verify personal auto insurance get 50% off security deposits on all rentals.
+                </p>
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Benefits Section */}
-        <section className="py-12 sm:py-16 bg-gray-50 dark:bg-gray-950">
+        <section className="py-12 sm:py-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
-                {activeTab === 'guest' ? 'Why Rent With Us' : 'Why Hosts Choose Us'}
+                {activeTab === 'guest' ? 'Why Rent on ITWhip' : 'Why Hosts Choose ITWhip'}
               </h2>
               <p className="text-gray-600 dark:text-gray-400">
                 {activeTab === 'guest' 
-                  ? 'Better prices, more convenience, full protection' 
-                  : 'Higher earnings, zero insurance costs, professional tools'}
+                  ? 'Peer-to-peer car sharing with full insurance coverage' 
+                  : 'Transparent tiers, complete protection, professional tools'}
               </p>
             </div>
 
@@ -489,24 +687,30 @@ export default function HowItWorksPage() {
                 </div>
               ))}
             </div>
+          </div>
+        </section>
 
-            {activeTab === 'host' && (
-              <div className="mt-12 text-center">
-                <div className="inline-flex items-center px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full text-sm font-medium">
-                  <IoSparklesOutline className="w-4 h-4 mr-2" />
-                  Limited Time: 0% commission for your first 60 days
+        {/* Platform Features */}
+        <section className="py-12 sm:py-16 bg-gradient-to-r from-gray-900 to-gray-800">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-10">
+              <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
+                What Makes ITWhip Different
+              </h2>
+              <p className="text-gray-400">
+                Advanced technology for safer, smarter car sharing
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {platformFeatures.map((feature, idx) => (
+                <div key={idx} className="bg-white/10 backdrop-blur rounded-xl p-6 text-center">
+                  <feature.icon className="w-10 h-10 text-purple-400 mx-auto mb-4" />
+                  <h4 className="font-semibold text-white mb-2">{feature.title}</h4>
+                  <p className="text-sm text-gray-300">{feature.description}</p>
                 </div>
-                <div className="mt-4">
-                  <Link 
-                    href="/list-your-car"
-                    className="inline-flex items-center text-purple-600 hover:text-purple-700 font-medium"
-                  >
-                    Start earning today
-                    <IoArrowForwardOutline className="w-4 h-4 ml-1" />
-                  </Link>
-                </div>
-              </div>
-            )}
+              ))}
+            </div>
           </div>
         </section>
 
@@ -515,7 +719,7 @@ export default function HowItWorksPage() {
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-8">
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
-                Simple Requirements
+                Requirements
               </h2>
             </div>
 
@@ -534,8 +738,10 @@ export default function HowItWorksPage() {
                     )}
                     <div>
                       <span className="text-gray-700 dark:text-gray-300">{req.text}</span>
-                      {req.required && (
+                      {req.required ? (
                         <span className="ml-2 text-xs text-gray-500">(Required)</span>
+                      ) : (
+                        <span className="ml-2 text-xs text-blue-500">(Optional)</span>
                       )}
                     </div>
                   </div>
@@ -543,70 +749,44 @@ export default function HowItWorksPage() {
               </div>
 
               <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                {activeTab === 'host' ? (
-                  <Link 
-                    href="/host-requirements"
-                    className="inline-flex items-center text-purple-600 hover:text-purple-700 font-medium"
-                  >
-                    View detailed requirements
-                    <IoArrowForwardOutline className="w-4 h-4 ml-1" />
-                  </Link>
-                ) : (
-                  <Link 
-                    href="/contact"
-                    className="inline-flex items-center text-purple-600 hover:text-purple-700 font-medium"
-                  >
-                    Have questions? Contact us
-                    <IoArrowForwardOutline className="w-4 h-4 ml-1" />
-                  </Link>
-                )}
+                <Link 
+                  href={activeTab === 'host' ? '/host-protection' : '/insurance-guide'}
+                  className="inline-flex items-center text-purple-600 hover:text-purple-700 font-medium"
+                >
+                  {activeTab === 'host' ? 'View full host protection details' : 'Learn about guest protection'}
+                  <IoArrowForwardOutline className="w-4 h-4 ml-1" />
+                </Link>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Host Tiers - Only show for hosts */}
-        {activeTab === 'host' && (
-          <section className="py-12 sm:py-16 bg-white dark:bg-black">
-            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="text-center mb-8">
-                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
-                  Earn More as You Grow
-                </h2>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Unlock rewards and reduced commissions
+        {/* Arizona Compliance */}
+        <section className="py-12 sm:py-16 bg-amber-50 dark:bg-amber-900/20">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-start gap-4">
+              <IoGlobeOutline className="w-8 h-8 text-amber-600 flex-shrink-0" />
+              <div>
+                <h3 className="text-lg font-semibold text-amber-900 dark:text-amber-400 mb-2">
+                  Arizona P2P Car Sharing Compliant
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  ITWhip operates under Arizona's peer-to-peer car sharing legislation (A.R.S. § 28-9601 through 28-9613), 
+                  which provides a clear regulatory framework for car sharing platforms. This means proper insurance coverage, 
+                  liability protections, and compliance with Arizona motor vehicle requirements.
                 </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {hostTiers.map((tier, idx) => (
-                  <div key={idx} className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 text-center">
-                    {idx === 0 && <IoCarOutline className="w-8 h-8 text-gray-400 mx-auto mb-2" />}
-                    {idx === 1 && <IoMedalOutline className="w-8 h-8 text-gray-400 mx-auto mb-2" />}
-                    {idx === 2 && <IoRibbonOutline className="w-8 h-8 text-yellow-500 mx-auto mb-2" />}
-                    {idx === 3 && <IoDiamondOutline className="w-8 h-8 text-purple-600 mx-auto mb-2" />}
-                    <h4 className="font-semibold text-gray-900 dark:text-white mb-1">{tier.tier}</h4>
-                    <p className="text-xs text-gray-500 mb-2">{tier.trips}</p>
-                    <p className="text-sm font-bold text-purple-600 mb-2">{tier.commission}</p>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">{tier.benefits}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-6 text-center">
-                <Link 
-                  href="/host-benefits"
-                  className="text-purple-600 hover:text-purple-700 text-sm font-medium"
-                >
-                  View all host benefits →
-                </Link>
+                <div className="flex flex-wrap gap-4 text-xs text-gray-500">
+                  <span>• Transaction Privilege Tax compliant</span>
+                  <span>• State minimum exceeded ($1M vs $25K/$50K/$15K)</span>
+                  <span>• Proper vehicle registration verification</span>
+                </div>
               </div>
             </div>
-          </section>
-        )}
+          </div>
+        </section>
 
         {/* FAQs Section */}
-        <section className="py-12 sm:py-16 bg-gray-50 dark:bg-gray-950">
+        <section className="py-12 sm:py-16">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
@@ -646,12 +826,12 @@ export default function HowItWorksPage() {
         <section className="py-12 sm:py-16 bg-gradient-to-r from-purple-600 to-purple-700">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4">
-              Ready to Get Started?
+              {activeTab === 'guest' ? 'Ready to Rent?' : 'Ready to Earn?'}
             </h2>
             <p className="text-base sm:text-lg lg:text-xl text-purple-100 mb-8">
               {activeTab === 'guest' 
-                ? 'Find your perfect car in Phoenix today' 
-                : 'Turn your car into a revenue generator'}
+                ? 'Find your perfect car from local Phoenix owners' 
+                : 'Choose your tier and start earning up to 90%'}
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -661,7 +841,7 @@ export default function HowItWorksPage() {
                     href="/"
                     className="inline-block px-8 py-3 bg-white text-purple-600 rounded-lg font-bold hover:bg-purple-50 transition shadow-lg"
                   >
-                    Search Available Cars
+                    Browse Available Cars
                   </Link>
                   <button 
                     onClick={() => setActiveTab('host')}
@@ -673,49 +853,48 @@ export default function HowItWorksPage() {
               ) : (
                 <>
                   <Link 
-                    href="/list-your-car"
+                    href="/host/signup"
                     className="inline-block px-8 py-3 bg-white text-purple-600 rounded-lg font-bold hover:bg-purple-50 transition shadow-lg"
                   >
                     List Your Car Now
                   </Link>
                   <Link 
-                    href="/host-earnings"
+                    href="/insurance-guide"
                     className="inline-block px-8 py-3 bg-purple-500 text-white rounded-lg font-bold hover:bg-purple-400 transition"
                   >
-                    Calculate Earnings
+                    Insurance Guide
                   </Link>
                 </>
               )}
             </div>
-
-            {activeTab === 'host' && (
-              <p className="text-xs text-purple-200 mt-6">
-                Join hundreds of Phoenix hosts earning extra income
-              </p>
-            )}
           </div>
         </section>
 
-        {/* Support Notice */}
+        {/* Trust Indicators */}
         <section className="py-8 bg-white dark:bg-black">
-          <div className="max-w-4xl mx-auto px-4 text-center">
-            <div className="flex items-center justify-center space-x-2 mb-2">
-              <IoNotificationsOutline className="w-5 h-5 text-purple-600" />
-              <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                Quick Response Support
-              </span>
+          <div className="max-w-5xl mx-auto px-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+              <div>
+                <div className="text-3xl font-bold text-purple-600 mb-1">$1M</div>
+                <div className="text-xs text-gray-500">Liability Coverage</div>
+              </div>
+              <div>
+                <div className="text-3xl font-bold text-purple-600 mb-1">48hr</div>
+                <div className="text-xs text-gray-500">Host Payments</div>
+              </div>
+              <div>
+                <div className="text-3xl font-bold text-purple-600 mb-1">50+</div>
+                <div className="text-xs text-gray-500">Hotel Partners</div>
+              </div>
+              <div>
+                <div className="text-3xl font-bold text-purple-600 mb-1">90%</div>
+                <div className="text-xs text-gray-500">Max Host Earnings</div>
+              </div>
             </div>
-            <p className="text-xs text-gray-600 dark:text-gray-400">
-              Contact us through our support center - typical response within 1-2 hours during business hours
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              For urgent issues, mark as priority for faster response
-            </p>
           </div>
         </section>
       </div>
 
-      {/* Footer */}
       <Footer />
     </div>
   )

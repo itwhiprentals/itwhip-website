@@ -4,50 +4,48 @@
 import {
   IoLeafOutline,
   IoShieldCheckmarkOutline,
-  IoBusinessOutline,
   IoSpeedometerOutline,
-  IoGlobeOutline,
   IoDocumentTextOutline,
-  IoStatsChartOutline,
-  IoLinkOutline
+  IoPersonOutline,
+  IoCashOutline
 } from 'react-icons/io5'
 
 const benefits = [
   {
     icon: IoShieldCheckmarkOutline,
-    title: 'Carrier-Grade Protection',
-    description: 'Full audit trail, verified coverage',
-    stat: '$1M liability included'
+    title: '$1M Protection Included',
+    description: 'Every trip backed by comprehensive liability coverage',
+    stat: 'Fully insured'
   },
   {
     icon: IoDocumentTextOutline,
     title: 'Fast Claims Processing',
-    description: 'Digital claim submission with forensic review',
-    stat: 'Under 7-day resolution'
+    description: 'Digital claim submission with quick resolution',
+    stat: 'Under 7-day turnaround'
   },
   {
     icon: IoSpeedometerOutline,
-    title: 'Mileage Forensics',
-    description: 'GPS + OBD-II verified trips',
-    stat: 'Fraud-proof tracking'
+    title: 'Mileage Forensics™',
+    description: 'GPS-verified trips protect hosts and guests',
+    stat: 'Fraud prevention'
   },
   {
     icon: IoLeafOutline,
-    title: 'ESG & Risk Dashboard',
-    description: 'Real-time risk, impact, tier scoring',
-    stat: 'Insurance-tiered earnings'
+    title: 'ESG Impact Tracking',
+    description: 'See your environmental impact with every rental',
+    stat: 'Sustainability scores'
   },
   {
-    icon: IoStatsChartOutline,
-    title: 'Scope 3 Compliance',
-    description: 'Automated emissions tracking for corporate travel',
-    stat: 'CSRD/SEC ready'
+    icon: IoPersonOutline,
+    title: 'Verified Local Hosts',
+    description: 'Every host is background checked and verified',
+    stat: 'Trusted community'
   },
   {
-    icon: IoLinkOutline,
-    title: 'Corporate Integration',
-    description: 'Concur, Expensify compatible',
-    stat: 'Enterprise accounts'
+    icon: IoCashOutline,
+    title: 'Flexible Host Earnings',
+    description: 'Choose your insurance tier, control your income',
+    stat: 'Keep 40-90%'
   }
 ]
 
@@ -57,13 +55,13 @@ export default function BenefitsSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-8 sm:mb-12">
           <span className="text-amber-600 dark:text-amber-400 text-xs sm:text-sm font-semibold uppercase tracking-wider">
-            Phoenix • Scottsdale • Tempe
+            Phoenix • Scottsdale • Tempe • Mesa • Chandler
           </span>
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mt-2 mb-2 sm:mb-4">
-            Enterprise Mobility OS
+            Why Rent with ITWhip
           </h2>
           <p className="text-base sm:text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto px-4">
-            Insurance-ready. Host-empowered. Guest-safe. Corporate-compliant.
+            Peer-to-peer car sharing with built-in protection and verified hosts
           </p>
         </div>
 

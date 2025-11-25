@@ -14,47 +14,60 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title: 'ItWhip - Luxury Rides Platform | Hotels Earn From Every Ride',
-  description: 'Phoenix premium transportation network. Riders save 60% vs surge pricing. Hotels earn $300K/year from guest rides. Zero investment required.',
+  // ============================================
+  // PRIMARY SEO - P2P Car Sharing Focus
+  // ============================================
+  title: 'ITWhip - Peer-to-Peer Car Sharing in Arizona | Rent from Local Owners',
+  description: 'Connect directly with Arizona vehicle owners for unique rentals. Hosts keep up to 90% of earnings with built-in protection plans. Phoenix, Scottsdale, Tempe & beyond.',
   
   // Google Search Console Verification - KEEP THIS
   verification: {
     google: 'BHWkhY02dx7jq6OPC5fLJXDEL7_PaiyguPwn2GnnpLw',
   },
   
-  // Open Graph for Facebook, LinkedIn, etc.
+  // ============================================
+  // OPEN GRAPH - Facebook, LinkedIn
+  // ============================================
   openGraph: {
-    title: 'ItWhip - Hotels Rental Car Plaform | Book or List your Car Today.',
-    description: 'Phoenix\'s premium car rentals network for hotel guests. $300K annual revenue for hotels. Join TODAY and start earning.',
+    title: 'ITWhip – Arizona\'s Peer-to-Peer Car Sharing Platform',
+    description: 'Rent unique cars from locals or earn up to 90% sharing yours. Fully insured P2P car sharing in Phoenix, Scottsdale, Tempe & more.',
     url: 'https://itwhip.com',
-    siteName: 'ItWhip',
+    siteName: 'ITWhip',
     images: [
       {
         url: 'https://itwhip.com/og-image.jpg',
         width: 1200,
         height: 630,
-        alt: 'ItWhip - Phoenix Premium Transportation Network',
+        alt: 'ITWhip - Peer-to-Peer Car Sharing in Arizona',
       }
     ],
     locale: 'en_US',
     type: 'website',
   },
   
-  // Twitter Card
+  // ============================================
+  // TWITTER CARD
+  // ============================================
   twitter: {
     card: 'summary_large_image',
-    title: 'ItWhip - No Surge. Just Luxury.',
-    description: 'Fixed prices on premium rides. Hotels earn 30% commission. Phoenix Sky Harbor to anywhere.',
+    title: 'ITWhip – Peer-to-Peer Car Sharing in Arizona',
+    description: 'Skip the rental counter. Rent from locals or list your car and earn up to 90%. Fully insured.',
     images: ['https://itwhip.com/og-image.jpg'],
     creator: '@itwhip',
     site: '@itwhip',
   },
   
-  // Additional meta tags - Updated for dual audience
-  keywords: 'hotel transportation revenue, luxury airport rides Phoenix, no surge pricing, hotel shuttle alternative, Sky Harbor transportation, premium rides Phoenix, hotel guest transportation, rideshare for hotels',
-  authors: [{ name: 'ItWhip Technologies' }],
-  creator: 'ItWhip Technologies',
-  publisher: 'ItWhip Technologies',
+  // ============================================
+  // KEYWORDS - P2P Car Sharing Focus
+  // ============================================
+  keywords: 'peer to peer car rental Phoenix, Turo alternative Arizona, rent car from owner Phoenix, P2P car sharing Scottsdale, list your car Phoenix, car sharing Arizona, rent my car Phoenix, local car rentals Tempe, Mesa car sharing, Chandler vehicle rental, Arizona car sharing platform, earn money with your car Phoenix',
+  
+  // ============================================
+  // AUTHOR & PUBLISHER
+  // ============================================
+  authors: [{ name: 'ITWhip' }],
+  creator: 'ITWhip',
+  publisher: 'ITWhip',
   formatDetection: {
     email: false,
     address: false,
@@ -73,11 +86,11 @@ export const metadata: Metadata = {
     ],
   },
   
-  // App-specific
-  applicationName: 'ItWhip',
+  // App-specific - UPDATED
+  applicationName: 'ITWhip',
   referrer: 'origin-when-cross-origin',
-  category: 'transportation',
-  classification: 'Transportation Technology',
+  category: 'car rental',
+  classification: 'Peer-to-Peer Car Sharing Marketplace',
   
   // Robots - KEEP FOR SEO
   robots: {
@@ -101,82 +114,132 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Additional meta tags that Next.js doesn't handle automatically */}
-        <meta name="theme-color" content="#2563eb" />
+        {/* Theme color */}
+        <meta name="theme-color" content="#7c3aed" />
         <link rel="canonical" href="https://itwhip.com" />
         
-        {/* Updated structured data for both audiences */}
+        {/* ============================================
+            SCHEMA 1: Organization - P2P Car Sharing Platform
+            ============================================ */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               '@context': 'https://schema.org',
               '@type': 'Organization',
-              name: 'ItWhip Technologies',
+              name: 'ITWhip',
+              alternateName: 'ITWhip Peer-to-Peer Car Sharing',
               url: 'https://itwhip.com',
               logo: 'https://itwhip.com/logo.png',
-              description: 'Premium transportation network connecting luxury drivers with riders and hotels in Phoenix',
+              description: 'Arizona\'s peer-to-peer car sharing marketplace. Rent unique vehicles directly from local owners or list your car and earn up to 90%.',
+              foundingDate: '2024',
               address: {
                 '@type': 'PostalAddress',
                 addressLocality: 'Phoenix',
                 addressRegion: 'AZ',
+                postalCode: '85001',
                 addressCountry: 'US'
               },
+              contactPoint: {
+                '@type': 'ContactPoint',
+                contactType: 'customer service',
+                email: 'support@itwhip.com',
+                availableLanguage: 'English'
+              },
               sameAs: [
-                'https://www.facebook.com/people/Itwhipcom/61573990760395/?mibextid=wwXIfr&rdid=2egGjvDzm0ZkDaJt&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F16A6t34gWX%2F%3Fmibextid%3DwwXIfr',
+                'https://www.facebook.com/itwhip',
                 'https://twitter.com/itwhip',
                 'https://instagram.com/itwhiptech',
                 'https://linkedin.com/company/itwhip'
               ],
-              areaServed: {
-                '@type': 'City',
-                name: 'Phoenix, Arizona'
-              },
-              offers: [
+              areaServed: [
                 {
-                  '@type': 'Offer',
-                  name: 'Luxury Rides',
-                  description: 'Fixed-price luxury transportation with no surge pricing',
-                  category: 'Transportation Service'
+                  '@type': 'State',
+                  name: 'Arizona'
                 },
                 {
-                  '@type': 'Offer',
-                  name: 'Hotel Revenue Program',
-                  description: 'Hotels earn 30% commission on guest rides',
-                  category: 'B2B Service'
+                  '@type': 'City',
+                  name: 'Phoenix'
+                },
+                {
+                  '@type': 'City',
+                  name: 'Scottsdale'
+                },
+                {
+                  '@type': 'City',
+                  name: 'Tempe'
+                },
+                {
+                  '@type': 'City',
+                  name: 'Mesa'
+                },
+                {
+                  '@type': 'City',
+                  name: 'Chandler'
                 }
               ]
             })
           }}
         />
         
-        {/* Additional schema for Hotel Industry */}
+        {/* ============================================
+            SCHEMA 2: Car Rental Service
+            ============================================ */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               '@context': 'https://schema.org',
-              '@type': 'Service',
-              name: 'Hotel Transportation Revenue Program',
-              provider: {
-                '@type': 'Organization',
-                name: 'ItWhip Technologies'
+              '@type': 'AutoRental',
+              name: 'ITWhip Car Sharing',
+              description: 'Peer-to-peer car sharing marketplace in Arizona. Rent directly from local vehicle owners.',
+              url: 'https://itwhip.com',
+              priceRange: '$30-$500/day',
+              address: {
+                '@type': 'PostalAddress',
+                addressLocality: 'Phoenix',
+                addressRegion: 'AZ',
+                addressCountry: 'US'
               },
-              description: 'Transform shuttle costs into revenue. Hotels earn 30% commission on every guest ride.',
-              areaServed: 'Phoenix, Arizona',
+              areaServed: {
+                '@type': 'State',
+                name: 'Arizona'
+              },
               hasOfferCatalog: {
                 '@type': 'OfferCatalog',
-                name: 'Hotel Partnership Programs',
+                name: 'Vehicle Categories',
                 itemListElement: [
                   {
                     '@type': 'Offer',
-                    name: 'Revenue Share Program',
-                    description: '30% commission on all guest rides'
+                    itemOffered: {
+                      '@type': 'Product',
+                      name: 'Economy Cars',
+                      description: 'Affordable daily rentals from local owners'
+                    }
                   },
                   {
                     '@type': 'Offer',
-                    name: 'Zero Investment',
-                    description: 'No upfront costs or vehicle purchases'
+                    itemOffered: {
+                      '@type': 'Product',
+                      name: 'SUVs & Trucks',
+                      description: 'Spacious vehicles for families and adventures'
+                    }
+                  },
+                  {
+                    '@type': 'Offer',
+                    itemOffered: {
+                      '@type': 'Product',
+                      name: 'Luxury & Exotic',
+                      description: 'Premium vehicles for special occasions'
+                    }
+                  },
+                  {
+                    '@type': 'Offer',
+                    itemOffered: {
+                      '@type': 'Product',
+                      name: 'Electric Vehicles',
+                      description: 'Eco-friendly EV rentals with high ESG impact scores'
+                    }
                   }
                 ]
               }
@@ -184,15 +247,34 @@ export default function RootLayout({
           }}
         />
         
-        {/* Google Analytics or other tracking scripts can go here */}
+        {/* ============================================
+            SCHEMA 3: Website with SearchAction
+            ============================================ */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'WebSite',
+              name: 'ITWhip',
+              url: 'https://itwhip.com',
+              description: 'Peer-to-peer car sharing in Arizona',
+              potentialAction: {
+                '@type': 'SearchAction',
+                target: {
+                  '@type': 'EntryPoint',
+                  urlTemplate: 'https://itwhip.com/rentals/search?q={search_term_string}'
+                },
+                'query-input': 'required name=search_term_string'
+              }
+            })
+          }}
+        />
       </head>
       <body className={`${inter.className} antialiased`}>
-        {/* ✅ UPDATED: Wrap in SessionProvider for next-auth */}
         <Providers>
           {children}
         </Providers>
-        
-        {/* You can add any persistent scripts or components here */}
       </body>
     </html>
   )

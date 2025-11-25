@@ -11,13 +11,11 @@ import Footer from '@/app/components/Footer'
 import Header from '@/app/components/Header'
 import CarCard from '@/app/components/cards/CarCard'
 import CarCardSkeleton from '@/app/components/cards/CarCardSkeleton'
-import CorporateBusinessSection from '@/app/components/sections/CorporateBusinessSection'
-import HotelDeliverySection from '@/app/components/sections/HotelDeliverySection'
 import MileageForensicsSection from '@/app/components/sections/MileageForensicsSection'
 import InsuranceTiersSection from '@/app/components/sections/InsuranceTiersSection'
 import MaxACSection from '@/app/components/sections/MaxACSection'
 import ArizonaEventsSection from '@/app/components/sections/ArizonaEventsSection'
-import { IoArrowForwardOutline } from 'react-icons/io5'
+import { IoArrowForwardOutline, IoLeafOutline, IoLocationOutline } from 'react-icons/io5'
 
 export default function RentalsPage() {
   const [esgCars, setEsgCars] = useState([])
@@ -71,19 +69,23 @@ export default function RentalsPage() {
         <QuickActionsBar />
         <BrowseByTypeSection />
 
-        {/* Impact Leaders Section */}
+        {/* ESG Impact Leaders Section */}
         <section className="py-6 bg-gray-50 dark:bg-gray-900">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <span className="text-emerald-600 dark:text-emerald-400 text-xs font-bold uppercase tracking-wider">
-                  Impact Leaders
+                <span className="text-emerald-600 dark:text-emerald-400 text-xs font-bold uppercase tracking-wider flex items-center gap-1">
+                  <IoLeafOutline className="w-3.5 h-3.5" />
+                  ESG Impact Leaders
                 </span>
                 <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mt-1">
-                  Top Verified Vehicles
+                  Top ESG-Impact Vehicles in Phoenix
                 </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  Low emissions rentals with verified maintenance scores
+                </p>
               </div>
-              <Link href="/rentals/search?filter=impact" className="hidden sm:flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
+              <Link href="/rentals/search?filter=impact" className="hidden sm:flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium hover:underline">
                 View all <IoArrowForwardOutline className="w-4 h-4" />
               </Link>
             </div>
@@ -104,22 +106,23 @@ export default function RentalsPage() {
           </div>
         </section>
 
-        {/* Corporate Business Section */}
-        <CorporateBusinessSection />
-
-        {/* Local Cars Section */}
+        {/* Local P2P Rentals Section */}
         <section className="py-6 bg-white dark:bg-gray-800">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <span className="text-amber-600 dark:text-amber-400 text-xs font-bold uppercase tracking-wider">
-                  Near You
+                <span className="text-amber-600 dark:text-amber-400 text-xs font-bold uppercase tracking-wider flex items-center gap-1">
+                  <IoLocationOutline className="w-3.5 h-3.5" />
+                  Rent From Local Owners
                 </span>
                 <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mt-1">
-                  Available in {userCity}
+                  P2P Rentals in {userCity}, AZ
                 </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  Luxury  rental car – rent directly from verified local hosts
+                </p>
               </div>
-              <Link href="/rentals/search" className="hidden sm:flex items-center gap-1 text-amber-600 dark:text-amber-400 font-medium">
+              <Link href="/rentals/search" className="hidden sm:flex items-center gap-1 text-amber-600 dark:text-amber-400 font-medium hover:underline">
                 Browse all <IoArrowForwardOutline className="w-4 h-4" />
               </Link>
             </div>
@@ -140,9 +143,8 @@ export default function RentalsPage() {
           </div>
         </section>
 
-        {/* Section Components */}
+        {/* Section Components - P2P Focused */}
         <BenefitsSection />
-        <HotelDeliverySection />
         <InsuranceTiersSection />
         <MileageForensicsSection />
         <MaxACSection />
