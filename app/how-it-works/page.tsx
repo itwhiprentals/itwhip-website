@@ -13,12 +13,8 @@ import {
   IoWalletOutline,
   IoCheckmarkCircle,
   IoLocationOutline,
-  IoTimeOutline,
-  IoPhonePortraitOutline,
   IoPersonOutline,
-  IoCalendarOutline,
   IoDocumentTextOutline,
-  IoBusinessOutline,
   IoStarOutline,
   IoTrendingUpOutline,
   IoKeyOutline,
@@ -26,30 +22,16 @@ import {
   IoSearchOutline,
   IoFlashOutline,
   IoCashOutline,
-  IoHeartOutline,
   IoReceiptOutline,
   IoHelpCircleOutline,
   IoInformationCircleOutline,
   IoArrowForwardOutline,
   IoChevronForwardOutline,
-  IoSparklesOutline,
   IoCameraOutline,
   IoFingerPrintOutline,
-  IoNotificationsOutline,
-  IoMailOutline,
   IoAnalyticsOutline,
   IoClipboardOutline,
-  IoTimerOutline,
-  IoWifiOutline,
-  IoDiamondOutline,
-  IoRibbonOutline,
-  IoMedalOutline,
   IoLeafOutline,
-  IoLockClosedOutline,
-  IoSwapHorizontalOutline,
-  IoLayersOutline,
-  IoCheckmarkDoneOutline,
-  IoWarningOutline,
   IoGlobeOutline,
   IoPeopleOutline,
   IoStatsChartOutline
@@ -421,32 +403,32 @@ export default function HowItWorksPage() {
       <div className="flex-1 overflow-y-auto mt-[106px] md:mt-[112px] pb-20">
         
         {/* Hero Section */}
-        <section className="bg-gradient-to-b from-purple-50 to-white dark:from-gray-950 dark:to-gray-900 py-12 sm:py-16 lg:py-20">
+        <section className="bg-gradient-to-b from-purple-50 to-white dark:from-gray-950 dark:to-gray-900 py-8 sm:py-10 pb-0 sm:pb-1">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-4xl mx-auto">
-              <div className="inline-flex items-center px-4 py-2 bg-purple-100 dark:bg-purple-900/30 rounded-full mb-4">
+              <div className="inline-flex items-center px-4 py-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg mb-4">
                 <IoPeopleOutline className="w-4 h-4 text-purple-600 mr-2" />
                 <span className="text-sm font-medium text-purple-600">Peer-to-Peer Car Sharing</span>
               </div>
               
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-6">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-3">
                 Rent Cars From Local Owners
-                <span className="block text-purple-600 mt-2">In Phoenix, Arizona</span>
+                <span className="block text-purple-600 mt-1">In Phoenix, Arizona</span>
               </h1>
               
-              <p className="text-base sm:text-lg lg:text-xl text-gray-600 dark:text-gray-400 mb-8">
+              <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400">
                 Skip the rental counter. Connect directly with local hosts. 
                 Fully insured, transparent pricing, hosts earn up to 90%.
               </p>
 
               {/* Tab Selector */}
-              <div className="inline-flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+              <div className="inline-flex bg-gray-200 dark:bg-gray-800 rounded-lg p-1.5 shadow-lg border border-gray-300 dark:border-gray-700 mt-8">
                 <button
                   onClick={() => setActiveTab('guest')}
-                  className={`px-6 py-3 rounded-md text-sm font-medium transition-all ${
+                  className={`px-6 py-3 rounded-lg text-sm font-medium transition-all ${
                     activeTab === 'guest' 
-                      ? 'bg-white dark:bg-gray-700 text-purple-600 shadow-sm' 
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900'
+                      ? 'bg-white dark:bg-gray-700 text-purple-600 shadow-xl border-2 border-purple-500' 
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 hover:bg-gray-100 dark:hover:bg-gray-700'
                   }`}
                 >
                   <IoPersonOutline className="inline w-5 h-5 mr-2" />
@@ -454,10 +436,10 @@ export default function HowItWorksPage() {
                 </button>
                 <button
                   onClick={() => setActiveTab('host')}
-                  className={`px-6 py-3 rounded-md text-sm font-medium transition-all ${
+                  className={`px-6 py-3 rounded-lg text-sm font-medium transition-all ${
                     activeTab === 'host' 
-                      ? 'bg-white dark:bg-gray-700 text-purple-600 shadow-sm' 
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900'
+                      ? 'bg-white dark:bg-gray-700 text-purple-600 shadow-xl border-2 border-purple-500' 
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 hover:bg-gray-100 dark:hover:bg-gray-700'
                   }`}
                 >
                   <IoCarOutline className="inline w-5 h-5 mr-2" />
@@ -469,10 +451,10 @@ export default function HowItWorksPage() {
         </section>
 
         {/* Steps Section */}
-        <section className="py-12 sm:py-16">
+        <section className="py-8 sm:py-10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
                 {activeTab === 'guest' ? '3 Simple Steps to Rent' : '3 Steps to Start Earning'}
               </h2>
               <p className="text-gray-600 dark:text-gray-400">
@@ -482,7 +464,7 @@ export default function HowItWorksPage() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {(activeTab === 'guest' ? guestSteps : hostSteps).map((step, idx) => (
                 <div key={idx} className="relative">
                   {idx < 2 && (
@@ -491,7 +473,7 @@ export default function HowItWorksPage() {
                     </div>
                   )}
                   
-                  <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow h-full">
+                  <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl p-6 hover:shadow-2xl transition-shadow h-full border border-gray-100 dark:border-gray-800">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
                         <step.icon className="w-6 h-6 text-purple-600" />
@@ -534,10 +516,10 @@ export default function HowItWorksPage() {
 
         {/* Insurance Tiers Section - Host Only */}
         {activeTab === 'host' && (
-          <section className="py-12 sm:py-16 bg-gray-50 dark:bg-gray-950">
+          <section className="py-8 sm:py-10 bg-gray-100 dark:bg-gray-900">
             <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="text-center mb-10">
-                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
+              <div className="text-center mb-8">
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
                   Choose Your Earnings Tier
                 </h2>
                 <p className="text-gray-600 dark:text-gray-400">
@@ -545,20 +527,20 @@ export default function HowItWorksPage() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 {insuranceTiers.map((tier, idx) => (
                   <div 
                     key={idx}
-                    className={`relative rounded-xl p-6 border-2 ${
+                    className={`relative rounded-lg p-6 border-2 shadow-xl ${
                       tier.color === 'emerald' 
                         ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-500'
                         : tier.color === 'amber'
                         ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-500'
-                        : 'bg-gray-50 dark:bg-gray-800 border-gray-400'
+                        : 'bg-white dark:bg-gray-800 border-gray-300'
                     }`}
                   >
                     {tier.color === 'amber' && (
-                      <div className="absolute -top-3 right-4 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                      <div className="absolute -top-3 right-4 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-lg">
                         POPULAR
                       </div>
                     )}
@@ -594,7 +576,7 @@ export default function HowItWorksPage() {
                 ))}
               </div>
 
-              <div className="text-center">
+              <div className="text-center mt-6">
                 <Link 
                   href="/insurance-guide"
                   className="inline-flex items-center text-purple-600 hover:text-purple-700 font-medium"
@@ -609,10 +591,10 @@ export default function HowItWorksPage() {
 
         {/* Guest Verification Section - Guest Only */}
         {activeTab === 'guest' && (
-          <section className="py-12 sm:py-16 bg-gray-50 dark:bg-gray-950">
+          <section className="py-8 sm:py-10 bg-gray-100 dark:bg-gray-900">
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="text-center mb-10">
-                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
+              <div className="text-center mb-8">
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
                   Simple Verification Process
                 </h2>
                 <p className="text-gray-600 dark:text-gray-400">
@@ -620,10 +602,10 @@ export default function HowItWorksPage() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {guestVerification.map((item, idx) => (
-                  <div key={idx} className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6 text-center">
-                    <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div key={idx} className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-5 text-center border border-gray-100 dark:border-gray-700">
+                    <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center mx-auto mb-3">
                       <item.icon className="w-6 h-6 text-purple-600" />
                     </div>
                     <div className="text-xs font-bold text-purple-600 mb-1">Step {item.step}</div>
@@ -635,9 +617,9 @@ export default function HowItWorksPage() {
                 ))}
               </div>
 
-              <div className="mt-8 bg-green-50 dark:bg-green-900/20 rounded-xl p-6 text-center">
-                <IoShieldCheckmarkOutline className="w-8 h-8 text-green-600 mx-auto mb-3" />
-                <h4 className="font-semibold text-green-800 dark:text-green-400 mb-2">
+              <div className="mt-6 bg-green-50 dark:bg-green-900/20 rounded-lg p-5 text-center shadow-lg border border-green-200 dark:border-green-800">
+                <IoShieldCheckmarkOutline className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                <h4 className="font-semibold text-green-800 dark:text-green-400 mb-1">
                   Add Your Insurance, Save 50%
                 </h4>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -649,10 +631,10 @@ export default function HowItWorksPage() {
         )}
 
         {/* Benefits Section */}
-        <section className="py-12 sm:py-16">
+        <section className="py-8 sm:py-10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
                 {activeTab === 'guest' ? 'Why Rent on ITWhip' : 'Why Hosts Choose ITWhip'}
               </h2>
               <p className="text-gray-600 dark:text-gray-400">
@@ -662,14 +644,14 @@ export default function HowItWorksPage() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {(activeTab === 'guest' ? guestBenefits : hostBenefits).map((benefit, idx) => (
-                <div key={idx} className="bg-white dark:bg-gray-900 rounded-lg p-6 shadow-sm hover:shadow-lg transition-shadow">
-                  <benefit.icon className="w-10 h-10 text-purple-600 mb-4" />
+                <div key={idx} className="bg-white dark:bg-gray-900 rounded-lg p-5 shadow-xl hover:shadow-2xl transition-shadow border border-gray-100 dark:border-gray-800">
+                  <benefit.icon className="w-10 h-10 text-purple-600 mb-3" />
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                     {benefit.title}
                   </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                     {benefit.description}
                   </p>
                   <p className="text-xs font-semibold text-purple-600">
@@ -678,7 +660,7 @@ export default function HowItWorksPage() {
                   {benefit.link && (
                     <Link 
                       href={benefit.link}
-                      className="inline-flex items-center mt-3 text-sm font-medium text-purple-600 hover:text-purple-700"
+                      className="inline-flex items-center mt-2 text-sm font-medium text-purple-600 hover:text-purple-700"
                     >
                       Learn more
                       <IoArrowForwardOutline className="w-4 h-4 ml-1" />
@@ -691,10 +673,10 @@ export default function HowItWorksPage() {
         </section>
 
         {/* Platform Features */}
-        <section className="py-12 sm:py-16 bg-gradient-to-r from-gray-900 to-gray-800">
+        <section className="py-8 sm:py-10 bg-gradient-to-r from-gray-900 to-gray-800">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-10">
-              <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">
                 What Makes ITWhip Different
               </h2>
               <p className="text-gray-400">
@@ -702,10 +684,10 @@ export default function HowItWorksPage() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
               {platformFeatures.map((feature, idx) => (
-                <div key={idx} className="bg-white/10 backdrop-blur rounded-xl p-6 text-center">
-                  <feature.icon className="w-10 h-10 text-purple-400 mx-auto mb-4" />
+                <div key={idx} className="bg-white/10 backdrop-blur rounded-lg p-5 text-center border border-white/20">
+                  <feature.icon className="w-10 h-10 text-purple-400 mx-auto mb-3" />
                   <h4 className="font-semibold text-white mb-2">{feature.title}</h4>
                   <p className="text-sm text-gray-300">{feature.description}</p>
                 </div>
@@ -715,20 +697,20 @@ export default function HowItWorksPage() {
         </section>
 
         {/* Requirements Section */}
-        <section className="py-12 sm:py-16">
+        <section className="py-8 sm:py-10">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
                 Requirements
               </h2>
             </div>
 
-            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl p-6 border border-gray-100 dark:border-gray-800">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-5">
                 {activeTab === 'guest' ? 'To Rent a Car' : 'To List Your Car'}
               </h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {requirements[activeTab].map((req, idx) => (
                   <div key={idx} className="flex items-start">
                     {req.required ? (
@@ -737,7 +719,7 @@ export default function HowItWorksPage() {
                       <IoInformationCircleOutline className="w-5 h-5 text-blue-500 mr-3 flex-shrink-0 mt-0.5" />
                     )}
                     <div>
-                      <span className="text-gray-700 dark:text-gray-300">{req.text}</span>
+                      <span className="text-gray-700 dark:text-gray-300 text-sm">{req.text}</span>
                       {req.required ? (
                         <span className="ml-2 text-xs text-gray-500">(Required)</span>
                       ) : (
@@ -748,7 +730,7 @@ export default function HowItWorksPage() {
                 ))}
               </div>
 
-              <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+              <div className="mt-5 pt-5 border-t border-gray-200 dark:border-gray-700">
                 <Link 
                   href={activeTab === 'host' ? '/host-protection' : '/insurance-guide'}
                   className="inline-flex items-center text-purple-600 hover:text-purple-700 font-medium"
@@ -762,7 +744,7 @@ export default function HowItWorksPage() {
         </section>
 
         {/* Arizona Compliance */}
-        <section className="py-12 sm:py-16 bg-amber-50 dark:bg-amber-900/20">
+        <section className="py-6 sm:py-8 bg-amber-50 dark:bg-amber-900/20">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-start gap-4">
               <IoGlobeOutline className="w-8 h-8 text-amber-600 flex-shrink-0" />
@@ -770,10 +752,9 @@ export default function HowItWorksPage() {
                 <h3 className="text-lg font-semibold text-amber-900 dark:text-amber-400 mb-2">
                   Arizona P2P Car Sharing Compliant
                 </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                   ITWhip operates under Arizona's peer-to-peer car sharing legislation (A.R.S. § 28-9601 through 28-9613), 
-                  which provides a clear regulatory framework for car sharing platforms. This means proper insurance coverage, 
-                  liability protections, and compliance with Arizona motor vehicle requirements.
+                  which provides a clear regulatory framework for car sharing platforms.
                 </p>
                 <div className="flex flex-wrap gap-4 text-xs text-gray-500">
                   <span>• Transaction Privilege Tax compliant</span>
@@ -786,19 +767,19 @@ export default function HowItWorksPage() {
         </section>
 
         {/* FAQs Section */}
-        <section className="py-12 sm:py-16">
+        <section className="py-8 sm:py-10">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
                 Frequently Asked Questions
               </h2>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               {faqs
                 .filter(faq => faq.category === 'general' || faq.category === activeTab)
                 .map((faq, idx) => (
-                  <div key={idx} className="bg-white dark:bg-gray-900 rounded-lg p-6 shadow-sm">
+                  <div key={idx} className="bg-white dark:bg-gray-900 rounded-lg p-5 shadow-lg border border-gray-100 dark:border-gray-800">
                     <h3 className="font-semibold text-gray-900 dark:text-white mb-2 flex items-start">
                       <IoHelpCircleOutline className="w-5 h-5 text-purple-600 mr-2 flex-shrink-0 mt-0.5" />
                       {faq.question}
@@ -810,7 +791,7 @@ export default function HowItWorksPage() {
                 ))}
             </div>
 
-            <div className="mt-8 text-center">
+            <div className="mt-6 text-center">
               <Link 
                 href="/contact"
                 className="inline-flex items-center text-purple-600 hover:text-purple-700 font-medium"
@@ -823,23 +804,23 @@ export default function HowItWorksPage() {
         </section>
 
         {/* Final CTA */}
-        <section className="py-12 sm:py-16 bg-gradient-to-r from-purple-600 to-purple-700">
+        <section className="py-8 sm:py-10 bg-gradient-to-r from-purple-600 to-purple-700">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-3">
               {activeTab === 'guest' ? 'Ready to Rent?' : 'Ready to Earn?'}
             </h2>
-            <p className="text-base sm:text-lg lg:text-xl text-purple-100 mb-8">
+            <p className="text-base sm:text-lg text-purple-100 mb-6">
               {activeTab === 'guest' 
                 ? 'Find your perfect car from local Phoenix owners' 
                 : 'Choose your tier and start earning up to 90%'}
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
               {activeTab === 'guest' ? (
                 <>
                   <Link 
                     href="/"
-                    className="inline-block px-8 py-3 bg-white text-purple-600 rounded-lg font-bold hover:bg-purple-50 transition shadow-lg"
+                    className="inline-block px-8 py-3 bg-white text-purple-600 rounded-lg font-bold hover:bg-purple-50 transition shadow-xl"
                   >
                     Browse Available Cars
                   </Link>
@@ -854,7 +835,7 @@ export default function HowItWorksPage() {
                 <>
                   <Link 
                     href="/host/signup"
-                    className="inline-block px-8 py-3 bg-white text-purple-600 rounded-lg font-bold hover:bg-purple-50 transition shadow-lg"
+                    className="inline-block px-8 py-3 bg-white text-purple-600 rounded-lg font-bold hover:bg-purple-50 transition shadow-xl"
                   >
                     List Your Car Now
                   </Link>
@@ -871,9 +852,9 @@ export default function HowItWorksPage() {
         </section>
 
         {/* Trust Indicators */}
-        <section className="py-8 bg-white dark:bg-black">
+        <section className="py-6 bg-white dark:bg-black">
           <div className="max-w-5xl mx-auto px-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-5 text-center">
               <div>
                 <div className="text-3xl font-bold text-purple-600 mb-1">$1M</div>
                 <div className="text-xs text-gray-500">Liability Coverage</div>
