@@ -183,8 +183,8 @@ export default function RootLayout({
         />
         
         {/* ============================================
-            SCHEMA 2: Car Rental Service
-            FIXED: Changed Product to Service (no offers/reviews required)
+            SCHEMA 2: Car Rental Service with Valid Offers
+            FIXED: Use Offer with itemOffered instead of nested OfferCatalog
             ============================================ */}
         <script
           type="application/ld+json"
@@ -206,32 +206,64 @@ export default function RootLayout({
                 '@type': 'State',
                 name: 'Arizona'
               },
-              hasOfferCatalog: {
-                '@type': 'OfferCatalog',
-                name: 'Vehicle Categories',
-                itemListElement: [
-                  {
-                    '@type': 'OfferCatalog',
-                    name: 'Economy Cars',
+              makesOffer: [
+                {
+                  '@type': 'Offer',
+                  itemOffered: {
+                    '@type': 'Service',
+                    name: 'Economy Car Rentals',
                     description: 'Affordable daily rentals from local owners'
                   },
-                  {
-                    '@type': 'OfferCatalog',
-                    name: 'SUVs & Trucks',
+                  priceSpecification: {
+                    '@type': 'PriceSpecification',
+                    priceCurrency: 'USD',
+                    minPrice: '30',
+                    maxPrice: '60'
+                  }
+                },
+                {
+                  '@type': 'Offer',
+                  itemOffered: {
+                    '@type': 'Service',
+                    name: 'SUV & Truck Rentals',
                     description: 'Spacious vehicles for families and adventures'
                   },
-                  {
-                    '@type': 'OfferCatalog',
-                    name: 'Luxury & Exotic',
+                  priceSpecification: {
+                    '@type': 'PriceSpecification',
+                    priceCurrency: 'USD',
+                    minPrice: '50',
+                    maxPrice: '120'
+                  }
+                },
+                {
+                  '@type': 'Offer',
+                  itemOffered: {
+                    '@type': 'Service',
+                    name: 'Luxury & Exotic Rentals',
                     description: 'Premium vehicles for special occasions'
                   },
-                  {
-                    '@type': 'OfferCatalog',
-                    name: 'Electric Vehicles',
-                    description: 'Eco-friendly EV rentals with high ESG impact scores'
+                  priceSpecification: {
+                    '@type': 'PriceSpecification',
+                    priceCurrency: 'USD',
+                    minPrice: '150',
+                    maxPrice: '500'
                   }
-                ]
-              }
+                },
+                {
+                  '@type': 'Offer',
+                  itemOffered: {
+                    '@type': 'Service',
+                    name: 'Electric Vehicle Rentals',
+                    description: 'Eco-friendly EV rentals with high ESG impact scores'
+                  },
+                  priceSpecification: {
+                    '@type': 'PriceSpecification',
+                    priceCurrency: 'USD',
+                    minPrice: '60',
+                    maxPrice: '200'
+                  }
+                }
+              ]
             })
           }}
         />
