@@ -212,12 +212,7 @@ export default function RootLayout({
                   itemOffered: {
                     '@type': 'Service',
                     name: 'SUV & Truck Rentals',
-                    description: 'Spacious vehicles for families and adventures',
-                    aggregateRating: {
-                      '@type': 'AggregateRating',
-                      ratingValue: '4.5',
-                      ratingCount: '42'
-                    }
+                    description: 'Spacious vehicles for families and adventures'
                   },
                   priceSpecification: {
                     '@type': 'PriceSpecification',
@@ -231,12 +226,7 @@ export default function RootLayout({
                   itemOffered: {
                     '@type': 'Service',
                     name: 'Luxury & Exotic Rentals',
-                    description: 'Premium vehicles for special occasions',
-                    aggregateRating: {
-                      '@type': 'AggregateRating',
-                      ratingValue: '4.6',
-                      ratingCount: '140'
-                    }
+                    description: 'Premium vehicles for special occasions'
                   },
                   priceSpecification: {
                     '@type': 'PriceSpecification',
