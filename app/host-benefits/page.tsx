@@ -7,27 +7,23 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
+import JsonLd, { hostBenefitsList } from '@/components/seo/JsonLd'
 import { 
   IoCheckmarkCircle,
   IoCashOutline,
   IoShieldCheckmarkOutline,
-  IoTrendingUpOutline,
   IoReceiptOutline,
   IoFlashOutline,
   IoAnalyticsOutline,
   IoWifiOutline,
   IoPeopleOutline,
   IoSchoolOutline,
-  IoHeartOutline,
   IoTimerOutline,
   IoCalculatorOutline,
-  IoCarOutline,
   IoGlobeOutline,
   IoRocketOutline,
   IoSparklesOutline,
   IoDiamondOutline,
-  IoRibbonOutline,
-  IoMedalOutline,
   IoTrophyOutline,
   IoArrowForwardOutline,
   IoDocumentTextOutline,
@@ -38,24 +34,21 @@ import {
   IoKeyOutline,
   IoBusinessOutline,
   IoWalletOutline,
-  IoInformationCircleOutline,
-  IoStatsChartOutline,
   IoClipboardOutline,
   IoLockClosedOutline,
-  IoCallOutline,
   IoMailOutline,
   IoSettingsOutline,
-  IoPhonePortraitOutline,
   IoTimeOutline,
-  IoLocationOutline,
   IoStarOutline,
-  IoCalendarOutline
+  IoCalendarOutline,
+  IoLayersOutline,
+  IoLeafOutline,
+  IoSpeedometerOutline
 } from 'react-icons/io5'
 
 export default function HostBenefitsPage() {
   const router = useRouter()
   const [selectedCategory, setSelectedCategory] = useState('all')
-  const [expandedBenefit, setExpandedBenefit] = useState<string | null>(null)
   
   // Header state management
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -69,7 +62,27 @@ export default function HostBenefitsPage() {
     router.push('/')
   }
 
-  // Comprehensive benefits organized by category
+  // FAQ data for JsonLd
+  const hostBenefitsFAQs = [
+    {
+      question: 'How do the earnings tiers work?',
+      answer: 'Your earnings percentage depends on the insurance you bring. Platform Coverage (40%) uses our insurance, P2P Coverage (75%) requires peer-to-peer insurance like State Farm, and Commercial Coverage (90%) requires commercial auto insurance. All tiers include $1M liability coverage.'
+    },
+    {
+      question: 'What is included in every tier?',
+      answer: 'Every tier includes: $1M liability coverage, 48-hour payments, guest verification, 24/7 support, Mileage Forensics™ tracking, ESG impact dashboard, and tax documentation. The only difference is your earnings percentage and deductible amount.'
+    },
+    {
+      question: 'When do benefits start?',
+      answer: 'All benefits activate immediately upon approval. Insurance coverage begins with your first booking. Host tier rewards unlock as you complete trips.'
+    },
+    {
+      question: 'What is Mileage Forensics™ and why do hosts love it?',
+      answer: 'Mileage Forensics™ is our GPS + OBD-II verified trip tracking system. It eliminates disputes, prevents fraud, and provides insurance-grade documentation for every rental. Hosts love it because it protects them from false claims and helps maintain lower insurance rates.'
+    }
+  ]
+
+  // Comprehensive benefits organized by category - UPDATED TO MATCH TIER SYSTEM
   const benefitCategories = [
     {
       id: 'earnings',
@@ -78,16 +91,16 @@ export default function HostBenefitsPage() {
       color: 'green',
       benefits: [
         {
-          title: '78-85% Revenue Share',
-          description: 'Keep the majority of your rental income with our simple commission structure',
+          title: '40-90% Revenue Share',
+          description: 'Keep more of your rental income based on your insurance tier',
           details: [
-            '15% commission for economy/standard vehicles',
-            '18% for luxury vehicles',
-            '20% for exotic/premium vehicles',
-            'Commission rates locked - never increase'
+            '40% PLATFORM COVERAGE — We provide insurance',
+            '75% P2P COVERAGE — You bring P2P insurance',
+            '90% COMMERCIAL COVERAGE — You bring commercial insurance',
+            'Your tier, your choice'
           ],
-          icon: IoTrendingUpOutline,
-          highlight: 'Industry-leading rates'
+          icon: IoLayersOutline,
+          highlight: 'You control your earnings'
         },
         {
           title: '48-Hour Fast Payments',
@@ -95,35 +108,35 @@ export default function HostBenefitsPage() {
           details: [
             'Direct deposit to your bank',
             'No payment processing fees',
-            'Choose daily or weekly payouts',
-            'Instant payouts for Gold+ hosts'
+            'Track payments in real-time',
+            'Instant payouts for Top Hosts'
           ],
           icon: IoFlashOutline,
           highlight: '10x faster than competitors'
         },
         {
-          title: '$600-10,000 Monthly Earnings',
+          title: '$600-10,000+ Monthly Earnings',
           description: 'Realistic earnings based on vehicle type and rental days',
           details: [
             'Economy: $600-1,100/month',
             'Standard: $900-1,500/month',
             'Luxury: $1,500-3,000/month',
-            'Exotic: $5,000-10,000/month'
+            'Exotic: $5,000-10,000+/month'
           ],
           icon: IoWalletOutline,
           highlight: 'Based on 15-20 rental days'
         },
         {
-          title: 'Dynamic Pricing Tools',
-          description: 'AI-powered pricing optimization to maximize your revenue',
+          title: 'Smart Pricing Tools',
+          description: 'Optimize your pricing to maximize revenue',
           details: [
             'Market demand analysis',
             'Competitor rate tracking',
-            'Event-based surge pricing',
-            'Seasonal adjustments'
+            'Seasonal adjustments',
+            'Custom pricing rules'
           ],
           icon: IoAnalyticsOutline,
-          highlight: '23% higher earnings average'
+          highlight: 'Maximize your earnings'
         }
       ]
     },
@@ -134,52 +147,52 @@ export default function HostBenefitsPage() {
       color: 'blue',
       benefits: [
         {
-          title: '$0 Insurance Cost',
-          description: 'Complete protection included - save thousands annually',
+          title: '$1M Liability Coverage',
+          description: 'Comprehensive protection included on every rental',
           details: [
-            'Save $3,000-6,000/year vs commercial insurance',
-            'Coverage included in commission',
+            '$1M liability on ALL tiers',
+            'Coverage included in platform fee',
             'No monthly insurance payments',
-            'No additional fees'
+            'Active during every trip'
           ],
           icon: IoShieldCheckmarkOutline,
-          highlight: 'Biggest cost savings'
+          highlight: 'Every tier protected'
         },
         {
-          title: 'Up to $2M Liability Coverage',
-          description: 'Comprehensive protection during every rental',
+          title: 'Tiered Deductibles',
+          description: 'Lower deductibles when you bring your own insurance',
           details: [
-            '$750K standard vehicle coverage',
-            '$1M luxury vehicle coverage',
-            '$2M exotic vehicle coverage',
-            'Medical payments included'
+            'PLATFORM COVERAGE: $2,500 deductible',
+            'P2P COVERAGE: $1,500 deductible',
+            'COMMERCIAL COVERAGE: $1,000 deductible',
+            'Bring insurance, lower your risk'
           ],
           icon: IoLockClosedOutline,
-          highlight: '40x traditional coverage'
+          highlight: 'You choose your risk level'
         },
         {
           title: 'Physical Damage Protection',
           description: 'Your vehicle is protected against damage during rentals',
           details: [
-            '$0-1,000 deductible based on tier',
             'Collision and comprehensive',
-            'Loss of use compensation',
-            'Diminished value coverage available'
+            'Loss of use compensation ($30-50/day)',
+            'Diminished value coverage available',
+            'Preferred repair network'
           ],
           icon: IoConstructOutline,
           highlight: 'Complete peace of mind'
         },
         {
           title: '48-72 Hour Claims Resolution',
-          description: 'Fast claims processing when you need it most',
+          description: 'Fast FNOL claims processing when you need it most',
           details: [
-            'Dedicated claims hotline',
+            'Dedicated claims team',
             'Preferred repair network',
             'Direct billing to shops',
             'Rental credit during repairs'
           ],
           icon: IoTimerOutline,
-          highlight: '10x faster than traditional'
+          highlight: 'Industry-leading speed'
         }
       ]
     },
@@ -195,7 +208,7 @@ export default function HostBenefitsPage() {
           details: [
             'Vehicle depreciation ($5-15K/year)',
             'Operating expenses deductible',
-            'Mileage deduction ($0.655/mile)',
+            'Mileage deduction ($0.67/mile)',
             'Business expense write-offs'
           ],
           icon: IoCalculatorOutline,
@@ -208,7 +221,7 @@ export default function HostBenefitsPage() {
             'Automatic 1099 generation',
             'Expense categorization',
             'Mileage tracking',
-            'QuickBooks integration'
+            'QuickBooks-ready reports'
           ],
           icon: IoDocumentTextOutline,
           highlight: 'Simplify tax filing'
@@ -234,16 +247,16 @@ export default function HostBenefitsPage() {
       color: 'indigo',
       benefits: [
         {
-          title: 'GPS Tracking & Monitoring',
-          description: 'Know where your vehicle is 24/7 during rentals',
+          title: 'Mileage Forensics™ Tracking',
+          description: 'Know exactly how your vehicle is being used',
           details: [
-            'Real-time location tracking',
-            'Speed monitoring alerts',
-            'Geofence boundaries',
-            'Trip history recording'
+            'GPS-verified trip tracking',
+            'OBD-II odometer integration',
+            'Usage compliance verification',
+            'Insurance integrity reports'
           ],
-          icon: IoWifiOutline,
-          highlight: 'Complete visibility'
+          icon: IoSpeedometerOutline,
+          highlight: 'Fraud-proof tracking'
         },
         {
           title: 'Guest Verification System',
@@ -251,23 +264,23 @@ export default function HostBenefitsPage() {
           details: [
             'Government ID verification',
             'Facial recognition matching',
-            'Criminal background checks',
-            'Driving record analysis'
+            'Driving record analysis',
+            'Background screening'
           ],
           icon: IoFingerPrintOutline,
-          highlight: '7-point verification'
+          highlight: 'Verified guests only'
         },
         {
-          title: 'Professional Photography',
-          description: 'Make your listing stand out with pro photos',
+          title: 'ESG Impact Dashboard',
+          description: 'Track your environmental and social impact',
           details: [
-            'Free for luxury+ vehicles',
-            'Multiple angle coverage',
-            'Lighting optimization',
-            'Virtual tour creation'
+            'Carbon offset tracking',
+            'Vehicle quality scoring',
+            'Sustainability metrics',
+            'Community impact stats'
           ],
-          icon: IoCameraOutline,
-          highlight: '3x more bookings'
+          icon: IoLeafOutline,
+          highlight: 'Make a difference'
         },
         {
           title: 'Smart Calendar Management',
@@ -302,28 +315,28 @@ export default function HostBenefitsPage() {
           highlight: 'Hands-off hosting'
         },
         {
-          title: 'Quick Response Support',
+          title: 'Priority Host Support',
           description: 'Get help when you need it',
           details: [
             '1-2 hour typical response',
-            'Priority support for issues',
             'Dedicated host support team',
-            'In-app messaging'
+            'In-app messaging',
+            'Phone support for urgent issues'
           ],
           icon: IoNotificationsOutline,
           highlight: 'Real human support'
         },
         {
-          title: 'Host University Training',
+          title: 'Host Resources & Training',
           description: 'Learn how to maximize your earnings',
           details: [
-            'Free training courses',
-            'Optimization webinars',
             'Best practices guide',
-            'Monthly coaching calls'
+            'Pricing optimization tips',
+            'Photo guidelines',
+            'Success stories'
           ],
           icon: IoSchoolOutline,
-          highlight: 'Continuous learning'
+          highlight: 'Set up for success'
         }
       ]
     },
@@ -334,27 +347,27 @@ export default function HostBenefitsPage() {
       color: 'yellow',
       benefits: [
         {
-          title: 'Host Tier Rewards',
-          description: 'Earn more as you grow with reduced commissions',
+          title: 'Host Achievement Tiers',
+          description: 'Unlock rewards as you grow',
           details: [
-            'Silver (10+ trips): -1% commission',
-            'Gold (25+ trips): -2% commission',
-            'Platinum (50+ trips): -3% commission',
-            'Elite Fleet (10+ cars): Custom rates'
+            'Rising Host (5+ trips): Verified badge',
+            'Established Host (15+ trips): Featured placement',
+            'Top Host (30+ trips): Priority support',
+            'Elite Fleet (5+ vehicles): Dedicated manager'
           ],
           icon: IoDiamondOutline,
-          highlight: 'Loyalty pays off'
+          highlight: 'Grow with us'
         },
         {
-          title: '$500 Referral Bonuses',
+          title: '$250 Referral Bonuses',
           description: 'Earn for every new host you bring to the platform',
           details: [
-            '$500 per qualified host',
+            '$250 per qualified host',
             'No limit on referrals',
             'Bonus for fleet referrals',
             'Monthly referral contests'
           ],
-          icon: IoGlobeOutline,
+          icon: IoPeopleOutline,
           highlight: 'Unlimited earnings'
         },
         {
@@ -378,13 +391,13 @@ export default function HostBenefitsPage() {
       color: 'teal',
       benefits: [
         {
-          title: 'You Keep Your Keys',
-          description: 'Multiple secure key exchange options',
+          title: 'Multiple Key Exchange Options',
+          description: 'Convenient handoff methods for you and guests',
           details: [
+            'Remote lockbox delivery',
             'Keyless entry devices',
-            'Lockbox installation',
-            'Hotel concierge handoff',
-            'Meet & greet service'
+            'Meet & greet service',
+            'Lockbox installation (free for Top Hosts)'
           ],
           icon: IoKeyOutline,
           highlight: 'Convenient options'
@@ -402,8 +415,8 @@ export default function HostBenefitsPage() {
           highlight: 'Your car, your rules'
         },
         {
-          title: 'Instant Calendar Control',
-          description: 'Block dates whenever you need your car',
+          title: 'Use Your Car Anytime',
+          description: 'Block dates whenever you need your vehicle',
           details: [
             'Real-time availability updates',
             'Recurring blackout dates',
@@ -411,51 +424,39 @@ export default function HostBenefitsPage() {
             'Holiday scheduling'
           ],
           icon: IoCalendarOutline,
-          highlight: 'Use when you want'
+          highlight: 'Always in control'
         }
       ]
     },
     {
-      id: 'special',
-      name: 'Special Programs',
-      icon: IoRocketOutline,
-      color: 'pink',
+      id: 'arizona',
+      name: 'Arizona Compliance',
+      icon: IoGlobeOutline,
+      color: 'amber',
       benefits: [
         {
-          title: '0% Commission First 60 Days',
-          description: 'Keep 100% of earnings when you start',
+          title: 'A.R.S. § 28-9601 Compliant',
+          description: 'Fully compliant with Arizona P2P car sharing laws',
           details: [
-            'No platform fees',
-            'Full earnings retention',
-            'Still get full protection',
-            'All tools included'
+            'Licensed P2P platform',
+            'Proper insurance structure',
+            'Liability protections',
+            'Motor vehicle compliance'
           ],
-          icon: IoSparklesOutline,
-          highlight: 'Limited time offer'
+          icon: IoDocumentTextOutline,
+          highlight: 'Legal & protected'
         },
         {
-          title: 'Fleet Owner Benefits',
-          description: 'Special perks for multiple vehicles',
+          title: 'Transaction Privilege Tax',
+          description: 'We handle Arizona TPT requirements',
           details: [
-            '3-5 cars: 1% commission reduction',
-            '6-10 cars: 2% reduction + manager',
-            '11-20 cars: 3% reduction + API',
-            '20+ cars: Custom enterprise rates'
+            'Automatic tax collection',
+            'Proper remittance',
+            'Documentation provided',
+            'Audit-ready records'
           ],
-          icon: IoBusinessOutline,
-          highlight: 'Scale your business'
-        },
-        {
-          title: 'Luxury Host Perks',
-          description: 'Premium benefits for high-value vehicles',
-          details: [
-            'White-glove service',
-            'Concierge support',
-            'Premium placement',
-            'Custom marketing'
-          ],
-          icon: IoDiamondOutline,
-          highlight: 'VIP treatment'
+          icon: IoReceiptOutline,
+          highlight: 'Hassle-free compliance'
         }
       ]
     }
@@ -469,18 +470,22 @@ export default function HostBenefitsPage() {
     ? allBenefits 
     : allBenefits.filter(b => b.categoryId === selectedCategory)
 
-  // Key statistics
+  // Key statistics - UPDATED
   const keyStats = [
     { value: '48hr', label: 'Payment Speed', detail: 'Industry fastest' },
-    { value: '$0', label: 'Insurance Cost', detail: 'Save $3-6K/year' },
-    { value: '85%', label: 'Max Revenue', detail: 'You keep' },
-    { value: '$2M', label: 'Protection', detail: 'Maximum coverage' },
-    { value: '30%', label: 'Tax Savings', detail: 'Average deduction' },
-    { value: '60', label: 'Day Trial', detail: '0% commission' }
+    { value: '$1M', label: 'Liability', detail: 'Every rental' },
+    { value: '90%', label: 'Max Earnings', detail: 'Commercial tier' },
+    { value: '40%', label: 'Min Earnings', detail: 'Platform tier' },
+    { value: '$8K+', label: 'Tax Savings', detail: 'Annual average' },
+    { value: 'AZ', label: 'Compliant', detail: 'A.R.S. § 28-9601' }
   ]
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col">
+      {/* JSON-LD Structured Data */}
+      <JsonLd type="faq" faqs={hostBenefitsFAQs} />
+      <JsonLd type="itemlist" listName="ITWhip Host Benefits" listItems={hostBenefitsList} />
+
       {/* Header */}
       <div className="fixed top-0 left-0 right-0 z-50">
         <Header
@@ -498,18 +503,21 @@ export default function HostBenefitsPage() {
             <div className="flex items-center space-x-2">
               <IoTrophyOutline className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
               <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
-                Complete Host Benefits
+                Host Benefits
               </h1>
-              <span className="hidden sm:inline-block ml-2 px-2 py-1 text-xs text-green-600 bg-green-100 dark:bg-green-900/20 rounded">
-                Everything Included
+              <span className="hidden sm:inline-block ml-2 px-2 py-1 text-xs text-green-600 bg-green-100 dark:bg-green-900/20 rounded-lg">
+                30+ Benefits
               </span>
             </div>
             <div className="hidden md:flex items-center space-x-4">
+              <Link href="/insurance-guide" className="text-sm text-gray-600 dark:text-gray-300 hover:text-purple-600">
+                Insurance Guide
+              </Link>
               <Link 
                 href="/list-your-car"
                 className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg font-semibold hover:bg-purple-700"
               >
-                Start Earning →
+                List Your Car →
               </Link>
             </div>
           </div>
@@ -523,22 +531,44 @@ export default function HostBenefitsPage() {
         <section className="bg-gradient-to-b from-purple-50 to-white dark:from-gray-950 dark:to-gray-900 py-8 sm:py-12">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-4xl mx-auto mb-8">
-              <div className="inline-flex items-center space-x-2 px-4 py-2 bg-green-100 dark:bg-green-900/20 rounded-full mb-4">
-                <IoSparklesOutline className="w-5 h-5 text-green-600" />
-                <span className="text-sm font-semibold text-green-700 dark:text-green-400">
-                  Limited Time: 0% Commission First 60 Days
-                </span>
+              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-2">
+                All 30+ Benefits You Get When You List Your Car
+              </h1>
+              <p className="text-lg text-purple-600 font-medium mb-4">
+                You Bring the Insurance. We Give You Up to 90% + Full Protection.
+              </p>
+              
+              <p className="text-base text-gray-600 dark:text-gray-400 mb-6">
+                Your earnings depend on the insurance you bring. All tiers include $1M liability coverage, 
+                48-hour payments, Mileage Forensics™, ESG tracking, and 24/7 support.
+              </p>
+              
+              {/* Tier Quick Reference */}
+              <div className="grid grid-cols-3 gap-3 max-w-xl mx-auto mb-6">
+                <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-3 text-center">
+                  <div className="text-2xl font-black text-gray-600">40%</div>
+                  <div className="text-xs font-semibold text-gray-500">PLATFORM</div>
+                  <div className="text-[10px] text-gray-400">We provide insurance</div>
+                </div>
+                <div className="bg-amber-100 dark:bg-amber-900/30 rounded-lg p-3 text-center border-2 border-amber-400">
+                  <div className="text-2xl font-black text-amber-600">75%</div>
+                  <div className="text-xs font-semibold text-amber-700 dark:text-amber-400">P2P</div>
+                  <div className="text-[10px] text-amber-600">Most Popular</div>
+                </div>
+                <div className="bg-emerald-100 dark:bg-emerald-900/30 rounded-lg p-3 text-center">
+                  <div className="text-2xl font-black text-emerald-600">90%</div>
+                  <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">COMMERCIAL</div>
+                  <div className="text-[10px] text-emerald-600">Max earnings</div>
+                </div>
               </div>
               
-              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-                Everything You Get as an ItWhip Host
-                <span className="block text-purple-600 mt-2">No Hidden Costs. Ever.</span>
-              </h1>
-              
-              <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
-                One simple commission covers everything. Compare us to any platform - 
-                we offer more benefits, better protection, and faster payments.
-              </p>
+              <Link 
+                href="/insurance-guide"
+                className="inline-flex items-center gap-1 text-sm text-purple-600 hover:text-purple-700 font-medium"
+              >
+                Learn about insurance tiers
+                <IoArrowForwardOutline className="w-4 h-4" />
+              </Link>
             </div>
 
             {/* Key Stats Grid */}
@@ -554,10 +584,35 @@ export default function HostBenefitsPage() {
           </div>
         </section>
 
+        {/* Arizona Compliance - HIGH POSITION */}
+        <section className="py-6 bg-amber-50 dark:bg-amber-900/20">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-start gap-4">
+              <IoGlobeOutline className="w-8 h-8 text-amber-600 flex-shrink-0" />
+              <div>
+                <h3 className="text-lg font-semibold text-amber-900 dark:text-amber-400 mb-2">
+                  Arizona P2P Car Sharing Compliant (A.R.S. § 28-9601–9613)
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                  ITWhip operates under Arizona's peer-to-peer car sharing legislation with proper insurance coverage, 
+                  liability protections, and full compliance with Arizona motor vehicle requirements.
+                </p>
+                <Link 
+                  href="/legal"
+                  className="inline-flex items-center gap-1 text-sm text-amber-700 dark:text-amber-400 font-medium hover:underline"
+                >
+                  Full Arizona law text
+                  <IoArrowForwardOutline className="w-4 h-4" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Category Filter */}
         <section className="sticky top-[106px] md:top-[112px] z-20 bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-            <div className="flex items-center space-x-2 overflow-x-auto pb-1">
+            <div className="flex items-center space-x-2 overflow-x-auto pb-1 scrollbar-hide">
               <button
                 onClick={() => setSelectedCategory('all')}
                 className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition ${
@@ -591,11 +646,11 @@ export default function HostBenefitsPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredBenefits.map((benefit, idx) => (
-                <div key={idx} className="bg-white dark:bg-gray-900 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
+                <div key={idx} className="bg-white dark:bg-gray-900 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
                   <div className="p-6">
                     <div className="flex items-start justify-between mb-4">
                       <benefit.icon className="w-10 h-10 text-purple-600 flex-shrink-0" />
-                      <span className="text-xs px-2 py-1 bg-purple-100 dark:bg-purple-900/20 text-purple-600 rounded">
+                      <span className="text-xs px-2 py-1 bg-purple-100 dark:bg-purple-900/20 text-purple-600 rounded-lg">
                         {benefit.category}
                       </span>
                     </div>
@@ -629,7 +684,45 @@ export default function HostBenefitsPage() {
           </div>
         </section>
 
-        {/* Comparison Section */}
+        {/* Internal Links Section */}
+        <section className="py-8 bg-gray-100 dark:bg-gray-900">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Link 
+                href="/mileage-forensics"
+                className="flex items-center gap-3 bg-white dark:bg-gray-800 rounded-lg p-4 hover:shadow-md transition"
+              >
+                <IoSpeedometerOutline className="w-8 h-8 text-purple-600" />
+                <div>
+                  <div className="font-semibold text-gray-900 dark:text-white text-sm">Mileage Forensics™</div>
+                  <div className="text-xs text-gray-500">How it works →</div>
+                </div>
+              </Link>
+              <Link 
+                href="/esg-dashboard"
+                className="flex items-center gap-3 bg-white dark:bg-gray-800 rounded-lg p-4 hover:shadow-md transition"
+              >
+                <IoLeafOutline className="w-8 h-8 text-green-600" />
+                <div>
+                  <div className="font-semibold text-gray-900 dark:text-white text-sm">ESG Dashboard</div>
+                  <div className="text-xs text-gray-500">See your impact →</div>
+                </div>
+              </Link>
+              <Link 
+                href="/legal"
+                className="flex items-center gap-3 bg-white dark:bg-gray-800 rounded-lg p-4 hover:shadow-md transition"
+              >
+                <IoDocumentTextOutline className="w-8 h-8 text-amber-600" />
+                <div>
+                  <div className="font-semibold text-gray-900 dark:text-white text-sm">Arizona Law</div>
+                  <div className="text-xs text-gray-500">Full legal text →</div>
+                </div>
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* Comparison Section - UPDATED */}
         <section className="py-12 sm:py-16 bg-white dark:bg-black">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-8">
@@ -637,12 +730,12 @@ export default function HostBenefitsPage() {
                 How We Compare
               </h2>
               <p className="text-gray-600 dark:text-gray-400">
-                See why hosts are switching to ItWhip
+                See why hosts are choosing ItWhip
               </p>
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full bg-white dark:bg-gray-900 rounded-xl shadow-lg">
+              <table className="w-full bg-white dark:bg-gray-900 rounded-lg shadow-lg">
                 <thead>
                   <tr className="border-b dark:border-gray-700">
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">
@@ -652,40 +745,45 @@ export default function HostBenefitsPage() {
                       ItWhip
                     </th>
                     <th className="px-6 py-4 text-center text-sm font-semibold text-gray-500">
-                      Others
+                      Traditional Platforms
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  <tr>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">Max Host Earnings</td>
+                    <td className="px-6 py-4 text-sm text-center font-bold text-green-600">Up to 90%</td>
+                    <td className="px-6 py-4 text-sm text-center text-gray-500">60-85%</td>
+                  </tr>
                   <tr>
                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">Payment Speed</td>
                     <td className="px-6 py-4 text-sm text-center font-bold text-green-600">48 hours</td>
                     <td className="px-6 py-4 text-sm text-center text-gray-500">3-14 days</td>
                   </tr>
                   <tr>
-                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">Insurance Cost</td>
-                    <td className="px-6 py-4 text-sm text-center font-bold text-green-600">$0 included</td>
-                    <td className="px-6 py-4 text-sm text-center text-gray-500">$200-500/mo</td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">Liability Coverage</td>
+                    <td className="px-6 py-4 text-sm text-center font-bold text-green-600">$1M (all tiers)</td>
+                    <td className="px-6 py-4 text-sm text-center text-gray-500">$750K-1M</td>
                   </tr>
                   <tr>
-                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">Commission Rate</td>
-                    <td className="px-6 py-4 text-sm text-center font-bold text-green-600">15-20%</td>
-                    <td className="px-6 py-4 text-sm text-center text-gray-500">25-35%</td>
-                  </tr>
-                  <tr>
-                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">Coverage Limit</td>
-                    <td className="px-6 py-4 text-sm text-center font-bold text-green-600">Up to $2M</td>
-                    <td className="px-6 py-4 text-sm text-center text-gray-500">$750K max</td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">Insurance Options</td>
+                    <td className="px-6 py-4 text-sm text-center font-bold text-green-600">3 tiers (you choose)</td>
+                    <td className="px-6 py-4 text-sm text-center text-gray-500">Platform decides</td>
                   </tr>
                   <tr>
                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">Guest Screening</td>
-                    <td className="px-6 py-4 text-sm text-center font-bold text-green-600">7-point verification</td>
+                    <td className="px-6 py-4 text-sm text-center font-bold text-green-600">ID + Face + Record</td>
                     <td className="px-6 py-4 text-sm text-center text-gray-500">Basic ID check</td>
                   </tr>
                   <tr>
-                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">Support Response</td>
-                    <td className="px-6 py-4 text-sm text-center font-bold text-green-600">1-2 hours</td>
-                    <td className="px-6 py-4 text-sm text-center text-gray-500">24-48 hours</td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">Mileage Tracking</td>
+                    <td className="px-6 py-4 text-sm text-center font-bold text-green-600">Forensics™ system</td>
+                    <td className="px-6 py-4 text-sm text-center text-gray-500">Basic odometer</td>
+                  </tr>
+                  <tr>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">ESG Tracking</td>
+                    <td className="px-6 py-4 text-sm text-center font-bold text-green-600">Full dashboard</td>
+                    <td className="px-6 py-4 text-sm text-center text-gray-500">None</td>
                   </tr>
                 </tbody>
               </table>
@@ -693,131 +791,94 @@ export default function HostBenefitsPage() {
           </div>
         </section>
 
-        {/* Testimonial/Trust Section */}
+        {/* CTA Section */}
         <section className="py-12 sm:py-16 bg-gradient-to-r from-purple-600 to-purple-700">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-8">
-              Join 2,847+ Phoenix Hosts Already Earning
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
+              Ready to Start Earning?
             </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <div className="bg-white/10 backdrop-blur rounded-lg p-4">
-                <div className="text-3xl font-bold text-white mb-2">$1.2M</div>
-                <div className="text-sm text-purple-100">Paid to hosts this month</div>
-              </div>
-              <div className="bg-white/10 backdrop-blur rounded-lg p-4">
-                <div className="text-3xl font-bold text-white mb-2">18 days</div>
-                <div className="text-sm text-purple-100">Average monthly bookings</div>
-              </div>
-              <div className="bg-white/10 backdrop-blur rounded-lg p-4">
-                <div className="text-3xl font-bold text-white mb-2">4.9★</div>
-                <div className="text-sm text-purple-100">Platform rating</div>
-              </div>
-            </div>
+            <p className="text-lg text-purple-100 mb-8">
+              Choose your insurance tier. List your car. Get paid in 48 hours.
+            </p>
             
             <Link 
               href="/list-your-car"
               className="inline-block px-8 py-3 bg-white text-purple-600 rounded-lg font-bold hover:bg-purple-50 transition shadow-lg"
             >
-              Start Your Application →
+              List Your Car →
             </Link>
             
             <p className="text-xs text-purple-200 mt-4">
-              5-minute application • Instant approval • Start earning in 24 hours
+              5-minute application • $1M coverage included • Cancel anytime
             </p>
           </div>
         </section>
 
-        {/* FAQ Section */}
+        {/* FAQ Section - UPDATED with Mileage Forensics */}
         <section className="py-12 sm:py-16">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-8">
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
-                Common Questions About Benefits
+                Common Questions
               </h2>
             </div>
 
             <div className="space-y-4">
               <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-                  Are these benefits really all included?
+                  How do the earnings tiers work?
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Yes, everything listed is included in our simple 15-20% commission. No hidden fees, 
-                  no monthly charges, no insurance costs. The commission covers platform operation, 
-                  insurance, support, and all tools.
+                  Your earnings percentage depends on the insurance you bring. Platform Coverage (40%) uses our insurance, 
+                  P2P Coverage (75%) requires peer-to-peer insurance like State Farm's car sharing coverage, and Commercial Coverage (90%) 
+                  requires commercial auto insurance. All tiers include $1M liability coverage.
                 </p>
               </div>
               
               <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-                  How do you offer $0 insurance?
+                  What's included in my tier?
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  We've partnered with commercial insurers to provide fleet coverage. The insurance 
-                  is included in our commission structure, saving you $3,000-6,000 annually compared 
-                  to getting your own commercial policy.
+                  Every tier includes: $1M liability coverage, 48-hour payments, guest verification, 
+                  24/7 support, Mileage Forensics™, ESG dashboard, and tax documentation. 
+                  The only difference is your earnings percentage and deductible amount.
                 </p>
               </div>
               
               <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-                  When do benefits start?
+                  Can I change my tier later?
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  All benefits activate immediately upon approval. Insurance coverage begins with 
-                  your first booking. The 0% commission offer applies to your first 60 days. 
-                  Host tier benefits unlock as you complete trips.
+                  Yes! You can upgrade your tier anytime by adding P2P or commercial insurance. 
+                  Simply upload your insurance documents and we'll verify and update your tier 
+                  within 24 hours. Your new earnings rate applies to future bookings.
                 </p>
               </div>
-            </div>
-          </div>
-        </section>
 
-        {/* Final CTA */}
-        <section className="py-12 sm:py-16 bg-gray-50 dark:bg-gray-950">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-4">
-              Everything Included. Nothing Hidden.
-            </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
-              One commission covers it all. Start earning with confidence.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-              <Link 
-                href="/list-your-car"
-                className="inline-block px-8 py-3 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 transition shadow-lg"
-              >
-                List Your Car Now
-              </Link>
-              <Link 
-                href="/host-earnings"
-                className="inline-block px-8 py-3 bg-white dark:bg-gray-800 text-purple-600 rounded-lg font-bold hover:bg-purple-50 transition border-2 border-purple-600"
-              >
-                Calculate Earnings
-              </Link>
-            </div>
-            
-            <div className="flex items-center justify-center space-x-6 text-sm text-gray-600 dark:text-gray-400">
-              <div className="flex items-center">
-                <IoCheckmarkCircle className="w-5 h-5 text-green-500 mr-2" />
-                <span>No fees</span>
-              </div>
-              <div className="flex items-center">
-                <IoCheckmarkCircle className="w-5 h-5 text-green-500 mr-2" />
-                <span>Cancel anytime</span>
-              </div>
-              <div className="flex items-center">
-                <IoCheckmarkCircle className="w-5 h-5 text-green-500 mr-2" />
-                <span>Keep your keys</span>
+              <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  What is Mileage Forensics™ and why do hosts love it?
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Mileage Forensics™ is our GPS + OBD-II verified trip tracking system. It eliminates disputes, 
+                  prevents fraud, and provides insurance-grade documentation for every rental. Hosts love it 
+                  because it protects them from false claims and helps maintain lower insurance rates.
+                </p>
+                <Link 
+                  href="/mileage-forensics"
+                  className="inline-flex items-center gap-1 mt-2 text-sm text-purple-600 hover:text-purple-700 font-medium"
+                >
+                  Learn more about Mileage Forensics™
+                  <IoArrowForwardOutline className="w-4 h-4" />
+                </Link>
               </div>
             </div>
           </div>
         </section>
       </div>
 
-      {/* Footer */}
       <Footer />
     </div>
   )

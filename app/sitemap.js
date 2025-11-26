@@ -125,6 +125,36 @@ export default async function sitemap() {
       changeFrequency: 'monthly',
       priority: 0.7,
     },
+    {
+      url: `${baseUrl}/host-protection`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/insurance-guide`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+  ]
+
+  // ============================================
+  // STATIC PAGES - Platform Features (NEW)
+  // ============================================
+  const featurePages = [
+    {
+      url: `${baseUrl}/mileage-forensics`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/esg-dashboard`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
   ]
 
   // ============================================
@@ -266,6 +296,7 @@ export default async function sitemap() {
     ...corePages,
     ...legalPages,
     ...hostPages,
+    ...featurePages,
     ...rentalPages,
     ...otherPages,
     ...cityPages,
