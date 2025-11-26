@@ -184,6 +184,7 @@ export default function RootLayout({
         
         {/* ============================================
             SCHEMA 2: Car Rental Service
+            FIXED: Changed Product to Service (no offers/reviews required)
             ============================================ */}
         <script
           type="application/ld+json"
@@ -210,36 +211,24 @@ export default function RootLayout({
                 name: 'Vehicle Categories',
                 itemListElement: [
                   {
-                    '@type': 'Offer',
-                    itemOffered: {
-                      '@type': 'Product',
-                      name: 'Economy Cars',
-                      description: 'Affordable daily rentals from local owners'
-                    }
+                    '@type': 'OfferCatalog',
+                    name: 'Economy Cars',
+                    description: 'Affordable daily rentals from local owners'
                   },
                   {
-                    '@type': 'Offer',
-                    itemOffered: {
-                      '@type': 'Product',
-                      name: 'SUVs & Trucks',
-                      description: 'Spacious vehicles for families and adventures'
-                    }
+                    '@type': 'OfferCatalog',
+                    name: 'SUVs & Trucks',
+                    description: 'Spacious vehicles for families and adventures'
                   },
                   {
-                    '@type': 'Offer',
-                    itemOffered: {
-                      '@type': 'Product',
-                      name: 'Luxury & Exotic',
-                      description: 'Premium vehicles for special occasions'
-                    }
+                    '@type': 'OfferCatalog',
+                    name: 'Luxury & Exotic',
+                    description: 'Premium vehicles for special occasions'
                   },
                   {
-                    '@type': 'Offer',
-                    itemOffered: {
-                      '@type': 'Product',
-                      name: 'Electric Vehicles',
-                      description: 'Eco-friendly EV rentals with high ESG impact scores'
-                    }
+                    '@type': 'OfferCatalog',
+                    name: 'Electric Vehicles',
+                    description: 'Eco-friendly EV rentals with high ESG impact scores'
                   }
                 ]
               }
