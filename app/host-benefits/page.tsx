@@ -484,7 +484,7 @@ export default function HostBenefitsPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col">
       {/* JSON-LD Structured Data */}
       <JsonLd type="faq" faqs={hostBenefitsFAQs} />
-      <JsonLd type="itemlist" listName="ITWhip Host Benefits" listItems={hostBenefitsList} />
+      <JsonLd type="itemlist" listName="ItWhip Host Benefits" listItems={hostBenefitsList} />
 
       {/* Header */}
       <div className="fixed top-0 left-0 right-0 z-50">
@@ -594,7 +594,7 @@ export default function HostBenefitsPage() {
                   Arizona P2P Car Sharing Compliant (A.R.S. § 28-9601–9613)
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                  ITWhip operates under Arizona's peer-to-peer car sharing legislation with proper insurance coverage, 
+                  ItWhip operates under Arizona's peer-to-peer car sharing legislation with proper insurance coverage, 
                   liability protections, and full compliance with Arizona motor vehicle requirements.
                 </p>
                 <Link 

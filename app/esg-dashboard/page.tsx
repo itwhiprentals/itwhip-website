@@ -19,14 +19,14 @@ import {
 } from 'react-icons/io5'
 
 export const metadata: Metadata = {
-  title: 'ESG Impact Dashboard | Sustainability Tracking | ITWhip Arizona',
+  title: 'ESG Impact Dashboard | Sustainability Tracking | ItWhip Arizona',
   description: 'Track your environmental impact with every rental. ESG scores, carbon offset tracking, and sustainability metrics for hosts and guests. Arizona\'s eco-conscious P2P car sharing platform.',
   keywords: 'ESG car sharing, sustainable car rental, carbon offset rental, eco-friendly car sharing Arizona, green transportation Phoenix, environmental impact tracking',
   openGraph: {
-    title: 'ESG Impact Dashboard | ITWhip',
+    title: 'ESG Impact Dashboard | ItWhip',
     description: 'See your environmental impact with every rental. Sustainability scores and carbon tracking.',
     url: 'https://itwhip.com/esg-dashboard',
-    siteName: 'ITWhip',
+    siteName: 'ItWhip',
     type: 'website',
   },
   alternates: {

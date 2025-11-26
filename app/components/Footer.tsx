@@ -42,7 +42,6 @@ export default function Footer() {
           seconds: Math.floor((distance % (1000 * 60)) / 1000)
         })
       } else {
-        // When countdown reaches zero, set to 0
         setTimeLeft({
           days: 0,
           hours: 0,
@@ -72,8 +71,8 @@ export default function Footer() {
               </p>
             </div>
             <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-4">
-              Premium transportation network serving Phoenix. 
-              GDS integrated platform connecting travelers with quality vehicles.
+              Arizona's peer-to-peer car sharing platform. 
+              Rent from local owners or list your car and earn up to 90%.
             </p>
             
             {/* Social Links */}
@@ -129,18 +128,23 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/faq" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  FAQ
+                </Link>
+              </li>
+              <li>
                 <Link href="/coverage" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
                   Coverage Areas
                 </Link>
               </li>
               <li>
-                <Link href="/private-club" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Private Club
+                <Link href="/insurance-guide" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Insurance Guide
                 </Link>
               </li>
               <li>
-                <Link href="/corporate" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Corporate
+                <Link href="/switch-from-turo" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Switch from Turo
                 </Link>
               </li>
             </ul>
@@ -153,6 +157,16 @@ export default function Footer() {
             </h4>
             <ul className="space-y-1.5">
               <li>
+                <Link href="/mileage-forensics" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Mileage Forensics™
+                </Link>
+              </li>
+              <li>
+                <Link href="/esg-dashboard" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  ESG Dashboard
+                </Link>
+              </li>
+              <li>
                 <Link href="/developers" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
                   Developer APIs
                 </Link>
@@ -164,22 +178,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link href="/integrations" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Integration Partners
-                </Link>
-              </li>
-              <li>
-                <Link href="/hotel-solutions" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Hotel Solutions
-                </Link>
-              </li>
-              <li>
-                <Link href="/hotel-portal" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Hotel Portal
-                </Link>
-              </li>
-              <li>
-                <Link href="/gds" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  GDS Documentation
+                  Integrations
                 </Link>
               </li>
             </ul>
@@ -197,8 +196,8 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/host-dashboard" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Host Dashboard
+                <Link href="/host/login" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Host Login
                 </Link>
               </li>
               <li>
@@ -212,8 +211,8 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/host-insurance" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Insurance Guide
+                <Link href="/host-benefits" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Host Benefits
                 </Link>
               </li>
             </ul>
@@ -237,12 +236,17 @@ export default function Footer() {
               </li>
               <li>
                 <Link href="/press" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Press
+                  Blog
                 </Link>
               </li>
               <li>
                 <Link href="/contact" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
                   Contact
+                </Link>
+              </li>
+              <li>
+                <Link href="/legal" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Legal
                 </Link>
               </li>
             </ul>
@@ -321,12 +325,6 @@ export default function Footer() {
                 <Link href="/accessibility" className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
                   Accessibility
                 </Link>
-                <Link href="/legal" className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
-                  Legal
-                </Link>
-                <Link href="/security/certification" className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
-                  TU-1-A
-                </Link>
               </div>
             </div>
             
@@ -335,10 +333,6 @@ export default function Footer() {
               <span>Phoenix, Arizona</span>
               <span>•</span>
               <span>United States</span>
-              <span>•</span>
-              <button className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
-                English (US)
-              </button>
             </div>
           </div>
         </div>

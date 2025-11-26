@@ -23,6 +23,7 @@ Allow: /accessibility
 Allow: /calculator
 Allow: /book
 Allow: /phoenix
+Allow: /faq
 
 # Host Acquisition Pages (Public)
 Allow: /host/signup
@@ -32,6 +33,13 @@ Allow: /host-benefits
 Allow: /host-earnings
 Allow: /host-insurance
 Allow: /host-requirements
+Allow: /host-protection
+Allow: /insurance-guide
+Allow: /switch-from-turo
+
+# Platform Features (Public)
+Allow: /mileage-forensics
+Allow: /esg-dashboard
 
 # Guest Rental Pages (Public)
 Allow: /rentals

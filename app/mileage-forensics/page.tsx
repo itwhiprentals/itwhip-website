@@ -17,14 +17,14 @@ import {
 } from 'react-icons/io5'
 
 export const metadata: Metadata = {
-  title: 'Mileage Forensics™ | GPS-Verified Trip Tracking | ITWhip Arizona',
+  title: 'Mileage Forensics™ | GPS-Verified Trip Tracking | ItWhip Arizona',
   description: 'Fraud-proof mileage tracking for P2P car sharing. GPS + OBD-II verified trips protect hosts, guests, and insurance rates. Arizona\'s most transparent car sharing platform.',
   keywords: 'mileage tracking car sharing, GPS verified trips, fraud prevention car rental, OBD tracking rental car, P2P car sharing protection, Arizona car sharing mileage',
   openGraph: {
-    title: 'Mileage Forensics™ | ITWhip',
+    title: 'Mileage Forensics™ | ItWhip',
     description: 'GPS + OBD-II verified trip data. Fraud-proof tracking that protects everyone.',
     url: 'https://itwhip.com/mileage-forensics',
-    siteName: 'ITWhip',
+    siteName: 'ItWhip',
     type: 'website',
   },
   alternates: {
@@ -190,7 +190,7 @@ export default function MileageForensicsPage() {
               Ready to List with Confidence?
             </h2>
             <p className="text-lg text-purple-100 mb-6">
-              Every rental on ITWhip includes Mileage Forensics™ protection at no extra cost.
+              Every rental on ItWhip includes Mileage Forensics™ protection at no extra cost.
             </p>
             <Link 
               href="/list-your-car"

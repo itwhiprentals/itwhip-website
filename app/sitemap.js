@@ -1,5 +1,5 @@
 // app/sitemap.js
-// Dynamic sitemap for ITWhip - P2P Car Sharing Platform
+// Dynamic sitemap for ItWhip - P2P Car Sharing Platform
 // Revalidates every hour (ISR)
 
 export const revalidate = 3600 // 1 hour
@@ -40,6 +40,12 @@ export default async function sitemap() {
       lastModified: new Date(),
       changeFrequency: 'monthly',
       priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/faq`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.8,
     },
   ]
 
@@ -146,7 +152,7 @@ export default async function sitemap() {
   ]
 
   // ============================================
-  // STATIC PAGES - Platform Features (NEW)
+  // STATIC PAGES - Platform Features
   // ============================================
   const featurePages = [
     {
@@ -222,7 +228,6 @@ export default async function sitemap() {
   // ============================================
   let cityPages = []
   try {
-    // Fetch unique cities from cars
     const carsResponse = await fetch(`${baseUrl}/api/rentals/search?limit=1000`, {
       next: { revalidate: 3600 }
     })
@@ -231,7 +236,6 @@ export default async function sitemap() {
       const data = await carsResponse.json()
       const cars = data.results || data.cars || data || []
       
-      // Extract unique cities
       const cities = [...new Set(cars
         .map(car => car.city)
         .filter(city => city && city.trim() !== '')
@@ -250,7 +254,6 @@ export default async function sitemap() {
   } catch (error) {
     console.error('Error fetching cities for sitemap:', error)
     
-    // Fallback: Known Arizona cities
     const fallbackCities = ['phoenix', 'scottsdale', 'tempe', 'mesa', 'chandler', 'glendale', 'gilbert']
     cityPages = fallbackCities.map(city => ({
       url: `${baseUrl}/rentals/cities/${city}`,
@@ -276,7 +279,6 @@ export default async function sitemap() {
       carPages = cars
         .filter(car => car.id && car.make && car.model && car.year)
         .map(car => {
-          // Generate SEO-friendly slug matching generateCarUrl()
           const slug = `${car.year}-${car.make}-${car.model}-${car.city || 'phoenix'}`
             .toLowerCase()
             .replace(/[^a-z0-9]+/g, '-')
@@ -292,7 +294,6 @@ export default async function sitemap() {
     }
   } catch (error) {
     console.error('Error fetching cars for sitemap:', error)
-    // Continue without car pages if fetch fails
   }
 
   // ============================================

@@ -492,7 +492,7 @@ export default function HostEarningsPage() {
                   <div className="p-6 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="font-semibold text-purple-900 dark:text-purple-400">
-                        Your ITWhip Earnings
+                        Your ItWhip Earnings
                       </h3>
                       <span className="text-xs bg-purple-600 text-white px-2 py-1 rounded-lg">
                         {currentTier.percentage}% tier
@@ -560,7 +560,7 @@ export default function HostEarningsPage() {
                 {/* Savings Highlight */}
                 {earnings.monthlySavings > 0 && (
                   <div className="p-6 bg-gradient-to-r from-green-500 to-green-600 rounded-lg text-white text-center">
-                    <div className="text-sm font-medium mb-2">Your Additional Earnings with ITWhip</div>
+                    <div className="text-sm font-medium mb-2">Your Additional Earnings with ItWhip</div>
                     <div className="text-4xl font-bold mb-2">
                       +${earnings.monthlySavings.toLocaleString()}/month
                     </div>
@@ -606,7 +606,7 @@ export default function HostEarningsPage() {
                   Arizona P2P Car Sharing Compliant
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  ITWhip operates under Arizona's peer-to-peer car sharing legislation (A.R.S. § 28-9601 through 28-9613). 
+                  ItWhip operates under Arizona's peer-to-peer car sharing legislation (A.R.S. § 28-9601 through 28-9613). 
                   Proper insurance coverage, liability protections, and full compliance with Arizona motor vehicle requirements.
                 </p>
                 <Link href="/legal" className="inline-flex items-center text-amber-600 hover:text-amber-700 text-sm font-medium mt-2">
@@ -1072,7 +1072,7 @@ export default function HostEarningsPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-8">
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
-                Why Hosts Choose ITWhip
+                Why Hosts Choose ItWhip
               </h2>
             </div>
 

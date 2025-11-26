@@ -312,8 +312,8 @@ export default function HowItWorksPage() {
 
   const faqs = [
     {
-      question: 'How is ITWhip different from Turo?',
-      answer: 'ITWhip is a peer-to-peer car sharing platform focused on Arizona. We offer transparent insurance tiers where YOU choose your earnings (40-90%), $1M liability coverage on all trips, advanced Mileage Forensics™ fraud prevention, and ESG impact tracking. We also partner directly with 50+ Arizona hotels for convenient guest pickup.',
+      question: 'How is ItWhip different from Turo?',
+      answer: 'ItWhip is a peer-to-peer car sharing platform focused on Arizona. We offer transparent insurance tiers where YOU choose your earnings (40-90%), $1M liability coverage on all trips, advanced Mileage Forensics™ fraud prevention, and ESG impact tracking. We also partner directly with 50+ Arizona hotels for convenient guest pickup.',
       category: 'general'
     },
     {
@@ -357,7 +357,7 @@ export default function HowItWorksPage() {
       category: 'general'
     },
     {
-      question: 'Is ITWhip available outside Arizona?',
+      question: 'Is ItWhip available outside Arizona?',
       answer: 'Currently, we\'re focused on the Phoenix metro area and Arizona. We operate under Arizona\'s P2P car sharing legislation (A.R.S. § 28-9601). Expansion to other states is planned for 2025.',
       category: 'general'
     }
@@ -635,7 +635,7 @@ export default function HowItWorksPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-8">
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                {activeTab === 'guest' ? 'Why Rent on ITWhip' : 'Why Hosts Choose ITWhip'}
+                {activeTab === 'guest' ? 'Why Rent on ItWhip' : 'Why Hosts Choose ItWhip'}
               </h2>
               <p className="text-gray-600 dark:text-gray-400">
                 {activeTab === 'guest' 
@@ -677,7 +677,7 @@ export default function HowItWorksPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-8">
               <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">
-                What Makes ITWhip Different
+                What Makes ItWhip Different
               </h2>
               <p className="text-gray-400">
                 Advanced technology for safer, smarter car sharing
@@ -753,7 +753,7 @@ export default function HowItWorksPage() {
                   Arizona P2P Car Sharing Compliant
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                  ITWhip operates under Arizona's peer-to-peer car sharing legislation (A.R.S. § 28-9601 through 28-9613), 
+                  ItWhip operates under Arizona's peer-to-peer car sharing legislation (A.R.S. § 28-9601 through 28-9613), 
                   which provides a clear regulatory framework for car sharing platforms.
                 </p>
                 <div className="flex flex-wrap gap-4 text-xs text-gray-500">

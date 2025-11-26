@@ -354,11 +354,11 @@ export default function HostProtectionPage() {
     arizona: [
       {
         title: 'State Minimum Requirements',
-        details: 'Arizona requires minimum liability coverage of 25/50/15 ($25K per person, $50K per accident for bodily injury, $15K property damage). ITWhip coverage exceeds state minimums significantly.'
+        details: 'Arizona requires minimum liability coverage of 25/50/15 ($25K per person, $50K per accident for bodily injury, $15K property damage). ItWhip coverage exceeds state minimums significantly.'
       },
       {
         title: 'Transaction Privilege Tax (TPT)',
-        details: 'Vehicle rentals in Arizona are subject to Transaction Privilege Tax. ITWhip automatically calculates and collects applicable taxes on all bookings.'
+        details: 'Vehicle rentals in Arizona are subject to Transaction Privilege Tax. ItWhip automatically calculates and collects applicable taxes on all bookings.'
       },
       {
         title: 'No-Fault State',
@@ -904,7 +904,7 @@ export default function HostProtectionPage() {
                 How We Compare
               </h2>
               <p className="text-gray-600 dark:text-gray-400">
-                ITWhip vs other P2P car sharing platforms
+                ItWhip vs other P2P car sharing platforms
               </p>
             </div>
 
@@ -916,7 +916,7 @@ export default function HostProtectionPage() {
                       Feature
                     </th>
                     <th className="px-6 py-4 text-center text-sm font-semibold text-purple-600">
-                      ITWhip
+                      ItWhip
                     </th>
                     <th className="px-6 py-4 text-center text-sm font-semibold text-gray-500">
                       Other Platforms

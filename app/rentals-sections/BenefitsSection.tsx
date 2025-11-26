@@ -58,7 +58,7 @@ export default function BenefitsSection() {
             Phoenix • Scottsdale • Tempe • Mesa • Chandler
           </span>
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mt-2 mb-2 sm:mb-4">
-            Why Rent with ITWhip
+            Why Rent with ItWhip
           </h2>
           <p className="text-base sm:text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto px-4">
             Peer-to-peer car sharing with built-in protection and verified hosts

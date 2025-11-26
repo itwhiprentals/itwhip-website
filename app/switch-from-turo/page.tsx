@@ -197,7 +197,7 @@ export default function SwitchFromTuroPage() {
               
               <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 mb-8 max-w-3xl mx-auto">
                 Same guests. Same cars. More money in your pocket. 
-                ITWhip's insurance-based tier system lets you keep up to 90% — 
+                ItWhip's insurance-based tier system lets you keep up to 90% — 
                 compared to Turo's typical 60-85%.
               </p>
 
@@ -240,7 +240,7 @@ export default function SwitchFromTuroPage() {
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-8">
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
-                ITWhip vs Turo: Side-by-Side
+                ItWhip vs Turo: Side-by-Side
               </h2>
               <p className="text-gray-600 dark:text-gray-400">
                 See exactly how we compare on what matters most to hosts
@@ -255,7 +255,7 @@ export default function SwitchFromTuroPage() {
                       Feature
                     </th>
                     <th className="px-6 py-4 text-center text-sm font-semibold text-purple-600">
-                      ITWhip
+                      ItWhip
                     </th>
                     <th className="px-6 py-4 text-center text-sm font-semibold text-gray-500">
                       Turo
@@ -304,7 +304,7 @@ export default function SwitchFromTuroPage() {
                 Calculate Your Savings
               </h2>
               <p className="text-gray-600 dark:text-gray-400">
-                See how much more you'd earn on ITWhip
+                See how much more you'd earn on ItWhip
               </p>
             </div>
 
@@ -334,7 +334,7 @@ export default function SwitchFromTuroPage() {
                 {/* Tier Selection */}
                 <div>
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 block">
-                    Your ITWhip Insurance Tier
+                    Your ItWhip Insurance Tier
                   </label>
                   <div className="grid grid-cols-3 gap-2">
                     {insuranceTiers.map((tier) => (
@@ -374,10 +374,10 @@ export default function SwitchFromTuroPage() {
                     <div className="text-sm text-gray-500">monthly earnings</div>
                   </div>
 
-                  {/* ITWhip */}
+                  {/* ItWhip */}
                   <div className="p-5 bg-green-50 dark:bg-green-900/20 rounded-lg border-2 border-green-500">
                     <h3 className="font-semibold text-green-700 dark:text-green-400 mb-3">
-                      On ITWhip ({currentTier.percentage}%)
+                      On ItWhip ({currentTier.percentage}%)
                     </h3>
                     <div className="text-3xl font-bold text-green-600">
                       ${savings.itwhipEarnings.toLocaleString()}
@@ -389,7 +389,7 @@ export default function SwitchFromTuroPage() {
                 {/* Savings Highlight */}
                 {savings.monthlySavings > 0 && (
                   <div className="p-6 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg text-white text-center">
-                    <div className="text-sm font-medium mb-2">Your Annual Savings with ITWhip</div>
+                    <div className="text-sm font-medium mb-2">Your Annual Savings with ItWhip</div>
                     <div className="text-4xl font-bold mb-2">
                       +${savings.annualSavings.toLocaleString()}/year
                     </div>
@@ -526,7 +526,7 @@ export default function SwitchFromTuroPage() {
                   Arizona P2P Car Sharing Compliant
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  ITWhip operates under Arizona's peer-to-peer car sharing legislation 
+                  ItWhip operates under Arizona's peer-to-peer car sharing legislation 
                   (A.R.S. § 28-9601 through 28-9613). Same legal protections as Turo, 
                   with better earnings for you.
                 </p>

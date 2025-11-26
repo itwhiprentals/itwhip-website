@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   // ============================================
   // PRIMARY SEO - P2P Car Sharing Focus
   // ============================================
-  title: 'ITWhip - Peer-to-Peer Car Sharing in Arizona | Rent from Local Owners',
+  title: 'ItWhip - Peer-to-Peer Car Sharing in Arizona | Rent from Local Owners',
   description: 'Connect directly with Arizona vehicle owners for unique rentals. Hosts keep up to 90% of earnings with built-in protection plans. Phoenix, Scottsdale, Tempe & beyond.',
   
   // Google Search Console Verification
@@ -29,16 +29,16 @@ export const metadata: Metadata = {
   // OPEN GRAPH - Facebook, LinkedIn
   // ============================================
   openGraph: {
-    title: 'ITWhip – Arizona\'s Peer-to-Peer Car Sharing Platform',
+    title: 'ItWhip – Arizona\'s Peer-to-Peer Car Sharing Platform',
     description: 'Rent unique cars from locals or earn up to 90% sharing yours. Fully insured P2P car sharing in Phoenix, Scottsdale, Tempe & more.',
     url: 'https://itwhip.com',
-    siteName: 'ITWhip',
+    siteName: 'ItWhip',
     images: [
       {
         url: 'https://itwhip.com/og-image.jpg',
         width: 1200,
         height: 630,
-        alt: 'ITWhip - Peer-to-Peer Car Sharing in Arizona',
+        alt: 'ItWhip - Peer-to-Peer Car Sharing in Arizona',
       }
     ],
     locale: 'en_US',
@@ -50,7 +50,7 @@ export const metadata: Metadata = {
   // ============================================
   twitter: {
     card: 'summary_large_image',
-    title: 'ITWhip – Peer-to-Peer Car Sharing in Arizona',
+    title: 'ItWhip – Peer-to-Peer Car Sharing in Arizona',
     description: 'Skip the rental counter. Rent from locals or list your car and earn up to 90%. Fully insured.',
     images: ['https://itwhip.com/og-image.jpg'],
     creator: '@itwhip',
@@ -65,9 +65,9 @@ export const metadata: Metadata = {
   // ============================================
   // AUTHOR & PUBLISHER
   // ============================================
-  authors: [{ name: 'ITWhip' }],
-  creator: 'ITWhip',
-  publisher: 'ITWhip',
+  authors: [{ name: 'ItWhip' }],
+  creator: 'ItWhip',
+  publisher: 'ItWhip',
   formatDetection: {
     email: false,
     address: false,
@@ -87,7 +87,7 @@ export const metadata: Metadata = {
   },
   
   // App-specific
-  applicationName: 'ITWhip',
+  applicationName: 'ItWhip',
   referrer: 'origin-when-cross-origin',
   category: 'car rental',
   classification: 'Peer-to-Peer Car Sharing Marketplace',
@@ -126,8 +126,8 @@ export default function RootLayout({
             __html: JSON.stringify({
               '@context': 'https://schema.org',
               '@type': 'Organization',
-              name: 'ITWhip',
-              alternateName: 'ITWhip Peer-to-Peer Car Sharing',
+              name: 'ItWhip',
+              alternateName: 'ItWhip Peer-to-Peer Car Sharing',
               url: 'https://itwhip.com',
               logo: 'https://itwhip.com/logo.png',
               description: 'Arizona\'s peer-to-peer car sharing marketplace. Rent unique vehicles directly from local owners or list your car and earn up to 90%.',
@@ -182,7 +182,7 @@ export default function RootLayout({
             __html: JSON.stringify({
               '@context': 'https://schema.org',
               '@type': 'AutoRental',
-              name: 'ITWhip Car Sharing',
+              name: 'ItWhip Car Sharing',
               description: 'Peer-to-peer car sharing marketplace in Arizona. Rent directly from local vehicle owners.',
               url: 'https://itwhip.com',
               priceRange: '$30-$500/day',
@@ -249,7 +249,7 @@ export default function RootLayout({
             __html: JSON.stringify({
               '@context': 'https://schema.org',
               '@type': 'WebSite',
-              name: 'ITWhip',
+              name: 'ItWhip',
               url: 'https://itwhip.com',
               description: 'Peer-to-peer car sharing in Arizona',
               potentialAction: {

@@ -190,7 +190,7 @@ export default function ListYourCarPage() {
       <JsonLd type="faq" faqs={listYourCarFAQs} />
       <JsonLd 
         type="howto" 
-        howToName="How to List Your Car and Start Earning on ITWhip"
+        howToName="How to List Your Car and Start Earning on ItWhip"
         howToDescription="Step-by-step guide to listing your car on Arizona's highest-paying P2P car sharing platform."
         howToSteps={listYourCarHowTo} 
       />
@@ -441,7 +441,7 @@ export default function ListYourCarPage() {
                   Arizona P2P Car Sharing Compliant (A.R.S. § 28-9601–9613)
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                  ITWhip operates under Arizona's peer-to-peer car sharing legislation. 
+                  ItWhip operates under Arizona's peer-to-peer car sharing legislation. 
                   This means proper insurance coverage, liability protections, and compliance with all Arizona motor vehicle requirements.
                 </p>
                 <Link 

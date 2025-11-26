@@ -2,7 +2,7 @@
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Host Earnings Calculator | Earn Up to 90% on ITWhip – Arizona P2P',
+  title: 'Host Earnings Calculator | Earn Up to 90% on ItWhip – Arizona P2P',
   description: 'Calculate your car sharing earnings in Phoenix. Keep 40-90% based on your insurance tier. $1M liability, Mileage Forensics™, ESG dashboard, 48-hour payments included.',
   keywords: [
     'car sharing earnings Phoenix',
@@ -13,14 +13,14 @@ export const metadata: Metadata = {
     'peer to peer car rental Phoenix',
     'rent my car Phoenix',
     'passive income car sharing',
-    'ITWhip host earnings',
+    'ItWhip host earnings',
     'car sharing revenue calculator'
   ],
   openGraph: {
-    title: 'Host Earnings Calculator | Earn Up to 90% on ITWhip',
+    title: 'Host Earnings Calculator | Earn Up to 90% on ItWhip',
     description: 'Calculate your car sharing earnings in Phoenix. Keep 40-90% based on your insurance tier. $1M liability included.',
     url: 'https://itwhip.com/host-earnings',
-    siteName: 'ITWhip',
+    siteName: 'ItWhip',
     locale: 'en_US',
     type: 'website',
     images: [
@@ -28,13 +28,13 @@ export const metadata: Metadata = {
         url: 'https://itwhip.com/og/host-earnings.png',
         width: 1200,
         height: 630,
-        alt: 'ITWhip Host Earnings Calculator - Earn Up to 90%'
+        alt: 'ItWhip Host Earnings Calculator - Earn Up to 90%'
       }
     ]
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Host Earnings Calculator | Earn Up to 90% on ITWhip',
+    title: 'Host Earnings Calculator | Earn Up to 90% on ItWhip',
     description: 'Calculate your car sharing earnings in Phoenix. Keep 40-90% based on your insurance tier.',
     images: ['https://itwhip.com/og/host-earnings.png']
   },
