@@ -29,11 +29,20 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       siteName: 'ItWhip',
       type: 'article',
       publishedTime: post.publishedAt,
+      images: [
+        {
+          url: `https://itwhip.com/og/blog/${post.slug}.png`,
+          width: 1200,
+          height: 630,
+          alt: post.title
+        }
+      ]
     },
     twitter: {
       card: 'summary_large_image',
       title: post.title,
       description: post.excerpt,
+      images: [`https://itwhip.com/og/blog/${post.slug}.png`]
     },
     alternates: {
       canonical: `https://itwhip.com/blog/${post.slug}`
