@@ -206,6 +206,50 @@ export default async function sitemap() {
   ]
 
   // ============================================
+  // BLOG PAGES (NEW)
+  // ============================================
+  const blogPages = [
+    // Main blog listing
+    {
+      url: `${baseUrl}/blog`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    // Individual blog posts
+    {
+      url: `${baseUrl}/blog/turo-vs-itwhip-arizona-2025`,
+      lastModified: new Date('2025-11-20'),
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/blog/renting-out-car-worth-it`,
+      lastModified: new Date('2025-11-18'),
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/blog/p2p-insurance-tiers`,
+      lastModified: new Date('2025-11-15'),
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/blog/esg-car-sharing`,
+      lastModified: new Date('2025-11-12'),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/blog/phoenix-airport-alternatives`,
+      lastModified: new Date('2025-11-10'),
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+  ]
+
+  // ============================================
   // STATIC PAGES - Other
   // ============================================
   const otherPages = [
@@ -305,6 +349,7 @@ export default async function sitemap() {
     ...hostPages,
     ...featurePages,
     ...rentalPages,
+    ...blogPages,  // NEW: Blog pages added
     ...otherPages,
     ...cityPages,
     ...carPages,

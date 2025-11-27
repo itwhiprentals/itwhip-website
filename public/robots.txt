@@ -25,6 +25,9 @@ Allow: /book
 Allow: /phoenix
 Allow: /faq
 
+# Blog (Public)
+Allow: /blog
+
 # Host Acquisition Pages (Public)
 Allow: /host/signup
 Allow: /host/login
