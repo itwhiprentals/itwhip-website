@@ -19,15 +19,40 @@ import {
 } from 'react-icons/io5'
 
 export const metadata: Metadata = {
-  title: 'ESG Impact Dashboard | Sustainability Tracking | ItWhip Arizona',
-  description: 'Track your environmental impact with every rental. ESG scores, carbon offset tracking, and sustainability metrics for hosts and guests. Arizona\'s eco-conscious P2P car sharing platform.',
-  keywords: 'ESG car sharing, sustainable car rental, carbon offset rental, eco-friendly car sharing Arizona, green transportation Phoenix, environmental impact tracking',
+  title: 'ESG Car Rental Arizona | Sustainable Car Sharing Phoenix | ItWhip',
+  description: 'Arizona\'s first ESG-focused car rental platform. Track carbon savings, rent eco-friendly vehicles, and earn sustainability badges. Electric vehicles, hybrid cars, and green transportation in Phoenix, Scottsdale, Tempe.',
+  keywords: [
+    'ESG car rental Arizona',
+    'ESG car rental Arizona 2025',
+    'sustainable car rental Phoenix',
+    'eco-friendly car sharing Arizona',
+    'green car rental Phoenix',
+    'electric vehicle rental Arizona',
+    'carbon neutral car rental',
+    'sustainable transportation Phoenix',
+    'hybrid car rental Scottsdale',
+    'environmental car sharing',
+    'green mobility Arizona'
+  ],
   openGraph: {
-    title: 'ESG Impact Dashboard | ItWhip',
-    description: 'See your environmental impact with every rental. Sustainability scores and carbon tracking.',
+    title: 'ESG Car Rental Arizona | Sustainable Car Sharing',
+    description: 'Arizona\'s first ESG-focused P2P car rental. Track your carbon savings, rent EVs, earn sustainability badges.',
     url: 'https://itwhip.com/esg-dashboard',
     siteName: 'ItWhip',
     type: 'website',
+    images: [
+      {
+        url: 'https://itwhip.com/og-esg-dashboard.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'ItWhip ESG Car Rental Dashboard - Sustainable Car Sharing in Arizona'
+      }
+    ]
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'ESG Car Rental Arizona | ItWhip',
+    description: 'Track your environmental impact with every rental. Arizona\'s sustainable P2P car sharing platform.',
   },
   alternates: {
     canonical: 'https://itwhip.com/esg-dashboard',
@@ -89,15 +114,15 @@ export default function ESGDashboardPage() {
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-100 dark:bg-green-900/30 rounded-full mb-4">
               <IoLeafOutline className="w-4 h-4 text-green-600" />
-              <span className="text-xs font-semibold text-green-700 dark:text-green-300">Sustainability Tracking</span>
+              <span className="text-xs font-semibold text-green-700 dark:text-green-300">ESG Car Rental Arizona</span>
             </div>
             
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-              ESG Impact Dashboard
+              Sustainable Car Sharing in Phoenix
             </h1>
             
             <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-400 mb-6 max-w-2xl mx-auto">
-              See your environmental impact with every rental. Track sustainability scores, carbon offsets, and community benefits.
+              Arizona's first ESG-focused P2P car rental. Track your environmental impact, rent eco-friendly vehicles, and earn sustainability badges.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
