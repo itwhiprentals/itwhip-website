@@ -17,8 +17,8 @@ export const metadata: Metadata = {
   // ============================================
   // PRIMARY SEO - P2P Car Sharing Focus
   // ============================================
-  title: 'ItWhip - Peer-to-Peer Car Sharing in Arizona | Rent from Local Owners',
-  description: 'Connect directly with Arizona vehicle owners for unique rentals. Hosts keep up to 90% of earnings with built-in protection plans. Phoenix, Scottsdale, Tempe & beyond.',
+  title: 'Peer to Peer Car Rental Arizona | Hosts Earn 90% | ItWhip',
+  description: 'Arizona\'s #1 peer-to-peer car rental platform. Rent unique cars from local Phoenix owners or list your car and earn up to 90%. $1M insurance included. Phoenix, Scottsdale, Tempe, Mesa, Chandler.',
   
   // Google Search Console Verification
   verification: {
@@ -29,8 +29,8 @@ export const metadata: Metadata = {
   // OPEN GRAPH - Facebook, LinkedIn
   // ============================================
   openGraph: {
-    title: 'ItWhip – Arizona\'s Peer-to-Peer Car Sharing Platform',
-    description: 'Rent unique cars from locals or earn up to 90% sharing yours. Fully insured P2P car sharing in Phoenix, Scottsdale, Tempe & more.',
+    title: 'Peer to Peer Car Rental Arizona | ItWhip',
+    description: 'Rent unique cars from local owners or earn up to 90% sharing yours. $1M insurance included. Phoenix, Scottsdale, Tempe & more.',
     url: 'https://itwhip.com',
     siteName: 'ItWhip',
     images: [
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
         url: 'https://itwhip.com/og-image.jpg',
         width: 1200,
         height: 630,
-        alt: 'ItWhip - Peer-to-Peer Car Sharing in Arizona',
+        alt: 'ItWhip - Peer to Peer Car Rental Arizona',
       }
     ],
     locale: 'en_US',
@@ -50,17 +50,32 @@ export const metadata: Metadata = {
   // ============================================
   twitter: {
     card: 'summary_large_image',
-    title: 'ItWhip – Peer-to-Peer Car Sharing in Arizona',
-    description: 'Skip the rental counter. Rent from locals or list your car and earn up to 90%. Fully insured.',
+    title: 'Peer to Peer Car Rental Arizona | ItWhip',
+    description: 'Skip the rental counter. Rent from local owners or list your car and earn up to 90%. $1M insurance included.',
     images: ['https://itwhip.com/og-image.jpg'],
     creator: '@itwhip',
     site: '@itwhip',
   },
   
   // ============================================
-  // KEYWORDS - P2P Car Sharing Focus
+  // KEYWORDS - P2P Car Rental Focus
   // ============================================
-  keywords: 'peer to peer car rental Phoenix, Turo alternative Arizona, rent car from owner Phoenix, P2P car sharing Scottsdale, list your car Phoenix, car sharing Arizona, rent my car Phoenix, local car rentals Tempe, Mesa car sharing, Chandler vehicle rental, Arizona car sharing platform, earn money with your car Phoenix',
+  keywords: [
+    'peer to peer car rental Arizona',
+    'peer to peer car rental Phoenix',
+    'P2P car rental Arizona',
+    'Turo alternative Arizona',
+    'rent car from owner Phoenix',
+    'car sharing Arizona',
+    'list your car Phoenix',
+    'rent my car Phoenix',
+    'local car rentals Scottsdale',
+    'Mesa car sharing',
+    'Chandler car rental',
+    'Tempe vehicle rental',
+    'earn money with your car Arizona',
+    'Arizona car sharing platform'
+  ],
   
   // ============================================
   // AUTHOR & PUBLISHER
@@ -127,10 +142,10 @@ export default function RootLayout({
               '@context': 'https://schema.org',
               '@type': 'Organization',
               name: 'ItWhip',
-              alternateName: 'ItWhip Peer-to-Peer Car Sharing',
+              alternateName: 'ItWhip Peer-to-Peer Car Rental Arizona',
               url: 'https://itwhip.com',
               logo: 'https://itwhip.com/logo.png',
-              description: 'Arizona\'s peer-to-peer car sharing marketplace. Rent unique vehicles directly from local owners or list your car and earn up to 90%.',
+              description: 'Arizona\'s #1 peer-to-peer car rental platform. Rent unique vehicles directly from local owners or list your car and earn up to 90%.',
               foundingDate: '2024',
               address: {
                 '@type': 'PostalAddress',
@@ -159,7 +174,6 @@ export default function RootLayout({
                 { '@type': 'City', name: 'Mesa' },
                 { '@type': 'City', name: 'Chandler' }
               ],
-              // Aggregate rating from real platform data
               aggregateRating: {
                 '@type': 'AggregateRating',
                 ratingValue: '4.6',
@@ -174,7 +188,6 @@ export default function RootLayout({
         
         {/* ============================================
             SCHEMA 2: AutoRental Service with Reviews
-            FIXED: Added aggregateRating to satisfy Google
             ============================================ */}
         <script
           type="application/ld+json"
@@ -182,8 +195,8 @@ export default function RootLayout({
             __html: JSON.stringify({
               '@context': 'https://schema.org',
               '@type': 'AutoRental',
-              name: 'ItWhip Car Sharing',
-              description: 'Peer-to-peer car sharing marketplace in Arizona. Rent directly from local vehicle owners.',
+              name: 'ItWhip - Peer to Peer Car Rental Arizona',
+              description: 'Arizona\'s #1 peer-to-peer car rental marketplace. Rent directly from local vehicle owners. Hosts earn up to 90%.',
               url: 'https://itwhip.com',
               priceRange: '$30-$500/day',
               address: {
@@ -196,7 +209,6 @@ export default function RootLayout({
                 '@type': 'State',
                 name: 'Arizona'
               },
-              // Aggregate rating from real platform data (182 reviews, 4.6 avg)
               aggregateRating: {
                 '@type': 'AggregateRating',
                 ratingValue: '4.6',
@@ -205,8 +217,21 @@ export default function RootLayout({
                 ratingCount: '182',
                 reviewCount: '182'
               },
-              // Vehicle category offers with proper Service type
               makesOffer: [
+                {
+                  '@type': 'Offer',
+                  itemOffered: {
+                    '@type': 'Service',
+                    name: 'Economy Car Rentals',
+                    description: 'Affordable vehicles for everyday use'
+                  },
+                  priceSpecification: {
+                    '@type': 'PriceSpecification',
+                    priceCurrency: 'USD',
+                    minPrice: '30',
+                    maxPrice: '75'
+                  }
+                },
                 {
                   '@type': 'Offer',
                   itemOffered: {
@@ -234,6 +259,20 @@ export default function RootLayout({
                     minPrice: '150',
                     maxPrice: '700'
                   }
+                },
+                {
+                  '@type': 'Offer',
+                  itemOffered: {
+                    '@type': 'Service',
+                    name: 'Electric Vehicle Rentals',
+                    description: 'Eco-friendly EVs and hybrids'
+                  },
+                  priceSpecification: {
+                    '@type': 'PriceSpecification',
+                    priceCurrency: 'USD',
+                    minPrice: '60',
+                    maxPrice: '200'
+                  }
                 }
               ]
             })
@@ -251,7 +290,7 @@ export default function RootLayout({
               '@type': 'WebSite',
               name: 'ItWhip',
               url: 'https://itwhip.com',
-              description: 'Peer-to-peer car sharing in Arizona',
+              description: 'Peer to peer car rental in Arizona. Rent from local owners or list your car and earn up to 90%.',
               potentialAction: {
                 '@type': 'SearchAction',
                 target: {
