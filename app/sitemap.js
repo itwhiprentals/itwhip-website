@@ -206,17 +206,39 @@ export default async function sitemap() {
   ]
 
   // ============================================
-  // BLOG PAGES (NEW)
+  // CITY PAGES - Static List (HIGH PRIORITY FOR LOCAL SEO)
+  // ============================================
+  const arizonaCities = [
+    'phoenix',
+    'scottsdale', 
+    'tempe',
+    'mesa',
+    'chandler',
+    'gilbert',
+    'glendale',
+    'peoria',
+    'paradise-valley',
+    'tucson',
+    'flagstaff'
+  ]
+  
+  const cityPages = arizonaCities.map(city => ({
+    url: `${baseUrl}/rentals/cities/${city}`,
+    lastModified: new Date(),
+    changeFrequency: 'daily',
+    priority: 0.9, // High priority for local SEO
+  }))
+
+  // ============================================
+  // BLOG PAGES
   // ============================================
   const blogPages = [
-    // Main blog listing
     {
       url: `${baseUrl}/blog`,
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.8,
     },
-    // Individual blog posts
     {
       url: `${baseUrl}/blog/turo-vs-itwhip-arizona-2025`,
       lastModified: new Date('2025-11-20'),
@@ -268,46 +290,6 @@ export default async function sitemap() {
   ]
 
   // ============================================
-  // DYNAMIC PAGES - City Hubs (from database)
-  // ============================================
-  let cityPages = []
-  try {
-    const carsResponse = await fetch(`${baseUrl}/api/rentals/search?limit=1000`, {
-      next: { revalidate: 3600 }
-    })
-    
-    if (carsResponse.ok) {
-      const data = await carsResponse.json()
-      const cars = data.results || data.cars || data || []
-      
-      const cities = [...new Set(cars
-        .map(car => car.city)
-        .filter(city => city && city.trim() !== '')
-      )]
-      
-      cityPages = cities.map(city => {
-        const citySlug = city.toLowerCase().replace(/\s+/g, '-')
-        return {
-          url: `${baseUrl}/rentals/cities/${citySlug}`,
-          lastModified: new Date(),
-          changeFrequency: 'daily',
-          priority: 0.8,
-        }
-      })
-    }
-  } catch (error) {
-    console.error('Error fetching cities for sitemap:', error)
-    
-    const fallbackCities = ['phoenix', 'scottsdale', 'tempe', 'mesa', 'chandler', 'glendale', 'gilbert']
-    cityPages = fallbackCities.map(city => ({
-      url: `${baseUrl}/rentals/cities/${city}`,
-      lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 0.8,
-    }))
-  }
-
-  // ============================================
   // DYNAMIC PAGES - Car Listings (from database)
   // ============================================
   let carPages = []
@@ -349,9 +331,9 @@ export default async function sitemap() {
     ...hostPages,
     ...featurePages,
     ...rentalPages,
-    ...blogPages,  // NEW: Blog pages added
+    ...cityPages,    // Static city pages - always included
+    ...blogPages,
     ...otherPages,
-    ...cityPages,
     ...carPages,
   ]
 }
