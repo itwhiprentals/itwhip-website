@@ -1,7 +1,6 @@
 // app/mileage-forensics/page.tsx
 import { Metadata } from 'next'
 import Link from 'next/link'
-import Script from 'next/script'
 import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
 import {
@@ -16,7 +15,6 @@ import {
   IoArrowForwardOutline,
   IoAnalyticsOutline,
   IoLockClosedOutline,
-  IoCloudUploadOutline,
   IoCheckmarkCircleOutline,
   IoBusinessOutline
 } from 'react-icons/io5'
@@ -117,7 +115,7 @@ export default function MileageForensicsPage() {
       url: 'https://itwhip.com'
     },
     datePublished: '2025-01-01',
-    dateModified: '2025-11-27',
+    dateModified: '2025-11-28',
     mainEntityOfPage: 'https://itwhip.com/mileage-forensics'
   }
 
@@ -199,21 +197,19 @@ export default function MileageForensicsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col">
+      {/* JSON-LD Schema - Inline for proper SSR */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+      />
+
       <Header />
 
       <main className="flex-1 pt-16">
-        {/* JSON-LD Schema */}
-        <Script
-          id="faq-schema"
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
-        />
-        <Script
-          id="article-schema"
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
-        />
-
         {/* Hero */}
         <section className="relative bg-gradient-to-br from-purple-700 via-purple-600 to-indigo-700 py-16 sm:py-20 overflow-hidden">
           {/* Background Pattern */}
