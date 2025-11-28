@@ -19,7 +19,14 @@ const nextConfig = {
   },
   async redirects() {
     return [
+      // ============================================
+      // REMOVED/OLD PAGES - Redirect to prevent 404/500
+      // ============================================
+      { source: '/driver-portal', destination: '/', permanent: true },
+      
+      // ============================================
       // Arizona City Hubs
+      // ============================================
       { source: '/phoenix', destination: '/rentals/cities/Phoenix', permanent: true },
       { source: '/scottsdale', destination: '/rentals/cities/Scottsdale', permanent: true },
       { source: '/tempe', destination: '/rentals/cities/Tempe', permanent: true },
