@@ -19,48 +19,7 @@ import {
   IoStarOutline
 } from 'react-icons/io5'
 
-export const metadata: Metadata = {
-  title: 'ESG Car Rental Arizona | Sustainable Car Sharing Phoenix, Scottsdale, Tempe | ItWhip',
-  description: 'Arizona\'s first ESG-focused car rental platform. Track carbon savings, rent eco-friendly vehicles in Phoenix, Scottsdale, and Tempe. Electric vehicles, hybrid cars, sustainability badges, and CSRD-compliant reporting for corporate travel.',
-  keywords: [
-    'ESG car rental Arizona',
-    'ESG car rental Arizona 2025',
-    'sustainable car rental Phoenix',
-    'eco-friendly car sharing Arizona',
-    'green car rental Phoenix',
-    'electric vehicle rental Arizona',
-    'carbon neutral car rental',
-    'sustainable transportation Phoenix',
-    'hybrid car rental Scottsdale',
-    'environmental car sharing',
-    'green mobility Arizona'
-  ],
-  openGraph: {
-    title: 'ESG Car Rental Arizona | Sustainable Car Sharing',
-    description: 'Arizona\'s first ESG-focused P2P car rental. Track your carbon savings, rent EVs, earn sustainability badges.',
-    url: 'https://itwhip.com/esg-dashboard',
-    siteName: 'ItWhip',
-    type: 'website',
-    images: [
-      {
-        url: 'https://itwhip.com/og/esg-dashboard.png',
-        width: 1200,
-        height: 630,
-        alt: 'ItWhip ESG Car Rental Dashboard - Sustainable Car Sharing in Arizona'
-      }
-    ]
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'ESG Car Rental Arizona | ItWhip',
-    description: 'Track your environmental impact with every rental. Arizona\'s sustainable P2P car sharing platform.',
-  },
-  alternates: {
-    canonical: 'https://itwhip.com/esg-dashboard',
-  },
-}
-
-// FAQ Schema Data
+// FAQ Schema
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
@@ -106,50 +65,51 @@ const articleSchema = {
   '@type': 'Article',
   headline: 'ESG Car Rental Arizona - Sustainable Car Sharing in Phoenix',
   description: 'Arizona\'s first ESG-focused car rental platform. Track carbon savings, rent eco-friendly vehicles, and earn sustainability badges.',
-  author: {
-    '@type': 'Organization',
-    name: 'ItWhip'
-  },
-  publisher: {
-    '@type': 'Organization',
-    name: 'ItWhip',
-    url: 'https://itwhip.com'
-  },
+  author: { '@type': 'Organization', name: 'ItWhip' },
+  publisher: { '@type': 'Organization', name: 'ItWhip', url: 'https://itwhip.com' },
   datePublished: '2025-01-01',
   dateModified: '2025-11-28',
   mainEntityOfPage: 'https://itwhip.com/esg-dashboard'
 }
 
+export const metadata: Metadata = {
+  title: 'ESG Car Rental Arizona | Sustainable Car Sharing Phoenix, Scottsdale, Tempe | ItWhip',
+  description: 'Arizona\'s first ESG-focused car rental platform. Track carbon savings, rent eco-friendly vehicles in Phoenix, Scottsdale, and Tempe. Electric vehicles, hybrid cars, sustainability badges, and CSRD-compliant reporting for corporate travel.',
+  keywords: [
+    'ESG car rental Arizona',
+    'ESG car rental Arizona 2025',
+    'sustainable car rental Phoenix',
+    'eco-friendly car sharing Arizona',
+    'green car rental Phoenix',
+    'electric vehicle rental Arizona',
+    'carbon neutral car rental',
+    'sustainable transportation Phoenix',
+    'hybrid car rental Scottsdale',
+    'environmental car sharing',
+    'green mobility Arizona'
+  ],
+  openGraph: {
+    title: 'ESG Car Rental Arizona | Sustainable Car Sharing',
+    description: 'Arizona\'s first ESG-focused P2P car rental. Track your carbon savings, rent EVs, earn sustainability badges.',
+    url: 'https://itwhip.com/esg-dashboard',
+    siteName: 'ItWhip',
+    type: 'website',
+    images: [{ url: 'https://itwhip.com/og/esg-dashboard.png', width: 1200, height: 630, alt: 'ItWhip ESG Car Rental Dashboard' }]
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'ESG Car Rental Arizona | ItWhip',
+    description: 'Track your environmental impact with every rental. Arizona\'s sustainable P2P car sharing platform.',
+  },
+  alternates: { canonical: 'https://itwhip.com/esg-dashboard' },
+}
+
 export default function ESGDashboardPage() {
   const impactMetrics = [
-    {
-      icon: IoLeafOutline,
-      title: 'Carbon Footprint Tracking',
-      description: 'Track CO2 emissions saved by sharing vehicles instead of individual ownership. Every trip calculates real environmental impact.',
-      stat: '2.4 tons',
-      statLabel: 'avg saved/year'
-    },
-    {
-      icon: IoCarOutline,
-      title: 'Vehicle Utilization',
-      description: 'Maximize the use of existing vehicles instead of manufacturing new ones. Shared cars reduce overall production demand.',
-      stat: '3x',
-      statLabel: 'higher utilization'
-    },
-    {
-      icon: IoFlashOutline,
-      title: 'EV Priority Placement',
-      description: 'Electric vehicles get premium search placement and earn bonus ESG points. Incentivizing clean energy transportation.',
-      stat: '+25',
-      statLabel: 'ESG points for EVs'
-    },
-    {
-      icon: IoWaterOutline,
-      title: 'Resource Efficiency',
-      description: 'Fewer cars on the road means less resource consumption, reduced parking needs, and lower urban congestion.',
-      stat: '40%',
-      statLabel: 'less parking needed'
-    }
+    { icon: IoLeafOutline, title: 'Carbon Footprint Tracking', description: 'Track CO2 emissions saved by sharing vehicles instead of individual ownership. Every trip calculates real environmental impact.', stat: '2.4 tons', statLabel: 'avg saved/year' },
+    { icon: IoCarOutline, title: 'Vehicle Utilization', description: 'Maximize the use of existing vehicles instead of manufacturing new ones. Shared cars reduce overall production demand.', stat: '3x', statLabel: 'higher utilization' },
+    { icon: IoFlashOutline, title: 'EV Priority Placement', description: 'Electric vehicles get premium search placement and earn bonus ESG points. Incentivizing clean energy transportation.', stat: '+25', statLabel: 'ESG points for EVs' },
+    { icon: IoWaterOutline, title: 'Resource Efficiency', description: 'Fewer cars on the road means less resource consumption, reduced parking needs, and lower urban congestion.', stat: '40%', statLabel: 'less parking needed' }
   ]
 
   const scoreFactors = [
@@ -178,9 +138,7 @@ export default function ESGDashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col">
-      <Header />
-
-      {/* JSON-LD Schemas - Inline for SSR */}
+      {/* JSON-LD Structured Data - Google reads from body */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
@@ -190,10 +148,11 @@ export default function ESGDashboardPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
       />
 
+      <Header />
+
       <main className="flex-1 pt-16">
         {/* Hero */}
         <section className="relative bg-gradient-to-br from-emerald-600 via-green-600 to-teal-700 py-16 sm:py-20 overflow-hidden">
-          {/* Background Pattern */}
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-10 left-10 w-40 h-40 border border-white rounded-full" />
             <div className="absolute bottom-10 right-10 w-60 h-60 border border-white rounded-full" />
@@ -215,22 +174,15 @@ export default function ESGDashboardPage() {
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Link 
-                href="/list-your-car"
-                className="w-full sm:w-auto px-6 py-3 bg-white text-emerald-700 rounded-lg font-semibold hover:bg-emerald-50 transition-colors flex items-center justify-center gap-2"
-              >
+              <Link href="/list-your-car" className="w-full sm:w-auto px-6 py-3 bg-white text-emerald-700 rounded-lg font-semibold hover:bg-emerald-50 transition-colors flex items-center justify-center gap-2">
                 List Your Car
                 <IoArrowForwardOutline className="w-4 h-4" />
               </Link>
-              <Link 
-                href="/"
-                className="w-full sm:w-auto px-6 py-3 bg-white/10 backdrop-blur-sm text-white rounded-lg font-semibold border border-white/30 hover:bg-white/20 transition-colors"
-              >
+              <Link href="/" className="w-full sm:w-auto px-6 py-3 bg-white/10 backdrop-blur-sm text-white rounded-lg font-semibold border border-white/30 hover:bg-white/20 transition-colors">
                 Browse Green Vehicles
               </Link>
             </div>
 
-            {/* Quick Stats */}
             <div className="mt-12 grid grid-cols-3 gap-4 max-w-lg mx-auto">
               <div className="text-center">
                 <div className="text-2xl sm:text-3xl font-bold text-white">85+</div>
@@ -252,14 +204,9 @@ export default function ESGDashboardPage() {
         <section className="py-12 sm:py-16 bg-white dark:bg-gray-900">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-10">
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
-                How Car Sharing Helps the Environment
-              </h2>
-              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-                Every shared ride reduces the need for new vehicles and lowers overall emissions
-              </p>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">How Car Sharing Helps the Environment</h2>
+              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">Every shared ride reduces the need for new vehicles and lowers overall emissions</p>
             </div>
-
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {impactMetrics.map((metric, idx) => (
                 <div key={idx} className="bg-gray-50 dark:bg-gray-800 rounded-lg p-5 border border-gray-200 dark:border-gray-700 hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors">
@@ -268,15 +215,11 @@ export default function ESGDashboardPage() {
                       <metric.icon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">
-                        {metric.title}
-                      </h3>
-                      <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-3 leading-relaxed">
-                        {metric.description}
-                      </p>
+                      <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">{metric.title}</h3>
+                      <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-3 leading-relaxed">{metric.description}</p>
                       <div className="flex items-baseline gap-1.5">
                         <span className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{metric.stat}</span>
-                        <span className="text-xs text-gray-500 dark:text-gray-500">{metric.statLabel}</span>
+                        <span className="text-xs text-gray-500">{metric.statLabel}</span>
                       </div>
                     </div>
                   </div>
@@ -290,16 +233,10 @@ export default function ESGDashboardPage() {
         <section className="py-12 sm:py-16 bg-gray-50 dark:bg-gray-950">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-10">
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
-                How Your ESG Score is Calculated
-              </h2>
-              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-                Your ESG Impact Score (0-100) reflects your vehicle's environmental and social contribution
-              </p>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">How Your ESG Score is Calculated</h2>
+              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">Your ESG Impact Score (0-100) reflects your vehicle's environmental and social contribution</p>
             </div>
-
             <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
-              {/* Desktop: Table */}
               <div className="hidden sm:block">
                 <table className="w-full">
                   <thead>
@@ -327,8 +264,6 @@ export default function ESGDashboardPage() {
                   </tbody>
                 </table>
               </div>
-
-              {/* Mobile View */}
               <div className="sm:hidden divide-y divide-gray-200 dark:divide-gray-700">
                 {scoreFactors.map((item, idx) => (
                   <div key={idx} className="p-4">
@@ -351,14 +286,9 @@ export default function ESGDashboardPage() {
         <section className="py-12 sm:py-16 bg-white dark:bg-gray-900">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-10">
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
-                ESG Score Tiers
-              </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Higher scores get priority placement in search results
-              </p>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">ESG Score Tiers</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Higher scores get priority placement in search results</p>
             </div>
-
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {tiers.map((tier, idx) => (
                 <div key={idx} className={`${tier.bg} ${tier.border} border rounded-lg p-5 text-center hover:scale-105 transition-transform`}>
@@ -368,15 +298,12 @@ export default function ESGDashboardPage() {
                 </div>
               ))}
             </div>
-
             <div className="mt-8 p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg">
               <div className="flex items-start gap-3">
                 <IoCheckmarkCircleOutline className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300">Eco Elite Badge</p>
-                  <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-0.5">
-                    Vehicles scoring 85+ earn the "Eco Elite" badge, displayed prominently on listings to help eco-conscious guests find green options.
-                  </p>
+                  <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-0.5">Vehicles scoring 85+ earn the "Eco Elite" badge, displayed prominently on listings to help eco-conscious guests find green options.</p>
                 </div>
               </div>
             </div>
@@ -391,14 +318,9 @@ export default function ESGDashboardPage() {
                 <IoBusinessOutline className="w-4 h-4 text-blue-600" />
                 <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">For Corporate Travel</span>
               </div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
-                Enterprise ESG Compliance
-              </h2>
-              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-                Meet regulatory requirements with verified sustainability data for every business trip
-              </p>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">Enterprise ESG Compliance</h2>
+              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">Meet regulatory requirements with verified sustainability data for every business trip</p>
             </div>
-
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {corporateBenefits.map((benefit, idx) => (
                 <div key={idx} className="bg-white dark:bg-gray-900 rounded-lg p-5 border border-gray-200 dark:border-gray-800 text-center">
@@ -408,12 +330,8 @@ export default function ESGDashboardPage() {
                 </div>
               ))}
             </div>
-
             <div className="mt-8 text-center">
-              <Link 
-                href="/corporate"
-                className="inline-flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 font-medium hover:underline"
-              >
+              <Link href="/corporate" className="inline-flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 font-medium hover:underline">
                 Learn about corporate accounts
                 <IoArrowForwardOutline className="w-4 h-4" />
               </Link>
@@ -429,17 +347,9 @@ export default function ESGDashboardPage() {
                 <IoSpeedometerOutline className="w-6 h-6 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <h3 className="text-base sm:text-lg font-semibold text-purple-900 dark:text-purple-300 mb-2">
-                  Powered by Mileage Forensics™
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                  ESG scores are verified using our proprietary tracking system. Real trip data ensures accurate 
-                  carbon calculations and prevents greenwashing. Every mile is accounted for and independently verifiable.
-                </p>
-                <Link 
-                  href="/mileage-forensics"
-                  className="inline-flex items-center gap-1.5 mt-3 text-sm text-purple-700 dark:text-purple-400 font-medium hover:underline"
-                >
+                <h3 className="text-base sm:text-lg font-semibold text-purple-900 dark:text-purple-300 mb-2">Powered by Mileage Forensics™</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">ESG scores are verified using our proprietary tracking system. Real trip data ensures accurate carbon calculations and prevents greenwashing. Every mile is accounted for and independently verifiable.</p>
+                <Link href="/mileage-forensics" className="inline-flex items-center gap-1.5 mt-3 text-sm text-purple-700 dark:text-purple-400 font-medium hover:underline">
                   Learn how Mileage Forensics works
                   <IoArrowForwardOutline className="w-4 h-4" />
                 </Link>
@@ -452,25 +362,11 @@ export default function ESGDashboardPage() {
         <section className="py-12 sm:py-16 bg-gradient-to-r from-emerald-600 to-teal-600">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <IoLeafOutline className="w-12 h-12 text-emerald-200 mx-auto mb-4" />
-            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
-              Make an Impact While You Earn
-            </h2>
-            <p className="text-base text-emerald-100 mb-6 max-w-xl mx-auto">
-              List your car and track your environmental contribution in real-time. Join Arizona's greenest car sharing community.
-            </p>
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">Make an Impact While You Earn</h2>
+            <p className="text-base text-emerald-100 mb-6 max-w-xl mx-auto">List your car and track your environmental contribution in real-time. Join Arizona's greenest car sharing community.</p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Link 
-                href="/list-your-car"
-                className="w-full sm:w-auto px-8 py-3 bg-white text-emerald-700 rounded-lg font-bold hover:bg-emerald-50 transition-colors shadow-lg"
-              >
-                List Your Car →
-              </Link>
-              <Link 
-                href="/host-benefits"
-                className="w-full sm:w-auto px-8 py-3 bg-transparent text-white rounded-lg font-semibold border-2 border-white/50 hover:bg-white/10 transition-colors"
-              >
-                View Host Benefits
-              </Link>
+              <Link href="/list-your-car" className="w-full sm:w-auto px-8 py-3 bg-white text-emerald-700 rounded-lg font-bold hover:bg-emerald-50 transition-colors shadow-lg">List Your Car →</Link>
+              <Link href="/host-benefits" className="w-full sm:w-auto px-8 py-3 bg-transparent text-white rounded-lg font-semibold border-2 border-white/50 hover:bg-white/10 transition-colors">View Host Benefits</Link>
             </div>
           </div>
         </section>
@@ -478,28 +374,17 @@ export default function ESGDashboardPage() {
         {/* Related Content */}
         <section className="py-10 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-base font-bold text-gray-900 dark:text-white mb-4">
-              Related Resources
-            </h2>
+            <h2 className="text-base font-bold text-gray-900 dark:text-white mb-4">Related Resources</h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <Link 
-                href="/blog/esg-car-sharing"
-                className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors group"
-              >
+              <Link href="/blog/esg-car-sharing" className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors group">
                 <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Blog</span>
                 <p className="text-sm font-medium text-gray-900 dark:text-white mt-1 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">ESG Car Sharing Guide →</p>
               </Link>
-              <Link 
-                href="/blog/p2p-insurance-tiers"
-                className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors group"
-              >
+              <Link href="/blog/p2p-insurance-tiers" className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors group">
                 <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Blog</span>
                 <p className="text-sm font-medium text-gray-900 dark:text-white mt-1 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">P2P Insurance Tiers Explained →</p>
               </Link>
-              <Link 
-                href="/insurance-guide"
-                className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors group"
-              >
+              <Link href="/insurance-guide" className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors group">
                 <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Guide</span>
                 <p className="text-sm font-medium text-gray-900 dark:text-white mt-1 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">Full Insurance Guide →</p>
               </Link>
