@@ -24,7 +24,8 @@ import {
   IoHelpCircleOutline,
   IoShieldCheckmarkOutline,
   IoTimeOutline,
-  IoCashOutline
+  IoCashOutline,
+  IoSearchOutline
 } from 'react-icons/io5'
 
 // Add ISR - Revalidate every 60 seconds
@@ -197,19 +198,14 @@ export async function generateMetadata({
     select: {
       make: true,
       model: true,
-      year: true,
-      photos: {
-        where: { isHero: true },
-        select: { url: true },
-        take: 1
-      }
+      year: true
     },
     orderBy: [{ rating: 'desc' }, { totalTrips: 'desc' }],
     take: 3
   })
 
-  const ogImage = topCars[0]?.photos[0]?.url || 
-    'https://images.unsplash.com/photo-1583267746897-2cf415887172?w=1200&h=630&fit=crop'
+  // Use Arizona OG image for all city pages
+  const ogImage = 'https://itwhip.com/og/cities/arizona.png'
 
   const carTypes = topCars.length > 0 
     ? `including ${topCars[0].year} ${topCars[0].make} ${topCars[0].model}`
@@ -232,7 +228,7 @@ export async function generateMetadata({
       title: `${cityName} Car Rentals - ${carCount} Available | ItWhip`,
       description: `Browse ${carCount} rental cars in ${cityName}. From luxury to economy, find your perfect ride with instant booking and free delivery.`,
       url: `https://itwhip.com/rentals/cities/${city}`,
-      images: [{ url: ogImage, width: 1200, height: 630, alt: `Car rentals in ${cityName}, ${cityData.state}` }],
+      images: [{ url: ogImage, width: 1200, height: 630, alt: `Car rentals in ${cityName}, Arizona` }],
       type: 'website'
     },
     twitter: {
@@ -265,6 +261,74 @@ export async function generateStaticParams() {
 // ============================================
 // COMPONENTS
 // ============================================
+
+// Hero Section Component
+function HeroSection({ cityName, cityData, minPrice }: { 
+  cityName: string
+  cityData: typeof DEFAULT_CITY_DATA
+  minPrice: number
+}) {
+  return (
+    <section className="relative h-[280px] sm:h-[320px] lg:h-[360px] overflow-hidden">
+      {/* Background Image */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: 'url(/images/hero/arizona-hero.jpg)' }}
+      />
+      {/* Gradient Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/30" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+      
+      {/* Content */}
+      <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col justify-center">
+        <div className="max-w-2xl">
+          {/* Location Badge */}
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 backdrop-blur-sm rounded-full text-white/90 text-xs font-medium mb-3">
+            <IoLocationOutline className="w-3.5 h-3.5" />
+            {cityName}, {cityData.state}
+          </div>
+          
+          {/* Main Heading */}
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2 leading-tight">
+            Rent Cars from Local Owners in {cityName}
+          </h1>
+          
+          {/* Subheading */}
+          <p className="text-sm sm:text-base text-white/80 mb-4 max-w-xl">
+            Rent directly from local owners starting at ${minPrice}/day with $1M insurance included.
+          </p>
+          
+          {/* Stats Row */}
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-white/90 text-xs sm:text-sm">
+            <div className="flex items-center gap-1.5">
+              <IoCashOutline className="w-4 h-4 text-emerald-400" />
+              <span>From <strong>${minPrice}</strong>/day</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <IoShieldCheckmarkOutline className="w-4 h-4 text-blue-400" />
+              <span><strong>$1M</strong> insurance</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <IoFlashOutline className="w-4 h-4 text-purple-400" />
+              <span>Instant booking</span>
+            </div>
+          </div>
+          
+          {/* CTA Button */}
+          <div className="mt-5">
+            <a 
+              href="#new-listings" 
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-lg transition-colors text-sm"
+            >
+              <IoSearchOutline className="w-4 h-4" />
+              Browse {cityName} Cars
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
 
 // Breadcrumb Component
 function Breadcrumbs({ cityName }: { cityName: string }) {
@@ -754,6 +818,13 @@ export default async function CityPage({
       
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <Header />
+        
+        {/* Hero Section */}
+        <HeroSection 
+          cityName={cityName} 
+          cityData={cityData} 
+          minPrice={minPrice} 
+        />
         
         <div>
           {/* Breadcrumbs */}
