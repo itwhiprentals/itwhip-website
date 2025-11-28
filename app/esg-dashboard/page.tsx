@@ -1,7 +1,6 @@
 // app/esg-dashboard/page.tsx
 import { Metadata } from 'next'
 import Link from 'next/link'
-import Script from 'next/script'
 import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
 import {
@@ -61,67 +60,67 @@ export const metadata: Metadata = {
   },
 }
 
-export default function ESGDashboardPage() {
-  // FAQ Schema Data
-  const faqSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: [
-      {
-        '@type': 'Question',
-        name: 'What is ESG car rental?',
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: 'ESG car rental tracks Environmental (carbon emissions, fuel efficiency), Social (safety features, accessibility), and Governance (compliance, transparency) impact of vehicle rentals. ItWhip is Arizona\'s first P2P platform to offer comprehensive ESG scoring and reporting.'
-        }
-      },
-      {
-        '@type': 'Question',
-        name: 'How do I improve my ESG score on ItWhip?',
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: 'List electric or hybrid vehicles (+25 points), maintain regular service records (+20 points), achieve high fuel efficiency of 35+ MPG (+15 points), maintain a clean non-smoking interior (+10 points), and keep your vehicle well-utilized through frequent rentals (+15 points).'
-        }
-      },
-      {
-        '@type': 'Question',
-        name: 'What are the ESG score tiers?',
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: 'ItWhip has four ESG tiers: Bronze (0-49 points), Silver (50-74 points), Gold (75-89 points), and Platinum (90-100 points). Vehicles scoring 85+ earn the Eco Elite badge and receive priority placement in search results.'
-        }
-      },
-      {
-        '@type': 'Question',
-        name: 'Does ItWhip support corporate ESG compliance?',
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: 'Yes, ItWhip provides CSRD (EU Corporate Sustainability Reporting Directive) and SEC climate disclosure compliant reporting. Corporate accounts receive quarterly ESG reports and per-booking carbon certificates for sustainability documentation.'
-        }
+// FAQ Schema Data
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'What is ESG car rental?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'ESG car rental tracks Environmental (carbon emissions, fuel efficiency), Social (safety features, accessibility), and Governance (compliance, transparency) impact of vehicle rentals. ItWhip is Arizona\'s first P2P platform to offer comprehensive ESG scoring and reporting.'
       }
-    ]
-  }
-
-  // Article Schema
-  const articleSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'Article',
-    headline: 'ESG Car Rental Arizona - Sustainable Car Sharing in Phoenix',
-    description: 'Arizona\'s first ESG-focused car rental platform. Track carbon savings, rent eco-friendly vehicles, and earn sustainability badges.',
-    author: {
-      '@type': 'Organization',
-      name: 'ItWhip'
     },
-    publisher: {
-      '@type': 'Organization',
-      name: 'ItWhip',
-      url: 'https://itwhip.com'
+    {
+      '@type': 'Question',
+      name: 'How do I improve my ESG score on ItWhip?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'List electric or hybrid vehicles (+25 points), maintain regular service records (+20 points), achieve high fuel efficiency of 35+ MPG (+15 points), maintain a clean non-smoking interior (+10 points), and keep your vehicle well-utilized through frequent rentals (+15 points).'
+      }
     },
-    datePublished: '2025-01-01',
-    dateModified: '2025-11-27',
-    mainEntityOfPage: 'https://itwhip.com/esg-dashboard'
-  }
+    {
+      '@type': 'Question',
+      name: 'What are the ESG score tiers?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'ItWhip has four ESG tiers: Bronze (0-49 points), Silver (50-74 points), Gold (75-89 points), and Platinum (90-100 points). Vehicles scoring 85+ earn the Eco Elite badge and receive priority placement in search results.'
+      }
+    },
+    {
+      '@type': 'Question',
+      name: 'Does ItWhip support corporate ESG compliance?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Yes, ItWhip provides CSRD (EU Corporate Sustainability Reporting Directive) and SEC climate disclosure compliant reporting. Corporate accounts receive quarterly ESG reports and per-booking carbon certificates for sustainability documentation.'
+      }
+    }
+  ]
+}
 
+// Article Schema
+const articleSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: 'ESG Car Rental Arizona - Sustainable Car Sharing in Phoenix',
+  description: 'Arizona\'s first ESG-focused car rental platform. Track carbon savings, rent eco-friendly vehicles, and earn sustainability badges.',
+  author: {
+    '@type': 'Organization',
+    name: 'ItWhip'
+  },
+  publisher: {
+    '@type': 'Organization',
+    name: 'ItWhip',
+    url: 'https://itwhip.com'
+  },
+  datePublished: '2025-01-01',
+  dateModified: '2025-11-28',
+  mainEntityOfPage: 'https://itwhip.com/esg-dashboard'
+}
+
+export default function ESGDashboardPage() {
   const impactMetrics = [
     {
       icon: IoLeafOutline,
@@ -181,19 +180,17 @@ export default function ESGDashboardPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col">
       <Header />
 
-      <main className="flex-1 pt-16">
-        {/* JSON-LD Schema */}
-        <Script
-          id="faq-schema"
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
-        />
-        <Script
-          id="article-schema"
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
-        />
+      {/* JSON-LD Schemas - Inline for SSR */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+      />
 
+      <main className="flex-1 pt-16">
         {/* Hero */}
         <section className="relative bg-gradient-to-br from-emerald-600 via-green-600 to-teal-700 py-16 sm:py-20 overflow-hidden">
           {/* Background Pattern */}
@@ -302,7 +299,7 @@ export default function ESGDashboardPage() {
             </div>
 
             <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
-              {/* Mobile: Cards | Desktop: Table */}
+              {/* Desktop: Table */}
               <div className="hidden sm:block">
                 <table className="w-full">
                   <thead>
@@ -477,6 +474,7 @@ export default function ESGDashboardPage() {
             </div>
           </div>
         </section>
+
         {/* Related Content */}
         <section className="py-10 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
