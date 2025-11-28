@@ -547,18 +547,14 @@ function CityInfoSection({ cityName, cityData, carCount }: {
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             {cityData.popularRoutes.map((route, i) => (
-              <Link 
+              <div 
                 key={i} 
-                href={`/rentals?location=${encodeURIComponent(cityName)}`}
-                className="px-2.5 py-2 sm:px-3 sm:py-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg text-[10px] sm:text-xs text-amber-800 dark:text-amber-300 leading-snug hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
+                className="px-2.5 py-2 sm:px-3 sm:py-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg text-[10px] sm:text-xs text-amber-800 dark:text-amber-300 leading-snug"
               >
                 {route}
-              </Link>
+              </div>
             ))}
           </div>
-          <p className="mt-2 text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
-            Need a car for a road trip? <Link href={`/rentals?location=${encodeURIComponent(cityName)}`} className="text-amber-600 hover:underline">Browse {cityName} rentals →</Link>
-          </p>
         </div>
       </div>
     </section>
