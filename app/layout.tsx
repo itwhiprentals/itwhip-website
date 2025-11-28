@@ -102,21 +102,20 @@ export const metadata: Metadata = {
 }
 
 // ============================================
-// CONSOLIDATED SCHEMA DEFINITIONS
+// SCHEMA DEFINITIONS
+// Each schema is standalone - no @id cross-references
+// to prevent Google's Rich Results Test from expanding/duplicating
 // ============================================
 
-// Schema 1: Organization (with @id for linking)
-// NOTE: aggregateRating is ONLY in AutoRental schema below - do not duplicate here
+// Schema 1: Organization
 const organizationSchema = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
-  '@id': 'https://itwhip.com/#organization',
   name: 'ItWhip',
   alternateName: 'ItWhip Peer-to-Peer Car Rental Arizona',
   url: 'https://itwhip.com',
   logo: {
     '@type': 'ImageObject',
-    '@id': 'https://itwhip.com/#logo',
     url: 'https://itwhip.com/logo.png',
     width: 512,
     height: 512
@@ -153,14 +152,12 @@ const organizationSchema = {
     { '@type': 'City', name: 'Glendale' },
     { '@type': 'City', name: 'Tucson' }
   ]
-  // NO aggregateRating here - it goes only in AutoRental
 }
 
-// Schema 2: AutoRental/LocalBusiness (single source of aggregateRating)
+// Schema 2: AutoRental with aggregateRating (standalone - no parentOrganization reference)
 const autoRentalSchema = {
   '@context': 'https://schema.org',
   '@type': 'AutoRental',
-  '@id': 'https://itwhip.com/#autorental',
   name: 'ItWhip - Peer to Peer Car Rental Arizona',
   description: 'Arizona\'s #1 peer-to-peer car rental marketplace. Rent directly from local vehicle owners. Hosts earn up to 90%.',
   url: 'https://itwhip.com',
@@ -181,10 +178,6 @@ const autoRentalSchema = {
     '@type': 'State',
     name: 'Arizona'
   },
-  parentOrganization: {
-    '@id': 'https://itwhip.com/#organization'
-  },
-  // SINGLE aggregateRating - only place it appears
   aggregateRating: {
     '@type': 'AggregateRating',
     ratingValue: '4.8',
@@ -261,17 +254,13 @@ const autoRentalSchema = {
   ]
 }
 
-// Schema 3: WebSite with SearchAction
+// Schema 3: WebSite with SearchAction (standalone - no publisher reference)
 const webSiteSchema = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
-  '@id': 'https://itwhip.com/#website',
   name: 'ItWhip',
   url: 'https://itwhip.com',
   description: 'Peer to peer car rental in Arizona. Rent from local owners or list your car and earn up to 90%.',
-  publisher: {
-    '@id': 'https://itwhip.com/#organization'
-  },
   potentialAction: {
     '@type': 'SearchAction',
     target: {
