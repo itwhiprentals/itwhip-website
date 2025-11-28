@@ -23,6 +23,32 @@ const nextConfig = {
       // REMOVED/OLD PAGES - Redirect to prevent 404/500
       // ============================================
       { source: '/driver-portal', destination: '/', permanent: true },
+      { source: '/driver-agreement', destination: '/terms', permanent: true },
+      { source: '/trip-planner', destination: '/', permanent: true },
+      { source: '/status', destination: '/', permanent: true },
+      
+      // ============================================
+      // RENAMED PAGES - Point to new locations
+      // ============================================
+      { source: '/insurance', destination: '/insurance-guide', permanent: true },
+      { source: '/press', destination: '/blog', permanent: true },
+      { source: '/help', destination: '/faq', permanent: true },
+      { source: '/support', destination: '/faq', permanent: true },
+      { source: '/platform-agreement', destination: '/terms', permanent: true },
+      { source: '/sitemap', destination: '/sitemap.xml', permanent: true },
+      
+      // ============================================
+      // HOST/DEMO PAGES - Redirect to relevant pages
+      // ============================================
+      { source: '/host-university', destination: '/host-benefits', permanent: true },
+      { source: '/host-demo', destination: '/list-your-car', permanent: true },
+      { source: '/schedule-demo', destination: '/list-your-car', permanent: true },
+      { source: '/schedule-call', destination: '/contact', permanent: true },
+      
+      // ============================================
+      // AUTH PAGES
+      // ============================================
+      { source: '/forgot-password', destination: '/auth/login', permanent: false },
       
       // ============================================
       // Arizona City Hubs

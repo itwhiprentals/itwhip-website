@@ -13,6 +13,8 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://itwhip.com'),
+  
   title: 'Peer to Peer Car Rental Arizona | Hosts Earn 90% | ItWhip',
   description: 'Arizona\'s #1 peer-to-peer car rental platform. Rent unique cars from local Phoenix owners or list your car and earn up to 90%. $1M insurance included. Phoenix, Scottsdale, Tempe, Mesa, Chandler.',
   
@@ -281,7 +283,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="theme-color" content="#7c3aed" />
-        <link rel="canonical" href="https://itwhip.com" />
+        {/* REMOVED: Hardcoded canonical - let each page set its own */}
         
         {/* Schema 1: Organization */}
         <script
