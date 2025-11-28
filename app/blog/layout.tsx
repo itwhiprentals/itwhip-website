@@ -51,44 +51,17 @@ export const metadata: Metadata = {
   }
 }
 
-// Blog Schema - For the blog section
+// Blog Schema - NO blogPost array (individual pages handle their own schemas)
 const blogSchema = {
   '@context': 'https://schema.org',
   '@type': 'Blog',
-  '@id': 'https://itwhip.com/blog/#blog',
   name: 'ItWhip Blog',
   description: 'Expert insights on peer-to-peer car rental in Arizona. Tips for hosts, insurance guides, ESG tracking, and Phoenix car sharing news.',
   url: 'https://itwhip.com/blog',
   publisher: {
-    '@id': 'https://itwhip.com/#organization'
+    '@type': 'Organization',
+    name: 'ItWhip'
   },
-  blogPost: [
-    {
-      '@type': 'BlogPosting',
-      headline: 'Turo vs ItWhip: Best P2P Car Rental in Arizona (2025)',
-      url: 'https://itwhip.com/blog/turo-vs-itwhip-arizona-2025'
-    },
-    {
-      '@type': 'BlogPosting',
-      headline: 'Is Renting Out Your Car Worth It in Arizona?',
-      url: 'https://itwhip.com/blog/renting-out-car-worth-it'
-    },
-    {
-      '@type': 'BlogPosting',
-      headline: 'P2P Car Rental Insurance Explained: 40%, 75%, 90% Tiers',
-      url: 'https://itwhip.com/blog/p2p-insurance-tiers'
-    },
-    {
-      '@type': 'BlogPosting',
-      headline: 'ESG Car Sharing: What It Means and Why It Matters',
-      url: 'https://itwhip.com/blog/esg-car-sharing'
-    },
-    {
-      '@type': 'BlogPosting',
-      headline: 'Phoenix Airport Car Rental Alternatives: Skip the Counter',
-      url: 'https://itwhip.com/blog/phoenix-airport-alternatives'
-    }
-  ],
   inLanguage: 'en-US'
 }
 
@@ -121,6 +94,7 @@ export default function BlogLayout({
     <>
       {/* Blog-specific JSON-LD only */}
       {/* Organization/LocalBusiness/WebSite schemas are in root layout - DO NOT ADD HERE */}
+      {/* Individual blog posts add their own BlogPosting schema - DO NOT LIST HERE */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{

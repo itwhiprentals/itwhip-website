@@ -66,15 +66,39 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
   const { prev, next } = getAdjacentPosts(slug)
   
-  // Schema
+  // Schema - Fixed with proper datetime format and complete fields
   const articleSchema = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
     headline: post.title,
     description: post.excerpt,
-    datePublished: post.publishedAt,
-    author: { '@type': 'Person', name: post.author.name },
-    publisher: { '@type': 'Organization', name: 'ItWhip' }
+    url: `https://itwhip.com/blog/${post.slug}`,
+    // Fixed: Added timezone for valid datetime
+    datePublished: `${post.publishedAt}T00:00:00-07:00`,
+    dateModified: `${post.publishedAt}T00:00:00-07:00`,
+    // Fixed: Added image field
+    image: `https://itwhip.com/og/blog/${post.slug}.png`,
+    // Fixed: Complete author object with url
+    author: {
+      '@type': 'Person',
+      name: post.author.name,
+      url: 'https://itwhip.com/about'
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'ItWhip',
+      logo: {
+        '@type': 'ImageObject',
+        url: 'https://itwhip.com/logo.png'
+      }
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      url: `https://itwhip.com/blog/${post.slug}`
+    },
+    keywords: post.keywords.join(', '),
+    articleSection: post.category,
+    inLanguage: 'en-US'
   }
 
   return (
