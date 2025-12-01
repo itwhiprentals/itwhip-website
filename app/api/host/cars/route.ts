@@ -29,7 +29,21 @@ async function getHostFromHeaders() {
 // GET - Fetch all cars for host
 export async function GET(request: NextRequest) {
   try {
-    const host = await getHostFromHeaders()
+    // Check for hostId in query params first (for VerificationProgress component)
+    const { searchParams } = new URL(request.url)
+    const queryHostId = searchParams.get('hostId')
+    
+    let host = null
+    
+    if (queryHostId) {
+      // Fetch host directly by ID (for components that pass hostId)
+      host = await prisma.rentalHost.findUnique({
+        where: { id: queryHostId }
+      })
+    } else {
+      // Fall back to header-based auth
+      host = await getHostFromHeaders()
+    }
     
     if (!host) {
       return NextResponse.json(
@@ -38,10 +52,11 @@ export async function GET(request: NextRequest) {
       )
     }
     
-    // Check if host has permission to view cars
-    if (host.approvalStatus !== 'APPROVED' && host.approvalStatus !== 'SUSPENDED') {
+    // ✅ FIXED: Allow PENDING hosts to view their cars
+    // Only block REJECTED hosts completely
+    if (host.approvalStatus === 'REJECTED') {
       return NextResponse.json(
-        { error: 'Host not approved' },
+        { error: 'Host application rejected' },
         { status: 403 }
       )
     }
@@ -55,7 +70,7 @@ export async function GET(request: NextRequest) {
         photos: {
           orderBy: { order: 'asc' }
         },
-        classification: true, // Include insurance classification
+        classification: true,
         bookings: {
           where: {
             OR: [
@@ -82,7 +97,8 @@ export async function GET(request: NextRequest) {
               where: {
                 status: 'COMPLETED'
               }
-            }
+            },
+            photos: true  // ✅ Added for completion checking
           }
         }
       },
@@ -91,31 +107,39 @@ export async function GET(request: NextRequest) {
       }
     })
     
-    // ✅ NEW: Get all active claims for all cars in one query
+    // Get all active claims for all cars in one query
     const carIds = cars.map(car => car.id)
-    const activeClaims = await prisma.claim.findMany({
-      where: {
-        booking: {
-          carId: { in: carIds }
-        },
-        status: {
-          in: ['PENDING', 'UNDER_REVIEW']
-        }
-      },
-      include: {
-        booking: {
-          select: {
-            bookingCode: true,
-            carId: true
-          }
-        }
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
-    })
+    let activeClaims: any[] = []
     
-    // ✅ NEW: Create a map of carId -> active claims
+    if (carIds.length > 0) {
+      try {
+        activeClaims = await prisma.claim.findMany({
+          where: {
+            booking: {
+              carId: { in: carIds }
+            },
+            status: {
+              in: ['PENDING', 'UNDER_REVIEW']
+            }
+          },
+          include: {
+            booking: {
+              select: {
+                bookingCode: true,
+                carId: true
+              }
+            }
+          },
+          orderBy: {
+            createdAt: 'desc'
+          }
+        })
+      } catch (err) {
+        console.error('Error fetching claims:', err)
+      }
+    }
+    
+    // Create a map of carId -> active claims
     const claimsByCarId = new Map<string, typeof activeClaims>()
     activeClaims.forEach(claim => {
       const carId = claim.booking.carId
@@ -139,10 +163,10 @@ export async function GET(request: NextRequest) {
       const activeBookings = car.bookings.filter(b => b.status === 'ACTIVE').length
       const upcomingBookings = car.bookings.filter(b => b.status === 'CONFIRMED').length
       
-      // ✅ NEW: Get active claims for this car
+      // Get active claims for this car
       const carClaims = claimsByCarId.get(car.id) || []
       const hasActiveClaim = carClaims.length > 0
-      const mostRecentClaim = carClaims[0] // Already sorted by createdAt desc
+      const mostRecentClaim = carClaims[0]
       
       return {
         id: car.id,
@@ -152,6 +176,7 @@ export async function GET(request: NextRequest) {
         trim: car.trim,
         color: car.color,
         licensePlate: car.licensePlate,
+        vin: car.vin,  // ✅ Added for completion checking
         
         // Specs
         carType: car.carType,
@@ -190,6 +215,9 @@ export async function GET(request: NextRequest) {
         totalTrips: car._count.bookings,
         rating: avgRating,
         
+        // ✅ Photo count for completion checking
+        photoCount: car._count.photos,
+        
         // Photos
         photos: car.photos.map(p => ({
           id: p.id,
@@ -202,7 +230,7 @@ export async function GET(request: NextRequest) {
         activeBookings: activeBookings,
         upcomingBookings: upcomingBookings,
         
-        // ✅ NEW: Active claim information
+        // Active claim information
         hasActiveClaim: hasActiveClaim,
         activeClaimCount: carClaims.length,
         activeClaim: mostRecentClaim ? {
@@ -216,13 +244,14 @@ export async function GET(request: NextRequest) {
     })
     
     return NextResponse.json({
+      success: true,
       cars: formattedCars,
       total: formattedCars.length,
       active: formattedCars.filter(c => c.isActive).length,
       inactive: formattedCars.filter(c => !c.isActive).length,
       insured: formattedCars.filter(c => c.insuranceEligible).length,
       uninsured: formattedCars.filter(c => !c.insuranceEligible).length,
-      withActiveClaims: formattedCars.filter(c => c.hasActiveClaim).length // ✅ NEW
+      withActiveClaims: formattedCars.filter(c => c.hasActiveClaim).length
     })
     
   } catch (error) {
@@ -472,10 +501,7 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // ========================================================================
-    // ✅ NEW: TRIGGER ESG EVENT - VEHICLE ADDED
-    // ========================================================================
-    
+    // ✅ TRIGGER ESG EVENT - VEHICLE ADDED
     try {
       await handleVehicleAdded(host.id, {
         carId: newCar.id,
@@ -497,7 +523,6 @@ export async function POST(request: NextRequest) {
         insuranceEligible: newCar.insuranceEligible
       })
     } catch (esgError) {
-      // Don't fail car creation if ESG update fails
       console.error('❌ ESG event failed (non-critical):', esgError)
     }
     

@@ -9,7 +9,8 @@ import {
   IoDocumentTextOutline,
   IoShieldCheckmarkOutline,
   IoCardOutline,
-  IoChevronForwardOutline
+  IoChevronForwardOutline,
+  IoCarSportOutline
 } from 'react-icons/io5'
 
 interface VerificationStep {
@@ -24,13 +25,34 @@ interface VerificationStep {
   priority: 'HIGH' | 'MEDIUM' | 'LOW'
 }
 
+interface CarData {
+  id: string
+  dailyRate: number
+  vin: string | null
+  licensePlate: string | null
+  photoCount: number
+}
+
 interface VerificationProgressProps {
   hostId: string
   approvalStatus: string
   documentStatuses?: any
   backgroundCheckStatus?: string
   pendingActions?: string[]
+  // These can still be passed but we'll also fetch directly
+  hasIncompleteCar?: boolean
+  incompleteCarId?: string
   onActionClick?: (stepId: string) => void
+}
+
+// Helper to check car completion
+function isCarComplete(car: CarData): boolean {
+  const hasPhotos = car.photoCount >= 6
+  const hasVin = car.vin && car.vin.length >= 17
+  const hasLicensePlate = car.licensePlate && car.licensePlate.length >= 2
+  const hasPricing = car.dailyRate && car.dailyRate > 0
+  
+  return hasPhotos && hasVin && hasLicensePlate && hasPricing
 }
 
 export default function VerificationProgress({
@@ -39,21 +61,89 @@ export default function VerificationProgress({
   documentStatuses = {},
   backgroundCheckStatus = 'NOT_STARTED',
   pendingActions = [],
+  hasIncompleteCar: hasIncompleteCarProp,
+  incompleteCarId: incompleteCarIdProp,
   onActionClick
 }: VerificationProgressProps) {
   const [progress, setProgress] = useState(0)
   const [steps, setSteps] = useState<VerificationStep[]>([])
   const [loading, setLoading] = useState(true)
+  
+  // Local state for car completion - fetched directly
+  const [hasIncompleteCar, setHasIncompleteCar] = useState(false)
+  const [incompleteCarId, setIncompleteCarId] = useState<string | null>(null)
+  const [carsFetched, setCarsFetched] = useState(false)
 
+  // Fetch cars directly to check completion status
   useEffect(() => {
-    fetchVerificationStatus()
-  }, [hostId, approvalStatus, backgroundCheckStatus]) // Removed documentStatuses - it's an object that changes reference
+    const fetchCars = async () => {
+      try {
+        const response = await fetch(`/api/host/cars?hostId=${hostId}`, {
+          credentials: 'include'
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          const cars = data.cars || data.data || []
+          
+          console.log('VerificationProgress - Fetched cars:', cars)
+          
+          if (cars.length > 0) {
+            // Check each car for completion
+            const incompleteCar = cars.find((car: any) => {
+              const photoCount = car.photoCount || car._count?.photos || (car.photos?.length || 0)
+              const carData: CarData = {
+                id: car.id,
+                dailyRate: car.dailyRate || 0,
+                vin: car.vin,
+                licensePlate: car.licensePlate,
+                photoCount: photoCount
+              }
+              return !isCarComplete(carData)
+            })
+            
+            if (incompleteCar) {
+              console.log('VerificationProgress - Found incomplete car:', incompleteCar.id)
+              setHasIncompleteCar(true)
+              setIncompleteCarId(incompleteCar.id)
+            } else {
+              setHasIncompleteCar(false)
+              setIncompleteCarId(null)
+            }
+          } else {
+            // No cars at all - check if we should show as incomplete
+            // If host just signed up with vehicle info, car might exist but not fetched
+            console.log('VerificationProgress - No cars found')
+            setHasIncompleteCar(false)
+            setIncompleteCarId(null)
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching cars for verification:', error)
+        // Fall back to props
+        setHasIncompleteCar(hasIncompleteCarProp || false)
+        setIncompleteCarId(incompleteCarIdProp || null)
+      } finally {
+        setCarsFetched(true)
+      }
+    }
+    
+    if (hostId) {
+      fetchCars()
+    }
+  }, [hostId, hasIncompleteCarProp, incompleteCarIdProp])
 
-  const fetchVerificationStatus = async () => {
+  // Build steps after cars are fetched
+  useEffect(() => {
+    if (!carsFetched) return
+    
+    buildVerificationSteps()
+  }, [carsFetched, hasIncompleteCar, approvalStatus, backgroundCheckStatus, documentStatuses])
+
+  const buildVerificationSteps = () => {
     try {
       setLoading(true)
 
-      // Build verification steps based on current status
       const verificationSteps: VerificationStep[] = []
 
       // Step 1: Profile Completion
@@ -61,7 +151,7 @@ export default function VerificationProgress({
         id: 'profile',
         title: 'Complete Your Profile',
         description: 'Add your bio, profile photo, and basic information',
-        status: 'COMPLETED', // Assumed completed if they're here
+        status: 'COMPLETED',
         icon: IoDocumentTextOutline,
         priority: 'HIGH'
       })
@@ -80,34 +170,25 @@ export default function VerificationProgress({
         priority: 'HIGH'
       })
 
-      // Step 3: Document Review
-      if (docsStatus === 'COMPLETED' || docsStatus === 'PENDING_REVIEW') {
-        verificationSteps.push({
-          id: 'document_review',
-          title: 'Document Review',
-          description: 'Our team is reviewing your submitted documents',
-          status: docsStatus === 'COMPLETED' ? 'COMPLETED' : 'PENDING_REVIEW',
-          icon: IoShieldCheckmarkOutline,
-          estimatedTime: '1-2 business days',
-          priority: 'MEDIUM'
-        })
-      }
+      // Step 3: Vehicle Listing Completion - ALWAYS show this step
+      const vehicleStatus = hasIncompleteCar ? 'IN_PROGRESS' : 'COMPLETED'
+      console.log('VerificationProgress - Vehicle step status:', vehicleStatus, 'hasIncompleteCar:', hasIncompleteCar)
+      
+      verificationSteps.push({
+        id: 'vehicle',
+        title: 'Complete Your Vehicle Listing',
+        description: hasIncompleteCar 
+          ? 'Add photos, VIN, pricing to finish your listing'
+          : 'Your vehicle listing is complete and ready for review',
+        status: vehicleStatus,
+        icon: IoCarSportOutline,
+        actionUrl: hasIncompleteCar && incompleteCarId ? `/host/cars/${incompleteCarId}/edit` : undefined,
+        actionLabel: 'Complete Listing',
+        estimatedTime: '10 minutes',
+        priority: 'HIGH'
+      })
 
-      // Step 4: Background Check
-      const bgStatus = determineBackgroundCheckStatus(backgroundCheckStatus)
-      if (docsStatus === 'COMPLETED') {
-        verificationSteps.push({
-          id: 'background_check',
-          title: 'Background Verification',
-          description: 'Identity, DMV, and criminal record checks',
-          status: bgStatus,
-          icon: IoShieldCheckmarkOutline,
-          estimatedTime: '2-3 business days',
-          priority: 'HIGH'
-        })
-      }
-
-      // Step 5: Bank Account Setup
+      // Step 4: Bank Account Setup
       verificationSteps.push({
         id: 'bank_account',
         title: 'Connect Bank Account',
@@ -120,21 +201,6 @@ export default function VerificationProgress({
         priority: 'MEDIUM'
       })
 
-      // Step 6: Final Approval
-      if (docsStatus === 'COMPLETED' && bgStatus === 'COMPLETED') {
-        verificationSteps.push({
-          id: 'final_approval',
-          title: 'Final Approval',
-          description: approvalStatus === 'APPROVED' 
-            ? 'Your account is approved! Start listing vehicles' 
-            : 'Final review in progress',
-          status: approvalStatus === 'APPROVED' ? 'COMPLETED' : 'PENDING_REVIEW',
-          icon: IoCheckmarkCircle,
-          estimatedTime: approvalStatus === 'APPROVED' ? undefined : '24 hours',
-          priority: 'HIGH'
-        })
-      }
-
       setSteps(verificationSteps)
 
       // Calculate progress percentage
@@ -144,7 +210,7 @@ export default function VerificationProgress({
       setProgress(progressPercentage)
 
     } catch (error) {
-      console.error('Error fetching verification status:', error)
+      console.error('Error building verification steps:', error)
     } finally {
       setLoading(false)
     }
@@ -176,39 +242,6 @@ export default function VerificationProgress({
     return 'IN_PROGRESS'
   }
 
-  const determineBackgroundCheckStatus = (status: string): VerificationStep['status'] => {
-    switch (status) {
-      case 'PASSED':
-      case 'COMPLETED':
-        return 'COMPLETED'
-      case 'FAILED':
-        return 'FAILED'
-      case 'IN_PROGRESS':
-      case 'PENDING':
-        return 'IN_PROGRESS'
-      default:
-        return 'NOT_STARTED'
-    }
-  }
-
-  const getStatusIcon = (status: VerificationStep['status']) => {
-    switch (status) {
-      case 'COMPLETED':
-        return <IoCheckmarkCircle className="w-6 h-6 text-green-500" />
-      case 'FAILED':
-        return <IoCloseCircle className="w-6 h-6 text-red-500" />
-      case 'IN_PROGRESS':
-      case 'PENDING_REVIEW':
-        return (
-          <div className="relative">
-            <div className="w-6 h-6 border-3 border-blue-500 border-t-transparent rounded-full animate-spin" />
-          </div>
-        )
-      default:
-        return <div className="w-6 h-6 bg-gray-300 dark:bg-gray-600 rounded-full" />
-    }
-  }
-
   const getStatusColor = (status: VerificationStep['status']) => {
     switch (status) {
       case 'COMPLETED':
@@ -238,14 +271,14 @@ export default function VerificationProgress({
     }
   }
 
-  if (loading) {
+  if (loading || !carsFetched) {
     return (
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
         <div className="animate-pulse space-y-4">
           <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
           <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded"></div>
           <div className="space-y-3">
-            {[1, 2, 3].map(i => (
+            {[1, 2, 3, 4].map(i => (
               <div key={i} className="h-16 bg-gray-100 dark:bg-gray-800 rounded-lg"></div>
             ))}
           </div>
@@ -262,7 +295,7 @@ export default function VerificationProgress({
           Verification Progress
         </h3>
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          Complete all steps to start listing vehicles
+          Complete all steps to start accepting bookings
         </p>
       </div>
 
@@ -278,7 +311,7 @@ export default function VerificationProgress({
         </div>
         <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
           <div 
-            className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-500 ease-out"
+            className="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full transition-all duration-500 ease-out"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -287,8 +320,8 @@ export default function VerificationProgress({
       {/* Steps */}
       <div className="space-y-4">
         {steps.map((step, index) => {
-          const Icon = step.icon
           const isLastStep = index === steps.length - 1
+          const isVehicleStep = step.id === 'vehicle'
           
           return (
             <div key={step.id} className="relative">
@@ -298,19 +331,35 @@ export default function VerificationProgress({
               )}
               
               {/* Step Card */}
-              <div className={`relative bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border-2 transition-all ${
+              <div className={`relative rounded-lg p-4 border-2 transition-all ${
                 step.status === 'FAILED' 
-                  ? 'border-red-200 dark:border-red-900'
+                  ? 'border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-900/10'
                   : step.status === 'COMPLETED'
-                  ? 'border-green-200 dark:border-green-900'
+                  ? 'border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-900/10'
                   : step.status === 'IN_PROGRESS' || step.status === 'PENDING_REVIEW'
-                  ? 'border-blue-200 dark:border-blue-900'
-                  : 'border-gray-200 dark:border-gray-700'
+                  ? isVehicleStep 
+                    ? 'border-yellow-300 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/20'
+                    : 'border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-900/10'
+                  : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800'
               }`}>
                 <div className="flex items-start gap-4">
                   {/* Status Icon */}
                   <div className="flex-shrink-0 relative z-10 bg-white dark:bg-gray-800 rounded-full p-1">
-                    {getStatusIcon(step.status)}
+                    {step.status === 'COMPLETED' ? (
+                      <IoCheckmarkCircle className="w-6 h-6 text-green-500" />
+                    ) : step.status === 'FAILED' ? (
+                      <IoCloseCircle className="w-6 h-6 text-red-500" />
+                    ) : step.status === 'IN_PROGRESS' && isVehicleStep ? (
+                      <div className="w-6 h-6 bg-yellow-100 dark:bg-yellow-800 rounded-full flex items-center justify-center">
+                        <IoCarSportOutline className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+                      </div>
+                    ) : step.status === 'IN_PROGRESS' || step.status === 'PENDING_REVIEW' ? (
+                      <div className="relative">
+                        <div className="w-6 h-6 border-3 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    ) : (
+                      <div className="w-6 h-6 bg-gray-300 dark:bg-gray-600 rounded-full" />
+                    )}
                   </div>
 
                   {/* Content */}
@@ -319,8 +368,15 @@ export default function VerificationProgress({
                       <h4 className="font-semibold text-gray-900 dark:text-white">
                         {step.title}
                       </h4>
-                      <span className={`text-xs font-medium ${getStatusColor(step.status)}`}>
-                        {getStatusLabel(step.status)}
+                      <span className={`text-xs font-medium whitespace-nowrap ${
+                        step.status === 'IN_PROGRESS' && isVehicleStep
+                          ? 'text-yellow-600 dark:text-yellow-400'
+                          : getStatusColor(step.status)
+                      }`}>
+                        {step.status === 'IN_PROGRESS' && isVehicleStep 
+                          ? 'Needs Completion'
+                          : getStatusLabel(step.status)
+                        }
                       </span>
                     </div>
                     
@@ -349,6 +405,8 @@ export default function VerificationProgress({
                         className={`inline-flex items-center gap-1 text-sm font-medium transition-colors ${
                           step.status === 'FAILED'
                             ? 'text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300'
+                            : isVehicleStep
+                            ? 'text-yellow-600 hover:text-yellow-700 dark:text-yellow-400 dark:hover:text-yellow-300'
                             : 'text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300'
                         }`}
                       >
@@ -381,8 +439,32 @@ export default function VerificationProgress({
         </div>
       )}
 
+      {/* Vehicle Completion Reminder */}
+      {hasIncompleteCar && incompleteCarId && (
+        <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+          <div className="flex items-start gap-3">
+            <IoCarSportOutline className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <h4 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-1">
+                Complete Your Vehicle Listing
+              </h4>
+              <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-3">
+                Your vehicle needs photos, VIN, and pricing before it can go live.
+              </p>
+              <button
+                onClick={() => onActionClick?.('vehicle')}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                Complete Listing
+                <IoChevronForwardOutline className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Pending Actions Alert */}
-      {pendingActions && pendingActions.length > 0 && (
+      {pendingActions && pendingActions.length > 0 && !hasIncompleteCar && (
         <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
           <div className="flex items-start gap-3">
             <IoTimeOutline className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />

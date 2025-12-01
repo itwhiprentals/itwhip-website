@@ -1,7 +1,7 @@
 // app/host/signup/page.tsx
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/app/components/Header'
@@ -11,33 +11,94 @@ import {
   IoMailOutline,
   IoPhonePortraitOutline,
   IoLockClosedOutline,
-  IoCarSportOutline,
-  IoDocumentTextOutline,
-  IoCloudUploadOutline,
-  IoBusiness,
-  IoLocationOutline,
   IoCheckmarkCircle,
-  IoWarningOutline,
+  IoCarSportOutline,
   IoEyeOutline,
   IoEyeOffOutline,
-  IoAddCircleOutline,
-  IoTrashOutline,
-  IoCameraOutline
+  IoWarningOutline,
+  IoChevronDownOutline,
+  IoLocationOutline,
+  IoColorPaletteOutline
 } from 'react-icons/io5'
+import { getAllMakes, getModelsByMake, getYears, getPopularMakes } from '@/app/lib/data/vehicles'
 
-interface VehicleData {
-  make: string
-  model: string
-  year: string
-  vin: string
-  licensePlate: string
-  mileage: string
-  photos: File[]
-  address: string
-  city: string
-  state: string
-  zipCode: string
-}
+// US States - Arizona first, then alphabetical
+const US_STATES = [
+  { value: 'AZ', label: 'Arizona' },
+  { value: 'AL', label: 'Alabama' },
+  { value: 'AK', label: 'Alaska' },
+  { value: 'AR', label: 'Arkansas' },
+  { value: 'CA', label: 'California' },
+  { value: 'CO', label: 'Colorado' },
+  { value: 'CT', label: 'Connecticut' },
+  { value: 'DE', label: 'Delaware' },
+  { value: 'FL', label: 'Florida' },
+  { value: 'GA', label: 'Georgia' },
+  { value: 'HI', label: 'Hawaii' },
+  { value: 'ID', label: 'Idaho' },
+  { value: 'IL', label: 'Illinois' },
+  { value: 'IN', label: 'Indiana' },
+  { value: 'IA', label: 'Iowa' },
+  { value: 'KS', label: 'Kansas' },
+  { value: 'KY', label: 'Kentucky' },
+  { value: 'LA', label: 'Louisiana' },
+  { value: 'ME', label: 'Maine' },
+  { value: 'MD', label: 'Maryland' },
+  { value: 'MA', label: 'Massachusetts' },
+  { value: 'MI', label: 'Michigan' },
+  { value: 'MN', label: 'Minnesota' },
+  { value: 'MS', label: 'Mississippi' },
+  { value: 'MO', label: 'Missouri' },
+  { value: 'MT', label: 'Montana' },
+  { value: 'NE', label: 'Nebraska' },
+  { value: 'NV', label: 'Nevada' },
+  { value: 'NH', label: 'New Hampshire' },
+  { value: 'NJ', label: 'New Jersey' },
+  { value: 'NM', label: 'New Mexico' },
+  { value: 'NY', label: 'New York' },
+  { value: 'NC', label: 'North Carolina' },
+  { value: 'ND', label: 'North Dakota' },
+  { value: 'OH', label: 'Ohio' },
+  { value: 'OK', label: 'Oklahoma' },
+  { value: 'OR', label: 'Oregon' },
+  { value: 'PA', label: 'Pennsylvania' },
+  { value: 'RI', label: 'Rhode Island' },
+  { value: 'SC', label: 'South Carolina' },
+  { value: 'SD', label: 'South Dakota' },
+  { value: 'TN', label: 'Tennessee' },
+  { value: 'TX', label: 'Texas' },
+  { value: 'UT', label: 'Utah' },
+  { value: 'VT', label: 'Vermont' },
+  { value: 'VA', label: 'Virginia' },
+  { value: 'WA', label: 'Washington' },
+  { value: 'WV', label: 'West Virginia' },
+  { value: 'WI', label: 'Wisconsin' },
+  { value: 'WY', label: 'Wyoming' },
+  { value: 'DC', label: 'Washington D.C.' }
+]
+
+// Standard car colors
+const CAR_COLORS = [
+  { value: 'Black', label: 'Black' },
+  { value: 'White', label: 'White' },
+  { value: 'Silver', label: 'Silver' },
+  { value: 'Gray', label: 'Gray' },
+  { value: 'Red', label: 'Red' },
+  { value: 'Blue', label: 'Blue' },
+  { value: 'Navy', label: 'Navy Blue' },
+  { value: 'Brown', label: 'Brown' },
+  { value: 'Beige', label: 'Beige' },
+  { value: 'Green', label: 'Green' },
+  { value: 'Gold', label: 'Gold' },
+  { value: 'Orange', label: 'Orange' },
+  { value: 'Yellow', label: 'Yellow' },
+  { value: 'Purple', label: 'Purple' },
+  { value: 'Burgundy', label: 'Burgundy' },
+  { value: 'Champagne', label: 'Champagne' },
+  { value: 'Pearl White', label: 'Pearl White' },
+  { value: 'Midnight Blue', label: 'Midnight Blue' },
+  { value: 'Other', label: 'Other' }
+]
 
 export default function HostSignupPage() {
   const router = useRouter()
@@ -46,149 +107,138 @@ export default function HostSignupPage() {
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   
-  // Form data state
-  const [personalInfo, setPersonalInfo] = useState({
+  // Personal info
+  const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
     phone: '',
     password: '',
-    dateOfBirth: '',
-    address: '',
+    confirmPassword: '',
+    agreeToTerms: false
+  })
+
+  // Vehicle + Location info
+  const [vehicleData, setVehicleData] = useState({
+    make: '',
+    model: '',
+    year: '',
+    color: '',
+    trim: '',
     city: '',
-    state: 'AZ',
+    state: '',
     zipCode: ''
   })
-  
-  const [profileData, setProfileData] = useState({
-    profilePhoto: null as File | null,
-    bio: '',
-    languages: '',
-    responseTime: '60',
-    education: '',
-    work: ''
-  })
-  
-  const [documents, setDocuments] = useState({
-    governmentId: null as File | null,
-    driversLicense: null as File | null,
-    insurance: null as File | null,
-    backgroundCheckConsent: false
-  })
-  
-  const [vehicles, setVehicles] = useState<VehicleData[]>([])
-  const [hasVehicles, setHasVehicles] = useState<boolean | null>(null)
-  
-  const [financialInfo, setFinancialInfo] = useState({
-    bankName: '',
-    accountNumber: '',
-    routingNumber: '',
-    taxId: '',
-    payoutSchedule: 'weekly'
-  })
-  
-  const [agreements, setAgreements] = useState({
-    termsAccepted: false,
-    commissionAccepted: false,
-    insuranceRequirements: false,
-    backgroundCheck: false
-  })
 
-  const totalSteps = 6
+  // Available options
+  const [availableModels, setAvailableModels] = useState<string[]>([])
+  const allMakes = getAllMakes()
+  const popularMakes = getPopularMakes()
+  const years = getYears()
 
-  const handleAddVehicle = () => {
-    setVehicles([...vehicles, {
-      make: '',
-      model: '',
-      year: '',
-      vin: '',
-      licensePlate: '',
-      mileage: '',
-      photos: [],
-      address: '',
-      city: 'Phoenix',
-      state: 'AZ',
-      zipCode: ''
-    }])
+  // Update available models when make changes
+  useEffect(() => {
+    if (vehicleData.make) {
+      const models = getModelsByMake(vehicleData.make)
+      setAvailableModels(models)
+      // Reset model if current model not in new make's models
+      if (!models.includes(vehicleData.model)) {
+        setVehicleData(prev => ({ ...prev, model: '' }))
+      }
+    } else {
+      setAvailableModels([])
+    }
+  }, [vehicleData.make])
+
+  const isStep1Valid = () => {
+    return (
+      formData.firstName.trim() !== '' &&
+      formData.lastName.trim() !== '' &&
+      formData.email.trim() !== '' &&
+      formData.phone.trim() !== '' &&
+      formData.password.length >= 8 &&
+      formData.password === formData.confirmPassword
+    )
   }
 
-  const handleRemoveVehicle = (index: number) => {
-    setVehicles(vehicles.filter((_, i) => i !== index))
+  const isStep2Valid = () => {
+    return (
+      vehicleData.make !== '' &&
+      vehicleData.model !== '' &&
+      vehicleData.year !== '' &&
+      vehicleData.color !== '' &&
+      vehicleData.city.trim() !== '' &&
+      vehicleData.state !== '' &&
+      vehicleData.zipCode.trim() !== '' &&
+      vehicleData.zipCode.length >= 5 &&
+      formData.agreeToTerms
+    )
   }
 
-  const updateVehicle = (index: number, field: string, value: any) => {
-    const updated = [...vehicles]
-    updated[index] = { ...updated[index], [field]: value }
-    setVehicles(updated)
-  }
-
-  const validateStep = (step: number): boolean => {
-    switch (step) {
-      case 1:
-        return !!(personalInfo.firstName && personalInfo.lastName && 
-                 personalInfo.email && personalInfo.phone && 
-                 personalInfo.password && personalInfo.dateOfBirth)
-      case 2:
-        return !!(profileData.bio && profileData.languages)
-      case 3:
-        return !!(documents.governmentId && documents.driversLicense && 
-                 documents.backgroundCheckConsent)
-      case 4:
-        if (hasVehicles === null) return false
-        if (!hasVehicles) return true
-        return vehicles.length > 0 && vehicles.every(v => 
-          v.make && v.model && v.year && v.photos.length >= 5
-        )
-      case 5:
-        return !!(financialInfo.bankName && financialInfo.accountNumber && 
-                 financialInfo.routingNumber && financialInfo.taxId)
-      case 6:
-        return Object.values(agreements).every(v => v === true)
-      default:
-        return false
+  const handleNextStep = () => {
+    if (currentStep === 1 && isStep1Valid()) {
+      setCurrentStep(2)
+      setError('')
     }
   }
 
-  const handleSubmit = async () => {
-    setIsLoading(true)
+  const handlePrevStep = () => {
+    if (currentStep === 2) {
+      setCurrentStep(1)
+      setError('')
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
     setError('')
     
-    // Prepare the data for the API
-    const submitData = {
-      name: `${personalInfo.firstName} ${personalInfo.lastName}`,
-      email: personalInfo.email,
-      password: personalInfo.password,
-      phone: personalInfo.phone,
-      address: personalInfo.address,
-      city: personalInfo.city,
-      state: personalInfo.state,
-      zipCode: personalInfo.zipCode,
-      bio: profileData.bio,
-      governmentIdUrl: 'pending_upload',
-      driversLicenseUrl: 'pending_upload',
-      insuranceDocUrl: documents.insurance ? 'pending_upload' : null,
-      bankName: financialInfo.bankName,
-      accountNumber: financialInfo.accountNumber,
-      routingNumber: financialInfo.routingNumber,
-      hasVehicle: hasVehicles || false,
-      vehicleMake: vehicles[0]?.make || null,
-      vehicleModel: vehicles[0]?.model || null,
-      vehicleYear: vehicles[0]?.year || null,
-      agreeToTerms: agreements.termsAccepted,
-      agreeToCommission: agreements.commissionAccepted
+    if (!isStep2Valid()) {
+      setError('Please complete all required fields')
+      return
     }
+    
+    setIsLoading(true)
     
     try {
       const response = await fetch('/api/host/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(submitData)
+        body: JSON.stringify({
+          name: `${formData.firstName} ${formData.lastName}`,
+          email: formData.email,
+          password: formData.password,
+          phone: formData.phone,
+          // Location info
+          city: vehicleData.city,
+          state: vehicleData.state,
+          zipCode: vehicleData.zipCode,
+          // Vehicle info
+          hasVehicle: true,
+          vehicleMake: vehicleData.make,
+          vehicleModel: vehicleData.model,
+          vehicleYear: vehicleData.year,
+          vehicleColor: vehicleData.color,
+          vehicleTrim: vehicleData.trim || null,
+          agreeToTerms: formData.agreeToTerms
+        })
       })
       
       const data = await response.json()
       
       if (!response.ok) {
         throw new Error(data.error || 'Signup failed')
+      }
+      
+      // Store hostId for verification page (use localStorage for persistence)
+      if (data.data?.hostId) {
+        localStorage.setItem('pendingHostId', data.data.hostId)
+        localStorage.setItem('pendingHostEmail', formData.email)
+      }
+      
+      // Store carId if created
+      if (data.data?.carId) {
+        localStorage.setItem('pendingCarId', data.data.carId)
       }
       
       // Trigger verification email
@@ -205,835 +255,496 @@ export default function HostSignupPage() {
       router.push('/verify?message=check-email')
       
     } catch (err: any) {
-      setError(err.message || 'Failed to submit application')
+      setError(err.message || 'Failed to create account')
     } finally {
       setIsLoading(false)
-    }
-  }
-
-  const renderStep = () => {
-    switch (currentStep) {
-      case 1:
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Personal Information</h2>
-              <p className="text-gray-600 dark:text-gray-400">Let's start with your basic information</p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  First Name *
-                </label>
-                <input
-                  type="text"
-                  value={personalInfo.firstName}
-                  onChange={(e) => setPersonalInfo({...personalInfo, firstName: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Last Name *
-                </label>
-                <input
-                  type="text"
-                  value={personalInfo.lastName}
-                  onChange={(e) => setPersonalInfo({...personalInfo, lastName: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Email Address *
-                </label>
-                <input
-                  type="email"
-                  value={personalInfo.email}
-                  onChange={(e) => setPersonalInfo({...personalInfo, email: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Phone Number *
-                </label>
-                <input
-                  type="tel"
-                  value={personalInfo.phone}
-                  onChange={(e) => setPersonalInfo({...personalInfo, phone: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Password *
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={personalInfo.password}
-                    onChange={(e) => setPersonalInfo({...personalInfo, password: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
-                  >
-                    {showPassword ? <IoEyeOffOutline className="w-5 h-5" /> : <IoEyeOutline className="w-5 h-5" />}
-                  </button>
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Date of Birth *
-                </label>
-                <input
-                  type="date"
-                  value={personalInfo.dateOfBirth}
-                  onChange={(e) => setPersonalInfo({...personalInfo, dateOfBirth: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
-                  required
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Street Address *
-                </label>
-                <input
-                  type="text"
-                  value={personalInfo.address}
-                  onChange={(e) => setPersonalInfo({...personalInfo, address: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
-                  required
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    City *
-                  </label>
-                  <input
-                    type="text"
-                    value={personalInfo.city}
-                    onChange={(e) => setPersonalInfo({...personalInfo, city: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    State *
-                  </label>
-                  <select
-                    value={personalInfo.state}
-                    onChange={(e) => setPersonalInfo({...personalInfo, state: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
-                  >
-                    <option value="AZ">Arizona</option>
-                    <option value="CA">California</option>
-                    <option value="NV">Nevada</option>
-                    <option value="TX">Texas</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    ZIP Code *
-                  </label>
-                  <input
-                    type="text"
-                    value={personalInfo.zipCode}
-                    onChange={(e) => setPersonalInfo({...personalInfo, zipCode: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        )
-        
-      case 2:
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Host Profile</h2>
-              <p className="text-gray-600 dark:text-gray-400">This information will be shown to guests</p>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Profile Photo
-              </label>
-              <div className="flex items-center space-x-4">
-                <div className="w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center overflow-hidden">
-                  {profileData.profilePhoto ? (
-                    <img 
-                      src={URL.createObjectURL(profileData.profilePhoto)}
-                      alt="Profile"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <IoCameraOutline className="w-8 h-8 text-gray-400 dark:text-gray-500" />
-                  )}
-                </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    if (e.target.files?.[0]) {
-                      setProfileData({...profileData, profilePhoto: e.target.files[0]})
-                    }
-                  }}
-                  className="text-sm dark:text-gray-300"
-                />
-              </div>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Bio * (Tell guests about yourself)
-              </label>
-              <textarea
-                value={profileData.bio}
-                onChange={(e) => setProfileData({...profileData, bio: e.target.value})}
-                rows={4}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
-                placeholder="Share what makes you a great host..."
-                required
-              />
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Languages Spoken *
-                </label>
-                <input
-                  type="text"
-                  value={profileData.languages}
-                  onChange={(e) => setProfileData({...profileData, languages: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
-                  placeholder="English, Spanish"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Average Response Time
-                </label>
-                <select
-                  value={profileData.responseTime}
-                  onChange={(e) => setProfileData({...profileData, responseTime: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
-                >
-                  <option value="30">Within 30 minutes</option>
-                  <option value="60">Within 1 hour</option>
-                  <option value="120">Within 2 hours</option>
-                  <option value="240">Within 4 hours</option>
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Education (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={profileData.education}
-                  onChange={(e) => setProfileData({...profileData, education: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
-                  placeholder="e.g., Arizona State University"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Work/Profession (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={profileData.work}
-                  onChange={(e) => setProfileData({...profileData, work: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
-                  placeholder="e.g., Hospitality"
-                />
-              </div>
-            </div>
-          </div>
-        )
-        
-      case 3:
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Verification Documents</h2>
-              <p className="text-gray-600 dark:text-gray-400">Upload required documents for verification</p>
-            </div>
-            
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Government ID (Front & Back) *
-                </label>
-                <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
-                  <input
-                    type="file"
-                    accept="image/*,.pdf"
-                    onChange={(e) => {
-                      if (e.target.files?.[0]) {
-                        setDocuments({...documents, governmentId: e.target.files[0]})
-                      }
-                    }}
-                    className="hidden"
-                    id="gov-id"
-                  />
-                  <label htmlFor="gov-id" className="cursor-pointer">
-                    {documents.governmentId ? (
-                      <div className="text-green-600 dark:text-green-400">
-                        <IoCheckmarkCircle className="w-12 h-12 mx-auto mb-2" />
-                        <p>{documents.governmentId.name}</p>
-                      </div>
-                    ) : (
-                      <div className="text-gray-400 dark:text-gray-500">
-                        <IoCloudUploadOutline className="w-12 h-12 mx-auto mb-2" />
-                        <p>Click to upload Government ID</p>
-                      </div>
-                    )}
-                  </label>
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Driver's License *
-                </label>
-                <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
-                  <input
-                    type="file"
-                    accept="image/*,.pdf"
-                    onChange={(e) => {
-                      if (e.target.files?.[0]) {
-                        setDocuments({...documents, driversLicense: e.target.files[0]})
-                      }
-                    }}
-                    className="hidden"
-                    id="drivers-license"
-                  />
-                  <label htmlFor="drivers-license" className="cursor-pointer">
-                    {documents.driversLicense ? (
-                      <div className="text-green-600 dark:text-green-400">
-                        <IoCheckmarkCircle className="w-12 h-12 mx-auto mb-2" />
-                        <p>{documents.driversLicense.name}</p>
-                      </div>
-                    ) : (
-                      <div className="text-gray-400 dark:text-gray-500">
-                        <IoCloudUploadOutline className="w-12 h-12 mx-auto mb-2" />
-                        <p>Click to upload Driver's License</p>
-                      </div>
-                    )}
-                  </label>
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Proof of Insurance
-                </label>
-                <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
-                  <input
-                    type="file"
-                    accept="image/*,.pdf"
-                    onChange={(e) => {
-                      if (e.target.files?.[0]) {
-                        setDocuments({...documents, insurance: e.target.files[0]})
-                      }
-                    }}
-                    className="hidden"
-                    id="insurance"
-                  />
-                  <label htmlFor="insurance" className="cursor-pointer">
-                    {documents.insurance ? (
-                      <div className="text-green-600 dark:text-green-400">
-                        <IoCheckmarkCircle className="w-12 h-12 mx-auto mb-2" />
-                        <p>{documents.insurance.name}</p>
-                      </div>
-                    ) : (
-                      <div className="text-gray-400 dark:text-gray-500">
-                        <IoCloudUploadOutline className="w-12 h-12 mx-auto mb-2" />
-                        <p>Click to upload Insurance (Optional)</p>
-                      </div>
-                    )}
-                  </label>
-                </div>
-              </div>
-              
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                <label className="flex items-start">
-                  <input
-                    type="checkbox"
-                    checked={documents.backgroundCheckConsent}
-                    onChange={(e) => setDocuments({...documents, backgroundCheckConsent: e.target.checked})}
-                    className="mt-1 mr-3"
-                  />
-                  <div>
-                    <p className="font-medium text-gray-900 dark:text-white">Background Check Authorization *</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                      I authorize ItWhip to conduct a background check for verification purposes. 
-                      This may include criminal history, driving records, and identity verification.
-                    </p>
-                  </div>
-                </label>
-              </div>
-            </div>
-          </div>
-        )
-        
-      case 4:
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Vehicle Information</h2>
-              <p className="text-gray-600 dark:text-gray-400">Add vehicles you want to list on the platform</p>
-            </div>
-            
-            {hasVehicles === null && (
-              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-8 text-center">
-                <IoCarSportOutline className="w-16 h-16 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">Do you have vehicles to list?</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-6">You can add your own vehicles or manage vehicles for others</p>
-                <div className="flex justify-center space-x-4">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setHasVehicles(true)
-                      handleAddVehicle()
-                    }}
-                    className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                  >
-                    Yes, I have vehicles
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setHasVehicles(false)}
-                    className="px-6 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500"
-                  >
-                    No, not yet
-                  </button>
-                </div>
-              </div>
-            )}
-            
-            {hasVehicles === false && (
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 text-center">
-                <IoCheckmarkCircle className="w-12 h-12 text-blue-600 dark:text-blue-400 mx-auto mb-3" />
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">No vehicles at this time</h3>
-                <p className="text-gray-600 dark:text-gray-400">You can add vehicles later from your dashboard after approval</p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setHasVehicles(true)
-                    handleAddVehicle()
-                  }}
-                  className="mt-4 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
-                >
-                  Actually, I want to add vehicles
-                </button>
-              </div>
-            )}
-            
-            {hasVehicles === true && (
-              <div className="space-y-6">
-                {vehicles.map((vehicle, index) => (
-                  <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 relative bg-white dark:bg-gray-800">
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveVehicle(index)}
-                      className="absolute top-4 right-4 text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
-                    >
-                      <IoTrashOutline className="w-5 h-5" />
-                    </button>
-                    
-                    <h4 className="font-semibold mb-4 text-gray-900 dark:text-white">Vehicle {index + 1}</h4>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Make *</label>
-                        <input
-                          type="text"
-                          value={vehicle.make}
-                          onChange={(e) => updateVehicle(index, 'make', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white"
-                          placeholder="Toyota"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Model *</label>
-                        <input
-                          type="text"
-                          value={vehicle.model}
-                          onChange={(e) => updateVehicle(index, 'model', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white"
-                          placeholder="Camry"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Year *</label>
-                        <input
-                          type="text"
-                          value={vehicle.year}
-                          onChange={(e) => updateVehicle(index, 'year', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white"
-                          placeholder="2022"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">VIN</label>
-                        <input
-                          type="text"
-                          value={vehicle.vin}
-                          onChange={(e) => updateVehicle(index, 'vin', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">License Plate</label>
-                        <input
-                          type="text"
-                          value={vehicle.licensePlate}
-                          onChange={(e) => updateVehicle(index, 'licensePlate', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Current Mileage</label>
-                        <input
-                          type="text"
-                          value={vehicle.mileage}
-                          onChange={(e) => updateVehicle(index, 'mileage', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="mt-4">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Pickup Location Address *
-                      </label>
-                      <input
-                        type="text"
-                        value={vehicle.address}
-                        onChange={(e) => updateVehicle(index, 'address', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white"
-                        placeholder="Where guests will pick up the vehicle"
-                      />
-                    </div>
-                    
-                    <div className="mt-4">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Vehicle Photos * (Minimum 5)
-                      </label>
-                      <input
-                        type="file"
-                        multiple
-                        accept="image/*"
-                        onChange={(e) => {
-                          if (e.target.files) {
-                            const files = Array.from(e.target.files)
-                            updateVehicle(index, 'photos', files)
-                          }
-                        }}
-                        className="w-full dark:text-gray-300"
-                      />
-                      {vehicle.photos.length > 0 && (
-                        <p className="text-sm text-green-600 dark:text-green-400 mt-1">
-                          {vehicle.photos.length} photos selected
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-                
-                <button
-                  type="button"
-                  onClick={handleAddVehicle}
-                  className="w-full py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-700 dark:hover:text-gray-300 flex items-center justify-center"
-                >
-                  <IoAddCircleOutline className="w-5 h-5 mr-2" />
-                  Add Another Vehicle
-                </button>
-              </div>
-            )}
-          </div>
-        )
-        
-      case 5:
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Financial Information</h2>
-              <p className="text-gray-600 dark:text-gray-400">Set up your payment and tax information</p>
-            </div>
-            
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-6">
-              <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                <strong>Important:</strong> This information is required for payouts and tax reporting. 
-                All information is encrypted and securely stored.
-              </p>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Bank Name *
-                </label>
-                <input
-                  type="text"
-                  value={financialInfo.bankName}
-                  onChange={(e) => setFinancialInfo({...financialInfo, bankName: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
-                  placeholder="e.g., Chase Bank"
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Account Number *
-                  </label>
-                  <input
-                    type="text"
-                    value={financialInfo.accountNumber}
-                    onChange={(e) => setFinancialInfo({...financialInfo, accountNumber: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Routing Number *
-                  </label>
-                  <input
-                    type="text"
-                    value={financialInfo.routingNumber}
-                    onChange={(e) => setFinancialInfo({...financialInfo, routingNumber: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Tax ID / SSN * (For 1099 reporting)
-                </label>
-                <input
-                  type="text"
-                  value={financialInfo.taxId}
-                  onChange={(e) => setFinancialInfo({...financialInfo, taxId: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
-                  placeholder="XXX-XX-XXXX"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Preferred Payout Schedule
-                </label>
-                <select
-                  value={financialInfo.payoutSchedule}
-                  onChange={(e) => setFinancialInfo({...financialInfo, payoutSchedule: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
-                >
-                  <option value="weekly">Weekly</option>
-                  <option value="biweekly">Bi-weekly</option>
-                  <option value="monthly">Monthly</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        )
-        
-      case 6:
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Terms & Agreements</h2>
-              <p className="text-gray-600 dark:text-gray-400">Review and accept our terms to complete your application</p>
-            </div>
-            
-            <div className="space-y-4">
-              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800">
-                <label className="flex items-start">
-                  <input
-                    type="checkbox"
-                    checked={agreements.termsAccepted}
-                    onChange={(e) => setAgreements({...agreements, termsAccepted: e.target.checked})}
-                    className="mt-1 mr-3"
-                  />
-                  <div>
-                    <p className="font-medium text-gray-900 dark:text-white">Terms of Service *</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                      I have read and agree to the{' '}
-                      <Link href="/terms" className="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300">
-                        ItWhip Host Terms of Service
-                      </Link>
-                    </p>
-                  </div>
-                </label>
-              </div>
-              
-              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800">
-                <label className="flex items-start">
-                  <input
-                    type="checkbox"
-                    checked={agreements.commissionAccepted}
-                    onChange={(e) => setAgreements({...agreements, commissionAccepted: e.target.checked})}
-                    className="mt-1 mr-3"
-                  />
-                  <div>
-                    <p className="font-medium text-gray-900 dark:text-white">Commission Agreement *</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                      I understand and agree to the 20% platform commission on all bookings. 
-                      This covers payment processing, insurance coordination, customer support, and platform maintenance.
-                    </p>
-                  </div>
-                </label>
-              </div>
-              
-              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800">
-                <label className="flex items-start">
-                  <input
-                    type="checkbox"
-                    checked={agreements.insuranceRequirements}
-                    onChange={(e) => setAgreements({...agreements, insuranceRequirements: e.target.checked})}
-                    className="mt-1 mr-3"
-                  />
-                  <div>
-                    <p className="font-medium text-gray-900 dark:text-white">Insurance Requirements *</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                      I acknowledge that I must maintain appropriate insurance coverage for all vehicles 
-                      listed on the platform and will provide proof of insurance when requested.
-                    </p>
-                  </div>
-                </label>
-              </div>
-              
-              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800">
-                <label className="flex items-start">
-                  <input
-                    type="checkbox"
-                    checked={agreements.backgroundCheck}
-                    onChange={(e) => setAgreements({...agreements, backgroundCheck: e.target.checked})}
-                    className="mt-1 mr-3"
-                  />
-                  <div>
-                    <p className="font-medium text-gray-900 dark:text-white">Background Check Authorization *</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                      I authorize ItWhip to conduct periodic background checks for the duration of my 
-                      participation as a host on the platform.
-                    </p>
-                  </div>
-                </label>
-              </div>
-            </div>
-            
-            {error && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-                <div className="flex items-center">
-                  <IoWarningOutline className="w-5 h-5 text-red-600 dark:text-red-400 mr-2" />
-                  <p className="text-red-800 dark:text-red-200">{error}</p>
-                </div>
-              </div>
-            )}
-          </div>
-        )
-        
-      default:
-        return null
     }
   }
 
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-16">
-        {/* Progress Bar */}
-        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-          <div className="max-w-4xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600 dark:text-gray-400">Step {currentStep} of {totalSteps}</span>
-              <span className="text-sm text-gray-600 dark:text-gray-400">{Math.round((currentStep / totalSteps) * 100)}% Complete</span>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-20 pb-12">
+        <div className="max-w-md mx-auto px-4">
+          {/* Header */}
+          <div className="text-center mb-6">
+            <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <IoCarSportOutline className="w-8 h-8 text-green-600" />
             </div>
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-              <div 
-                className="bg-green-600 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${(currentStep / totalSteps) * 100}%` }}
-              />
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Become a Host
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">
+              Start earning by sharing your vehicle
+            </p>
+          </div>
+
+          {/* Progress Steps */}
+          <div className="flex items-center justify-center mb-8">
+            <div className="flex items-center">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
+                currentStep >= 1 ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-500'
+              }`}>
+                {currentStep > 1 ? <IoCheckmarkCircle className="w-6 h-6" /> : '1'}
+              </div>
+              <div className={`w-16 h-1 ${currentStep >= 2 ? 'bg-green-600' : 'bg-gray-200'}`} />
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
+                currentStep >= 2 ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-500'
+              }`}>
+                2
+              </div>
             </div>
           </div>
-        </div>
-        
-        {/* Main Content */}
-        <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 md:p-8">
-            {renderStep()}
-            
-            {/* Navigation Buttons */}
-            <div className="flex justify-between mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-              {currentStep > 1 && (
-                <button
-                  type="button"
-                  onClick={() => setCurrentStep(currentStep - 1)}
-                  className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  Previous
-                </button>
-              )}
+
+          {/* Signup Form */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+            <form onSubmit={handleSubmit}>
               
-              <div className="ml-auto">
-                {currentStep < totalSteps ? (
+              {/* Step 1: Personal Info */}
+              {currentStep === 1 && (
+                <div className="space-y-4">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                    Personal Information
+                  </h2>
+
+                  {/* Name Fields */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        First Name <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <IoPersonOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <input
+                          type="text"
+                          value={formData.firstName}
+                          onChange={(e) => setFormData({...formData, firstName: e.target.value})}
+                          className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+                          placeholder="John"
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Last Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.lastName}
+                        onChange={(e) => setFormData({...formData, lastName: e.target.value})}
+                        className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+                        placeholder="Doe"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Email */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Email Address <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <IoMailOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({...formData, email: e.target.value})}
+                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+                        placeholder="john@example.com"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Phone */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Phone Number <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <IoPhonePortraitOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="tel"
+                        value={formData.phone}
+                        onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+                        placeholder="(555) 123-4567"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Password */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Password <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <IoLockClosedOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={formData.password}
+                        onChange={(e) => setFormData({...formData, password: e.target.value})}
+                        className="w-full pl-10 pr-12 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+                        placeholder="Min. 8 characters"
+                        required
+                        minLength={8}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showPassword ? <IoEyeOffOutline className="w-5 h-5" /> : <IoEyeOutline className="w-5 h-5" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Confirm Password */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Confirm Password <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <IoLockClosedOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={formData.confirmPassword}
+                        onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
+                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+                        placeholder="Confirm your password"
+                        required
+                      />
+                    </div>
+                    {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+                      <p className="text-red-500 text-sm mt-1">Passwords do not match</p>
+                    )}
+                  </div>
+
+                  {/* Next Button */}
                   <button
                     type="button"
-                    onClick={() => setCurrentStep(currentStep + 1)}
-                    disabled={!validateStep(currentStep)}
-                    className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                    onClick={handleNextStep}
+                    disabled={!isStep1Valid()}
+                    className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium mt-6"
                   >
-                    Next Step
+                    Continue to Vehicle Info
                   </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleSubmit}
-                    disabled={!validateStep(currentStep) || isLoading}
-                    className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-semibold"
-                  >
-                    {isLoading ? 'Submitting...' : 'Submit Application'}
-                  </button>
-                )}
+                </div>
+              )}
+
+              {/* Step 2: Vehicle + Location Info */}
+              {currentStep === 2 && (
+                <div className="space-y-4">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                    Vehicle & Location
+                  </h2>
+
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    Tell us about your vehicle and where it's located.
+                  </p>
+
+                  {/* Vehicle Section */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                      <IoCarSportOutline className="w-4 h-4" />
+                      Vehicle Details
+                    </h3>
+
+                    {/* Year and Make - Side by side */}
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* Year */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Year <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative">
+                          <select
+                            value={vehicleData.year}
+                            onChange={(e) => setVehicleData({...vehicleData, year: e.target.value})}
+                            className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white appearance-none cursor-pointer"
+                            required
+                          >
+                            <option value="">Year</option>
+                            {years.map(year => (
+                              <option key={year} value={year}>{year}</option>
+                            ))}
+                          </select>
+                          <IoChevronDownOutline className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                        </div>
+                      </div>
+
+                      {/* Make */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Make <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative">
+                          <select
+                            value={vehicleData.make}
+                            onChange={(e) => setVehicleData({...vehicleData, make: e.target.value})}
+                            className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white appearance-none cursor-pointer"
+                            required
+                          >
+                            <option value="">Make</option>
+                            <optgroup label="Popular Brands">
+                              {popularMakes.map(make => (
+                                <option key={make} value={make}>{make}</option>
+                              ))}
+                            </optgroup>
+                            <optgroup label="All Brands">
+                              {allMakes.filter(make => !popularMakes.includes(make)).map(make => (
+                                <option key={make} value={make}>{make}</option>
+                              ))}
+                            </optgroup>
+                          </select>
+                          <IoChevronDownOutline className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Model and Color - Side by side */}
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* Model */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Model <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative">
+                          <select
+                            value={vehicleData.model}
+                            onChange={(e) => setVehicleData({...vehicleData, model: e.target.value})}
+                            className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white appearance-none cursor-pointer disabled:bg-gray-100 disabled:cursor-not-allowed dark:disabled:bg-gray-800"
+                            required
+                            disabled={!vehicleData.make}
+                          >
+                            <option value="">{vehicleData.make ? 'Model' : 'Select Make First'}</option>
+                            {availableModels.map(model => (
+                              <option key={model} value={model}>{model}</option>
+                            ))}
+                          </select>
+                          <IoChevronDownOutline className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                        </div>
+                      </div>
+
+                      {/* Color */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Color <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative">
+                          <select
+                            value={vehicleData.color}
+                            onChange={(e) => setVehicleData({...vehicleData, color: e.target.value})}
+                            className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white appearance-none cursor-pointer"
+                            required
+                          >
+                            <option value="">Color</option>
+                            {CAR_COLORS.map(color => (
+                              <option key={color.value} value={color.value}>{color.label}</option>
+                            ))}
+                          </select>
+                          <IoChevronDownOutline className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Trim (Optional) */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Trim <span className="text-gray-400 font-normal">(Optional)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={vehicleData.trim}
+                        onChange={(e) => setVehicleData({...vehicleData, trim: e.target.value})}
+                        className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+                        placeholder="e.g., SE, XLE, Sport, Limited"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Vehicle Preview */}
+                  {vehicleData.make && vehicleData.model && vehicleData.year && vehicleData.color && (
+                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-800/50 flex items-center justify-center">
+                          <IoCarSportOutline className="w-6 h-6 text-green-600" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-900 dark:text-white">
+                            {vehicleData.year} {vehicleData.make} {vehicleData.model}
+                            {vehicleData.trim && ` ${vehicleData.trim}`}
+                          </p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                            <IoColorPaletteOutline className="w-4 h-4" />
+                            {vehicleData.color} • Ready to list on ItWhip
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Divider */}
+                  <div className="border-t border-gray-200 dark:border-gray-700 my-6"></div>
+
+                  {/* Location Section */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                      <IoLocationOutline className="w-4 h-4" />
+                      Vehicle Location
+                    </h3>
+
+                    {/* City */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        City <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <IoLocationOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <input
+                          type="text"
+                          value={vehicleData.city}
+                          onChange={(e) => setVehicleData({...vehicleData, city: e.target.value})}
+                          className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+                          placeholder="Phoenix"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    {/* State and Zip */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          State <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative">
+                          <select
+                            value={vehicleData.state}
+                            onChange={(e) => setVehicleData({...vehicleData, state: e.target.value})}
+                            className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white appearance-none cursor-pointer"
+                            required
+                          >
+                            <option value="">Select State</option>
+                            {US_STATES.map(state => (
+                              <option key={state.value} value={state.value}>{state.label}</option>
+                            ))}
+                          </select>
+                          <IoChevronDownOutline className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Zip Code <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={vehicleData.zipCode}
+                          onChange={(e) => setVehicleData({...vehicleData, zipCode: e.target.value.replace(/\D/g, '').slice(0, 5)})}
+                          className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+                          placeholder="85001"
+                          required
+                          maxLength={5}
+                          pattern="[0-9]{5}"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Terms Agreement */}
+                  <div className="flex items-start gap-3 mt-6 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                    <input
+                      type="checkbox"
+                      id="terms"
+                      checked={formData.agreeToTerms}
+                      onChange={(e) => setFormData({...formData, agreeToTerms: e.target.checked})}
+                      className="mt-0.5 h-5 w-5 text-green-600 focus:ring-green-500 border-2 border-gray-300 dark:border-gray-500 rounded cursor-pointer bg-white dark:bg-gray-800"
+                      required
+                    />
+                    <label htmlFor="terms" className="text-sm text-gray-600 dark:text-gray-400 cursor-pointer select-none">
+                      I agree to the{' '}
+                      <Link href="/terms" className="text-green-600 hover:text-green-700 underline font-medium">
+                        Terms of Service
+                      </Link>{' '}
+                      and{' '}
+                      <Link href="/privacy" className="text-green-600 hover:text-green-700 underline font-medium">
+                        Privacy Policy
+                      </Link>
+                      {' '}<span className="text-red-500">*</span>
+                    </label>
+                  </div>
+
+                  {/* Validation hint */}
+                  {!formData.agreeToTerms && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 ml-1">
+                      Please check the box above to continue
+                    </p>
+                  )}
+
+                  {/* Error Message */}
+                  {error && (
+                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg text-sm flex items-center gap-2">
+                      <IoWarningOutline className="w-5 h-5 flex-shrink-0" />
+                      {error}
+                    </div>
+                  )}
+
+                  {/* Buttons */}
+                  <div className="flex gap-3 mt-6">
+                    <button
+                      type="button"
+                      onClick={handlePrevStep}
+                      className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-3 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium"
+                    >
+                      Back
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isLoading || !isStep2Valid()}
+                      className="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
+                    >
+                      {isLoading ? 'Creating Account...' : 'Create Account'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </form>
+
+            {/* Login Link */}
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Already have an account?{' '}
+                <Link href="/host/login" className="text-green-600 hover:text-green-700 font-medium">
+                  Sign In
+                </Link>
+              </p>
+            </div>
+          </div>
+
+          {/* Benefits */}
+          <div className="mt-8">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4 text-center">
+              Why host with ItWhip?
+            </h3>
+            <div className="grid grid-cols-1 gap-3">
+              <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
+                <IoCheckmarkCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                <span>Earn up to 90% of each rental</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
+                <IoCheckmarkCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                <span>$1M liability insurance included</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
+                <IoCheckmarkCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                <span>24/7 roadside assistance</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
+                <IoCheckmarkCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                <span>You control pricing & availability</span>
               </div>
             </div>
           </div>

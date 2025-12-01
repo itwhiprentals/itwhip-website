@@ -42,7 +42,7 @@ const HOST_ACCESSIBLE_ROUTES = [
   '/host/profile',
   '/host/cars',
   '/host/bookings',
-  '/host/messages',           // ✅ ADDED
+  '/host/messages',
   '/host/earnings',
   '/host/calendar',
   '/host/trips',
@@ -50,7 +50,7 @@ const HOST_ACCESSIBLE_ROUTES = [
   '/host/notifications',
   '/host/claims',
   '/host/logout',
-  '/api/host/messages',       // ✅ ADDED
+  '/api/host/messages',
   '/api/host/profile',
   '/api/host/documents/upload',
   '/api/host/verification-status',
@@ -64,12 +64,14 @@ const HOST_ACCESSIBLE_ROUTES = [
   '/api/host/claims',
   '/api/host/banking',
   '/api/host/payout-methods',
+  '/api/host/upload',
 ]
 
-// Routes that require APPROVED status
+// ✅ FIXED: Routes that require APPROVED status
+// Removed '/api/host/cars/[id]' - PENDING hosts need to edit their incomplete cars
+// The route handler itself controls what PENDING hosts can/cannot do (e.g., can't activate)
 const APPROVED_ONLY_ROUTES = [
   '/host/claims/new',
-  '/api/host/cars/[id]',
   '/api/host/bookings/[id]/approve',
   '/api/host/bookings/[id]/decline',
   '/api/host/earnings/payout',
@@ -81,7 +83,7 @@ const authRoutes = ['/auth/login', '/auth/signup']
 const adminAuthRoutes = ['/admin/auth/login']
 const hostAuthRoutes = ['/host/login']
 
-// ✅ UPDATED: EXPLICITLY PUBLIC ROUTES (Added password reset routes)
+// EXPLICITLY PUBLIC ROUTES
 const publicRoutes = [
   '/hotel-portal',
   '/portal/login',
@@ -193,8 +195,8 @@ export async function middleware(request: NextRequest) {
     const headerKey = request.headers.get('x-fleet-key')
     
     // Valid keys
-    const phoenixKey = 'phoenix-fleet-2847'  // Your internal key
-    const externalKey = FLEET_API_KEY         // External API key
+    const phoenixKey = 'phoenix-fleet-2847'
+    const externalKey = FLEET_API_KEY
     
     console.log(`[FLEET API] ${request.method} ${pathname}`, {
       hasUrlKey: !!urlKey,
@@ -203,19 +205,16 @@ export async function middleware(request: NextRequest) {
       timestamp: new Date().toISOString()
     })
 
-    // ✅ Allow if has phoenix key in URL OR header (internal use)
     if (urlKey === phoenixKey || headerKey === phoenixKey) {
       console.log(`[FLEET API] ✅ ALLOWED with phoenix key`)
       return NextResponse.next()
     }
 
-    // ✅ Allow if has external API key in header (external APIs)
     if (headerKey && headerKey === externalKey) {
       console.log(`[FLEET API] ✅ ALLOWED with external key`)
       return NextResponse.next()
     }
 
-    // ❌ Block everything else
     console.warn(`[FLEET API] 🚫 BLOCKED unauthorized access to ${pathname}`)
     
     return NextResponse.json(
@@ -251,7 +250,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // ✅ UPDATED: HANDLE HOST PROTECTED ROUTES (Allow password reset pages)
+  // HANDLE HOST PROTECTED ROUTES
   if (pathname.startsWith('/host/') && 
       !pathname.startsWith('/host/signup') && 
       !pathname.startsWith('/host/login') && 
@@ -308,7 +307,7 @@ export async function middleware(request: NextRequest) {
         console.log('🚫 APPROVAL REQUIRED:', {
           approvalStatus,
           attemptedPath: pathname,
-          reason: 'Only APPROVED hosts can create new claims'
+          reason: 'Only APPROVED hosts can perform this action'
         })
         
         const claimsUrl = new URL('/host/claims', request.url)
@@ -395,9 +394,9 @@ export async function middleware(request: NextRequest) {
         return NextResponse.json(
           { 
             error: 'Account approval required',
-            message: 'Only approved hosts can create new claims. Contact support if you need assistance.',
+            message: 'Only approved hosts can perform this action. Contact support if you need assistance.',
             approvalStatus,
-            action: 'create_claim'
+            action: 'requires_approval'
           },
           { status: 403 }
         )

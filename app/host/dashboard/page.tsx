@@ -16,13 +16,37 @@ import {
   IoHomeOutline,
   IoStarOutline,
   IoChatbubbleOutline,
-  IoShieldCheckmarkOutline
+  IoShieldCheckmarkOutline,
+  IoWarningOutline,
+  IoCheckmarkCircleOutline,
+  IoImageOutline,
+  IoCarSportOutline,
+  IoPricetagOutline,
+  IoDocumentOutline,
+  IoChevronForwardOutline
 } from 'react-icons/io5'
 import VerificationProgress from '../components/VerificationProgress'
 import PendingBanner from '../components/PendingBanner'
 import ClaimBanner from './components/ClaimBanner'
 import ESGDashboardCard from '@/app/components/host/ESGDashboardCard'
 import ServiceMetricsDashboardCard from '@/app/components/host/ServiceMetricsDashboardCard'
+
+interface CarData {
+  id: string
+  make: string
+  model: string
+  year: number
+  color?: string
+  trim?: string
+  isActive: boolean
+  // Fields to determine completion status
+  dailyRate: number
+  vin?: string | null
+  licensePlate?: string | null
+  description?: string | null
+  photos?: Array<{ id: string; url: string }> | string[]
+  photoCount?: number
+}
 
 interface HostData {
   id: string
@@ -54,13 +78,7 @@ interface HostData {
     approvedClaims?: number
     totalClaims?: number
   }
-  cars?: Array<{
-    id: string
-    make: string
-    model: string
-    year: number
-    isActive: boolean
-  }>
+  cars?: CarData[]
   documents?: {
     governmentIdUrl?: string
     driversLicenseUrl?: string
@@ -93,6 +111,164 @@ interface ClaimNotification extends Notification {
     guestResponse?: string
     estimatedCost?: number
   }
+}
+
+// Helper function to check if car listing is complete
+function getCarCompletionStatus(car: CarData): {
+  isComplete: boolean
+  completedSteps: number
+  totalSteps: number
+  missingItems: string[]
+  completionPercent: number
+} {
+  const missingItems: string[] = []
+  let completedSteps = 0
+  const totalSteps = 5
+
+  // 1. Photos (minimum 6)
+  const photoCount = car.photoCount || (Array.isArray(car.photos) ? car.photos.length : 0)
+  if (photoCount >= 6) {
+    completedSteps++
+  } else {
+    missingItems.push(`${6 - photoCount} more photo${6 - photoCount > 1 ? 's' : ''} needed`)
+  }
+
+  // 2. VIN
+  if (car.vin && car.vin.length >= 17) {
+    completedSteps++
+  } else {
+    missingItems.push('VIN number')
+  }
+
+  // 3. License Plate
+  if (car.licensePlate && car.licensePlate.length >= 2) {
+    completedSteps++
+  } else {
+    missingItems.push('License plate')
+  }
+
+  // 4. Daily Rate (must be > 0)
+  if (car.dailyRate && car.dailyRate > 0) {
+    completedSteps++
+  } else {
+    missingItems.push('Daily rate')
+  }
+
+  // 5. Description (minimum 50 characters)
+  if (car.description && car.description.length >= 50) {
+    completedSteps++
+  } else {
+    missingItems.push('Description (50+ characters)')
+  }
+
+  const isComplete = completedSteps === totalSteps
+  const completionPercent = Math.round((completedSteps / totalSteps) * 100)
+
+  return { isComplete, completedSteps, totalSteps, missingItems, completionPercent }
+}
+
+// Incomplete Car Card Component
+function IncompleteCarCard({ car, onComplete }: { car: CarData; onComplete: () => void }) {
+  const status = getCarCompletionStatus(car)
+  
+  return (
+    <div className="bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border-2 border-yellow-300 dark:border-yellow-700 rounded-lg p-4 sm:p-5">
+      {/* Header */}
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-800/50 rounded-lg flex items-center justify-center">
+            <IoCarSportOutline className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-gray-900 dark:text-white">
+              {car.year} {car.make} {car.model}
+              {car.trim && <span className="text-gray-500 font-normal"> {car.trim}</span>}
+            </h3>
+            {car.color && (
+              <p className="text-sm text-gray-500 dark:text-gray-400">{car.color}</p>
+            )}
+          </div>
+        </div>
+        <span className="px-2.5 py-1 bg-yellow-200 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200 text-xs font-semibold rounded-full">
+          INCOMPLETE
+        </span>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between text-sm mb-1.5">
+          <span className="text-gray-600 dark:text-gray-400">Listing Progress</span>
+          <span className="font-semibold text-gray-900 dark:text-white">{status.completionPercent}%</span>
+        </div>
+        <div className="w-full h-2.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div 
+            className="h-full bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full transition-all duration-500"
+            style={{ width: `${status.completionPercent}%` }}
+          />
+        </div>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          {status.completedSteps} of {status.totalSteps} steps complete
+        </p>
+      </div>
+
+      {/* Missing Items */}
+      <div className="mb-4">
+        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Still needed:</p>
+        <ul className="space-y-1.5">
+          {status.missingItems.slice(0, 3).map((item, idx) => (
+            <li key={idx} className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+              <IoWarningOutline className="w-4 h-4 text-yellow-500 flex-shrink-0" />
+              {item}
+            </li>
+          ))}
+          {status.missingItems.length > 3 && (
+            <li className="text-sm text-gray-500 dark:text-gray-400 ml-6">
+              +{status.missingItems.length - 3} more item{status.missingItems.length - 3 > 1 ? 's' : ''}
+            </li>
+          )}
+        </ul>
+      </div>
+
+      {/* Action Button */}
+      <Link
+        href={`/host/cars/${car.id}/edit`}
+        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-yellow-500 hover:bg-yellow-600 text-white font-medium rounded-lg transition-colors"
+      >
+        Complete Your Listing
+        <IoChevronForwardOutline className="w-4 h-4" />
+      </Link>
+    </div>
+  )
+}
+
+// Active Car Card Component
+function ActiveCarCard({ car, isApproved }: { car: CarData; isApproved: boolean }) {
+  return (
+    <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow bg-white dark:bg-gray-800">
+      <div className="flex items-start justify-between">
+        <div>
+          <h3 className="font-semibold text-gray-900 dark:text-white">
+            {car.year} {car.make} {car.model}
+          </h3>
+          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+            Status: <span className={car.isActive ? 'text-green-600 dark:text-green-400' : 'text-gray-500'}>
+              {car.isActive ? 'Active' : 'Inactive'}
+            </span>
+          </p>
+        </div>
+        {car.isActive && (
+          <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium rounded-full">
+            LIVE
+          </span>
+        )}
+      </div>
+      {isApproved && (
+        <Link href={`/host/cars/${car.id}/edit`} className="mt-3 text-purple-600 dark:text-purple-400 text-sm hover:underline inline-flex items-center gap-1">
+          Manage <IoChevronForwardOutline className="w-3 h-3" />
+        </Link>
+      )}
+    </div>
+  )
 }
 
 export default function HostDashboardPage() {
@@ -246,6 +422,20 @@ export default function HostDashboardPage() {
   const isPending = hostData?.approvalStatus === 'PENDING'
   const needsAttention = hostData?.approvalStatus === 'NEEDS_ATTENTION'
 
+  // Separate incomplete and complete cars
+  const incompleteCars = hostData?.cars?.filter(car => {
+    const status = getCarCompletionStatus(car)
+    return !status.isComplete
+  }) || []
+
+  const completeCars = hostData?.cars?.filter(car => {
+    const status = getCarCompletionStatus(car)
+    return status.isComplete
+  }) || []
+
+  // Check if host has any incomplete cars (for verification progress)
+  const hasIncompleteCar = incompleteCars.length > 0
+
   const navigationItems = [
     { name: 'Dashboard', href: '/host/dashboard', icon: IoHomeOutline, current: true },
     { name: 'My Cars', href: '/host/cars', icon: IoCarOutline, current: false },
@@ -289,6 +479,11 @@ export default function HostDashboardPage() {
                         {hostData?.stats.pendingClaims}
                       </span>
                     )}
+                    {item.name === 'My Cars' && incompleteCars.length > 0 && (
+                      <span className="ml-auto bg-yellow-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                        !
+                      </span>
+                    )}
                   </Link>
                 ))}
               </nav>
@@ -317,7 +512,7 @@ export default function HostDashboardPage() {
                 {!isApproved ? 'Your host dashboard (limited access)' : 'Manage your car rental business'}
               </p>
               
-              {isApproved && (
+              {isApproved && incompleteCars.length === 0 && (
                 <Link 
                   href="/host/cars/add"
                   className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors"
@@ -360,7 +555,7 @@ export default function HostDashboardPage() {
               return null
             })()}
 
-            {/* Verification Progress */}
+            {/* Verification Progress - Now includes vehicle completion step */}
             {(isPending || needsAttention) && hostData && !notifications.some(n => n.type.includes('CLAIM')) && (
               <div className="mb-8">
                 <VerificationProgress
@@ -369,9 +564,13 @@ export default function HostDashboardPage() {
                   documentStatuses={hostData.documentStatuses}
                   backgroundCheckStatus={hostData.backgroundCheckStatus}
                   pendingActions={hostData.pendingActions}
+                  hasIncompleteCar={hasIncompleteCar}
+                  incompleteCarId={incompleteCars[0]?.id}
                   onActionClick={(stepId) => {
                     if (stepId === 'documents' || stepId === 'bank_account') {
                       router.push('/host/profile')
+                    } else if (stepId === 'vehicle' && incompleteCars[0]) {
+                      router.push(`/host/cars/${incompleteCars[0].id}/edit`)
                     }
                   }}
                 />
@@ -459,6 +658,27 @@ export default function HostDashboardPage() {
               </Link>
             </div>
 
+            {/* Incomplete Cars Section - PRIORITY */}
+            {incompleteCars.length > 0 && (
+              <div className="mb-8">
+                <div className="flex items-center gap-2 mb-4">
+                  <IoWarningOutline className="w-5 h-5 text-yellow-500" />
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+                    Complete Your Listing{incompleteCars.length > 1 ? 's' : ''}
+                  </h2>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
+                  {incompleteCars.map(car => (
+                    <IncompleteCarCard 
+                      key={car.id} 
+                      car={car} 
+                      onComplete={() => router.push(`/host/cars/${car.id}/edit`)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* ESG DASHBOARD CARD */}
             {isApproved && hostData && (
               <div className="mb-8">
@@ -466,38 +686,37 @@ export default function HostDashboardPage() {
               </div>
             )}
 
-            {/* SERVICE METRICS DASHBOARD CARD - NEW */}
+            {/* SERVICE METRICS DASHBOARD CARD */}
             {isApproved && hostData && (
               <div className="mb-8">
                 <ServiceMetricsDashboardCard hostId={hostData.id} />
               </div>
             )}
 
-            {/* My Cars Section */}
+            {/* My Cars Section - Complete Cars Only */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6 mb-8">
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-4">My Cars</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+                  {completeCars.length > 0 ? 'My Cars' : 'My Cars'}
+                </h2>
+                {isApproved && completeCars.length > 0 && incompleteCars.length === 0 && (
+                  <Link 
+                    href="/host/cars/add"
+                    className="text-sm text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1"
+                  >
+                    <IoAddCircleOutline className="w-4 h-4" />
+                    Add Another
+                  </Link>
+                )}
+              </div>
               
-              {hostData?.cars && hostData.cars.length > 0 ? (
+              {completeCars.length > 0 ? (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {hostData.cars.map(car => (
-                    <div key={car.id} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow">
-                      <h3 className="font-semibold text-gray-900 dark:text-white">
-                        {car.year} {car.make} {car.model}
-                      </h3>
-                      <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                        Status: <span className={car.isActive ? 'text-green-600 dark:text-green-400' : 'text-gray-500'}>
-                          {car.isActive ? 'Active' : 'Inactive'}
-                        </span>
-                      </p>
-                      {isApproved && (
-                        <Link href={`/host/cars/${car.id}/edit`} className="mt-3 text-purple-600 dark:text-purple-400 text-sm hover:underline inline-block">
-                          Manage →
-                        </Link>
-                      )}
-                    </div>
+                  {completeCars.map(car => (
+                    <ActiveCarCard key={car.id} car={car} isApproved={isApproved} />
                   ))}
                 </div>
-              ) : (
+              ) : incompleteCars.length === 0 ? (
                 <div className="text-center py-12">
                   <IoCarOutline className="mx-auto w-12 h-12 text-gray-400" />
                   <p className="mt-3 text-gray-600 dark:text-gray-400">
@@ -509,6 +728,10 @@ export default function HostDashboardPage() {
                       Add Your First Car
                     </Link>
                   )}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <p className="text-sm">Complete your listing{incompleteCars.length > 1 ? 's' : ''} above to start earning</p>
                 </div>
               )}
             </div>

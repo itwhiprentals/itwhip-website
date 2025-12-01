@@ -451,38 +451,66 @@ export default function EditCarPage() {
     }
   }
 
+  // ✅ FIXED: Photo upload with type field and multiple file support
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const files = e.target.files
+    if (!files || files.length === 0) return
     
     setUploadingPhoto(true)
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('carId', carId)
     
     try {
+      const uploadFormData = new FormData()
+      
+      // ✅ Support multiple files
+      for (let i = 0; i < files.length; i++) {
+        uploadFormData.append('file', files[i])
+      }
+      
+      uploadFormData.append('carId', carId)
+      uploadFormData.append('type', 'carPhoto')  // ✅ THIS WAS MISSING!
+      
       const response = await fetch('/api/host/upload', {
         method: 'POST',
         headers: {
           'x-host-id': localStorage.getItem('hostId') || ''
         },
-        body: formData
+        body: uploadFormData
       })
       
       if (response.ok) {
         const data = await response.json()
-        const newPhoto: CarPhoto = {
-          id: data.photo.id,
-          url: data.photo.url,
-          isHero: photos.length === 0,
-          order: photos.length
+        
+        // Handle multiple photos response
+        if (data.photos && Array.isArray(data.photos)) {
+          const newPhotos: CarPhoto[] = data.photos.map((p: any) => ({
+            id: p.id,
+            url: p.url,
+            isHero: p.isHero,
+            order: p.order
+          }))
+          setPhotos([...photos, ...newPhotos])
+        } else if (data.photo) {
+          // Single photo backward compatibility
+          const newPhoto: CarPhoto = {
+            id: data.photo.id,
+            url: data.photo.url,
+            isHero: photos.length === 0,
+            order: photos.length
+          }
+          setPhotos([...photos, newPhoto])
         }
-        setPhotos([...photos, newPhoto])
+      } else {
+        const errorData = await response.json()
+        console.error('Upload failed:', errorData.error)
+        alert(errorData.error || 'Failed to upload photo')
       }
     } catch (error) {
       console.error('Failed to upload photo:', error)
+      alert('Failed to upload photo. Please try again.')
     } finally {
       setUploadingPhoto(false)
+      // Reset the input so the same file can be uploaded again if needed
+      e.target.value = ''
     }
   }
 
@@ -1411,10 +1439,11 @@ export default function EditCarPage() {
                       : 'bg-purple-600 text-white hover:bg-purple-700 cursor-pointer'
                   }`}>
                     <IoAddOutline className="w-5 h-5" />
-                    {uploadingPhoto ? 'Uploading...' : 'Add Photo'}
+                    {uploadingPhoto ? 'Uploading...' : 'Add Photos'}
                     <input
                       type="file"
                       accept="image/*"
+                      multiple
                       onChange={handlePhotoUpload}
                       className="hidden"
                       disabled={uploadingPhoto || isLocked}

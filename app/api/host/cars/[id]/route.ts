@@ -8,7 +8,6 @@ import { headers } from 'next/headers'
 async function getHostFromHeaders() {
   const headersList = await headers()
   const hostId = headersList.get('x-host-id')
-  const userId = headersList.get('x-user-id')
   
   if (!hostId) {
     return null
@@ -61,97 +60,90 @@ async function checkActiveClaims(carId: string) {
   }
 }
 
-// ✅ NEW: Helper to track field changes
+// Helper to track field changes (with proper Date comparison)
 function detectChanges(oldData: any, newData: any, fields: string[]) {
-  const changes: any = {
+  const changes: {
+    updated: string[]
+    oldValues: Record<string, any>
+    newValues: Record<string, any>
+  } = {
     updated: [],
     oldValues: {},
     newValues: {}
   }
 
   for (const field of fields) {
-    if (newData[field] !== undefined && oldData[field] !== newData[field]) {
-      changes.updated.push(field)
-      changes.oldValues[field] = oldData[field]
-      changes.newValues[field] = newData[field]
+    if (newData[field] !== undefined) {
+      const oldVal = oldData[field]
+      const newVal = newData[field]
+      
+      // Handle Date comparison properly
+      let changed = false
+      if (newVal instanceof Date && oldVal instanceof Date) {
+        changed = newVal.getTime() !== oldVal.getTime()
+      } else if (newVal instanceof Date || oldVal instanceof Date) {
+        // One is Date, one is not - definitely changed
+        changed = true
+      } else {
+        changed = oldVal !== newVal
+      }
+      
+      if (changed) {
+        changes.updated.push(field)
+        changes.oldValues[field] = oldVal
+        changes.newValues[field] = newVal
+      }
     }
   }
 
   return changes
 }
 
-// ✅ NEW: Helper to create detailed activity log
+// Helper to create detailed activity log
 async function logVehicleActivity(params: {
   carId: string
   hostId: string
   hostName: string
   action: string
   category: string
-  changes?: any
-  metadata?: any
+  changes?: {
+    updated: string[]
+    oldValues: Record<string, any>
+    newValues: Record<string, any>
+  }
+  metadata?: Record<string, any>
 }) {
   const { carId, hostId, hostName, action, category, changes, metadata } = params
 
-  // Build description based on action
-  let description = ''
-  switch (action) {
-    case 'UPDATE_PRICING':
-      const priceDiff = changes?.newValues.dailyRate - changes?.oldValues.dailyRate
-      const percentChange = ((priceDiff / changes?.oldValues.dailyRate) * 100).toFixed(1)
-      description = `Pricing updated: $${changes?.oldValues.dailyRate} → $${changes?.newValues.dailyRate} (${priceDiff > 0 ? '+' : ''}${percentChange}%)`
-      break
-    case 'UPDATE_AVAILABILITY':
-      description = `Availability settings updated`
-      break
-    case 'UPDATE_DELIVERY':
-      description = `Delivery options updated`
-      break
-    case 'UPDATE_FEATURES':
-      const addedFeatures = metadata?.added || []
-      const removedFeatures = metadata?.removed || []
-      if (addedFeatures.length > 0) {
-        description = `Added features: ${addedFeatures.join(', ')}`
-      } else if (removedFeatures.length > 0) {
-        description = `Removed features: ${removedFeatures.join(', ')}`
-      } else {
-        description = `Features updated`
-      }
-      break
-    case 'UPDATE_REGISTRATION':
-      description = `Registration information updated`
-      break
-    case 'VEHICLE_ACTIVATED':
-      description = `Vehicle activated and available for booking`
-      break
-    case 'VEHICLE_DEACTIVATED':
-      description = `Vehicle deactivated`
-      break
-    default:
-      description = `Vehicle ${action.toLowerCase().replace(/_/g, ' ')}`
-  }
+  // Determine severity based on action type
+  const highSeverityActions = ['VEHICLE_DELETED', 'UPDATE_PRICING', 'VEHICLE_ACTIVATED', 'VEHICLE_DEACTIVATED']
+  const severity = highSeverityActions.includes(action) ? 'HIGH' : 'INFO'
 
-  await prisma.activityLog.create({
-    data: {
-      entityType: 'CAR',
-      entityId: carId,
-      hostId: hostId,
-      action: action,
-      category: category,
-      severity: 'INFO',
-      description: description,
-      oldValue: changes?.oldValues ? JSON.stringify(changes.oldValues) : null,
-      newValue: changes?.newValues ? JSON.stringify(changes.newValues) : null,
-      metadata: metadata ? JSON.stringify({
-        ...metadata,
-        hostName,
-        timestamp: new Date().toISOString()
-      }) : JSON.stringify({
-        hostName,
-        timestamp: new Date().toISOString()
-      }),
-      createdAt: new Date()
-    }
-  })
+  try {
+    await prisma.activityLog.create({
+      data: {
+        entityType: 'CAR',
+        entityId: carId,
+        hostId: hostId,
+        action: action,
+        category: category,
+        severity: severity,
+        oldValue: changes?.oldValues ? JSON.stringify(changes.oldValues) : null,
+        newValue: changes?.newValues ? JSON.stringify(changes.newValues) : null,
+        metadata: metadata ? JSON.stringify({
+          ...metadata,
+          hostName,
+          timestamp: new Date().toISOString()
+        }) : JSON.stringify({
+          hostName,
+          timestamp: new Date().toISOString()
+        }),
+        createdAt: new Date()
+      }
+    })
+  } catch (err) {
+    console.error('Failed to log activity:', err)
+  }
 }
 
 // GET - Fetch single car details
@@ -267,7 +259,7 @@ export async function GET(
   }
 }
 
-// PUT - Update car details (ENHANCED WITH ACTIVITY LOGGING)
+// PUT - Update car details
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -283,7 +275,17 @@ export async function PUT(
       )
     }
 
-    if (!host.canEditCalendar) {
+    // Only block REJECTED hosts - they cannot edit anything
+    if (host.approvalStatus === 'REJECTED') {
+      return NextResponse.json(
+        { error: 'Your host application has been rejected' },
+        { status: 403 }
+      )
+    }
+
+    // For APPROVED hosts, check canEditCalendar permission
+    // For PENDING/NEEDS_ATTENTION hosts, always allow editing their own cars
+    if (host.approvalStatus === 'APPROVED' && !host.canEditCalendar) {
       return NextResponse.json(
         { error: 'You do not have permission to edit cars' },
         { status: 403 }
@@ -309,7 +311,7 @@ export async function PUT(
 
     const body = await request.json()
 
-    // ✅ FETCH EXISTING CAR FOR COMPARISON
+    // Fetch existing car for comparison
     const existingCar = await prisma.rentalCar.findFirst({
       where: {
         id: carId,
@@ -324,15 +326,28 @@ export async function PUT(
       )
     }
 
-    // Validate daily rate
-    if (body.dailyRate) {
-      if (host.minDailyRate && body.dailyRate < host.minDailyRate) {
+    // ✅ TURO-STYLE: Silent ignore isActive for non-approved hosts
+    let activationNote: string | null = null
+    if (host.approvalStatus !== 'APPROVED') {
+      if (body.isActive === true) {
+        console.log('📋 PENDING host tried to activate car - silently keeping inactive')
+        activationNote = 'Your listing has been saved! It will go live once your account is approved.'
+      }
+      // Force car to stay inactive for non-approved hosts
+      body.isActive = false
+    }
+
+    // ✅ FIX #3: Validate daily rate with !== undefined (handles 0 correctly)
+    if (body.dailyRate !== undefined) {
+      if (host.minDailyRate !== null && host.minDailyRate !== undefined && 
+          body.dailyRate < host.minDailyRate) {
         return NextResponse.json(
           { error: `Daily rate cannot be less than $${host.minDailyRate}` },
           { status: 400 }
         )
       }
-      if (host.maxDailyRate && body.dailyRate > host.maxDailyRate) {
+      if (host.maxDailyRate !== null && host.maxDailyRate !== undefined && 
+          body.dailyRate > host.maxDailyRate) {
         return NextResponse.json(
           { error: `Daily rate cannot exceed $${host.maxDailyRate}` },
           { status: 400 }
@@ -398,6 +413,16 @@ export async function PUT(
     if (body.hotelDelivery !== undefined) updateData.hotelDelivery = body.hotelDelivery
     if (body.homeDelivery !== undefined) updateData.homeDelivery = body.homeDelivery
     
+    // Handle isActive - only update if host is approved OR setting to false
+    if (body.isActive !== undefined) {
+      if (host.approvalStatus === 'APPROVED') {
+        updateData.isActive = body.isActive
+      } else {
+        // Non-approved hosts: always set to false
+        updateData.isActive = false
+      }
+    }
+    
     // Availability settings
     if (body.instantBook !== undefined) updateData.instantBook = body.instantBook
     if (body.advanceNotice !== undefined) updateData.advanceNotice = body.advanceNotice
@@ -420,15 +445,24 @@ export async function PUT(
     if (body.insuranceIncluded !== undefined) updateData.insuranceIncluded = body.insuranceIncluded
     if (body.insuranceDaily !== undefined) updateData.insuranceDaily = body.insuranceDaily
     
-    // Registration & Title
-    if (body.registrationState !== undefined) updateData.registrationState = body.registrationState
+    // ✅ FIX #2: Proper date validation (new Date() doesn't throw on invalid input)
     if (body.registrationExpiryDate !== undefined) {
-      try {
-        updateData.registrationExpiryDate = body.registrationExpiryDate ? new Date(body.registrationExpiryDate) : null
-      } catch (e) {
-        console.warn('Invalid registration expiry date:', body.registrationExpiryDate)
+      if (!body.registrationExpiryDate) {
+        updateData.registrationExpiryDate = null
+      } else {
+        const d = new Date(body.registrationExpiryDate)
+        if (!Number.isNaN(d.getTime())) {
+          updateData.registrationExpiryDate = d
+        } else {
+          return NextResponse.json(
+            { error: 'Invalid registration expiry date format' },
+            { status: 400 }
+          )
+        }
       }
     }
+    
+    if (body.registrationState !== undefined) updateData.registrationState = body.registrationState
     if (body.titleStatus !== undefined) updateData.titleStatus = body.titleStatus
     if (body.registeredOwner !== undefined) updateData.registeredOwner = body.registeredOwner
     if (body.estimatedValue !== undefined) updateData.estimatedValue = body.estimatedValue
@@ -457,9 +491,7 @@ export async function PUT(
 
     console.log('🔧 Update data:', JSON.stringify(updateData, null, 2))
     
-    // ===== ACTIVITY LOGGING LOGIC =====
-    
-    // 1. PRICING CHANGES
+    // Activity Logging - Pricing Changes
     const pricingFields = ['dailyRate', 'weeklyRate', 'monthlyRate', 'weeklyDiscount', 'monthlyDiscount']
     const pricingChanges = detectChanges(existingCar, updateData, pricingFields)
     if (pricingChanges.updated.length > 0) {
@@ -472,15 +504,12 @@ export async function PUT(
         changes: pricingChanges,
         metadata: {
           fields: pricingChanges.updated,
-          priceChange: updateData.dailyRate ? updateData.dailyRate - existingCar.dailyRate : 0,
-          percentChange: updateData.dailyRate ? 
-            (((updateData.dailyRate - existingCar.dailyRate) / existingCar.dailyRate) * 100).toFixed(2) : 
-            0
+          priceChange: updateData.dailyRate !== undefined ? updateData.dailyRate - existingCar.dailyRate : 0
         }
       })
     }
 
-    // 2. AVAILABILITY CHANGES
+    // Activity Logging - Availability Changes
     const availabilityFields = ['instantBook', 'advanceNotice', 'minTripDuration', 'maxTripDuration']
     const availabilityChanges = detectChanges(existingCar, updateData, availabilityFields)
     if (availabilityChanges.updated.length > 0) {
@@ -491,13 +520,11 @@ export async function PUT(
         action: 'UPDATE_AVAILABILITY',
         category: 'VEHICLE',
         changes: availabilityChanges,
-        metadata: {
-          fields: availabilityChanges.updated
-        }
+        metadata: { fields: availabilityChanges.updated }
       })
     }
 
-    // 3. DELIVERY SETTINGS CHANGES
+    // Activity Logging - Delivery Changes
     const deliveryFields = ['airportPickup', 'hotelDelivery', 'homeDelivery', 'airportFee', 'hotelFee', 'homeFee', 'deliveryRadius']
     const deliveryChanges = detectChanges(existingCar, updateData, deliveryFields)
     if (deliveryChanges.updated.length > 0) {
@@ -508,13 +535,11 @@ export async function PUT(
         action: 'UPDATE_DELIVERY',
         category: 'VEHICLE',
         changes: deliveryChanges,
-        metadata: {
-          fields: deliveryChanges.updated
-        }
+        metadata: { fields: deliveryChanges.updated }
       })
     }
 
-    // 4. FEATURES CHANGES
+    // Activity Logging - Features Changes
     if (body.features !== undefined) {
       const oldFeatures = existingCar.features ? JSON.parse(existingCar.features as string) : []
       const newFeatures = body.features
@@ -533,15 +558,12 @@ export async function PUT(
             oldValues: { features: oldFeatures },
             newValues: { features: newFeatures }
           },
-          metadata: {
-            added,
-            removed
-          }
+          metadata: { added, removed }
         })
       }
     }
 
-    // 5. REGISTRATION CHANGES
+    // Activity Logging - Registration Changes
     const registrationFields = ['registrationState', 'registrationExpiryDate', 'titleStatus', 'registeredOwner', 'vin', 'licensePlate']
     const registrationChanges = detectChanges(existingCar, updateData, registrationFields)
     if (registrationChanges.updated.length > 0) {
@@ -552,14 +574,10 @@ export async function PUT(
         action: 'UPDATE_REGISTRATION',
         category: 'DOCUMENT',
         changes: registrationChanges,
-        metadata: {
-          fields: registrationChanges.updated
-        }
+        metadata: { fields: registrationChanges.updated }
       })
     }
 
-    // ===== END ACTIVITY LOGGING =====
-    
     // Update car
     const updatedCar = await prisma.rentalCar.update({
       where: { id: carId },
@@ -586,9 +604,12 @@ export async function PUT(
       photos
     }
 
+    // Return success with optional activation note for PENDING hosts
     return NextResponse.json({
       success: true,
-      car: serializedCar
+      car: serializedCar,
+      message: activationNote || 'Car details updated successfully!',
+      pendingActivation: host.approvalStatus !== 'APPROVED'
     })
 
   } catch (error) {
@@ -600,7 +621,7 @@ export async function PUT(
   }
 }
 
-// PATCH - Toggle car active status (ENHANCED)
+// PATCH - Toggle car active status
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -613,6 +634,26 @@ export async function PATCH(
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
+      )
+    }
+
+    // ✅ FIX #4: Check both approvalStatus AND canEditCalendar for consistency
+    if (host.approvalStatus !== 'APPROVED') {
+      return NextResponse.json(
+        { 
+          error: 'Your account must be approved to activate vehicles',
+          message: 'Complete your listing now - it will go live once approved!',
+          approvalStatus: host.approvalStatus
+        },
+        { status: 403 }
+      )
+    }
+
+    // Also check canEditCalendar permission for APPROVED hosts
+    if (!host.canEditCalendar) {
+      return NextResponse.json(
+        { error: 'You do not have permission to activate/deactivate vehicles' },
+        { status: 403 }
       )
     }
 
@@ -673,7 +714,7 @@ export async function PATCH(
       data: { isActive }
     })
 
-    // ✅ ENHANCED ACTIVITY LOGGING
+    // Log activity
     await logVehicleActivity({
       carId,
       hostId: host.id,
@@ -713,7 +754,7 @@ export async function PATCH(
   }
 }
 
-// DELETE - Delete car (ENHANCED)
+// DELETE - Delete car
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -771,14 +812,15 @@ export async function DELETE(
       )
     }
 
-    const pastBookings = await prisma.rentalBooking.count({
+    // ✅ FIX #5: Include all historical booking statuses to prevent FK errors
+    const historicalBookings = await prisma.rentalBooking.count({
       where: {
         carId,
-        status: 'COMPLETED'
+        status: { in: ['COMPLETED', 'CANCELLED', 'EXPIRED', 'NO_SHOW'] }
       }
     })
 
-    if (pastBookings > 0) {
+    if (historicalBookings > 0) {
       await prisma.rentalCar.update({
         where: { id: carId },
         data: { 
@@ -787,7 +829,6 @@ export async function DELETE(
         }
       })
 
-      // ✅ LOG SOFT DELETE
       await logVehicleActivity({
         carId,
         hostId: host.id,
@@ -796,7 +837,7 @@ export async function DELETE(
         category: 'VEHICLE',
         metadata: {
           reason: 'soft_delete_has_history',
-          pastBookings
+          historicalBookings
         }
       })
 
@@ -806,7 +847,7 @@ export async function DELETE(
       })
     }
 
-    // Hard delete
+    // Hard delete - only if no historical bookings at all
     await prisma.rentalCarPhoto.deleteMany({
       where: { carId }
     })
@@ -823,7 +864,6 @@ export async function DELETE(
       where: { id: carId }
     })
 
-    // ✅ LOG HARD DELETE
     await logVehicleActivity({
       carId,
       hostId: host.id,

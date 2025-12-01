@@ -1,4 +1,4 @@
-// app/api/host/dashboard/route.ts - FIXED VERSION
+// app/api/host/dashboard/route.ts
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
@@ -35,19 +35,27 @@ export async function GET(request: NextRequest) {
             make: true,
             model: true,
             year: true,
+            color: true,
+            trim: true,
             isActive: true,
             dailyRate: true,
+            vin: true,
+            licensePlate: true,
+            // Use 'rules' or 'features' as a proxy for description completeness
+            rules: true,
+            features: true,
             city: true,
             state: true,
             photos: {
               select: {
+                id: true,
                 url: true
-              },
-              take: 1
+              }
             },
             _count: {
               select: {
-                bookings: true
+                bookings: true,
+                photos: true
               }
             }
           }
@@ -87,19 +95,20 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // ✅ FIXED: Get claims count
-    const claimsCount = await prisma.claim.count({
-      where: {
-        hostId: hostId,
-        status: 'PENDING' // Only count pending claims
-      }
-    })
+    // Get claims count
+    let claimsCount = 0
+    try {
+      claimsCount = await prisma.claim.count({
+        where: {
+          hostId: hostId,
+          status: 'PENDING'
+        }
+      })
+    } catch (err) {
+      console.error('Error fetching claims:', err)
+    }
 
-    // ✅ FIXED: Get unread messages count - using correct field structure
-    // RentalMessage doesn't have receiverId, we need to find messages where:
-    // - The booking belongs to this host
-    // - The sender is NOT the host (messages from guests)
-    // - Message is not read
+    // Get unread messages count
     let unreadMessagesCount = 0
     try {
       unreadMessagesCount = await prisma.rentalMessage.count({
@@ -115,7 +124,6 @@ export async function GET(request: NextRequest) {
       })
     } catch (err) {
       console.error('Error fetching unread messages:', err)
-      // Continue without failing the whole request
     }
 
     // Calculate additional stats
@@ -128,10 +136,39 @@ export async function GET(request: NextRequest) {
       acceptanceRate: host.acceptanceRate || 0,
       totalBookings: host.bookings.length,
       totalEarnings: host.totalEarnings || 0,
-      monthlyEarnings: 0, // Calculate from recent bookings if needed
-      pendingClaims: claimsCount, // ✅ NEW
-      unreadMessages: unreadMessagesCount // ✅ NEW
+      monthlyEarnings: 0,
+      pendingClaims: claimsCount,
+      unreadMessages: unreadMessagesCount
     }
+
+    // Format cars with completion status data
+    const formattedCars = host.cars.map(car => {
+      // Calculate if car has enough content (rules/features as proxy for completeness)
+      const hasRules = Array.isArray(car.rules) && car.rules.length > 0
+      const hasFeatures = Array.isArray(car.features) && car.features.length > 0
+      
+      return {
+        id: car.id,
+        make: car.make,
+        model: car.model,
+        year: car.year,
+        color: car.color,
+        trim: car.trim,
+        isActive: car.isActive,
+        dailyRate: car.dailyRate,
+        vin: car.vin,
+        licensePlate: car.licensePlate,
+        // Use rules/features as proxy for "description complete"
+        hasRules: hasRules,
+        hasFeatures: hasFeatures,
+        rules: car.rules,
+        features: car.features,
+        location: `${car.city}, ${car.state}`,
+        photos: car.photos,
+        photoCount: car._count.photos,
+        bookingCount: car._count.bookings
+      }
+    })
 
     // Format response
     const responseData = {
@@ -160,7 +197,12 @@ export async function GET(request: NextRequest) {
           canWithdrawFunds: host.canWithdrawFunds
         },
         
-        // Documents
+        // Documents - for verification progress
+        documentStatuses: {
+          governmentId: host.governmentIdUrl ? 'UPLOADED' : 'NOT_STARTED',
+          driversLicense: host.driversLicenseUrl ? 'UPLOADED' : 'NOT_STARTED',
+          insurance: host.insuranceDocUrl ? 'UPLOADED' : 'NOT_STARTED'
+        },
         documents: {
           governmentIdUrl: host.governmentIdUrl,
           driversLicenseUrl: host.driversLicenseUrl,
@@ -177,18 +219,8 @@ export async function GET(request: NextRequest) {
         // Stats
         stats: stats,
         
-        // Related data
-        cars: host.cars.map(car => ({
-          id: car.id,
-          make: car.make,
-          model: car.model,
-          year: car.year,
-          isActive: car.isActive,
-          dailyRate: car.dailyRate,
-          location: `${car.city}, ${car.state}`,
-          photo: car.photos[0]?.url || null,
-          bookingCount: car._count.bookings
-        })),
+        // Cars with full data for completion checking
+        cars: formattedCars,
         
         recentBookings: host.bookings,
         recentReviews: host.reviews,

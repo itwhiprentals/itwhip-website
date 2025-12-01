@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
+import { IoMailOutline } from 'react-icons/io5'
 
 function VerifyContent() {
   const searchParams = useSearchParams()
@@ -15,28 +16,36 @@ function VerifyContent() {
   
   const [code, setCode] = useState('')
   const [hostId, setHostId] = useState('')
+  const [hostEmail, setHostEmail] = useState('')
+  const [resendEmail, setResendEmail] = useState('')
+  const [showEmailInput, setShowEmailInput] = useState(false)
   const [verifying, setVerifying] = useState(false)
   const [status, setStatus] = useState<'pending' | 'success' | 'error'>('pending')
   const [statusMessage, setStatusMessage] = useState('')
-  const [showHostIdInput, setShowHostIdInput] = useState(false)
 
   useEffect(() => {
     if (token) {
-      // Auto-verify with token
       handleTokenVerification()
     }
     
-    // Check if we have hostId in session storage (from signup flow)
-    const storedHostId = sessionStorage.getItem('pendingHostId')
-    if (storedHostId) {
-      setHostId(storedHostId)
+    // Get hostId and email from localStorage (set during signup)
+    if (typeof window !== 'undefined') {
+      const storedHostId = localStorage.getItem('pendingHostId')
+      const storedEmail = localStorage.getItem('pendingHostEmail')
+      
+      if (storedHostId) {
+        setHostId(storedHostId)
+      }
+      if (storedEmail) {
+        setHostEmail(storedEmail)
+        setResendEmail(storedEmail)
+      }
     }
   }, [token])
 
   const handleTokenVerification = async () => {
     setVerifying(true)
     try {
-      // Token already contains hostId:code in base64
       const response = await fetch('/api/host/verify', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -48,10 +57,11 @@ function VerifyContent() {
       if (response.ok) {
         setStatus('success')
         setStatusMessage('Email verified successfully! Redirecting to login...')
-        sessionStorage.removeItem('pendingHostId') // Clear stored hostId
+        localStorage.removeItem('pendingHostId')
+        localStorage.removeItem('pendingHostEmail')
         setTimeout(() => {
           router.push('/host/login')
-        }, 3000)
+        }, 2000)
       } else {
         setStatus('error')
         setStatusMessage(data.error || 'Verification failed')
@@ -71,10 +81,9 @@ function VerifyContent() {
       return
     }
     
-    // If no hostId, we need to get it
     if (!hostId) {
-      setShowHostIdInput(true)
-      setStatusMessage('Please enter your Host ID (check your email or database)')
+      setStatusMessage('Session expired. Click "Resend Code" and enter your email.')
+      setShowEmailInput(true)
       return
     }
     
@@ -82,7 +91,6 @@ function VerifyContent() {
     setStatusMessage('')
     
     try {
-      // Call the verify API with hostId and code
       const response = await fetch('/api/host/verify', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -98,10 +106,11 @@ function VerifyContent() {
       if (response.ok) {
         setStatus('success')
         setStatusMessage('Email verified successfully! Redirecting to login...')
-        sessionStorage.removeItem('pendingHostId') // Clear stored hostId
+        localStorage.removeItem('pendingHostId')
+        localStorage.removeItem('pendingHostEmail')
         setTimeout(() => {
           router.push('/host/login')
-        }, 3000)
+        }, 2000)
       } else {
         setStatus('error')
         setStatusMessage(data.error || 'Verification failed. Please check your code.')
@@ -115,12 +124,68 @@ function VerifyContent() {
   }
 
   const handleResendCode = async () => {
-    if (!hostId) {
-      setShowHostIdInput(true)
-      setStatusMessage('Please enter your Host ID to resend verification')
+    // If we have hostId, resend directly
+    if (hostId) {
+      await resendCodeWithHostId(hostId)
+      return
+    }
+    
+    // Otherwise, show email input
+    setShowEmailInput(true)
+    setStatusMessage('')
+  }
+
+  const handleResendWithEmail = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!resendEmail || !resendEmail.includes('@')) {
+      setStatusMessage('Please enter a valid email address')
       return
     }
 
+    setVerifying(true)
+    setStatusMessage('')
+
+    try {
+      const response = await fetch('/api/host/verify/resend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: resendEmail })
+      })
+
+      const data = await response.json()
+      
+      if (response.ok) {
+        // Store the hostId for verification
+        if (data.hostId) {
+          localStorage.setItem('pendingHostId', data.hostId)
+          localStorage.setItem('pendingHostEmail', resendEmail)
+          setHostId(data.hostId)
+          setHostEmail(resendEmail)
+        }
+        setStatusMessage('New verification code sent! Check your email.')
+        setShowEmailInput(false)
+        setStatus('pending')
+      } else {
+        // Handle specific error cases
+        if (data.code === 'ALREADY_VERIFIED') {
+          setStatus('error')
+          setStatusMessage('This account is already verified. Please login.')
+        } else if (data.code === 'NOT_FOUND') {
+          setStatus('error')
+          setStatusMessage('No account found with this email. Please sign up first.')
+        } else {
+          setStatusMessage(data.error || 'Failed to resend code')
+        }
+      }
+    } catch (error) {
+      setStatusMessage('Unable to resend code. Please try again.')
+    }
+    
+    setVerifying(false)
+  }
+
+  const resendCodeWithHostId = async (id: string) => {
     setVerifying(true)
     setStatusMessage('')
 
@@ -129,7 +194,7 @@ function VerifyContent() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          hostId,
+          hostId: id,
           verificationType: 'email'
         })
       })
@@ -138,10 +203,7 @@ function VerifyContent() {
       
       if (response.ok) {
         setStatusMessage('New verification code sent! Check your email.')
-        // In dev mode, show the code
-        if (data.devCode) {
-          setStatusMessage(`New code sent! Dev mode: ${data.devCode}`)
-        }
+        setStatus('pending')
       } else {
         setStatusMessage(data.error || 'Failed to resend code')
       }
@@ -159,82 +221,167 @@ function VerifyContent() {
         <div className="max-w-md mx-auto px-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
             <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              </div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                 Verify Your Email
               </h1>
               <p className="text-gray-600 dark:text-gray-400 mt-2">
                 {token ? 'Verifying your email...' : 
-                 message === 'check-email' ? 'Check your email for the verification code' :
+                 showEmailInput ? 'Enter your email to resend verification code' :
+                 message === 'check-email' ? 'Enter the 6-digit code sent to your email' :
                  'Enter your verification code'}
               </p>
+              {hostEmail && !showEmailInput && (
+                <p className="text-sm text-green-600 dark:text-green-400 mt-1">
+                  Sent to: {hostEmail}
+                </p>
+              )}
             </div>
 
+            {/* Success Message */}
             {status === 'success' && (
               <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200 p-4 rounded-lg mb-6">
                 <div className="flex items-center">
-                  <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  {statusMessage}
+                  <span>{statusMessage}</span>
                 </div>
+                {statusMessage.includes('already verified') && (
+                  <Link 
+                    href="/host/login"
+                    className="mt-3 inline-block w-full text-center bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium"
+                  >
+                    Go to Login
+                  </Link>
+                )}
               </div>
             )}
 
+            {/* Error Message */}
             {status === 'error' && (
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 p-4 rounded-lg mb-6">
                 <div className="flex items-center">
-                  <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                   </svg>
-                  {statusMessage}
+                  <span>{statusMessage}</span>
                 </div>
-              </div>
-            )}
-
-            {status === 'pending' && statusMessage && (
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-200 p-4 rounded-lg mb-6">
-                <div className="flex items-center">
-                  <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                  </svg>
-                  {statusMessage}
-                </div>
-              </div>
-            )}
-
-            {status === 'pending' && !token && (
-              <form onSubmit={handleManualVerification}>
-                {/* Host ID input (shown when needed) */}
-                {(showHostIdInput || !hostId) && (
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Host ID
-                    </label>
-                    <input
-                      type="text"
-                      value={hostId}
-                      onChange={(e) => setHostId(e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
-                      placeholder="Enter your Host ID"
-                      disabled={verifying}
-                    />
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Your Host ID was sent in your verification email or you can find it in the database
-                    </p>
-                  </div>
+                {statusMessage.includes('already verified') && (
+                  <Link 
+                    href="/host/login"
+                    className="mt-3 inline-block w-full text-center bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium"
+                  >
+                    Go to Login
+                  </Link>
                 )}
+                {statusMessage.includes('sign up') && (
+                  <Link 
+                    href="/host/signup"
+                    className="mt-3 inline-block w-full text-center bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium"
+                  >
+                    Go to Sign Up
+                  </Link>
+                )}
+              </div>
+            )}
 
-                {/* Verification Code Input */}
-                <div className="mb-4">
+            {/* Warning Message */}
+            {status === 'pending' && statusMessage && !statusMessage.includes('sent') && (
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 text-yellow-800 dark:text-yellow-200 p-4 rounded-lg mb-6">
+                <div className="flex items-center">
+                  <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  <span>{statusMessage}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Success Message for Code Sent */}
+            {status === 'pending' && statusMessage && statusMessage.includes('sent') && (
+              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200 p-4 rounded-lg mb-6">
+                <div className="flex items-center">
+                  <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  <span>{statusMessage}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Email Input Form (for resend when session expired) */}
+            {status === 'pending' && showEmailInput && !token && (
+              <form onSubmit={handleResendWithEmail} className="space-y-4">
+                <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    6-Digit Code
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <IoMailOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="email"
+                      value={resendEmail}
+                      onChange={(e) => setResendEmail(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                      placeholder="Enter your email"
+                      disabled={verifying}
+                      autoFocus
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Enter the email you used to sign up
+                  </p>
+                </div>
+                
+                <button
+                  type="submit"
+                  disabled={verifying || !resendEmail}
+                  className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                >
+                  {verifying ? 'Sending...' : 'Send Verification Code'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEmailInput(false)
+                    setStatusMessage('')
+                  }}
+                  className="w-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-3 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium"
+                >
+                  Back to Code Entry
+                </button>
+
+                <div className="text-center pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Don't have an account?{' '}
+                    <Link href="/host/signup" className="text-green-600 hover:text-green-700 font-medium">
+                      Sign Up
+                    </Link>
+                  </p>
+                </div>
+              </form>
+            )}
+
+            {/* Main Verification Form */}
+            {status === 'pending' && !showEmailInput && !token && (
+              <form onSubmit={handleManualVerification}>
+                {/* Verification Code Input */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 text-center">
+                    6-Digit Verification Code
                   </label>
                   <input
                     type="text"
                     maxLength={6}
                     value={code}
                     onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg text-center text-2xl tracking-wider bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full px-4 py-4 border border-gray-300 dark:border-gray-600 rounded-lg text-center text-3xl tracking-[0.5em] font-mono bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500"
                     placeholder="000000"
                     disabled={verifying}
                     autoFocus
@@ -244,7 +391,7 @@ function VerifyContent() {
                 <button
                   type="submit"
                   disabled={verifying || code.length !== 6}
-                  className="w-full bg-purple-600 text-white py-3 px-4 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                  className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
                 >
                   {verifying ? 'Verifying...' : 'Verify Email'}
                 </button>
@@ -253,15 +400,15 @@ function VerifyContent() {
                   type="button"
                   onClick={handleResendCode}
                   disabled={verifying}
-                  className="w-full mt-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-3 px-4 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                  className="w-full mt-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-3 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
                 >
                   Resend Code
                 </button>
 
-                <div className="mt-4 text-center">
+                <div className="mt-6 text-center">
                   <Link 
                     href="/host/login" 
-                    className="text-sm text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400"
+                    className="text-sm text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400"
                   >
                     Already verified? Login here
                   </Link>
@@ -269,18 +416,10 @@ function VerifyContent() {
               </form>
             )}
 
+            {/* Loading state for token verification */}
             {verifying && token && (
               <div className="flex justify-center py-8">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-              </div>
-            )}
-
-            {/* Development Helper */}
-            {process.env.NODE_ENV === 'development' && hostId && (
-              <div className="mt-4 p-3 bg-gray-100 dark:bg-gray-700 rounded text-xs text-gray-600 dark:text-gray-400">
-                <p className="font-semibold">Dev Info:</p>
-                <p>Host ID: {hostId}</p>
-                <p>Enter the code from your email or console</p>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
               </div>
             )}
           </div>
@@ -290,24 +429,11 @@ function VerifyContent() {
             <p>Didn't receive the email? Check your spam folder.</p>
             <p className="mt-2">
               Need help? Contact{' '}
-              <a href="mailto:info@itwhip.com" className="text-purple-600 hover:underline">
+              <a href="mailto:info@itwhip.com" className="text-green-600 hover:underline">
                 info@itwhip.com
               </a>
             </p>
           </div>
-
-          {/* Known Host ID for Testing (Dev Only) */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg text-xs">
-              <p className="font-semibold text-yellow-800 dark:text-yellow-200">Testing Info:</p>
-              <p className="text-yellow-700 dark:text-yellow-300 mt-1">
-                Jay Jackson's Host ID: cmg6fh4j50000doel8gah9z72
-              </p>
-              <p className="text-yellow-700 dark:text-yellow-300">
-                Verification Code: 536486 (if still valid)
-              </p>
-            </div>
-          )}
         </div>
       </div>
       <Footer />
@@ -321,7 +447,7 @@ export default function VerifyPage() {
       <>
         <Header />
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
         </div>
         <Footer />
       </>
