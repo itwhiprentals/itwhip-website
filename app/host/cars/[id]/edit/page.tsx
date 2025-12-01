@@ -104,6 +104,9 @@ interface CarDetails {
   totalTrips: number
   rating: number
   
+  // Description
+  description?: string
+  
   // Registration & Documentation Fields
   registeredOwner?: string
   registrationState?: string
@@ -275,6 +278,9 @@ export default function EditCarPage() {
     insuranceIncluded: false,
     insuranceDaily: 25,
     
+    // Description
+    description: '',
+    
     // Registration & Documentation Fields
     registeredOwner: '',
     registrationState: 'AZ',
@@ -357,6 +363,8 @@ export default function EditCarPage() {
         rules: carData.rules || [],
         insuranceIncluded: carData.insuranceIncluded,
         insuranceDaily: carData.insuranceDaily,
+        // Description
+        description: carData.description || '',
         // ✅ FIXED: Registration fields with proper date formatting
         registeredOwner: carData.registeredOwner || '',
         registrationState: carData.registrationState || 'AZ',
@@ -854,6 +862,27 @@ export default function EditCarPage() {
                       <option value="automatic">Automatic</option>
                       <option value="manual">Manual</option>
                     </select>
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-4">Vehicle Description</h4>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Description
+                    </label>
+                    <textarea
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      disabled={isLocked}
+                      rows={4}
+                      maxLength={2000}
+                      placeholder="Describe your vehicle to potential renters. Highlight special features, recent upgrades, or what makes it a great choice..."
+                      className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none ${isLocked ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-900' : ''}`}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      {formData.description.length}/2000 characters
+                    </p>
                   </div>
                 </div>
 

@@ -1626,7 +1626,6 @@ model RentalCar {
   color        String
   licensePlate String? // ✅ OPTIONAL - Will backfill
   vin          String? // ✅ OPTIONAL - Will backfill
-  description  String? @db.Text // Vehicle description for listings
 
   // ===== NEW: VEHICLE CLASSIFICATION LINK =====
   classificationId String?

@@ -82,7 +82,6 @@ function detectChanges(oldData: any, newData: any, fields: string[]) {
       if (newVal instanceof Date && oldVal instanceof Date) {
         changed = newVal.getTime() !== oldVal.getTime()
       } else if (newVal instanceof Date || oldVal instanceof Date) {
-        // One is Date, one is not - definitely changed
         changed = true
       } else {
         changed = oldVal !== newVal
@@ -115,7 +114,6 @@ async function logVehicleActivity(params: {
 }) {
   const { carId, hostId, hostName, action, category, changes, metadata } = params
 
-  // Determine severity based on action type
   const highSeverityActions = ['VEHICLE_DELETED', 'UPDATE_PRICING', 'VEHICLE_ACTIVATED', 'VEHICLE_DEACTIVATED']
   const severity = highSeverityActions.includes(action) ? 'HIGH' : 'INFO'
 
@@ -275,7 +273,6 @@ export async function PUT(
       )
     }
 
-    // Only block REJECTED hosts - they cannot edit anything
     if (host.approvalStatus === 'REJECTED') {
       return NextResponse.json(
         { error: 'Your host application has been rejected' },
@@ -283,8 +280,6 @@ export async function PUT(
       )
     }
 
-    // For APPROVED hosts, check canEditCalendar permission
-    // For PENDING/NEEDS_ATTENTION hosts, always allow editing their own cars
     if (host.approvalStatus === 'APPROVED' && !host.canEditCalendar) {
       return NextResponse.json(
         { error: 'You do not have permission to edit cars' },
@@ -292,7 +287,6 @@ export async function PUT(
       )
     }
 
-    // Check for active claims
     const claimInfo = await checkActiveClaims(carId)
     
     if (claimInfo.hasActiveClaims) {
@@ -311,7 +305,6 @@ export async function PUT(
 
     const body = await request.json()
 
-    // Fetch existing car for comparison
     const existingCar = await prisma.rentalCar.findFirst({
       where: {
         id: carId,
@@ -326,18 +319,15 @@ export async function PUT(
       )
     }
 
-    // ✅ TURO-STYLE: Silent ignore isActive for non-approved hosts
     let activationNote: string | null = null
     if (host.approvalStatus !== 'APPROVED') {
       if (body.isActive === true) {
         console.log('📋 PENDING host tried to activate car - silently keeping inactive')
         activationNote = 'Your listing has been saved! It will go live once your account is approved.'
       }
-      // Force car to stay inactive for non-approved hosts
       body.isActive = false
     }
 
-    // ✅ FIX #3: Validate daily rate with !== undefined (handles 0 correctly)
     if (body.dailyRate !== undefined) {
       if (host.minDailyRate !== null && host.minDailyRate !== undefined && 
           body.dailyRate < host.minDailyRate) {
@@ -366,6 +356,7 @@ export async function PUT(
     if (body.color !== undefined) updateData.color = body.color
     if (body.licensePlate !== undefined) updateData.licensePlate = body.licensePlate
     if (body.vin !== undefined) updateData.vin = body.vin
+    if (body.description !== undefined) updateData.description = body.description
     
     // Specifications
     if (body.carType !== undefined) updateData.carType = body.carType
@@ -413,12 +404,11 @@ export async function PUT(
     if (body.hotelDelivery !== undefined) updateData.hotelDelivery = body.hotelDelivery
     if (body.homeDelivery !== undefined) updateData.homeDelivery = body.homeDelivery
     
-    // Handle isActive - only update if host is approved OR setting to false
+    // Handle isActive
     if (body.isActive !== undefined) {
       if (host.approvalStatus === 'APPROVED') {
         updateData.isActive = body.isActive
       } else {
-        // Non-approved hosts: always set to false
         updateData.isActive = false
       }
     }
@@ -445,7 +435,7 @@ export async function PUT(
     if (body.insuranceIncluded !== undefined) updateData.insuranceIncluded = body.insuranceIncluded
     if (body.insuranceDaily !== undefined) updateData.insuranceDaily = body.insuranceDaily
     
-    // ✅ FIX #2: Proper date validation (new Date() doesn't throw on invalid input)
+    // Registration date
     if (body.registrationExpiryDate !== undefined) {
       if (!body.registrationExpiryDate) {
         updateData.registrationExpiryDate = null
@@ -578,6 +568,26 @@ export async function PUT(
       })
     }
 
+    // Activity Logging - Description Changes
+    if (body.description !== undefined && existingCar.description !== body.description) {
+      await logVehicleActivity({
+        carId,
+        hostId: host.id,
+        hostName: host.name || host.email,
+        action: 'UPDATE_DESCRIPTION',
+        category: 'VEHICLE',
+        changes: {
+          updated: ['description'],
+          oldValues: { description: existingCar.description },
+          newValues: { description: body.description }
+        },
+        metadata: { 
+          oldLength: existingCar.description?.length || 0,
+          newLength: body.description?.length || 0
+        }
+      })
+    }
+
     // Update car
     const updatedCar = await prisma.rentalCar.update({
       where: { id: carId },
@@ -604,7 +614,6 @@ export async function PUT(
       photos
     }
 
-    // Return success with optional activation note for PENDING hosts
     return NextResponse.json({
       success: true,
       car: serializedCar,
@@ -637,7 +646,6 @@ export async function PATCH(
       )
     }
 
-    // ✅ FIX #4: Check both approvalStatus AND canEditCalendar for consistency
     if (host.approvalStatus !== 'APPROVED') {
       return NextResponse.json(
         { 
@@ -649,7 +657,6 @@ export async function PATCH(
       )
     }
 
-    // Also check canEditCalendar permission for APPROVED hosts
     if (!host.canEditCalendar) {
       return NextResponse.json(
         { error: 'You do not have permission to activate/deactivate vehicles' },
@@ -714,7 +721,6 @@ export async function PATCH(
       data: { isActive }
     })
 
-    // Log activity
     await logVehicleActivity({
       carId,
       hostId: host.id,
@@ -812,7 +818,6 @@ export async function DELETE(
       )
     }
 
-    // ✅ FIX #5: Include all historical booking statuses to prevent FK errors
     const historicalBookings = await prisma.rentalBooking.count({
       where: {
         carId,
@@ -847,7 +852,7 @@ export async function DELETE(
       })
     }
 
-    // Hard delete - only if no historical bookings at all
+    // Hard delete
     await prisma.rentalCarPhoto.deleteMany({
       where: { carId }
     })
