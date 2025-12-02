@@ -226,11 +226,12 @@ function HostProfileContent() {
   }, [searchParams])
 
   // Fetch insurance data when insurance tab is active
+  // Insurance tier selection is required for ALL hosts (including PENDING) to complete verification
   useEffect(() => {
-    if (activeTab === 'insurance' && profile?.id && profile?.approvalStatus === 'APPROVED') {
+    if (activeTab === 'insurance' && profile?.id) {
       fetchInsuranceData()
     }
-  }, [activeTab, profile?.id, profile?.approvalStatus])
+  }, [activeTab, profile?.id])
 
   const fetchProfile = async () => {
     try {

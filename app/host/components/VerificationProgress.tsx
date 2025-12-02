@@ -2,15 +2,17 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { 
-  IoCheckmarkCircle, 
-  IoCloseCircle, 
+import {
+  IoCheckmarkCircle,
+  IoCloseCircle,
   IoTimeOutline,
   IoDocumentTextOutline,
   IoShieldCheckmarkOutline,
   IoCardOutline,
   IoChevronForwardOutline,
-  IoCarSportOutline
+  IoCarSportOutline,
+  IoPencilOutline,
+  IoInformationCircleOutline
 } from 'react-icons/io5'
 
 interface VerificationStep {
@@ -23,6 +25,10 @@ interface VerificationStep {
   actionLabel?: string
   estimatedTime?: string
   priority: 'HIGH' | 'MEDIUM' | 'LOW'
+  tierInfo?: {
+    tier: 'BASIC' | 'STANDARD' | 'PREMIUM' | null
+    percentage: number
+  }
 }
 
 interface CarData {
@@ -136,11 +142,41 @@ export default function VerificationProgress({
   // Build steps after cars are fetched
   useEffect(() => {
     if (!carsFetched) return
-    
+
     buildVerificationSteps()
   }, [carsFetched, hasIncompleteCar, approvalStatus, backgroundCheckStatus, documentStatuses])
 
-  const buildVerificationSteps = () => {
+  // Helper function to check if host has selected insurance tier
+  const checkInsuranceTierSelected = async (): Promise<{ selected: boolean; tier: 'BASIC' | 'STANDARD' | 'PREMIUM' | null; percentage: number }> => {
+    try {
+      const response = await fetch(`/api/host/profile`, {
+        credentials: 'include'
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        const profile = data.profile
+
+        // Check tier priority: PREMIUM > STANDARD > BASIC
+        if (profile.earningsTier === 'PREMIUM' || profile.commercialInsuranceActive === true) {
+          return { selected: true, tier: 'PREMIUM', percentage: 90 }
+        } else if (profile.earningsTier === 'STANDARD' || profile.p2pInsuranceActive === true) {
+          return { selected: true, tier: 'STANDARD', percentage: 75 }
+        } else if (profile.earningsTier === 'BASIC') {
+          return { selected: true, tier: 'BASIC', percentage: 40 }
+        }
+
+        return { selected: false, tier: null, percentage: 0 }
+      }
+
+      return { selected: false, tier: null, percentage: 0 }
+    } catch (error) {
+      console.error('Error checking insurance tier:', error)
+      return { selected: false, tier: null, percentage: 0 }
+    }
+  }
+
+  const buildVerificationSteps = async () => {
     try {
       setLoading(true)
 
@@ -199,6 +235,28 @@ export default function VerificationProgress({
         actionLabel: 'Add Bank Account',
         estimatedTime: '3 minutes',
         priority: 'MEDIUM'
+      })
+
+      // Step 5: Insurance Tier Selection
+      // Host must select earnings tier to complete verification
+      // BASIC (40%) - No insurance, STANDARD (75%) - P2P, PREMIUM (90%) - Commercial
+      const tierStatus = await checkInsuranceTierSelected()
+      verificationSteps.push({
+        id: 'insurance_tier',
+        title: 'Select Insurance Tier',
+        description: tierStatus.selected
+          ? 'Your earnings tier is configured'
+          : 'Choose your earnings tier: BASIC (40%), STANDARD (75%), or PREMIUM (90%)',
+        status: tierStatus.selected ? 'COMPLETED' : 'NOT_STARTED',
+        icon: IoShieldCheckmarkOutline,
+        actionUrl: '/host/profile?tab=insurance',
+        actionLabel: 'Select Tier',
+        estimatedTime: '5 minutes',
+        priority: 'HIGH',
+        tierInfo: tierStatus.selected ? {
+          tier: tierStatus.tier,
+          percentage: tierStatus.percentage
+        } : undefined
       })
 
       setSteps(verificationSteps)
@@ -288,7 +346,7 @@ export default function VerificationProgress({
   }
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
+    <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">
       {/* Header */}
       <div className="mb-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
@@ -365,19 +423,65 @@ export default function VerificationProgress({
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2 mb-1">
-                      <h4 className="font-semibold text-gray-900 dark:text-white">
-                        {step.title}
-                      </h4>
-                      <span className={`text-xs font-medium whitespace-nowrap ${
-                        step.status === 'IN_PROGRESS' && isVehicleStep
-                          ? 'text-yellow-600 dark:text-yellow-400'
-                          : getStatusColor(step.status)
-                      }`}>
-                        {step.status === 'IN_PROGRESS' && isVehicleStep 
-                          ? 'Needs Completion'
-                          : getStatusLabel(step.status)
-                        }
-                      </span>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900 dark:text-white">
+                          {step.title}
+                        </h4>
+
+                        {/* Tier Display for Insurance Step */}
+                        {step.id === 'insurance_tier' && step.tierInfo && (
+                          <div className="mt-1">
+                            <span className={`text-sm font-semibold ${
+                              step.tierInfo.tier === 'BASIC'
+                                ? 'text-green-600 dark:text-green-400'
+                                : step.tierInfo.tier === 'STANDARD'
+                                ? 'text-purple-600 dark:text-purple-400'
+                                : 'text-yellow-600 dark:text-yellow-400'
+                            }`}>
+                              {step.tierInfo.tier} ({step.tierInfo.percentage}%)
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Not Selected Display */}
+                        {step.id === 'insurance_tier' && !step.tierInfo && step.status !== 'COMPLETED' && (
+                          <div className="mt-1">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">
+                              Not selected
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs font-medium whitespace-nowrap ${
+                          step.status === 'IN_PROGRESS' && isVehicleStep
+                            ? 'text-yellow-600 dark:text-yellow-400'
+                            : getStatusColor(step.status)
+                        }`}>
+                          {step.status === 'IN_PROGRESS' && isVehicleStep
+                            ? 'Needs Completion'
+                            : getStatusLabel(step.status)
+                          }
+                        </span>
+
+                        {/* Edit Button for Completed Steps */}
+                        {step.status === 'COMPLETED' && step.actionUrl && (
+                          <button
+                            onClick={() => {
+                              if (onActionClick) {
+                                onActionClick(step.id)
+                              } else if (step.actionUrl) {
+                                window.location.href = step.actionUrl
+                              }
+                            }}
+                            className="p-1 text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+                            aria-label="Edit this step"
+                          >
+                            <IoPencilOutline className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                     
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
@@ -435,6 +539,16 @@ export default function VerificationProgress({
                 Your host account is fully verified. You can now list your vehicles and start earning!
               </p>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Review Message - Show when not all steps complete */}
+      {progress < 100 && (
+        <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+          <div className="flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+            <IoInformationCircleOutline className="w-5 h-5 flex-shrink-0" />
+            <span>Your account will be reviewed once all steps are completed</span>
           </div>
         </div>
       )}

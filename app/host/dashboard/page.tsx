@@ -257,15 +257,11 @@ function IncompleteCarCard({ car, onComplete }: { car: CarData; onComplete: () =
 function ActiveCarCard({ car, isApproved }: { car: CarData; isApproved: boolean }) {
   const carPhoto = car.photo || car.heroPhoto
   const carLocation = car.location || (car.city && car.state ? `${car.city}, ${car.state}` : null)
-  
+
   return (
     <Link
-      href={isApproved ? `/host/cars/${car.id}/edit` : '#'}
-      className={`block border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden transition-all bg-white dark:bg-gray-800 ${
-        isApproved 
-          ? 'hover:shadow-md hover:border-purple-300 dark:hover:border-purple-700 cursor-pointer' 
-          : 'cursor-default'
-      }`}
+      href={`/host/cars/${car.id}/edit`}
+      className="block border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden transition-all bg-white dark:bg-gray-800 hover:shadow-md hover:border-purple-300 dark:hover:border-purple-700 cursor-pointer"
     >
       {/* Car Photo */}
       <div className="relative h-36 sm:h-40 bg-gray-100 dark:bg-gray-700">
@@ -339,15 +335,13 @@ function ActiveCarCard({ car, isApproved }: { car: CarData; isApproved: boolean 
             <span className="truncate">{carLocation}</span>
           </div>
         )}
-        
-        {/* Manage Link for approved hosts */}
-        {isApproved && (
-          <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
-            <span className="text-purple-600 dark:text-purple-400 text-sm font-medium inline-flex items-center gap-1 group-hover:underline">
-              Manage <IoChevronForwardOutline className="w-3 h-3" />
-            </span>
-          </div>
-        )}
+
+        {/* Manage Link */}
+        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+          <span className="text-purple-600 dark:text-purple-400 text-sm font-medium inline-flex items-center gap-1 group-hover:underline">
+            Manage <IoChevronForwardOutline className="w-3 h-3" />
+          </span>
+        </div>
       </div>
     </Link>
   )

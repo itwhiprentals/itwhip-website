@@ -114,31 +114,178 @@ export default function InsuranceTab({
 
   const insuranceProviderName = getInsuranceProviderName()
 
-  // If not approved, show locked state
+  // If not approved, show tier selection interface (required for verification)
   if (!isApproved) {
     return (
-      <div className="text-center py-8 sm:py-12">
-        <IoLockClosedOutline className="w-12 h-12 sm:w-16 sm:h-16 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
-        
-        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-2 px-4">
-          Insurance Access Locked
-        </h3>
-        
-        <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto px-4">
-          Complete your account verification to view insurance details and upgrade your earnings tier.
-        </p>
-        
-        <button
-          onClick={() => onTabChange('documents')}
-          className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors text-sm sm:text-base"
-        >
-          Complete Verification
-        </button>
+      <div className="space-y-6">
+        {/* Verification Required Banner */}
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <IoInformationCircleOutline className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">
+                Select Your Insurance Tier
+              </h4>
+              <p className="text-sm text-blue-800 dark:text-blue-300">
+                Choose your earnings tier to complete verification. This determines your earnings rate and insurance requirements.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Tier Selection Cards */}
+        <div className="grid gap-4 md:grid-cols-3">
+          {/* BASIC Tier - 40% */}
+          <div className={`border-2 rounded-lg p-5 transition-all cursor-pointer ${
+            currentTier === 'BASIC'
+              ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+              : 'border-gray-200 dark:border-gray-700 hover:border-purple-300'
+          }`}>
+            <div className="flex items-start justify-between mb-3">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Basic</h3>
+              {currentTier === 'BASIC' && (
+                <IoCheckmarkCircleOutline className="w-6 h-6 text-purple-600" />
+              )}
+            </div>
+            <div className="mb-3">
+              <span className="text-3xl font-bold text-gray-900 dark:text-white">40%</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400 ml-2">earnings</span>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              Platform insurance covers your vehicles. No additional insurance required.
+            </p>
+            <ul className="space-y-2 text-sm text-gray-700 dark:text-gray-300 mb-4">
+              <li className="flex items-start gap-2">
+                <IoCheckmarkCircleOutline className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                <span>No insurance required</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <IoCheckmarkCircleOutline className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                <span>Platform coverage included</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <IoCheckmarkCircleOutline className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                <span>60% platform fee</span>
+              </li>
+            </ul>
+            <button
+              disabled={currentTier === 'BASIC'}
+              className={`w-full py-2 rounded-lg font-medium transition-colors ${
+                currentTier === 'BASIC'
+                  ? 'bg-purple-600 text-white cursor-default'
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600'
+              }`}
+            >
+              {currentTier === 'BASIC' ? 'Current Tier' : 'Select Basic'}
+            </button>
+          </div>
+
+          {/* STANDARD Tier - 75% */}
+          <div className={`border-2 rounded-lg p-5 transition-all cursor-pointer ${
+            currentTier === 'STANDARD'
+              ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+              : 'border-gray-200 dark:border-gray-700 hover:border-purple-300'
+          }`}>
+            <div className="flex items-start justify-between mb-3">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Standard</h3>
+              {currentTier === 'STANDARD' && (
+                <IoCheckmarkCircleOutline className="w-6 h-6 text-purple-600" />
+              )}
+            </div>
+            <div className="mb-3">
+              <span className="text-3xl font-bold text-gray-900 dark:text-white">75%</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400 ml-2">earnings</span>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              P2P insurance required. Better earnings with peer-to-peer coverage.
+            </p>
+            <ul className="space-y-2 text-sm text-gray-700 dark:text-gray-300 mb-4">
+              <li className="flex items-start gap-2">
+                <IoCheckmarkCircleOutline className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                <span>P2P insurance required</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <IoCheckmarkCircleOutline className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                <span>Higher earnings rate</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <IoCheckmarkCircleOutline className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                <span>25% platform fee</span>
+              </li>
+            </ul>
+            <button
+              disabled={currentTier === 'STANDARD'}
+              className={`w-full py-2 rounded-lg font-medium transition-colors ${
+                currentTier === 'STANDARD'
+                  ? 'bg-purple-600 text-white cursor-default'
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600'
+              }`}
+            >
+              {currentTier === 'STANDARD' ? 'Current Tier' : 'Select Standard'}
+            </button>
+          </div>
+
+          {/* PREMIUM Tier - 90% */}
+          <div className={`border-2 rounded-lg p-5 transition-all cursor-pointer ${
+            currentTier === 'PREMIUM'
+              ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+              : 'border-gray-200 dark:border-gray-700 hover:border-purple-300'
+          }`}>
+            <div className="flex items-start justify-between mb-3">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Premium</h3>
+              {currentTier === 'PREMIUM' && (
+                <IoCheckmarkCircleOutline className="w-6 h-6 text-purple-600" />
+              )}
+            </div>
+            <div className="mb-3">
+              <span className="text-3xl font-bold text-gray-900 dark:text-white">90%</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400 ml-2">earnings</span>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              Commercial insurance required. Highest earnings for professional hosts.
+            </p>
+            <ul className="space-y-2 text-sm text-gray-700 dark:text-gray-300 mb-4">
+              <li className="flex items-start gap-2">
+                <IoCheckmarkCircleOutline className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                <span>Commercial insurance required</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <IoCheckmarkCircleOutline className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                <span>Maximum earnings rate</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <IoCheckmarkCircleOutline className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                <span>10% platform fee</span>
+              </li>
+            </ul>
+            <button
+              disabled={currentTier === 'PREMIUM'}
+              className={`w-full py-2 rounded-lg font-medium transition-colors ${
+                currentTier === 'PREMIUM'
+                  ? 'bg-purple-600 text-white cursor-default'
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600'
+              }`}
+            >
+              {currentTier === 'PREMIUM' ? 'Current Tier' : 'Select Premium'}
+            </button>
+          </div>
+        </div>
+
+        {/* Info Box */}
+        <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+          <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Important Information</h4>
+          <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+            <li>• You must select a tier to complete host verification</li>
+            <li>• You can upgrade your tier anytime after approval</li>
+            <li>• Standard and Premium tiers require insurance verification</li>
+            <li>• Basic tier is perfect for getting started quickly</li>
+          </ul>
+        </div>
       </div>
     )
   }
 
-  // If approved, show insurance sections
+  // If approved, show full insurance sections
   return (
     <div className="space-y-6">
       {/* Dynamic Insurance Status Banner */}

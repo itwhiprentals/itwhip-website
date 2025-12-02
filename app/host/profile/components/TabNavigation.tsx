@@ -23,17 +23,17 @@ export default function TabNavigation({
   const tabs: { value: TabType; label: string; icon?: React.ReactNode; requiresApproval?: boolean }[] = [
     { value: 'profile', label: 'Profile' },
     { value: 'documents', label: 'Documents' },
-    { 
-      value: 'banking', 
-      label: 'Banking', 
+    {
+      value: 'banking',
+      label: 'Banking',
       icon: <IoWalletOutline className="w-4 h-4" />,
-      requiresApproval: true 
+      requiresApproval: true
     },
-    { 
-      value: 'insurance', 
-      label: 'Insurance', 
-      icon: <IoShieldCheckmarkOutline className="w-4 h-4" />,
-      requiresApproval: true 
+    {
+      value: 'insurance',
+      label: 'Insurance',
+      icon: <IoShieldCheckmarkOutline className="w-4 h-4" />
+      // Insurance tab now accessible to ALL hosts (including PENDING) for tier selection
     },
     { value: 'claims', label: 'Claims' },
     { value: 'settings', label: 'Settings' }
