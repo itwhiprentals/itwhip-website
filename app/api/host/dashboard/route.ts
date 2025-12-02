@@ -41,15 +41,20 @@ export async function GET(request: NextRequest) {
             dailyRate: true,
             vin: true,
             licensePlate: true,
-            // Use 'rules' or 'features' as a proxy for description completeness
+            description: true,
             rules: true,
             features: true,
             city: true,
             state: true,
+            rating: true,
             photos: {
               select: {
                 id: true,
-                url: true
+                url: true,
+                isHero: true
+              },
+              orderBy: {
+                order: 'asc'
               }
             },
             _count: {
@@ -141,11 +146,16 @@ export async function GET(request: NextRequest) {
       unreadMessages: unreadMessagesCount
     }
 
-    // Format cars with completion status data
+    // Format cars with completion status data and enhanced metrics
     const formattedCars = host.cars.map(car => {
-      // Calculate if car has enough content (rules/features as proxy for completeness)
+      // Calculate if car has enough content
       const hasRules = Array.isArray(car.rules) && car.rules.length > 0
       const hasFeatures = Array.isArray(car.features) && car.features.length > 0
+      
+      // Get hero photo - prioritize isHero flag, then first photo
+      const heroPhoto = car.photos?.find((p: any) => p.isHero)?.url 
+        || car.photos?.[0]?.url 
+        || null
       
       return {
         id: car.id,
@@ -158,14 +168,22 @@ export async function GET(request: NextRequest) {
         dailyRate: car.dailyRate,
         vin: car.vin,
         licensePlate: car.licensePlate,
-        // Use rules/features as proxy for "description complete"
+        description: car.description,
         hasRules: hasRules,
         hasFeatures: hasFeatures,
         rules: car.rules,
         features: car.features,
+        city: car.city,
+        state: car.state,
         location: `${car.city}, ${car.state}`,
+        // Photo fields
+        photo: heroPhoto,
+        heroPhoto: heroPhoto,
         photos: car.photos,
         photoCount: car._count.photos,
+        // Metrics
+        totalTrips: car._count.bookings,
+        rating: car.rating || 0,
         bookingCount: car._count.bookings
       }
     })

@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { 
   IoCarOutline, 
   IoStatsChartOutline, 
@@ -23,7 +24,8 @@ import {
   IoCarSportOutline,
   IoPricetagOutline,
   IoDocumentOutline,
-  IoChevronForwardOutline
+  IoChevronForwardOutline,
+  IoLocationOutline
 } from 'react-icons/io5'
 import VerificationProgress from '../components/VerificationProgress'
 import PendingBanner from '../components/PendingBanner'
@@ -39,13 +41,23 @@ interface CarData {
   color?: string
   trim?: string
   isActive: boolean
-  // Fields to determine completion status
+  // Pricing & metrics
   dailyRate: number
+  totalTrips?: number
+  rating?: number
+  // Photos
+  photo?: string
+  heroPhoto?: string
+  photos?: Array<{ id: string; url: string }> | string[]
+  photoCount?: number
+  // Location
+  location?: string
+  city?: string
+  state?: string
+  // Fields for completion status
   vin?: string | null
   licensePlate?: string | null
   description?: string | null
-  photos?: Array<{ id: string; url: string }> | string[]
-  photoCount?: number
 }
 
 interface HostData {
@@ -241,33 +253,103 @@ function IncompleteCarCard({ car, onComplete }: { car: CarData; onComplete: () =
   )
 }
 
-// Active Car Card Component
+// Active Car Card Component - Enhanced with Photo & Metrics
 function ActiveCarCard({ car, isApproved }: { car: CarData; isApproved: boolean }) {
+  const carPhoto = car.photo || car.heroPhoto
+  const carLocation = car.location || (car.city && car.state ? `${car.city}, ${car.state}` : null)
+  
   return (
-    <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow bg-white dark:bg-gray-800">
-      <div className="flex items-start justify-between">
-        <div>
-          <h3 className="font-semibold text-gray-900 dark:text-white">
-            {car.year} {car.make} {car.model}
-          </h3>
-          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-            Status: <span className={car.isActive ? 'text-green-600 dark:text-green-400' : 'text-gray-500'}>
-              {car.isActive ? 'Active' : 'Inactive'}
-            </span>
-          </p>
+    <Link
+      href={isApproved ? `/host/cars/${car.id}/edit` : '#'}
+      className={`block border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden transition-all bg-white dark:bg-gray-800 ${
+        isApproved 
+          ? 'hover:shadow-md hover:border-purple-300 dark:hover:border-purple-700 cursor-pointer' 
+          : 'cursor-default'
+      }`}
+    >
+      {/* Car Photo */}
+      <div className="relative h-36 sm:h-40 bg-gray-100 dark:bg-gray-700">
+        {carPhoto ? (
+          <Image
+            src={carPhoto}
+            alt={`${car.year} ${car.make} ${car.model}`}
+            fill
+            className="object-cover"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full">
+            <IoCarOutline className="w-12 h-12 text-gray-400" />
+          </div>
+        )}
+        {/* Status Badge */}
+        <div className={`absolute top-2 right-2 px-2 py-1 rounded-lg text-xs font-medium ${
+          car.isActive 
+            ? 'bg-green-100 dark:bg-green-900/80 text-green-700 dark:text-green-300'
+            : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+        }`}>
+          {car.isActive ? 'Active' : 'Inactive'}
         </div>
-        {car.isActive && (
-          <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium rounded-full">
-            LIVE
-          </span>
+      </div>
+      
+      {/* Car Details */}
+      <div className="p-3 sm:p-4">
+        <h3 className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base truncate">
+          {car.year} {car.make} {car.model}
+        </h3>
+        {car.color && (
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            {car.color}
+          </p>
+        )}
+        
+        {/* Metrics Row */}
+        <div className="flex items-center flex-wrap gap-x-4 gap-y-1 mt-3 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+          {/* Daily Rate */}
+          {car.dailyRate !== undefined && car.dailyRate > 0 && (
+            <div className="flex items-center gap-1">
+              <span className="font-semibold text-gray-900 dark:text-white">
+                ${car.dailyRate}
+              </span>
+              <span>/day</span>
+            </div>
+          )}
+          
+          {/* Trips */}
+          {car.totalTrips !== undefined && (
+            <div className="flex items-center gap-1">
+              <IoStatsChartOutline className="w-3.5 h-3.5" />
+              <span>{car.totalTrips} {car.totalTrips === 1 ? 'trip' : 'trips'}</span>
+            </div>
+          )}
+          
+          {/* Rating */}
+          {car.rating !== undefined && car.rating > 0 && (
+            <div className="flex items-center gap-1">
+              <IoStarOutline className="w-3.5 h-3.5 text-yellow-500" />
+              <span>{car.rating.toFixed(1)}</span>
+            </div>
+          )}
+        </div>
+        
+        {/* Location */}
+        {carLocation && (
+          <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 mt-2">
+            <IoLocationOutline className="w-3.5 h-3.5 flex-shrink-0" />
+            <span className="truncate">{carLocation}</span>
+          </div>
+        )}
+        
+        {/* Manage Link for approved hosts */}
+        {isApproved && (
+          <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+            <span className="text-purple-600 dark:text-purple-400 text-sm font-medium inline-flex items-center gap-1 group-hover:underline">
+              Manage <IoChevronForwardOutline className="w-3 h-3" />
+            </span>
+          </div>
         )}
       </div>
-      {isApproved && (
-        <Link href={`/host/cars/${car.id}/edit`} className="mt-3 text-purple-600 dark:text-purple-400 text-sm hover:underline inline-flex items-center gap-1">
-          Manage <IoChevronForwardOutline className="w-3 h-3" />
-        </Link>
-      )}
-    </div>
+    </Link>
   )
 }
 
@@ -555,7 +637,7 @@ export default function HostDashboardPage() {
               return null
             })()}
 
-            {/* Verification Progress - Now includes vehicle completion step */}
+            {/* Verification Progress */}
             {(isPending || needsAttention) && hostData && !notifications.some(n => n.type.includes('CLAIM')) && (
               <div className="mb-8">
                 <VerificationProgress
@@ -693,12 +775,10 @@ export default function HostDashboardPage() {
               </div>
             )}
 
-            {/* My Cars Section - Complete Cars Only */}
+            {/* My Cars Section - Complete Cars with Photos & Metrics */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6 mb-8">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
-                  {completeCars.length > 0 ? 'My Cars' : 'My Cars'}
-                </h2>
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">My Cars</h2>
                 {isApproved && completeCars.length > 0 && incompleteCars.length === 0 && (
                   <Link 
                     href="/host/cars/add"
