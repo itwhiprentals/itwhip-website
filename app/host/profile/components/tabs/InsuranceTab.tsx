@@ -1,11 +1,13 @@
 // app/host/profile/components/tabs/InsuranceTab.tsx
 'use client'
 
+import { useState } from 'react'
 import { IoLockClosedOutline, IoInformationCircleOutline, IoCheckmarkCircleOutline, IoArrowForwardOutline, IoShieldCheckmarkOutline, IoWarningOutline } from 'react-icons/io5'
 import { TabType } from '../TabNavigation'
 import PlatformInsuranceSection from '../insurance/PlatformInsuranceSection'
 import HostInsuranceSection from '../insurance/HostInsuranceSection'
 import VehicleCoverageSection from '../insurance/VehicleCoverageSection'
+import TierSelectionSheet from '../TierSelectionSheet'
 import { EARNINGS_TIERS, determineHostTier, getTierComparison } from '@/app/fleet/financial-constants'
 
 interface InsuranceProvider {
@@ -86,9 +88,32 @@ export default function InsuranceTab({
   onDeactivateInsurance,
   onTabChange
 }: InsuranceTabProps) {
+  // State for tier selection sheet
+  const [showTierSheet, setShowTierSheet] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
+
   // Determine current tier
   const currentTier = determineHostTier(profile)
   const tierComparison = getTierComparison()
+
+  // Handle tier selection
+  const handleTierSelected = async (tier: 'BASIC' | 'STANDARD' | 'PREMIUM') => {
+    const response = await fetch('/api/host/profile', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ earningsTier: tier })
+    })
+
+    if (response.ok) {
+      window.location.reload()
+    }
+  }
+
+  // Handle refresh after upload
+  const handleRefresh = () => {
+    setRefreshKey(prev => prev + 1)
+  }
 
   // Handle adding new insurance
   const handleAddInsurance = () => {
@@ -136,7 +161,9 @@ export default function InsuranceTab({
         {/* Tier Selection Cards */}
         <div className="grid gap-4 md:grid-cols-3">
           {/* BASIC Tier - 40% */}
-          <div className={`border-2 rounded-lg p-5 transition-all cursor-pointer ${
+          <div
+            onClick={() => setShowTierSheet(true)}
+            className={`border-2 rounded-lg p-5 transition-all cursor-pointer ${
             currentTier === 'BASIC'
               ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
               : 'border-gray-200 dark:border-gray-700 hover:border-purple-300'
@@ -181,7 +208,9 @@ export default function InsuranceTab({
           </div>
 
           {/* STANDARD Tier - 75% */}
-          <div className={`border-2 rounded-lg p-5 transition-all cursor-pointer ${
+          <div
+            onClick={() => setShowTierSheet(true)}
+            className={`border-2 rounded-lg p-5 transition-all cursor-pointer ${
             currentTier === 'STANDARD'
               ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
               : 'border-gray-200 dark:border-gray-700 hover:border-purple-300'
@@ -226,7 +255,9 @@ export default function InsuranceTab({
           </div>
 
           {/* PREMIUM Tier - 90% */}
-          <div className={`border-2 rounded-lg p-5 transition-all cursor-pointer ${
+          <div
+            onClick={() => setShowTierSheet(true)}
+            className={`border-2 rounded-lg p-5 transition-all cursor-pointer ${
             currentTier === 'PREMIUM'
               ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
               : 'border-gray-200 dark:border-gray-700 hover:border-purple-300'
@@ -281,6 +312,16 @@ export default function InsuranceTab({
             <li>• Basic tier is perfect for getting started quickly</li>
           </ul>
         </div>
+
+        {/* Tier Selection Sheet */}
+        <TierSelectionSheet
+          isOpen={showTierSheet}
+          onClose={() => setShowTierSheet(false)}
+          currentTier={currentTier}
+          profile={profile}
+          onTierSelected={handleTierSelected}
+          onRefresh={handleRefresh}
+        />
       </div>
     )
   }
