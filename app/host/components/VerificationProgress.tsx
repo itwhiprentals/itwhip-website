@@ -2,6 +2,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   IoCheckmarkCircle,
   IoCloseCircle,
@@ -11,7 +12,6 @@ import {
   IoCardOutline,
   IoChevronForwardOutline,
   IoCarSportOutline,
-  IoPencilOutline,
   IoInformationCircleOutline
 } from 'react-icons/io5'
 
@@ -71,6 +71,7 @@ export default function VerificationProgress({
   incompleteCarId: incompleteCarIdProp,
   onActionClick
 }: VerificationProgressProps) {
+  const router = useRouter()
   const [progress, setProgress] = useState(0)
   const [steps, setSteps] = useState<VerificationStep[]>([])
   const [loading, setLoading] = useState(true)
@@ -274,29 +275,71 @@ export default function VerificationProgress({
     }
   }
 
+  // Handle navigation when a step is clicked
+  const handleStepClick = (step: VerificationStep) => {
+    // Determine the route based on step ID
+    let route = ''
+
+    switch (step.id) {
+      case 'profile':
+        route = '/host/profile?tab=profile'
+        break
+      case 'documents':
+        route = '/host/profile?tab=documents'
+        break
+      case 'vehicle':
+        // If we have an incomplete car ID, go to its edit page
+        // Otherwise go to the cars list page
+        route = incompleteCarId
+          ? `/host/cars/${incompleteCarId}/edit`
+          : '/host/cars'
+        break
+      case 'bank_account':
+        route = '/host/profile?tab=banking'
+        break
+      case 'insurance_tier':
+        route = '/host/profile?tab=insurance'
+        break
+      default:
+        // If step has actionUrl, use it
+        if (step.actionUrl) {
+          route = step.actionUrl
+        }
+        break
+    }
+
+    // Navigate if we have a route
+    if (route) {
+      if (onActionClick) {
+        onActionClick(step.id)
+      }
+      router.push(route)
+    }
+  }
+
   const determineDocumentStatus = (statuses: any): VerificationStep['status'] => {
     if (!statuses || Object.keys(statuses).length === 0) {
       return 'NOT_STARTED'
     }
 
     const statusValues = Object.values(statuses)
-    
+
     if (statusValues.every(s => s === 'APPROVED')) {
       return 'COMPLETED'
     }
-    
+
     if (statusValues.some(s => s === 'REJECTED')) {
       return 'FAILED'
     }
-    
+
     if (statusValues.some(s => s === 'PENDING')) {
       return 'PENDING_REVIEW'
     }
-    
+
     if (statusValues.some(s => s === 'UPLOADED' || s === 'SUBMITTED')) {
       return 'PENDING_REVIEW'
     }
-    
+
     return 'IN_PROGRESS'
   }
 
@@ -388,18 +431,24 @@ export default function VerificationProgress({
                 <div className="absolute left-3 top-12 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-700 -mb-4" />
               )}
               
-              {/* Step Card */}
-              <div className={`relative rounded-lg p-4 border-2 transition-all ${
-                step.status === 'FAILED' 
-                  ? 'border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-900/10'
-                  : step.status === 'COMPLETED'
-                  ? 'border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-900/10'
-                  : step.status === 'IN_PROGRESS' || step.status === 'PENDING_REVIEW'
-                  ? isVehicleStep 
-                    ? 'border-yellow-300 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/20'
-                    : 'border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-900/10'
-                  : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800'
-              }`}>
+              {/* Step Card - Fully Clickable */}
+              <button
+                onClick={() => handleStepClick(step)}
+                className={`group relative rounded-lg p-4 border-2 transition-all w-full text-left cursor-pointer
+                  hover:border-purple-400 dark:hover:border-purple-600
+                  hover:bg-opacity-80 dark:hover:bg-opacity-80
+                  ${
+                    step.status === 'FAILED'
+                      ? 'border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-900/10'
+                      : step.status === 'COMPLETED'
+                      ? 'border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-900/10'
+                      : step.status === 'IN_PROGRESS' || step.status === 'PENDING_REVIEW'
+                      ? isVehicleStep
+                        ? 'border-yellow-300 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/20'
+                        : 'border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-900/10'
+                      : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800'
+                  }`}
+              >
                 <div className="flex items-start gap-4">
                   {/* Status Icon */}
                   <div className="flex-shrink-0 relative z-10 bg-white dark:bg-gray-800 rounded-full p-1">
@@ -465,22 +514,10 @@ export default function VerificationProgress({
                           }
                         </span>
 
-                        {/* Edit Button for Completed Steps */}
-                        {step.status === 'COMPLETED' && step.actionUrl && (
-                          <button
-                            onClick={() => {
-                              if (onActionClick) {
-                                onActionClick(step.id)
-                              } else if (step.actionUrl) {
-                                window.location.href = step.actionUrl
-                              }
-                            }}
-                            className="p-1 text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
-                            aria-label="Edit this step"
-                          >
-                            <IoPencilOutline className="w-4 h-4" />
-                          </button>
-                        )}
+                        {/* Arrow Icon - Indicates clickable */}
+                        <IoChevronForwardOutline
+                          className="w-4 h-4 text-gray-400 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors"
+                        />
                       </div>
                     </div>
                     
@@ -490,37 +527,14 @@ export default function VerificationProgress({
 
                     {/* Estimated Time */}
                     {step.estimatedTime && step.status !== 'COMPLETED' && (
-                      <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 mb-2">
+                      <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                         <IoTimeOutline className="w-3.5 h-3.5" />
                         <span>Est. {step.estimatedTime}</span>
                       </div>
                     )}
-
-                    {/* Action Button */}
-                    {step.actionUrl && step.status !== 'COMPLETED' && (
-                      <button
-                        onClick={() => {
-                          if (onActionClick) {
-                            onActionClick(step.id)
-                          } else if (step.actionUrl) {
-                            window.location.href = step.actionUrl
-                          }
-                        }}
-                        className={`inline-flex items-center gap-1 text-sm font-medium transition-colors ${
-                          step.status === 'FAILED'
-                            ? 'text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300'
-                            : isVehicleStep
-                            ? 'text-yellow-600 hover:text-yellow-700 dark:text-yellow-400 dark:hover:text-yellow-300'
-                            : 'text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300'
-                        }`}
-                      >
-                        {step.actionLabel || 'Take Action'}
-                        <IoChevronForwardOutline className="w-4 h-4" />
-                      </button>
-                    )}
                   </div>
                 </div>
-              </div>
+              </button>
             </div>
           )
         })}
