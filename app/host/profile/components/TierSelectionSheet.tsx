@@ -472,7 +472,7 @@ export default function TierSelectionSheet({
             <p className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
               <span className="font-semibold">Disclaimer:</span> BASIC uses platform insurance. STANDARD/PREMIUM require your own insurance (Geico, Allstate, Progressive, etc). Documents reviewed 24-48hrs. Cannot upgrade until approved. Protection applies during active rentals only. ItWhip is not an insurance company. Arizona regulations apply.{' '}
               <a
-                href="/insurance-tiers"
+                href="/insurance-guide#tiers"
                 target="_blank"
                 className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 underline font-medium"
               >

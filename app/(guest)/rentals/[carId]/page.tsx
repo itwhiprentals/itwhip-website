@@ -1,8 +1,9 @@
 // app/(guest)/rentals/[carId]/page.tsx
 import { Metadata } from 'next'
+import { redirect } from 'next/navigation'
 import Script from 'next/script'
 import CarDetailsClient from './CarDetailsClient'
-import { extractCarId, generateCarUrl } from '@/app/lib/utils/urls'
+import { extractCarId, generateCarUrl, isOldUrlFormat } from '@/app/lib/utils/urls'
 
 // Generate dynamic Open Graph metadata for link previews
 export async function generateMetadata({ 
@@ -108,14 +109,40 @@ export async function generateMetadata({
 }
 
 // Server Component - Pass params as CarDetailsClient expects
-export default async function CarDetailsPage({ 
-  params 
-}: { 
-  params: Promise<{ carId: string }> 
+export default async function CarDetailsPage({
+  params
+}: {
+  params: Promise<{ carId: string }>
 }) {
   const { carId: urlSlug } = await params
   const carId = extractCarId(urlSlug)
-  
+
+  // If using old URL format (raw ID), redirect to SEO-friendly URL
+  if (isOldUrlFormat(urlSlug)) {
+    try {
+      const redirectResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_APP_URL || 'https://itwhip.com'}/api/rentals/cars/${carId}`,
+        { cache: 'no-store' }
+      )
+
+      if (redirectResponse.ok) {
+        const car = await redirectResponse.json()
+        const seoUrl = generateCarUrl({
+          id: carId,
+          make: car.make,
+          model: car.model,
+          year: car.year,
+          city: car.city
+        })
+        // 308 permanent redirect to SEO-friendly URL
+        redirect(seoUrl)
+      }
+    } catch (error) {
+      console.error('Error during SEO redirect:', error)
+      // Continue without redirect if fetch fails
+    }
+  }
+
   // Fetch car data for schema markup
   let schemaData = null
   try {
