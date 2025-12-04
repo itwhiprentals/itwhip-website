@@ -139,12 +139,14 @@ export default function TierSelectionSheet({
         'Your P2P insurance policy',
         'Upload required',
         'Enhanced coverage',
+        'Platform insurance as backup',
         '75% of rental earnings'
       ],
       coverage: {
         liability: 'Per your policy (typically $1M+)',
         collision: 'Per your policy terms',
-        comprehensive: 'Per your policy terms'
+        comprehensive: 'Per your policy terms',
+        platformBackup: 'Platform insurance: Secondary backup coverage'
       },
       requirements: 'Valid P2P insurance policy required (e.g., Geico, Allstate, State Farm, Progressive)',
       uploadSection: true,
@@ -160,12 +162,14 @@ export default function TierSelectionSheet({
         'Commercial insurance policy',
         'Upload required',
         'Maximum coverage',
+        'Platform insurance as backup',
         '90% of rental earnings'
       ],
       coverage: {
         liability: 'Per your policy (typically $2M+)',
         collision: 'Per your policy terms',
-        comprehensive: 'Per your policy terms'
+        comprehensive: 'Per your policy terms',
+        platformBackup: 'Platform insurance: Secondary backup coverage'
       },
       requirements: 'Valid commercial auto insurance policy required (e.g., Geico Commercial, Progressive Commercial, Nationwide Commercial)',
       uploadSection: true,
@@ -355,14 +359,19 @@ export default function TierSelectionSheet({
                       </div>
 
                       {/* Coverage Details - SMALLER TEXT */}
-                      <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3 mb-4">
-                        <p className="text-[10px] font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                      <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-2 mb-4">
+                        <p className="text-[9px] font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
                           Coverage Details:
                         </p>
-                        <div className="space-y-1 text-[10px] text-gray-600 dark:text-gray-400">
+                        <div className="space-y-0.5 text-[9px] text-gray-600 dark:text-gray-400">
                           <p>• Liability: {card.coverage.liability}</p>
                           <p>• Collision: {card.coverage.collision}</p>
                           <p>• Comprehensive: {card.coverage.comprehensive}</p>
+                          {card.coverage.platformBackup && (
+                            <p className="text-purple-600 dark:text-purple-400 font-medium pt-0.5">
+                              • {card.coverage.platformBackup}
+                            </p>
+                          )}
                         </div>
                       </div>
 
@@ -458,22 +467,18 @@ export default function TierSelectionSheet({
             })}
           </div>
 
-          {/* Legal Disclaimer - SMALLER TEXT */}
-          <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-3">
-            <div className="flex items-start gap-2">
-              <IoInformationCircleOutline className="w-4 h-4 text-gray-500 flex-shrink-0 mt-0.5" />
-              <div className="text-[10px] text-gray-600 dark:text-gray-400 space-y-1.5">
-                <p className="font-semibold text-gray-700 dark:text-gray-300">
-                  Insurance Disclaimer:
-                </p>
-                <p>
-                  BASIC tier uses platform-provided insurance. STANDARD tier requires valid P2P insurance from providers like Geico, Allstate, State Farm, or Progressive. PREMIUM tier requires commercial auto insurance.
-                </p>
-                <p>
-                  All uploaded documents must be current and valid. Documents are reviewed within 24-48 hours. You cannot switch to higher tiers until insurance is approved.
-                </p>
-              </div>
-            </div>
+          {/* Legal Disclaimer */}
+          <div className="bg-gray-100 dark:bg-gray-900/30 rounded p-2.5">
+            <p className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+              <span className="font-semibold">Disclaimer:</span> BASIC uses platform insurance. STANDARD/PREMIUM require your own insurance (Geico, Allstate, Progressive, etc). Documents reviewed 24-48hrs. Cannot upgrade until approved. Protection applies during active rentals only. ItWhip is not an insurance company. Arizona regulations apply.{' '}
+              <a
+                href="/insurance-tiers"
+                target="_blank"
+                className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 underline font-medium"
+              >
+                Learn more
+              </a>
+            </p>
           </div>
 
         </div>
