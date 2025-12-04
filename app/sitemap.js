@@ -293,6 +293,36 @@ export default async function sitemap() {
       changeFrequency: 'monthly',
       priority: 0.8,
     },
+    {
+      url: `${baseUrl}/blog/best-cars-sedona-road-trip-2025`,
+      lastModified: new Date('2025-12-01'),
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/blog/how-phoenix-hosts-earn-2000-month`,
+      lastModified: new Date('2025-11-28'),
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/blog/tesla-rental-phoenix-scottsdale-guide`,
+      lastModified: new Date('2025-11-25'),
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/blog/skip-phoenix-airport-rental-counter`,
+      lastModified: new Date('2025-11-22'),
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/blog/luxury-car-rental-scottsdale-guide`,
+      lastModified: new Date('2025-11-20'),
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
   ]
 
   // ============================================
