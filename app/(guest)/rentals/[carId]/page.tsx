@@ -192,6 +192,49 @@ export default async function CarDetailsPage({
             "@type": "Organization",
             "name": car.host?.name || "ItWhip",
             "image": car.host?.profilePhoto || "https://itwhip.com/logo.png"
+          },
+          // Merchant Return Policy (Cancellation Policy for rentals)
+          "hasMerchantReturnPolicy": {
+            "@type": "MerchantReturnPolicy",
+            "applicableCountry": "US",
+            "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+            "merchantReturnDays": 1,
+            "returnFees": "https://schema.org/FreeReturn",
+            "refundType": "https://schema.org/FullRefund",
+            "returnPolicySeasonalOverride": {
+              "@type": "MerchantReturnPolicySeasonalOverride",
+              "merchantReturnDays": 0,
+              "returnPolicyCategory": "https://schema.org/MerchantReturnNotPermitted"
+            }
+          },
+          // Shipping Details (Delivery for car rentals)
+          "shippingDetails": {
+            "@type": "OfferShippingDetails",
+            "shippingRate": {
+              "@type": "MonetaryAmount",
+              "value": car.deliveryFee || 0,
+              "currency": "USD"
+            },
+            "shippingDestination": {
+              "@type": "DefinedRegion",
+              "addressCountry": "US",
+              "addressRegion": "AZ"
+            },
+            "deliveryTime": {
+              "@type": "ShippingDeliveryTime",
+              "handlingTime": {
+                "@type": "QuantitativeValue",
+                "minValue": 0,
+                "maxValue": 24,
+                "unitCode": "HUR"
+              },
+              "transitTime": {
+                "@type": "QuantitativeValue",
+                "minValue": 0,
+                "maxValue": 2,
+                "unitCode": "HUR"
+              }
+            }
           }
         },
         // Add aggregate rating if available
