@@ -194,18 +194,15 @@ export default async function CarDetailsPage({
             "image": car.host?.profilePhoto || "https://itwhip.com/logo.png"
           },
           // Merchant Return Policy (Cancellation Policy for rentals)
+          // 72+ hours before pickup = full refund per ItWhip Terms of Service
           "hasMerchantReturnPolicy": {
             "@type": "MerchantReturnPolicy",
             "applicableCountry": "US",
             "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
-            "merchantReturnDays": 1,
+            "merchantReturnDays": 3,
             "returnFees": "https://schema.org/FreeReturn",
             "refundType": "https://schema.org/FullRefund",
-            "returnPolicySeasonalOverride": {
-              "@type": "MerchantReturnPolicySeasonalOverride",
-              "merchantReturnDays": 0,
-              "returnPolicyCategory": "https://schema.org/MerchantReturnNotPermitted"
-            }
+            "returnPolicyCountry": "US"
           },
           // Shipping Details (Delivery for car rentals)
           "shippingDetails": {
