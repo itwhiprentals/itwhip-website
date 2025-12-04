@@ -2,7 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
-import { compare } from 'bcryptjs'
+import { verify } from 'argon2'
 import { sign } from 'jsonwebtoken'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const passwordValid = await compare(password, user.passwordHash)
+    const passwordValid = await verify(user.passwordHash, password)
 
     if (!passwordValid) {
       // Log failed attempt
