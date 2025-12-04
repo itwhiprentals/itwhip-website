@@ -206,6 +206,30 @@ export default async function sitemap() {
   ]
 
   // ============================================
+  // VEHICLE TYPE PAGES (HIGH PRIORITY FOR SEO)
+  // ============================================
+  const vehicleTypes = ['sedan', 'suv', 'luxury', 'sports', 'electric', 'convertible', 'truck']
+
+  const typePages = vehicleTypes.map(type => ({
+    url: `${baseUrl}/rentals/types/${type}`,
+    lastModified: new Date(),
+    changeFrequency: 'daily',
+    priority: 0.9,
+  }))
+
+  // ============================================
+  // CAR MAKE PAGES (HIGH PRIORITY FOR SEO)
+  // ============================================
+  const carMakes = ['tesla', 'bmw', 'mercedes', 'porsche', 'lamborghini', 'audi', 'lexus', 'dodge']
+
+  const makePages = carMakes.map(make => ({
+    url: `${baseUrl}/rentals/makes/${make}`,
+    lastModified: new Date(),
+    changeFrequency: 'daily',
+    priority: 0.9,
+  }))
+
+  // ============================================
   // CITY PAGES - Static List (HIGH PRIORITY FOR LOCAL SEO)
   // ============================================
   const arizonaCities = [
@@ -331,6 +355,8 @@ export default async function sitemap() {
     ...hostPages,
     ...featurePages,
     ...rentalPages,
+    ...typePages,    // Vehicle type pages
+    ...makePages,    // Car make pages
     ...cityPages,    // Static city pages - always included
     ...blogPages,
     ...otherPages,
