@@ -748,6 +748,9 @@ export default async function CityPage({
     { sectionId: 'affordable', searchTerms: affordableCars.flatMap(car => [car.make, car.model, 'budget', 'cheap', 'affordable']) }
   ].filter(section => section.searchTerms.length > 0)
 
+  // Calculate priceValidUntil once for all offers (30 days from now)
+  const priceValidUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+
   // Generate JSON-LD Structured Data
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -807,7 +810,45 @@ export default async function CityPage({
               '@type': 'Offer',
               price: car.dailyRate,
               priceCurrency: 'USD',
-              availability: 'https://schema.org/InStock'
+              availability: 'https://schema.org/InStock',
+              priceValidUntil,
+              hasMerchantReturnPolicy: {
+                '@type': 'MerchantReturnPolicy',
+                applicableCountry: 'US',
+                returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+                merchantReturnDays: 3,
+                returnFees: 'https://schema.org/FreeReturn',
+                refundType: 'https://schema.org/FullRefund',
+                returnPolicyCountry: 'US'
+              },
+              shippingDetails: {
+                '@type': 'OfferShippingDetails',
+                shippingRate: {
+                  '@type': 'MonetaryAmount',
+                  value: 0,
+                  currency: 'USD'
+                },
+                shippingDestination: {
+                  '@type': 'DefinedRegion',
+                  addressCountry: 'US',
+                  addressRegion: 'AZ'
+                },
+                deliveryTime: {
+                  '@type': 'ShippingDeliveryTime',
+                  handlingTime: {
+                    '@type': 'QuantitativeValue',
+                    minValue: 0,
+                    maxValue: 24,
+                    unitCode: 'HUR'
+                  },
+                  transitTime: {
+                    '@type': 'QuantitativeValue',
+                    minValue: 0,
+                    maxValue: 2,
+                    unitCode: 'HUR'
+                  }
+                }
+              }
             },
             aggregateRating: car.rating ? {
               '@type': 'AggregateRating',
