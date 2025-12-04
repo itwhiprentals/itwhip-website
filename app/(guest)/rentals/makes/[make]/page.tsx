@@ -5,13 +5,11 @@ import Script from 'next/script'
 import { notFound } from 'next/navigation'
 import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
+import CarCard from '@/app/components/cards/CarCard'
 import prisma from '@/app/lib/database/prisma'
 import { generateCarUrl } from '@/app/lib/utils/urls'
 import {
   IoCarOutline,
-  IoFlashOutline,
-  IoStarSharp,
-  IoLocationOutline,
   IoChevronForwardOutline,
   IoHomeOutline,
   IoShieldCheckmarkOutline
@@ -210,7 +208,27 @@ export default async function CarMakePage({
         mode: 'insensitive'
       }
     },
-    include: {
+    select: {
+      id: true,
+      make: true,
+      model: true,
+      year: true,
+      carType: true,
+      dailyRate: true,
+      city: true,
+      state: true,
+      latitude: true,
+      longitude: true,
+      rating: true,
+      totalTrips: true,
+      instantBook: true,
+      fuelType: true,
+      esgScore: true,
+      photos: {
+        select: { url: true },
+        orderBy: { order: 'asc' },
+        take: 1
+      },
       host: {
         select: {
           id: true,
@@ -226,6 +244,23 @@ export default async function CarMakePage({
     ],
     take: 24
   })
+
+  // Transform cars for CarCard component
+  const transformedCars = cars.map(car => ({
+    ...car,
+    location: {
+      city: car.city,
+      state: car.state,
+      lat: car.latitude,
+      lng: car.longitude
+    },
+    rating: car.rating ? {
+      average: Number(car.rating),
+      count: car.totalTrips || 0
+    } : null,
+    trips: car.totalTrips,
+    photos: car.photos?.map(p => p.url) || []
+  }))
 
   // Generate schemas
   const breadcrumbSchema = {
@@ -259,7 +294,7 @@ export default async function CarMakePage({
         '@type': 'Product',
         name: `${car.year} ${car.make} ${car.model}`,
         description: `Rent this ${car.year} ${car.make} ${car.model} in ${car.city}, AZ`,
-        image: (car.photos as string[])?.[0] || '',
+        image: car.photos?.[0]?.url || '',
         url: `https://itwhip.com${generateCarUrl({ id: car.id, make: car.make, model: car.model, year: car.year, city: car.city })}`,
         brand: {
           '@type': 'Brand',
@@ -309,7 +344,7 @@ export default async function CarMakePage({
         <Header />
 
         {/* Breadcrumb */}
-        <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 mt-14 md:mt-16">
+        <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
             <nav className="flex items-center gap-2 text-sm">
               <Link href="/" className="text-gray-500 hover:text-gray-700 dark:text-gray-400 flex items-center gap-1">
@@ -371,7 +406,7 @@ export default async function CarMakePage({
               {makeData.knownFor.map((trait) => (
                 <span
                   key={trait}
-                  className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-full text-sm flex items-center gap-1"
+                  className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-full text-sm flex items-center gap-1 border border-gray-200 dark:border-gray-700"
                 >
                   <IoShieldCheckmarkOutline className="w-4 h-4 text-green-500" />
                   {trait}
@@ -392,7 +427,7 @@ export default async function CarMakePage({
                 <Link
                   key={model}
                   href={`/rentals/search?make=${makeData.dbValue}&q=${encodeURIComponent(model)}`}
-                  className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white px-4 py-2 rounded-lg text-sm font-medium hover:border-purple-500 hover:text-purple-600 transition"
+                  className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white px-4 py-2 rounded-lg text-sm font-medium hover:border-purple-500 hover:text-purple-600 transition shadow-sm hover:shadow-md"
                 >
                   {makeData.displayName} {model}
                 </Link>
@@ -408,69 +443,14 @@ export default async function CarMakePage({
               Available {makeData.displayName} Vehicles
             </h2>
 
-            {cars.length > 0 ? (
+            {transformedCars.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {cars.map((car) => {
-                  const carUrl = generateCarUrl({
-                    id: car.id,
-                    make: car.make,
-                    model: car.model,
-                    year: car.year,
-                    city: car.city
-                  })
-                  const photos = car.photos as string[] | null
-
-                  return (
-                    <Link
-                      key={car.id}
-                      href={carUrl}
-                      className="bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-lg transition-shadow overflow-hidden group"
-                    >
-                      <div className="aspect-[4/3] relative overflow-hidden">
-                        <img
-                          src={photos?.[0] || '/placeholder-car.jpg'}
-                          alt={`${car.year} ${car.make} ${car.model}`}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                        {car.instantBook && (
-                          <div className="absolute top-2 left-2 bg-purple-600 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
-                            <IoFlashOutline className="w-3 h-3" />
-                            Instant Book
-                          </div>
-                        )}
-                      </div>
-                      <div className="p-4">
-                        <h3 className="font-semibold text-gray-900 dark:text-white">
-                          {car.year} {car.make} {car.model}
-                        </h3>
-                        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mt-1">
-                          <IoLocationOutline className="w-4 h-4" />
-                          {car.city}, {car.state}
-                        </div>
-                        <div className="flex items-center justify-between mt-3">
-                          <div className="flex items-center gap-1">
-                            {car.rating && (
-                              <>
-                                <IoStarSharp className="w-4 h-4 text-yellow-500" />
-                                <span className="text-sm font-medium">{Number(car.rating).toFixed(1)}</span>
-                                <span className="text-sm text-gray-400">({car.totalTrips || 0})</span>
-                              </>
-                            )}
-                          </div>
-                          <div className="text-right">
-                            <span className="text-lg font-bold text-gray-900 dark:text-white">
-                              ${car.dailyRate}
-                            </span>
-                            <span className="text-sm text-gray-500">/day</span>
-                          </div>
-                        </div>
-                      </div>
-                    </Link>
-                  )
-                })}
+                {transformedCars.map((car) => (
+                  <CarCard key={car.id} car={car} />
+                ))}
               </div>
             ) : (
-              <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-xl">
+              <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
                 <IoCarOutline className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                   No {makeData.displayName} Vehicles Available
@@ -480,7 +460,7 @@ export default async function CarMakePage({
                 </p>
                 <Link
                   href="/rentals/search"
-                  className="inline-flex items-center gap-2 bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition"
+                  className="inline-flex items-center gap-2 bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition shadow-sm focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
                 >
                   Browse All Cars
                   <IoChevronForwardOutline className="w-4 h-4" />
@@ -501,7 +481,7 @@ export default async function CarMakePage({
                 <Link
                   key={key}
                   href={`/rentals/makes/${key}`}
-                  className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 text-center hover:shadow-lg transition group"
+                  className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 text-center hover:shadow-lg transition group border border-gray-200 dark:border-gray-700 shadow-sm"
                 >
                   <h3 className="font-semibold text-gray-900 dark:text-white group-hover:text-purple-600">
                     {data.displayName}

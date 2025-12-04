@@ -5,40 +5,40 @@ import Link from 'next/link'
 
 const carTypes = [
   {
-    type: 'economy',
-    label: 'Economy',
-    price: 'from $45/day',
-    image: 'https://images.unsplash.com/photo-1581540222194-0def2dda95b8?w=400&h=400&fit=crop' // SUV image moved to Economy
+    type: 'sedan',
+    label: 'Sedan',
+    price: 'from $35/day',
+    image: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=400&h=400&fit=crop'
   },
   {
     type: 'suv',
-    label: 'SUV', 
-    price: 'from $75/day',
-    image: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400&h=400&fit=crop' // Ford Explorer/SUV
+    label: 'SUV',
+    price: 'from $45/day',
+    image: 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=400&h=300&fit=crop'
   },
   {
     type: 'luxury',
     label: 'Luxury',
-    price: 'from $125/day',
-    image: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=400&h=400&fit=crop' // Luxury sedan (unchanged)
+    price: 'from $100/day',
+    image: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=400&h=400&fit=crop'
   },
   {
     type: 'sports',
     label: 'Sports',
     price: 'from $150/day',
-    image: 'https://images.unsplash.com/photo-1493238792000-8113da705763?w=400&h=400&fit=crop' // Convertible image moved to Sports
+    image: 'https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=400&h=400&fit=crop'
   },
   {
     type: 'electric',
     label: 'Electric',
-    price: 'from $85/day',
-    image: 'https://images.unsplash.com/photo-1561580125-028ee3bd62eb?w=400&h=400&fit=crop' // Tesla Model 3 side view
+    price: 'from $80/day',
+    image: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?w=400&h=300&fit=crop'
   },
   {
-    type: 'convertible',
-    label: 'Convertible',
-    price: 'from $110/day',
-    image: 'https://images.unsplash.com/photo-1525609004556-c46c7d6cf023?w=400&h=400&fit=crop' // Sports car image moved to Convertible
+    type: 'truck',
+    label: 'Truck',
+    price: 'from $60/day',
+    image: 'https://images.unsplash.com/photo-1559416523-140ddc3d238c?w=400&h=400&fit=crop'
   }
 ]
 
@@ -55,12 +55,12 @@ export default function BrowseByTypeSection() {
           {carTypes.map((carType) => (
             <Link
               key={carType.type}
-              href={`/rentals/search?type=${carType.type}`}
+              href={`/rentals/types/${carType.type}`}
               className="group"
             >
-              <div className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all">
-                {/* Square aspect ratio container */}
-                <div className="aspect-square bg-gray-100 dark:bg-gray-600 overflow-hidden">
+              <div className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-all">
+                {/* Shorter aspect ratio for compact cards */}
+                <div className="aspect-[4/3] bg-gray-100 dark:bg-gray-600 overflow-hidden">
                   <img 
                     src={carType.image}
                     alt={carType.label}

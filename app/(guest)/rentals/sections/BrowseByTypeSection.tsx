@@ -5,40 +5,40 @@ import Link from 'next/link'
 
 const carTypes = [
   {
-    type: 'economy',
-    label: 'Economy',
-    price: 'from $45/day',
-    image: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=400&h=300&fit=crop'
+    type: 'sedan',
+    label: 'Sedan',
+    price: 'from $35/day',
+    image: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=400&h=300&fit=crop'
   },
   {
     type: 'suv',
     label: 'SUV',
-    price: 'from $75/day',
-    image: 'https://images.unsplash.com/photo-1511919884226-fd3cad34687c?w=400&h=300&fit=crop'
+    price: 'from $45/day',
+    image: 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=400&h=300&fit=crop'
   },
   {
     type: 'luxury',
     label: 'Luxury',
-    price: 'from $125/day',
+    price: 'from $100/day',
     image: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=400&h=300&fit=crop'
   },
   {
     type: 'sports',
     label: 'Sports',
     price: 'from $150/day',
-    image: 'https://images.unsplash.com/photo-1506015391300-4802dc74de2e?w=400&h=300&fit=crop'
+    image: 'https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=400&h=300&fit=crop'
   },
   {
     type: 'electric',
     label: 'Electric',
-    price: 'from $85/day',
-    image: 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=400&h=300&fit=crop'
+    price: 'from $80/day',
+    image: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?w=400&h=300&fit=crop'
   },
   {
-    type: 'convertible',
-    label: 'Convertible',
-    price: 'from $110/day',
-    image: 'https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?w=400&h=300&fit=crop'
+    type: 'truck',
+    label: 'Truck',
+    price: 'from $60/day',
+    image: 'https://images.unsplash.com/photo-1559416523-140ddc3d238c?w=400&h=300&fit=crop'
   }
 ]
 
@@ -55,7 +55,7 @@ export default function BrowseByTypeSection() {
           {carTypes.map((carType) => (
             <Link
               key={carType.type}
-              href={`/rentals/search?type=${carType.type}`}
+              href={`/rentals/types/${carType.type}`}
               className="flex-shrink-0 sm:flex-shrink group"
             >
               <div className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all min-w-[140px] sm:min-w-0">
