@@ -281,6 +281,9 @@ export default async function CarMakePage({
     url: `https://itwhip.com/rentals/makes/${make}`
   }
 
+  // Calculate priceValidUntil once for all offers (30 days from now)
+  const priceValidUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+
   const itemListSchema = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
@@ -304,7 +307,45 @@ export default async function CarMakePage({
           '@type': 'Offer',
           price: car.dailyRate,
           priceCurrency: 'USD',
-          availability: 'https://schema.org/InStock'
+          availability: 'https://schema.org/InStock',
+          priceValidUntil,
+          hasMerchantReturnPolicy: {
+            '@type': 'MerchantReturnPolicy',
+            applicableCountry: 'US',
+            returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+            merchantReturnDays: 3,
+            returnFees: 'https://schema.org/FreeReturn',
+            refundType: 'https://schema.org/FullRefund',
+            returnPolicyCountry: 'US'
+          },
+          shippingDetails: {
+            '@type': 'OfferShippingDetails',
+            shippingRate: {
+              '@type': 'MonetaryAmount',
+              value: 0,
+              currency: 'USD'
+            },
+            shippingDestination: {
+              '@type': 'DefinedRegion',
+              addressCountry: 'US',
+              addressRegion: 'AZ'
+            },
+            deliveryTime: {
+              '@type': 'ShippingDeliveryTime',
+              handlingTime: {
+                '@type': 'QuantitativeValue',
+                minValue: 0,
+                maxValue: 24,
+                unitCode: 'HUR'
+              },
+              transitTime: {
+                '@type': 'QuantitativeValue',
+                minValue: 0,
+                maxValue: 2,
+                unitCode: 'HUR'
+              }
+            }
+          }
         },
         ...(car.rating ? {
           aggregateRating: {

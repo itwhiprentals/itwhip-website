@@ -126,15 +126,19 @@ const organizationSchema = {
   foundingDate: '2024',
   address: {
     '@type': 'PostalAddress',
+    streetAddress: '1 N 1st St',
     addressLocality: 'Phoenix',
     addressRegion: 'AZ',
-    postalCode: '85001',
+    postalCode: '85004',
     addressCountry: 'US'
   },
+  telephone: '+1-305-399-9069',
   contactPoint: {
     '@type': 'ContactPoint',
     contactType: 'customer service',
+    telephone: '+1-305-399-9069',
     email: 'support@itwhip.com',
+    url: 'https://itwhip.com/contact',
     availableLanguage: ['English', 'Spanish']
   },
   sameAs: [
@@ -165,10 +169,13 @@ const autoRentalSchema = {
   url: 'https://itwhip.com',
   priceRange: '$$',
   image: 'https://itwhip.com/og-image.jpg',
+  telephone: '+1-305-399-9069',
   address: {
     '@type': 'PostalAddress',
+    streetAddress: '1 N 1st St',
     addressLocality: 'Phoenix',
     addressRegion: 'AZ',
+    postalCode: '85004',
     addressCountry: 'US'
   },
   geo: {

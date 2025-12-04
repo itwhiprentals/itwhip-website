@@ -201,8 +201,7 @@ export default async function CarDetailsPage({
             "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
             "merchantReturnDays": 3,
             "returnFees": "https://schema.org/FreeReturn",
-            "refundType": "https://schema.org/FullRefund",
-            "returnPolicyCountry": "US"
+            "refundType": "https://schema.org/FullRefund"
           },
           // Shipping Details (Delivery for car rentals)
           "shippingDetails": {
