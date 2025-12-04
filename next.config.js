@@ -31,6 +31,7 @@ const nextConfig = {
       // RENAMED PAGES - Point to new locations
       // ============================================
       { source: '/insurance', destination: '/insurance-guide', permanent: true },
+      { source: '/itwhip-vs-turo', destination: '/switch-from-turo', permanent: true },
       { source: '/press', destination: '/blog', permanent: true },
       { source: '/help', destination: '/faq', permanent: true },
       { source: '/support', destination: '/faq', permanent: true },
