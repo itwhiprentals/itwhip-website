@@ -395,7 +395,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
         </div>
         
         {/* Trip Dates */}
-        <div className="mb-4 space-y-3">
+        <div className="mb-4 space-y-2">
           <h3 className="text-xs font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
             <IoCalendarOutline className="w-3.5 h-3.5 text-amber-600" />
             Trip Dates

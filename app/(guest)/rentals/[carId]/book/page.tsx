@@ -22,6 +22,8 @@ import {
   IoCloseCircleOutline
 } from 'react-icons/io5'
 import { format } from 'date-fns'
+import DatePicker from 'react-datepicker'
+import 'react-datepicker/dist/react-datepicker.css'
 
 // Import modal components
 import RentalAgreementModal from '@/app/(guest)/rentals/components/modals/RentalAgreementModal'
@@ -194,7 +196,7 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
   // Primary driver information states
   const [driverFirstName, setDriverFirstName] = useState('')
   const [driverLastName, setDriverLastName] = useState('')
-  const [driverAge, setDriverAge] = useState('')
+  const [driverAge, setDriverAge] = useState<Date | null>(null)
   const [driverLicense, setDriverLicense] = useState('')
   const [driverPhone, setDriverPhone] = useState('')
   const [driverEmail, setDriverEmail] = useState('')
@@ -651,10 +653,9 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
         return date.toISOString().split('T')[0]
       }
       
-      const formatDOB = (dob: string) => {
+      const formatDOB = (dob: Date | null) => {
         if (!dob) return '1990-01-01'
-        if (dob.match(/^\d{4}-\d{2}-\d{2}$/)) return dob
-        return '1990-01-01'
+        return format(dob, 'yyyy-MM-dd')
       }
       
       const mapInsuranceType = (type: string) => {
@@ -1111,12 +1112,19 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Date of Birth <span className="text-red-500">*</span>
               </label>
-              <input
-                type="date"
-                value={driverAge}
-                onChange={(e) => setDriverAge(e.target.value)}
-                max={new Date(new Date().setFullYear(new Date().getFullYear() - 21)).toISOString().split('T')[0]}
+              <DatePicker
+                selected={driverAge}
+                onChange={(date) => setDriverAge(date)}
+                showYearDropdown
+                showMonthDropdown
+                scrollableYearDropdown
+                yearDropdownItemNumber={100}
+                dateFormat="MM/dd/yyyy"
+                placeholderText="Select date of birth"
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white dark:bg-gray-700 dark:text-white"
+                wrapperClassName="w-full"
+                calendarClassName="!rounded-xl !border-0 !shadow-xl"
+                popperClassName="!z-50"
                 required
               />
               <p className="text-xs text-gray-500 mt-1">Must be 21 or older</p>
