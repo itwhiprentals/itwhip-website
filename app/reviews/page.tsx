@@ -195,7 +195,7 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
 
   const aggregateRatingJsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'LocalBusiness',
+    '@type': 'Organization',
     name: 'ItWhip',
     url: 'https://itwhip.com',
     aggregateRating: {
