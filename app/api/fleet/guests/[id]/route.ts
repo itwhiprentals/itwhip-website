@@ -31,29 +31,55 @@ type DurationType = '1_WEEK' | '2_WEEKS' | '1_MONTH' | '3_MONTHS' | '6_MONTHS' |
 
 /**
  * Calculate warning expiration date based on duration
+ * NOTE: Each case clones the date to avoid mutation bugs
  */
 function calculateWarningExpiration(duration: DurationType, customDays?: number): Date | null {
   if (duration === 'PERMANENT') return null
-  
+
   const now = new Date()
-  
+
   switch (duration) {
-    case '1_WEEK':
-      return new Date(now.setDate(now.getDate() + 7))
-    case '2_WEEKS':
-      return new Date(now.setDate(now.getDate() + 14))
-    case '1_MONTH':
-      return new Date(now.setMonth(now.getMonth() + 1))
-    case '3_MONTHS':
-      return new Date(now.setMonth(now.getMonth() + 3))
-    case '6_MONTHS':
-      return new Date(now.setMonth(now.getMonth() + 6))
-    case '1_YEAR':
-      return new Date(now.setFullYear(now.getFullYear() + 1))
-    case 'CUSTOM':
-      return customDays ? new Date(now.setDate(now.getDate() + customDays)) : null
-    default:
-      return new Date(now.setMonth(now.getMonth() + 1)) // Default 1 month
+    case '1_WEEK': {
+      const result = new Date(now)
+      result.setDate(result.getDate() + 7)
+      return result
+    }
+    case '2_WEEKS': {
+      const result = new Date(now)
+      result.setDate(result.getDate() + 14)
+      return result
+    }
+    case '1_MONTH': {
+      const result = new Date(now)
+      result.setMonth(result.getMonth() + 1)
+      return result
+    }
+    case '3_MONTHS': {
+      const result = new Date(now)
+      result.setMonth(result.getMonth() + 3)
+      return result
+    }
+    case '6_MONTHS': {
+      const result = new Date(now)
+      result.setMonth(result.getMonth() + 6)
+      return result
+    }
+    case '1_YEAR': {
+      const result = new Date(now)
+      result.setFullYear(result.getFullYear() + 1)
+      return result
+    }
+    case 'CUSTOM': {
+      if (!customDays) return null
+      const result = new Date(now)
+      result.setDate(result.getDate() + customDays)
+      return result
+    }
+    default: {
+      const result = new Date(now)
+      result.setMonth(result.getMonth() + 1)
+      return result
+    }
   }
 }
 

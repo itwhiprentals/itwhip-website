@@ -322,7 +322,7 @@ export default function DriverVerification({
            value={data.licenseNumber}
            onChange={(e) => setData(prevData => ({ ...prevData, licenseNumber: e.target.value.toUpperCase() }))}
            className={`
-             w-full px-4 py-2 border rounded-lg dark:bg-gray-700
+             w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-700
              ${errors.licenseNumber ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}
            `}
            placeholder="Enter license number"
@@ -341,7 +341,7 @@ export default function DriverVerification({
              value={data.licenseState}
              onChange={(e) => setData(prevData => ({ ...prevData, licenseState: e.target.value }))}
              className={`
-               w-full px-4 py-2 border rounded-lg dark:bg-gray-700
+               w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-700
                ${errors.licenseState ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}
              `}
            >
@@ -367,7 +367,7 @@ export default function DriverVerification({
              onChange={(e) => setData(prevData => ({ ...prevData, licenseExpiry: e.target.value }))}
              min={new Date().toISOString().split('T')[0]}
              className={`
-               w-full px-4 py-2 border rounded-lg dark:bg-gray-700
+               w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-700
                ${errors.licenseExpiry ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}
              `}
            />
@@ -386,7 +386,7 @@ export default function DriverVerification({
              onChange={(e) => setData(prevData => ({ ...prevData, dateOfBirth: e.target.value }))}
              max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split('T')[0]}
              className={`
-               w-full px-4 py-2 border rounded-lg dark:bg-gray-700
+               w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-700
                ${errors.dateOfBirth ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}
              `}
            />

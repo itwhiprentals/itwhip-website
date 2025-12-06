@@ -1087,7 +1087,7 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
                 type="text"
                 value={driverFirstName}
                 onChange={(e) => setDriverFirstName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white dark:bg-gray-700 dark:text-white"
                 placeholder="John"
                 required
               />
@@ -1101,7 +1101,7 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
                 type="text"
                 value={driverLastName}
                 onChange={(e) => setDriverLastName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white dark:bg-gray-700 dark:text-white"
                 placeholder="Doe"
                 required
               />
@@ -1116,7 +1116,7 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
                 value={driverAge}
                 onChange={(e) => setDriverAge(e.target.value)}
                 max={new Date(new Date().setFullYear(new Date().getFullYear() - 21)).toISOString().split('T')[0]}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white dark:bg-gray-700 dark:text-white"
                 required
               />
               <p className="text-xs text-gray-500 mt-1">Must be 21 or older</p>
@@ -1130,7 +1130,7 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
                 type="text"
                 value={driverLicense}
                 onChange={(e) => setDriverLicense(e.target.value.toUpperCase())}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white dark:bg-gray-700 dark:text-white"
                 placeholder="D12345678"
                 required
               />

@@ -394,66 +394,87 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
           </div>
         </div>
         
-        {/* Dates Selection */}
-        <div className="mb-6">
-          <label className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-            <IoCalendarOutline className="w-4 h-4" />
-            Select Dates
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs text-gray-600 dark:text-gray-400 mb-1 block">Pickup</label>
+        {/* Trip Dates */}
+        <div className="mb-4 space-y-3">
+          <h3 className="text-xs font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
+            <IoCalendarOutline className="w-3.5 h-3.5 text-amber-600" />
+            Trip Dates
+          </h3>
+
+          {/* Pickup Card */}
+          <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3">
+            <div className="flex items-center gap-1.5 mb-2">
+              <div className="w-2 h-2 rounded-full bg-green-500"></div>
+              <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Pickup</span>
+            </div>
+            <div className="grid grid-cols-2 gap-6">
               <input
                 type="date"
                 value={startDate}
                 min={today}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                className="w-full px-2 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-amber-500 focus:border-amber-500 cursor-pointer"
               />
               <select
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                className="w-full mt-2 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                className="w-full px-2 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-amber-500 focus:border-amber-500 cursor-pointer"
               >
                 {Array.from({ length: 24 }, (_, i) => {
                   const hour = i.toString().padStart(2, '0')
+                  const ampm = i < 12 ? 'AM' : 'PM'
+                  const displayHour = i === 0 ? 12 : i > 12 ? i - 12 : i
                   return (
                     <option key={hour} value={`${hour}:00`}>
-                      {hour}:00
-                    </option>
-                  )
-                })}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs text-gray-600 dark:text-gray-400 mb-1 block">Return</label>
-              <input
-                type="date"
-                value={endDate}
-                min={startDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
-              />
-              <select
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                className="w-full mt-2 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
-              >
-                {Array.from({ length: 24 }, (_, i) => {
-                  const hour = i.toString().padStart(2, '0')
-                  return (
-                    <option key={hour} value={`${hour}:00`}>
-                      {hour}:00
+                      {displayHour}:00 {ampm}
                     </option>
                   )
                 })}
               </select>
             </div>
           </div>
+
+          {/* Return Card */}
+          <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3">
+            <div className="flex items-center gap-1.5 mb-2">
+              <div className="w-2 h-2 rounded-full bg-red-500"></div>
+              <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Return</span>
+            </div>
+            <div className="grid grid-cols-2 gap-6">
+              <input
+                type="date"
+                value={endDate}
+                min={startDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full px-2 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-amber-500 focus:border-amber-500 cursor-pointer"
+              />
+              <select
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                className="w-full px-2 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-amber-500 focus:border-amber-500 cursor-pointer"
+              >
+                {Array.from({ length: 24 }, (_, i) => {
+                  const hour = i.toString().padStart(2, '0')
+                  const ampm = i < 12 ? 'AM' : 'PM'
+                  const displayHour = i === 0 ? 12 : i > 12 ? i - 12 : i
+                  return (
+                    <option key={hour} value={`${hour}:00`}>
+                      {displayHour}:00 {ampm}
+                    </option>
+                  )
+                })}
+              </select>
+            </div>
+          </div>
+
+          {/* Trip Summary */}
           {days > 0 && (
-            <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 text-center">
-              {days} {days === 1 ? 'day' : 'days'} rental
-            </p>
+            <div className="flex items-center justify-center gap-1.5 py-2 px-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+              <IoCalendarOutline className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+              <span className="text-xs font-medium text-amber-800 dark:text-amber-300">
+                {days} day{days > 1 ? 's' : ''} · {new Date(startDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – {new Date(endDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              </span>
+            </div>
           )}
         </div>
         

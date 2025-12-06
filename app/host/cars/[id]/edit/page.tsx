@@ -769,7 +769,7 @@ export default function EditCarPage() {
               <div className="space-y-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Vehicle Details</h3>
                 
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Make *
@@ -888,7 +888,7 @@ export default function EditCarPage() {
 
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                   <h4 className="font-medium text-gray-900 dark:text-white mb-4">Location</h4>
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Street Address *
@@ -977,7 +977,7 @@ export default function EditCarPage() {
                 
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Vehicle Identification & Ownership</h3>
                 
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       VIN (Vehicle Identification Number) <span className="text-red-500">*</span>
@@ -1029,16 +1029,13 @@ export default function EditCarPage() {
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Registration Expiration Date <span className="text-red-500">*</span>
                     </label>
-                    <div className="relative">
-                      <input
-                        type="date"
-                        value={formData.registrationExpiryDate}
-                        onChange={(e) => setFormData({ ...formData, registrationExpiryDate: e.target.value })}
-                        disabled={isLocked}
-                        className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${isLocked ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-900' : ''}`}
-                      />
-                      <IoCalendarOutline className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                    </div>
+                    <input
+                      type="date"
+                      value={formData.registrationExpiryDate}
+                      onChange={(e) => setFormData({ ...formData, registrationExpiryDate: e.target.value })}
+                      disabled={isLocked}
+                      className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white ${isLocked ? 'opacity-60 cursor-not-allowed !bg-gray-50 dark:!bg-gray-900' : ''}`}
+                    />
                     <p className="text-xs text-gray-500 mt-1">Date shown on registration card</p>
                   </div>
                   
@@ -1113,7 +1110,7 @@ export default function EditCarPage() {
                   <h4 className="font-medium text-gray-900 dark:text-white mb-4">Garage/Storage Location</h4>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Where the vehicle is normally parked overnight (Required for insurance)</p>
                   
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Garage Address <span className="text-red-500">*</span>

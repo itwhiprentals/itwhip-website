@@ -175,7 +175,7 @@ export default async function CarDetailsPage({
           "name": car.make
         },
         "model": car.model,
-        "vehicleModelDate": car.year.toString(),
+        "vehicleModelDate": car.year?.toString() || "",
         "vehicleConfiguration": car.carType || "sedan",
         "vehicleTransmission": car.transmission || "automatic",
         "vehicleSeatingCapacity": car.seats || 5,
