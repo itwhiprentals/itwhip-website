@@ -191,6 +191,7 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
           name: review.car
             ? `${review.car.year} ${review.car.make} ${review.car.model}`
             : 'Vehicle Rental',
+          image: review.car?.photos?.[0]?.url || 'https://itwhip.com/default-car.jpg',
           offers: {
             '@type': 'Offer',
             priceCurrency: 'USD',
