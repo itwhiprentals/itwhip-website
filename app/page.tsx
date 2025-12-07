@@ -93,7 +93,7 @@ export default function RentalsPage() {
               {isLoading ? (
                 [...Array(6)].map((_, i) => <CarCardSkeleton key={i} />)
               ) : (
-                esgCars.map(car => <CarCard key={car.id} car={car} />)
+                esgCars.map(car => <CarCard key={car.id} car={car} showHostAvatar />)
               )}
             </div>
             {!isLoading && esgCars.length > 0 && (
@@ -130,7 +130,7 @@ export default function RentalsPage() {
               {isLoading ? (
                 [...Array(6)].map((_, i) => <CarCardSkeleton key={i} />)
               ) : (
-                cityCars.map(car => <CarCard key={car.id} car={car} />)
+                cityCars.map(car => <CarCard key={car.id} car={car} showHostAvatar />)
               )}
             </div>
             {!isLoading && cityCars.length > 0 && (

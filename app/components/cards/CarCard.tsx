@@ -1,6 +1,7 @@
 // app/components/cards/CarCard.tsx
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { generateCarUrl } from '@/app/lib/utils/urls'
 import CarImage from './CarImage'
@@ -19,7 +20,19 @@ interface CarCardProps {
   showHostAvatar?: boolean
 }
 
+// Check if host photo URL is valid (not a placeholder/default)
+const isValidHostPhoto = (url: string | undefined | null): boolean => {
+  if (!url) return false
+  // Filter out default/placeholder URLs
+  if (url === '/default-avatar.png') return false
+  if (url.includes('default-avatar')) return false
+  if (url.includes('placeholder')) return false
+  // Must start with http or be a valid path to actual image
+  return url.startsWith('http') || url.startsWith('https')
+}
+
 export default function CarCard({ car, showHostAvatar = false }: CarCardProps) {
+  const [hostAvatarError, setHostAvatarError] = useState(false)
   const isTraditional = car.provider_type === 'traditional'
   const showLocalHostBadge = car.host && !car.instantBook
   const tripCount = car.trips || car.totalTrips || car.rating?.count || 0
@@ -69,24 +82,36 @@ export default function CarCard({ car, showHostAvatar = false }: CarCardProps) {
             </div>
           </div>
 
-          {/* Host avatar - bottom-left */}
-          {showHostAvatar && car.host && (
-            <div className="absolute bottom-3 left-3">
-              <div className="w-10 h-10 rounded-full border-2 border-white shadow-md overflow-hidden bg-gray-200 dark:bg-gray-600">
-                {car.host.profilePhoto || car.host.avatar ? (
-                  <img
-                    src={car.host.profilePhoto || car.host.avatar}
-                    alt={car.host.name || 'Host'}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-amber-500 text-white font-bold text-sm">
-                    {(car.host.name || 'H').charAt(0).toUpperCase()}
+          {/* Host avatar and name - bottom-left */}
+          {showHostAvatar && car.host && (() => {
+            const hostFirstName = (car.host.name || 'Host').split(' ')[0]
+            const hostInitial = hostFirstName.charAt(0).toUpperCase()
+            const hostPhotoUrl = car.host.profilePhoto || car.host.avatar
+            const hasValidPhoto = isValidHostPhoto(hostPhotoUrl) && !hostAvatarError
+            return (
+              <div className="absolute bottom-3 left-3">
+                <div className="flex items-center gap-2 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-full pl-1 pr-3 py-1 shadow-md border border-white/20">
+                  <div className="w-8 h-8 rounded-full border-2 border-white shadow-sm overflow-hidden flex-shrink-0">
+                    {hasValidPhoto ? (
+                      <img
+                        src={hostPhotoUrl}
+                        alt={hostFirstName}
+                        className="w-full h-full object-cover"
+                        onError={() => setHostAvatarError(true)}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-amber-500 text-white font-bold text-xs">
+                        {hostInitial}
+                      </div>
+                    )}
                   </div>
-                )}
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">
+                    {hostFirstName}
+                  </span>
+                </div>
               </div>
-            </div>
-          )}
+            )
+          })()}
         </div>
 
         <div className="p-5 space-y-3">
