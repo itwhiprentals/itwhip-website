@@ -1,332 +1,334 @@
 // app/(guest)/rentals/page.tsx
-// Refactored rental landing page with footer
+// Server Component - Car Listings Page (Catalog Style)
 
-'use client'
-
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import HeroSection from './sections/HeroSection'
-import QuickActionsBar from './sections/QuickActionsBar'
-import BrowseByTypeSection from './sections/BrowseByTypeSection'
-import BenefitsSection from './sections/BenefitsSection'
+import { Metadata } from 'next'
+import { Suspense } from 'react'
+import prisma from '@/app/lib/database/prisma'
+import CarFilters from './components/CarFilters'
+import CarGrid from './components/CarGrid'
+import Breadcrumbs from './components/Breadcrumbs'
 import Footer from '@/app/components/Footer'
-import { 
-  IoCarOutline, 
-  IoFlashOutline,
-  IoStarOutline,
-  IoArrowForwardOutline,
-  IoLocationOutline,
-  IoStarSharp,
-  IoCarSportOutline
-} from 'react-icons/io5'
+import { IoCarSportOutline } from 'react-icons/io5'
 
-// Skeleton Component for Loading Cards
-function CarCardSkeleton() {
-  return (
-    <div className="group relative bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-xl animate-pulse">
-      {/* Image Skeleton */}
-      <div className="relative h-48 sm:h-56 bg-gray-200 dark:bg-gray-700">
-        <div className="absolute top-3 left-3 flex flex-col gap-2">
-          <div className="h-6 w-24 bg-gray-300 dark:bg-gray-600 rounded-full" />
-        </div>
-        <div className="absolute bottom-3 right-3">
-          <div className="px-4 py-2.5 bg-gray-300 dark:bg-gray-600 rounded-lg w-20 h-10" />
-        </div>
-      </div>
-      
-      {/* Content Skeleton */}
-      <div className="p-5">
-        {/* Title */}
-        <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded mb-3 w-3/4" />
-        
-        {/* Rating and Location */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-3">
-            <div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded" />
-            <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded" />
-          </div>
-          <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded" />
-        </div>
-        
-        {/* Features */}
-        <div className="flex gap-2 mb-3">
-          <div className="h-6 w-16 bg-gray-200 dark:bg-gray-700 rounded" />
-          <div className="h-6 w-20 bg-gray-200 dark:bg-gray-700 rounded" />
-          <div className="h-6 w-18 bg-gray-200 dark:bg-gray-700 rounded" />
-        </div>
-        
-        {/* Bottom Section */}
-        <div className="mt-4 pt-3 border-t-2 border-gray-200 dark:border-gray-600">
-          <div className="flex items-center justify-between">
-            <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded" />
-            <div className="h-4 w-12 bg-gray-200 dark:bg-gray-700 rounded" />
-          </div>
-        </div>
-      </div>
-    </div>
-  )
+const TYPE_LABELS: Record<string, string> = {
+  suv: 'SUVs',
+  sedan: 'Sedans',
+  luxury: 'Luxury Cars',
+  electric: 'Electric Vehicles',
+  truck: 'Trucks',
+  sports: 'Sports Cars',
+  convertible: 'Convertibles'
 }
 
-export default function RentalsPage() {
-  const [featuredCars, setFeaturedCars] = useState<any[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+interface SearchParams {
+  type?: string
+  make?: string
+  priceMin?: string
+  priceMax?: string
+  price?: string
+  page?: string
+}
 
-  useEffect(() => {
-    fetchFeaturedCars()
-  }, [])
+// Dynamic meta tags based on filters
+export async function generateMetadata({
+  searchParams
+}: {
+  searchParams: Promise<SearchParams>
+}): Promise<Metadata> {
+  const params = await searchParams
+  const type = params?.type
+  const make = params?.make
 
-  const fetchFeaturedCars = async () => {
-    try {
-      const response = await fetch('/api/rentals/search?sortBy=recommended&limit=6')
-      const data = await response.json()
-      
-      let cars = data?.results || []
-      setFeaturedCars(cars.slice(0, 6))
-    } catch (error) {
-      console.error('Error fetching featured cars:', error)
-      setFeaturedCars([])
-    } finally {
-      setIsLoading(false)
+  let title = 'Rent Cars in Phoenix | SUVs, Sedans & Luxury | ItWhip'
+  let description = 'Browse and rent cars from local Phoenix hosts. Choose from SUVs, sedans, luxury cars, electric vehicles, and more. Book instantly with no hidden fees.'
+
+  if (type && make) {
+    const typeLabel = TYPE_LABELS[type.toLowerCase()] || type
+    title = `Rent ${make} ${typeLabel} in Phoenix | ItWhip`
+    description = `Find ${make} ${typeLabel} available for rent in Phoenix from local hosts. Book your perfect ${make} today.`
+  } else if (type) {
+    const typeLabel = TYPE_LABELS[type.toLowerCase()] || type
+    title = `Rent ${typeLabel} in Phoenix | ItWhip`
+    description = `Browse ${typeLabel} available for rent in Phoenix from local hosts. Find the perfect vehicle for your trip.`
+  } else if (make) {
+    title = `Rent ${make} Cars in Phoenix | ItWhip`
+    description = `Find ${make} vehicles available for rent in Phoenix from local hosts. Book your ${make} today.`
+  }
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      url: 'https://itwhip.com/rentals',
+      siteName: 'ItWhip',
+      images: [
+        {
+          url: 'https://itwhip.com/og-rentals.jpg',
+          width: 1200,
+          height: 630,
+          alt: 'ItWhip Car Rentals'
+        }
+      ],
+      type: 'website'
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description
+    },
+    alternates: {
+      canonical: 'https://itwhip.com/rentals'
+    }
+  }
+}
+
+const ITEMS_PER_PAGE = 20
+
+export default async function RentalsPage({
+  searchParams
+}: {
+  searchParams: Promise<SearchParams>
+}) {
+  const params = await searchParams
+  const currentPage = parseInt(params?.page || '1', 10)
+
+  // Build Prisma where clause from filters
+  const whereClause: any = {
+    isActive: true
+  }
+
+  if (params?.type && params.type !== 'all') {
+    whereClause.carType = params.type.toUpperCase()
+  }
+
+  if (params?.make) {
+    whereClause.make = {
+      equals: params.make,
+      mode: 'insensitive'
     }
   }
 
+  if (params?.priceMin || params?.priceMax) {
+    whereClause.dailyRate = {}
+    if (params.priceMin) whereClause.dailyRate.gte = parseFloat(params.priceMin)
+    if (params.priceMax) whereClause.dailyRate.lte = parseFloat(params.priceMax)
+  }
+
+  // Fetch cars and counts in parallel
+  const [cars, totalCount, makesData] = await Promise.all([
+    // Fetch cars with pagination
+    prisma.rentalCar.findMany({
+      where: whereClause,
+      select: {
+        id: true,
+        make: true,
+        model: true,
+        year: true,
+        carType: true,
+        dailyRate: true,
+        instantBook: true,
+        rating: true,
+        totalTrips: true,
+        city: true,
+        latitude: true,
+        longitude: true,
+        features: true,
+        photos: {
+          select: {
+            url: true,
+            caption: true
+          },
+          orderBy: { order: 'asc' },
+          take: 1
+        },
+        host: {
+          select: {
+            name: true,
+            isVerified: true,
+            profilePhoto: true
+          }
+        }
+      },
+      orderBy: [
+        { rating: 'desc' },
+        { totalTrips: 'desc' }
+      ],
+      take: ITEMS_PER_PAGE,
+      skip: (currentPage - 1) * ITEMS_PER_PAGE
+    }),
+
+    // Get total count for pagination
+    prisma.rentalCar.count({
+      where: whereClause
+    }),
+
+    // Get distinct makes for filter dropdown
+    prisma.rentalCar.findMany({
+      where: { isActive: true },
+      select: { make: true },
+      distinct: ['make']
+    })
+  ])
+
+  // Parse features safely and transform cars for client
+  const transformedCars = cars.map(car => {
+    let parsedFeatures: string[] = []
+    try {
+      if (typeof car.features === 'string') {
+        parsedFeatures = JSON.parse(car.features)
+      } else if (Array.isArray(car.features)) {
+        parsedFeatures = car.features as string[]
+      }
+    } catch {
+      parsedFeatures = []
+    }
+
+    return {
+      id: car.id,
+      make: car.make,
+      model: car.model,
+      year: car.year,
+      carType: car.carType,
+      dailyRate: Number(car.dailyRate),
+      instantBook: car.instantBook,
+      rating: car.rating ? Number(car.rating) : null,
+      totalTrips: car.totalTrips,
+      city: car.city,
+      latitude: car.latitude ? Number(car.latitude) : null,
+      longitude: car.longitude ? Number(car.longitude) : null,
+      photos: car.photos,
+      features: parsedFeatures.slice(0, 5),
+      host: car.host
+    }
+  })
+
+  const makes = makesData.map(m => m.make)
+
+  // Build page title based on filters
+  const getPageTitle = () => {
+    if (params?.type && params?.make) {
+      const typeLabel = TYPE_LABELS[params.type.toLowerCase()] || params.type
+      return `${params.make} ${typeLabel}`
+    }
+    if (params?.type) {
+      return TYPE_LABELS[params.type.toLowerCase()] || 'Cars'
+    }
+    if (params?.make) {
+      return `${params.make} Cars`
+    }
+    return 'Browse Cars'
+  }
+
+  // Build ItemList JSON-LD schema
+  const itemListSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: params?.type
+      ? `${TYPE_LABELS[params.type.toLowerCase()] || params.type} for Rent in Phoenix`
+      : 'Cars for Rent in Phoenix',
+    description: 'Browse rental cars from local Phoenix hosts',
+    numberOfItems: totalCount,
+    itemListElement: transformedCars.map((car, idx) => ({
+      '@type': 'ListItem',
+      position: idx + 1,
+      item: {
+        '@type': 'Product',
+        name: `${car.year} ${car.make} ${car.model}`,
+        image: car.photos[0]?.url || 'https://itwhip.com/default-car.jpg',
+        description: `Rent a ${car.year} ${car.make} ${car.model} in ${car.city || 'Phoenix'}`,
+        offers: {
+          '@type': 'Offer',
+          priceCurrency: 'USD',
+          price: car.dailyRate.toString(),
+          availability: 'https://schema.org/InStock',
+          url: `https://itwhip.com/rentals/${car.id}`
+        },
+        ...(car.rating && {
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: car.rating.toFixed(1),
+            bestRating: '5',
+            worstRating: '1',
+            ratingCount: car.totalTrips.toString()
+          }
+        })
+      }
+    }))
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <HeroSection />
-      <QuickActionsBar />
-      <BrowseByTypeSection />
-      
-      {/* Featured Cars Section - Minimal top padding to eliminate gap */}
-      <section className="pt-2 pb-12 sm:pt-4 sm:pb-16 md:pt-6 md:pb-20 bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-8 sm:mb-12">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      {/* ItemList Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
+      />
+
+      {/* Page Header - Clean & Simple */}
+      <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          {/* Breadcrumbs */}
+          <Breadcrumbs type={params?.type} make={params?.make} />
+
+          {/* Title Section */}
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
             <div>
-              <span className="text-amber-600 dark:text-amber-400 text-xs sm:text-sm font-semibold uppercase tracking-wider">Popular Now</span>
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mt-2 mb-1 sm:mb-2">
-                Featured Cars
-              </h2>
-              <p className="text-base sm:text-lg md:text-xl text-gray-600 dark:text-gray-400">
-                Hand-picked for you
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white">
+                {getPageTitle()}
+              </h1>
+              <p className="mt-1 sm:mt-2 text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                <IoCarSportOutline className="w-5 h-5" />
+                <span>
+                  <span className="font-semibold text-gray-900 dark:text-white">{totalCount}</span>
+                  {' '}cars available in Phoenix
+                </span>
               </p>
             </div>
-            <Link
-              href="/rentals/search"
-              className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors font-medium"
-            >
-              View all
-              <IoArrowForwardOutline className="w-5 h-5" />
-            </Link>
+
+            {/* Optional: Sort dropdown could go here */}
           </div>
-
-          {/* Show Skeletons while loading */}
-          {isLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {[...Array(6)].map((_, index) => (
-                <CarCardSkeleton key={index} />
-              ))}
-            </div>
-          ) : featuredCars.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {featuredCars.map((car) => {
-                // Get the image URL properly
-                const imageUrl = car.photos?.[0]?.url || 
-                                car.photos?.[0] || 
-                                (car.provider === 'Enterprise' ? 'https://images.unsplash.com/photo-1619767886558-efdc259cde1a?w=800&h=600&fit=crop' :
-                                 car.provider === 'Hertz' ? 'https://images.unsplash.com/photo-1616422285623-13ff0162193c?w=800&h=600&fit=crop' :
-                                 'https://images.unsplash.com/photo-1583267746897-2cf415887172?w=800&h=600&fit=crop')
-                
-                const isTraditional = car.provider_type === 'traditional'
-                const isP2P = car.source === 'p2p' || car.host
-                const tripCount = car.trips || car.totalTrips || car.rating?.count || 0
-                
-                return (
-                  <Link
-                    key={car.id}
-                    href={`/rentals/${car.id}`}
-                    className="group relative bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300"
-                  >
-                    {/* Image Container with Gradient Overlay */}
-                    <div className="relative h-48 sm:h-56 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 overflow-hidden">
-                      <img
-                        src={imageUrl}
-                        alt={`${car.make} ${car.model}`}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
-                      />
-                      
-                      {/* Gradient overlay for better text visibility */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      
-                      {/* Top Badges */}
-                      <div className="absolute top-3 left-3 flex flex-col gap-2">
-                        {isP2P && (
-                          <span className="px-3 py-1 bg-black/80 backdrop-blur-sm text-white text-xs font-bold rounded-full shadow-lg flex items-center gap-1">
-                            <IoStarSharp className="w-3 h-3" />
-                            LOCAL HOST
-                          </span>
-                        )}
-                        {car.instantBook && (
-                          <span className="px-3 py-1 bg-emerald-500 backdrop-blur-sm text-white text-xs font-bold rounded-full shadow-lg flex items-center gap-1">
-                            <IoFlashOutline className="w-3 h-3" />
-                            INSTANT BOOK
-                          </span>
-                        )}
-                        {isTraditional && car.provider && (
-                          <span className="px-3 py-1 bg-blue-600 backdrop-blur-sm text-white text-xs font-bold rounded-full shadow-lg">
-                            {car.provider.toUpperCase()}
-                          </span>
-                        )}
-                      </div>
-                      
-                      {/* Price Badge - More prominent */}
-                      <div className="absolute bottom-3 right-3">
-                        <div className="px-4 py-2.5 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-lg shadow-xl border border-white/20">
-                          <div className="flex items-baseline gap-1">
-                            <span className="text-2xl font-black text-gray-900 dark:text-white">
-                              ${car.dailyRate || car.totalDaily}
-                            </span>
-                            <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">/day</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Content Section */}
-                    <div className="p-5">
-                      {/* Car Title */}
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                        {car.year} {car.make} {car.model}
-                      </h3>
-                      
-                      {/* Rating and Location Row */}
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          {/* Rating */}
-                          {car.rating && (
-                            <div className="flex items-center gap-1">
-                              <div className="flex">
-                                {[...Array(5)].map((_, i) => (
-                                  <IoStarOutline
-                                    key={i}
-                                    className={`w-3.5 h-3.5 ${
-                                      i < Math.floor(car.rating.average || car.rating)
-                                        ? 'text-amber-400 fill-current'
-                                        : 'text-gray-300'
-                                    }`}
-                                  />
-                                ))}
-                              </div>
-                              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                {typeof (car.rating.average || car.rating) === 'number' 
-                                  ? (car.rating.average || car.rating).toFixed(1)
-                                  : (car.rating.average || car.rating)}
-                              </span>
-                            </div>
-                          )}
-                          
-                          {/* Trip Count - Now showing */}
-                          <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                            <IoCarSportOutline className="w-3.5 h-3.5" />
-                            {tripCount} trips
-                          </span>
-                        </div>
-                        
-                        {/* Location for P2P */}
-                        {car.location && (
-                          <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                            <IoLocationOutline className="w-3 h-3" />
-                            {car.location.city || 'Phoenix'}
-                          </span>
-                        )}
-                      </div>
-                      
-                      {/* Features Pills */}
-                      {car.features && Array.isArray(car.features) && (
-                        <div className="flex gap-2 mb-3 flex-wrap">
-                          {car.features.slice(0, 3).map((feature, idx) => (
-                            <span
-                              key={idx}
-                              className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-xs rounded text-gray-600 dark:text-gray-400"
-                            >
-                              {feature}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      
-                      {/* Action Button - Enhanced border visibility with distance */}
-                      <div className="mt-4 pt-3 border-t-2 border-gray-200 dark:border-gray-600">
-                        <div className="flex items-center justify-between">
-                          <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1 font-medium">
-                            <IoLocationOutline className="w-3.5 h-3.5" />
-                            {(() => {
-                              // Calculate distance if coordinates are available
-                              if (car.location?.lat && car.location?.lng) {
-                                // Default Phoenix coordinates (you can get user's actual location)
-                                const userLat = 33.4484
-                                const userLng = -112.0740
-                                
-                                // Haversine formula for distance calculation
-                                const R = 3959 // Earth radius in miles
-                                const dLat = (car.location.lat - userLat) * Math.PI / 180
-                                const dLon = (car.location.lng - userLng) * Math.PI / 180
-                                const a = 
-                                  Math.sin(dLat/2) * Math.sin(dLat/2) +
-                                  Math.cos(userLat * Math.PI / 180) * Math.cos(car.location.lat * Math.PI / 180) *
-                                  Math.sin(dLon/2) * Math.sin(dLon/2)
-                                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
-                                let distance = R * c
-                                
-                                // Privacy protection: Never show less than 1 mile
-                                if (distance < 1.0) {
-                                  // Randomize between 1.1 and 1.9 for privacy
-                                  // Use car ID as seed for consistent random per car
-                                  const seed = car.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
-                                  const random = (seed % 9) / 10 // Gives 0.0 to 0.8
-                                  distance = 1.1 + random // Range: 1.1 to 1.9
-                                }
-                                
-                                return `${distance.toFixed(1)} miles away`
-                              } else {
-                                // Fallback to city if no coordinates
-                                return car.location?.city || 'Phoenix area'
-                              }
-                            })()}
-                          </div>
-                          <div className="flex items-center text-amber-600 dark:text-amber-400 font-semibold text-sm group-hover:gap-2 transition-all">
-                            <span>View</span>
-                            <IoArrowForwardOutline className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                )
-              })}
-            </div>
-          ) : (
-            // Empty state when no cars are found
-            <div className="text-center py-12">
-              <IoCarOutline className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-              <p className="text-gray-600 dark:text-gray-400">No featured cars available at the moment.</p>
-            </div>
-          )}
-
-          {/* Mobile View All */}
-          {!isLoading && featuredCars.length > 0 && (
-            <div className="mt-6 text-center sm:hidden">
-              <Link
-                href="/rentals/search"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-black dark:bg-white text-white dark:text-black rounded-lg font-medium"
-              >
-                View all cars
-                <IoArrowForwardOutline className="w-5 h-5" />
-              </Link>
-            </div>
-          )}
         </div>
-      </section>
-      
-      <BenefitsSection />
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Filters */}
+        <Suspense fallback={<div className="h-24 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />}>
+          <CarFilters
+            currentType={params?.type || ''}
+            currentMake={params?.make || ''}
+            currentPriceRange={params?.price || ''}
+            makes={makes}
+            totalCount={totalCount}
+          />
+        </Suspense>
+
+        {/* Car Grid */}
+        <Suspense fallback={
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="bg-white dark:bg-gray-800 rounded-lg h-80 animate-pulse" />
+            ))}
+          </div>
+        }>
+          <CarGrid
+            initialCars={transformedCars}
+            totalCount={totalCount}
+            currentPage={currentPage}
+            perPage={ITEMS_PER_PAGE}
+            filters={{
+              type: params?.type,
+              make: params?.make,
+              priceMin: params?.priceMin,
+              priceMax: params?.priceMax
+            }}
+          />
+        </Suspense>
+      </main>
+
+      {/* Footer */}
       <Footer />
     </div>
   )

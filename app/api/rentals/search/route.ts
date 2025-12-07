@@ -83,7 +83,13 @@ export async function GET(request: NextRequest) {
     // Add other filters
     if (instantBook) whereClause.instantBook = true
     if (carType && carType !== 'all') whereClause.carType = carType.toUpperCase()
-    
+
+    // Make filter (case-insensitive)
+    const make = searchParams.get('make')
+    if (make) {
+      whereClause.make = { equals: make, mode: 'insensitive' }
+    }
+
     if (priceMin || priceMax) {
       whereClause.dailyRate = {}
       if (priceMin) whereClause.dailyRate.gte = parseFloat(priceMin)

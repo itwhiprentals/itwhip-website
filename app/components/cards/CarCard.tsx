@@ -16,9 +16,10 @@ import {
 
 interface CarCardProps {
   car: any
+  showHostAvatar?: boolean
 }
 
-export default function CarCard({ car }: CarCardProps) {
+export default function CarCard({ car, showHostAvatar = false }: CarCardProps) {
   const isTraditional = car.provider_type === 'traditional'
   const showLocalHostBadge = car.host && !car.instantBook
   const tripCount = car.trips || car.totalTrips || car.rating?.count || 0
@@ -67,6 +68,25 @@ export default function CarCard({ car }: CarCardProps) {
               </div>
             </div>
           </div>
+
+          {/* Host avatar - bottom-left */}
+          {showHostAvatar && car.host && (
+            <div className="absolute bottom-3 left-3">
+              <div className="w-10 h-10 rounded-full border-2 border-white shadow-md overflow-hidden bg-gray-200 dark:bg-gray-600">
+                {car.host.profilePhoto || car.host.avatar ? (
+                  <img
+                    src={car.host.profilePhoto || car.host.avatar}
+                    alt={car.host.name || 'Host'}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-amber-500 text-white font-bold text-sm">
+                    {(car.host.name || 'H').charAt(0).toUpperCase()}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="p-5 space-y-3">

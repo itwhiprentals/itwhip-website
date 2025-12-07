@@ -4,25 +4,15 @@
 import { useState, useEffect, useCallback, Suspense, useMemo } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { 
-  IoCarOutline, 
-  IoLocationOutline, 
-  IoCalendarOutline,
+import {
+  IoCarOutline,
+  IoLocationOutline,
   IoFilterOutline,
-  IoStarOutline,
   IoFlashOutline,
-  IoShieldCheckmarkOutline,
   IoMapOutline,
   IoListOutline,
-  IoSearchOutline,
-  IoChevronDownOutline,
   IoCloseOutline,
   IoSwapVerticalOutline,
-  IoTimeOutline,
-  IoCheckmarkCircleOutline,
-  IoAlertCircleOutline,
-  IoWarningOutline,
-  IoCarSportOutline,
   IoAirplaneOutline,
   IoBusinessOutline
 } from 'react-icons/io5'
@@ -31,6 +21,7 @@ import { MapContainer } from './components/MapContainer'
 import { getLocationCoordinates } from './utils/mapHelpers'
 import Footer from '@/app/components/Footer'
 import RentalSearchCard from '@/app/(guest)/components/hero/RentalSearchWidget'
+import CarCard from '@/app/components/cards/CarCard'
 
 // Loading skeleton component
 function CarCardSkeleton() {
@@ -257,40 +248,6 @@ function SearchResultsContent() {
     (filters.minPrice > 0 || filters.maxPrice < 1000 ? 1 : 0) +
     (filters.availability !== 'all' ? 1 : 0)
 
-  // Get availability badge
-  const getAvailabilityBadge = (car: any) => {
-    if (!car.availability) return null
-
-    if (car.availability.isFullyAvailable) {
-      return (
-        <span className="px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 text-xs font-semibold rounded-full flex items-center gap-1">
-          <IoCheckmarkCircleOutline className="w-3 h-3" />
-          Available
-        </span>
-      )
-    }
-
-    if (car.availability.isCompletelyUnavailable) {
-      return (
-        <span className="px-2 py-1 bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 text-xs font-semibold rounded-full flex items-center gap-1">
-          <IoCloseOutline className="w-3 h-3" />
-          Unavailable
-        </span>
-      )
-    }
-
-    if (car.availability.isPartiallyAvailable) {
-      return (
-        <span className="px-2 py-1 bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 text-xs font-semibold rounded-full flex items-center gap-1">
-          <IoWarningOutline className="w-3 h-3" />
-          Partial
-        </span>
-      )
-    }
-
-    return null
-  }
-
   return (
     <>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -482,133 +439,27 @@ function SearchResultsContent() {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filteredCars.map((car) => (
-                    <Link
+                    <CarCard
                       key={car.id}
-                      href={`/rentals/${car.id}?pickupDate=${pickupDate}&returnDate=${returnDate}`}
-                      className="group bg-white dark:bg-gray-800 rounded-lg shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300"
-                    >
-                      {/* Car Image */}
-                      <div className="relative aspect-w-16 aspect-h-10 bg-gray-200 dark:bg-gray-700 rounded-t-lg overflow-hidden">
-                        {car.photos && car.photos[0] ? (
-                          <img
-                            src={car.photos[0].url}
-                            alt={`${car.make} ${car.model}`}
-                            className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
-                          />
-                        ) : (
-                          <div className="w-full h-48 flex items-center justify-center">
-                            <IoCarOutline className="w-16 h-16 text-gray-400" />
-                          </div>
-                        )}
-                        
-                        {/* Badges */}
-                        <div className="absolute top-3 left-3 flex flex-wrap gap-2">
-                          {car.instantBook && (
-                            <span className="px-3 py-1 bg-emerald-500 text-white text-xs font-bold rounded-full shadow-lg flex items-center gap-1">
-                              <IoFlashOutline className="w-3 h-3" />
-                              INSTANT BOOK
-                            </span>
-                          )}
-                          {getAvailabilityBadge(car)}
-                        </div>
-
-                        {/* Price Badge */}
-                        <div className="absolute bottom-3 right-3">
-                          <div className="px-4 py-2.5 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-lg shadow-xl border border-white/20">
-                            <div className="flex items-baseline gap-1">
-                              <span className="text-2xl font-black text-gray-900 dark:text-white">
-                                ${Math.round(car.dailyRate || 0)}
-                              </span>
-                              <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">/day</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Car Details */}
-                      <div className="p-5">
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                          {car.year} {car.make} {car.model}
-                        </h3>
-
-                        {/* Rating and Trips Row */}
-                        <div className="flex items-center gap-3 text-sm mb-3">
-                          {/* Rating */}
-                          {car.rating && car.rating.count > 0 ? (
-                            <div className="flex items-center gap-1">
-                              <div className="flex">
-                                {[...Array(5)].map((_, i) => (
-                                  <IoStarOutline
-                                    key={i}
-                                    className={`w-3.5 h-3.5 ${
-                                      i < Math.floor(car.rating.average || 0)
-                                        ? 'text-amber-400 fill-current'
-                                        : 'text-gray-300'
-                                    }`}
-                                  />
-                                ))}
-                              </div>
-                              <span className="font-semibold text-gray-700 dark:text-gray-300">
-                                {typeof car.rating.average === 'number' 
-                                  ? car.rating.average.toFixed(1) 
-                                  : car.rating.average}
-                              </span>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-1">
-                              <div className="flex">
-                                {[...Array(5)].map((_, i) => (
-                                  <IoStarOutline key={i} className="w-3.5 h-3.5 text-gray-300" />
-                                ))}
-                              </div>
-                              <span className="text-gray-500">New</span>
-                            </div>
-                          )}
-                          
-                          {/* Trip Count */}
-                          <span className="text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                            <IoCarSportOutline className="w-3.5 h-3.5" />
-                            {car.trips || 0 > 0 ? (
-                              <>{car.trips || 0} trips</>
-                            ) : (
-                              <>New listing</>
-                            )}
-                          </span>
-                        </div>
-
-                        {/* Availability Info (for partial) */}
-                        {car.availability?.isPartiallyAvailable && (
-                          <div className="mb-3 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                            <p className="text-xs text-yellow-800 dark:text-yellow-400 font-medium">
-                              {car.availability.label}
-                            </p>
-                          </div>
-                        )}
-
-                        {/* Location with Distance - Bottom section */}
-                        <div className="pt-3 border-t-2 border-gray-200 dark:border-gray-600">
-                          <div className="flex items-center justify-between text-sm">
-                            <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400 font-medium">
-                              <IoLocationOutline className="w-3.5 h-3.5" />
-                              <span>
-                                {car.location?.distanceText || `${car.location?.city || 'Phoenix'} area`}
-                              </span>
-                            </div>
-                            <span className="text-green-600 dark:text-green-400 font-medium">
-                              View →
-                            </span>
-                          </div>
-                          
-                          {/* Free Delivery Badge */}
-                          {car.location?.withinFreeDelivery && (
-                            <div className="mt-2 flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
-                              <IoCheckmarkCircleOutline className="w-3.5 h-3.5" />
-                              <span>Free delivery available</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </Link>
+                      car={{
+                        ...car,
+                        dailyRate: car.dailyRate,
+                        totalDaily: car.dailyRate,
+                        trips: car.trips,
+                        totalTrips: car.trips,
+                        host: {
+                          ...car.host,
+                          profilePhoto: car.host?.avatar || car.host?.profilePhoto
+                        },
+                        location: {
+                          city: car.location?.city || 'Phoenix',
+                          state: car.location?.state || 'AZ',
+                          lat: car.location?.latitude,
+                          lng: car.location?.longitude
+                        }
+                      }}
+                      showHostAvatar
+                    />
                   ))}
                 </div>
               )}

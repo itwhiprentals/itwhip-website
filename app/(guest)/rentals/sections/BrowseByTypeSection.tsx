@@ -55,7 +55,7 @@ export default function BrowseByTypeSection() {
           {carTypes.map((carType) => (
             <Link
               key={carType.type}
-              href={`/rentals/types/${carType.type}`}
+              href={`/rentals?type=${carType.type}`}
               className="flex-shrink-0 sm:flex-shrink group"
             >
               <div className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all min-w-[140px] sm:min-w-0">
