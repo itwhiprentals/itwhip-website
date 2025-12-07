@@ -131,6 +131,7 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
             model: true,
             year: true,
             city: true,
+            dailyRate: true,
             photos: {
               where: { isHero: true },
               take: 1,
@@ -186,8 +187,17 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
         },
         reviewBody: review.comment,
         itemReviewed: {
-          '@type': 'Thing',
-          name: review.car ? `${review.car.year} ${review.car.make} ${review.car.model}` : 'Vehicle'
+          '@type': 'Product',
+          name: review.car
+            ? `${review.car.year} ${review.car.make} ${review.car.model}`
+            : 'Vehicle Rental',
+          offers: {
+            '@type': 'Offer',
+            priceCurrency: 'USD',
+            price: review.car?.dailyRate?.toString() || '99',
+            availability: 'https://schema.org/InStock',
+            url: `https://itwhip.com/rentals/${review.car?.id}`
+          }
         }
       }
     }))
