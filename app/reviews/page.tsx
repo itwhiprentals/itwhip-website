@@ -186,7 +186,7 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
         },
         reviewBody: review.comment,
         itemReviewed: {
-          '@type': 'Product',
+          '@type': 'Thing',
           name: review.car ? `${review.car.year} ${review.car.make} ${review.car.model}` : 'Vehicle'
         }
       }
