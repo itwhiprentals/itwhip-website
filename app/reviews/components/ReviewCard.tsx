@@ -163,7 +163,7 @@ export default function ReviewCard({ review }: ReviewCardProps) {
         <div className="flex items-center gap-3 mb-3">
           <StarRating rating={review.rating} />
           <span className="text-sm text-gray-500 dark:text-gray-400">
-            {getTimeAgo(review.createdAt)}
+            ({getTimeAgo(review.createdAt)})
           </span>
           {review.isVerified && (
             <span className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded-full">
@@ -187,11 +187,16 @@ export default function ReviewCard({ review }: ReviewCardProps) {
           </p>
         )}
 
+        {/* Separator line before car section */}
+        {review.car && (
+          <div className="border-t border-gray-200 dark:border-gray-600 my-4" />
+        )}
+
         {/* Car Info with Photo */}
         {review.car && (
           <Link
             href={generateCarUrl(review.car)}
-            className="inline-flex items-center gap-3 p-2 -ml-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group"
+            className="inline-flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
           >
             {/* Car Thumbnail */}
             {review.car.photos?.[0]?.url ? (
@@ -214,7 +219,7 @@ export default function ReviewCard({ review }: ReviewCardProps) {
               <p className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
                 {review.car.year} {review.car.make}
                 {review.car.totalTrips != null && review.car.totalTrips > 0 && (
-                  <span className="text-gray-500 dark:text-gray-400 font-normal"> • {review.car.totalTrips} trips</span>
+                  <span className="text-gray-500 dark:text-gray-400 font-normal"> ({review.car.totalTrips} trips)</span>
                 )}
               </p>
               <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -234,11 +239,11 @@ export default function ReviewCard({ review }: ReviewCardProps) {
           <div className="mt-4 pl-4 border-l-2 border-amber-500 bg-amber-50 dark:bg-amber-900/10 rounded-r-lg p-4">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-sm font-medium text-gray-900 dark:text-white">
-                Response from {review.host?.name || 'Host'}
+                Response from {getFirstName(review.host?.name)}
               </span>
               {review.hostRespondedAt && (
                 <span className="text-xs text-gray-500 dark:text-gray-400">
-                  {getTimeAgo(review.hostRespondedAt)}
+                  ({getTimeAgo(review.hostRespondedAt)})
                 </span>
               )}
             </div>
