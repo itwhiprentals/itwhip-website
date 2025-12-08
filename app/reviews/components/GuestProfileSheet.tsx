@@ -250,12 +250,15 @@ export default function GuestProfileSheet({ isOpen, onClose, guest }: GuestProfi
                   </div>
 
                   <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-                    {profileData?.name || guestName}
+                    {getFirstName(profileData?.name) || guestName}
                   </h3>
 
                   {(profileData?.isVerified || guest.isVerified) && (
                     <div className="flex items-center justify-center gap-1 mt-1">
-                      <IoCheckmarkCircleOutline className="w-3.5 h-3.5 text-green-600" />
+                      <IoCheckmarkCircleOutline
+                        className="w-3.5 h-3.5 text-green-600"
+                        title="Documents + Insurance Verified"
+                      />
                       <span className="text-xs text-green-600">Verified</span>
                     </div>
                   )}

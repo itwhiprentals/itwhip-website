@@ -6,7 +6,8 @@ import { prisma } from '@/app/lib/database/prisma'
 import {
   IoStar,
   IoChevronBackOutline,
-  IoChevronForwardOutline
+  IoChevronForwardOutline,
+  IoCheckmarkCircleOutline
 } from 'react-icons/io5'
 import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
@@ -96,6 +97,7 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
         },
         host: {
           select: {
+            id: true,
             name: true,
             profilePhoto: true,
           }
@@ -206,13 +208,13 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
                 <div className="flex items-center gap-2">
                   <div className="flex items-center">
                     {[1, 2, 3, 4, 5].map((star) => (
-                      <IoStar key={star} className="w-6 h-6 text-amber-500" />
+                      <IoStar key={star} className="w-7 h-7 text-amber-500" />
                     ))}
                   </div>
-                  <span className="text-2xl font-bold text-gray-900 dark:text-white">{avgRating}</span>
-                  <span className="text-gray-500 dark:text-gray-400">average</span>
+                  <span className="text-3xl font-bold text-gray-900 dark:text-white">{avgRating}</span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">average</span>
                 </div>
-                <div className="text-gray-500 dark:text-gray-400">
+                <div className="text-sm text-gray-500 dark:text-gray-400">
                   <span className="font-semibold text-gray-900 dark:text-white">{totalCount}</span> verified reviews
                 </div>
               </div>
@@ -240,16 +242,23 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
               ))}
             </div>
 
+            {/* Badge Legend */}
+            <p className="mt-6 text-center text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+              <IoCheckmarkCircleOutline className="w-3.5 h-3.5 text-green-500" />
+              <span>Documents + Insurance Verified</span>
+              <span className="mx-1">•</span>
+              <span>🌱 Eco-Friendly = Carbon Reporting</span>
+            </p>
+
             {/* Pagination */}
             {totalPages > 1 && (
-              <nav className="mt-8 flex items-center justify-center gap-2">
+              <nav className="mt-4 flex items-center justify-center gap-2">
                 {currentPage > 1 && (
                   <Link
                     href={`/reviews?page=${currentPage - 1}`}
-                    className="inline-flex items-center gap-1 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                    className="inline-flex items-center justify-center w-10 h-10 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
                   >
-                    <IoChevronBackOutline className="w-4 h-4" />
-                    Previous
+                    ←
                   </Link>
                 )}
 
@@ -285,10 +294,9 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
                 {currentPage < totalPages && (
                   <Link
                     href={`/reviews?page=${currentPage + 1}`}
-                    className="inline-flex items-center gap-1 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                    className="inline-flex items-center justify-center w-10 h-10 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
                   >
-                    Next
-                    <IoChevronForwardOutline className="w-4 h-4" />
+                    →
                   </Link>
                 )}
               </nav>

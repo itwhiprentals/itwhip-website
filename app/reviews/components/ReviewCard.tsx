@@ -11,6 +11,7 @@ import {
   IoCarSportOutline
 } from 'react-icons/io5'
 import GuestProfileSheet from './GuestProfileSheet'
+import HostProfileSheet from './HostProfileSheet'
 
 // Helper function to extract first name
 function getFirstName(fullName: string | null): string {
@@ -43,6 +44,7 @@ interface Car {
 }
 
 interface Host {
+  id: string
   name: string | null
   profilePhoto: string | null
 }
@@ -110,6 +112,7 @@ function StarRating({ rating }: { rating: number }) {
 
 export default function ReviewCard({ review }: ReviewCardProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false)
+  const [isHostProfileOpen, setIsHostProfileOpen] = useState(false)
 
   const guestName = getFirstName(review.reviewerProfile?.name)
   const guestInitial = guestName.charAt(0).toUpperCase()
@@ -167,8 +170,7 @@ export default function ReviewCard({ review }: ReviewCardProps) {
           </span>
           {review.isVerified && (
             <span className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded-full">
-              <IoCheckmarkCircleOutline className="w-3 h-3" />
-              Verified Trip
+              🌱 Eco-Friendly
             </span>
           )}
         </div>
@@ -196,7 +198,7 @@ export default function ReviewCard({ review }: ReviewCardProps) {
         {review.car && (
           <Link
             href={generateCarUrl(review.car)}
-            className="inline-flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
+            className="flex items-center gap-3 p-3 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors group border border-gray-200 dark:border-gray-700"
           >
             {/* Car Thumbnail */}
             {review.car.photos?.[0]?.url ? (
@@ -238,8 +240,18 @@ export default function ReviewCard({ review }: ReviewCardProps) {
         {review.hostResponse && (
           <div className="mt-4 pl-4 border-l-2 border-amber-500 bg-amber-50 dark:bg-amber-900/10 rounded-r-lg p-4">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-sm font-medium text-gray-900 dark:text-white">
-                Response from {getFirstName(review.host?.name)}
+              <span className="text-sm text-gray-900 dark:text-white">
+                Response from{' '}
+                {review.host?.id ? (
+                  <button
+                    onClick={() => setIsHostProfileOpen(true)}
+                    className="font-medium text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 hover:underline transition-colors"
+                  >
+                    {getFirstName(review.host?.name)}
+                  </button>
+                ) : (
+                  <span className="font-medium">{getFirstName(review.host?.name)}</span>
+                )}
               </span>
               {review.hostRespondedAt && (
                 <span className="text-xs text-gray-500 dark:text-gray-400">
@@ -260,6 +272,15 @@ export default function ReviewCard({ review }: ReviewCardProps) {
         onClose={() => setIsProfileOpen(false)}
         guest={review.reviewerProfile}
       />
+
+      {/* Host Profile Sheet */}
+      {review.host?.id && (
+        <HostProfileSheet
+          hostId={review.host.id}
+          isOpen={isHostProfileOpen}
+          onClose={() => setIsHostProfileOpen(false)}
+        />
+      )}
     </>
   )
 }
