@@ -2,19 +2,15 @@
 import { Metadata } from 'next'
 import Script from 'next/script'
 import Link from 'next/link'
-import Image from 'next/image'
 import { prisma } from '@/app/lib/database/prisma'
 import {
   IoStar,
-  IoStarOutline,
-  IoCheckmarkCircleOutline,
-  IoCarOutline,
   IoChevronBackOutline,
-  IoChevronForwardOutline,
-  IoPersonCircleOutline
+  IoChevronForwardOutline
 } from 'react-icons/io5'
 import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
+import ReviewCard from './components/ReviewCard'
 
 // Revalidate every hour
 export const revalidate = 3600
@@ -44,49 +40,6 @@ export async function generateMetadata(): Promise<Metadata> {
       canonical: 'https://itwhip.com/reviews',
     },
   }
-}
-
-// Helper to generate car URL
-function generateCarUrl(car: { id: string; make: string; model: string; year: number; city?: string }): string {
-  const slug = `${car.year}-${car.make}-${car.model}-${car.city || 'phoenix'}`
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-  return `/rentals/${slug}-${car.id}`
-}
-
-// Helper to format date
-function formatDate(date: Date | string): string {
-  const d = new Date(date)
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-  return `${months[d.getMonth()]} ${d.getFullYear()}`
-}
-
-// Helper to get time ago
-function getTimeAgo(date: Date | string): string {
-  const d = new Date(date)
-  const now = new Date()
-  const diffInDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24))
-
-  if (diffInDays < 7) return 'This week'
-  if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} week${Math.floor(diffInDays / 7) > 1 ? 's' : ''} ago`
-  if (diffInDays < 365) return `${Math.floor(diffInDays / 30)} month${Math.floor(diffInDays / 30) > 1 ? 's' : ''} ago`
-  return `${Math.floor(diffInDays / 365)} year${Math.floor(diffInDays / 365) > 1 ? 's' : ''} ago`
-}
-
-// Star rating component
-function StarRating({ rating }: { rating: number }) {
-  return (
-    <div className="flex items-center gap-0.5">
-      {[1, 2, 3, 4, 5].map((star) => (
-        star <= rating ? (
-          <IoStar key={star} className="w-4 h-4 text-amber-500" />
-        ) : (
-          <IoStarOutline key={star} className="w-4 h-4 text-gray-300 dark:text-gray-600" />
-        )
-      ))}
-    </div>
-  )
 }
 
 interface PageProps {
@@ -131,6 +84,8 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
             model: true,
             year: true,
             city: true,
+            state: true,
+            totalTrips: true,
             dailyRate: true,
             photos: {
               where: { isHero: true },
@@ -234,10 +189,10 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
 
       <Header />
 
-      <main className="min-h-screen bg-gray-50 dark:bg-gray-950 pt-20">
+      <main className="min-h-screen bg-gray-50 dark:bg-gray-950 pt-16">
         {/* Hero Section */}
         <section className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
             <div className="text-center">
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4">
                 {totalCount.toLocaleString()} Guest Reviews
@@ -270,114 +225,18 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="space-y-6">
               {reviews.map((review) => (
-                <article
+                <ReviewCard
                   key={review.id}
-                  className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 p-6"
-                >
-                  {/* Reviewer Header */}
-                  <div className="flex items-start gap-4 mb-4">
-                    <div className="flex-shrink-0">
-                      {review.reviewerProfile?.profilePhotoUrl ? (
-                        <Image
-                          src={review.reviewerProfile.profilePhotoUrl}
-                          alt={review.reviewerProfile.name || 'Reviewer'}
-                          width={48}
-                          height={48}
-                          className="w-12 h-12 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                          <IoPersonCircleOutline className="w-8 h-8 text-gray-400" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-semibold text-gray-900 dark:text-white">
-                          {review.reviewerProfile?.name || 'Guest'}
-                        </h3>
-                        {review.reviewerProfile?.isVerified && (
-                          <IoCheckmarkCircleOutline className="w-4 h-4 text-green-500" />
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 flex-wrap">
-                        {review.reviewerProfile?.city && (
-                          <span>{review.reviewerProfile.city}, {review.reviewerProfile.state}</span>
-                        )}
-                        {review.reviewerProfile?.memberSince && (
-                          <>
-                            <span>•</span>
-                            <span>Member since {formatDate(review.reviewerProfile.memberSince)}</span>
-                          </>
-                        )}
-                        {review.reviewerProfile?.tripCount && review.reviewerProfile.tripCount > 0 && (
-                          <>
-                            <span>•</span>
-                            <span>{review.reviewerProfile.tripCount} trips</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Rating and Date */}
-                  <div className="flex items-center gap-3 mb-3">
-                    <StarRating rating={review.rating} />
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
-                      {getTimeAgo(review.createdAt)}
-                    </span>
-                    {review.isVerified && (
-                      <span className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded-full">
-                        <IoCheckmarkCircleOutline className="w-3 h-3" />
-                        Verified Trip
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Review Title */}
-                  {review.title && (
-                    <h4 className="font-medium text-gray-900 dark:text-white mb-2">
-                      {review.title}
-                    </h4>
-                  )}
-
-                  {/* Review Comment */}
-                  {review.comment && (
-                    <p className="text-gray-700 dark:text-gray-300 mb-4">
-                      {review.comment}
-                    </p>
-                  )}
-
-                  {/* Car Info */}
-                  {review.car && (
-                    <Link
-                      href={generateCarUrl(review.car)}
-                      className="inline-flex items-center gap-2 text-sm text-amber-600 hover:text-amber-700 dark:text-amber-500 dark:hover:text-amber-400"
-                    >
-                      <IoCarOutline className="w-4 h-4" />
-                      <span>{review.car.year} {review.car.make} {review.car.model}</span>
-                    </Link>
-                  )}
-
-                  {/* Host Response */}
-                  {review.hostResponse && (
-                    <div className="mt-4 pl-4 border-l-2 border-amber-500 bg-amber-50 dark:bg-amber-900/10 rounded-r-lg p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">
-                          Response from {review.host?.name || 'Host'}
-                        </span>
-                        {review.hostRespondedAt && (
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
-                            {getTimeAgo(review.hostRespondedAt)}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-700 dark:text-gray-300">
-                        {review.hostResponse}
-                      </p>
-                    </div>
-                  )}
-                </article>
+                  review={{
+                    ...review,
+                    createdAt: review.createdAt.toISOString(),
+                    hostRespondedAt: review.hostRespondedAt?.toISOString() || null,
+                    reviewerProfile: review.reviewerProfile ? {
+                      ...review.reviewerProfile,
+                      memberSince: review.reviewerProfile.memberSince?.toISOString() || null
+                    } : null
+                  }}
+                />
               ))}
             </div>
 
