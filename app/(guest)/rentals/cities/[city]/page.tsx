@@ -8,9 +8,8 @@ import Footer from '@/app/components/Footer'
 import prisma from '@/app/lib/database/prisma'
 import { generateCarUrl } from '@/app/lib/utils/urls'
 import CitySearchWrapper from '@/app/(guest)/rentals/cities/[city]/CitySearchWrapper'
-import { 
-  IoLocationOutline, 
-  IoArrowBackOutline,
+import {
+  IoLocationOutline,
   IoFlashOutline,
   IoStarSharp,
   IoCarOutline,
@@ -27,124 +26,11 @@ import {
   IoCashOutline,
   IoSearchOutline
 } from 'react-icons/io5'
+import { getCitySeoData, getAllCitySlugs, CITY_SEO_DATA, CitySeoData } from '@/app/lib/data/city-seo-data'
 
 // Add ISR - Revalidate every 60 seconds
 export const revalidate = 60
 
-// ============================================
-// CITY SEO DATA - Landmarks, Airports, Content
-// ============================================
-const CITY_SEO_DATA: Record<string, {
-  state: string
-  airport?: string
-  airportCode?: string
-  landmarks: string[]
-  neighborhoods: string[]
-  description: string
-  whyRent: string
-  popularRoutes: string[]
-  coordinates: { lat: number; lng: number }
-}> = {
-  'Phoenix': {
-    state: 'Arizona',
-    airport: 'Phoenix Sky Harbor International Airport',
-    airportCode: 'PHX',
-    landmarks: ['Phoenix Sky Harbor Airport', 'Chase Field', 'Footprint Center', 'Desert Botanical Garden', 'Camelback Mountain', 'South Mountain Park'],
-    neighborhoods: ['Downtown Phoenix', 'Arcadia', 'Biltmore', 'Paradise Valley', 'Ahwatukee', 'North Phoenix'],
-    description: 'Phoenix is Arizona\'s capital and largest city, known for its year-round sun, world-class golf courses, and vibrant downtown scene. As the fifth-largest city in the US, Phoenix offers endless attractions from desert hiking to professional sports.',
-    whyRent: 'With sprawling desert landscapes and attractions spread across the Valley, having your own car in Phoenix is essential. Skip the rental counter lines at Sky Harbor and get a car delivered directly to you.',
-    popularRoutes: ['Phoenix to Sedona (2 hours)', 'Phoenix to Grand Canyon (3.5 hours)', 'Phoenix to Tucson (1.5 hours)', 'Phoenix to Flagstaff (2.5 hours)'],
-    coordinates: { lat: 33.4484, lng: -112.0740 }
-  },
-  'Scottsdale': {
-    state: 'Arizona',
-    airport: 'Scottsdale Airport',
-    airportCode: 'SDL',
-    landmarks: ['Old Town Scottsdale', 'Scottsdale Fashion Square', 'TPC Scottsdale', 'Taliesin West', 'McDowell Sonoran Preserve', 'Butterfly Wonderland'],
-    neighborhoods: ['Old Town', 'North Scottsdale', 'McCormick Ranch', 'Gainey Ranch', 'DC Ranch', 'Kierland'],
-    description: 'Scottsdale is renowned for its upscale resorts, world-class spas, championship golf courses, and vibrant arts district. This desert oasis combines luxury living with outdoor adventure.',
-    whyRent: 'Scottsdale\'s luxury resorts, golf courses, and dining destinations are spread throughout the city. A rental car lets you explore everything from Old Town galleries to North Scottsdale\'s hiking trails.',
-    popularRoutes: ['Scottsdale to Phoenix Airport (25 min)', 'Scottsdale to Sedona (2 hours)', 'Scottsdale to Cave Creek (30 min)', 'Scottsdale to Mesa (20 min)'],
-    coordinates: { lat: 33.4942, lng: -111.9261 }
-  },
-  'Tempe': {
-    state: 'Arizona',
-    airport: 'Phoenix Sky Harbor International Airport',
-    airportCode: 'PHX',
-    landmarks: ['Arizona State University', 'Tempe Town Lake', 'Mill Avenue District', 'Tempe Marketplace', 'Papago Park', 'Sun Devil Stadium'],
-    neighborhoods: ['Downtown Tempe', 'Mill Avenue', 'South Tempe', 'North Tempe', 'Alameda', 'University District'],
-    description: 'Tempe is a vibrant college town home to Arizona State University. With Tempe Town Lake, bustling Mill Avenue, and proximity to Phoenix Sky Harbor, it\'s a hub for young professionals and visitors.',
-    whyRent: 'Located just minutes from Phoenix Sky Harbor Airport, Tempe is perfectly positioned for exploring the entire Valley. Rent a car and easily access ASU, Mill Avenue nightlife, and nearby attractions.',
-    popularRoutes: ['Tempe to Phoenix Airport (10 min)', 'Tempe to Scottsdale (15 min)', 'Tempe to Mesa (10 min)', 'Tempe to Downtown Phoenix (15 min)'],
-    coordinates: { lat: 33.4255, lng: -111.9400 }
-  },
-  'Mesa': {
-    state: 'Arizona',
-    airport: 'Phoenix-Mesa Gateway Airport',
-    airportCode: 'AZA',
-    landmarks: ['Mesa Arts Center', 'Sloan Park (Cubs Spring Training)', 'Usery Mountain Regional Park', 'Arizona Museum of Natural History', 'Superstition Mountains', 'Salt River'],
-    neighborhoods: ['Downtown Mesa', 'East Mesa', 'Superstition Springs', 'Red Mountain', 'Las Sendas', 'Dana Park'],
-    description: 'Mesa is Arizona\'s third-largest city, known for spring training baseball, outdoor recreation, and family-friendly attractions. The Superstition Mountains provide a stunning backdrop for adventure.',
-    whyRent: 'Mesa\'s gateway to the Superstition Mountains and Apache Trail makes it ideal for road trip adventures. With Phoenix-Mesa Gateway Airport nearby, grab a rental and explore the desert wilderness.',
-    popularRoutes: ['Mesa to Apache Junction (20 min)', 'Mesa to Phoenix (25 min)', 'Mesa to Globe (1.5 hours)', 'Mesa to Roosevelt Lake (1.5 hours)'],
-    coordinates: { lat: 33.4152, lng: -111.8315 }
-  },
-  'Chandler': {
-    state: 'Arizona',
-    airport: 'Phoenix Sky Harbor International Airport',
-    airportCode: 'PHX',
-    landmarks: ['Downtown Chandler', 'Intel Campus', 'Chandler Fashion Center', 'Tumbleweed Park', 'Veterans Oasis Park', 'San Marcos Hotel'],
-    neighborhoods: ['Downtown Chandler', 'Ocotillo', 'Sun Lakes', 'Chandler Heights', 'Gilbert Border', 'West Chandler'],
-    description: 'Chandler has transformed from agricultural roots into a high-tech hub, home to Intel and other tech giants. Its charming downtown, excellent schools, and family amenities make it a sought-after destination.',
-    whyRent: 'Chandler\'s tech corridor and proximity to Phoenix make a rental car essential for business travelers and families alike. Explore downtown dining, nearby golf courses, and easy freeway access to the entire Valley.',
-    popularRoutes: ['Chandler to Phoenix Airport (20 min)', 'Chandler to Tempe (15 min)', 'Chandler to Gilbert (10 min)', 'Chandler to Casa Grande (30 min)'],
-    coordinates: { lat: 33.3062, lng: -111.8413 }
-  },
-  'Gilbert': {
-    state: 'Arizona',
-    airport: 'Phoenix Sky Harbor International Airport',
-    airportCode: 'PHX',
-    landmarks: ['Gilbert Heritage District', 'Riparian Preserve', 'San Tan Village', 'Cosmo Dog Park', 'Freestone Park', 'Gilbert Town Square'],
-    neighborhoods: ['Heritage District', 'Val Vista Lakes', 'Power Ranch', 'Agritopia', 'Seville', 'Finley Farms'],
-    description: 'Gilbert has grown from a small farming community to one of the safest and most desirable cities in America. Its Heritage District offers charming shops and restaurants in a walkable downtown setting.',
-    whyRent: 'Gilbert\'s family-friendly attractions and growing dining scene are best explored by car. Easy access to Loop 202 connects you to the entire Phoenix metro area.',
-    popularRoutes: ['Gilbert to Phoenix Airport (25 min)', 'Gilbert to Mesa (10 min)', 'Gilbert to Chandler (10 min)', 'Gilbert to Queen Creek (15 min)'],
-    coordinates: { lat: 33.3528, lng: -111.7890 }
-  },
-  'Glendale': {
-    state: 'Arizona',
-    airport: 'Phoenix Sky Harbor International Airport',
-    airportCode: 'PHX',
-    landmarks: ['State Farm Stadium', 'Westgate Entertainment District', 'Glendale Glitters', 'Cerreta Candy Company', 'Sahuaro Ranch Park', 'Historic Downtown Glendale'],
-    neighborhoods: ['Downtown Glendale', 'Arrowhead', 'Westgate', 'Peoria Border', 'North Glendale', 'Catlin Court'],
-    description: 'Glendale is home to the Arizona Cardinals and hosts major events including Super Bowls and Final Fours at State Farm Stadium. Its antique district and Westgate entertainment make it a unique Valley destination.',
-    whyRent: 'Whether you\'re catching a Cardinals game, attending a concert at State Farm Stadium, or exploring the antique shops, a rental car makes Glendale accessible from anywhere in the Valley.',
-    popularRoutes: ['Glendale to Phoenix Airport (25 min)', 'Glendale to Downtown Phoenix (20 min)', 'Glendale to Peoria (10 min)', 'Glendale to Scottsdale (30 min)'],
-    coordinates: { lat: 33.5387, lng: -112.1859 }
-  },
-  'Peoria': {
-    state: 'Arizona',
-    airport: 'Phoenix Sky Harbor International Airport',
-    airportCode: 'PHX',
-    landmarks: ['Peoria Sports Complex', 'Lake Pleasant', 'Theater Works', 'Pioneer Community Park', 'Challenger Space Center', 'Old Town Peoria'],
-    neighborhoods: ['Old Town Peoria', 'Vistancia', 'Westwing', 'Fletcher Heights', 'Sunrise Mountain', 'Pleasant Harbor'],
-    description: 'Peoria offers the perfect blend of suburban living and outdoor recreation. Lake Pleasant provides water sports year-round, while the Peoria Sports Complex hosts MLB spring training.',
-    whyRent: 'Lake Pleasant and the surrounding desert trails are best accessed by car. Peoria\'s spring training facilities and growing entertainment options make a rental essential for visitors.',
-    popularRoutes: ['Peoria to Phoenix Airport (30 min)', 'Peoria to Lake Pleasant (20 min)', 'Peoria to Glendale (10 min)', 'Peoria to Surprise (15 min)'],
-    coordinates: { lat: 33.5806, lng: -112.2374 }
-  }
-}
-
-// Default data for cities not in the list
-const DEFAULT_CITY_DATA = {
-  state: 'Arizona',
-  landmarks: ['Local attractions', 'Shopping centers', 'Parks and recreation'],
-  neighborhoods: ['Downtown', 'Residential areas', 'Business district'],
-  description: 'Explore this Arizona community with its unique local charm and easy access to Phoenix metro attractions.',
-  whyRent: 'Having your own car gives you the freedom to explore at your pace. Skip the rental counters and get a car delivered to you.',
-  popularRoutes: ['To Phoenix (varies)', 'To Scottsdale (varies)', 'To local attractions'],
-  coordinates: { lat: 33.4484, lng: -112.0740 }
-}
 
 // City-specific FAQs
 const CITY_FAQS = (cityName: string, carCount: number, minPrice: number) => [
@@ -177,19 +63,19 @@ const CITY_FAQS = (cityName: string, carCount: number, minPrice: number) => [
 // ============================================
 // METADATA GENERATION
 // ============================================
-export async function generateMetadata({ 
-  params 
-}: { 
-  params: Promise<{ city: string }> 
+export async function generateMetadata({
+  params
+}: {
+  params: Promise<{ city: string }>
 }): Promise<Metadata> {
   const { city } = await params
-  const cityName = city.charAt(0).toUpperCase() + city.slice(1).replace(/-/g, ' ')
-  const cityData = CITY_SEO_DATA[cityName] || DEFAULT_CITY_DATA
-  
+  const cityData = getCitySeoData(city) || getCitySeoData('phoenix')!
+  const cityName = cityData.name
+
   const carCount = await prisma.rentalCar.count({
-    where: { 
+    where: {
       city: { equals: cityName, mode: 'insensitive' },
-      isActive: true 
+      isActive: true
     }
   })
 
@@ -211,22 +97,23 @@ export async function generateMetadata({
   // Use Arizona OG image for all city pages
   const ogImage = 'https://itwhip.com/og/cities/arizona.png'
 
-  const carTypes = topCars.length > 0 
+  const carTypes = topCars.length > 0
     ? `including ${topCars[0].year} ${topCars[0].make} ${topCars[0].model}`
     : 'from economy to luxury'
 
   return {
-    title: `${cityName} Car Rentals | ${carCount} Cars from Local Owners | ItWhip`,
-    description: `Rent cars in ${cityName}, ${cityData.state} from $45/day. ${carCount} peer-to-peer rental cars available ${carTypes}. Book from local owners with free airport delivery. $1M insurance included. Best Turo alternative in Arizona.`,
+    title: cityData.metaTitle || `${cityName} Car Rentals | ${carCount} Cars from Local Owners | ItWhip`,
+    description: cityData.metaDescription || `Rent cars in ${cityName}, Arizona from $45/day. ${carCount} peer-to-peer rental cars available ${carTypes}. Book from local owners with free airport delivery. $1M insurance included.`,
     keywords: [
       `${cityName} car rental`,
       `rent a car ${cityName}`,
-      `${cityName} ${cityData.state} car rental`,
+      `${cityName} Arizona car rental`,
       `cheap car rental ${cityName}`,
       `${cityData.airport || 'airport'} car rental`,
       'peer to peer car rental',
       'turo alternative',
-      `${cityName} rental cars`
+      `${cityName} rental cars`,
+      ...cityData.searchTerms
     ],
     openGraph: {
       title: `${cityName} Car Rentals - ${carCount} Available | ItWhip`,
@@ -251,15 +138,25 @@ export async function generateMetadata({
 // STATIC PARAMS FOR PRE-RENDERING
 // ============================================
 export async function generateStaticParams() {
-  const cities = await prisma.rentalCar.findMany({
+  // Get cities from database
+  const dbCities = await prisma.rentalCar.findMany({
     where: { isActive: true },
     select: { city: true },
     distinct: ['city'],
   })
 
-  return cities.map((item) => ({
+  const dbCitySlugs = dbCities.map((item: { city: string | null }) => ({
     city: (item.city || 'phoenix').toLowerCase().replace(/\s+/g, '-'),
   }))
+
+  // Combine with all SEO data slugs to ensure all pages are generated
+  const seoSlugs = getAllCitySlugs().map(slug => ({ city: slug }))
+
+  // Merge and deduplicate
+  const allSlugs = [...dbCitySlugs, ...seoSlugs]
+  const uniqueSlugs = Array.from(new Set(allSlugs.map(s => s.city))).map(city => ({ city }))
+
+  return uniqueSlugs
 }
 
 // ============================================
@@ -267,29 +164,29 @@ export async function generateStaticParams() {
 // ============================================
 
 // Hero Section Component
-function HeroSection({ cityName, cityData, minPrice }: { 
+function HeroSection({ cityName, cityData, minPrice }: {
   cityName: string
-  cityData: typeof DEFAULT_CITY_DATA
+  cityData: CitySeoData
   minPrice: number
 }) {
   return (
     <section className="relative h-[280px] sm:h-[320px] lg:h-[360px] overflow-hidden">
       {/* Background Image */}
-      <div 
+      <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: 'url(/images/hero/arizona-hero.jpg)' }}
       />
       {/* Gradient Overlay */}
       <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/30" />
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-      
+
       {/* Content */}
       <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col justify-center">
         <div className="max-w-2xl">
           {/* Location Badge */}
           <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 backdrop-blur-sm rounded-full text-white/90 text-xs font-medium mb-3">
             <IoLocationOutline className="w-3.5 h-3.5" />
-            {cityName}, {cityData.state}
+            {cityName}, Arizona
           </div>
           
           {/* Main Heading */}
@@ -440,10 +337,10 @@ function CarCard({ car, cityName }: { car: any, cityName: string }) {
 }
 
 // SEO Content Section
-function CityInfoSection({ cityName, cityData, carCount }: { 
+function CityInfoSection({ cityName, cityData, carCount }: {
   cityName: string
-  cityData: typeof DEFAULT_CITY_DATA
-  carCount: number 
+  cityData: CitySeoData
+  carCount: number
 }) {
   return (
     <section className="py-6 sm:py-8 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
@@ -454,28 +351,35 @@ function CityInfoSection({ cityName, cityData, carCount }: {
             <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-2 sm:mb-3">
               About {cityName} Car Rentals
             </h2>
-            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-2 sm:mb-3 leading-relaxed">
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-2 sm:mb-3 leading-relaxed whitespace-pre-line">
               {cityData.description}
             </p>
-            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-              {cityData.whyRent}
-            </p>
+            {cityData.whyRent.length > 0 && (
+              <ul className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed space-y-1">
+                {cityData.whyRent.map((reason: string, i: number) => (
+                  <li key={i} className="flex items-start gap-2">
+                    <span className="text-amber-500 mt-0.5">•</span>
+                    <span>{reason}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
-          
+
           {/* Quick Facts */}
           <div className="grid grid-cols-2 gap-2 sm:gap-3">
-            {'airport' in cityData && cityData.airport && (
+            {cityData.airport && (
               <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2.5 sm:p-3">
                 <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 mb-1">
                   <IoAirplaneOutline className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   <span className="font-semibold text-[10px] sm:text-xs">Nearest Airport</span>
                 </div>
                 <p className="text-[10px] sm:text-xs text-gray-700 dark:text-gray-300 leading-snug">
-                  {cityData.airport} {'airportCode' in cityData && `(${cityData.airportCode})`}
+                  {cityData.airport}
                 </p>
               </div>
             )}
-            
+
             <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2.5 sm:p-3">
               <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 mb-1">
                 <IoCarOutline className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -485,7 +389,7 @@ function CityInfoSection({ cityName, cityData, carCount }: {
                 {carCount}+ vehicles ready
               </p>
             </div>
-            
+
             <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2.5 sm:p-3">
               <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 mb-1">
                 <IoShieldCheckmarkOutline className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -495,7 +399,7 @@ function CityInfoSection({ cityName, cityData, carCount }: {
                 $1M liability included
               </p>
             </div>
-            
+
             <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2.5 sm:p-3">
               <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 mb-1">
                 <IoTimeOutline className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -507,7 +411,7 @@ function CityInfoSection({ cityName, cityData, carCount }: {
             </div>
           </div>
         </div>
-        
+
         {/* Landmarks & Neighborhoods */}
         <div className="grid md:grid-cols-2 gap-4 sm:gap-6 mt-5 sm:mt-6">
           <div>
@@ -516,29 +420,31 @@ function CityInfoSection({ cityName, cityData, carCount }: {
               Popular Landmarks
             </h3>
             <div className="flex flex-wrap gap-1.5">
-              {cityData.landmarks.map((landmark, i) => (
+              {cityData.landmarks.map((landmark: string, i: number) => (
                 <span key={i} className="px-2 py-0.5 sm:px-2.5 sm:py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-[10px] sm:text-xs rounded-full">
                   {landmark}
                 </span>
               ))}
             </div>
           </div>
-          
-          <div>
-            <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-1.5">
-              <IoMapOutline className="w-4 h-4 text-amber-600" />
-              Neighborhoods We Serve
-            </h3>
-            <div className="flex flex-wrap gap-1.5">
-              {cityData.neighborhoods.map((neighborhood, i) => (
-                <span key={i} className="px-2 py-0.5 sm:px-2.5 sm:py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-[10px] sm:text-xs rounded-full">
-                  {neighborhood}
-                </span>
-              ))}
+
+          {cityData.neighborhoods && cityData.neighborhoods.length > 0 && (
+            <div>
+              <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-1.5">
+                <IoMapOutline className="w-4 h-4 text-amber-600" />
+                Neighborhoods We Serve
+              </h3>
+              <div className="flex flex-wrap gap-1.5">
+                {cityData.neighborhoods.map((neighborhood: string, i: number) => (
+                  <span key={i} className="px-2 py-0.5 sm:px-2.5 sm:py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-[10px] sm:text-xs rounded-full">
+                    {neighborhood}
+                  </span>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
-        
+
         {/* Popular Routes */}
         <div className="mt-5 sm:mt-6">
           <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-1.5">
@@ -546,9 +452,9 @@ function CityInfoSection({ cityName, cityData, carCount }: {
             Popular Road Trips from {cityName}
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            {cityData.popularRoutes.map((route, i) => (
-              <div 
-                key={i} 
+            {cityData.popularRoutes.map((route: string, i: number) => (
+              <div
+                key={i}
                 className="px-2.5 py-2 sm:px-3 sm:py-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg text-[10px] sm:text-xs text-amber-800 dark:text-amber-300 leading-snug"
               >
                 {route}
@@ -596,9 +502,11 @@ function FAQSection({ cityName, carCount, minPrice }: {
 
 // Related Cities Section
 function RelatedCities({ currentCity }: { currentCity: string }) {
-  const allCities = Object.keys(CITY_SEO_DATA)
-  const otherCities = allCities.filter(c => c !== currentCity).slice(0, 6)
-  
+  // Get all city slugs from the centralized SEO data
+  const allSlugs = Object.keys(CITY_SEO_DATA)
+  const currentSlug = currentCity.toLowerCase().replace(/\s+/g, '-')
+  const otherSlugs = allSlugs.filter(slug => slug !== currentSlug).slice(0, 6)
+
   return (
     <section className="py-5 sm:py-6 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -609,18 +517,18 @@ function RelatedCities({ currentCity }: { currentCity: string }) {
           Explore peer-to-peer car rentals across the Phoenix metro area
         </p>
         <div className="flex flex-wrap gap-2">
-          {otherCities.map((city) => {
-            const cityData = CITY_SEO_DATA[city]
+          {otherSlugs.map((slug) => {
+            const cityData = CITY_SEO_DATA[slug]
             return (
               <Link
-                key={city}
-                href={`/rentals/cities/${city.toLowerCase().replace(/\s+/g, '-')}`}
+                key={slug}
+                href={`/rentals/cities/${slug}`}
                 className="group px-3 py-2 sm:px-4 sm:py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/30 hover:text-amber-700 dark:hover:text-amber-400 transition-colors"
               >
-                <span className="text-xs sm:text-sm font-medium">{city}</span>
-                {cityData?.airportCode && (
+                <span className="text-xs sm:text-sm font-medium">{cityData?.name || slug}</span>
+                {cityData?.airport && (
                   <span className="ml-1.5 text-[10px] text-gray-400 dark:text-gray-500 group-hover:text-amber-500">
-                    ({cityData.airportCode})
+                    ({cityData.airport})
                   </span>
                 )}
                 <span className="ml-1 text-amber-600 dark:text-amber-400 opacity-0 group-hover:opacity-100 transition-opacity">→</span>
@@ -629,8 +537,8 @@ function RelatedCities({ currentCity }: { currentCity: string }) {
           })}
         </div>
         <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-          <Link 
-            href="/rentals/cities" 
+          <Link
+            href="/rentals/cities"
             className="inline-flex items-center gap-1.5 text-xs sm:text-sm text-amber-600 hover:text-amber-700 font-medium"
           >
             View all Arizona cities
@@ -645,14 +553,14 @@ function RelatedCities({ currentCity }: { currentCity: string }) {
 // ============================================
 // MAIN PAGE COMPONENT
 // ============================================
-export default async function CityPage({ 
-  params 
-}: { 
-  params: Promise<{ city: string }> 
+export default async function CityPage({
+  params
+}: {
+  params: Promise<{ city: string }>
 }) {
   const { city } = await params
-  const cityName = city.charAt(0).toUpperCase() + city.slice(1).replace(/-/g, ' ')
-  const cityData = CITY_SEO_DATA[cityName] || DEFAULT_CITY_DATA
+  const cityData = getCitySeoData(city) || getCitySeoData('phoenix')!
+  const cityName = cityData.name
 
   // Fetch all cars for this city
   const allCars = await prisma.rentalCar.findMany({
@@ -760,13 +668,13 @@ export default async function CityPage({
         '@type': 'LocalBusiness',
         '@id': `https://itwhip.com/rentals/cities/${city}#business`,
         name: `ItWhip Car Rentals - ${cityName}`,
-        description: `Rent cars from local owners in ${cityName}, ${cityData.state}. ${allCars.length} vehicles available.`,
+        description: `Rent cars from local owners in ${cityName}, Arizona. ${allCars.length} vehicles available.`,
         url: `https://itwhip.com/rentals/cities/${city}`,
         telephone: '+1-480-555-0100',
         address: {
           '@type': 'PostalAddress',
           addressLocality: cityName,
-          addressRegion: cityData.state,
+          addressRegion: 'AZ',
           addressCountry: 'US'
         },
         geo: {

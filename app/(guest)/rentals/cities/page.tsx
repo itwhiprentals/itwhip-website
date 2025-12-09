@@ -5,9 +5,10 @@ import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
 import prisma from '@/app/lib/database/prisma'
 import { generateCarUrl } from '@/app/lib/utils/urls'
+import { CITY_SEO_DATA } from '@/app/lib/data/city-seo-data'
 import styles from './cities.module.css'
-import { 
-  IoLocationOutline, 
+import {
+  IoLocationOutline,
   IoArrowForwardOutline,
   IoCarOutline,
   IoNavigateOutline,
@@ -73,23 +74,10 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-// City coordinates for distance calculation
-const CITY_COORDS: Record<string, { lat: number; lng: number }> = {
-  'Phoenix': { lat: 33.4484, lng: -112.0740 },
-  'Scottsdale': { lat: 33.4942, lng: -111.9261 },
-  'Tempe': { lat: 33.4255, lng: -111.9400 },
-  'Mesa': { lat: 33.4152, lng: -111.8315 },
-  'Chandler': { lat: 33.3062, lng: -111.8413 },
-  'Glendale': { lat: 33.5387, lng: -112.1859 },
-  'Gilbert': { lat: 33.3528, lng: -111.7890 },
-  'Peoria': { lat: 33.5806, lng: -112.2374 },
-  'Paradise Valley': { lat: 33.5417, lng: -111.9437 },
-  'Avondale': { lat: 33.4356, lng: -112.3496 },
-  'Anthem': { lat: 33.8675, lng: -112.1184 },
-  'Tucson': { lat: 32.2226, lng: -110.9747 },
-  'Flagstaff': { lat: 35.1983, lng: -111.6513 },
-  'Laveen': { lat: 33.3628, lng: -112.1691 }
-}
+// City coordinates for distance calculation - dynamically generated from SEO data
+const CITY_COORDS: Record<string, { lat: number; lng: number }> = Object.fromEntries(
+  Object.entries(CITY_SEO_DATA).map(([slug, data]) => [data.name, data.coordinates])
+)
 
 // Calculate distance between two coordinates
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
