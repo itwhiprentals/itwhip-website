@@ -21,20 +21,17 @@ import { MapContainer } from './components/MapContainer'
 import { getLocationCoordinates } from './utils/mapHelpers'
 import Footer from '@/app/components/Footer'
 import RentalSearchCard from '@/app/(guest)/components/hero/RentalSearchWidget'
-import CarCard from '@/app/components/cards/CarCard'
+import CompactCarCard from '@/app/components/cards/CompactCarCard'
 
-// Loading skeleton component
+// Loading skeleton component - compact style
 function CarCardSkeleton() {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl">
-      <div className="aspect-w-16 aspect-h-10 bg-gray-300 dark:bg-gray-700 rounded-t-lg h-48 animate-pulse"></div>
-      <div className="p-5">
-        <div className="h-6 bg-gray-300 dark:bg-gray-700 rounded w-3/4 mb-3 animate-pulse"></div>
-        <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-1/2 mb-4 animate-pulse"></div>
-        <div className="flex justify-between">
-          <div className="h-8 bg-gray-300 dark:bg-gray-700 rounded w-24 animate-pulse"></div>
-          <div className="h-8 bg-gray-300 dark:bg-gray-700 rounded w-20 animate-pulse"></div>
-        </div>
+    <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md animate-pulse">
+      <div className="h-32 sm:h-36 bg-gray-200 dark:bg-gray-700" />
+      <div className="p-3 space-y-2">
+        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
+        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
+        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-2/3" />
       </div>
     </div>
   )
@@ -415,8 +412,8 @@ function SearchResultsContent() {
             <>
               {/* Car Grid */}
               {isLoading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {[...Array(6)].map((_, i) => (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+                  {[...Array(10)].map((_, i) => (
                     <CarCardSkeleton key={i} />
                   ))}
                 </div>
@@ -437,28 +434,28 @@ function SearchResultsContent() {
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
                   {filteredCars.map((car) => (
-                    <CarCard
+                    <CompactCarCard
                       key={car.id}
                       car={{
-                        ...car,
-                        dailyRate: car.dailyRate,
-                        totalDaily: car.dailyRate,
-                        trips: car.trips,
-                        totalTrips: car.trips,
-                        host: {
-                          ...car.host,
-                          profilePhoto: car.host?.avatar || car.host?.profilePhoto
-                        },
-                        location: {
-                          city: car.location?.city || 'Phoenix',
-                          state: car.location?.state || 'AZ',
-                          lat: car.location?.latitude,
-                          lng: car.location?.longitude
-                        }
+                        id: car.id,
+                        make: car.make,
+                        model: car.model,
+                        year: car.year,
+                        dailyRate: Number(car.dailyRate),
+                        carType: car.carType,
+                        seats: car.seats,
+                        city: car.location?.city || 'Phoenix',
+                        rating: car.rating != null ? Number(car.rating) : null,
+                        totalTrips: car.trips || car.totalTrips,
+                        instantBook: car.instantBook,
+                        photos: car.photos,
+                        host: car.host ? {
+                          name: car.host.name,
+                          profilePhoto: car.host.avatar || car.host.profilePhoto
+                        } : null
                       }}
-                      showHostAvatar
                     />
                   ))}
                 </div>

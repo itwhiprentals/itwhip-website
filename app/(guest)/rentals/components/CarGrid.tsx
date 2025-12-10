@@ -2,8 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import CarCard from '@/app/components/cards/CarCard'
-import CarCardSkeleton from '@/app/components/cards/CarCardSkeleton'
+import CompactCarCard from '@/app/components/cards/CompactCarCard'
 import { IoCarOutline, IoArrowForwardOutline } from 'react-icons/io5'
 
 interface CarGridProps {
@@ -31,35 +30,22 @@ export default function CarGrid({
   const [isLoading, setIsLoading] = useState(false)
   const [hasMore, setHasMore] = useState(initialCars.length < totalCount)
 
-  // Transform server data to match CarCard expected format
-  // CarCard expects rating as either a number or { average: number }
-  const transformCarForCard = (car: any) => {
-    // Ensure rating is a proper number (handles Decimal from Prisma)
-    const ratingValue = car.rating != null ? Number(car.rating) : null
-
-    return {
-      id: car.id,
-      make: car.make,
-      model: car.model,
-      year: car.year,
-      dailyRate: Number(car.dailyRate),
-      totalDaily: Number(car.dailyRate),
-      instantBook: car.instantBook,
-      rating: ratingValue ? { average: ratingValue, count: car.totalTrips || 0 } : null,
-      trips: car.totalTrips,
-      totalTrips: car.totalTrips,
-      esgScore: car.esgScore || null,
-      fuelType: car.fuelType || null,
-      host: car.host,
-      photos: car.photos,
-      location: {
-        city: car.city || 'Phoenix',
-        state: 'AZ',
-        lat: car.latitude,
-        lng: car.longitude
-      }
-    }
-  }
+  // Transform server data to match CompactCarCard expected format
+  const transformCarForCard = (car: any) => ({
+    id: car.id,
+    make: car.make,
+    model: car.model,
+    year: car.year,
+    dailyRate: Number(car.dailyRate),
+    carType: car.carType,
+    seats: car.seats,
+    city: car.city || 'Phoenix',
+    rating: car.rating != null ? Number(car.rating) : null,
+    totalTrips: car.totalTrips,
+    instantBook: car.instantBook,
+    photos: car.photos,
+    host: car.host
+  })
 
   const loadMore = async () => {
     setIsLoading(true)
@@ -124,14 +110,21 @@ export default function CarGrid({
       </p>
 
       {/* Car Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
         {cars.map((car) => (
-          <CarCard key={car.id} car={transformCarForCard(car)} showHostAvatar />
+          <CompactCarCard key={car.id} car={transformCarForCard(car)} />
         ))}
 
         {/* Loading skeletons */}
-        {isLoading && [...Array(6)].map((_, i) => (
-          <CarCardSkeleton key={`skeleton-${i}`} />
+        {isLoading && [...Array(10)].map((_, i) => (
+          <div key={`skeleton-${i}`} className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md animate-pulse">
+            <div className="h-32 sm:h-36 bg-gray-200 dark:bg-gray-700" />
+            <div className="p-3 space-y-2">
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
+              <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
+              <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-2/3" />
+            </div>
+          </div>
         ))}
       </div>
 

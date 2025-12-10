@@ -2266,7 +2266,7 @@ export interface BlogPost {
     <p><strong>Best for:</strong> Everyone. Seriously. This is the move.</p>
 
     <div class="cta-box">
-      <a href="/rentals?sort=price" class="cta-button">Browse Budget Cars on ItWhip →</a>
+      <a href="/rentals/budget" class="cta-button">Browse Budget Cars on ItWhip →</a>
     </div>
 
     <h3>2. Off-Airport Locations</h3>
@@ -2358,7 +2358,7 @@ export interface BlogPost {
     </ul>
 
     <div class="cta-box">
-      <a href="/rentals?sort=price&maxPrice=50" class="cta-button">View Cars Under $50/day →</a>
+      <a href="/rentals/budget" class="cta-button">View Cars Under $50/day →</a>
     </div>
 
     <h2>Money-Saving Tips for Phoenix Car Rentals</h2>
@@ -2444,7 +2444,7 @@ export interface BlogPost {
     <div class="cta-box">
       <h3>Find Your Budget Rental</h3>
       <p>Browse affordable cars from local Phoenix owners. Free delivery, insurance included, no hidden fees.</p>
-      <a href="/rentals?sort=price" class="cta-button">Browse Budget Cars →</a>
+      <a href="/rentals/budget" class="cta-button">Browse Budget Cars →</a>
     </div>
       `
     },
@@ -2853,7 +2853,7 @@ export interface BlogPost {
     </ul>
 
     <div class="cta-box">
-      <a href="/rentals/cities/phoenix" class="cta-button">Browse SUVs for Your Road Trip →</a>
+      <a href="/rentals/types/suv" class="cta-button">Browse SUVs for Your Road Trip →</a>
     </div>
 
     <h2>Best Stops Along the Way</h2>
@@ -3659,7 +3659,7 @@ export interface BlogPost {
     <div class="cta-box">
       <h3>Find Your Perfect Convertible</h3>
       <p>From Mustangs to Miatas, browse convertibles available throughout Phoenix and Arizona. Many hosts offer free delivery to resorts and airports.</p>
-      <a href="/rentals/cities/phoenix" class="cta-button">Browse Convertibles in Phoenix →</a>
+      <a href="/rentals/types/convertible" class="cta-button">Browse Convertibles in Phoenix →</a>
     </div>
       `
     }
