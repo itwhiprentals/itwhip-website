@@ -1,5 +1,6 @@
 // app/(guest)/rentals/types/[type]/page.tsx
 import { Metadata } from 'next'
+import Image from 'next/image'
 import Link from 'next/link'
 import Script from 'next/script'
 import { notFound } from 'next/navigation'
@@ -17,6 +18,23 @@ import {
 
 // ISR - Revalidate every 60 seconds
 export const revalidate = 60
+
+// ============================================
+// HERO IMAGE MAPPINGS
+// ============================================
+const TYPE_HERO_IMAGES: Record<string, string> = {
+  'sedan': '/images/types/sedan-car-rental-phoenix-arizona.jpg',
+  'suv': '/images/types/suv-car-rental-phoenix-arizona.jpg',
+  'sports': '/images/types/sports-car-rental-phoenix-arizona.jpg',
+  'electric': '/images/types/electric-car-rental-phoenix-arizona.jpg',
+}
+
+const TYPE_ALT_TEXT: Record<string, string> = {
+  'sedan': 'Sedan car rentals in Phoenix Arizona - ItWhip',
+  'suv': 'SUV rentals in Phoenix Arizona - ItWhip',
+  'sports': 'Sports car rentals in Phoenix Arizona - ItWhip',
+  'electric': 'Electric vehicle rentals in Phoenix Arizona - ItWhip',
+}
 
 // ============================================
 // CAR TYPE SEO DATA
@@ -132,6 +150,12 @@ export async function generateMetadata({
   const title = `${typeData.displayName} Rentals in Phoenix, AZ | ItWhip`
   const description = typeData.description
 
+  // Use hero image if available, otherwise fall back to default
+  const heroImage = TYPE_HERO_IMAGES[type.toLowerCase()]
+    ? `https://itwhip.com${TYPE_HERO_IMAGES[type.toLowerCase()]}`
+    : 'https://itwhip.com/og-default-car.jpg'
+  const altText = TYPE_ALT_TEXT[type.toLowerCase()] || `${typeData.displayName} Rentals in Phoenix`
+
   return {
     title,
     description,
@@ -144,17 +168,17 @@ export async function generateMetadata({
       locale: 'en_US',
       type: 'website',
       images: [{
-        url: 'https://itwhip.com/og-default-car.jpg',
+        url: heroImage,
         width: 1200,
         height: 630,
-        alt: `${typeData.displayName} Rentals in Phoenix`
+        alt: altText
       }]
     },
     twitter: {
       card: 'summary_large_image',
       title,
       description,
-      images: ['https://itwhip.com/og-default-car.jpg']
+      images: [heroImage]
     },
     alternates: {
       canonical: `https://itwhip.com/rentals/types/${type}`
@@ -368,29 +392,65 @@ export default async function CarTypePage({
         </div>
 
         {/* Hero Section */}
-        <section className="bg-gradient-to-br from-purple-600 to-purple-800 text-white py-12 md:py-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center gap-3 mb-4">
-              <IoCarSportOutline className="w-10 h-10" />
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold">
-                {typeData.displayName} Rentals in Phoenix, AZ
-              </h1>
-            </div>
-            <p className="text-lg md:text-xl text-white/90 max-w-3xl mb-6">
-              {typeData.longDescription}
-            </p>
-            <div className="flex flex-wrap gap-4">
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2">
-                <span className="text-purple-100 text-sm">Available Now</span>
-                <p className="text-2xl font-bold">{cars.length} vehicles</p>
+        {TYPE_HERO_IMAGES[type.toLowerCase()] ? (
+          <section className="relative h-[250px] sm:h-[300px] md:h-[350px] overflow-hidden">
+            <Image
+              src={TYPE_HERO_IMAGES[type.toLowerCase()]}
+              alt={TYPE_ALT_TEXT[type.toLowerCase()] || `${typeData.displayName} Rentals in Phoenix`}
+              fill
+              className="object-cover"
+              priority
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent" />
+            <div className="absolute inset-0 flex items-center">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+                <div className="flex items-center gap-3 mb-3">
+                  <IoCarSportOutline className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white">
+                    {typeData.displayName} Rentals in Phoenix, AZ
+                  </h1>
+                </div>
+                <p className="text-base sm:text-lg md:text-xl text-white/90 max-w-2xl mb-4 line-clamp-2 sm:line-clamp-none">
+                  {typeData.description}
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  <div className="bg-white/20 backdrop-blur-sm rounded-lg px-3 py-1.5 sm:px-4 sm:py-2">
+                    <span className="text-white/80 text-xs sm:text-sm">Available Now</span>
+                    <p className="text-lg sm:text-2xl font-bold text-white">{cars.length} vehicles</p>
+                  </div>
+                  <div className="bg-white/20 backdrop-blur-sm rounded-lg px-3 py-1.5 sm:px-4 sm:py-2">
+                    <span className="text-white/80 text-xs sm:text-sm">Starting at</span>
+                    <p className="text-lg sm:text-2xl font-bold text-white">{typeData.priceRange.split('-')[0]}/day</p>
+                  </div>
+                </div>
               </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2">
-                <span className="text-purple-100 text-sm">Price Range</span>
-                <p className="text-2xl font-bold">{typeData.priceRange}</p>
+            </div>
+          </section>
+        ) : (
+          <section className="bg-gradient-to-br from-purple-600 to-purple-800 text-white py-12 md:py-16">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex items-center gap-3 mb-4">
+                <IoCarSportOutline className="w-10 h-10" />
+                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold">
+                  {typeData.displayName} Rentals in Phoenix, AZ
+                </h1>
+              </div>
+              <p className="text-lg md:text-xl text-white/90 max-w-3xl mb-6">
+                {typeData.longDescription}
+              </p>
+              <div className="flex flex-wrap gap-4">
+                <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2">
+                  <span className="text-purple-100 text-sm">Available Now</span>
+                  <p className="text-2xl font-bold">{cars.length} vehicles</p>
+                </div>
+                <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2">
+                  <span className="text-purple-100 text-sm">Price Range</span>
+                  <p className="text-2xl font-bold">{typeData.priceRange}</p>
+                </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         {/* Ideal For Section */}
         <section className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 py-6">
