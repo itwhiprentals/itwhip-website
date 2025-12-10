@@ -5,7 +5,6 @@ import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
 import CompactCarCard from '@/app/components/cards/CompactCarCard'
 import prisma from '@/app/lib/database/prisma'
-import styles from './cities.module.css'
 import {
   IoLocationOutline,
   IoArrowForwardOutline,
@@ -315,42 +314,26 @@ export default async function CitiesPage() {
                         </div>
                       </div>
 
-                      {/* Cars Preview - Horizontal Scroll */}
-                      <div className="relative pt-4">
-                        <div className={`flex gap-3 sm:gap-4 pb-4 ${styles.scrollbarHide}`}>
+                      {/* Cars Grid - Same layout as Browse by Make */}
+                      <div className="pt-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
                           {cityData.cars.map((car) => (
-                            <div key={car.id} className="flex-shrink-0 w-64 sm:w-72 overflow-visible">
-                              <CompactCarCard car={transformCarForCompactCard(car)} />
-                            </div>
+                            <CompactCarCard key={car.id} car={transformCarForCompactCard(car)} />
                           ))}
-                          
-                          {/* Show More Card */}
-                          {cityData.count > cityData.cars.length && (
+                        </div>
+
+                        {/* View More Button - shown when there are more cars */}
+                        {cityData.count > cityData.cars.length && (
+                          <div className="mt-4 text-center">
                             <Link
                               href={`/rentals/cities/${citySlug}`}
-                              className="flex-shrink-0 w-64 sm:w-72 bg-white dark:bg-gray-800 rounded-lg flex flex-col items-center justify-center h-[164px] sm:h-[176px] hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-lg border border-gray-200 dark:border-gray-700 group"
+                              className="inline-flex items-center gap-2 px-6 py-3 bg-black dark:bg-white text-white dark:text-black rounded-lg font-medium text-sm hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors"
                             >
-                              <IoCarOutline className="w-8 h-8 text-gray-400 dark:text-gray-500 mb-2 group-hover:scale-110 transition-transform" />
-                              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                                +{cityData.count - cityData.cars.length} more
-                              </span>
-                              <span className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                                View all →
-                              </span>
+                              View all {cityData.count} cars in {cityData.city}
+                              <IoArrowForwardOutline className="w-4 h-4" />
                             </Link>
-                          )}
-                        </div>
-                        
-                        {/* Mobile View All Button */}
-                        <div className="sm:hidden pt-2">
-                          <Link
-                            href={`/rentals/cities/${citySlug}`}
-                            className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-lg font-medium text-sm"
-                          >
-                            View all {cityData.city} cars
-                            <IoArrowForwardOutline className="w-4 h-4" />
-                          </Link>
-                        </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )

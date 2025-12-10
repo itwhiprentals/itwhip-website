@@ -96,7 +96,7 @@ export default function BrowseByTypeSection() {
   }, [activeTab, makesData.length])
 
   return (
-    <section className="py-4 sm:py-8 bg-white dark:bg-gray-800">
+    <section className="py-4 sm:py-8 bg-gray-50 dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Toggle Header - Centered */}
         <div className="flex items-center justify-center mb-6 sm:mb-8">
@@ -187,11 +187,7 @@ export default function BrowseByTypeSection() {
               makesData.map((makeData, idx) => (
                 <div
                   key={makeData.make}
-                  className={`py-6 sm:py-8 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 ${
-                    idx % 2 === 0
-                      ? 'bg-gray-50 dark:bg-gray-900'
-                      : 'bg-white dark:bg-gray-800'
-                  }`}
+                  className="py-6 sm:py-8 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700"
                 >
                   {/* Make Header */}
                   <div className="flex items-center justify-between mb-4 sm:mb-6">
