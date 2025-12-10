@@ -399,14 +399,16 @@ function SearchResultsContent() {
 
         {/* Main Content */}
         {showMap ? (
-          /* Map view - full width, no container constraints */
-          <MapContainer
-            cars={filteredCars}
-            searchLocation={searchMetadata?.searchCoordinates ? { lat: searchMetadata.searchCoordinates.latitude, lng: searchMetadata.searchCoordinates.longitude } : { lat: 33.4484, lng: -112.0740 }}
-            userLocation={searchMetadata?.searchCoordinates ? { lat: searchMetadata.searchCoordinates.latitude, lng: searchMetadata.searchCoordinates.longitude } : null}
-            rentalDays={rentalDays}
-            isLoading={isLoading}
-          />
+          /* Map view - no z-index to avoid creating stacking context that traps modal */
+          <div className="relative">
+            <MapContainer
+              cars={filteredCars}
+              searchLocation={searchMetadata?.searchCoordinates ? { lat: searchMetadata.searchCoordinates.latitude, lng: searchMetadata.searchCoordinates.longitude } : { lat: 33.4484, lng: -112.0740 }}
+              userLocation={searchMetadata?.searchCoordinates ? { lat: searchMetadata.searchCoordinates.latitude, lng: searchMetadata.searchCoordinates.longitude } : null}
+              rentalDays={rentalDays}
+              isLoading={isLoading}
+            />
+          </div>
         ) : (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <>

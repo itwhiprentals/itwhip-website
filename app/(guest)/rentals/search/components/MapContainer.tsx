@@ -63,8 +63,8 @@ export function MapContainer({
     ...car,
     location: {
       ...car.location,
-      lat: car.location?.lat || searchLocation.lat,
-      lng: car.location?.lng || searchLocation.lng,
+      lat: car.location?.lat ?? searchLocation.lat,
+      lng: car.location?.lng ?? searchLocation.lng,
       city: car.location?.city || car.city || 'Phoenix',
       state: car.location?.state || car.state || 'AZ',
       address: car.location?.address || car.address

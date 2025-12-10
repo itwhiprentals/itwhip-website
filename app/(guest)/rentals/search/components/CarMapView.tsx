@@ -391,10 +391,10 @@ function CarDetailModal({
     )
   }
 
-  // Desktop Modal - Centered, Medium Size (unchanged)
+  // Desktop Modal - Centered, Medium Size
   return (
-    <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="car-modal-title"
@@ -802,7 +802,7 @@ export default function CarMapView({
   // Calculate distances for cars with memoization
   const carsWithObfuscatedLocations = useMemo(() => {
     if (!cars.length) return []
-    
+
     return cars.map(car => {
       let calculatedDistance = car.distance
       
@@ -813,10 +813,12 @@ export default function CarMapView({
         }
       }
       
-      // Obfuscate the location for privacy
-      const displayLocation = car.location?.lat && car.location?.lng
+      // Obfuscate the location for privacy - use proper null checks (not falsy check since 0 is valid)
+      const hasValidLocation = car.location?.lat !== undefined && car.location?.lat !== null &&
+                               car.location?.lng !== undefined && car.location?.lng !== null
+      const displayLocation = hasValidLocation
         ? obfuscateLocation(car.location.lat, car.location.lng, currentZoom, car.id)
-        : { lat: 0, lng: 0 }
+        : null
       
       return { 
         ...car, 
@@ -967,7 +969,7 @@ export default function CarMapView({
   // Add car markers with enhanced obfuscation
   useEffect(() => {
     if (!map.current || !mapLoaded || !carsWithObfuscatedLocations.length) return
-    
+
     try {
       // Clear existing markers
       markers.current.forEach(marker => {
@@ -981,7 +983,8 @@ export default function CarMapView({
       
       // Add new markers with obfuscated locations
       carsWithObfuscatedLocations.forEach(car => {
-        if (!car.displayLocation?.lat || !car.displayLocation?.lng) return
+        // Skip cars without valid display location (use null check, not falsy check)
+        if (car.displayLocation === null || car.displayLocation === undefined) return
         
         try {
           const el = document.createElement('div')
