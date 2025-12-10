@@ -47,15 +47,43 @@ interface CarMapViewProps {
   isLoading?: boolean
 }
 
-// Simple location offset for privacy (consistent per car)
+// Phoenix metro default coordinates for fallback
+const PHOENIX_DEFAULT = { lat: 33.4484, lng: -112.0740 }
+
+// City coordinates for fallback based on city name
+const CITY_COORDS: Record<string, { lat: number; lng: number }> = {
+  'Phoenix': { lat: 33.4484, lng: -112.0740 },
+  'Scottsdale': { lat: 33.4942, lng: -111.9261 },
+  'Tempe': { lat: 33.4255, lng: -111.9400 },
+  'Mesa': { lat: 33.4152, lng: -111.8315 },
+  'Chandler': { lat: 33.3062, lng: -111.8413 },
+  'Gilbert': { lat: 33.3528, lng: -111.7890 },
+  'Glendale': { lat: 33.5387, lng: -112.1860 },
+  'Peoria': { lat: 33.5806, lng: -112.2374 },
+}
+
+// Privacy-preserving location offset (300-600m from actual location)
+// Creates a consistent offset per car so it doesn't jump around
 function offsetLocation(lat: number, lng: number, carId: string): { lat: number; lng: number } {
   const seed = carId.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
   const angle = (seed % 360) * (Math.PI / 180)
-  const offset = 0.002 + (seed % 100) / 50000 // ~200-400m offset
+  // Offset between 0.003 and 0.006 degrees (~300-600m)
+  const offset = 0.003 + (seed % 100) / 33333
   return {
     lat: lat + Math.cos(angle) * offset,
     lng: lng + Math.sin(angle) * offset
   }
+}
+
+// Get fallback coordinates based on city name
+function getFallbackCoords(city?: string): { lat: number; lng: number } {
+  if (city) {
+    const normalizedCity = city.split(',')[0].trim()
+    if (CITY_COORDS[normalizedCity]) {
+      return CITY_COORDS[normalizedCity]
+    }
+  }
+  return PHOENIX_DEFAULT
 }
 
 // Car Popup Component - Rendered via Portal
@@ -334,15 +362,30 @@ export default function CarMapView({
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  // Process cars with offset locations
+  // Process cars with offset locations - ALL cars get a location (use fallback if needed)
   const processedCars = useMemo(() => {
-    return cars.map(car => ({
-      ...car,
-      displayLocation: car.location?.lat !== undefined && car.location?.lat !== null &&
-                       car.location?.lng !== undefined && car.location?.lng !== null
-        ? offsetLocation(car.location.lat, car.location.lng, car.id)
-        : null
-    }))
+    return cars.map(car => {
+      // Get base coordinates - use actual location or fallback based on city
+      let baseLat = car.location?.lat
+      let baseLng = car.location?.lng
+
+      // If coordinates are missing or invalid, use fallback
+      if (baseLat === undefined || baseLat === null ||
+          baseLng === undefined || baseLng === null ||
+          !isFinite(baseLat) || !isFinite(baseLng)) {
+        const fallback = getFallbackCoords(car.location?.city || car.city)
+        baseLat = fallback.lat
+        baseLng = fallback.lng
+      }
+
+      // Apply privacy offset to all coordinates
+      const displayLocation = offsetLocation(baseLat, baseLng, car.id)
+
+      return {
+        ...car,
+        displayLocation
+      }
+    })
   }, [cars])
 
   // Initialize map
@@ -396,36 +439,72 @@ export default function CarMapView({
     markers.current.forEach(m => m.remove())
     markers.current.clear()
 
-    // Add markers for each car
+    // Add markers for each car - ALL cars have displayLocation now
     processedCars.forEach(car => {
-      if (!car.displayLocation) return
-
-      // Create marker element - Price badge style
+      // Create marker container
       const el = document.createElement('div')
       el.className = 'cursor-pointer'
       el.dataset.carId = car.id
+      el.style.cssText = 'position: relative;'
 
-      // Inner badge element that will be styled
+      // Proximity circle (shows approximate area, not exact location)
+      const circle = document.createElement('div')
+      circle.className = 'proximity-circle'
+      circle.style.cssText = `
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: rgba(217, 119, 6, 0.1);
+        border: 2px dashed rgba(217, 119, 6, 0.3);
+        pointer-events: none;
+        z-index: 1;
+      `
+      el.appendChild(circle)
+
+      // Price badge (centered on the circle)
       const badge = document.createElement('div')
       badge.className = 'marker-badge'
       badge.style.cssText = `
-        padding: 4px 10px;
+        position: relative;
+        z-index: 2;
+        padding: 6px 12px;
         border-radius: 20px;
         font-size: 13px;
         font-weight: 600;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         background: white;
         color: #111;
         border: 2px solid #e5e7eb;
         white-space: nowrap;
-        transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+        transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
       `
       badge.textContent = `$${Math.round(car.dailyRate)}`
       el.appendChild(badge)
 
+      // Click handler
       el.addEventListener('click', (e) => {
         e.stopPropagation()
         onCarSelect(car)
+      })
+
+      // Hover effect
+      el.addEventListener('mouseenter', () => {
+        badge.style.boxShadow = '0 4px 12px rgba(0,0,0,0.25)'
+        circle.style.background = 'rgba(217, 119, 6, 0.15)'
+        circle.style.borderColor = 'rgba(217, 119, 6, 0.5)'
+      })
+
+      el.addEventListener('mouseleave', () => {
+        const isSelected = selectedCar?.id === car.id
+        if (!isSelected) {
+          badge.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)'
+          circle.style.background = 'rgba(217, 119, 6, 0.1)'
+          circle.style.borderColor = 'rgba(217, 119, 6, 0.3)'
+        }
       })
 
       const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
@@ -434,13 +513,14 @@ export default function CarMapView({
 
       markers.current.set(car.id, marker)
     })
-  }, [processedCars, mapLoaded, onCarSelect])
+  }, [processedCars, mapLoaded, onCarSelect, selectedCar])
 
   // Update marker styles when selection changes (without recreating markers)
   useEffect(() => {
     markers.current.forEach((marker, carId) => {
       const el = marker.getElement()
       const badge = el.querySelector('.marker-badge') as HTMLElement
+      const circle = el.querySelector('.proximity-circle') as HTMLElement
       if (!badge) return
 
       const isSelected = selectedCar?.id === carId
@@ -449,10 +529,22 @@ export default function CarMapView({
         badge.style.background = '#d97706'
         badge.style.color = 'white'
         badge.style.borderColor = '#b45309'
+        badge.style.boxShadow = '0 4px 12px rgba(217, 119, 6, 0.4)'
+        if (circle) {
+          circle.style.background = 'rgba(217, 119, 6, 0.2)'
+          circle.style.borderColor = 'rgba(217, 119, 6, 0.6)'
+          circle.style.borderStyle = 'solid'
+        }
       } else {
         badge.style.background = 'white'
         badge.style.color = '#111'
         badge.style.borderColor = '#e5e7eb'
+        badge.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)'
+        if (circle) {
+          circle.style.background = 'rgba(217, 119, 6, 0.1)'
+          circle.style.borderColor = 'rgba(217, 119, 6, 0.3)'
+          circle.style.borderStyle = 'dashed'
+        }
       }
     })
   }, [selectedCar])
@@ -497,20 +589,37 @@ export default function CarMapView({
       {/* Map container */}
       <div ref={mapContainer} className="w-full h-full" />
 
-      {/* Loading overlay */}
+      {/* Loading overlay - shows teaser info */}
       {isLoading && (
-        <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 flex items-center justify-center">
-          <div className="text-center">
+        <div className="absolute inset-0 bg-white/90 dark:bg-gray-900/90 flex items-center justify-center">
+          <div className="text-center max-w-xs">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto mb-4" />
-            <p className="text-gray-600 dark:text-gray-400">Loading cars...</p>
+            <p className="text-gray-900 dark:text-white font-medium mb-1">
+              Finding cars near you...
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Tap markers to explore available rentals
+            </p>
           </div>
         </div>
       )}
 
-      {/* Car count badge */}
-      {mapLoaded && !isLoading && (
-        <div className="absolute top-4 left-4 px-3 py-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg text-sm font-medium text-gray-900 dark:text-white">
-          {processedCars.length} cars
+      {/* Car count badge - always visible when map loaded */}
+      {mapLoaded && (
+        <div className="absolute top-4 left-4 px-3 py-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+          <span className="text-sm font-semibold text-gray-900 dark:text-white">
+            {processedCars.length} cars
+          </span>
+          <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
+            in this area
+          </span>
+        </div>
+      )}
+
+      {/* Approximate location notice */}
+      {mapLoaded && !isLoading && processedCars.length > 0 && (
+        <div className="absolute bottom-4 left-4 px-3 py-2 bg-gray-900/80 backdrop-blur-sm rounded-lg text-xs text-white max-w-[200px]">
+          Markers show approximate pickup areas for privacy
         </div>
       )}
 

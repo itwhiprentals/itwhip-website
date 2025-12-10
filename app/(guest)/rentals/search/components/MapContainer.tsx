@@ -13,10 +13,13 @@ import {
 const CarMapView = dynamic(() => import('./CarMapView'), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-900">
-      <div className="text-center">
+    <div className="w-full h-full flex items-center justify-center bg-gradient-to-b from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
+      <div className="text-center max-w-xs">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto mb-4"></div>
-        <p className="text-gray-600 dark:text-gray-400">Loading map...</p>
+        <p className="text-gray-900 dark:text-white font-medium mb-1">Loading map...</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Preparing car locations across Phoenix metro
+        </p>
       </div>
     </div>
   )
@@ -77,10 +80,13 @@ export function MapContainer({
   if (!hasMounted) {
     return (
       <div className="flex h-[calc(100vh-200px)] relative">
-        <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-900">
-          <div className="text-center">
+        <div className="w-full h-full flex items-center justify-center bg-gradient-to-b from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
+          <div className="text-center max-w-xs">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400">Loading map...</p>
+            <p className="text-gray-900 dark:text-white font-medium mb-1">Loading map...</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {cars.length > 0 ? `${cars.length} cars ready to explore` : 'Preparing car locations'}
+            </p>
           </div>
         </div>
       </div>
