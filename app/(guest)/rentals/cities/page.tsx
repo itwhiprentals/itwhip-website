@@ -145,7 +145,7 @@ export default async function CitiesPage() {
           city: cityGroup.city,
           isActive: true
         },
-        take: 6, // Get 6 for scrolling
+        take: 4, // Get 4 for horizontal display
         select: {
           id: true,
           make: true,
@@ -277,63 +277,48 @@ export default async function CitiesPage() {
                   const citySlug = (cityData.city || '').toLowerCase().replace(/\s+/g, '-')
                   
                   return (
-                    <div key={cityData.city} className="rounded-lg overflow-hidden">
-                      {/* City Header - Consistent with [city]/page.tsx */}
-                      <div className="pb-4 border-b border-gray-200 dark:border-gray-700">
+                    <div key={cityData.city} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+                      {/* City Header */}
+                      <div className="mb-4">
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4">
-                            <div>
-                              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
-                                {cityData.city}, AZ
-                              </h2>
-                              <div className="flex items-center gap-3 mt-1">
-                                <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                                  <IoLocationOutline className="w-4 h-4" />
-                                  {cityData.distance} miles away
+                          <div>
+                            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+                              {cityData.city}, AZ
+                            </h2>
+                            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1">
+                              <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                                <IoLocationOutline className="w-4 h-4" />
+                                {cityData.distance} mi
+                              </span>
+                              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                {cityData.count} {cityData.count === 1 ? 'car' : 'cars'}
+                              </span>
+                              {priceRange && (
+                                <span className="text-sm text-amber-600 dark:text-amber-400 font-medium">
+                                  ${priceRange.min}-${priceRange.max}/day
                                 </span>
-                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                  {cityData.count} {cityData.count === 1 ? 'car' : 'cars'} available
-                                </span>
-                                {priceRange && (
-                                  <span className="text-sm text-amber-600 dark:text-amber-400 font-medium">
-                                    ${priceRange.min}-${priceRange.max}/day
-                                  </span>
-                                )}
-                              </div>
+                              )}
                             </div>
                           </div>
-                          
-                          {/* View All Link */}
-                          <Link
-                            href={`/rentals/cities/${citySlug}`}
-                            className="hidden sm:flex items-center gap-2 px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors font-medium text-sm"
-                          >
-                            View all
-                            <IoArrowForwardOutline className="w-4 h-4" />
-                          </Link>
                         </div>
                       </div>
 
-                      {/* Cars Grid - Same layout as Browse by Make */}
-                      <div className="pt-4">
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
-                          {cityData.cars.map((car) => (
-                            <CompactCarCard key={car.id} car={transformCarForCompactCard(car)} />
-                          ))}
-                        </div>
+                      {/* Cars Grid - 4 cars horizontal */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+                        {cityData.cars.slice(0, 4).map((car) => (
+                          <CompactCarCard key={car.id} car={transformCarForCompactCard(car)} />
+                        ))}
+                      </div>
 
-                        {/* View More Button - shown when there are more cars */}
-                        {cityData.count > cityData.cars.length && (
-                          <div className="mt-4 text-center">
-                            <Link
-                              href={`/rentals/cities/${citySlug}`}
-                              className="inline-flex items-center gap-2 px-6 py-3 bg-black dark:bg-white text-white dark:text-black rounded-lg font-medium text-sm hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors"
-                            >
-                              View all {cityData.count} cars in {cityData.city}
-                              <IoArrowForwardOutline className="w-4 h-4" />
-                            </Link>
-                          </div>
-                        )}
+                      {/* View All Button - Always show for each city */}
+                      <div className="mt-4 text-center">
+                        <Link
+                          href={`/rentals/cities/${citySlug}`}
+                          className="inline-flex items-center gap-2 px-6 py-3 bg-black dark:bg-white text-white dark:text-black rounded-lg font-medium text-sm hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors"
+                        >
+                          View all {cityData.count} cars in {cityData.city}
+                          <IoArrowForwardOutline className="w-4 h-4" />
+                        </Link>
                       </div>
                     </div>
                   )
