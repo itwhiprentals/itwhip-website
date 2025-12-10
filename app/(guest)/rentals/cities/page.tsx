@@ -277,29 +277,25 @@ export default async function CitiesPage() {
                   const citySlug = (cityData.city || '').toLowerCase().replace(/\s+/g, '-')
                   
                   return (
-                    <div key={cityData.city} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+                    <div key={cityData.city}>
                       {/* City Header */}
                       <div className="mb-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
-                              {cityData.city}, AZ
-                            </h2>
-                            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1">
-                              <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                                <IoLocationOutline className="w-4 h-4" />
-                                {cityData.distance} mi
-                              </span>
-                              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                {cityData.count} {cityData.count === 1 ? 'car' : 'cars'}
-                              </span>
-                              {priceRange && (
-                                <span className="text-sm text-amber-600 dark:text-amber-400 font-medium">
-                                  ${priceRange.min}-${priceRange.max}/day
-                                </span>
-                              )}
-                            </div>
-                          </div>
+                        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+                          {cityData.city}, AZ
+                        </h2>
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1">
+                          <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                            <IoLocationOutline className="w-4 h-4" />
+                            {cityData.distance} mi
+                          </span>
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            {cityData.count} {cityData.count === 1 ? 'car' : 'cars'}
+                          </span>
+                          {priceRange && (
+                            <span className="text-sm text-amber-600 dark:text-amber-400 font-medium">
+                              ${priceRange.min}-${priceRange.max}/day
+                            </span>
+                          )}
                         </div>
                       </div>
 
@@ -310,7 +306,7 @@ export default async function CitiesPage() {
                         ))}
                       </div>
 
-                      {/* View All Button - Always show for each city */}
+                      {/* View All Button */}
                       <div className="mt-4 text-center">
                         <Link
                           href={`/rentals/cities/${citySlug}`}
