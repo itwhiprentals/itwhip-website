@@ -30,30 +30,29 @@ interface MapContainerProps {
   isLoading?: boolean
 }
 
-export function MapContainer({ 
-  cars, 
+export function MapContainer({
+  cars,
   searchLocation = { lat: 33.4484, lng: -112.0740 }, // Phoenix default
   userLocation,
   rentalDays,
-  isLoading = false 
+  isLoading = false
 }: MapContainerProps) {
   const [selectedCar, setSelectedCar] = useState<any | null>(null)
   const [hoveredCar, setHoveredCar] = useState<any | null>(null)
   const [showSidebar, setShowSidebar] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
-  
-  // Detect mobile viewport
+  const [hasMounted, setHasMounted] = useState(false)
+
+  // Detect mobile viewport - only after mount to avoid hydration mismatch
   useEffect(() => {
+    setHasMounted(true)
+
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768)
-      // Always show sidebar on desktop, hide on mobile
-      if (window.innerWidth >= 768) {
-        setShowSidebar(true)
-      } else {
-        setShowSidebar(false)
-      }
+      const mobile = window.innerWidth < 768
+      setIsMobile(mobile)
+      setShowSidebar(!mobile)
     }
-    
+
     checkMobile()
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
@@ -74,6 +73,20 @@ export function MapContainer({
     distance: car.distance || null
   }))
   
+  // Show loading until mounted to avoid hydration mismatch
+  if (!hasMounted) {
+    return (
+      <div className="flex h-[calc(100vh-200px)] relative">
+        <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-900">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-400">Loading map...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   // Mobile layout - Just the map, no bottom sheet
   if (isMobile) {
     return (
@@ -89,7 +102,7 @@ export function MapContainer({
       </div>
     )
   }
-  
+
   // Desktop layout - Map with sidebar
   return (
     <div className="flex h-[calc(100vh-200px)] relative">
@@ -109,7 +122,7 @@ export function MapContainer({
       )}
       
       {/* Map */}
-      <div className="flex-1 relative">
+      <div className="flex-1 relative h-full">
         <CarMapView
           cars={carsWithLocation}
           selectedCar={selectedCar}
