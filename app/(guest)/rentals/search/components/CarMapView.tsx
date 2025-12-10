@@ -388,7 +388,7 @@ export default function CarMapView({
     }
   }, [searchLocation])
 
-  // Add/update markers
+  // Add markers (only when cars or map changes, NOT on selection change)
   useEffect(() => {
     if (!map.current || !mapLoaded) return
 
@@ -402,43 +402,30 @@ export default function CarMapView({
 
       // Create marker element - Price badge style
       const el = document.createElement('div')
-      const isSelected = selectedCar?.id === car.id
-
       el.className = 'cursor-pointer'
-      el.style.cssText = 'transition: transform 0.15s ease;'
+      el.dataset.carId = car.id
 
-      el.innerHTML = `
-        <div style="
-          padding: 4px 10px;
-          border-radius: 20px;
-          font-size: 13px;
-          font-weight: 600;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-          background: ${isSelected ? '#d97706' : 'white'};
-          color: ${isSelected ? 'white' : '#111'};
-          border: 2px solid ${isSelected ? '#b45309' : '#e5e7eb'};
-          transform: ${isSelected ? 'scale(1.1)' : 'scale(1)'};
-          white-space: nowrap;
-        ">
-          $${Math.round(car.dailyRate)}
-        </div>
+      // Inner badge element that will be styled
+      const badge = document.createElement('div')
+      badge.className = 'marker-badge'
+      badge.style.cssText = `
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        background: white;
+        color: #111;
+        border: 2px solid #e5e7eb;
+        white-space: nowrap;
+        transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
       `
+      badge.textContent = `$${Math.round(car.dailyRate)}`
+      el.appendChild(badge)
 
       el.addEventListener('click', (e) => {
         e.stopPropagation()
         onCarSelect(car)
-      })
-
-      el.addEventListener('mouseenter', () => {
-        if (!isSelected) {
-          el.style.transform = 'scale(1.1)'
-        }
-      })
-
-      el.addEventListener('mouseleave', () => {
-        if (!isSelected) {
-          el.style.transform = 'scale(1)'
-        }
       })
 
       const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
@@ -447,7 +434,28 @@ export default function CarMapView({
 
       markers.current.set(car.id, marker)
     })
-  }, [processedCars, mapLoaded, selectedCar, onCarSelect])
+  }, [processedCars, mapLoaded, onCarSelect])
+
+  // Update marker styles when selection changes (without recreating markers)
+  useEffect(() => {
+    markers.current.forEach((marker, carId) => {
+      const el = marker.getElement()
+      const badge = el.querySelector('.marker-badge') as HTMLElement
+      if (!badge) return
+
+      const isSelected = selectedCar?.id === carId
+
+      if (isSelected) {
+        badge.style.background = '#d97706'
+        badge.style.color = 'white'
+        badge.style.borderColor = '#b45309'
+      } else {
+        badge.style.background = 'white'
+        badge.style.color = '#111'
+        badge.style.borderColor = '#e5e7eb'
+      }
+    })
+  }, [selectedCar])
 
   // Pan to selected car
   useEffect(() => {
