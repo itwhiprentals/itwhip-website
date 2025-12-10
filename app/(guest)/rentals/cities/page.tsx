@@ -328,7 +328,7 @@ export default async function CitiesPage() {
                           {cityData.count > cityData.cars.length && (
                             <Link
                               href={`/rentals/cities/${citySlug}`}
-                              className="flex-shrink-0 w-64 sm:w-72 bg-white dark:bg-gray-800 rounded-xl flex flex-col items-center justify-center h-[164px] sm:h-[176px] hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-lg border border-gray-200 dark:border-gray-700 group"
+                              className="flex-shrink-0 w-64 sm:w-72 bg-white dark:bg-gray-800 rounded-lg flex flex-col items-center justify-center h-[164px] sm:h-[176px] hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-lg border border-gray-200 dark:border-gray-700 group"
                             >
                               <IoCarOutline className="w-8 h-8 text-gray-400 dark:text-gray-500 mb-2 group-hover:scale-110 transition-transform" />
                               <span className="text-sm font-medium text-gray-600 dark:text-gray-400">

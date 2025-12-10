@@ -106,7 +106,7 @@ export default function CompactCarCard({ car, accentColor = 'amber' }: CompactCa
   return (
     <Link
       href={carUrl}
-      className="group bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-lg hover:shadow-xl border border-gray-200 dark:border-gray-700 transform hover:-translate-y-0.5 transition-all duration-300"
+      className="group bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl border border-gray-200 dark:border-gray-700 transform hover:-translate-y-0.5 transition-all duration-300"
     >
       {/* Image Container */}
       <div className="relative h-32 sm:h-36 bg-gray-200 dark:bg-gray-700 overflow-hidden">
