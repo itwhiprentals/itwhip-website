@@ -280,6 +280,9 @@ export default async function BudgetRentalsPage() {
       rating: true,
       totalTrips: true,
       instantBook: true,
+      reviews: {
+        select: { rating: true }
+      },
       photos: {
         select: { url: true },
         orderBy: { order: 'asc' },
@@ -291,8 +294,25 @@ export default async function BudgetRentalsPage() {
     }
   })
 
-  const carCount = budgetCars.length
-  const minPrice = carCount > 0 ? Math.min(...budgetCars.map(c => c.dailyRate)) : 29
+  // Transform cars to calculate rating from reviews with fallback to static rating
+  const transformedCars = budgetCars.map((car: typeof budgetCars[number]) => {
+    const reviewCount = car.reviews?.length || 0
+    let finalRating: number | null = null
+    if (reviewCount > 0) {
+      const sum = car.reviews.reduce((acc: number, review: { rating: number }) => acc + review.rating, 0)
+      finalRating = sum / reviewCount
+    } else if (car.rating) {
+      finalRating = Number(car.rating)
+    }
+    return {
+      ...car,
+      dailyRate: Number(car.dailyRate),
+      rating: finalRating
+    }
+  })
+
+  const carCount = transformedCars.length
+  const minPrice = carCount > 0 ? Math.min(...transformedCars.map(c => c.dailyRate)) : 29
 
   // Calculate priceValidUntil (30 days from now)
   const priceValidUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
@@ -318,7 +338,7 @@ export default async function BudgetRentalsPage() {
         name: 'Budget Car Rentals in Arizona',
         description: `${carCount} affordable car rentals under $${MAX_DAILY_RATE}/day`,
         numberOfItems: carCount,
-        itemListElement: budgetCars.slice(0, 20).map((car, index) => ({
+        itemListElement: transformedCars.slice(0, 20).map((car: typeof transformedCars[number], index: number) => ({
           '@type': 'ListItem',
           position: index + 1,
           item: {
@@ -436,7 +456,7 @@ export default async function BudgetRentalsPage() {
           {/* Car Grid */}
           {carCount > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
-              {budgetCars.map((car) => (
+              {transformedCars.map((car: typeof transformedCars[number]) => (
                 <CompactCarCard key={car.id} car={car} accentColor="emerald" />
               ))}
             </div>

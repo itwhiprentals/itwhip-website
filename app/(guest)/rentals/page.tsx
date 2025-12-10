@@ -132,6 +132,11 @@ export default async function RentalsPage({
         instantBook: true,
         rating: true,
         totalTrips: true,
+        reviews: {
+          select: {
+            rating: true
+          }
+        },
         city: true,
         latitude: true,
         longitude: true,
@@ -186,6 +191,18 @@ export default async function RentalsPage({
       parsedFeatures = []
     }
 
+    // Calculate average rating from reviews, fallback to static rating field
+    const reviewCount = car.reviews?.length || 0
+    let finalRating: number | null = null
+    if (reviewCount > 0) {
+      // Use calculated average from actual reviews
+      const sum = car.reviews.reduce((acc, review) => acc + review.rating, 0)
+      finalRating = sum / reviewCount
+    } else if (car.rating) {
+      // Fallback to static rating field from database
+      finalRating = Number(car.rating)
+    }
+
     return {
       id: car.id,
       make: car.make,
@@ -195,7 +212,7 @@ export default async function RentalsPage({
       seats: car.seats,
       dailyRate: Number(car.dailyRate),
       instantBook: car.instantBook,
-      rating: car.rating ? Number(car.rating) : null,
+      rating: finalRating,
       totalTrips: car.totalTrips,
       city: car.city,
       latitude: car.latitude ? Number(car.latitude) : null,

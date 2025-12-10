@@ -31,20 +31,24 @@ export default function CarGrid({
   const [hasMore, setHasMore] = useState(initialCars.length < totalCount)
 
   // Transform server data to match CompactCarCard expected format
+  // Note: Initial server data uses 'carType', but search API uses 'type'
   const transformCarForCard = (car: any) => ({
     id: car.id,
     make: car.make,
     model: car.model,
     year: car.year,
     dailyRate: Number(car.dailyRate),
-    carType: car.carType,
+    carType: car.carType || car.type,  // Handle both field names
     seats: car.seats,
-    city: car.city || 'Phoenix',
-    rating: car.rating != null ? Number(car.rating) : null,
-    totalTrips: car.totalTrips,
+    city: car.city || car.location?.city || 'Phoenix',
+    rating: car.rating?.average ?? (car.rating != null ? Number(car.rating) : null),
+    totalTrips: car.totalTrips || car.trips,
     instantBook: car.instantBook,
-    photos: car.photos,
-    host: car.host
+    photos: Array.isArray(car.photos) ? car.photos : [],
+    host: car.host ? {
+      name: car.host.name,
+      profilePhoto: car.host.profilePhoto || car.host.avatar  // Handle both field names
+    } : null
   })
 
   const loadMore = async () => {

@@ -18,6 +18,7 @@ export interface CompactCarCardProps {
     year: number
     dailyRate: number
     carType?: string | null
+    type?: string | null  // Alternative field name from search API
     seats?: number | null
     city?: string | null
     rating?: number | string | null
@@ -175,7 +176,7 @@ export default function CompactCarCard({ car, accentColor = 'amber' }: CompactCa
 
         {/* Car details + rating row - all on one line */}
         <div className="flex items-center flex-wrap gap-x-1 text-[10px] text-gray-500 dark:text-gray-400 mt-1">
-          <span className="capitalize">{car.carType?.toLowerCase() || 'sedan'}</span>
+          <span className="capitalize">{(car.carType || car.type)?.toLowerCase() || 'sedan'}</span>
           <span>•</span>
           <span>{car.seats || 5} seats</span>
           <span>•</span>
