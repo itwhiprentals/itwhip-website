@@ -5,6 +5,7 @@ import Script from 'next/script'
 import { notFound } from 'next/navigation'
 import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
+import CompactCarCard from '@/app/components/cards/CompactCarCard'
 import prisma from '@/app/lib/database/prisma'
 import { generateCarUrl } from '@/app/lib/utils/urls'
 import CitySearchWrapper from '@/app/(guest)/rentals/cities/[city]/CitySearchWrapper'
@@ -257,83 +258,26 @@ function Breadcrumbs({ cityName }: { cityName: string }) {
   )
 }
 
-// Car Card Component
-function CarCard({ car, cityName }: { car: any, cityName: string }) {
-  const imageUrl = car.photos?.[0]?.url || 
-    'https://images.unsplash.com/photo-1583267746897-2cf415887172?w=800&h=600&fit=crop'
-  
-  const showLocalHostBadge = car.host && !car.instantBook
-  const carUrl = generateCarUrl({
+// Transform car data for CompactCarCard
+function transformCarForCompactCard(car: any, cityName: string) {
+  return {
     id: car.id,
     make: car.make,
     model: car.model,
     year: car.year,
-    city: car.city || cityName
-  })
-
-  return (
-    <Link
-      href={carUrl}
-      className="flex-shrink-0 w-64 sm:w-72 group bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300"
-    >
-      <div className="relative h-24 sm:h-28 bg-gray-200 dark:bg-gray-700 overflow-hidden">
-        <img
-          src={imageUrl}
-          alt={`${car.year} ${car.make} ${car.model} for rent in ${cityName}`}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-        <div className="absolute top-2 left-2 flex gap-1">
-          {showLocalHostBadge && (
-            <span className="px-2 py-0.5 bg-black/70 backdrop-blur-sm text-white text-[10px] font-bold rounded-full flex items-center gap-1">
-              <IoStarSharp className="w-2.5 h-2.5" />
-              HOST
-            </span>
-          )}
-          {car.instantBook && (
-            <span className="px-2 py-0.5 bg-emerald-500/90 backdrop-blur-sm text-white text-[10px] font-bold rounded-full flex items-center gap-1">
-              <IoFlashOutline className="w-2.5 h-2.5" />
-              INSTANT
-            </span>
-          )}
-        </div>
-        <div className="absolute bottom-2 right-2">
-          <div className="px-2 py-1 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-md shadow-lg">
-            <div className="flex items-baseline gap-0.5">
-              <span className="text-sm font-bold text-gray-900 dark:text-white">${car.dailyRate}</span>
-              <span className="text-[10px] text-gray-600 dark:text-gray-400">/day</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="p-3">
-        <div className="mb-1">
-          <div className="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors line-clamp-1">
-            {car.year} {car.make}
-          </div>
-          <div className="text-xs font-medium text-gray-700 dark:text-gray-300 line-clamp-1">
-            {car.model}
-          </div>
-        </div>
-        <div className="flex items-center gap-1.5 text-[11px] text-gray-600 dark:text-gray-400">
-          <span className="capitalize">{car.carType?.toLowerCase() || 'sedan'}</span>
-          <span>•</span>
-          <span>{car.seats} seats</span>
-          {car.rating && (
-            <>
-              <span>•</span>
-              <div className="flex items-center gap-0.5">
-                <IoStarOutline className="w-2.5 h-2.5 text-amber-400 fill-current" />
-                <span className="font-medium text-gray-700 dark:text-gray-300">{car.rating.toFixed(1)}</span>
-              </div>
-            </>
-          )}
-          <span>•</span>
-          <span>{car.totalTrips} trips</span>
-        </div>
-      </div>
-    </Link>
-  )
+    dailyRate: Number(car.dailyRate),
+    carType: car.carType,
+    seats: car.seats || 5,
+    city: car.city || cityName,
+    rating: car.rating ? Number(car.rating) : null,
+    totalTrips: car.totalTrips,
+    instantBook: car.instantBook,
+    photos: car.photos || [],
+    host: car.host ? {
+      name: car.host.name,
+      profilePhoto: car.host.profilePhoto
+    } : null
+  }
 }
 
 // SEO Content Section
@@ -827,8 +771,8 @@ export default async function CityPage({
                         <p className="text-sm text-gray-600 dark:text-gray-400">Recently added cars in {cityName}</p>
                       </div>
                     </div>
-                    <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-                      {newListings.map((car) => <CarCard key={car.id} car={car} cityName={cityName} />)}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+                      {newListings.map((car) => <CompactCarCard key={car.id} car={transformCarForCompactCard(car, cityName)} />)}
                     </div>
                   </div>
                 </section>
@@ -850,8 +794,8 @@ export default async function CityPage({
                         <p className="text-sm text-gray-600 dark:text-gray-400">Highest-rated cars by our customers</p>
                       </div>
                     </div>
-                    <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-                      {topRated.map((car) => <CarCard key={car.id} car={car} cityName={cityName} />)}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+                      {topRated.map((car) => <CompactCarCard key={car.id} car={transformCarForCompactCard(car, cityName)} accentColor="emerald" />)}
                     </div>
                   </div>
                 </section>
@@ -873,8 +817,8 @@ export default async function CityPage({
                         <p className="text-sm text-gray-600 dark:text-gray-400">Premium vehicles for special occasions</p>
                       </div>
                     </div>
-                    <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-                      {luxuryCars.map((car) => <CarCard key={car.id} car={car} cityName={cityName} />)}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+                      {luxuryCars.map((car) => <CompactCarCard key={car.id} car={transformCarForCompactCard(car, cityName)} accentColor="purple" />)}
                     </div>
                   </div>
                 </section>
@@ -896,8 +840,8 @@ export default async function CityPage({
                         <p className="text-sm text-gray-600 dark:text-gray-400">Sustainable and efficient vehicles</p>
                       </div>
                     </div>
-                    <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-                      {electricCars.map((car) => <CarCard key={car.id} car={car} cityName={cityName} />)}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+                      {electricCars.map((car) => <CompactCarCard key={car.id} car={transformCarForCompactCard(car, cityName)} accentColor="emerald" />)}
                     </div>
                   </div>
                 </section>
@@ -919,8 +863,8 @@ export default async function CityPage({
                         <p className="text-sm text-gray-600 dark:text-gray-400">Affordable options for every budget</p>
                       </div>
                     </div>
-                    <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-                      {affordableCars.map((car) => <CarCard key={car.id} car={car} cityName={cityName} />)}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+                      {affordableCars.map((car) => <CompactCarCard key={car.id} car={transformCarForCompactCard(car, cityName)} accentColor="blue" />)}
                     </div>
                   </div>
                 </section>

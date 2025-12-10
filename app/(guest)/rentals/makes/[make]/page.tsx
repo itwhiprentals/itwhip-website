@@ -5,7 +5,7 @@ import Script from 'next/script'
 import { notFound } from 'next/navigation'
 import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
-import CarCard from '@/app/components/cards/CarCard'
+import CompactCarCard from '@/app/components/cards/CompactCarCard'
 import prisma from '@/app/lib/database/prisma'
 import { generateCarUrl } from '@/app/lib/utils/urls'
 import {
@@ -245,21 +245,24 @@ export default async function CarMakePage({
     take: 24
   })
 
-  // Transform cars for CarCard component
+  // Transform cars for CompactCarCard component
   const transformedCars = cars.map(car => ({
-    ...car,
-    location: {
-      city: car.city,
-      state: car.state,
-      lat: car.latitude,
-      lng: car.longitude
-    },
-    rating: car.rating ? {
-      average: Number(car.rating),
-      count: car.totalTrips || 0
-    } : null,
-    trips: car.totalTrips,
-    photos: car.photos?.map(p => p.url) || []
+    id: car.id,
+    make: car.make,
+    model: car.model,
+    year: car.year,
+    dailyRate: Number(car.dailyRate),
+    carType: car.carType,
+    seats: 5,
+    city: car.city,
+    rating: car.rating ? Number(car.rating) : null,
+    totalTrips: car.totalTrips,
+    instantBook: car.instantBook,
+    photos: car.photos || [],
+    host: car.host ? {
+      name: car.host.name,
+      profilePhoto: car.host.profilePhoto
+    } : null
   }))
 
   // Generate schemas
@@ -485,9 +488,9 @@ export default async function CarMakePage({
             </h2>
 
             {transformedCars.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
                 {transformedCars.map((car) => (
-                  <CarCard key={car.id} car={car} />
+                  <CompactCarCard key={car.id} car={car} />
                 ))}
               </div>
             ) : (

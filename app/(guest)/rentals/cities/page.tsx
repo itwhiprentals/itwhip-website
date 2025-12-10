@@ -3,18 +3,14 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
+import CompactCarCard from '@/app/components/cards/CompactCarCard'
 import prisma from '@/app/lib/database/prisma'
-import { generateCarUrl } from '@/app/lib/utils/urls'
-import { CITY_SEO_DATA } from '@/app/lib/data/city-seo-data'
 import styles from './cities.module.css'
 import {
   IoLocationOutline,
   IoArrowForwardOutline,
   IoCarOutline,
-  IoNavigateOutline,
-  IoFlashOutline,
-  IoStarSharp,
-  IoStarOutline
+  IoNavigateOutline
 } from 'react-icons/io5'
 
 // Add ISR - Revalidate every 60 seconds
@@ -74,10 +70,23 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-// City coordinates for distance calculation - dynamically generated from SEO data
-const CITY_COORDS: Record<string, { lat: number; lng: number }> = Object.fromEntries(
-  Object.entries(CITY_SEO_DATA).map(([slug, data]) => [data.name, data.coordinates])
-)
+// City coordinates for distance calculation
+const CITY_COORDS: Record<string, { lat: number; lng: number }> = {
+  'Phoenix': { lat: 33.4484, lng: -112.0740 },
+  'Scottsdale': { lat: 33.4942, lng: -111.9261 },
+  'Tempe': { lat: 33.4255, lng: -111.9400 },
+  'Mesa': { lat: 33.4152, lng: -111.8315 },
+  'Chandler': { lat: 33.3062, lng: -111.8413 },
+  'Glendale': { lat: 33.5387, lng: -112.1859 },
+  'Gilbert': { lat: 33.3528, lng: -111.7890 },
+  'Peoria': { lat: 33.5806, lng: -112.2374 },
+  'Paradise Valley': { lat: 33.5417, lng: -111.9437 },
+  'Avondale': { lat: 33.4356, lng: -112.3496 },
+  'Anthem': { lat: 33.8675, lng: -112.1184 },
+  'Tucson': { lat: 32.2226, lng: -110.9747 },
+  'Flagstaff': { lat: 35.1983, lng: -111.6513 },
+  'Laveen': { lat: 33.3628, lng: -112.1691 }
+}
 
 // Calculate distance between two coordinates
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -92,99 +101,26 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
   return R * c
 }
 
-// Car Card Component - Matching the [city]/page.tsx design
-function CarCard({ car }: { car: any }) {
-  const imageUrl = car.photos?.[0]?.url || 
-    'https://images.unsplash.com/photo-1583267746897-2cf415887172?w=800&h=600&fit=crop'
-  
-  const showLocalHostBadge = car.host && !car.instantBook
-  const carUrl = generateCarUrl({
+// Transform car data for CompactCarCard
+function transformCarForCompactCard(car: any) {
+  return {
     id: car.id,
     make: car.make,
     model: car.model,
     year: car.year,
-    city: car.city
-  })
-
-  return (
-    <Link
-      href={carUrl}
-      className="flex-shrink-0 w-64 sm:w-72 group bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300"
-    >
-      {/* Image Container - Wide rectangular */}
-      <div className="relative h-24 sm:h-28 bg-gray-200 dark:bg-gray-700 overflow-hidden">
-        <img
-          src={imageUrl}
-          alt={`${car.year} ${car.make} ${car.model}`}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-        />
-        
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-        
-        {/* Badges - Smaller */}
-        <div className="absolute top-2 left-2 flex gap-1">
-          {showLocalHostBadge && (
-            <span className="px-2 py-0.5 bg-black/70 backdrop-blur-sm text-white text-[10px] font-bold rounded-full flex items-center gap-1">
-              <IoStarSharp className="w-2.5 h-2.5" />
-              HOST
-            </span>
-          )}
-          {car.instantBook && (
-            <span className="px-2 py-0.5 bg-emerald-500/90 backdrop-blur-sm text-white text-[10px] font-bold rounded-full flex items-center gap-1">
-              <IoFlashOutline className="w-2.5 h-2.5" />
-              INSTANT
-            </span>
-          )}
-        </div>
-        
-        {/* Price Badge - Smaller */}
-        <div className="absolute bottom-2 right-2">
-          <div className="px-2 py-1 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-md shadow-lg">
-            <div className="flex items-baseline gap-0.5">
-              <span className="text-sm font-bold text-gray-900 dark:text-white">
-                ${car.dailyRate}
-              </span>
-              <span className="text-[10px] text-gray-600 dark:text-gray-400">/day</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      {/* Content - Compact */}
-      <div className="p-3">
-        {/* Title - Make and Model on separate lines */}
-        <div className="mb-1">
-          <div className="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors line-clamp-1">
-            {car.year} {car.make}
-          </div>
-          <div className="text-xs font-medium text-gray-700 dark:text-gray-300 line-clamp-1">
-            {car.model}
-          </div>
-        </div>
-        
-        {/* Car Type, Specs, Rating & Trips - All in one row */}
-        <div className="flex items-center gap-1.5 text-[11px] text-gray-600 dark:text-gray-400">
-          <span className="capitalize">{car.carType?.toLowerCase() || 'sedan'}</span>
-          <span>•</span>
-          <span>{car.seats || 5} seats</span>
-          {car.rating && (
-            <>
-              <span>•</span>
-              <div className="flex items-center gap-0.5">
-                <IoStarOutline className="w-2.5 h-2.5 text-amber-400 fill-current" />
-                <span className="font-medium text-gray-700 dark:text-gray-300">
-                  {car.rating.toFixed(1)}
-                </span>
-              </div>
-            </>
-          )}
-          <span>•</span>
-          <span>{car.totalTrips || 0} trips</span>
-        </div>
-      </div>
-    </Link>
-  )
+    dailyRate: Number(car.dailyRate),
+    carType: car.carType,
+    seats: car.seats || 5,
+    city: car.city,
+    rating: car.rating ? Number(car.rating) : null,
+    totalTrips: car.totalTrips,
+    instantBook: car.instantBook,
+    photos: car.photos || [],
+    host: car.host ? {
+      name: car.host.name,
+      profilePhoto: car.host.profilePhoto
+    } : null
+  }
 }
 
 export default async function CitiesPage() {
@@ -234,7 +170,8 @@ export default async function CitiesPage() {
           host: {
             select: {
               name: true,
-              isVerified: true
+              isVerified: true,
+              profilePhoto: true
             }
           }
         },
@@ -348,7 +285,7 @@ export default async function CitiesPage() {
                           <div className="flex items-center gap-4">
                             <div>
                               <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
-                                {cityData.city}
+                                {cityData.city}, AZ
                               </h2>
                               <div className="flex items-center gap-3 mt-1">
                                 <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
@@ -382,14 +319,16 @@ export default async function CitiesPage() {
                       <div className="relative pt-4">
                         <div className={`flex gap-3 sm:gap-4 pb-4 ${styles.scrollbarHide}`}>
                           {cityData.cars.map((car) => (
-                            <CarCard key={car.id} car={car} />
+                            <div key={car.id} className="flex-shrink-0 w-64 sm:w-72 overflow-visible">
+                              <CompactCarCard car={transformCarForCompactCard(car)} />
+                            </div>
                           ))}
                           
                           {/* Show More Card */}
                           {cityData.count > cityData.cars.length && (
                             <Link
                               href={`/rentals/cities/${citySlug}`}
-                              className="flex-shrink-0 w-64 sm:w-72 bg-gray-100 dark:bg-gray-700 rounded-lg flex flex-col items-center justify-center h-[164px] sm:h-[176px] hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group"
+                              className="flex-shrink-0 w-64 sm:w-72 bg-white dark:bg-gray-800 rounded-xl flex flex-col items-center justify-center h-[164px] sm:h-[176px] hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-lg border border-gray-200 dark:border-gray-700 group"
                             >
                               <IoCarOutline className="w-8 h-8 text-gray-400 dark:text-gray-500 mb-2 group-hover:scale-110 transition-transform" />
                               <span className="text-sm font-medium text-gray-600 dark:text-gray-400">

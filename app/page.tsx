@@ -9,8 +9,7 @@ import BrowseByTypeSection from './rentals-sections/BrowseByTypeSection'
 import BenefitsSection from './rentals-sections/BenefitsSection'
 import Footer from '@/app/components/Footer'
 import Header from '@/app/components/Header'
-import CarCard from '@/app/components/cards/CarCard'
-import CarCardSkeleton from '@/app/components/cards/CarCardSkeleton'
+import CompactCarCard from '@/app/components/cards/CompactCarCard'
 import MileageForensicsSection from '@/app/components/sections/MileageForensicsSection'
 import InsuranceTiersSection from '@/app/components/sections/InsuranceTiersSection'
 import MaxACSection from '@/app/components/sections/MaxACSection'
@@ -24,6 +23,26 @@ export default function RentalsPage() {
   const [temp, setTemp] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  // Transform API data to CompactCarCard format
+  const transformCar = (car: any) => ({
+    id: car.id,
+    make: car.make,
+    model: car.model,
+    year: car.year,
+    dailyRate: Number(car.dailyRate),
+    carType: car.carType || car.type,
+    seats: car.seats,
+    city: car.city || car.location?.city || 'Phoenix',
+    rating: car.rating?.average ?? (car.rating != null ? Number(car.rating) : null),
+    totalTrips: car.totalTrips || car.trips,
+    instantBook: car.instantBook,
+    photos: Array.isArray(car.photos) ? car.photos : [],
+    host: car.host ? {
+      name: car.host.name,
+      profilePhoto: car.host.profilePhoto || car.host.avatar
+    } : null
+  })
 
   useEffect(() => {
     const init = async () => {
@@ -89,11 +108,20 @@ export default function RentalsPage() {
                 View all <IoArrowForwardOutline className="w-4 h-4" />
               </Link>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
               {isLoading ? (
-                [...Array(6)].map((_, i) => <CarCardSkeleton key={i} />)
+                [...Array(10)].map((_, i) => (
+                  <div key={i} className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md animate-pulse">
+                    <div className="h-32 sm:h-36 bg-gray-200 dark:bg-gray-700" />
+                    <div className="p-3 space-y-2">
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
+                      <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
+                      <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-2/3" />
+                    </div>
+                  </div>
+                ))
               ) : (
-                esgCars.map(car => <CarCard key={car.id} car={car} showHostAvatar />)
+                esgCars.map(car => <CompactCarCard key={car.id} car={transformCar(car)} accentColor="emerald" />)
               )}
             </div>
             {!isLoading && esgCars.length > 0 && (
@@ -126,11 +154,20 @@ export default function RentalsPage() {
                 Browse all <IoArrowForwardOutline className="w-4 h-4" />
               </Link>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
               {isLoading ? (
-                [...Array(6)].map((_, i) => <CarCardSkeleton key={i} />)
+                [...Array(10)].map((_, i) => (
+                  <div key={i} className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md animate-pulse">
+                    <div className="h-32 sm:h-36 bg-gray-200 dark:bg-gray-700" />
+                    <div className="p-3 space-y-2">
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
+                      <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
+                      <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-2/3" />
+                    </div>
+                  </div>
+                ))
               ) : (
-                cityCars.map(car => <CarCard key={car.id} car={car} showHostAvatar />)
+                cityCars.map(car => <CompactCarCard key={car.id} car={transformCar(car)} accentColor="amber" />)
               )}
             </div>
             {!isLoading && cityCars.length > 0 && (
