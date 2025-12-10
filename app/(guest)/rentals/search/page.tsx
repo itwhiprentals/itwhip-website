@@ -248,26 +248,28 @@ function SearchResultsContent() {
   return (
     <>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        {/* Search Widget - NOT sticky, scrolls away - WIDER CONTAINER */}
-        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 py-4">
-          <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
-            <RentalSearchCard 
-              onSearch={handleSearchUpdate} 
-              variant="compact"
-              initialLocation={location}
-              initialPickupDate={pickupDate}
-              initialReturnDate={returnDate}
-              initialPickupTime={pickupTime}
-              initialReturnTime={returnTime}
-            />
+        {/* Search Widget - Hidden on map view for more space */}
+        {!showMap && (
+          <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 py-4">
+            <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
+              <RentalSearchCard
+                onSearch={handleSearchUpdate}
+                variant="compact"
+                initialLocation={location}
+                initialPickupDate={pickupDate}
+                initialReturnDate={returnDate}
+                initialPickupTime={pickupTime}
+                initialReturnTime={returnTime}
+              />
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Filter Bar - ADJUSTED MOBILE STICKY - slightly lower to meet header edge perfectly */}
-        <div className="bg-white dark:bg-gray-800 sticky top-[60px] md:top-16 z-40 border-b border-gray-200 dark:border-gray-700">
-          <div className="max-w-7xl mx-auto">
-            {/* Results Summary - NOW AT TOP */}
-            <div className="px-4 sm:px-6 lg:px-8 py-2 text-sm text-gray-600 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
+        {/* Filter Bar - Sticky below header */}
+        <div className={`bg-white dark:bg-gray-800 sticky top-[60px] md:top-16 z-40 border-b border-gray-200 dark:border-gray-700 ${showMap ? 'shadow-md' : ''}`}>
+          <div className={showMap ? 'w-full' : 'max-w-7xl mx-auto'}>
+            {/* Results Summary - Compact on map view */}
+            <div className={`px-4 sm:px-6 lg:px-8 py-2 text-sm text-gray-600 dark:text-gray-400 ${showMap ? '' : 'border-b border-gray-100 dark:border-gray-700'}`}>
               {!isLoading && (
                 <>
                   <span className="font-medium text-gray-900 dark:text-white">{filteredCars.length}</span> car{filteredCars.length !== 1 ? 's' : ''} 
