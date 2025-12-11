@@ -636,7 +636,7 @@ export default async function CarMakePage({
         </div>
 
         {/* Hero Section */}
-        <section className="bg-gradient-to-br from-gray-900 to-gray-800 text-white py-12 md:py-16">
+        <section className="bg-gradient-to-br from-gray-900 to-gray-800 text-white pt-4 sm:pt-6 pb-12 md:pb-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
               <div>
@@ -645,7 +645,7 @@ export default async function CarMakePage({
                   <span>•</span>
                   <span>Est. {makeData.founded}</span>
                 </div>
-                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
+                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-amber-400">
                   {makeData.displayName} Rentals in Phoenix, AZ
                 </h1>
                 <p className="text-lg md:text-xl text-gray-300 max-w-3xl">

@@ -126,6 +126,28 @@ const CAR_TYPE_SEO_DATA: Record<string, {
     popularMakes: ['Tesla', 'Rivian', 'BMW', 'Mercedes-Benz', 'Porsche', 'Audi'],
     idealFor: ['Eco-conscious travel', 'Tech enthusiasts', 'City driving', 'Fuel savings', 'Quiet rides'],
     priceRange: '$80-300/day'
+  },
+  'coupe': {
+    displayName: 'Coupe',
+    dbValue: 'COUPE',
+    description: 'Sleek coupe rentals in Phoenix. Two-door style meets performance. BMW, Mercedes, Audi coupes and more for the discerning driver.',
+    longDescription: 'For those who appreciate style and sportiness, our coupe collection delivers. From elegant Mercedes-Benz coupes to aggressive BMW M-series, these two-door beauties combine head-turning design with exhilarating performance. Perfect for couples or solo travelers who want to make a statement.',
+    icon: 'coupe',
+    keywords: ['coupe rental phoenix', 'two door car rental arizona', 'bmw coupe rental', 'mercedes coupe rental', 'sports coupe rental phoenix'],
+    popularMakes: ['BMW', 'Mercedes-Benz', 'Audi', 'Porsche', 'Lexus', 'Infiniti'],
+    idealFor: ['Style-conscious drivers', 'Date nights', 'Weekend getaways', 'Business travel', 'Special occasions'],
+    priceRange: '$100-400/day'
+  },
+  'exotic': {
+    displayName: 'Exotic',
+    dbValue: 'EXOTIC',
+    description: 'Exotic car rentals in Phoenix. Drive a Lamborghini, Ferrari, Bentley, or Rolls-Royce. Ultimate luxury and supercar experiences in Arizona.',
+    longDescription: 'Experience the pinnacle of automotive excellence. Our exotic car collection features the world\'s most prestigious marques: Lamborghini, Ferrari, Bentley, Rolls-Royce, and McLaren. Whether it\'s for a special celebration, photo shoot, or simply to fulfill a dream, drive something extraordinary in the Arizona sun.',
+    icon: 'exotic',
+    keywords: ['exotic car rental phoenix', 'lamborghini rental arizona', 'ferrari rental phoenix', 'supercar rental scottsdale', 'bentley rental phoenix', 'rolls royce rental arizona'],
+    popularMakes: ['Lamborghini', 'Ferrari', 'Bentley', 'Rolls-Royce', 'McLaren', 'Aston Martin'],
+    idealFor: ['Special celebrations', 'Weddings', 'Photo shoots', 'Bachelor parties', 'Bucket list experiences'],
+    priceRange: '$500-2000/day'
   }
 }
 

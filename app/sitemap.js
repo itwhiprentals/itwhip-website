@@ -238,7 +238,7 @@ export default async function sitemap() {
   // ============================================
   // VEHICLE TYPE PAGES (HIGH PRIORITY FOR SEO)
   // ============================================
-  const vehicleTypes = ['sedan', 'suv', 'luxury', 'sports', 'electric', 'convertible', 'truck']
+  const vehicleTypes = ['sedan', 'suv', 'luxury', 'sports', 'electric', 'convertible', 'truck', 'coupe', 'exotic']
 
   const typePages = vehicleTypes.map(type => ({
     url: `${baseUrl}/rentals/types/${type}`,
@@ -250,7 +250,10 @@ export default async function sitemap() {
   // ============================================
   // CAR MAKE PAGES (HIGH PRIORITY FOR SEO)
   // ============================================
-  const carMakes = ['tesla', 'bmw', 'mercedes', 'porsche', 'lamborghini', 'audi', 'lexus', 'dodge']
+  const carMakes = [
+    'tesla', 'bmw', 'mercedes', 'porsche', 'lamborghini', 'audi', 'lexus', 'dodge',
+    'bentley', 'cadillac', 'ferrari', 'chevrolet', 'land-rover', 'toyota', 'honda', 'ford'
+  ]
 
   const makePages = carMakes.map(make => ({
     url: `${baseUrl}/rentals/makes/${make}`,
@@ -260,24 +263,204 @@ export default async function sitemap() {
   }))
 
   // ============================================
-  // CITY PAGES - Static List (HIGH PRIORITY FOR LOCAL SEO)
+  // AIRPORT PAGES (HIGH PRIORITY FOR SEO)
   // ============================================
+  const airportSlugs = ['phoenix-sky-harbor', 'mesa-gateway', 'scottsdale-airport']
+
+  const airportPages = airportSlugs.map(airport => ({
+    url: `${baseUrl}/rentals/airports/${airport}`,
+    lastModified: new Date(),
+    changeFrequency: 'daily',
+    priority: 0.9,
+  }))
+
+  // ============================================
+  // NEAR ME & USE CASE PAGES (HIGH PRIORITY FOR SEO)
+  // ============================================
+  const nearMePages = [
+    {
+      url: `${baseUrl}/rentals/near-me`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/rentals/luxury-near-me`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/rentals/suv-near-me`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/rentals/exotic-near-me`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.9,
+    },
+  ]
+
+  const useCasePages = [
+    {
+      url: `${baseUrl}/rentals/long-term`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/rentals/weekend`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/rentals/airport-delivery`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/rentals/road-trip`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/rentals/business`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/rentals/snowbird`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/rentals/spring-training`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+  ]
+
+  // ============================================
+  // SUPPORT PAGES
+  // ============================================
+  const supportPages = [
+    {
+      url: `${baseUrl}/support`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/support/damage-process`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/support/deposits`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/support/insurance`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/support/cleaning-policy`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+  ]
+
+  // ============================================
+  // MAKE/MODEL PAGES (HIGH PRIORITY FOR SEO)
+  // ============================================
+  const makeModelPages = [
+    'tesla/model-y',
+    'tesla/model-3',
+    'bmw/x5',
+    'porsche/cayenne',
+    'mercedes/s-class',
+    'dodge/hellcat',
+    'lamborghini/huracan',
+    'bentley/bentayga',
+    'ferrari/488',
+    'ford/mustang-gt',
+    'jeep/wrangler',
+    'chevrolet/corvette',
+  ].map(path => ({
+    url: `${baseUrl}/rentals/makes/${path}`,
+    lastModified: new Date(),
+    changeFrequency: 'weekly',
+    priority: 0.85,
+  }))
+
+  // ============================================
+  // CITY PAGES - Static List (HIGH PRIORITY FOR LOCAL SEO)
+  // All 30 locations from CITY_SEO_DATA
+  // ============================================
+
+  // Major Arizona Cities (18)
   const arizonaCities = [
     'phoenix',
-    'scottsdale', 
+    'scottsdale',
     'tempe',
     'mesa',
     'chandler',
     'gilbert',
     'glendale',
     'peoria',
-    'paradise-valley',
+    'goodyear',
+    'surprise',
     'tucson',
-    'flagstaff'
+    'sedona',
+    'flagstaff',
+    'queen-creek',
+    'paradise-valley',
+    'ahwatukee',
+    'avondale',
+    'fountain-hills',
   ]
-  
-  const cityPages = arizonaCities.map(city => ({
-    url: `${baseUrl}/rentals/cities/${city}`,
+
+  // Phoenix Metro Neighborhoods (9)
+  const phoenixNeighborhoods = [
+    'sky-harbor-airport',
+    'mesa-gateway-airport',
+    'scottsdale-airport',
+    'camelback',
+    'old-town-scottsdale',
+    'biltmore',
+    'downtown-phoenix',
+    'arcadia',
+    'papago-park',
+  ]
+
+  // Additional Popular Areas (4)
+  const popularAreas = [
+    'lake-pleasant',
+    'sedona-village',
+    'westgate',
+    'talking-stick',
+  ]
+
+  // Combine all locations for city pages
+  const allLocations = [...arizonaCities, ...phoenixNeighborhoods, ...popularAreas]
+
+  const cityPages = allLocations.map(location => ({
+    url: `${baseUrl}/rentals/cities/${location}`,
     lastModified: new Date(),
     changeFrequency: 'daily',
     priority: 0.9, // High priority for local SEO
@@ -493,13 +676,18 @@ export default async function sitemap() {
     ...hostPages,
     ...featurePages,
     ...rentalPages,
-    ...typePages,    // Vehicle type pages
-    ...makePages,    // Car make pages
-    ...cityPages,    // Static city pages - always included
+    ...typePages,      // Vehicle type pages
+    ...makePages,      // Car make pages
+    ...airportPages,   // Airport pickup pages
+    ...nearMePages,    // Near me pages
+    ...useCasePages,   // Use case pages (long-term, weekend, etc.)
+    ...makeModelPages, // Make/model pages (tesla/model-y, etc.)
+    ...supportPages,   // Support/help pages
+    ...cityPages,      // Static city pages - always included
     ...blogPages,
     ...otherPages,
-    ...businessPages, // Business / B2B pages
-    ...driverPages,   // Driver/Guest acquisition pages
+    ...businessPages,  // Business / B2B pages
+    ...driverPages,    // Driver/Guest acquisition pages
     ...carPages,
   ]
 }
