@@ -155,6 +155,36 @@ export default async function sitemap() {
       changeFrequency: 'monthly',
       priority: 0.8,
     },
+    {
+      url: `${baseUrl}/host/fleet-owners`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/host/tax-benefits`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/host/payouts`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/host/requirements/arizona`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/host/insurance-options`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
   ]
 
   // ============================================
@@ -238,7 +268,10 @@ export default async function sitemap() {
   // ============================================
   // VEHICLE TYPE PAGES (HIGH PRIORITY FOR SEO)
   // ============================================
-  const vehicleTypes = ['sedan', 'suv', 'luxury', 'sports', 'electric', 'convertible', 'truck', 'coupe', 'exotic']
+  const vehicleTypes = [
+    'sedan', 'suv', 'luxury', 'sports', 'electric', 'convertible', 'truck', 'coupe', 'exotic',
+    'pickup-truck', '7-seater', '8-seater', 'economy', 'family'
+  ]
 
   const typePages = vehicleTypes.map(type => ({
     url: `${baseUrl}/rentals/types/${type}`,
@@ -302,6 +335,12 @@ export default async function sitemap() {
       changeFrequency: 'daily',
       priority: 0.9,
     },
+    {
+      url: `${baseUrl}/rentals/airport-near-me`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.9,
+    },
   ]
 
   const useCasePages = [
@@ -343,6 +382,30 @@ export default async function sitemap() {
     },
     {
       url: `${baseUrl}/rentals/spring-training`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/rentals/hourly`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/rentals/daily`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/rentals/corporate-travel`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/rentals/hotel-delivery`,
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.8,
@@ -592,6 +655,18 @@ export default async function sitemap() {
     },
     {
       url: `${baseUrl}/reviews`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/reviews/hosts`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/reviews/cars`,
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.7,

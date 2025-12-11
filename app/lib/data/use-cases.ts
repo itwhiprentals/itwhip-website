@@ -383,6 +383,207 @@ export const USE_CASE_DATA: Record<string, UseCaseData> = {
       'SUVs are great for groups of fans',
       'Check stadium parking before each game'
     ]
+  },
+
+  'hourly': {
+    slug: 'hourly',
+    title: 'Hourly Car Rentals',
+    h1: 'Hourly Car Rentals in Phoenix | By-the-Hour Pricing',
+    metaTitle: 'Hourly Car Rentals Phoenix | Pay Per Hour | ItWhip',
+    metaDescription: 'Rent a car by the hour in Phoenix. Perfect for quick errands, appointments, or short trips. No full-day commitment required. Starting from $15/hour.',
+    heroSubtitle: 'Need a car for just a few hours? Pay only for the time you use.',
+    content: 'Not every trip needs a full day rental. Whether you\'re running errands, attending an appointment, picking someone up from the airport, or just need wheels for a quick task, our hourly rentals give you flexibility without paying for a full day. Book for 2, 4, or 6 hours - whatever fits your schedule.',
+    benefits: [
+      'Pay only for hours you need',
+      'Minimum 2-hour rental',
+      'Perfect for quick errands',
+      'Airport pickups and dropoffs',
+      'Last-minute availability',
+      'No full-day commitment'
+    ],
+    priceRange: '$15-45/hour',
+    durationSuggestion: '2-6 hours',
+    idealCarTypes: ['SEDAN', 'SUV', 'ELECTRIC'],
+    filters: {
+      maxDays: 1,
+      carTypes: ['SEDAN', 'SUV']
+    },
+    faqs: [
+      {
+        question: 'What\'s the minimum rental time?',
+        answer: 'Most hosts require a minimum of 2 hours for hourly rentals. Some allow single-hour bookings for quick errands.'
+      },
+      {
+        question: 'How does hourly pricing work?',
+        answer: 'Hourly rates are typically 15-20% of the daily rate per hour. Book for your estimated time, and if you return early, you still pay for booked hours.'
+      },
+      {
+        question: 'What if I need the car longer than planned?',
+        answer: 'Message your host through the app to extend. If the car is available, most hosts are happy to accommodate. Additional hours are charged at the hourly rate.'
+      },
+      {
+        question: 'Is mileage included in hourly rentals?',
+        answer: 'Yes, hourly rentals typically include a proportional mileage allowance (e.g., 30-50 miles for a 4-hour rental).'
+      }
+    ],
+    tips: [
+      'Book a 30-minute buffer for unexpected delays',
+      'Check if host offers hourly rates on their listing',
+      'Perfect for airport pickups and dropoffs',
+      'Message host to confirm hourly availability'
+    ]
+  },
+
+  'daily': {
+    slug: 'daily',
+    title: 'Daily Car Rentals',
+    h1: 'Daily Car Rentals in Phoenix | 24-Hour Rentals',
+    metaTitle: 'Daily Car Rentals Phoenix | 24-Hour Rentals | ItWhip',
+    metaDescription: 'Rent a car for the day in Phoenix. Sedans from $35/day, SUVs from $55/day. Flexible pickup times, no hidden fees. All cars include insurance.',
+    heroSubtitle: 'Full day freedom. Pick up in the morning, return that evening.',
+    content: 'Sometimes you just need a car for the day. Whether you\'re exploring Phoenix, running multiple errands, or your car is in the shop, our daily rentals offer complete flexibility. Choose from sedans, SUVs, trucks, and luxury vehicles. Every rental includes insurance and 24-hour roadside assistance.',
+    benefits: [
+      'Full 24-hour rental period',
+      'Wide variety of vehicles',
+      'Insurance included',
+      'No hidden fees',
+      'Flexible pickup times',
+      '24-hour roadside assistance'
+    ],
+    priceRange: '$35-299/day',
+    durationSuggestion: '1 day',
+    idealCarTypes: ['SEDAN', 'SUV', 'TRUCK', 'LUXURY'],
+    filters: {
+      carTypes: ['SEDAN', 'SUV', 'TRUCK']
+    },
+    faqs: [
+      {
+        question: 'How long is a daily rental?',
+        answer: 'A daily rental is 24 hours from your pickup time. Pick up at 10am, return by 10am the next day to avoid additional charges.'
+      },
+      {
+        question: 'What if I only need the car for 12 hours?',
+        answer: 'You can return early, but daily rentals are charged the full day rate. For shorter needs, check if the host offers hourly rates.'
+      },
+      {
+        question: 'Can I extend a daily rental?',
+        answer: 'Yes! Message your host before your rental ends to request an extension. Subject to availability, additional days are charged at the daily rate.'
+      },
+      {
+        question: 'What\'s included in the daily rate?',
+        answer: 'All daily rentals include $1M liability insurance, typically 150-250 miles, and 24/7 roadside assistance. Fuel is not included.'
+      }
+    ],
+    tips: [
+      'Return on time to avoid late fees',
+      'Check mileage limits for day trips',
+      'Book instant book cars for same-day pickup',
+      'Compare daily vs. hourly for short trips'
+    ]
+  },
+
+  'corporate-travel': {
+    slug: 'corporate-travel',
+    title: 'Corporate Travel Rentals',
+    h1: 'Corporate Travel Car Rentals | Phoenix Business Rentals',
+    metaTitle: 'Corporate Car Rentals Phoenix | Business Travel | ItWhip',
+    metaDescription: 'Corporate car rentals in Phoenix for business travelers. Premium vehicles, expense receipts, volume discounts. Serving Fortune 500 companies.',
+    heroSubtitle: 'Streamlined corporate travel. Premium vehicles, simplified billing.',
+    content: 'ItWhip serves businesses of all sizes - from startups to Fortune 500 companies. Our corporate travel program offers volume discounts, centralized billing, detailed expense reports, and a curated fleet of professional vehicles. Your team gets the right car every time, and your accounting team gets clean expense documentation.',
+    benefits: [
+      'Volume discounts for companies',
+      'Centralized billing available',
+      'Detailed expense reports',
+      'Premium vehicle selection',
+      'Dedicated account manager',
+      'Priority customer support'
+    ],
+    priceRange: '$65-350/day',
+    durationSuggestion: '1-30 days',
+    idealCarTypes: ['LUXURY', 'SEDAN', 'SUV'],
+    filters: {
+      carTypes: ['LUXURY', 'SEDAN', 'SUV']
+    },
+    faqs: [
+      {
+        question: 'How do corporate accounts work?',
+        answer: 'Apply for a corporate account and we\'ll set up centralized billing, volume discounts, and a dedicated account manager. All employee bookings go to one monthly invoice.'
+      },
+      {
+        question: 'What discounts are available for businesses?',
+        answer: 'Volume discounts range from 5-20% depending on booking frequency. We also offer special rates for long-term assignments and executive travel.'
+      },
+      {
+        question: 'Can employees book directly?',
+        answer: 'Yes! Employees can book through their corporate account with approved payment methods. Managers can set booking policies and spending limits.'
+      },
+      {
+        question: 'What expense documentation is provided?',
+        answer: 'Every booking generates a detailed receipt with dates, vehicle, driver, and itemized charges. Downloadable invoices are available for accounting.'
+      },
+      {
+        question: 'Do you serve large companies?',
+        answer: 'Yes, we work with companies of all sizes including Fortune 500 corporations with recurring Phoenix travel needs.'
+      }
+    ],
+    tips: [
+      'Apply for corporate account for volume discounts',
+      'Set up centralized billing for easier expense tracking',
+      'Book luxury vehicles for executive travel',
+      'Use same-day booking for last-minute trips'
+    ]
+  },
+
+  'hotel-delivery': {
+    slug: 'hotel-delivery',
+    title: 'Hotel Delivery Car Rentals',
+    h1: 'Hotel Delivery Car Rentals | Phoenix & Scottsdale',
+    metaTitle: 'Hotel Car Delivery Phoenix | Scottsdale Hotels | ItWhip',
+    metaDescription: 'Get your rental car delivered to your Phoenix or Scottsdale hotel. Free delivery available. Skip the rental counter and start your vacation immediately.',
+    heroSubtitle: 'Your car, delivered to your hotel lobby. Start exploring immediately.',
+    content: 'Why waste vacation time at a rental counter? With hotel delivery, your host brings the car directly to your Phoenix or Scottsdale hotel. Meet in the lobby or valet area, do a quick walkthrough, and you\'re on your way. Perfect for resort guests, conference attendees, or anyone who wants maximum convenience.',
+    benefits: [
+      'Delivery to any Phoenix metro hotel',
+      'Meet your host at the lobby',
+      'No rental counter lines',
+      'Free delivery from many hosts',
+      'Return at hotel too',
+      'Concierge-style service'
+    ],
+    priceRange: '$0-35 delivery fee',
+    durationSuggestion: 'Any duration',
+    idealCarTypes: ['SEDAN', 'SUV', 'LUXURY', 'CONVERTIBLE'],
+    filters: {
+      features: ['delivery']
+    },
+    faqs: [
+      {
+        question: 'Which hotels do you deliver to?',
+        answer: 'We deliver to hotels throughout the Phoenix metro area including Scottsdale resorts, downtown Phoenix hotels, and properties in Tempe, Mesa, and Chandler.'
+      },
+      {
+        question: 'Is hotel delivery free?',
+        answer: 'Many hosts offer free delivery within a certain radius. Others charge $15-35 for hotel delivery. The fee is clearly shown on each listing.'
+      },
+      {
+        question: 'Where do I meet the host?',
+        answer: 'Typically you\'ll meet in the hotel lobby or valet/parking area. Coordinate with your host through the app for the exact meeting spot.'
+      },
+      {
+        question: 'Can I return the car to my hotel?',
+        answer: 'Yes! Most hosts with hotel delivery also offer hotel pickup at the end of your rental. Arrange the return time and location with your host.'
+      },
+      {
+        question: 'What if I\'m staying at an Airbnb or vacation rental?',
+        answer: 'No problem! Hosts can deliver to vacation rentals, Airbnbs, and private residences throughout the Phoenix area.'
+      }
+    ],
+    tips: [
+      'Book delivery for your check-in day',
+      'Meet in the lobby for easy handoff',
+      'Confirm delivery time with host',
+      'Check if return pickup is available'
+    ]
   }
 }
 

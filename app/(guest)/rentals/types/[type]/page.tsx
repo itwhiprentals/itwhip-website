@@ -148,6 +148,61 @@ const CAR_TYPE_SEO_DATA: Record<string, {
     popularMakes: ['Lamborghini', 'Ferrari', 'Bentley', 'Rolls-Royce', 'McLaren', 'Aston Martin'],
     idealFor: ['Special celebrations', 'Weddings', 'Photo shoots', 'Bachelor parties', 'Bucket list experiences'],
     priceRange: '$500-2000/day'
+  },
+  'pickup-truck': {
+    displayName: 'Pickup Truck',
+    dbValue: 'TRUCK',
+    description: 'Pickup truck rentals in Phoenix. Full-size trucks for hauling, towing, moving, and weekend projects. F-150, Silverado, Ram, and more.',
+    longDescription: 'Need serious hauling or towing capability? Our pickup truck rentals range from mid-size workhorses to full-size heavy-duty trucks. Perfect for moving, construction projects, towing boats or trailers, or just tackling Arizona\'s rugged terrain.',
+    icon: 'truck',
+    keywords: ['pickup truck rental phoenix', 'truck rental arizona', 'f150 rental phoenix', 'silverado rental arizona', 'ram truck rental phoenix'],
+    popularMakes: ['Ford', 'Chevrolet', 'Ram', 'Toyota', 'GMC', 'Nissan'],
+    idealFor: ['Moving day', 'Hauling equipment', 'Towing trailers', 'Construction work', 'Off-road adventures'],
+    priceRange: '$65-200/day'
+  },
+  '7-seater': {
+    displayName: '7-Seater',
+    dbValue: 'SUV',
+    description: '7-seater vehicle rentals in Phoenix. SUVs and minivans with third-row seating. Perfect for large families, groups, and airport pickups.',
+    longDescription: 'Traveling with a group? Our 7-seater rentals provide comfortable seating for the whole crew. From three-row SUVs to spacious minivans, find the perfect vehicle for family vacations, group outings, or airport runs with multiple passengers.',
+    icon: 'suv',
+    keywords: ['7 seater rental phoenix', '7 passenger suv rental arizona', 'large family car rental', 'group vehicle rental phoenix', 'minivan rental arizona'],
+    popularMakes: ['Toyota', 'Honda', 'Chevrolet', 'Ford', 'Kia', 'Chrysler'],
+    idealFor: ['Large families', 'Group travel', 'Airport pickups', 'Road trips', 'Sports team transport'],
+    priceRange: '$75-175/day'
+  },
+  '8-seater': {
+    displayName: '8-Seater',
+    dbValue: 'SUV',
+    description: '8-seater vehicle rentals in Phoenix. Full-size SUVs and passenger vans for large groups. Maximum capacity for your Arizona adventure.',
+    longDescription: 'Need maximum seating capacity? Our 8-seater rentals are perfect for large groups, sports teams, or extended families. Choose from full-size SUVs with captain\'s chairs to passenger vans with bench seating for the ultimate group transportation.',
+    icon: 'suv',
+    keywords: ['8 seater rental phoenix', '8 passenger suv rental arizona', 'large group vehicle rental', 'passenger van rental phoenix', 'extended family car rental'],
+    popularMakes: ['Chevrolet', 'Ford', 'GMC', 'Toyota', 'Nissan', 'Mercedes-Benz'],
+    idealFor: ['Large groups', 'Corporate shuttles', 'Wedding parties', 'Sports teams', 'Family reunions'],
+    priceRange: '$85-225/day'
+  },
+  'economy': {
+    displayName: 'Economy',
+    dbValue: 'SEDAN',
+    description: 'Economy car rentals in Phoenix. Affordable, fuel-efficient vehicles perfect for budget-conscious travelers and daily driving.',
+    longDescription: 'Get the best value without sacrificing quality. Our economy rentals offer reliable, fuel-efficient vehicles at wallet-friendly prices. Perfect for budget travelers, daily commuters, or anyone who wants to save on rental costs and gas.',
+    icon: 'sedan',
+    keywords: ['cheap car rental phoenix', 'economy car rental arizona', 'budget car rental phoenix', 'affordable rental car arizona', 'fuel efficient rental phoenix'],
+    popularMakes: ['Toyota', 'Honda', 'Nissan', 'Hyundai', 'Kia', 'Mazda'],
+    idealFor: ['Budget travel', 'Daily commuting', 'City driving', 'First-time renters', 'Fuel savings'],
+    priceRange: '$29-55/day'
+  },
+  'family': {
+    displayName: 'Family',
+    dbValue: 'SUV',
+    description: 'Family car rentals in Phoenix. Spacious SUVs, minivans, and crossovers with room for kids, gear, and everything else.',
+    longDescription: 'Family travel demands space, comfort, and reliability. Our family-friendly rentals feature spacious SUVs, minivans, and crossovers with plenty of room for car seats, luggage, strollers, and everything else families need on the road.',
+    icon: 'suv',
+    keywords: ['family car rental phoenix', 'family suv rental arizona', 'minivan rental phoenix', 'car seat friendly rental', 'kid friendly car rental'],
+    popularMakes: ['Toyota', 'Honda', 'Chevrolet', 'Ford', 'Kia', 'Chrysler'],
+    idealFor: ['Family vacations', 'Road trips with kids', 'Disney trips', 'Sports practice', 'Grocery runs'],
+    priceRange: '$55-150/day'
   }
 }
 
