@@ -98,7 +98,7 @@ const navigationSections = [
       { href: '/host/fleet-owners', label: 'Fleet Owners', icon: IoCarOutline },
       { href: '/host/payouts', label: 'Payouts & Earnings', icon: IoWalletOutline },
       { href: '/host/insurance-options', label: 'Insurance Options', icon: IoShieldCheckmarkOutline },
-      { href: '/host/requirements/arizona', label: 'Host Requirements', icon: IoDocumentTextOutline },
+      { href: '/host-requirements', label: 'Host Requirements', icon: IoDocumentTextOutline },
       { href: '/host/tax-benefits', label: 'Tax Benefits', icon: IoCalculatorOutline }
     ]
   },

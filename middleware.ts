@@ -111,7 +111,6 @@ const publicRoutes = [
   '/host/fleet-owners',
   '/host/tax-benefits',
   '/host/payouts',
-  '/host/requirements/arizona',
   '/host/insurance-options',
 ]
 

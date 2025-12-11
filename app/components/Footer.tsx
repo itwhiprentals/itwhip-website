@@ -176,7 +176,7 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/host/requirements/arizona" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                <Link href="/host-requirements" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
                   Host Requirements
                 </Link>
               </li>
