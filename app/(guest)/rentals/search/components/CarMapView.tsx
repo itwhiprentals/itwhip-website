@@ -441,36 +441,44 @@ export default function CarMapView({
 
     // Add markers for each car - ALL cars have displayLocation now
     processedCars.forEach(car => {
-      // Create marker container
+      // Create marker container - needs explicit size for Mapbox positioning
       const el = document.createElement('div')
       el.className = 'cursor-pointer'
       el.dataset.carId = car.id
-      el.style.cssText = 'position: relative;'
+      el.style.cssText = `
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      `
+
+      // Wrapper for badge + circle
+      const wrapper = document.createElement('div')
+      wrapper.style.cssText = `
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      `
 
       // Proximity circle (shows approximate area, not exact location)
       const circle = document.createElement('div')
       circle.className = 'proximity-circle'
       circle.style.cssText = `
         position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
         width: 60px;
         height: 60px;
         border-radius: 50%;
         background: rgba(217, 119, 6, 0.1);
         border: 2px dashed rgba(217, 119, 6, 0.3);
         pointer-events: none;
-        z-index: 1;
       `
-      el.appendChild(circle)
+      wrapper.appendChild(circle)
 
       // Price badge (centered on the circle)
       const badge = document.createElement('div')
       badge.className = 'marker-badge'
       badge.style.cssText = `
         position: relative;
-        z-index: 2;
         padding: 6px 12px;
         border-radius: 20px;
         font-size: 13px;
@@ -483,7 +491,9 @@ export default function CarMapView({
         transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
       `
       badge.textContent = `$${Math.round(car.dailyRate)}`
-      el.appendChild(badge)
+      wrapper.appendChild(badge)
+
+      el.appendChild(wrapper)
 
       // Click handler
       el.addEventListener('click', (e) => {
@@ -492,13 +502,13 @@ export default function CarMapView({
       })
 
       // Hover effect
-      el.addEventListener('mouseenter', () => {
+      wrapper.addEventListener('mouseenter', () => {
         badge.style.boxShadow = '0 4px 12px rgba(0,0,0,0.25)'
         circle.style.background = 'rgba(217, 119, 6, 0.15)'
         circle.style.borderColor = 'rgba(217, 119, 6, 0.5)'
       })
 
-      el.addEventListener('mouseleave', () => {
+      wrapper.addEventListener('mouseleave', () => {
         const isSelected = selectedCar?.id === car.id
         if (!isSelected) {
           badge.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)'
