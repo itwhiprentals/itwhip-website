@@ -356,6 +356,42 @@ const CAR_MAKE_SEO_DATA: Record<string, {
     popularModels: ['Ghost', 'Cullinan', 'Phantom', 'Wraith'],
     knownFor: ['Ultimate luxury', 'British craftsmanship', 'Starlight headliner', 'Bespoke options', 'Prestige'],
     priceRange: '$1500-4000/day'
+  },
+  'chrysler': {
+    displayName: 'Chrysler',
+    dbValue: 'Chrysler',
+    description: 'Chrysler rentals in Phoenix, AZ. American comfort and style with 300 and Pacifica. Premium features at accessible prices.',
+    longDescription: 'Experience American comfort with a Chrysler rental. Our fleet includes the bold Chrysler 300 sedan with its commanding presence, and the versatile Pacifica minivan perfect for family travel across Arizona.',
+    country: 'USA',
+    founded: '1925',
+    keywords: ['chrysler rental phoenix', 'chrysler 300 rental arizona', 'pacifica rental phoenix', 'family car rental scottsdale', 'minivan rental arizona'],
+    popularModels: ['300', 'Pacifica', 'Pacifica Hybrid'],
+    knownFor: ['Bold design', 'Premium features', 'Family comfort', 'American heritage', 'Value'],
+    priceRange: '$60-130/day'
+  },
+  'ram': {
+    displayName: 'RAM',
+    dbValue: 'Ram',
+    description: 'RAM rentals in Phoenix, AZ. Heavy-duty capability with 1500, 2500, and 3500 trucks. Built to serve Arizona\'s toughest jobs.',
+    longDescription: 'Get the job done with a RAM truck rental. Our RAM fleet offers the refined 1500 for daily driving and the powerful 2500/3500 for serious hauling. Experience class-leading towing capacity and interior comfort.',
+    country: 'USA',
+    founded: '2010',
+    keywords: ['ram rental phoenix', 'ram 1500 rental arizona', 'ram 2500 rental phoenix', 'truck rental scottsdale', 'heavy duty truck rental arizona'],
+    popularModels: ['1500', '2500', '3500', 'TRX'],
+    knownFor: ['Towing capacity', 'Luxury truck interiors', 'Heavy-duty capability', 'Multifunction tailgate', 'Work-ready'],
+    priceRange: '$80-250/day'
+  },
+  'gmc': {
+    displayName: 'GMC',
+    dbValue: 'GMC',
+    description: 'GMC rentals in Phoenix, AZ. Professional grade trucks and SUVs with Sierra, Yukon, and Denali. Premium capability awaits.',
+    longDescription: 'Experience Professional Grade with a GMC rental. Our fleet features the capable Sierra truck, spacious Yukon SUV, and luxurious Denali trims. GMC delivers premium refinement with serious capability for Arizona adventures.',
+    country: 'USA',
+    founded: '1911',
+    keywords: ['gmc rental phoenix', 'sierra rental arizona', 'yukon rental phoenix', 'denali rental scottsdale', 'truck rental arizona'],
+    popularModels: ['Sierra', 'Yukon', 'Acadia', 'Terrain', 'Hummer EV'],
+    knownFor: ['Professional Grade', 'Denali luxury', 'Truck capability', 'Premium interiors', 'MultiPro tailgate'],
+    priceRange: '$80-350/day'
   }
 }
 
@@ -695,15 +731,18 @@ export default async function CarMakePage({
               POPULAR MODELS
             </h2>
             <div className="flex flex-wrap gap-3">
-              {makeData.popularModels.map((model) => (
-                <Link
-                  key={model}
-                  href={`/rentals/search?make=${makeData.dbValue}&q=${encodeURIComponent(model)}`}
-                  className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white px-4 py-2 rounded-lg text-sm font-medium hover:border-purple-500 hover:text-purple-600 transition shadow-sm hover:shadow-md"
-                >
-                  {makeData.displayName} {model}
-                </Link>
-              ))}
+              {makeData.popularModels.map((model) => {
+                const modelSlug = model.toLowerCase().replace(/\s+/g, '-')
+                return (
+                  <Link
+                    key={model}
+                    href={`/rentals/makes/${make}/${modelSlug}`}
+                    className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white px-4 py-2 rounded-lg text-sm font-medium hover:border-purple-500 hover:text-purple-600 transition shadow-sm hover:shadow-md"
+                  >
+                    {makeData.displayName} {model}
+                  </Link>
+                )
+              })}
             </div>
           </div>
         </section>

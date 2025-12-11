@@ -3,18 +3,25 @@ import { Metadata } from 'next'
 import Script from 'next/script'
 import Link from 'next/link'
 import Image from 'next/image'
-import prisma from '@/app/lib/database/prisma'
+import { prisma } from '@/app/lib/database/prisma'
 import {
   IoStar,
-  IoCheckmarkCircleOutline,
+  IoStarOutline,
   IoChevronForwardOutline,
   IoHomeOutline,
   IoCarOutline,
   IoLocationOutline,
-  IoSpeedometerOutline
+  IoSpeedometerOutline,
+  IoPersonCircleOutline
 } from 'react-icons/io5'
 import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
+
+// Helper to get first name only
+function getFirstName(name: string | null | undefined): string {
+  if (!name) return 'Guest'
+  return name.trim().split(/\s+/)[0] || 'Guest'
+}
 
 export const revalidate = 3600
 
@@ -39,16 +46,15 @@ export default async function CarReviewsPage() {
     where: {
       isActive: true,
       rating: { gte: 4.5 },
-      reviewCount: { gt: 0 }
+      totalTrips: { gt: 0 }
     },
     select: {
       id: true,
       make: true,
       model: true,
       year: true,
-      type: true,
+      carType: true,
       rating: true,
-      reviewCount: true,
       totalTrips: true,
       dailyRate: true,
       city: true,
@@ -61,7 +67,7 @@ export default async function CarReviewsPage() {
       host: {
         select: {
           name: true,
-          isSuperhost: true,
+          rating: true,
           isVerified: true
         }
       },
@@ -74,28 +80,34 @@ export default async function CarReviewsPage() {
           comment: true,
           createdAt: true,
           reviewerProfile: {
-            select: { name: true }
+            select: {
+              name: true,
+              profilePhotoUrl: true
+            }
           }
         }
+      },
+      _count: {
+        select: { reviews: true }
       }
     },
     orderBy: [
       { rating: 'desc' },
-      { reviewCount: 'desc' }
+      { totalTrips: 'desc' }
     ],
     take: 30
   })
 
   // Get overall stats
   const stats = await prisma.rentalCar.aggregate({
-    where: { isActive: true, reviewCount: { gt: 0 } },
+    where: { isActive: true, totalTrips: { gt: 0 } },
     _avg: { rating: true },
-    _sum: { reviewCount: true },
+    _sum: { totalTrips: true },
     _count: true
   })
 
   const avgRating = stats._avg.rating?.toFixed(1) || '4.8'
-  const totalReviews = stats._sum.reviewCount || 0
+  const totalTrips = stats._sum.totalTrips || 0
   const totalCars = stats._count || 0
 
   // JSON-LD
@@ -115,7 +127,7 @@ export default async function CarReviewsPage() {
         aggregateRating: {
           '@type': 'AggregateRating',
           ratingValue: car.rating,
-          reviewCount: car.reviewCount,
+          reviewCount: car._count.reviews,
           bestRating: 5,
           worstRating: 1
         },
@@ -182,10 +194,10 @@ export default async function CarReviewsPage() {
                   <span className="text-amber-100">average</span>
                 </div>
                 <div className="text-amber-100">
-                  <span className="font-semibold text-white">{totalCars}</span> reviewed cars
+                  <span className="font-semibold text-white">{totalCars}</span> rated cars
                 </div>
                 <div className="text-amber-100">
-                  <span className="font-semibold text-white">{totalReviews.toLocaleString()}</span> total reviews
+                  <span className="font-semibold text-white">{totalTrips.toLocaleString()}</span> trips completed
                 </div>
               </div>
             </div>
@@ -265,19 +277,25 @@ export default async function CarReviewsPage() {
                     <div className="absolute top-3 left-3 px-2 py-1 bg-white/90 dark:bg-gray-800/90 rounded-full flex items-center gap-1">
                       <IoStar className="w-4 h-4 text-amber-500" />
                       <span className="text-sm font-semibold">{car.rating?.toFixed(1)}</span>
-                      <span className="text-xs text-gray-500">({car.reviewCount})</span>
+                      <span className="text-xs text-gray-500">({car._count.reviews})</span>
                     </div>
                     {/* Type Badge */}
                     <div className="absolute top-3 right-3 px-2 py-1 bg-gray-900/70 text-white text-xs font-medium rounded">
-                      {getTypeLabel(car.type)}
+                      {getTypeLabel(car.carType)}
                     </div>
                   </div>
 
                   {/* Car Info */}
                   <div className="p-4">
-                    <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
-                      {car.year} {car.make} {car.model}
+                    {/* Year & Make */}
+                    <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
+                      {car.year} {car.make}
                     </h3>
+                    {/* Model on separate line */}
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                      {car.model}
+                    </p>
+
                     <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mb-3">
                       <IoLocationOutline className="w-3.5 h-3.5" />
                       <span>{car.city}, {car.state}</span>
@@ -290,28 +308,49 @@ export default async function CarReviewsPage() {
                       )}
                     </div>
 
-                    {/* Host Info */}
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="text-xs text-gray-500">by {car.host.name}</span>
-                      {car.host.isSuperhost && (
-                        <span className="px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[10px] font-medium rounded">
-                          Superhost
-                        </span>
-                      )}
-                      {car.host.isVerified && (
-                        <IoCheckmarkCircleOutline className="w-3.5 h-3.5 text-blue-500" />
-                      )}
-                    </div>
-
-                    {/* Latest Review Preview */}
-                    {car.reviews[0] && (
+                    {/* Latest Review Preview with Guest Photo */}
+                    {car.reviews[0] && car.reviews[0].comment && (
                       <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                        <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
-                          &ldquo;{car.reviews[0].comment}&rdquo;
-                        </p>
-                        <p className="text-[10px] text-gray-400 mt-1">
-                          — {car.reviews[0].reviewerProfile?.name || 'Guest'}
-                        </p>
+                        <div className="flex items-start gap-2">
+                          {/* Guest Photo */}
+                          <div className="flex-shrink-0">
+                            {car.reviews[0].reviewerProfile?.profilePhotoUrl ? (
+                              <Image
+                                src={car.reviews[0].reviewerProfile.profilePhotoUrl}
+                                alt={getFirstName(car.reviews[0].reviewerProfile?.name)}
+                                width={28}
+                                height={28}
+                                className="w-7 h-7 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                                <IoPersonCircleOutline className="w-5 h-5 text-gray-400" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            {/* Reviewer name and stars */}
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                {getFirstName(car.reviews[0].reviewerProfile?.name)}
+                              </span>
+                              {/* Dynamic stars */}
+                              <div className="flex">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                  star <= (car.reviews[0].rating || 5) ? (
+                                    <IoStar key={star} className="w-3 h-3 text-amber-400" />
+                                  ) : (
+                                    <IoStarOutline key={star} className="w-3 h-3 text-gray-300" />
+                                  )
+                                ))}
+                              </div>
+                            </div>
+                            {/* Review comment */}
+                            <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                              &ldquo;{car.reviews[0].comment}&rdquo;
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     )}
 

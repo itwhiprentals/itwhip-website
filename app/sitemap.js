@@ -285,7 +285,9 @@ export default async function sitemap() {
   // ============================================
   const carMakes = [
     'tesla', 'bmw', 'mercedes', 'porsche', 'lamborghini', 'audi', 'lexus', 'dodge',
-    'bentley', 'cadillac', 'ferrari', 'chevrolet', 'land-rover', 'toyota', 'honda', 'ford'
+    'bentley', 'cadillac', 'ferrari', 'chevrolet', 'land-rover', 'toyota', 'honda', 'ford',
+    'jeep', 'nissan', 'hyundai', 'kia', 'subaru', 'mazda', 'volkswagen', 'genesis', 'volvo',
+    'mclaren', 'rolls-royce', 'chrysler', 'ram', 'gmc'
   ]
 
   const makePages = carMakes.map(make => ({

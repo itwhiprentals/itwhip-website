@@ -296,9 +296,10 @@ export default function UseCasePage({
                     {faq.question}
                     <IoChevronForwardOutline className="w-4 h-4 text-gray-500 group-open:rotate-90 transition-transform flex-shrink-0 ml-2" />
                   </summary>
-                  <div className="px-4 pb-4 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                    {faq.answer}
-                  </div>
+                  <div
+                    className="px-4 pb-4 text-sm text-gray-600 dark:text-gray-400 leading-relaxed [&_a]:text-amber-600 [&_a]:hover:text-amber-700 [&_a]:underline [&_a]:font-medium"
+                    dangerouslySetInnerHTML={{ __html: faq.answer }}
+                  />
                 </details>
               ))}
             </div>

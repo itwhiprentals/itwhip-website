@@ -2,8 +2,7 @@
 import { Metadata } from 'next'
 import Script from 'next/script'
 import Link from 'next/link'
-import Image from 'next/image'
-import prisma from '@/app/lib/database/prisma'
+import { prisma } from '@/app/lib/database/prisma'
 import {
   IoStar,
   IoCheckmarkCircleOutline,
@@ -15,6 +14,7 @@ import {
 } from 'react-icons/io5'
 import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
+import HostCard from './HostCard'
 
 export const revalidate = 3600
 
@@ -35,11 +35,16 @@ export const metadata: Metadata = {
 
 export default async function HostReviewsPage() {
   // Fetch top-rated hosts with their stats
-  const hosts = await prisma.host.findMany({
+  // Only include hosts who have at least one active car AND trips
+  const hosts = await prisma.rentalHost.findMany({
     where: {
-      isActive: true,
+      active: true,
       rating: { gte: 4.5 },
-      totalReviews: { gt: 0 }
+      totalTrips: { gt: 0 },
+      // Must have at least one active car to be featured
+      cars: {
+        some: { isActive: true }
+      }
     },
     select: {
       id: true,
@@ -47,13 +52,11 @@ export default async function HostReviewsPage() {
       profilePhoto: true,
       bio: true,
       rating: true,
-      totalReviews: true,
       totalTrips: true,
       responseRate: true,
       responseTime: true,
       isVerified: true,
-      isSuperhost: true,
-      memberSince: true,
+      joinedAt: true,
       city: true,
       state: true,
       cars: {
@@ -63,23 +66,22 @@ export default async function HostReviewsPage() {
       }
     },
     orderBy: [
-      { isSuperhost: 'desc' },
       { rating: 'desc' },
-      { totalReviews: 'desc' }
+      { totalTrips: 'desc' }
     ],
     take: 30
   })
 
   // Get overall stats
-  const stats = await prisma.host.aggregate({
-    where: { isActive: true, totalReviews: { gt: 0 } },
+  const stats = await prisma.rentalHost.aggregate({
+    where: { active: true, totalTrips: { gt: 0 } },
     _avg: { rating: true },
-    _sum: { totalReviews: true, totalTrips: true },
+    _sum: { totalTrips: true },
     _count: true
   })
 
   const avgRating = stats._avg.rating?.toFixed(1) || '4.9'
-  const totalReviews = stats._sum.totalReviews || 0
+  const totalTrips = stats._sum.totalTrips || 0
   const totalHosts = stats._count || 0
 
   // JSON-LD
@@ -99,7 +101,7 @@ export default async function HostReviewsPage() {
         aggregateRating: {
           '@type': 'AggregateRating',
           ratingValue: host.rating,
-          reviewCount: host.totalReviews,
+          reviewCount: host.totalTrips,
           bestRating: 5,
           worstRating: 1
         }
@@ -146,7 +148,7 @@ export default async function HostReviewsPage() {
                   <span className="font-semibold text-white">{totalHosts}</span> verified hosts
                 </div>
                 <div className="text-purple-200">
-                  <span className="font-semibold text-white">{totalReviews.toLocaleString()}</span> reviews
+                  <span className="font-semibold text-white">{totalTrips.toLocaleString()}</span> trips completed
                 </div>
               </div>
             </div>
@@ -224,101 +226,7 @@ export default async function HostReviewsPage() {
             </h2>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {hosts.map((host) => (
-                <div
-                  key={host.id}
-                  className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-shadow"
-                >
-                  <div className="p-6">
-                    <div className="flex items-start gap-4">
-                      {/* Host Photo */}
-                      <div className="relative flex-shrink-0">
-                        <div className="w-16 h-16 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
-                          {host.profilePhoto ? (
-                            <Image
-                              src={host.profilePhoto}
-                              alt={host.name}
-                              width={64}
-                              height={64}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <IoPersonOutline className="w-8 h-8 text-gray-400" />
-                            </div>
-                          )}
-                        </div>
-                        {host.isSuperhost && (
-                          <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center">
-                            <IoStar className="w-3.5 h-3.5 text-white" />
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Host Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold text-gray-900 dark:text-white truncate">
-                            {host.name}
-                          </h3>
-                          {host.isVerified && (
-                            <IoCheckmarkCircleOutline className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                          )}
-                        </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                          {host.city}, {host.state}
-                        </p>
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center gap-1">
-                            <IoStar className="w-4 h-4 text-amber-500" />
-                            <span className="font-semibold text-gray-900 dark:text-white">
-                              {host.rating?.toFixed(1)}
-                            </span>
-                          </div>
-                          <span className="text-xs text-gray-500">
-                            ({host.totalReviews} reviews)
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Bio */}
-                    {host.bio && (
-                      <p className="mt-4 text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
-                        {host.bio}
-                      </p>
-                    )}
-
-                    {/* Stats */}
-                    <div className="mt-4 flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
-                      <span>{host.totalTrips} trips</span>
-                      {host.responseRate && (
-                        <span>{host.responseRate}% response rate</span>
-                      )}
-                      {host.memberSince && (
-                        <span>Since {new Date(host.memberSince).getFullYear()}</span>
-                      )}
-                    </div>
-
-                    {/* Badges */}
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {host.isSuperhost && (
-                        <span className="px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-medium rounded">
-                          Superhost
-                        </span>
-                      )}
-                      {host.isVerified && (
-                        <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs font-medium rounded">
-                          Verified
-                        </span>
-                      )}
-                      {(host.responseRate ?? 0) >= 90 && (
-                        <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium rounded">
-                          Fast Responder
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                <HostCard key={host.id} host={host} />
               ))}
             </div>
 

@@ -58,9 +58,9 @@ export default function Footer() {
     <footer className="bg-gray-100 dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800">
       {/* Main Footer Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-3 md:gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-7 gap-3 md:gap-4 mb-8">
           {/* Company Info */}
-          <div className="col-span-2 md:col-span-2">
+          <div className="col-span-2 md:col-span-1">
             {/* Logo - ItWhip with bold W and TECHNOLOGY underneath */}
             <div className="mb-3">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white leading-none">
@@ -70,11 +70,10 @@ export default function Footer() {
                 TECHNOLOGY
               </p>
             </div>
-            <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-4">
-              Arizona's peer-to-peer car sharing platform. 
-              Rent from local owners or list your car and earn up to 90%.
+            <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">
+              Arizona's peer-to-peer car sharing platform.
             </p>
-            
+
             {/* Social Links */}
             <div className="flex space-x-3">
               <a
@@ -115,16 +114,89 @@ export default function Footer() {
               </a>
             </div>
           </div>
-          
-          {/* Platform Links */}
+
+          {/* For Guests */}
           <div className="md:col-span-1">
             <h4 className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white mb-2">
-              Platform
+              For Guests
             </h4>
             <ul className="space-y-1.5">
               <li>
                 <Link href="/how-it-works" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
                   How It Works
+                </Link>
+              </li>
+              <li>
+                <Link href="/rentals/daily" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Daily Rentals
+                </Link>
+              </li>
+              <li>
+                <Link href="/rentals/long-term" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Long-Term Rentals
+                </Link>
+              </li>
+              <li>
+                <Link href="/insurance-guide" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Insurance Guide
+                </Link>
+              </li>
+              <li>
+                <Link href="/reviews" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Reviews
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* For Hosts */}
+          <div className="md:col-span-1">
+            <h4 className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white mb-2">
+              For Hosts
+            </h4>
+            <ul className="space-y-1.5">
+              <li>
+                <Link href="/list-your-car" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  List Your Car
+                </Link>
+              </li>
+              <li>
+                <Link href="/host/fleet-owners" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Fleet Owners
+                </Link>
+              </li>
+              <li>
+                <Link href="/host/payouts" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Payouts & Earnings
+                </Link>
+              </li>
+              <li>
+                <Link href="/host/insurance-options" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Insurance Options
+                </Link>
+              </li>
+              <li>
+                <Link href="/host/requirements/arizona" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Host Requirements
+                </Link>
+              </li>
+              <li>
+                <Link href="/host/tax-benefits" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Tax Benefits
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Support */}
+          <div className="md:col-span-1">
+            <h4 className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white mb-2">
+              Support
+            </h4>
+            <ul className="space-y-1.5">
+              <li>
+                <Link href="/support" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Help Center
                 </Link>
               </li>
               <li>
@@ -138,24 +210,53 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/contact" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Contact Us
+                </Link>
+              </li>
+              <li>
                 <Link href="/coverage" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
                   Coverage Areas
-                </Link>
-              </li>
-              <li>
-                <Link href="/insurance-guide" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Insurance Guide
-                </Link>
-              </li>
-              <li>
-                <Link href="/switch-from-turo" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Switch from Turo
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Technology Section */}
+          {/* Company */}
+          <div className="md:col-span-1">
+            <h4 className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white mb-2">
+              Company
+            </h4>
+            <ul className="space-y-1.5">
+              <li>
+                <Link href="/about" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  About Us
+                </Link>
+              </li>
+              <li>
+                <Link href="/careers" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Careers
+                </Link>
+              </li>
+              <li>
+                <Link href="/blog" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Blog
+                </Link>
+              </li>
+              <li>
+                <Link href="/developers" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Developers
+                </Link>
+              </li>
+              <li>
+                <Link href="/corporate" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Corporate Rentals
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Technology */}
           <div className="md:col-span-1">
             <h4 className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white mb-2">
               Technology
@@ -188,70 +289,31 @@ export default function Footer() {
               </li>
             </ul>
           </div>
-          
-          {/* Hosts Links */}
+
+          {/* Legal */}
           <div className="md:col-span-1">
             <h4 className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white mb-2">
-              Hosts
+              Legal
             </h4>
             <ul className="space-y-1.5">
               <li>
-                <Link href="/list-your-car" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  List Your Car
+                <Link href="/terms" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Terms of Service
                 </Link>
               </li>
               <li>
-                <Link href="/host/login" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Host Login
+                <Link href="/privacy" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link href="/host-earnings" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Host Earnings
-                </Link>
-              </li>
-              <li>
-                <Link href="/host-requirements" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Requirements
-                </Link>
-              </li>
-              <li>
-                <Link href="/host-benefits" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Host Benefits
-                </Link>
-              </li>
-            </ul>
-          </div>
-          
-          {/* Company Links */}
-          <div className="md:col-span-1">
-            <h4 className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white mb-2">
-              Company
-            </h4>
-            <ul className="space-y-1.5">
-              <li>
-                <Link href="/about" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  About Us
-                </Link>
-              </li>
-              <li>
-                <Link href="/careers" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Careers
-                </Link>
-              </li>
-              <li>
-                <Link href="/blog" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Blog
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Contact
+                <Link href="/accessibility" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Accessibility
                 </Link>
               </li>
               <li>
                 <Link href="/legal" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Legal
+                  Legal Center
                 </Link>
               </li>
             </ul>

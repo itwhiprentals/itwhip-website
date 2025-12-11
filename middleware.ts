@@ -107,6 +107,12 @@ const publicRoutes = [
   '/api/auth/forgot-password',
   '/api/auth/reset-password',
   '/verify',
+  // Host landing pages (public SEO pages)
+  '/host/fleet-owners',
+  '/host/tax-benefits',
+  '/host/payouts',
+  '/host/requirements/arizona',
+  '/host/insurance-options',
 ]
 
 // Helper function to verify guest/platform token

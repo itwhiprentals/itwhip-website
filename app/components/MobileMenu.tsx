@@ -77,32 +77,29 @@ const navigationSections = [
     ]
   },
   {
-    id: 'host',
-    label: 'Host',
-    icon: IoKeyOutline,
-    badge: { text: 'EARN', color: 'from-green-500 to-emerald-500' },
+    id: 'rentals',
+    label: 'Rental Options',
+    icon: IoCalendarOutline,
     items: [
-      { href: '/host/signup', label: 'List Your Car', icon: IoSparklesOutline, highlight: true },
-      { href: '/host/dashboard', label: 'Dashboard', icon: IoHomeOutline },
-      { href: '/host/cars', label: 'My Cars', icon: IoCarOutline },
-      { href: '/host/bookings', label: 'Bookings', icon: IoCalendarOutline },
-      { href: '/host/earnings', label: 'Earnings', icon: IoCalculatorOutline }
+      { href: '/rentals/daily', label: 'Daily Rentals', icon: IoCalendarOutline },
+      { href: '/rentals/long-term', label: 'Long-Term Rentals', icon: IoDocumentTextOutline },
+      { href: '/rentals/weekend', label: 'Weekend Rentals', icon: IoCarSportOutline },
+      { href: '/reviews', label: 'Reviews', icon: IoStarOutline },
+      { href: '/insurance-guide', label: 'Insurance Guide', icon: IoShieldCheckmarkOutline }
     ]
   },
   {
-    id: 'business',
-    label: 'Business',
-    icon: IoBusinessOutline,
+    id: 'host',
+    label: 'For Hosts',
+    icon: IoKeyOutline,
+    badge: { text: 'EARN', color: 'from-green-500 to-emerald-500' },
     items: [
-      { href: '/corporate', label: 'Corporate Rentals', icon: IoBusinessOutline },
-      { href: '/integrations', label: 'Integration Partners', icon: IoShieldCheckmarkOutline },
-      { href: '/developers', label: 'API Access', icon: IoCodeSlashOutline },
-      { 
-        href: '/gds', 
-        label: 'GDS Integration', 
-        icon: IoGridOutline,
-        badge: { text: 'NEW', color: 'from-blue-500 to-purple-500' }
-      }
+      { href: '/list-your-car', label: 'List Your Car', icon: IoSparklesOutline, highlight: true },
+      { href: '/host/fleet-owners', label: 'Fleet Owners', icon: IoCarOutline },
+      { href: '/host/payouts', label: 'Payouts & Earnings', icon: IoWalletOutline },
+      { href: '/host/insurance-options', label: 'Insurance Options', icon: IoShieldCheckmarkOutline },
+      { href: '/host/requirements/arizona', label: 'Host Requirements', icon: IoDocumentTextOutline },
+      { href: '/host/tax-benefits', label: 'Tax Benefits', icon: IoCalculatorOutline }
     ]
   },
   {
@@ -110,9 +107,22 @@ const navigationSections = [
     label: 'Support',
     icon: IoHelpCircleOutline,
     items: [
+      { href: '/support', label: 'Help Center', icon: IoHelpCircleOutline },
+      { href: '/faq', label: 'FAQ', icon: IoDocumentTextOutline },
       { href: '/how-it-works', label: 'How It Works', icon: IoHelpCircleOutline },
-      { href: '/contact', label: 'Contact Us', icon: IoMailOutline },
-      { href: '/about', label: 'About', icon: IoBusinessOutline }
+      { href: '/cancellation-policy', label: 'Cancellation Policy', icon: IoDocumentTextOutline },
+      { href: '/contact', label: 'Contact Us', icon: IoMailOutline }
+    ]
+  },
+  {
+    id: 'company',
+    label: 'Company',
+    icon: IoBusinessOutline,
+    items: [
+      { href: '/about', label: 'About Us', icon: IoBusinessOutline },
+      { href: '/corporate', label: 'Corporate Rentals', icon: IoBusinessOutline },
+      { href: '/developers', label: 'Developers', icon: IoCodeSlashOutline },
+      { href: '/blog', label: 'Blog', icon: IoDocumentTextOutline }
     ]
   }
 ]

@@ -51,23 +51,23 @@ export const USE_CASE_DATA: Record<string, UseCaseData> = {
     faqs: [
       {
         question: 'How much can I save with a long-term rental?',
-        answer: 'Most hosts offer 10-20% off for weekly rentals (7+ days) and 20-30% off for monthly rentals (30+ days). The exact discount is shown on each listing.'
+        answer: 'Most hosts offer 10-20% off for weekly rentals (7+ days) and 20-30% off for monthly rentals (30+ days). The exact discount is shown on each listing. For shorter needs, check out our <a href="/rentals/daily">daily rentals</a> or <a href="/rentals/weekend">weekend rentals</a>.'
       },
       {
         question: 'Is there a maximum rental duration?',
-        answer: 'Most hosts allow rentals up to 30 days, and many are happy to extend beyond that. Just message the host to arrange longer rentals.'
+        answer: 'Most hosts allow rentals up to 30 days, and many are happy to extend beyond that. Just message the host to arrange longer rentals. <a href="/rentals/snowbird">Snowbird seasonal rentals</a> are perfect for multi-month stays.'
       },
       {
         question: 'Can I extend my long-term rental?',
-        answer: 'Yes! Contact your host through the app to request an extension. Subject to availability, most extensions are approved within hours.'
+        answer: 'Yes! Contact your host through the app to request an extension. Subject to availability, most extensions are approved within hours. Visit our <a href="/support">support page</a> if you need help with extensions.'
       },
       {
         question: 'What\'s included in a long-term rental?',
-        answer: 'All rentals include $1M liability insurance. Most include a daily mileage allowance (typically 150-250 miles/day). Additional miles and protection plans are optional.'
+        answer: 'All rentals include $1M liability insurance. Most include a daily mileage allowance (typically 150-250 miles/day). Additional miles and protection plans are optional. Learn more about our <a href="/insurance">insurance coverage</a>.'
       },
       {
         question: 'Do I need to sign a contract?',
-        answer: 'No long-term contracts! Your rental agreement covers your booking period. Extend or end early with flexible policies.'
+        answer: 'No long-term contracts! Your rental agreement covers your booking period. Extend or end early with flexible policies. For <a href="/rentals/corporate-travel">corporate accounts</a>, we offer additional flexibility for business needs.'
       }
     ],
     tips: [
@@ -104,19 +104,19 @@ export const USE_CASE_DATA: Record<string, UseCaseData> = {
     faqs: [
       {
         question: 'What\'s a typical weekend rental cost?',
-        answer: 'Weekend rentals start around $49/day for sedans, $79/day for SUVs, and $150+/day for sports cars and convertibles. Many hosts offer special weekend rates.'
+        answer: 'Weekend rentals start around $49/day for sedans, $79/day for SUVs, and $150+/day for sports cars and convertibles. Many hosts offer special weekend rates. <a href="/rentals/search">Browse all available cars</a> to compare prices.'
       },
       {
         question: 'Can I pick up on Friday evening?',
-        answer: 'Yes! Many hosts offer flexible pickup times including evening pickups. Coordinate with your host through the app for the best time.'
+        answer: 'Yes! Many hosts offer flexible pickup times including evening pickups. Coordinate with your host through the app for the best time. For even shorter trips, check our <a href="/rentals/hourly">hourly rentals</a>.'
       },
       {
         question: 'What about late Sunday returns?',
-        answer: 'Return times are flexible. Most hosts are accommodating with Sunday evening returns. Just confirm the time when you book.'
+        answer: 'Return times are flexible. Most hosts are accommodating with Sunday evening returns. Just confirm the time when you book. Need the car longer? Consider a <a href="/rentals/long-term">weekly rental</a> for better rates.'
       },
       {
         question: 'What cars are best for a Sedona trip?',
-        answer: 'SUVs and crossovers are ideal for Sedona\'s terrain and any off-road exploration. Convertibles are great for scenic drives if you\'re sticking to paved roads.'
+        answer: 'SUVs and crossovers are ideal for Sedona\'s terrain and any off-road exploration. Convertibles are great for scenic drives if you\'re sticking to paved roads. Planning a longer adventure? See our <a href="/rentals/road-trip">road trip rentals</a>.'
       }
     ],
     tips: [
@@ -152,23 +152,23 @@ export const USE_CASE_DATA: Record<string, UseCaseData> = {
     faqs: [
       {
         question: 'How does airport pickup work?',
-        answer: 'When you land, text your host through the ItWhip app. They\'ll meet you curbside at arrivals - usually within 10-15 minutes. Quick vehicle walkthrough, sign digitally, and you\'re on your way.'
+        answer: 'When you land, text your host through the ItWhip app. They\'ll meet you curbside at arrivals - usually within 10-15 minutes. Quick vehicle walkthrough, sign digitally, and you\'re on your way. Learn more in our <a href="/how-it-works">how it works guide</a>.'
       },
       {
         question: 'Is airport delivery free?',
-        answer: 'Many hosts offer free airport delivery. Others charge $15-50 depending on the airport and time. The fee is clearly shown on each listing.'
+        answer: 'Many hosts offer free airport delivery. Others charge $15-50 depending on the airport and time. The fee is clearly shown on each listing. <a href="/rentals/search">Browse cars with airport delivery</a>.'
       },
       {
         question: 'What if my flight is delayed?',
-        answer: 'Just message your host through the app. They\'ll adjust to your actual arrival time. Communication is key - hosts are very understanding about flight delays.'
+        answer: 'Just message your host through the app. They\'ll adjust to your actual arrival time. Communication is key - hosts are very understanding about flight delays. Need help? Visit our <a href="/support">support page</a>.'
       },
       {
         question: 'Which Phoenix airports are covered?',
-        answer: 'Most hosts with airport delivery serve Phoenix Sky Harbor (PHX). Many also cover Mesa Gateway (AZA) and Scottsdale Airport (SDL) for private aviation.'
+        answer: 'Most hosts with airport delivery serve <a href="/rentals/airports/phoenix-sky-harbor-phx">Phoenix Sky Harbor (PHX)</a>. Many also cover <a href="/rentals/airports/phoenix-mesa-gateway-aza">Mesa Gateway (AZA)</a> and <a href="/rentals/airports/scottsdale-sdl">Scottsdale Airport (SDL)</a> for private aviation.'
       },
       {
         question: 'Can I return the car at the airport?',
-        answer: 'Yes! Most hosts with airport pickup also offer airport return. Coordinate the drop-off location and time with your host before your flight.'
+        answer: 'Yes! Most hosts with airport pickup also offer airport return. Coordinate the drop-off location and time with your host before your flight. Prefer hotel drop-off? Check <a href="/rentals/hotel-delivery">hotel delivery options</a>.'
       }
     ],
     tips: [
@@ -205,23 +205,23 @@ export const USE_CASE_DATA: Record<string, UseCaseData> = {
     faqs: [
       {
         question: 'What\'s the typical mileage limit?',
-        answer: 'Most rentals include 150-250 miles per day. Many hosts offer higher limits for road trips, and some offer unlimited mileage. Check each listing for details.'
+        answer: 'Most rentals include 150-250 miles per day. Many hosts offer higher limits for road trips, and some offer unlimited mileage. Check each listing for details. For shorter trips, see our <a href="/rentals/daily">daily rentals</a>.'
       },
       {
         question: 'What happens if I go over the mileage limit?',
-        answer: 'Extra miles are charged at the rate shown on the listing - typically $0.25-0.75 per mile. Some hosts offer mileage packages for road trips.'
+        answer: 'Extra miles are charged at the rate shown on the listing - typically $0.25-0.75 per mile. Some hosts offer mileage packages for road trips. For unlimited mileage options, consider <a href="/rentals/long-term">long-term rentals</a>.'
       },
       {
         question: 'Can I take the car out of Arizona?',
-        answer: 'Most hosts allow travel to neighboring states (CA, NV, UT, NM). Check the listing rules or message the host to confirm. Some restrict Mexico travel.'
+        answer: 'Most hosts allow travel to neighboring states (CA, NV, UT, NM). Check the listing rules or message the host to confirm. Some restrict Mexico travel. Visit our <a href="/support">support page</a> for more details.'
       },
       {
         question: 'What\'s the best car for a Grand Canyon trip?',
-        answer: 'SUVs are popular for their comfort and cargo space. If you\'re visiting in summer, make sure you have reliable A/C. 4WD isn\'t needed for the main routes.'
+        answer: 'SUVs are popular for their comfort and cargo space. If you\'re visiting in summer, make sure you have reliable A/C. 4WD isn\'t needed for the main routes. <a href="/rentals/search?type=SUV">Browse SUVs</a> for your trip.'
       },
       {
         question: 'Should I get an electric car for a road trip?',
-        answer: 'Teslas are great for in-state trips with Supercharger coverage. For trips to remote areas, a gas vehicle offers more flexibility.'
+        answer: 'Teslas are great for in-state trips with Supercharger coverage. For trips to remote areas, a gas vehicle offers more flexibility. Explore our <a href="/rentals/makes/tesla">Tesla rentals</a> or <a href="/rentals/search">all available cars</a>.'
       }
     ],
     tips: [
@@ -257,19 +257,19 @@ export const USE_CASE_DATA: Record<string, UseCaseData> = {
     faqs: [
       {
         question: 'Can I get an invoice for expense reports?',
-        answer: 'Yes! All bookings include detailed receipts showing dates, vehicle, and total cost. You can also download invoices from your account at any time.'
+        answer: 'Yes! All bookings include detailed receipts showing dates, vehicle, and total cost. You can also download invoices from your account at any time. Learn more on our <a href="/corporate">corporate page</a>.'
       },
       {
         question: 'Do you offer corporate accounts?',
-        answer: 'Yes, we offer corporate accounts for businesses with recurring travel needs. Contact us for volume discounts and centralized billing.'
+        answer: 'Yes, we offer corporate accounts for businesses with recurring travel needs. <a href="/corporate">Apply for a corporate account</a> for volume discounts and centralized billing.'
       },
       {
         question: 'What cars are best for client meetings?',
-        answer: 'For the best impression, consider a Mercedes-Benz, BMW, or Audi sedan. For groups, a luxury SUV like a BMW X5 or Mercedes GLS works well.'
+        answer: 'For the best impression, consider a <a href="/rentals/makes/mercedes-benz">Mercedes-Benz</a>, <a href="/rentals/makes/bmw">BMW</a>, or Audi sedan. For groups, a luxury SUV like a BMW X5 or Mercedes GLS works well.'
       },
       {
         question: 'Is same-day booking available?',
-        answer: 'Many hosts offer instant booking and same-day availability. Filter by "Instant Book" for vehicles you can reserve immediately.'
+        answer: 'Many hosts offer instant booking and same-day availability. <a href="/rentals/search">Browse available cars</a> and filter by "Instant Book" for vehicles you can reserve immediately.'
       }
     ],
     tips: [
@@ -306,23 +306,23 @@ export const USE_CASE_DATA: Record<string, UseCaseData> = {
     faqs: [
       {
         question: 'What\'s the typical monthly rate?',
-        answer: 'Monthly rates typically range from $1,200-2,500 for sedans and SUVs, with luxury vehicles higher. This is often 50-60% less than daily rates.'
+        answer: 'Monthly rates typically range from $1,200-2,500 for sedans and SUVs, with luxury vehicles higher. This is often 50-60% less than <a href="/rentals/daily">daily rates</a>. <a href="/rentals/search">Browse available cars</a> to compare.'
       },
       {
         question: 'Can I rent for the entire winter season?',
-        answer: 'Yes! Many hosts welcome season-long rentals (3-4 months). Message hosts directly to arrange multi-month bookings at the best rates.'
+        answer: 'Yes! Many hosts welcome season-long rentals (3-4 months). Message hosts directly to arrange multi-month bookings at the best rates. Also see our <a href="/rentals/long-term">long-term rentals</a> for more options.'
       },
       {
         question: 'Is there enough mileage for snowbird activities?',
-        answer: 'Most rentals include 150-250 miles/day, which is plenty for local errands, golf, and day trips. For extensive travel, ask about unlimited mileage options.'
+        answer: 'Most rentals include 150-250 miles/day, which is plenty for local errands, golf, and day trips. For extensive travel, ask about unlimited mileage options or check our <a href="/rentals/road-trip">road trip rentals</a>.'
       },
       {
         question: 'What about insurance for long stays?',
-        answer: 'All rentals include $1M liability coverage. For stays over 30 days, we recommend adding your own insurance as primary for potential savings.'
+        answer: 'All rentals include $1M liability coverage. For stays over 30 days, we recommend adding your own insurance as primary for potential savings. Learn more about our <a href="/insurance">insurance coverage</a>.'
       },
       {
         question: 'Can I have the car delivered to my winter home?',
-        answer: 'Yes! Many hosts deliver to homes, condos, and resorts throughout the Phoenix metro area. Delivery fees vary by location.'
+        answer: 'Yes! Many hosts deliver to homes, condos, and resorts throughout the Phoenix metro area. See our <a href="/rentals/hotel-delivery">hotel delivery</a> options for resort guests. Delivery fees vary by location.'
       }
     ],
     tips: [
@@ -358,23 +358,23 @@ export const USE_CASE_DATA: Record<string, UseCaseData> = {
     faqs: [
       {
         question: 'When is Spring Training in Arizona?',
-        answer: 'Cactus League games run from late February through late March. The busiest weeks are typically mid-March when all teams are in full swing.'
+        answer: 'Cactus League games run from late February through late March. The busiest weeks are typically mid-March when all teams are in full swing. Check our <a href="/rentals/search">car availability</a> early for the best selection.'
       },
       {
         question: 'How far apart are the stadiums?',
-        answer: 'Stadiums are spread across the Valley - from Goodyear in the west to Scottsdale and Mesa in the east. Expect 30-60 minute drives between most venues.'
+        answer: 'Stadiums are spread across the Valley - from Goodyear in the west to Scottsdale and Mesa in the east. Expect 30-60 minute drives between most venues. See our <a href="/rentals/cities">city guides</a> to plan your routes.'
       },
       {
         question: 'Should I book early for Spring Training?',
-        answer: 'Absolutely! Spring Training is one of the busiest times in Phoenix. Book your car at least 2-3 weeks in advance for the best selection.'
+        answer: 'Absolutely! Spring Training is one of the busiest times in Phoenix. Book your car at least 2-3 weeks in advance for the best selection. <a href="/rentals/search">Browse available cars now</a>.'
       },
       {
         question: 'What\'s the best vehicle for stadium hopping?',
-        answer: 'An SUV or crossover works great for groups. For couples, a convertible is perfect for enjoying the spring weather between games.'
+        answer: 'An SUV or crossover works great for groups - <a href="/rentals/search?type=SUV">browse SUVs</a>. For couples, a convertible is perfect for enjoying the spring weather between games. See <a href="/rentals/weekend">weekend rental options</a>.'
       },
       {
         question: 'Can I tailgate at the stadiums?',
-        answer: 'Tailgating policies vary by stadium. Most allow it in some capacity. An SUV or truck gives you space for coolers and gear.'
+        answer: 'Tailgating policies vary by stadium. Most allow it in some capacity. An SUV or truck gives you space for coolers and gear. Need a pickup? <a href="/rentals/search?type=TRUCK">Browse trucks</a> available for rent.'
       }
     ],
     tips: [
@@ -411,19 +411,19 @@ export const USE_CASE_DATA: Record<string, UseCaseData> = {
     faqs: [
       {
         question: 'What\'s the minimum rental time?',
-        answer: 'Most hosts require a minimum of 2 hours for hourly rentals. Some allow single-hour bookings for quick errands.'
+        answer: 'Most hosts require a minimum of 2 hours for hourly rentals. Some allow single-hour bookings for quick errands. Need more time? Check our <a href="/rentals/daily">daily rentals</a>.'
       },
       {
         question: 'How does hourly pricing work?',
-        answer: 'Hourly rates are typically 15-20% of the daily rate per hour. Book for your estimated time, and if you return early, you still pay for booked hours.'
+        answer: 'Hourly rates are typically 15-20% of the daily rate per hour. Book for your estimated time, and if you return early, you still pay for booked hours. Compare with <a href="/rentals/daily">daily rates</a> for longer needs.'
       },
       {
         question: 'What if I need the car longer than planned?',
-        answer: 'Message your host through the app to extend. If the car is available, most hosts are happy to accommodate. Additional hours are charged at the hourly rate.'
+        answer: 'Message your host through the app to extend. If the car is available, most hosts are happy to accommodate. Additional hours are charged at the hourly rate. Need help? Visit <a href="/support">support</a>.'
       },
       {
         question: 'Is mileage included in hourly rentals?',
-        answer: 'Yes, hourly rentals typically include a proportional mileage allowance (e.g., 30-50 miles for a 4-hour rental).'
+        answer: 'Yes, hourly rentals typically include a proportional mileage allowance (e.g., 30-50 miles for a 4-hour rental). For higher mileage needs, consider <a href="/rentals/road-trip">road trip rentals</a>.'
       }
     ],
     tips: [
@@ -459,19 +459,19 @@ export const USE_CASE_DATA: Record<string, UseCaseData> = {
     faqs: [
       {
         question: 'How long is a daily rental?',
-        answer: 'A daily rental is 24 hours from your pickup time. Pick up at 10am, return by 10am the next day to avoid additional charges.'
+        answer: 'A daily rental is 24 hours from your pickup time. Pick up at 10am, return by 10am the next day to avoid additional charges. Need multiple days? Check our <a href="/rentals/weekend">weekend</a> or <a href="/rentals/long-term">long-term rentals</a>.'
       },
       {
         question: 'What if I only need the car for 12 hours?',
-        answer: 'You can return early, but daily rentals are charged the full day rate. For shorter needs, check if the host offers hourly rates.'
+        answer: 'You can return early, but daily rentals are charged the full day rate. For shorter needs, check out our <a href="/rentals/hourly">hourly rentals</a> instead.'
       },
       {
         question: 'Can I extend a daily rental?',
-        answer: 'Yes! Message your host before your rental ends to request an extension. Subject to availability, additional days are charged at the daily rate.'
+        answer: 'Yes! Message your host before your rental ends to request an extension. Subject to availability, additional days are charged at the daily rate. <a href="/support">Contact support</a> if you need help.'
       },
       {
         question: 'What\'s included in the daily rate?',
-        answer: 'All daily rentals include $1M liability insurance, typically 150-250 miles, and 24/7 roadside assistance. Fuel is not included.'
+        answer: 'All daily rentals include $1M liability insurance, typically 150-250 miles, and 24/7 roadside assistance. Fuel is not included. Learn more about our <a href="/insurance">insurance coverage</a>.'
       }
     ],
     tips: [
@@ -507,23 +507,23 @@ export const USE_CASE_DATA: Record<string, UseCaseData> = {
     faqs: [
       {
         question: 'How do corporate accounts work?',
-        answer: 'Apply for a corporate account and we\'ll set up centralized billing, volume discounts, and a dedicated account manager. All employee bookings go to one monthly invoice.'
+        answer: 'Apply for a corporate account and we\'ll set up centralized billing, volume discounts, and a dedicated account manager. All employee bookings go to one monthly invoice. <a href="/corporate">Learn more about corporate accounts</a>.'
       },
       {
         question: 'What discounts are available for businesses?',
-        answer: 'Volume discounts range from 5-20% depending on booking frequency. We also offer special rates for long-term assignments and executive travel.'
+        answer: 'Volume discounts range from 5-20% depending on booking frequency. We also offer special rates for <a href="/rentals/long-term">long-term assignments</a> and executive travel. <a href="/corporate">Apply for corporate pricing</a>.'
       },
       {
         question: 'Can employees book directly?',
-        answer: 'Yes! Employees can book through their corporate account with approved payment methods. Managers can set booking policies and spending limits.'
+        answer: 'Yes! Employees can book through their corporate account with approved payment methods. Managers can set booking policies and spending limits. <a href="/rentals/search">Browse available vehicles</a> to get started.'
       },
       {
         question: 'What expense documentation is provided?',
-        answer: 'Every booking generates a detailed receipt with dates, vehicle, driver, and itemized charges. Downloadable invoices are available for accounting.'
+        answer: 'Every booking generates a detailed receipt with dates, vehicle, driver, and itemized charges. Downloadable invoices are available for accounting. See our <a href="/corporate">corporate features</a>.'
       },
       {
         question: 'Do you serve large companies?',
-        answer: 'Yes, we work with companies of all sizes including Fortune 500 corporations with recurring Phoenix travel needs.'
+        answer: 'Yes, we work with companies of all sizes including Fortune 500 corporations with recurring Phoenix travel needs. <a href="/corporate">Contact us for enterprise solutions</a>.'
       }
     ],
     tips: [
@@ -559,23 +559,23 @@ export const USE_CASE_DATA: Record<string, UseCaseData> = {
     faqs: [
       {
         question: 'Which hotels do you deliver to?',
-        answer: 'We deliver to hotels throughout the Phoenix metro area including Scottsdale resorts, downtown Phoenix hotels, and properties in Tempe, Mesa, and Chandler.'
+        answer: 'We deliver to hotels throughout the Phoenix metro area including <a href="/rentals/cities/scottsdale">Scottsdale</a> resorts, <a href="/rentals/cities/phoenix">downtown Phoenix</a> hotels, and properties in <a href="/rentals/cities/tempe">Tempe</a>, <a href="/rentals/cities/mesa">Mesa</a>, and <a href="/rentals/cities/chandler">Chandler</a>.'
       },
       {
         question: 'Is hotel delivery free?',
-        answer: 'Many hosts offer free delivery within a certain radius. Others charge $15-35 for hotel delivery. The fee is clearly shown on each listing.'
+        answer: 'Many hosts offer free delivery within a certain radius. Others charge $15-35 for hotel delivery. The fee is clearly shown on each listing. <a href="/rentals/search">Browse cars with delivery</a>.'
       },
       {
         question: 'Where do I meet the host?',
-        answer: 'Typically you\'ll meet in the hotel lobby or valet/parking area. Coordinate with your host through the app for the exact meeting spot.'
+        answer: 'Typically you\'ll meet in the hotel lobby or valet/parking area. Coordinate with your host through the app for the exact meeting spot. See <a href="/how-it-works">how it works</a> for more details.'
       },
       {
         question: 'Can I return the car to my hotel?',
-        answer: 'Yes! Most hosts with hotel delivery also offer hotel pickup at the end of your rental. Arrange the return time and location with your host.'
+        answer: 'Yes! Most hosts with hotel delivery also offer hotel pickup at the end of your rental. Arrange the return time and location with your host. For airport returns, see <a href="/rentals/airport-delivery">airport delivery</a>.'
       },
       {
         question: 'What if I\'m staying at an Airbnb or vacation rental?',
-        answer: 'No problem! Hosts can deliver to vacation rentals, Airbnbs, and private residences throughout the Phoenix area.'
+        answer: 'No problem! Hosts can deliver to vacation rentals, Airbnbs, and private residences throughout the Phoenix area. <a href="/rentals/search">Find cars available for delivery</a> to your location.'
       }
     ],
     tips: [
