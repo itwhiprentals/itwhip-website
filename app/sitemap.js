@@ -83,6 +83,12 @@ export default async function sitemap() {
       changeFrequency: 'monthly',
       priority: 0.6,
     },
+    {
+      url: `${baseUrl}/cancellation-policy`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
   ]
 
   // ============================================
@@ -166,6 +172,30 @@ export default async function sitemap() {
       lastModified: new Date(),
       changeFrequency: 'monthly',
       priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/sdk`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/integrations`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/developers`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/security`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.6,
     },
   ]
 
@@ -323,6 +353,42 @@ export default async function sitemap() {
       changeFrequency: 'monthly',
       priority: 0.8,
     },
+    {
+      url: `${baseUrl}/blog/sky-harbor-vs-mesa-gateway-car-rental-2025`,
+      lastModified: new Date('2025-12-05'),
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/blog/cheapest-car-rental-phoenix-budget-guide-2025`,
+      lastModified: new Date('2025-12-05'),
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/blog/car-rental-near-asu-tempe-student-guide-2025`,
+      lastModified: new Date('2025-12-05'),
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/blog/phoenix-to-grand-canyon-road-trip-guide-2025`,
+      lastModified: new Date('2025-12-05'),
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/blog/spring-training-car-rental-phoenix-2025`,
+      lastModified: new Date('2025-12-05'),
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/blog/convertible-rental-arizona-desert-drives-2025`,
+      lastModified: new Date('2025-12-05'),
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
   ]
 
   // ============================================
@@ -340,6 +406,48 @@ export default async function sitemap() {
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/reviews`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.7,
+    },
+  ]
+
+  // ============================================
+  // STATIC PAGES - Business / B2B
+  // ============================================
+  const businessPages = [
+    {
+      url: `${baseUrl}/corporate`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/gds`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+  ]
+
+  // ============================================
+  // STATIC PAGES - Driver/Guest Acquisition
+  // ============================================
+  const driverPages = [
+    {
+      url: `${baseUrl}/earnings`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/private-club`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.6,
     },
   ]
 
@@ -390,6 +498,8 @@ export default async function sitemap() {
     ...cityPages,    // Static city pages - always included
     ...blogPages,
     ...otherPages,
+    ...businessPages, // Business / B2B pages
+    ...driverPages,   // Driver/Guest acquisition pages
     ...carPages,
   ]
 }

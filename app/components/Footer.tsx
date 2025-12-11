@@ -133,6 +133,11 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/cancellation-policy" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Cancellation Policy
+                </Link>
+              </li>
+              <li>
                 <Link href="/coverage" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
                   Coverage Areas
                 </Link>
