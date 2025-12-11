@@ -436,55 +436,55 @@ function SSRCarCard({ car }: { car: any }) {
 }
 
 // SEO Content Sections - Matching cities/[city] page typography
-function SEOContent({ location, carCount, priceRange }: { location: string; carCount: number; priceRange: { min: number; max: number } }) {
+function SEOContent({ location, priceRange }: { location: string; priceRange: { min: number; max: number } }) {
   const cityName = location.split(',')[0].trim()
 
   const popularAreas = [
-    { name: 'Phoenix', slug: 'Phoenix, AZ', description: 'Downtown, Sky Harbor' },
-    { name: 'Scottsdale', slug: 'Scottsdale, AZ', description: 'Old Town, Fashion Square' },
-    { name: 'Tempe', slug: 'Tempe, AZ', description: 'ASU, Mill Avenue' },
-    { name: 'Mesa', slug: 'Mesa, AZ', description: 'Gateway Airport' },
-    { name: 'Chandler', slug: 'Chandler, AZ', description: 'Tech corridor' },
-    { name: 'Gilbert', slug: 'Gilbert, AZ', description: 'Heritage District' }
+    { name: 'Phoenix', slug: 'Phoenix, AZ' },
+    { name: 'Scottsdale', slug: 'Scottsdale, AZ' },
+    { name: 'Tempe', slug: 'Tempe, AZ' },
+    { name: 'Mesa', slug: 'Mesa, AZ' },
+    { name: 'Chandler', slug: 'Chandler, AZ' },
+    { name: 'Gilbert', slug: 'Gilbert, AZ' }
   ]
 
   const vehicleTypes = [
-    { name: 'SUVs', slug: 'suv', description: 'Families & road trips' },
-    { name: 'Luxury', slug: 'luxury', description: 'Special occasions' },
-    { name: 'Electric', slug: 'electric', description: 'Tesla & EVs' },
-    { name: 'Convertibles', slug: 'convertible', description: 'Arizona sunshine' },
-    { name: 'Trucks', slug: 'truck', description: 'Hauling & adventure' },
-    { name: 'Economy', slug: 'sedan', description: 'Budget-friendly' }
+    { name: 'SUVs', slug: 'suv' },
+    { name: 'Luxury', slug: 'luxury' },
+    { name: 'Electric', slug: 'electric' },
+    { name: 'Convertibles', slug: 'convertible' },
+    { name: 'Trucks', slug: 'truck' },
+    { name: 'Economy', slug: 'sedan' }
   ]
 
   return (
-    <section className="bg-white dark:bg-gray-800 py-6 sm:py-8 border-t border-gray-200 dark:border-gray-700">
+    <section className="bg-white dark:bg-gray-800 py-4 sm:py-6 border-t border-gray-200 dark:border-gray-700">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Heading & Intro */}
-        <div className="mb-5 sm:mb-6">
-          <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-2 sm:mb-3">
-            Car Rentals in {cityName}, AZ – Live Availability
+        <div className="mb-4">
+          <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-2">
+            Car Rentals in {cityName}, AZ
           </h2>
-          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 max-w-3xl leading-relaxed">
-            Browse {carCount}+ cars from local owners in {cityName}. Vehicles from ${priceRange.min}/day to ${priceRange.max}/day
-            with airport delivery, instant booking, and flexible rental periods. Skip the counter – rent direct from verified hosts.
+          <p className="text-[11px] sm:text-xs text-gray-600 dark:text-gray-400 max-w-2xl leading-relaxed">
+            Available cars from local owners. Vehicles from ${priceRange.min}/day with airport delivery and instant booking.
+            <Link href="/rentals" className="text-amber-600 hover:underline ml-1">Browse all rentals →</Link>
           </p>
         </div>
 
         {/* Popular Areas & Vehicle Types Grid */}
-        <div className="grid md:grid-cols-2 gap-4 sm:gap-6 mb-5 sm:mb-6">
+        <div className="grid md:grid-cols-2 gap-3 sm:gap-4 mb-4">
           {/* Popular Areas */}
           <div>
             <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-1.5">
               <IoLocationOutline className="w-4 h-4 text-amber-600" />
               Popular Areas
             </h3>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-1">
               {popularAreas.map(area => (
                 <Link
                   key={area.name}
                   href={`/rentals/search?location=${encodeURIComponent(area.slug)}`}
-                  className="px-2 py-0.5 sm:px-2.5 sm:py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-[10px] sm:text-xs rounded-full hover:bg-amber-100 dark:hover:bg-amber-900/30 hover:text-amber-700 dark:hover:text-amber-400 transition-colors"
+                  className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-[10px] rounded-full hover:bg-amber-100 dark:hover:bg-amber-900/30 hover:text-amber-700 dark:hover:text-amber-400 transition-colors"
                 >
                   {area.name}
                 </Link>
@@ -498,12 +498,12 @@ function SEOContent({ location, carCount, priceRange }: { location: string; carC
               <IoCarOutline className="w-4 h-4 text-amber-600" />
               Vehicle Types
             </h3>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-1">
               {vehicleTypes.map(type => (
                 <Link
                   key={type.name}
                   href={`/rentals/search?location=${encodeURIComponent(location)}&carType=${type.slug}`}
-                  className="px-2 py-0.5 sm:px-2.5 sm:py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-[10px] sm:text-xs rounded-full hover:bg-amber-100 dark:hover:bg-amber-900/30 hover:text-amber-700 dark:hover:text-amber-400 transition-colors"
+                  className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-[10px] rounded-full hover:bg-amber-100 dark:hover:bg-amber-900/30 hover:text-amber-700 dark:hover:text-amber-400 transition-colors"
                 >
                   {type.name}
                 </Link>
@@ -512,62 +512,47 @@ function SEOContent({ location, carCount, priceRange }: { location: string; carC
           </div>
         </div>
 
-        {/* FAQs - Compact */}
-        <div className="mb-5 sm:mb-6">
-          <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-1.5">
-            <IoChevronForwardOutline className="w-4 h-4 text-amber-600" />
-            Frequently Asked Questions
-          </h3>
-          <div className="space-y-2 sm:space-y-3 max-w-2xl">
-            <details className="group bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <summary className="flex items-center justify-between p-3 sm:p-4 cursor-pointer text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
-                How much does it cost to rent a car in {cityName}?
-                <IoChevronForwardOutline className="w-4 h-4 text-gray-500 group-open:rotate-90 transition-transform flex-shrink-0 ml-2" />
+        {/* FAQs - Compact with links */}
+        <div className="mb-4">
+          <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white mb-2">FAQ</h3>
+          <div className="space-y-1.5 max-w-xl">
+            <details className="group bg-gray-50 dark:bg-gray-700 rounded">
+              <summary className="flex items-center justify-between p-2 sm:p-2.5 cursor-pointer text-[11px] sm:text-xs font-medium text-gray-900 dark:text-white">
+                How much does it cost?
+                <IoChevronForwardOutline className="w-3 h-3 text-gray-500 group-open:rotate-90 transition-transform flex-shrink-0 ml-1" />
               </summary>
-              <div className="px-3 sm:px-4 pb-3 sm:pb-4 text-[11px] sm:text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
-                Car rentals start at ${priceRange.min}/day for economy cars. Luxury and SUVs range $99-$299/day. Weekly/monthly rentals include 15-30% discounts.
+              <div className="px-2 sm:px-2.5 pb-2 sm:pb-2.5 text-[10px] sm:text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed">
+                Rentals start at ${priceRange.min}/day. <Link href="/rentals/search?sortBy=price_low" className="text-amber-600 hover:underline">View cheapest options →</Link>
               </div>
             </details>
 
-            <details className="group bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <summary className="flex items-center justify-between p-3 sm:p-4 cursor-pointer text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
-                Can I get airport delivery?
-                <IoChevronForwardOutline className="w-4 h-4 text-gray-500 group-open:rotate-90 transition-transform flex-shrink-0 ml-2" />
+            <details className="group bg-gray-50 dark:bg-gray-700 rounded">
+              <summary className="flex items-center justify-between p-2 sm:p-2.5 cursor-pointer text-[11px] sm:text-xs font-medium text-gray-900 dark:text-white">
+                Airport delivery available?
+                <IoChevronForwardOutline className="w-3 h-3 text-gray-500 group-open:rotate-90 transition-transform flex-shrink-0 ml-1" />
               </summary>
-              <div className="px-3 sm:px-4 pb-3 sm:pb-4 text-[11px] sm:text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
-                Yes! Many hosts offer free or low-cost delivery to Phoenix Sky Harbor (PHX). Filter results by airport pickup.
+              <div className="px-2 sm:px-2.5 pb-2 sm:pb-2.5 text-[10px] sm:text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed">
+                Yes! Many hosts deliver to PHX. <Link href="/rentals/search?delivery=airport" className="text-amber-600 hover:underline">Filter by airport pickup →</Link>
               </div>
             </details>
 
-            <details className="group bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <summary className="flex items-center justify-between p-3 sm:p-4 cursor-pointer text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
+            <details className="group bg-gray-50 dark:bg-gray-700 rounded">
+              <summary className="flex items-center justify-between p-2 sm:p-2.5 cursor-pointer text-[11px] sm:text-xs font-medium text-gray-900 dark:text-white">
                 Is insurance included?
-                <IoChevronForwardOutline className="w-4 h-4 text-gray-500 group-open:rotate-90 transition-transform flex-shrink-0 ml-2" />
+                <IoChevronForwardOutline className="w-3 h-3 text-gray-500 group-open:rotate-90 transition-transform flex-shrink-0 ml-1" />
               </summary>
-              <div className="px-3 sm:px-4 pb-3 sm:pb-4 text-[11px] sm:text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
-                All rentals include $1M liability coverage. Add comprehensive protection for $15-25/day for collision and theft.
-              </div>
-            </details>
-
-            <details className="group bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <summary className="flex items-center justify-between p-3 sm:p-4 cursor-pointer text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
-                What do I need to rent?
-                <IoChevronForwardOutline className="w-4 h-4 text-gray-500 group-open:rotate-90 transition-transform flex-shrink-0 ml-2" />
-              </summary>
-              <div className="px-3 sm:px-4 pb-3 sm:pb-4 text-[11px] sm:text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
-                Valid driver's license, 21+ years old (25+ for some vehicles), clean driving record, and payment method.
+              <div className="px-2 sm:px-2.5 pb-2 sm:pb-2.5 text-[10px] sm:text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed">
+                All rentals include $1M liability. <Link href="/insurance" className="text-amber-600 hover:underline">Learn about coverage →</Link>
               </div>
             </details>
           </div>
         </div>
 
-        {/* Why Rent - Compact prose */}
-        <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 max-w-3xl space-y-2 leading-relaxed">
-          <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white">Why Rent from Local Owners?</h3>
-          <p>
-            ITWhip connects you with local car owners across the Phoenix metro. Unlike traditional agencies,
-            our peer-to-peer platform offers unique vehicles, competitive pricing, and personalized service.
-            All vehicles are inspected for quality. Every booking includes 24/7 roadside assistance and secure payments.
+        {/* Why Rent */}
+        <div className="max-w-xl">
+          <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-2">Why rent from local owners?</h3>
+          <p className="text-[10px] sm:text-[11px] text-gray-500 dark:text-gray-500 leading-relaxed">
+            Unique vehicles, competitive pricing, personalized service. All cars inspected. <Link href="/how-it-works" className="text-amber-600 hover:underline">Learn more →</Link>
           </p>
         </div>
       </div>
@@ -667,7 +652,6 @@ export default async function SearchResultsPage({
       {/* SEO Content Sections (always visible, server-rendered) */}
       <SEOContent
         location={location}
-        carCount={total}
         priceRange={priceRange}
       />
 

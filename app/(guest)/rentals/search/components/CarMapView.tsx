@@ -11,7 +11,11 @@ import {
   IoFlashOutline,
   IoCarOutline,
   IoChevronBackOutline,
-  IoChevronForwardOutline
+  IoChevronForwardOutline,
+  IoLocationOutline,
+  IoAirplaneOutline,
+  IoSnowOutline,
+  IoShieldCheckmarkOutline
 } from 'react-icons/io5'
 import Link from 'next/link'
 
@@ -51,6 +55,35 @@ interface CarMapViewProps {
 // Phoenix metro default coordinates for fallback
 const PHOENIX_DEFAULT = { lat: 33.4484, lng: -112.0740 }
 
+// AZ Neighborhood centers for privacy snapping (approximate areas, not exact addresses)
+// Each neighborhood has a center point and a privacy radius for markers
+const AZ_NEIGHBORHOODS: Record<string, { lat: number; lng: number; name: string; tip?: string }> = {
+  // Phoenix Metro
+  'downtown-phoenix': { lat: 33.4484, lng: -112.0740, name: 'Downtown Phoenix', tip: 'Near Chase Field & Convention Center' },
+  'arcadia': { lat: 33.5091, lng: -111.9782, name: 'Arcadia', tip: 'Upscale neighborhood with great dining' },
+  'biltmore': { lat: 33.5153, lng: -112.0183, name: 'Biltmore', tip: 'Luxury shopping & resorts' },
+  'desert-ridge': { lat: 33.6751, lng: -111.9281, name: 'Desert Ridge', tip: 'Near Mayo Clinic' },
+  'ahwatukee': { lat: 33.3333, lng: -111.9833, name: 'Ahwatukee', tip: 'South Mountain access' },
+  'paradise-valley': { lat: 33.5333, lng: -111.9433, name: 'Paradise Valley', tip: 'Camelback Mountain nearby' },
+  // Scottsdale
+  'old-town-scottsdale': { lat: 33.4942, lng: -111.9261, name: 'Old Town Scottsdale', tip: 'Galleries, dining & nightlife' },
+  'north-scottsdale': { lat: 33.6167, lng: -111.8989, name: 'North Scottsdale', tip: 'Hiking & luxury homes' },
+  'scottsdale-airpark': { lat: 33.6277, lng: -111.9156, name: 'Scottsdale Airpark', tip: 'Near Scottsdale Airport' },
+  // East Valley
+  'tempe-asu': { lat: 33.4255, lng: -111.9400, name: 'Tempe / ASU', tip: 'Near ASU campus & Mill Ave' },
+  'downtown-mesa': { lat: 33.4152, lng: -111.8315, name: 'Downtown Mesa', tip: 'Spring Training nearby' },
+  'gilbert': { lat: 33.3528, lng: -111.7890, name: 'Gilbert', tip: 'Family-friendly suburb' },
+  'chandler': { lat: 33.3062, lng: -111.8413, name: 'Chandler', tip: 'Tech hub & great parks' },
+  'queen-creek': { lat: 33.2486, lng: -111.6343, name: 'Queen Creek', tip: 'Rural charm & farms' },
+  // West Valley
+  'glendale': { lat: 33.5387, lng: -112.1860, name: 'Glendale', tip: 'Near State Farm Stadium' },
+  'peoria': { lat: 33.5806, lng: -112.2374, name: 'Peoria', tip: 'Spring Training & Lake Pleasant' },
+  'surprise': { lat: 33.6292, lng: -112.3679, name: 'Surprise', tip: 'Growing west valley suburb' },
+  'goodyear': { lat: 33.4353, lng: -112.3583, name: 'Goodyear', tip: 'Near Phoenix Goodyear Airport' },
+  // Airport
+  'sky-harbor': { lat: 33.4373, lng: -112.0078, name: 'Sky Harbor Area', tip: 'Free airport delivery available!' },
+}
+
 // City coordinates for fallback based on city name
 const CITY_COORDS: Record<string, { lat: number; lng: number }> = {
   'Phoenix': { lat: 33.4484, lng: -112.0740 },
@@ -61,19 +94,69 @@ const CITY_COORDS: Record<string, { lat: number; lng: number }> = {
   'Gilbert': { lat: 33.3528, lng: -111.7890 },
   'Glendale': { lat: 33.5387, lng: -112.1860 },
   'Peoria': { lat: 33.5806, lng: -112.2374 },
+  'Surprise': { lat: 33.6292, lng: -112.3679 },
+  'Goodyear': { lat: 33.4353, lng: -112.3583 },
+  'Queen Creek': { lat: 33.2486, lng: -111.6343 },
 }
 
-// Privacy-preserving location offset (300-600m from actual location)
+// Find nearest neighborhood center for privacy snapping
+function findNearestNeighborhood(lat: number, lng: number): { center: { lat: number; lng: number }; name: string; tip?: string } {
+  let nearest = { center: PHOENIX_DEFAULT, name: 'Phoenix Metro', tip: undefined as string | undefined }
+  let minDist = Infinity
+
+  Object.values(AZ_NEIGHBORHOODS).forEach(hood => {
+    const dist = Math.sqrt(Math.pow(lat - hood.lat, 2) + Math.pow(lng - hood.lng, 2))
+    if (dist < minDist) {
+      minDist = dist
+      nearest = { center: { lat: hood.lat, lng: hood.lng }, name: hood.name, tip: hood.tip }
+    }
+  })
+
+  return nearest
+}
+
+// Privacy-preserving location offset - snaps to neighborhood center with ~500m radius scatter
 // Creates a consistent offset per car so it doesn't jump around
-function offsetLocation(lat: number, lng: number, carId: string): { lat: number; lng: number } {
+function offsetLocation(lat: number, lng: number, carId: string): {
+  lat: number;
+  lng: number;
+  neighborhood: string;
+  tip?: string;
+} {
+  // Find nearest neighborhood
+  const { center, name, tip } = findNearestNeighborhood(lat, lng)
+
+  // Create deterministic scatter within ~500m of neighborhood center
   const seed = carId.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
   const angle = (seed % 360) * (Math.PI / 180)
-  // Offset between 0.003 and 0.006 degrees (~300-600m)
-  const offset = 0.003 + (seed % 100) / 33333
+  // Offset between 0.002 and 0.005 degrees (~200-500m from neighborhood center)
+  const offset = 0.002 + (seed % 100) / 33333
+
   return {
-    lat: lat + Math.cos(angle) * offset,
-    lng: lng + Math.sin(angle) * offset
+    lat: center.lat + Math.cos(angle) * offset,
+    lng: center.lng + Math.sin(angle) * offset,
+    neighborhood: name,
+    tip
   }
+}
+
+// Check if a car qualifies for MaxAC certification (good AC for Phoenix summers)
+// Based on: newer model, good rating, positive reviews mentioning AC
+function isMaxACCertified(car: { year: number; rating?: { average: number; count: number }; carType?: string }): boolean {
+  // Newer cars (2020+) with good ratings get MaxAC badge
+  const isNewEnough = car.year >= 2020
+  const hasGoodRating = car.rating && car.rating.average >= 4.5 && car.rating.count >= 3
+  // Luxury and SUV types typically have better AC
+  const premiumType = ['luxury', 'suv', 'electric'].includes(car.carType?.toLowerCase() || '')
+
+  return isNewEnough && (hasGoodRating || premiumType)
+}
+
+// Check if near Sky Harbor for airport delivery tip
+function isNearAirport(lat: number, lng: number): boolean {
+  const skyHarbor = AZ_NEIGHBORHOODS['sky-harbor']
+  const dist = Math.sqrt(Math.pow(lat - skyHarbor.lat, 2) + Math.pow(lng - skyHarbor.lng, 2))
+  return dist < 0.05 // ~5km radius
 }
 
 // Get fallback coordinates based on city name
@@ -94,7 +177,14 @@ function CarPopup({
   isMobile,
   rentalDays = 1
 }: {
-  car: Car & { trips?: number; totalTrips?: number; host?: { name?: string } }
+  car: Car & {
+    trips?: number;
+    totalTrips?: number;
+    host?: { name?: string };
+    maxACCertified?: boolean;
+    nearAirport?: boolean;
+    displayLocation?: { neighborhood?: string; tip?: string };
+  }
   onClose: () => void
   isMobile: boolean
   rentalDays?: number
@@ -103,6 +193,9 @@ function CarPopup({
   const photos = car.photos || []
   const tripCount = car.trips || car.totalTrips || 0
   const totalPrice = Math.round(car.dailyRate * rentalDays)
+  const maxAC = car.maxACCertified || isMaxACCertified(car)
+  const nearAirport = car.nearAirport || false
+  const neighborhood = car.displayLocation?.neighborhood
 
   const nextImage = () => {
     if (photos.length > 1) {
@@ -150,8 +243,8 @@ function CarPopup({
             <IoCloseOutline className="w-4 h-4" />
           </button>
 
-          {/* Image - shorter */}
-          <div className="relative h-36 bg-gray-200 dark:bg-gray-700">
+          {/* Image */}
+          <div className="relative h-52 bg-gray-200 dark:bg-gray-700">
             {photos[imageIndex] ? (
               <img
                 src={photos[imageIndex].url}
@@ -192,10 +285,20 @@ function CarPopup({
             )}
 
             {/* Badges */}
-            <div className="absolute top-2 left-2 flex gap-1.5">
+            <div className="absolute top-2 left-2 flex flex-wrap gap-1.5">
               {car.instantBook && (
                 <span className="px-1.5 py-0.5 bg-green-500 text-white text-[10px] font-medium rounded flex items-center gap-0.5">
                   <IoFlashOutline className="w-2.5 h-2.5" /> Instant
+                </span>
+              )}
+              {maxAC && (
+                <span className="px-1.5 py-0.5 bg-blue-500 text-white text-[10px] font-medium rounded flex items-center gap-0.5">
+                  <IoSnowOutline className="w-2.5 h-2.5" /> MaxAC™
+                </span>
+              )}
+              {nearAirport && (
+                <span className="px-1.5 py-0.5 bg-amber-500 text-white text-[10px] font-medium rounded flex items-center gap-0.5">
+                  <IoAirplaneOutline className="w-2.5 h-2.5" /> PHX Delivery
                 </span>
               )}
             </div>
@@ -204,8 +307,15 @@ function CarPopup({
           {/* Content - compact */}
           <div className="p-3">
             <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-              {car.year} {car.make} {car.model}
+              {car.year} {car.make}
             </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">{car.model}</p>
+            {neighborhood && (
+              <p className="text-[10px] text-gray-500 dark:text-gray-500 flex items-center gap-1 mt-0.5">
+                <IoLocationOutline className="w-2.5 h-2.5" />
+                {neighborhood}
+              </p>
+            )}
 
             <div className="flex items-center gap-2 mt-1 text-[11px] text-gray-600 dark:text-gray-400">
               {car.rating && car.rating.average > 0 && (
@@ -230,7 +340,7 @@ function CarPopup({
 
             {car.host?.name && (
               <p className="text-[10px] text-gray-500 dark:text-gray-500 mt-1">
-                Hosted by {car.host.name}
+                Hosted by {car.host.name.split(' ')[0]}
               </p>
             )}
 
@@ -281,8 +391,8 @@ function CarPopup({
           <IoCloseOutline className="w-4 h-4" />
         </button>
 
-        {/* Image */}
-        <div className="relative h-44 bg-gray-200 dark:bg-gray-700">
+        {/* Image - larger */}
+        <div className="relative h-52 bg-gray-200 dark:bg-gray-700">
           {photos[imageIndex] ? (
             <img
               src={photos[imageIndex].url}
@@ -326,10 +436,20 @@ function CarPopup({
           )}
 
           {/* Badges */}
-          <div className="absolute top-2 left-2 flex gap-1.5">
+          <div className="absolute top-2 left-2 flex flex-wrap gap-1.5">
             {car.instantBook && (
               <span className="px-1.5 py-0.5 bg-green-500 text-white text-[10px] font-medium rounded flex items-center gap-0.5">
                 <IoFlashOutline className="w-2.5 h-2.5" /> Instant
+              </span>
+            )}
+            {maxAC && (
+              <span className="px-1.5 py-0.5 bg-blue-500 text-white text-[10px] font-medium rounded flex items-center gap-0.5">
+                <IoSnowOutline className="w-2.5 h-2.5" /> MaxAC™
+              </span>
+            )}
+            {nearAirport && (
+              <span className="px-1.5 py-0.5 bg-amber-500 text-white text-[10px] font-medium rounded flex items-center gap-0.5">
+                <IoAirplaneOutline className="w-2.5 h-2.5" /> PHX Delivery
               </span>
             )}
           </div>
@@ -338,8 +458,15 @@ function CarPopup({
         {/* Content */}
         <div className="p-4">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            {car.year} {car.make} {car.model}
+            {car.year} {car.make}
           </h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400">{car.model}</p>
+          {neighborhood && (
+            <p className="text-[10px] text-gray-500 dark:text-gray-500 flex items-center gap-1 mt-0.5">
+              <IoLocationOutline className="w-3 h-3" />
+              {neighborhood}
+            </p>
+          )}
 
           <div className="flex items-center gap-2 mt-1.5 text-xs text-gray-600 dark:text-gray-400">
             {car.rating && car.rating.average > 0 && (
@@ -364,7 +491,7 @@ function CarPopup({
 
           {car.host?.name && (
             <p className="text-[11px] text-gray-500 dark:text-gray-500 mt-1.5">
-              Hosted by {car.host.name}
+              Hosted by {car.host.name.split(' ')[0]}
             </p>
           )}
 
@@ -440,12 +567,18 @@ export default function CarMapView({
         baseLng = fallback.lng
       }
 
-      // Apply privacy offset to all coordinates
+      // Apply privacy offset with neighborhood snapping
       const displayLocation = offsetLocation(baseLat, baseLng, car.id)
+
+      // Check for special badges
+      const maxACCertified = isMaxACCertified(car)
+      const nearAirport = isNearAirport(baseLat, baseLng)
 
       return {
         ...car,
-        displayLocation
+        displayLocation,
+        maxACCertified,
+        nearAirport
       }
     })
   }, [cars])
@@ -479,8 +612,52 @@ export default function CarMapView({
         setMapError('Failed to load map')
       })
 
+      // Zoom-level based feature visibility
+      newMap.on('zoom', () => {
+        const zoom = newMap.getZoom()
+        const markers = document.querySelectorAll('.car-marker')
+
+        markers.forEach(marker => {
+          const neighborhoodLabel = marker.querySelector('.neighborhood-label') as HTMLElement
+          const circle = marker.querySelector('.proximity-circle') as HTMLElement
+
+          if (neighborhoodLabel) {
+            // Show neighborhood labels when zoomed in (zoom >= 13)
+            neighborhoodLabel.style.opacity = zoom >= 13 ? '1' : '0'
+          }
+
+          if (circle) {
+            // Make privacy circles more visible on zoom
+            if (zoom >= 14) {
+              circle.style.width = '90px'
+              circle.style.height = '90px'
+              circle.style.background = 'rgba(217, 119, 6, 0.12)'
+              circle.style.borderWidth = '2px'
+            } else if (zoom >= 12) {
+              circle.style.width = '80px'
+              circle.style.height = '80px'
+              circle.style.background = 'rgba(217, 119, 6, 0.1)'
+              circle.style.borderWidth = '2px'
+            } else {
+              circle.style.width = '70px'
+              circle.style.height = '70px'
+              circle.style.background = 'rgba(217, 119, 6, 0.08)'
+              circle.style.borderWidth = '2px'
+            }
+          }
+        })
+      })
+
       // Add navigation controls
       newMap.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'bottom-right')
+
+      // Add geolocate control for "Zoom to My Location"
+      const geolocate = new mapboxgl.GeolocateControl({
+        positionOptions: { enableHighAccuracy: true },
+        trackUserLocation: false,
+        showUserLocation: true
+      })
+      newMap.addControl(geolocate, 'bottom-right')
 
       return () => {
         markers.current.forEach(m => m.remove())
@@ -505,12 +682,15 @@ export default function CarMapView({
     processedCars.forEach(car => {
       // Create marker container - needs explicit size for Mapbox positioning
       const el = document.createElement('div')
-      el.className = 'cursor-pointer'
+      el.className = 'cursor-pointer car-marker'
       el.dataset.carId = car.id
+      el.dataset.neighborhood = car.displayLocation.neighborhood
+      if (car.displayLocation.tip) el.dataset.tip = car.displayLocation.tip
       el.style.cssText = `
         display: flex;
         align-items: center;
         justify-content: center;
+        flex-direction: column;
       `
 
       // Wrapper for badge + circle
@@ -520,28 +700,41 @@ export default function CarMapView({
         display: flex;
         align-items: center;
         justify-content: center;
+        flex-direction: column;
       `
 
-      // Proximity circle (shows approximate area, not exact location)
+      // Proximity circle (shows approximate area for host privacy)
       const circle = document.createElement('div')
       circle.className = 'proximity-circle'
       circle.style.cssText = `
         position: absolute;
-        width: 60px;
-        height: 60px;
+        width: 70px;
+        height: 70px;
         border-radius: 50%;
-        background: rgba(217, 119, 6, 0.1);
-        border: 2px dashed rgba(217, 119, 6, 0.3);
+        background: rgba(217, 119, 6, 0.08);
+        border: 2px dashed rgba(217, 119, 6, 0.25);
         pointer-events: none;
       `
       wrapper.appendChild(circle)
+
+      // Badge container (price + optional icons)
+      const badgeContainer = document.createElement('div')
+      badgeContainer.style.cssText = `
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+      `
 
       // Price badge (centered on the circle)
       const badge = document.createElement('div')
       badge.className = 'marker-badge'
       badge.style.cssText = `
-        position: relative;
-        padding: 6px 12px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 6px 10px;
         border-radius: 20px;
         font-size: 13px;
         font-weight: 600;
@@ -552,9 +745,52 @@ export default function CarMapView({
         white-space: nowrap;
         transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
       `
-      badge.textContent = `$${Math.round(car.dailyRate)}`
-      wrapper.appendChild(badge)
 
+      // Add MaxAC badge for certified cars (Phoenix summer essential!)
+      if (car.maxACCertified) {
+        const acIcon = document.createElement('span')
+        acIcon.innerHTML = '❄️'
+        acIcon.style.cssText = 'font-size: 10px;'
+        acIcon.title = 'MaxAC™ Certified - Premium cooling for Arizona summers'
+        badge.appendChild(acIcon)
+      }
+
+      // Add airplane icon for near-airport cars
+      if (car.nearAirport) {
+        const airportIcon = document.createElement('span')
+        airportIcon.innerHTML = '✈️'
+        airportIcon.style.cssText = 'font-size: 10px;'
+        airportIcon.title = 'Near Sky Harbor - Free airport delivery'
+        badge.appendChild(airportIcon)
+      }
+
+      const priceText = document.createElement('span')
+      priceText.textContent = `$${Math.round(car.dailyRate)}`
+      badge.appendChild(priceText)
+
+      badgeContainer.appendChild(badge)
+
+      // Neighborhood label (shown on zoom, hidden by default)
+      const neighborhoodLabel = document.createElement('div')
+      neighborhoodLabel.className = 'neighborhood-label'
+      neighborhoodLabel.style.cssText = `
+        font-size: 9px;
+        color: #666;
+        background: rgba(255,255,255,0.9);
+        padding: 2px 6px;
+        border-radius: 8px;
+        margin-top: 2px;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        white-space: nowrap;
+        max-width: 100px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      `
+      neighborhoodLabel.textContent = car.displayLocation.neighborhood
+      badgeContainer.appendChild(neighborhoodLabel)
+
+      wrapper.appendChild(badgeContainer)
       el.appendChild(wrapper)
 
       // Click handler
@@ -629,7 +865,7 @@ export default function CarMapView({
     if (car?.displayLocation) {
       map.current.easeTo({
         center: [car.displayLocation.lng, car.displayLocation.lat],
-        zoom: 13,
+        zoom: 12,
         duration: 500
       })
     }
@@ -676,24 +912,38 @@ export default function CarMapView({
         </div>
       )}
 
-      {/* Car count badge - always visible when map loaded */}
+      {/* Top info bar - Available cars + privacy note */}
       {mapLoaded && (
-        <div className="absolute top-4 left-4 px-3 py-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
-          <span className="text-sm font-semibold text-gray-900 dark:text-white">
-            {processedCars.length} cars
-          </span>
-          <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
-            in this area
-          </span>
+        <div className="absolute top-4 left-4 right-4 flex items-start justify-between gap-2 pointer-events-none">
+          {/* Available cars badge */}
+          <div className="px-3 py-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg pointer-events-auto">
+            <span className="text-sm font-semibold text-gray-900 dark:text-white">
+              {processedCars.length} Available Cars
+            </span>
+          </div>
+
+          {/* Privacy indicator - shows on zoom */}
+          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 bg-white/95 dark:bg-gray-800/95 rounded-lg shadow-md text-[10px] text-gray-600 dark:text-gray-400 pointer-events-auto">
+            <IoShieldCheckmarkOutline className="w-3.5 h-3.5 text-amber-600" />
+            <span>Approximate for host safety</span>
+          </div>
         </div>
       )}
 
-      {/* Approximate location notice */}
-      {mapLoaded && !isLoading && processedCars.length > 0 && (
-        <div className="absolute bottom-4 left-4 px-3 py-2 bg-gray-900/80 backdrop-blur-sm rounded-lg text-xs text-white max-w-[200px]">
-          Markers show approximate pickup areas for privacy
+      {/* Legend - shown at bottom left */}
+      {mapLoaded && (
+        <div className="absolute bottom-20 left-4 hidden sm:flex flex-col gap-1.5 px-3 py-2 bg-white/95 dark:bg-gray-800/95 rounded-lg shadow-md text-[10px]">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px]">❄️</span>
+            <span className="text-gray-600 dark:text-gray-400">MaxAC™ - Premium cooling</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px]">✈️</span>
+            <span className="text-gray-600 dark:text-gray-400">Free Sky Harbor delivery</span>
+          </div>
         </div>
       )}
+
 
       {/* Selected car popup - Rendered via Portal to document.body */}
       {selectedCar && portalContainer && createPortal(

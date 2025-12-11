@@ -294,7 +294,7 @@ export default function SearchResultsClient({
     (filters.availability !== 'all' ? 1 : 0)
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="bg-gray-50 dark:bg-gray-900">
       {/* Search Widget - Hidden on map view for more space */}
       {!showMap && (
         <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 py-4">
