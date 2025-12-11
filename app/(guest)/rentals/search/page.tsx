@@ -435,161 +435,139 @@ function SSRCarCard({ car }: { car: any }) {
   )
 }
 
-// SEO Content Sections
+// SEO Content Sections - Matching cities/[city] page typography
 function SEOContent({ location, carCount, priceRange }: { location: string; carCount: number; priceRange: { min: number; max: number } }) {
   const cityName = location.split(',')[0].trim()
 
   const popularAreas = [
-    { name: 'Phoenix', slug: 'Phoenix, AZ', description: 'Downtown Phoenix, Sky Harbor Airport' },
-    { name: 'Scottsdale', slug: 'Scottsdale, AZ', description: 'Old Town, Fashion Square area' },
-    { name: 'Tempe', slug: 'Tempe, AZ', description: 'ASU campus, Mill Avenue district' },
-    { name: 'Mesa', slug: 'Mesa, AZ', description: 'Gateway Airport, downtown Mesa' },
-    { name: 'Chandler', slug: 'Chandler, AZ', description: 'Tech corridor, downtown Chandler' },
-    { name: 'Gilbert', slug: 'Gilbert, AZ', description: 'Heritage District, San Tan area' }
+    { name: 'Phoenix', slug: 'Phoenix, AZ', description: 'Downtown, Sky Harbor' },
+    { name: 'Scottsdale', slug: 'Scottsdale, AZ', description: 'Old Town, Fashion Square' },
+    { name: 'Tempe', slug: 'Tempe, AZ', description: 'ASU, Mill Avenue' },
+    { name: 'Mesa', slug: 'Mesa, AZ', description: 'Gateway Airport' },
+    { name: 'Chandler', slug: 'Chandler, AZ', description: 'Tech corridor' },
+    { name: 'Gilbert', slug: 'Gilbert, AZ', description: 'Heritage District' }
   ]
 
   const vehicleTypes = [
-    { name: 'SUVs', slug: 'suv', description: 'Perfect for families and road trips' },
-    { name: 'Luxury Cars', slug: 'luxury', description: 'Premium vehicles for special occasions' },
-    { name: 'Electric Vehicles', slug: 'electric', description: 'Eco-friendly Tesla and EV rentals' },
-    { name: 'Convertibles', slug: 'convertible', description: 'Enjoy Arizona sunshine in style' },
-    { name: 'Trucks', slug: 'truck', description: 'For moving, hauling, or adventure' },
-    { name: 'Economy', slug: 'sedan', description: 'Budget-friendly daily drivers' }
+    { name: 'SUVs', slug: 'suv', description: 'Families & road trips' },
+    { name: 'Luxury', slug: 'luxury', description: 'Special occasions' },
+    { name: 'Electric', slug: 'electric', description: 'Tesla & EVs' },
+    { name: 'Convertibles', slug: 'convertible', description: 'Arizona sunshine' },
+    { name: 'Trucks', slug: 'truck', description: 'Hauling & adventure' },
+    { name: 'Economy', slug: 'sedan', description: 'Budget-friendly' }
   ]
 
   return (
-    <section className="bg-white dark:bg-gray-800 py-12 mt-8">
+    <section className="bg-white dark:bg-gray-800 py-6 sm:py-8 border-t border-gray-200 dark:border-gray-700">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Heading & Intro */}
-        <div className="mb-10">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+        <div className="mb-5 sm:mb-6">
+          <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-2 sm:mb-3">
             Car Rentals in {cityName}, AZ – Live Availability
           </h2>
-          <p className="text-gray-600 dark:text-gray-300 max-w-3xl">
-            Browse {carCount}+ cars available from local owners in the {cityName} area.
-            Our peer-to-peer car rental marketplace offers vehicles from ${priceRange.min}/day to ${priceRange.max}/day,
-            with options for airport delivery, instant booking, and flexible rental periods.
-            Skip the rental car counter and rent directly from verified local hosts.
+          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 max-w-3xl leading-relaxed">
+            Browse {carCount}+ cars from local owners in {cityName}. Vehicles from ${priceRange.min}/day to ${priceRange.max}/day
+            with airport delivery, instant booking, and flexible rental periods. Skip the counter – rent direct from verified hosts.
           </p>
         </div>
 
-        {/* Popular Areas */}
-        <div className="mb-10">
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-            Popular Areas We Serve
-          </h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {popularAreas.map(area => (
-              <Link
-                key={area.name}
-                href={`/rentals/search?location=${encodeURIComponent(area.slug)}`}
-                className="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-              >
-                <h4 className="font-medium text-gray-900 dark:text-white">{area.name}</h4>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{area.description}</p>
-              </Link>
-            ))}
+        {/* Popular Areas & Vehicle Types Grid */}
+        <div className="grid md:grid-cols-2 gap-4 sm:gap-6 mb-5 sm:mb-6">
+          {/* Popular Areas */}
+          <div>
+            <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-1.5">
+              <IoLocationOutline className="w-4 h-4 text-amber-600" />
+              Popular Areas
+            </h3>
+            <div className="flex flex-wrap gap-1.5">
+              {popularAreas.map(area => (
+                <Link
+                  key={area.name}
+                  href={`/rentals/search?location=${encodeURIComponent(area.slug)}`}
+                  className="px-2 py-0.5 sm:px-2.5 sm:py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-[10px] sm:text-xs rounded-full hover:bg-amber-100 dark:hover:bg-amber-900/30 hover:text-amber-700 dark:hover:text-amber-400 transition-colors"
+                >
+                  {area.name}
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* Vehicle Types */}
+          <div>
+            <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-1.5">
+              <IoCarOutline className="w-4 h-4 text-amber-600" />
+              Vehicle Types
+            </h3>
+            <div className="flex flex-wrap gap-1.5">
+              {vehicleTypes.map(type => (
+                <Link
+                  key={type.name}
+                  href={`/rentals/search?location=${encodeURIComponent(location)}&carType=${type.slug}`}
+                  className="px-2 py-0.5 sm:px-2.5 sm:py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-[10px] sm:text-xs rounded-full hover:bg-amber-100 dark:hover:bg-amber-900/30 hover:text-amber-700 dark:hover:text-amber-400 transition-colors"
+                >
+                  {type.name}
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Vehicle Types */}
-        <div className="mb-10">
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-            Top Vehicle Types in {cityName}
-          </h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {vehicleTypes.map(type => (
-              <Link
-                key={type.name}
-                href={`/rentals/search?location=${encodeURIComponent(location)}&carType=${type.slug}`}
-                className="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-              >
-                <h4 className="font-medium text-gray-900 dark:text-white">{type.name}</h4>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{type.description}</p>
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        {/* FAQs */}
-        <div className="mb-10">
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+        {/* FAQs - Compact */}
+        <div className="mb-5 sm:mb-6">
+          <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-1.5">
+            <IoChevronForwardOutline className="w-4 h-4 text-amber-600" />
             Frequently Asked Questions
           </h3>
-          <div className="space-y-4">
+          <div className="space-y-2 sm:space-y-3 max-w-2xl">
             <details className="group bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <summary className="flex items-center justify-between p-4 cursor-pointer font-medium text-gray-900 dark:text-white">
+              <summary className="flex items-center justify-between p-3 sm:p-4 cursor-pointer text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
                 How much does it cost to rent a car in {cityName}?
-                <IoChevronForwardOutline className="w-5 h-5 transition-transform group-open:rotate-90" />
+                <IoChevronForwardOutline className="w-4 h-4 text-gray-500 group-open:rotate-90 transition-transform flex-shrink-0 ml-2" />
               </summary>
-              <p className="px-4 pb-4 text-gray-600 dark:text-gray-300">
-                Car rentals from local owners in {cityName} start at ${priceRange.min}/day for economy cars.
-                Luxury vehicles and SUVs typically range from $99-$299/day. Weekly and monthly rentals
-                include discounts of 15-30%.
-              </p>
+              <div className="px-3 sm:px-4 pb-3 sm:pb-4 text-[11px] sm:text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                Car rentals start at ${priceRange.min}/day for economy cars. Luxury and SUVs range $99-$299/day. Weekly/monthly rentals include 15-30% discounts.
+              </div>
             </details>
 
             <details className="group bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <summary className="flex items-center justify-between p-4 cursor-pointer font-medium text-gray-900 dark:text-white">
-                Can I get airport delivery for my rental car?
-                <IoChevronForwardOutline className="w-5 h-5 transition-transform group-open:rotate-90" />
+              <summary className="flex items-center justify-between p-3 sm:p-4 cursor-pointer text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
+                Can I get airport delivery?
+                <IoChevronForwardOutline className="w-4 h-4 text-gray-500 group-open:rotate-90 transition-transform flex-shrink-0 ml-2" />
               </summary>
-              <p className="px-4 pb-4 text-gray-600 dark:text-gray-300">
-                Yes! Many of our local hosts offer free or low-cost delivery to Phoenix Sky Harbor Airport (PHX).
-                You can filter search results to show only cars with airport pickup available.
-              </p>
+              <div className="px-3 sm:px-4 pb-3 sm:pb-4 text-[11px] sm:text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                Yes! Many hosts offer free or low-cost delivery to Phoenix Sky Harbor (PHX). Filter results by airport pickup.
+              </div>
             </details>
 
             <details className="group bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <summary className="flex items-center justify-between p-4 cursor-pointer font-medium text-gray-900 dark:text-white">
-                Is insurance included with peer-to-peer car rentals?
-                <IoChevronForwardOutline className="w-5 h-5 transition-transform group-open:rotate-90" />
+              <summary className="flex items-center justify-between p-3 sm:p-4 cursor-pointer text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
+                Is insurance included?
+                <IoChevronForwardOutline className="w-4 h-4 text-gray-500 group-open:rotate-90 transition-transform flex-shrink-0 ml-2" />
               </summary>
-              <p className="px-4 pb-4 text-gray-600 dark:text-gray-300">
-                All rentals through ITWhip include liability insurance. Comprehensive coverage is available
-                as an add-on for $15-25/day, covering collision damage and theft protection.
-              </p>
+              <div className="px-3 sm:px-4 pb-3 sm:pb-4 text-[11px] sm:text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                All rentals include $1M liability coverage. Add comprehensive protection for $15-25/day for collision and theft.
+              </div>
             </details>
 
             <details className="group bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <summary className="flex items-center justify-between p-4 cursor-pointer font-medium text-gray-900 dark:text-white">
-                What is the minimum age to rent a car?
-                <IoChevronForwardOutline className="w-5 h-5 transition-transform group-open:rotate-90" />
+              <summary className="flex items-center justify-between p-3 sm:p-4 cursor-pointer text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
+                What do I need to rent?
+                <IoChevronForwardOutline className="w-4 h-4 text-gray-500 group-open:rotate-90 transition-transform flex-shrink-0 ml-2" />
               </summary>
-              <p className="px-4 pb-4 text-gray-600 dark:text-gray-300">
-                The minimum age to rent is 21 years old with a valid driver's license.
-                Renters under 25 may have additional requirements depending on the vehicle type.
-              </p>
-            </details>
-
-            <details className="group bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <summary className="flex items-center justify-between p-4 cursor-pointer font-medium text-gray-900 dark:text-white">
-                How does instant booking work?
-                <IoChevronForwardOutline className="w-5 h-5 transition-transform group-open:rotate-90" />
-              </summary>
-              <p className="px-4 pb-4 text-gray-600 dark:text-gray-300">
-                Cars marked with "Instant Book" can be reserved immediately without waiting for host approval.
-                Your booking is confirmed as soon as you complete payment.
-              </p>
+              <div className="px-3 sm:px-4 pb-3 sm:pb-4 text-[11px] sm:text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                Valid driver's license, 21+ years old (25+ for some vehicles), clean driving record, and payment method.
+              </div>
             </details>
           </div>
         </div>
 
-        {/* Additional SEO Text */}
-        <div className="prose prose-gray dark:prose-invert max-w-none">
-          <h3>Why Rent from Local Owners in {cityName}?</h3>
+        {/* Why Rent - Compact prose */}
+        <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 max-w-3xl space-y-2 leading-relaxed">
+          <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white">Why Rent from Local Owners?</h3>
           <p>
-            ITWhip connects you with local car owners throughout the Phoenix metropolitan area.
-            Unlike traditional rental agencies, our peer-to-peer platform offers unique vehicles,
-            competitive pricing, and personalized service. Whether you need a reliable sedan for
-            business, an SUV for a family road trip to the Grand Canyon, or a luxury convertible
-            to cruise through Scottsdale, our local hosts have you covered.
-          </p>
-          <p>
-            All vehicles are inspected for quality and safety. Every booking includes 24/7 roadside
-            assistance, and our secure payment system protects both renters and hosts. With hundreds
-            of cars available across {cityName}, Scottsdale, Tempe, Mesa, and surrounding areas,
-            you'll find the perfect vehicle for your Arizona adventure.
+            ITWhip connects you with local car owners across the Phoenix metro. Unlike traditional agencies,
+            our peer-to-peer platform offers unique vehicles, competitive pricing, and personalized service.
+            All vehicles are inspected for quality. Every booking includes 24/7 roadside assistance and secure payments.
           </p>
         </div>
       </div>

@@ -45,6 +45,7 @@ interface CarMapViewProps {
   searchLocation: { lat: number; lng: number }
   userLocation?: { lat: number; lng: number } | null
   isLoading?: boolean
+  rentalDays?: number
 }
 
 // Phoenix metro default coordinates for fallback
@@ -90,14 +91,18 @@ function getFallbackCoords(city?: string): { lat: number; lng: number } {
 function CarPopup({
   car,
   onClose,
-  isMobile
+  isMobile,
+  rentalDays = 1
 }: {
-  car: Car
+  car: Car & { trips?: number; totalTrips?: number; host?: { name?: string } }
   onClose: () => void
   isMobile: boolean
+  rentalDays?: number
 }) {
   const [imageIndex, setImageIndex] = useState(0)
   const photos = car.photos || []
+  const tripCount = car.trips || car.totalTrips || 0
+  const totalPrice = Math.round(car.dailyRate * rentalDays)
 
   const nextImage = () => {
     if (photos.length > 1) {
@@ -120,33 +125,33 @@ function CarPopup({
     return () => document.removeEventListener('keydown', handleEsc)
   }, [onClose])
 
-  // Mobile: Bottom sheet style
+  // Mobile: Bottom sheet style - compact
   if (isMobile) {
     return (
       <div className="fixed inset-0 z-[9999]" onClick={onClose}>
         {/* Backdrop */}
-        <div className="absolute inset-0 bg-black/50" />
+        <div className="absolute inset-0 bg-black/40" />
 
-        {/* Bottom Sheet */}
+        {/* Bottom Sheet - More compact */}
         <div
-          className="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-800 rounded-t-2xl max-h-[70vh] overflow-hidden"
+          className="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-800 rounded-t-xl max-h-[60vh] overflow-hidden shadow-2xl"
           onClick={e => e.stopPropagation()}
         >
           {/* Handle bar */}
-          <div className="flex justify-center py-2">
-            <div className="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
+          <div className="flex justify-center py-1.5">
+            <div className="w-8 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
           </div>
 
           {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute top-3 right-3 z-10 p-2 bg-white/90 dark:bg-gray-700/90 rounded-full shadow-lg"
+            className="absolute top-2 right-2 z-10 p-1.5 bg-white/90 dark:bg-gray-700/90 rounded-full shadow"
           >
-            <IoCloseOutline className="w-5 h-5" />
+            <IoCloseOutline className="w-4 h-4" />
           </button>
 
-          {/* Image */}
-          <div className="relative h-48 bg-gray-200 dark:bg-gray-700">
+          {/* Image - shorter */}
+          <div className="relative h-36 bg-gray-200 dark:bg-gray-700">
             {photos[imageIndex] ? (
               <img
                 src={photos[imageIndex].url}
@@ -155,7 +160,7 @@ function CarPopup({
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
-                <IoCarOutline className="w-16 h-16 text-gray-400" />
+                <IoCarOutline className="w-12 h-12 text-gray-400" />
               </div>
             )}
 
@@ -164,56 +169,89 @@ function CarPopup({
               <>
                 <button
                   onClick={prevImage}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-black/50 text-white rounded-full"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 bg-black/50 text-white rounded-full"
                 >
-                  <IoChevronBackOutline className="w-5 h-5" />
+                  <IoChevronBackOutline className="w-4 h-4" />
                 </button>
                 <button
                   onClick={nextImage}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-black/50 text-white rounded-full"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-black/50 text-white rounded-full"
                 >
-                  <IoChevronForwardOutline className="w-5 h-5" />
+                  <IoChevronForwardOutline className="w-4 h-4" />
                 </button>
+                {/* Image indicators */}
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                  {photos.slice(0, 5).map((_, i) => (
+                    <div
+                      key={i}
+                      className={`w-1 h-1 rounded-full ${i === imageIndex ? 'bg-white' : 'bg-white/50'}`}
+                    />
+                  ))}
+                </div>
               </>
             )}
 
             {/* Badges */}
-            <div className="absolute top-3 left-3 flex gap-2">
+            <div className="absolute top-2 left-2 flex gap-1.5">
               {car.instantBook && (
-                <span className="px-2 py-1 bg-green-500 text-white text-xs font-medium rounded-full flex items-center gap-1">
-                  <IoFlashOutline className="w-3 h-3" /> Instant
+                <span className="px-1.5 py-0.5 bg-green-500 text-white text-[10px] font-medium rounded flex items-center gap-0.5">
+                  <IoFlashOutline className="w-2.5 h-2.5" /> Instant
                 </span>
               )}
             </div>
           </div>
 
-          {/* Content */}
-          <div className="p-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+          {/* Content - compact */}
+          <div className="p-3">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white">
               {car.year} {car.make} {car.model}
             </h3>
 
-            <div className="flex items-center gap-3 mt-2 text-sm text-gray-600 dark:text-gray-400">
-              {car.rating && (
-                <span className="flex items-center gap-1">
-                  <IoStarOutline className="w-4 h-4 text-amber-500" />
-                  {car.rating.average?.toFixed(1) || '5.0'} ({car.rating.count || 0})
+            <div className="flex items-center gap-2 mt-1 text-[11px] text-gray-600 dark:text-gray-400">
+              {car.rating && car.rating.average > 0 && (
+                <span className="flex items-center gap-0.5">
+                  <IoStarOutline className="w-3 h-3 text-amber-500" />
+                  <span className="font-medium">{car.rating.average?.toFixed(1) || '5.0'}</span>
+                  {tripCount > 0 && <span className="text-gray-500">({tripCount} trips)</span>}
                 </span>
               )}
+              {tripCount > 0 && (!car.rating || car.rating.average === 0) && (
+                <span className="text-gray-500">{tripCount} trips</span>
+              )}
+              <span className="text-gray-400">•</span>
               <span>{car.location?.city || 'Phoenix'}</span>
+              {car.seats && (
+                <>
+                  <span className="text-gray-400">•</span>
+                  <span>{car.seats} seats</span>
+                </>
+              )}
             </div>
 
-            <div className="flex items-center justify-between mt-4">
+            {car.host?.name && (
+              <p className="text-[10px] text-gray-500 dark:text-gray-500 mt-1">
+                Hosted by {car.host.name}
+              </p>
+            )}
+
+            <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100 dark:border-gray-700">
               <div>
-                <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                  ${Math.round(car.dailyRate)}
-                </span>
-                <span className="text-gray-500 dark:text-gray-400">/day</span>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-xl font-bold text-gray-900 dark:text-white">
+                    ${Math.round(car.dailyRate)}
+                  </span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">/day</span>
+                </div>
+                {rentalDays > 1 && (
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400">
+                    ${totalPrice} total for {rentalDays} days
+                  </p>
+                )}
               </div>
 
               <Link
-                href={`/rentals/${car.id}`}
-                className="px-6 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg transition-colors"
+                href={`/rentals/cars/${car.id}`}
+                className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg transition-colors"
               >
                 View Details
               </Link>
@@ -224,27 +262,27 @@ function CarPopup({
     )
   }
 
-  // Desktop: Centered modal
+  // Desktop: Centered modal - more compact
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" onClick={onClose}>
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
 
       {/* Modal */}
       <div
-        className="relative w-full max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-2xl overflow-hidden"
+        className="relative w-full max-w-sm bg-white dark:bg-gray-800 rounded-xl shadow-2xl overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 z-10 p-2 bg-white/90 dark:bg-gray-700/90 rounded-full shadow-lg hover:bg-white dark:hover:bg-gray-700 transition-colors"
+          className="absolute top-2 right-2 z-10 p-1.5 bg-white/90 dark:bg-gray-700/90 rounded-full shadow hover:bg-white dark:hover:bg-gray-700 transition-colors"
         >
-          <IoCloseOutline className="w-5 h-5" />
+          <IoCloseOutline className="w-4 h-4" />
         </button>
 
         {/* Image */}
-        <div className="relative h-56 bg-gray-200 dark:bg-gray-700">
+        <div className="relative h-44 bg-gray-200 dark:bg-gray-700">
           {photos[imageIndex] ? (
             <img
               src={photos[imageIndex].url}
@@ -253,7 +291,7 @@ function CarPopup({
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
-              <IoCarOutline className="w-16 h-16 text-gray-400" />
+              <IoCarOutline className="w-12 h-12 text-gray-400" />
             </div>
           )}
 
@@ -262,19 +300,19 @@ function CarPopup({
             <>
               <button
                 onClick={prevImage}
-                className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors"
+                className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors"
               >
-                <IoChevronBackOutline className="w-5 h-5" />
+                <IoChevronBackOutline className="w-4 h-4" />
               </button>
               <button
                 onClick={nextImage}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors"
               >
-                <IoChevronForwardOutline className="w-5 h-5" />
+                <IoChevronForwardOutline className="w-4 h-4" />
               </button>
 
               {/* Image indicators */}
-              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1">
+              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
                 {photos.slice(0, 5).map((_, i) => (
                   <div
                     key={i}
@@ -288,43 +326,66 @@ function CarPopup({
           )}
 
           {/* Badges */}
-          <div className="absolute top-3 left-3 flex gap-2">
+          <div className="absolute top-2 left-2 flex gap-1.5">
             {car.instantBook && (
-              <span className="px-2 py-1 bg-green-500 text-white text-xs font-medium rounded-full flex items-center gap-1">
-                <IoFlashOutline className="w-3 h-3" /> Instant
+              <span className="px-1.5 py-0.5 bg-green-500 text-white text-[10px] font-medium rounded flex items-center gap-0.5">
+                <IoFlashOutline className="w-2.5 h-2.5" /> Instant
               </span>
             )}
           </div>
         </div>
 
         {/* Content */}
-        <div className="p-5">
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+        <div className="p-4">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
             {car.year} {car.make} {car.model}
           </h3>
 
-          <div className="flex items-center gap-4 mt-2 text-sm text-gray-600 dark:text-gray-400">
-            {car.rating && (
+          <div className="flex items-center gap-2 mt-1.5 text-xs text-gray-600 dark:text-gray-400">
+            {car.rating && car.rating.average > 0 && (
               <span className="flex items-center gap-1">
-                <IoStarOutline className="w-4 h-4 text-amber-500" />
-                {car.rating.average?.toFixed(1) || '5.0'} ({car.rating.count || 0})
+                <IoStarOutline className="w-3.5 h-3.5 text-amber-500" />
+                <span className="font-medium">{car.rating.average?.toFixed(1) || '5.0'}</span>
+                {tripCount > 0 && <span className="text-gray-500">({tripCount} trips)</span>}
               </span>
             )}
+            {tripCount > 0 && (!car.rating || car.rating.average === 0) && (
+              <span className="text-gray-500">{tripCount} trips</span>
+            )}
+            <span className="text-gray-400">•</span>
             <span>{car.location?.city || 'Phoenix'}</span>
-            {car.seats && <span>{car.seats} seats</span>}
+            {car.seats && (
+              <>
+                <span className="text-gray-400">•</span>
+                <span>{car.seats} seats</span>
+              </>
+            )}
           </div>
 
-          <div className="flex items-center justify-between mt-5 pt-4 border-t border-gray-200 dark:border-gray-700">
+          {car.host?.name && (
+            <p className="text-[11px] text-gray-500 dark:text-gray-500 mt-1.5">
+              Hosted by {car.host.name}
+            </p>
+          )}
+
+          <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
             <div>
-              <span className="text-3xl font-bold text-gray-900 dark:text-white">
-                ${Math.round(car.dailyRate)}
-              </span>
-              <span className="text-gray-500 dark:text-gray-400">/day</span>
+              <div className="flex items-baseline gap-1">
+                <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                  ${Math.round(car.dailyRate)}
+                </span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">/day</span>
+              </div>
+              {rentalDays > 1 && (
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+                  ${totalPrice} total for {rentalDays} days
+                </p>
+              )}
             </div>
 
             <Link
-              href={`/rentals/${car.id}`}
-              className="px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg transition-colors"
+              href={`/rentals/cars/${car.id}`}
+              className="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg transition-colors"
             >
               View Details
             </Link>
@@ -342,7 +403,8 @@ export default function CarMapView({
   onCarSelect,
   searchLocation,
   userLocation,
-  isLoading = false
+  isLoading = false,
+  rentalDays = 1
 }: CarMapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<mapboxgl.Map | null>(null)
@@ -639,6 +701,7 @@ export default function CarMapView({
           car={selectedCar}
           onClose={() => onCarSelect(null)}
           isMobile={isMobile}
+          rentalDays={rentalDays}
         />,
         portalContainer
       )}

@@ -79,12 +79,12 @@ export function MapContainer({
   // Show loading until mounted to avoid hydration mismatch
   if (!hasMounted) {
     return (
-      <div className="flex h-[calc(100vh-200px)] relative">
+      <div className="flex h-[500px] md:h-[550px] relative">
         <div className="w-full h-full flex items-center justify-center bg-gradient-to-b from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
           <div className="text-center max-w-xs">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto mb-4"></div>
-            <p className="text-gray-900 dark:text-white font-medium mb-1">Loading map...</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-amber-600 mx-auto mb-3"></div>
+            <p className="text-gray-900 dark:text-white font-medium text-sm mb-1">Loading map...</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
               {cars.length > 0 ? `${cars.length} cars ready to explore` : 'Preparing car locations'}
             </p>
           </div>
@@ -96,7 +96,7 @@ export function MapContainer({
   // Mobile layout - Just the map, no bottom sheet
   if (isMobile) {
     return (
-      <div className="relative h-[calc(100vh-120px)]">
+      <div className="relative h-[450px]">
         <CarMapView
           cars={carsWithLocation}
           selectedCar={selectedCar}
@@ -104,6 +104,7 @@ export function MapContainer({
           searchLocation={searchLocation}
           userLocation={userLocation}
           isLoading={isLoading}
+          rentalDays={rentalDays}
         />
       </div>
     )
@@ -111,7 +112,7 @@ export function MapContainer({
 
   // Desktop layout - Map with sidebar
   return (
-    <div className="flex h-[calc(100vh-200px)] relative">
+    <div className="flex h-[500px] md:h-[550px] relative">
       {/* Sidebar - Desktop only */}
       {showSidebar && (
         <div className="w-[420px] border-r border-gray-200 dark:border-gray-700 transition-all duration-300">
@@ -136,6 +137,7 @@ export function MapContainer({
           searchLocation={searchLocation}
           userLocation={userLocation}
           isLoading={isLoading}
+          rentalDays={rentalDays}
         />
         
         {/* Toggle sidebar button - Desktop only */}
