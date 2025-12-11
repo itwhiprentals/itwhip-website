@@ -1,491 +1,699 @@
 // app/(guest)/rentals/search/page.tsx
-'use client'
-
-import { useState, useEffect, useCallback, Suspense, useMemo } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
+// SERVER-SIDE RENDERED for SEO - Google can see all car listings
+import { Suspense } from 'react'
+import { Metadata } from 'next'
 import Link from 'next/link'
-import {
-  IoCarOutline,
-  IoLocationOutline,
-  IoFilterOutline,
-  IoFlashOutline,
-  IoMapOutline,
-  IoListOutline,
-  IoCloseOutline,
-  IoSwapVerticalOutline,
-  IoAirplaneOutline,
-  IoBusinessOutline
-} from 'react-icons/io5'
-import { format, parseISO } from 'date-fns'
-import { MapContainer } from './components/MapContainer'
-import { getLocationCoordinates } from './utils/mapHelpers'
+import Image from 'next/image'
+import { IoCarOutline, IoLocationOutline, IoStarOutline, IoChevronForwardOutline } from 'react-icons/io5'
+import prisma from '@/app/lib/database/prisma'
+import { calculateDistance, getBoundingBox } from '@/lib/utils/distance'
+import { getLocationByName, ALL_ARIZONA_LOCATIONS } from '@/lib/data/arizona-locations'
+import { format, addDays } from 'date-fns'
+import SearchResultsClient from './SearchResultsClient'
 import Footer from '@/app/components/Footer'
-import RentalSearchCard from '@/app/(guest)/components/hero/RentalSearchWidget'
-import CompactCarCard from '@/app/components/cards/CompactCarCard'
 
-// Loading skeleton component - compact style
-function CarCardSkeleton() {
+// Dynamic metadata based on search params
+export async function generateMetadata({ searchParams }: { searchParams: Promise<{ [key: string]: string | undefined }> }): Promise<Metadata> {
+  const params = await searchParams
+  const location = params.location || 'Phoenix, AZ'
+  const cityName = location.split(',')[0].trim()
+
+  return {
+    title: `Car Rentals in ${cityName} from Local Owners | ITWhip Rentals`,
+    description: `Rent cars directly from local owners in ${cityName}. Browse ${cityName} car rentals from $59/day with airport delivery, instant booking, and full insurance. Better prices than traditional rental companies.`,
+    keywords: `${cityName} car rental, rent a car ${cityName}, peer to peer car rental, local car rental ${cityName}, cheap car rental Arizona, airport car rental ${cityName}`,
+    openGraph: {
+      title: `Car Rentals in ${cityName} from Local Owners | ITWhip`,
+      description: `Browse available cars from local owners in ${cityName}. Airport delivery, instant booking, and competitive prices.`,
+      type: 'website',
+      locale: 'en_US',
+      siteName: 'ITWhip Rentals',
+    },
+    alternates: {
+      canonical: `https://itwhip.com/rentals/search?location=${encodeURIComponent(location)}`
+    }
+  }
+}
+
+// Server-side data fetching
+async function getInitialCars(location: string, pickupDate: string, returnDate: string) {
+  const DEFAULT_RADIUS_MILES = 25
+
+  // Determine search coordinates
+  let searchCoordinates: { latitude: number; longitude: number } | null = null
+  const locationData = getLocationByName(location)
+
+  if (locationData) {
+    searchCoordinates = {
+      latitude: locationData.latitude,
+      longitude: locationData.longitude
+    }
+  } else {
+    const cityName = location.split(',')[0].trim()
+    const matchedLocation = ALL_ARIZONA_LOCATIONS.find(
+      loc => loc.city.toLowerCase() === cityName.toLowerCase()
+    )
+
+    if (matchedLocation) {
+      searchCoordinates = {
+        latitude: matchedLocation.latitude,
+        longitude: matchedLocation.longitude
+      }
+    } else {
+      searchCoordinates = {
+        latitude: 33.4484,
+        longitude: -112.0740
+      }
+    }
+  }
+
+  // Build query with bounding box
+  const boundingBox = getBoundingBox(searchCoordinates, DEFAULT_RADIUS_MILES)
+
+  const cars = await prisma.rentalCar.findMany({
+    where: {
+      isActive: true,
+      AND: [
+        { latitude: { gte: boundingBox.minLat, lte: boundingBox.maxLat } },
+        { longitude: { gte: boundingBox.minLng, lte: boundingBox.maxLng } }
+      ]
+    },
+    select: {
+      id: true,
+      make: true,
+      model: true,
+      year: true,
+      carType: true,
+      transmission: true,
+      seats: true,
+      dailyRate: true,
+      weeklyRate: true,
+      monthlyRate: true,
+      features: true,
+      instantBook: true,
+      fuelType: true,
+      esgScore: true,
+      city: true,
+      state: true,
+      latitude: true,
+      longitude: true,
+      airportPickup: true,
+      hotelDelivery: true,
+      homeDelivery: true,
+      rating: true,
+      totalTrips: true,
+      host: {
+        select: {
+          name: true,
+          profilePhoto: true,
+          isVerified: true,
+          responseRate: true,
+          responseTime: true
+        }
+      },
+      photos: {
+        select: {
+          url: true,
+          caption: true,
+          order: true
+        },
+        orderBy: { order: 'asc' },
+        take: 5
+      },
+      _count: {
+        select: {
+          bookings: {
+            where: {
+              status: { in: ['COMPLETED', 'ACTIVE'] }
+            }
+          },
+          reviews: {
+            where: { isVisible: true }
+          }
+        }
+      }
+    },
+    take: 50 // Limit for initial load
+  })
+
+  // Process and filter by actual distance
+  const processedCars = cars
+    .map(car => {
+      if (!car.latitude || !car.longitude || !searchCoordinates) return null
+
+      const distance = calculateDistance(
+        searchCoordinates,
+        { latitude: car.latitude, longitude: car.longitude }
+      )
+
+      if (distance > DEFAULT_RADIUS_MILES) return null
+
+      // Parse features
+      let parsedFeatures: string[] = []
+      try {
+        if (typeof car.features === 'string') {
+          parsedFeatures = JSON.parse(car.features)
+        } else if (Array.isArray(car.features)) {
+          parsedFeatures = car.features as string[]
+        }
+      } catch {
+        parsedFeatures = []
+      }
+
+      const actualTripCount = car.totalTrips ?? car._count.bookings ?? 0
+
+      return {
+        id: car.id,
+        make: car.make,
+        model: car.model,
+        year: car.year,
+        type: car.carType,
+        transmission: car.transmission,
+        seats: car.seats,
+        dailyRate: Number(car.dailyRate),
+        weeklyRate: car.weeklyRate ? Number(car.weeklyRate) : null,
+        monthlyRate: car.monthlyRate ? Number(car.monthlyRate) : null,
+        features: parsedFeatures.slice(0, 5),
+        instantBook: car.instantBook,
+        fuelType: car.fuelType,
+        esgScore: car.esgScore,
+        location: {
+          city: car.city,
+          state: car.state,
+          lat: car.latitude,
+          lng: car.longitude,
+          distance: parseFloat(distance.toFixed(1)),
+          airport: car.airportPickup,
+          hotelDelivery: car.hotelDelivery,
+          homeDelivery: car.homeDelivery
+        },
+        host: {
+          name: car.host.name,
+          avatar: car.host.profilePhoto || '/default-avatar.png',
+          verified: car.host.isVerified,
+          responseRate: car.host.responseRate || 95,
+          responseTime: car.host.responseTime || 60,
+          totalTrips: actualTripCount
+        },
+        photos: car.photos.map((photo: any) => ({
+          url: photo.url,
+          alt: photo.caption || `${car.make} ${car.model}`
+        })),
+        rating: {
+          average: car.rating ? parseFloat(Number(car.rating).toFixed(1)) : 5.0,
+          count: car._count.reviews
+        },
+        trips: actualTripCount,
+        totalTrips: actualTripCount
+      }
+    })
+    .filter(Boolean)
+    .sort((a, b) => {
+      // Sort by rating then trips
+      const ratingDiff = (b!.rating.average || 0) - (a!.rating.average || 0)
+      if (Math.abs(ratingDiff) > 0.5) return ratingDiff
+      return (b!.trips || 0) - (a!.trips || 0)
+    })
+
+  // Calculate price range
+  const prices = processedCars.map(c => c!.dailyRate).filter(p => p > 0)
+  const minPrice = prices.length > 0 ? Math.min(...prices) : 59
+  const maxPrice = prices.length > 0 ? Math.max(...prices) : 499
+
+  return {
+    cars: processedCars,
+    total: processedCars.length,
+    searchCoordinates,
+    priceRange: { min: minPrice, max: maxPrice },
+    metadata: {
+      totalResults: processedCars.length,
+      fullyAvailable: processedCars.length,
+      partiallyAvailable: 0,
+      unavailable: 0,
+      searchCoordinates
+    }
+  }
+}
+
+// JSON-LD Structured Data Components
+function ItemListSchema({ cars, location }: { cars: any[], location: string }) {
+  const itemListSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: `Car Rentals in ${location}`,
+    description: `Browse ${cars.length} cars available for rent from local owners in ${location}`,
+    numberOfItems: cars.length,
+    itemListElement: cars.slice(0, 20).map((car, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      item: {
+        '@type': 'Car',
+        name: `${car.year} ${car.make} ${car.model}`,
+        vehicleConfiguration: car.type,
+        numberOfDoors: 4,
+        vehicleSeatingCapacity: car.seats,
+        fuelType: car.fuelType || 'Gasoline',
+        image: car.photos?.[0]?.url,
+        offers: {
+          '@type': 'Offer',
+          price: car.dailyRate,
+          priceCurrency: 'USD',
+          priceSpecification: {
+            '@type': 'UnitPriceSpecification',
+            price: car.dailyRate,
+            priceCurrency: 'USD',
+            unitText: 'DAY'
+          },
+          availability: 'https://schema.org/InStock',
+          seller: {
+            '@type': 'Person',
+            name: car.host?.name || 'Local Owner'
+          }
+        },
+        aggregateRating: car.rating?.count > 0 ? {
+          '@type': 'AggregateRating',
+          ratingValue: car.rating.average,
+          reviewCount: car.rating.count,
+          bestRating: 5,
+          worstRating: 1
+        } : undefined
+      }
+    }))
+  }
+
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md animate-pulse">
-      <div className="h-32 sm:h-36 bg-gray-200 dark:bg-gray-700" />
-      <div className="p-3 space-y-2">
-        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
-        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
-        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-2/3" />
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
+    />
+  )
+}
+
+function FAQSchema() {
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: 'How much does it cost to rent a car in Phoenix?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Car rentals from local owners in Phoenix start at $59/day for economy cars. Luxury vehicles and SUVs typically range from $99-$299/day. Weekly and monthly rentals include discounts of 15-30%.'
+        }
+      },
+      {
+        '@type': 'Question',
+        name: 'Can I get airport delivery for my rental car?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Yes! Many of our local hosts offer free or low-cost delivery to Phoenix Sky Harbor Airport (PHX). You can filter search results to show only cars with airport pickup available.'
+        }
+      },
+      {
+        '@type': 'Question',
+        name: 'Is insurance included with peer-to-peer car rentals?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'All rentals through ITWhip include liability insurance. Comprehensive coverage is available as an add-on for $15-25/day, covering collision damage and theft protection.'
+        }
+      },
+      {
+        '@type': 'Question',
+        name: 'What is the minimum age to rent a car?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'The minimum age to rent is 21 years old with a valid driver\'s license. Renters under 25 may have additional requirements depending on the vehicle type.'
+        }
+      },
+      {
+        '@type': 'Question',
+        name: 'How does instant booking work?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Cars marked with "Instant Book" can be reserved immediately without waiting for host approval. Your booking is confirmed as soon as you complete payment.'
+        }
+      }
+    ]
+  }
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+    />
+  )
+}
+
+function LocalBusinessSchema({ location }: { location: string }) {
+  const businessSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'AutoRental',
+    name: 'ITWhip Car Rentals',
+    description: `Peer-to-peer car rental marketplace in ${location}. Rent cars directly from local owners at competitive prices.`,
+    url: 'https://itwhip.com',
+    telephone: '+1-480-555-0123',
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: location.split(',')[0].trim(),
+      addressRegion: 'AZ',
+      addressCountry: 'US'
+    },
+    geo: {
+      '@type': 'GeoCoordinates',
+      latitude: 33.4484,
+      longitude: -112.0740
+    },
+    areaServed: {
+      '@type': 'State',
+      name: 'Arizona'
+    },
+    priceRange: '$59 - $499/day',
+    openingHoursSpecification: {
+      '@type': 'OpeningHoursSpecification',
+      dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+      opens: '00:00',
+      closes: '23:59'
+    }
+  }
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(businessSchema) }}
+    />
+  )
+}
+
+// SSR Car Card for static HTML (visible to Google)
+function SSRCarCard({ car }: { car: any }) {
+  return (
+    <Link
+      href={`/rentals/cars/${car.id}`}
+      className="block bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow"
+    >
+      <div className="relative h-32 sm:h-36 bg-gray-100">
+        {car.photos?.[0]?.url ? (
+          <Image
+            src={car.photos[0].url}
+            alt={`${car.year} ${car.make} ${car.model} for rent in ${car.location?.city || 'Phoenix'}`}
+            fill
+            className="object-cover"
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gray-200">
+            <IoCarOutline className="w-12 h-12 text-gray-400" />
+          </div>
+        )}
+        {car.instantBook && (
+          <span className="absolute top-2 left-2 bg-green-500 text-white text-xs px-2 py-0.5 rounded">
+            Instant
+          </span>
+        )}
+      </div>
+      <div className="p-3">
+        <h3 className="font-semibold text-gray-900 dark:text-white text-sm truncate">
+          {car.year} {car.make} {car.model}
+        </h3>
+        <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center mt-1">
+          <IoLocationOutline className="w-3 h-3 mr-1" />
+          {car.location?.city || 'Phoenix'}, AZ
+        </p>
+        <div className="flex items-center justify-between mt-2">
+          <span className="text-amber-600 font-bold">${car.dailyRate}/day</span>
+          {car.rating?.average > 0 && (
+            <span className="flex items-center text-xs text-gray-600">
+              <IoStarOutline className="w-3 h-3 mr-0.5 text-yellow-500" />
+              {car.rating.average.toFixed(1)}
+              {car.trips > 0 && <span className="ml-1">({car.trips})</span>}
+            </span>
+          )}
+        </div>
+      </div>
+    </Link>
+  )
+}
+
+// SEO Content Sections
+function SEOContent({ location, carCount, priceRange }: { location: string; carCount: number; priceRange: { min: number; max: number } }) {
+  const cityName = location.split(',')[0].trim()
+
+  const popularAreas = [
+    { name: 'Phoenix', slug: 'Phoenix, AZ', description: 'Downtown Phoenix, Sky Harbor Airport' },
+    { name: 'Scottsdale', slug: 'Scottsdale, AZ', description: 'Old Town, Fashion Square area' },
+    { name: 'Tempe', slug: 'Tempe, AZ', description: 'ASU campus, Mill Avenue district' },
+    { name: 'Mesa', slug: 'Mesa, AZ', description: 'Gateway Airport, downtown Mesa' },
+    { name: 'Chandler', slug: 'Chandler, AZ', description: 'Tech corridor, downtown Chandler' },
+    { name: 'Gilbert', slug: 'Gilbert, AZ', description: 'Heritage District, San Tan area' }
+  ]
+
+  const vehicleTypes = [
+    { name: 'SUVs', slug: 'suv', description: 'Perfect for families and road trips' },
+    { name: 'Luxury Cars', slug: 'luxury', description: 'Premium vehicles for special occasions' },
+    { name: 'Electric Vehicles', slug: 'electric', description: 'Eco-friendly Tesla and EV rentals' },
+    { name: 'Convertibles', slug: 'convertible', description: 'Enjoy Arizona sunshine in style' },
+    { name: 'Trucks', slug: 'truck', description: 'For moving, hauling, or adventure' },
+    { name: 'Economy', slug: 'sedan', description: 'Budget-friendly daily drivers' }
+  ]
+
+  return (
+    <section className="bg-white dark:bg-gray-800 py-12 mt-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Main Heading & Intro */}
+        <div className="mb-10">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            Car Rentals in {cityName}, AZ – Live Availability
+          </h2>
+          <p className="text-gray-600 dark:text-gray-300 max-w-3xl">
+            Browse {carCount}+ cars available from local owners in the {cityName} area.
+            Our peer-to-peer car rental marketplace offers vehicles from ${priceRange.min}/day to ${priceRange.max}/day,
+            with options for airport delivery, instant booking, and flexible rental periods.
+            Skip the rental car counter and rent directly from verified local hosts.
+          </p>
+        </div>
+
+        {/* Popular Areas */}
+        <div className="mb-10">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+            Popular Areas We Serve
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {popularAreas.map(area => (
+              <Link
+                key={area.name}
+                href={`/rentals/search?location=${encodeURIComponent(area.slug)}`}
+                className="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+              >
+                <h4 className="font-medium text-gray-900 dark:text-white">{area.name}</h4>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{area.description}</p>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* Vehicle Types */}
+        <div className="mb-10">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+            Top Vehicle Types in {cityName}
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {vehicleTypes.map(type => (
+              <Link
+                key={type.name}
+                href={`/rentals/search?location=${encodeURIComponent(location)}&carType=${type.slug}`}
+                className="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+              >
+                <h4 className="font-medium text-gray-900 dark:text-white">{type.name}</h4>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{type.description}</p>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* FAQs */}
+        <div className="mb-10">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+            Frequently Asked Questions
+          </h3>
+          <div className="space-y-4">
+            <details className="group bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <summary className="flex items-center justify-between p-4 cursor-pointer font-medium text-gray-900 dark:text-white">
+                How much does it cost to rent a car in {cityName}?
+                <IoChevronForwardOutline className="w-5 h-5 transition-transform group-open:rotate-90" />
+              </summary>
+              <p className="px-4 pb-4 text-gray-600 dark:text-gray-300">
+                Car rentals from local owners in {cityName} start at ${priceRange.min}/day for economy cars.
+                Luxury vehicles and SUVs typically range from $99-$299/day. Weekly and monthly rentals
+                include discounts of 15-30%.
+              </p>
+            </details>
+
+            <details className="group bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <summary className="flex items-center justify-between p-4 cursor-pointer font-medium text-gray-900 dark:text-white">
+                Can I get airport delivery for my rental car?
+                <IoChevronForwardOutline className="w-5 h-5 transition-transform group-open:rotate-90" />
+              </summary>
+              <p className="px-4 pb-4 text-gray-600 dark:text-gray-300">
+                Yes! Many of our local hosts offer free or low-cost delivery to Phoenix Sky Harbor Airport (PHX).
+                You can filter search results to show only cars with airport pickup available.
+              </p>
+            </details>
+
+            <details className="group bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <summary className="flex items-center justify-between p-4 cursor-pointer font-medium text-gray-900 dark:text-white">
+                Is insurance included with peer-to-peer car rentals?
+                <IoChevronForwardOutline className="w-5 h-5 transition-transform group-open:rotate-90" />
+              </summary>
+              <p className="px-4 pb-4 text-gray-600 dark:text-gray-300">
+                All rentals through ITWhip include liability insurance. Comprehensive coverage is available
+                as an add-on for $15-25/day, covering collision damage and theft protection.
+              </p>
+            </details>
+
+            <details className="group bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <summary className="flex items-center justify-between p-4 cursor-pointer font-medium text-gray-900 dark:text-white">
+                What is the minimum age to rent a car?
+                <IoChevronForwardOutline className="w-5 h-5 transition-transform group-open:rotate-90" />
+              </summary>
+              <p className="px-4 pb-4 text-gray-600 dark:text-gray-300">
+                The minimum age to rent is 21 years old with a valid driver's license.
+                Renters under 25 may have additional requirements depending on the vehicle type.
+              </p>
+            </details>
+
+            <details className="group bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <summary className="flex items-center justify-between p-4 cursor-pointer font-medium text-gray-900 dark:text-white">
+                How does instant booking work?
+                <IoChevronForwardOutline className="w-5 h-5 transition-transform group-open:rotate-90" />
+              </summary>
+              <p className="px-4 pb-4 text-gray-600 dark:text-gray-300">
+                Cars marked with "Instant Book" can be reserved immediately without waiting for host approval.
+                Your booking is confirmed as soon as you complete payment.
+              </p>
+            </details>
+          </div>
+        </div>
+
+        {/* Additional SEO Text */}
+        <div className="prose prose-gray dark:prose-invert max-w-none">
+          <h3>Why Rent from Local Owners in {cityName}?</h3>
+          <p>
+            ITWhip connects you with local car owners throughout the Phoenix metropolitan area.
+            Unlike traditional rental agencies, our peer-to-peer platform offers unique vehicles,
+            competitive pricing, and personalized service. Whether you need a reliable sedan for
+            business, an SUV for a family road trip to the Grand Canyon, or a luxury convertible
+            to cruise through Scottsdale, our local hosts have you covered.
+          </p>
+          <p>
+            All vehicles are inspected for quality and safety. Every booking includes 24/7 roadside
+            assistance, and our secure payment system protects both renters and hosts. With hundreds
+            of cars available across {cityName}, Scottsdale, Tempe, Mesa, and surrounding areas,
+            you'll find the perfect vehicle for your Arizona adventure.
+          </p>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// Loading fallback
+function SearchLoadingFallback() {
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="text-center">
+        <IoCarOutline className="w-16 h-16 text-gray-400 mx-auto mb-4 animate-pulse" />
+        <p className="text-gray-600 dark:text-gray-400">Loading cars...</p>
       </div>
     </div>
   )
 }
 
-function SearchResultsContent() {
-  const searchParams = useSearchParams()
-  const router = useRouter()
-  
-  // Check for view parameter from URL
-  const viewParam = searchParams.get('view')
-  
-  const [cars, setCars] = useState<any[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [filters, setFilters] = useState({
-    carType: [] as string[],
-    minPrice: 0,
-    maxPrice: 1000,
-    features: [] as string[],
-    instantBook: false,
-    transmission: 'all',
-    seats: 'all',
-    delivery: [] as string[],
-    availability: 'all' // all, available, partial
-  })
-  const [sortBy, setSortBy] = useState('recommended')
-  const [showFilters, setShowFilters] = useState(false)
-  const [showMap, setShowMap] = useState(viewParam === 'map')
-  const [totalCount, setTotalCount] = useState(0)
-  const [searchMetadata, setSearchMetadata] = useState<any>(null)
+// Main Page Component (Server-Side Rendered)
+export default async function SearchResultsPage({
+  searchParams
+}: {
+  searchParams: Promise<{ [key: string]: string | undefined }>
+}) {
+  const params = await searchParams
 
-  // Parse search params
-  const location = searchParams.get('location') || 'Phoenix, AZ'
-  const pickupDate = searchParams.get('pickupDate') || format(new Date(), 'yyyy-MM-dd')
-  const returnDate = searchParams.get('returnDate') || format(new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd')
-  const pickupTime = searchParams.get('pickupTime') || '10:00'
-  const returnTime = searchParams.get('returnTime') || '10:00'
+  // Parse search params with defaults
+  const location = params.location || 'Phoenix, AZ'
+  const pickupDate = params.pickupDate || format(new Date(), 'yyyy-MM-dd')
+  const returnDate = params.returnDate || format(addDays(new Date(), 3), 'yyyy-MM-dd')
+  const pickupTime = params.pickupTime || '10:00'
+  const returnTime = params.returnTime || '10:00'
 
-  // Calculate rental days
-  const rentalDays = Math.ceil(
-    (new Date(returnDate).getTime() - new Date(pickupDate).getTime()) 
-    / (1000 * 60 * 60 * 24)
-  )
+  const cityName = location.split(',')[0].trim()
 
-  // Fetch cars
-  const fetchCars = useCallback(async () => {
-    setIsLoading(true)
-    try {
-      const params = new URLSearchParams({
-        location,
-        pickupDate,
-        returnDate,
-        pickupTime,
-        returnTime,
-        sortBy,
-        ...filters.carType.length > 0 && { carType: filters.carType.join(',') },
-        ...filters.minPrice > 0 && { minPrice: filters.minPrice.toString() },
-        ...filters.maxPrice < 1000 && { maxPrice: filters.maxPrice.toString() },
-        ...filters.features.length > 0 && { features: filters.features.join(',') },
-        ...filters.instantBook && { instantBook: 'true' },
-        ...filters.transmission !== 'all' && { transmission: filters.transmission },
-        ...filters.seats !== 'all' && { seats: filters.seats },
-        ...filters.delivery.length > 0 && { delivery: filters.delivery.join(',') }
-      })
-
-      const response = await fetch(`/api/rentals/search?${params.toString()}`)
-      const data = await response.json()
-      
-      if (data.success) {
-        setCars(data.results || [])
-        setTotalCount(data.total || 0)
-        setSearchMetadata(data.metadata || null)
-      } else {
-        console.error('Search failed:', data.error)
-        setCars([])
-        setTotalCount(0)
-      }
-    } catch (error) {
-      console.error('Error fetching cars:', error)
-      setCars([])
-      setTotalCount(0)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [location, pickupDate, returnDate, pickupTime, returnTime, sortBy, filters])
-
-  useEffect(() => {
-    fetchCars()
-  }, [fetchCars])
-
-  // Filter cars by availability filter
-  const filteredCars = useMemo(() => {
-    if (filters.availability === 'all') return cars
-    
-    return cars.filter(car => {
-      if (filters.availability === 'available') {
-        return car.availability?.isFullyAvailable
-      }
-      if (filters.availability === 'partial') {
-        return car.availability?.isPartiallyAvailable
-      }
-      return true
-    })
-  }, [cars, filters.availability])
-
-  // Handle search update
-  const handleSearchUpdate = (params: any) => {
-    const searchParams = new URLSearchParams({
-      location: params.location || location,
-      pickupDate: params.pickupDate || pickupDate,
-      returnDate: params.returnDate || returnDate,
-      pickupTime: params.pickupTime || pickupTime,
-      returnTime: params.returnTime || returnTime,
-    })
-    router.push(`/rentals/search?${searchParams.toString()}`)
-  }
-
-  // Car types for filter
-  const carTypes = [
-    { value: 'sedan', label: 'Sedan', icon: IoCarOutline },
-    { value: 'suv', label: 'SUV', icon: IoCarOutline },
-    { value: 'truck', label: 'Truck', icon: IoCarOutline },
-    { value: 'van', label: 'Van', icon: IoCarOutline },
-    { value: 'luxury', label: 'Luxury', icon: IoCarOutline },
-    { value: 'sports', label: 'Sports', icon: IoCarOutline },
-    { value: 'convertible', label: 'Convertible', icon: IoCarOutline },
-    { value: 'electric', label: 'Electric', icon: IoCarOutline }
-  ]
-
-  // Features for filter
-  const featureOptions = [
-    'Bluetooth',
-    'Apple CarPlay',
-    'Android Auto',
-    'Backup Camera',
-    'GPS Navigation',
-    'Heated Seats',
-    'Sunroof',
-    'AWD',
-    'USB Charger',
-    'Leather Seats',
-    'Cruise Control',
-    'Keyless Entry'
-  ]
-
-  // Delivery options
-  const deliveryOptions = [
-    { value: 'airport', label: 'Airport Pickup', icon: IoAirplaneOutline },
-    { value: 'hotel', label: 'Hotel Delivery', icon: IoBusinessOutline },
-    { value: 'home', label: 'Home Delivery', icon: IoLocationOutline }
-  ]
-
-  // Sort options
-  const sortOptions = [
-    { value: 'recommended', label: 'Recommended' },
-    { value: 'price_low', label: 'Price: Low to High' },
-    { value: 'price_high', label: 'Price: High to Low' },
-    { value: 'rating', label: 'Highest Rated' },
-    { value: 'distance', label: 'Distance: Nearest' }
-  ]
-
-  // Handle filter changes
-  const handleCarTypeFilter = (type: string) => {
-    setFilters(prev => ({
-      ...prev,
-      carType: prev.carType.includes(type)
-        ? prev.carType.filter(t => t !== type)
-        : [...prev.carType, type]
-    }))
-  }
-
-  const handleFeatureFilter = (feature: string) => {
-    setFilters(prev => ({
-      ...prev,
-      features: prev.features.includes(feature)
-        ? prev.features.filter(f => f !== feature)
-        : [...prev.features, feature]
-    }))
-  }
-
-  const handleDeliveryFilter = (delivery: string) => {
-    setFilters(prev => ({
-      ...prev,
-      delivery: prev.delivery.includes(delivery)
-        ? prev.delivery.filter(d => d !== delivery)
-        : [...prev.delivery, delivery]
-    }))
-  }
-
-  const clearFilters = () => {
-    setFilters({
-      carType: [],
-      minPrice: 0,
-      maxPrice: 1000,
-      features: [],
-      instantBook: false,
-      transmission: 'all',
-      seats: 'all',
-      delivery: [],
-      availability: 'all'
-    })
-  }
-
-  const activeFilterCount = 
-    filters.carType.length + 
-    filters.features.length + 
-    filters.delivery.length +
-    (filters.instantBook ? 1 : 0) +
-    (filters.transmission !== 'all' ? 1 : 0) +
-    (filters.seats !== 'all' ? 1 : 0) +
-    (filters.minPrice > 0 || filters.maxPrice < 1000 ? 1 : 0) +
-    (filters.availability !== 'all' ? 1 : 0)
+  // Fetch initial cars on the server
+  const { cars, total, metadata, priceRange } = await getInitialCars(location, pickupDate, returnDate)
 
   return (
     <>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        {/* Search Widget - Hidden on map view for more space */}
-        {!showMap && (
-          <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 py-4">
-            <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
-              <RentalSearchCard
-                onSearch={handleSearchUpdate}
-                variant="compact"
-                initialLocation={location}
-                initialPickupDate={pickupDate}
-                initialReturnDate={returnDate}
-                initialPickupTime={pickupTime}
-                initialReturnTime={returnTime}
-              />
-            </div>
-          </div>
-        )}
+      {/* JSON-LD Structured Data for SEO */}
+      <ItemListSchema cars={cars as any[]} location={location} />
+      <FAQSchema />
+      <LocalBusinessSchema location={location} />
 
-        {/* Filter Bar - Sticky below header */}
-        <div className={`bg-white dark:bg-gray-800 sticky top-[60px] md:top-16 z-40 border-b border-gray-200 dark:border-gray-700 ${showMap ? 'shadow-md' : ''}`}>
-          <div className={showMap ? 'w-full' : 'max-w-7xl mx-auto'}>
-            {/* Results Summary - Compact on map view */}
-            <div className={`px-4 sm:px-6 lg:px-8 py-2 text-sm text-gray-600 dark:text-gray-400 ${showMap ? '' : 'border-b border-gray-100 dark:border-gray-700'}`}>
-              {!isLoading && (
-                <>
-                  <span className="font-medium text-gray-900 dark:text-white">{filteredCars.length}</span> car{filteredCars.length !== 1 ? 's' : ''} 
-                  {searchMetadata && (
-                    <>
-                      <span className="mx-2">•</span>
-                      <span className="text-green-600 dark:text-green-400">{searchMetadata.fullyAvailable || 0} fully available</span>
-                      {searchMetadata.partiallyAvailable > 0 && (
-                        <>
-                          <span className="mx-2">•</span>
-                          <span className="text-yellow-600 dark:text-yellow-400">{searchMetadata.partiallyAvailable} partial</span>
-                        </>
-                      )}
-                    </>
-                  )}
-                  <span className="mx-2">•</span>
-                  {format(parseISO(pickupDate), 'MMM d')} - {format(parseISO(returnDate), 'MMM d')}
-                  <span className="mx-2">•</span>
-                  {rentalDays} day{rentalDays !== 1 ? 's' : ''}
-                </>
-              )}
-            </div>
+      {/* SEO-Visible Header (in static HTML) */}
+      <div className="sr-only">
+        <h1>Car Rentals in {cityName}, AZ from Local Owners</h1>
+        <p>
+          Browse {total} cars available for rent starting at ${priceRange.min}/day.
+          {cityName} peer-to-peer car rentals with airport delivery, instant booking, and full insurance.
+        </p>
+      </div>
 
-            {/* Scrollable filter container */}
-            <div className="overflow-x-auto">
-              <div className="flex items-center gap-2 px-4 sm:px-6 lg:px-8 py-3 min-w-max">
-                
-                {/* Availability Filter */}
-                <select
-                  value={filters.availability}
-                  onChange={(e) => setFilters(prev => ({ ...prev, availability: e.target.value }))}
-                  className="h-10 px-4 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 appearance-none cursor-pointer min-w-[140px]"
-                >
-                  <option value="all">All Cars</option>
-                  <option value="available">Fully Available</option>
-                  <option value="partial">Partial Availability</option>
-                </select>
-
-                {/* Car Type Quick Filter */}
-                {carTypes.slice(0, 4).map(type => (
-                  <button
-                    key={type.value}
-                    onClick={() => handleCarTypeFilter(type.value)}
-                    className={`h-10 px-4 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
-                      filters.carType.includes(type.value)
-                        ? 'bg-amber-600 text-white'
-                        : 'bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800'
-                    }`}
-                  >
-                    {type.label}
-                  </button>
-                ))}
-
-                {/* Instant Book Toggle */}
-                <button
-                  onClick={() => setFilters(prev => ({ ...prev, instantBook: !prev.instantBook }))}
-                  className={`h-10 px-4 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 whitespace-nowrap ${
-                    filters.instantBook
-                      ? 'bg-green-600 text-white'
-                      : 'bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800'
-                  }`}
-                >
-                  <IoFlashOutline className="w-4 h-4" />
-                  Instant Book
-                </button>
-
-                {/* More Filters Button */}
-                <button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className="h-10 px-4 bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center gap-2 whitespace-nowrap"
-                >
-                  <IoFilterOutline className="w-4 h-4" />
-                  More Filters
-                  {activeFilterCount > 0 && (
-                    <span className="px-1.5 py-0.5 bg-amber-600 text-white text-xs font-semibold rounded-full">
-                      {activeFilterCount}
-                    </span>
-                  )}
-                </button>
-
-                {/* Sort Dropdown */}
-                <div className="relative ml-auto">
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className="h-10 pl-3 pr-8 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 appearance-none cursor-pointer min-w-[160px]"
-                  >
-                    {sortOptions.map(option => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  <IoSwapVerticalOutline className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
-                </div>
-
-                {/* View Toggle */}
-                <div className="flex items-center bg-gray-100 dark:bg-gray-900 rounded-lg p-1">
-                  <button
-                    onClick={() => setShowMap(false)}
-                    className={`p-2 rounded ${!showMap ? 'bg-white dark:bg-gray-800 shadow-sm' : ''}`}
-                    title="List view"
-                  >
-                    <IoListOutline className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => setShowMap(true)}
-                    className={`p-2 rounded ${showMap ? 'bg-white dark:bg-gray-800 shadow-sm' : ''}`}
-                    title="Map view"
-                  >
-                    <IoMapOutline className="w-5 h-5" />
-                  </button>
-                </div>
-
-                {/* Clear Filters */}
-                {activeFilterCount > 0 && (
-                  <button
-                    onClick={clearFilters}
-                    className="h-10 px-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg text-sm font-medium hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors flex items-center gap-2 whitespace-nowrap"
-                  >
-                    <IoCloseOutline className="w-4 h-4" />
-                    Clear All
-                  </button>
-                )}
-              </div>
-            </div>
+      {/* SSR Car Listings (visible to Google in HTML source) */}
+      <noscript>
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <h1 className="text-2xl font-bold mb-6">Car Rentals in {cityName}, AZ</h1>
+          <p className="mb-4">{total} cars available from ${priceRange.min}/day to ${priceRange.max}/day</p>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {(cars as any[]).slice(0, 20).map((car: any) => (
+              <SSRCarCard key={car.id} car={car} />
+            ))}
           </div>
         </div>
+      </noscript>
 
-        {/* Main Content */}
-        {showMap ? (
-          /* Map view - no z-index to avoid creating stacking context that traps modal */
-          <div className="relative">
-            <MapContainer
-              cars={filteredCars}
-              searchLocation={searchMetadata?.searchCoordinates ? { lat: searchMetadata.searchCoordinates.latitude, lng: searchMetadata.searchCoordinates.longitude } : { lat: 33.4484, lng: -112.0740 }}
-              userLocation={searchMetadata?.searchCoordinates ? { lat: searchMetadata.searchCoordinates.latitude, lng: searchMetadata.searchCoordinates.longitude } : null}
-              rentalDays={rentalDays}
-              isLoading={isLoading}
-            />
-          </div>
-        ) : (
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <>
-              {/* Car Grid */}
-              {isLoading ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
-                  {[...Array(10)].map((_, i) => (
-                    <CarCardSkeleton key={i} />
-                  ))}
-                </div>
-              ) : filteredCars.length === 0 ? (
-                <div className="text-center py-12">
-                  <IoCarOutline className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                    No cars found
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-6">
-                    Try adjusting your filters or search dates
-                  </p>
-                  <button
-                    onClick={clearFilters}
-                    className="px-6 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
-                  >
-                    Clear Filters
-                  </button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
-                  {filteredCars.map((car) => (
-                    <CompactCarCard
-                      key={car.id}
-                      car={{
-                        id: car.id,
-                        make: car.make,
-                        model: car.model,
-                        year: car.year,
-                        dailyRate: Number(car.dailyRate),
-                        carType: car.type || car.carType,
-                        seats: car.seats,
-                        city: car.location?.city || 'Phoenix',
-                        rating: car.rating?.average ?? car.rating ?? null,
-                        totalTrips: car.trips || car.totalTrips,
-                        instantBook: car.instantBook,
-                        photos: car.photos,
-                        host: car.host ? {
-                          name: car.host.name,
-                          profilePhoto: car.host.avatar || car.host.profilePhoto
-                        } : null
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
-            </>
-          </div>
-        )}
+      {/* Hidden but crawlable car data for SEO */}
+      <div className="hidden" aria-hidden="true">
+        <ul>
+          {(cars as any[]).slice(0, 30).map((car: any) => (
+            <li key={car.id}>
+              <a href={`/rentals/cars/${car.id}`}>
+                {car.year} {car.make} {car.model} - ${car.dailyRate}/day in {car.location?.city || 'Phoenix'}, AZ
+                {car.rating?.average > 0 && ` - ${car.rating.average} stars (${car.trips} trips)`}
+              </a>
+            </li>
+          ))}
+        </ul>
       </div>
-      
-      {/* Add Footer */}
+
+      {/* Interactive Client Component */}
+      <Suspense fallback={<SearchLoadingFallback />}>
+        <SearchResultsClient
+          initialCars={cars as any[]}
+          initialTotal={total}
+          initialMetadata={metadata}
+          initialLocation={location}
+          initialPickupDate={pickupDate}
+          initialReturnDate={returnDate}
+          initialPickupTime={pickupTime}
+          initialReturnTime={returnTime}
+        />
+      </Suspense>
+
+      {/* SEO Content Sections (always visible, server-rendered) */}
+      <SEOContent
+        location={location}
+        carCount={total}
+        priceRange={priceRange}
+      />
+
       <Footer />
     </>
-  )
-}
-
-export default function SearchResultsPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <IoCarOutline className="w-16 h-16 text-gray-400 mx-auto mb-4 animate-pulse" />
-          <p className="text-gray-600 dark:text-gray-400">Loading cars...</p>
-        </div>
-      </div>
-    }>
-      <SearchResultsContent />
-    </Suspense>
   )
 }
