@@ -1,9 +1,9 @@
-// app/(guest)/reviews/cars/page.tsx
+// app/reviews/cars/page.tsx
 import { Metadata } from 'next'
 import Script from 'next/script'
 import Link from 'next/link'
 import Image from 'next/image'
-import { prisma } from '@/app/lib/database/prisma'
+import prisma from '@/app/lib/database/prisma'
 import {
   IoStar,
   IoCheckmarkCircleOutline,
