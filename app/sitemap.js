@@ -343,6 +343,12 @@ export default async function sitemap() {
       changeFrequency: 'daily',
       priority: 0.9,
     },
+    {
+      url: `${baseUrl}/rentals/tesla-near-me`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.9,
+    },
   ]
 
   const useCasePages = [

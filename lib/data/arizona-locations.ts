@@ -554,3 +554,122 @@ export function getPopularLocations(): Location[] {
     .map(id => getLocationById(id))
     .filter(Boolean) as Location[]
 }
+
+// ============================================================================
+// GEOLOCATION UTILITIES
+// ============================================================================
+
+/**
+ * Calculate distance between two points using Haversine formula
+ * Returns distance in miles
+ */
+function calculateDistanceMiles(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number
+): number {
+  const R = 3959 // Earth's radius in miles
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLng = (lng2 - lng1) * Math.PI / 180
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) *
+    Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng / 2) *
+    Math.sin(dLng / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c
+}
+
+/**
+ * Find the closest Arizona city to given coordinates
+ * Returns the city Location or null if no city within 100 miles
+ */
+export function findClosestCity(
+  lat: number,
+  lng: number,
+  maxDistanceMiles: number = 100
+): Location | null {
+  let closestCity: Location | null = null
+  let minDistance = Infinity
+
+  for (const city of ARIZONA_CITIES) {
+    const distance = calculateDistanceMiles(lat, lng, city.latitude, city.longitude)
+    if (distance < minDistance) {
+      minDistance = distance
+      closestCity = city
+    }
+  }
+
+  // Only return if within max distance
+  if (closestCity && minDistance <= maxDistanceMiles) {
+    return closestCity
+  }
+
+  return null
+}
+
+/**
+ * Find closest city and return with distance info
+ */
+export function findClosestCityWithDistance(
+  lat: number,
+  lng: number
+): { city: Location; distance: number } | null {
+  let closestCity: Location | null = null
+  let minDistance = Infinity
+
+  for (const city of ARIZONA_CITIES) {
+    const distance = calculateDistanceMiles(lat, lng, city.latitude, city.longitude)
+    if (distance < minDistance) {
+      minDistance = distance
+      closestCity = city
+    }
+  }
+
+  if (closestCity) {
+    return { city: closestCity, distance: minDistance }
+  }
+
+  return null
+}
+
+/**
+ * Get user location info from coordinates
+ * Returns city name and state, defaults to Phoenix if not in Arizona
+ */
+export function getLocationFromCoordinates(
+  lat: number,
+  lng: number
+): { city: string; state: string; displayName: string; isArizona: boolean } {
+  const closest = findClosestCity(lat, lng, 100)
+
+  if (closest) {
+    return {
+      city: closest.city,
+      state: 'AZ',
+      displayName: `${closest.city}, AZ`,
+      isArizona: true
+    }
+  }
+
+  // Default to Phoenix if not in Arizona
+  return {
+    city: 'Phoenix',
+    state: 'AZ',
+    displayName: 'Phoenix, AZ',
+    isArizona: false
+  }
+}
+
+/**
+ * Default location (Phoenix) for fallback
+ */
+export const DEFAULT_LOCATION = {
+  city: 'Phoenix',
+  state: 'AZ',
+  displayName: 'Phoenix, AZ',
+  latitude: 33.4484,
+  longitude: -112.0740
+}
