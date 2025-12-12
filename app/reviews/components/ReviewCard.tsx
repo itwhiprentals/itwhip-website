@@ -8,7 +8,9 @@ import {
   IoStar,
   IoStarOutline,
   IoCheckmarkCircleOutline,
-  IoCarSportOutline
+  IoCarSportOutline,
+  IoChevronForwardOutline,
+  IoCheckmarkOutline
 } from 'react-icons/io5'
 import GuestProfileSheet from './GuestProfileSheet'
 import HostProfileSheet from './HostProfileSheet'
@@ -177,14 +179,14 @@ export default function ReviewCard({ review }: ReviewCardProps) {
 
         {/* Review Title */}
         {review.title && (
-          <h4 className="font-medium text-gray-900 dark:text-white mb-2">
+          <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
             {review.title}
           </h4>
         )}
 
         {/* Review Comment */}
         {review.comment && (
-          <p className="text-gray-700 dark:text-gray-300 mb-4">
+          <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
             {review.comment}
           </p>
         )}
@@ -216,23 +218,29 @@ export default function ReviewCard({ review }: ReviewCardProps) {
                 <IoCarSportOutline className="w-6 h-6 text-gray-400" />
               </div>
             )}
-            {/* Car Name */}
-            <div>
+            {/* Car Name and Info */}
+            <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                {review.car.year} {review.car.make}
-                {review.car.totalTrips != null && review.car.totalTrips > 0 && (
-                  <span className="text-gray-500 dark:text-gray-400 font-normal"> ({review.car.totalTrips} trips)</span>
-                )}
-              </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {review.car.model}
+                {review.car.year} {review.car.make} {review.car.model}
               </p>
               {(review.car.city || review.car.state) && (
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   {review.car.city}{review.car.city && review.car.state && ', '}{review.car.state}
                 </p>
               )}
+              {/* Ride Completed Badge with Time Ago */}
+              <div className="flex items-center gap-1.5 mt-1">
+                <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded">
+                  <IoCheckmarkOutline className="w-3 h-3" />
+                  Ride Completed
+                </span>
+                <span className="text-[10px] text-gray-400 dark:text-gray-500">
+                  {getTimeAgo(review.createdAt)}
+                </span>
+              </div>
             </div>
+            {/* Arrow */}
+            <IoChevronForwardOutline className="w-5 h-5 text-gray-400 dark:text-gray-500 flex-shrink-0 group-hover:text-amber-500 transition-colors" />
           </Link>
         )}
 

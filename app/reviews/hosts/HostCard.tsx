@@ -136,7 +136,7 @@ export default function HostCard({ host }: HostCardProps) {
           <div className="mt-4 flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
             <span>{host.totalTrips} trips</span>
             {host.responseRate && (
-              <span>{Math.round(host.responseRate * 100)}% response rate</span>
+              <span>{Math.round(host.responseRate)}% response rate</span>
             )}
             {host.joinedAt && (
               <span>Since {new Date(host.joinedAt).getFullYear()}</span>
@@ -155,7 +155,7 @@ export default function HostCard({ host }: HostCardProps) {
                 Verified
               </span>
             )}
-            {(host.responseRate ?? 0) >= 0.9 && (
+            {(host.responseRate ?? 0) >= 90 && (
               <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium rounded">
                 Fast Responder
               </span>
