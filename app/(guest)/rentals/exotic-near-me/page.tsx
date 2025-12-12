@@ -6,6 +6,7 @@ import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
 import CompactCarCard from '@/app/components/cards/CompactCarCard'
 import prisma from '@/app/lib/database/prisma'
+import { LocationAwareTitle, DynamicPageTitle } from '@/app/components/LocationAwareContent'
 import {
   IoCarSportOutline,
   IoChevronForwardOutline,
@@ -175,6 +176,8 @@ export default async function ExoticNearMePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
+      <DynamicPageTitle template="Exotic Car Rentals Near Me in {city}, AZ | ItWhip" />
+
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <Header />
 
@@ -187,7 +190,12 @@ export default async function ExoticNearMePage() {
                 Supercar Experience
               </div>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-3 text-white">
-                Exotic Car Rentals Near Me
+                <LocationAwareTitle
+                  prefix="Exotic Car Rentals Near Me in "
+                  suffix=", AZ"
+                  fallbackCity="Phoenix"
+                  as="span"
+                />
               </h1>
               <p className="text-lg text-gray-300 mb-6">
                 Drive your dream car. Lamborghini, Ferrari, McLaren and more exotic supercars from local owners in Phoenix & Scottsdale.

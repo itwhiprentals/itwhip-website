@@ -6,6 +6,7 @@ import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
 import CompactCarCard from '@/app/components/cards/CompactCarCard'
 import prisma from '@/app/lib/database/prisma'
+import { LocationAwareTitle, DynamicPageTitle } from '@/app/components/LocationAwareContent'
 import {
   IoLocationOutline,
   IoCarOutline,
@@ -176,6 +177,8 @@ export default async function LuxuryNearMePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
+      <DynamicPageTitle template="Luxury Car Rentals Near Me in {city}, AZ | ItWhip" />
+
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <Header />
 
@@ -188,7 +191,12 @@ export default async function LuxuryNearMePage() {
                 Premium Selection
               </div>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-3 text-white">
-                Luxury Car Rentals Near Me
+                <LocationAwareTitle
+                  prefix="Luxury Car Rentals Near Me in "
+                  suffix=", AZ"
+                  fallbackCity="Phoenix"
+                  as="span"
+                />
               </h1>
               <p className="text-lg text-gray-300 mb-6">
                 Experience premium vehicles from BMW, Mercedes, Porsche and more. Rent from local owners in Phoenix & Scottsdale.

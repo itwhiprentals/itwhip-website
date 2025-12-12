@@ -8,6 +8,7 @@ import CompactCarCard from '@/app/components/cards/CompactCarCard'
 import prisma from '@/app/lib/database/prisma'
 import { CITY_SEO_DATA } from '@/app/lib/data/city-seo-data'
 import { AIRPORT_DATA } from '@/app/lib/data/airports'
+import { LocationAwareTitle, DynamicPageTitle } from '@/app/components/LocationAwareContent'
 import {
   IoLocationOutline,
   IoCarOutline,
@@ -238,6 +239,8 @@ export default async function NearMePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
+      <DynamicPageTitle template="Car Rentals Near Me in {city}, AZ | ItWhip" />
+
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <Header />
 
@@ -258,7 +261,12 @@ export default async function NearMePage() {
               </div>
 
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2 leading-tight">
-                Car Rentals Near Me
+                <LocationAwareTitle
+                  prefix="Car Rentals Near Me in "
+                  suffix=", AZ"
+                  fallbackCity="Phoenix"
+                  as="span"
+                />
               </h1>
 
               <p className="text-sm sm:text-base text-white/80 mb-4 max-w-xl">

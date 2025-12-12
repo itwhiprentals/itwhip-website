@@ -6,6 +6,7 @@ import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
 import CompactCarCard from '@/app/components/cards/CompactCarCard'
 import prisma from '@/app/lib/database/prisma'
+import { LocationAwareTitle, DynamicPageTitle } from '@/app/components/LocationAwareContent'
 import {
   IoLocationOutline,
   IoCarOutline,
@@ -175,6 +176,8 @@ export default async function SUVNearMePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
+      <DynamicPageTitle template="SUV Rentals Near Me in {city}, AZ | ItWhip" />
+
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <Header />
 
@@ -187,7 +190,12 @@ export default async function SUVNearMePage() {
                 Adventure Ready
               </div>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-3 text-white">
-                SUV Rentals Near Me
+                <LocationAwareTitle
+                  prefix="SUV Rentals Near Me in "
+                  suffix=", AZ"
+                  fallbackCity="Phoenix"
+                  as="span"
+                />
               </h1>
               <p className="text-lg text-white/90 mb-6">
                 Spacious SUVs perfect for families, road trips, and Arizona adventures. Rent from local owners.

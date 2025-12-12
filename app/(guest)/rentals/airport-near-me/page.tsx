@@ -6,6 +6,7 @@ import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
 import CompactCarCard from '@/app/components/cards/CompactCarCard'
 import prisma from '@/app/lib/database/prisma'
+import { LocationAwareTitle, DynamicPageTitle } from '@/app/components/LocationAwareContent'
 import {
   IoAirplaneOutline,
   IoCarOutline,
@@ -184,6 +185,8 @@ export default async function AirportNearMePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
+      <DynamicPageTitle template="Airport Car Rentals Near Me in {city}, AZ | ItWhip" />
+
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <Header />
 
@@ -196,7 +199,12 @@ export default async function AirportNearMePage() {
                 Skip the Counter
               </div>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-3 text-white">
-                Airport Car Rentals Near Me
+                <LocationAwareTitle
+                  prefix="Airport Car Rentals Near Me in "
+                  suffix=", AZ"
+                  fallbackCity="Phoenix"
+                  as="span"
+                />
               </h1>
               <p className="text-lg text-blue-100 mb-6">
                 Skip the rental counter lines. Get your car delivered curbside at Phoenix airports.
