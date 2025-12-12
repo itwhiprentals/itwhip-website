@@ -149,6 +149,9 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
     return `/reviews${queryString ? `?${queryString}` : ''}`
   }
 
+  // Price valid until (30 days from now)
+  const priceValidUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+
   // JSON-LD structured data
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -178,13 +181,54 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
           name: review.car
             ? `${review.car.year} ${review.car.make} ${review.car.model}`
             : 'Vehicle Rental',
-          image: review.car?.photos?.[0]?.url || 'https://itwhip.com/default-car.jpg',
+          url: review.car?.id ? `https://itwhip.com/rentals/${review.car.id}` : 'https://itwhip.com/rentals',
+          description: review.car
+            ? `${review.car.year} ${review.car.make} ${review.car.model} rental in ${review.car.city || 'Phoenix'}, AZ`
+            : 'Car rental in Phoenix, AZ',
+          image: review.car?.photos?.[0]?.url || 'https://itwhip.com/images/car-default.jpg',
           offers: {
             '@type': 'Offer',
             priceCurrency: 'USD',
             price: review.car?.dailyRate?.toString() || '99',
             availability: 'https://schema.org/InStock',
-            url: `https://itwhip.com/rentals/${review.car?.id}`
+            url: review.car?.id ? `https://itwhip.com/rentals/${review.car.id}` : 'https://itwhip.com/rentals',
+            priceValidUntil,
+            hasMerchantReturnPolicy: {
+              '@type': 'MerchantReturnPolicy',
+              applicableCountry: 'US',
+              returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+              merchantReturnDays: 1,
+              returnMethod: 'https://schema.org/ReturnByMail',
+              returnFees: 'https://schema.org/FreeReturn'
+            },
+            shippingDetails: {
+              '@type': 'OfferShippingDetails',
+              shippingDestination: {
+                '@type': 'DefinedRegion',
+                addressCountry: 'US',
+                addressRegion: 'AZ'
+              },
+              deliveryTime: {
+                '@type': 'ShippingDeliveryTime',
+                handlingTime: {
+                  '@type': 'QuantitativeValue',
+                  minValue: 0,
+                  maxValue: 1,
+                  unitCode: 'DAY'
+                },
+                transitTime: {
+                  '@type': 'QuantitativeValue',
+                  minValue: 0,
+                  maxValue: 1,
+                  unitCode: 'DAY'
+                }
+              },
+              shippingRate: {
+                '@type': 'MonetaryAmount',
+                value: 0,
+                currency: 'USD'
+              }
+            }
           }
         }
       }
@@ -196,6 +240,7 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
     '@type': 'Organization',
     name: 'ItWhip',
     url: 'https://itwhip.com',
+    image: 'https://itwhip.com/logo.png',
     aggregateRating: {
       '@type': 'AggregateRating',
       ratingValue: avgRating,

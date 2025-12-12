@@ -23,6 +23,23 @@ function getFirstName(name: string | null | undefined): string {
   return name.trim().split(/\s+/)[0] || 'Guest'
 }
 
+// Helper to get car type label
+function getTypeLabel(type: string): string {
+  const labels: Record<string, string> = {
+    SEDAN: 'Sedan',
+    SUV: 'SUV',
+    TRUCK: 'Truck',
+    SPORTS: 'Sports',
+    LUXURY: 'Luxury',
+    CONVERTIBLE: 'Convertible',
+    VAN: 'Van',
+    COUPE: 'Coupe',
+    HATCHBACK: 'Hatchback',
+    EXOTIC: 'Exotic'
+  }
+  return labels[type] || type
+}
+
 export const revalidate = 3600
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -140,6 +157,9 @@ export default async function CarReviewsPage({ searchParams }: PageProps) {
   const totalTrips = stats._sum.totalTrips || 0
   const totalCars = stats._count || 0
 
+  // Price valid until (30 days from now)
+  const priceValidUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+
   // JSON-LD
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -153,39 +173,64 @@ export default async function CarReviewsPage({ searchParams }: PageProps) {
       item: {
         '@type': 'Product',
         name: `${car.year} ${car.make} ${car.model}`,
-        image: car.photos[0]?.url,
-        aggregateRating: {
-          '@type': 'AggregateRating',
-          ratingValue: car.rating,
-          reviewCount: car._count.reviews,
-          bestRating: 5,
-          worstRating: 1
-        },
+        url: `https://itwhip.com/rentals/${car.id}`,
+        description: `${car.year} ${car.make} ${car.model} rental in ${car.city}, AZ - ${getTypeLabel(car.carType)} from $${car.dailyRate}/day`,
+        image: car.photos[0]?.url || 'https://itwhip.com/images/car-default.jpg',
+        ...(car.rating && car._count.reviews > 0 ? {
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: car.rating,
+            reviewCount: car._count.reviews,
+            bestRating: 5,
+            worstRating: 1
+          }
+        } : {}),
         offers: {
           '@type': 'Offer',
           priceCurrency: 'USD',
           price: car.dailyRate,
           availability: 'https://schema.org/InStock',
-          url: `https://itwhip.com/rentals/${car.id}`
+          url: `https://itwhip.com/rentals/${car.id}`,
+          priceValidUntil,
+          hasMerchantReturnPolicy: {
+            '@type': 'MerchantReturnPolicy',
+            applicableCountry: 'US',
+            returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+            merchantReturnDays: 1,
+            returnMethod: 'https://schema.org/ReturnByMail',
+            returnFees: 'https://schema.org/FreeReturn'
+          },
+          shippingDetails: {
+            '@type': 'OfferShippingDetails',
+            shippingDestination: {
+              '@type': 'DefinedRegion',
+              addressCountry: 'US',
+              addressRegion: 'AZ'
+            },
+            deliveryTime: {
+              '@type': 'ShippingDeliveryTime',
+              handlingTime: {
+                '@type': 'QuantitativeValue',
+                minValue: 0,
+                maxValue: 1,
+                unitCode: 'DAY'
+              },
+              transitTime: {
+                '@type': 'QuantitativeValue',
+                minValue: 0,
+                maxValue: 1,
+                unitCode: 'DAY'
+              }
+            },
+            shippingRate: {
+              '@type': 'MonetaryAmount',
+              value: 0,
+              currency: 'USD'
+            }
+          }
         }
       }
     }))
-  }
-
-  const getTypeLabel = (type: string) => {
-    const labels: Record<string, string> = {
-      SEDAN: 'Sedan',
-      SUV: 'SUV',
-      TRUCK: 'Truck',
-      SPORTS: 'Sports',
-      LUXURY: 'Luxury',
-      CONVERTIBLE: 'Convertible',
-      VAN: 'Van',
-      COUPE: 'Coupe',
-      HATCHBACK: 'Hatchback',
-      EXOTIC: 'Exotic'
-    }
-    return labels[type] || type
   }
 
   return (

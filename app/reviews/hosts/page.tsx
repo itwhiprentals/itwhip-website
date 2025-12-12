@@ -121,14 +121,24 @@ export default async function HostReviewsPage({ searchParams }: PageProps) {
       item: {
         '@type': 'Person',
         name: host.name,
-        image: host.profilePhoto,
-        aggregateRating: {
-          '@type': 'AggregateRating',
-          ratingValue: host.rating,
-          reviewCount: host.totalTrips,
-          bestRating: 5,
-          worstRating: 1
-        }
+        url: `https://itwhip.com/hosts/${host.id}`,
+        description: `Verified car rental host in ${host.city || 'Phoenix'}, AZ with ${host.totalTrips} completed trips`,
+        image: host.profilePhoto || 'https://itwhip.com/images/default-avatar.jpg',
+        jobTitle: 'Car Rental Host',
+        worksFor: {
+          '@type': 'Organization',
+          name: 'ItWhip',
+          url: 'https://itwhip.com'
+        },
+        ...(host.rating && host.totalTrips > 0 ? {
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: host.rating,
+            reviewCount: host.totalTrips,
+            bestRating: 5,
+            worstRating: 1
+          }
+        } : {})
       }
     }))
   }
