@@ -192,6 +192,12 @@ export default async function TeslaNearMePage() {
                     minValue: 0,
                     maxValue: 1,
                     unitCode: 'DAY'
+                  },
+                  transitTime: {
+                    '@type': 'QuantitativeValue',
+                    minValue: 0,
+                    maxValue: 1,
+                    unitCode: 'DAY'
                   }
                 },
                 shippingRate: {

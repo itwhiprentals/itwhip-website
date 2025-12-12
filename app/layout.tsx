@@ -116,6 +116,7 @@ const organizationSchema = {
   name: 'ItWhip',
   alternateName: 'ItWhip Peer-to-Peer Car Rental Arizona',
   url: 'https://itwhip.com',
+  image: 'https://itwhip.com/logo.png',
   logo: {
     '@type': 'ImageObject',
     url: 'https://itwhip.com/logo.png',
