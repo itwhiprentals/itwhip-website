@@ -211,20 +211,55 @@ export default async function NearMePage() {
           item: {
             '@type': 'Product',
             name: `${car.year} ${car.make} ${car.model}`,
+            url: `https://itwhip.com/rentals/${car.id}`,
             description: `Rent this ${car.year} ${car.make} ${car.model} in ${car.city}, AZ`,
-            image: car.photos?.[0]?.url,
+            image: car.photos?.[0]?.url || 'https://itwhip.com/images/car-default.jpg',
+            ...(car.rating && car.totalTrips > 0 ? {
+              aggregateRating: {
+                '@type': 'AggregateRating',
+                ratingValue: car.rating,
+                reviewCount: car.totalTrips,
+                bestRating: 5,
+                worstRating: 1
+              }
+            } : {}),
             offers: {
               '@type': 'Offer',
               price: car.dailyRate,
               priceCurrency: 'USD',
               availability: 'https://schema.org/InStock',
-              priceValidUntil
-            },
-            aggregateRating: car.rating ? {
-              '@type': 'AggregateRating',
-              ratingValue: car.rating,
-              reviewCount: car.totalTrips || 1
-            } : undefined
+              priceValidUntil,
+              hasMerchantReturnPolicy: {
+                '@type': 'MerchantReturnPolicy',
+                applicableCountry: 'US',
+                returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+                merchantReturnDays: 1,
+                returnMethod: 'https://schema.org/ReturnByMail',
+                returnFees: 'https://schema.org/FreeReturn'
+              },
+              shippingDetails: {
+                '@type': 'OfferShippingDetails',
+                shippingDestination: {
+                  '@type': 'DefinedRegion',
+                  addressCountry: 'US',
+                  addressRegion: 'AZ'
+                },
+                deliveryTime: {
+                  '@type': 'ShippingDeliveryTime',
+                  handlingTime: {
+                    '@type': 'QuantitativeValue',
+                    minValue: 0,
+                    maxValue: 1,
+                    unitCode: 'DAY'
+                  }
+                },
+                shippingRate: {
+                  '@type': 'MonetaryAmount',
+                  value: 0,
+                  currency: 'USD'
+                }
+              }
+            }
           }
         }))
       }
