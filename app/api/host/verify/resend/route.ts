@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
     const codeExpiry = new Date(Date.now() + 15 * 60 * 1000) // 15 minutes
 
     // Build verification URL
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_URL || 'https://itwhip.com'
     const verificationUrl = `${baseUrl}/verify?token=${verificationToken}`
 
     // Update host with new verification code

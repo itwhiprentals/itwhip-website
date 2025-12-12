@@ -1,7 +1,7 @@
 // app/api/host/reset-password/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
-import bcrypt from 'bcryptjs'
+import { hash } from 'argon2'
 import crypto from 'crypto'
 
 export async function POST(req: NextRequest) {
@@ -26,8 +26,8 @@ export async function POST(req: NextRequest) {
     // Hash the token to compare with stored hash
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex')
 
-    // Find host with this reset token
-    const host = await prisma.rentalHost.findFirst({
+    // Find user with this reset token (forgot-password stores token on User model)
+    const user = await prisma.user.findFirst({
       where: {
         resetToken: hashedToken,
         resetTokenUsed: false,
@@ -39,29 +39,33 @@ export async function POST(req: NextRequest) {
         id: true,
         email: true,
         name: true,
-        resetTokenExpiry: true
+        resetTokenExpiry: true,
+        rentalHost: {
+          select: {
+            id: true,
+            email: true,
+            name: true
+          }
+        }
       }
     })
 
     // Token validation
-    if (!host) {
+    if (!user) {
       return NextResponse.json(
         { error: 'Invalid or expired reset token' },
         { status: 400 }
       )
     }
 
-    // Hash the new password with bcrypt
-    const salt = await bcrypt.genSalt(10)
-    const hashedPassword = await bcrypt.hash(password, salt)
+    // Hash the new password with argon2
+    const hashedPassword = await hash(password)
 
-    // Update host password and invalidate token
-    await prisma.rentalHost.update({
-      where: { id: host.id },
+    // Update user password and invalidate token
+    await prisma.user.update({
+      where: { id: user.id },
       data: {
-        // Note: RentalHost doesn't have passwordHash field yet
-        // You'll need to add this to your schema if hosts log in with passwords
-        // For now, we'll update the User model if userId exists
+        passwordHash: hashedPassword,
         resetToken: null,
         resetTokenExpiry: null,
         resetTokenUsed: true,
@@ -70,25 +74,8 @@ export async function POST(req: NextRequest) {
       }
     })
 
-    // If host has a linked User account, update that password too
-    const linkedUser = await prisma.user.findFirst({
-      where: { 
-        rentalHost: {
-          id: host.id
-        }
-      }
-    })
-
-    if (linkedUser) {
-      await prisma.user.update({
-        where: { id: linkedUser.id },
-        data: {
-          passwordHash: hashedPassword,
-          lastPasswordReset: new Date(),
-          updatedAt: new Date()
-        }
-      })
-    }
+    // Use host info for email, fallback to user info
+    const host = user.rentalHost || { id: user.id, email: user.email, name: user.name }
 
     console.log(`[Host Password Reset] Successfully reset password for: ${host.email}`)
 

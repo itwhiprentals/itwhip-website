@@ -2,7 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
-import bcrypt from 'bcryptjs'
+import { hash } from 'argon2'
 
 export async function POST(request: NextRequest) {
   try {
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Hash password
-    const passwordHash = await bcrypt.hash(password, 10)
+    const passwordHash = await hash(password)
 
     // Create the host with PENDING status
     const newHost = await prisma.rentalHost.create({

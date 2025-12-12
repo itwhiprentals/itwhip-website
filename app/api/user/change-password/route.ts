@@ -249,7 +249,7 @@ Location: ${ipAddress}
 ${logoutOtherDevices ? '\nAll other devices have been signed out for security.' : ''}
 
 If you didn't make this change, please reset your password immediately:
-${process.env.NEXT_PUBLIC_APP_URL}/auth/forgot-password
+${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_URL || 'https://itwhip.com'}/auth/forgot-password
 
 - ItWhip Security Team
       `.trim()
@@ -393,7 +393,7 @@ function generatePasswordChangedEmail(
                     <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
                       <tr>
                         <td align="center">
-                          <a href="${process.env.NEXT_PUBLIC_APP_URL}/auth/forgot-password" style="display: inline-block; padding: 14px 28px; background-color: #dc2626; color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 600; border-radius: 8px; box-shadow: 0 4px 6px rgba(220, 38, 38, 0.2);">Reset Password Now</a>
+                          <a href="${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_URL || 'https://itwhip.com'}/auth/forgot-password" style="display: inline-block; padding: 14px 28px; background-color: #dc2626; color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 600; border-radius: 8px; box-shadow: 0 4px 6px rgba(220, 38, 38, 0.2);">Reset Password Now</a>
                         </td>
                       </tr>
                     </table>

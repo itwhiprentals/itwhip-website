@@ -258,7 +258,7 @@ interface HostPasswordResetEmailProps {
                       <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin: 32px 0;">
                         <tr>
                           <td align="center">
-                            <a href="${process.env.NEXT_PUBLIC_APP_URL}/host/login" style="display: inline-block; padding: 14px 28px; background-color: #16a34a; color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 600; border-radius: 8px; box-shadow: 0 2px 4px rgba(22, 163, 74, 0.2);">
+                            <a href="${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_URL || 'https://itwhip.com'}/host/login" style="display: inline-block; padding: 14px 28px; background-color: #16a34a; color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 600; border-radius: 8px; box-shadow: 0 2px 4px rgba(22, 163, 74, 0.2);">
                               Sign In to Host Portal
                             </a>
                           </td>

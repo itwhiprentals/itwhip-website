@@ -51,3 +51,4 @@ next-env.d.ts
 # Prisma
 prisma/migrations/dev/
 cookies.txt
+.env*.local

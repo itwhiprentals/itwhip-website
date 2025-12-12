@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
 
     // Send verification based on type
     if (verificationType === 'email') {
-      const verificationUrl = `${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/verify?token=${verificationToken}`
+      const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_URL || 'https://itwhip.com'}/verify?token=${verificationToken}`
       
       try {
         const emailResult = await sendHostVerificationEmail(host.email, {

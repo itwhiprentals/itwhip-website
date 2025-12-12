@@ -229,7 +229,7 @@ export async function POST(
                 
                 <div style="margin-top: 30px; padding: 20px; background: #3b82f6; color: white; border-radius: 8px; text-align: center;">
                   <p style="margin: 0 0 15px;">View and manage this application in:</p>
-                  <a href="${process.env.NEXT_PUBLIC_APP_URL}/admin/careers/applications/${application.id}" 
+                  <a href="${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_URL || 'https://itwhip.com'}/admin/careers/applications/${application.id}" 
                      style="display: inline-block; padding: 10px 20px; background: white; color: #3b82f6; text-decoration: none; border-radius: 5px; font-weight: bold;">
                     Admin Dashboard
                   </a>

@@ -111,7 +111,8 @@ export async function POST(req: NextRequest) {
     })
 
     // Send reset email
-    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/host/reset-password?token=${resetToken}`
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_URL || 'https://itwhip.com'
+    const resetUrl = `${baseUrl}/host/reset-password?token=${resetToken}`
     
     const htmlContent = `
       <!DOCTYPE html>

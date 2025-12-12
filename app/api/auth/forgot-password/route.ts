@@ -94,7 +94,8 @@ export async function POST(req: NextRequest) {
     })
 
     // Send reset email
-    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password?token=${resetToken}`
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_URL || 'https://itwhip.com'
+    const resetUrl = `${baseUrl}/auth/reset-password?token=${resetToken}`
     
     try {
       // Import sendEmail from sender directly
