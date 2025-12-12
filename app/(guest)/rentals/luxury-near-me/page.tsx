@@ -133,6 +133,7 @@ export default async function LuxuryNearMePage() {
             '@type': 'Product',
             name: `${car.year} ${car.make} ${car.model}`,
             description: `Luxury ${car.year} ${car.make} ${car.model} rental in ${car.city}`,
+            image: car.photos?.[0]?.url || 'https://itwhip.com/images/luxury-default.jpg',
             offers: {
               '@type': 'Offer',
               price: car.dailyRate,

@@ -152,6 +152,7 @@ export default async function TeslaNearMePage() {
             '@type': 'Product',
             name: `${car.year} ${car.make} ${car.model}`,
             description: `Tesla ${car.model} electric vehicle rental in ${car.city}`,
+            image: car.photos?.[0]?.url || 'https://itwhip.com/images/tesla-default.jpg',
             brand: { '@type': 'Brand', name: 'Tesla' },
             offers: {
               '@type': 'Offer',

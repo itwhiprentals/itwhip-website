@@ -120,6 +120,7 @@ export default async function AirportNearMePage() {
             '@type': 'Product',
             name: `${car.year} ${car.make} ${car.model}`,
             description: `Airport pickup available - ${car.year} ${car.make} ${car.model} in ${car.city}`,
+            image: car.photos?.[0]?.url || 'https://itwhip.com/images/car-default.jpg',
             offers: {
               '@type': 'Offer',
               price: car.dailyRate,

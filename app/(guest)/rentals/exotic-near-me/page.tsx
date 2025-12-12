@@ -132,6 +132,7 @@ export default async function ExoticNearMePage() {
             '@type': 'Product',
             name: `${car.year} ${car.make} ${car.model}`,
             description: `Exotic ${car.year} ${car.make} ${car.model} supercar rental in ${car.city}`,
+            image: car.photos?.[0]?.url || 'https://itwhip.com/images/exotic-default.jpg',
             offers: {
               '@type': 'Offer',
               price: car.dailyRate,

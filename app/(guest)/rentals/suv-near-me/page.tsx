@@ -132,6 +132,7 @@ export default async function SUVNearMePage() {
             '@type': 'Product',
             name: `${car.year} ${car.make} ${car.model}`,
             description: `${car.seats || 5}-passenger SUV rental in ${car.city}`,
+            image: car.photos?.[0]?.url || 'https://itwhip.com/images/suv-default.jpg',
             offers: {
               '@type': 'Offer',
               price: car.dailyRate,
