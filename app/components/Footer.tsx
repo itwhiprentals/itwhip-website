@@ -3,56 +3,18 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
-import { 
+import {
   IoLogoFacebook,
   IoLogoTwitter,
   IoLogoInstagram,
   IoLogoLinkedin,
   IoLogoApple,
-  IoLogoGooglePlaystore,
-  IoTimeOutline
+  IoLogoGooglePlaystore
 } from 'react-icons/io5'
 
 export default function Footer() {
   const currentYear = new Date().getFullYear()
   
-  // Countdown timer state
-  const [timeLeft, setTimeLeft] = useState({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0
-  })
-
-  useEffect(() => {
-    // Set launch date to 60 days from now
-    const launchDate = new Date()
-    launchDate.setDate(launchDate.getDate() + 60)
-    
-    const timer = setInterval(() => {
-      const now = new Date().getTime()
-      const distance = launchDate.getTime() - now
-      
-      if (distance > 0) {
-        setTimeLeft({
-          days: Math.floor(distance / (1000 * 60 * 60 * 24)),
-          hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-          minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
-          seconds: Math.floor((distance % (1000 * 60)) / 1000)
-        })
-      } else {
-        setTimeLeft({
-          days: 0,
-          hours: 0,
-          minutes: 0,
-          seconds: 0
-        })
-      }
-    }, 1000)
-    
-    return () => clearInterval(timer)
-  }, [])
 
   return (
     <footer className="bg-gray-100 dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800">
@@ -324,20 +286,13 @@ export default function Footer() {
         <div className="border-t border-gray-200 dark:border-gray-800 pt-8 mb-8">
           <div className="flex flex-col md:flex-row items-center justify-between">
             <div className="mb-4 md:mb-0">
-              <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
+              <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
                 Download the ItWhip App
               </h4>
-              {/* Countdown Timer */}
-              <div className="flex items-center space-x-1 text-xs text-gray-600 dark:text-gray-400">
-                <IoTimeOutline className="w-4 h-4 mr-1" />
-                <span>Full app launches in:</span>
-                <span className="font-bold text-purple-600">
-                  {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
-                </span>
-              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Available on iOS, Android coming soon</p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
-              <a 
+              <a
                 href="https://testflight.apple.com/join/ygzsQbNf"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -346,27 +301,27 @@ export default function Footer() {
                 <div className="flex items-center space-x-3">
                   <IoLogoApple className="w-7 h-7" />
                   <div className="text-left">
-                    <div className="text-[10px] uppercase tracking-wider opacity-90">Download on the</div>
-                    <div className="text-sm font-bold">App Store</div>
+                    <div className="text-[10px] uppercase tracking-wider opacity-90 leading-tight">Download on the</div>
+                    <div className="text-sm font-bold -mt-0.5">App Store</div>
                   </div>
                 </div>
                 <div className="absolute bottom-1 right-2">
                   <span className="text-[9px] bg-blue-500 px-1.5 py-0.5 rounded text-white font-medium">BETA</span>
                 </div>
               </a>
-              
-              <a 
+
+              <a
                 href="#"
                 className="group relative overflow-hidden bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-6 py-3 rounded-lg transition-all transform hover:scale-105 shadow-lg opacity-90"
               >
                 <div className="flex items-center space-x-3">
                   <IoLogoGooglePlaystore className="w-7 h-7" />
                   <div className="text-left">
-                    <div className="text-[10px] uppercase tracking-wider opacity-90">Get it on</div>
-                    <div className="text-sm font-bold">Google Play</div>
+                    <div className="text-[10px] uppercase tracking-wider opacity-90 leading-tight">Get it on</div>
+                    <div className="text-sm font-bold -mt-0.5">Google Play</div>
                   </div>
                 </div>
-                <div className="absolute bottom-1 right-2">
+                <div className="absolute top-1 right-2">
                   <span className="text-[9px] bg-orange-500 px-1.5 py-0.5 rounded text-white font-medium">SOON</span>
                 </div>
               </a>

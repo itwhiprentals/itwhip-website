@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { prisma } from '@/app/lib/database/prisma'
 import {
   IoStar,
+  IoStarOutline,
   IoCheckmarkCircleOutline,
   IoChevronForwardOutline,
   IoHomeOutline,
@@ -15,6 +16,49 @@ import {
 import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
 import HostCard from './HostCard'
+
+// Rating Breakdown Component
+function RatingBreakdown({
+  distribution,
+  total
+}: {
+  distribution: { rating: number; _count: { rating: number } }[]
+  total: number
+}) {
+  const ratings = [5, 4, 3, 2, 1]
+
+  return (
+    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-6 space-y-3">
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Rating Breakdown</h3>
+      {ratings.map(star => {
+        const count = distribution.find(d => d.rating === star)?._count?.rating || 0
+        const percentage = total > 0 ? Math.round((count / total) * 100) : 0
+
+        return (
+          <div key={star} className="flex items-center gap-3 text-sm">
+            <span className="w-6 text-gray-600 dark:text-gray-400 font-medium">{star}</span>
+            <div className="flex gap-0.5">
+              {[1, 2, 3, 4, 5].map(s => (
+                s <= star
+                  ? <IoStar key={s} className="w-3.5 h-3.5 text-amber-500" />
+                  : <IoStarOutline key={s} className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600" />
+              ))}
+            </div>
+            <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-purple-500 rounded-full transition-all"
+                style={{ width: `${percentage}%` }}
+              />
+            </div>
+            <span className="w-20 text-gray-500 dark:text-gray-400 text-right text-xs">
+              {percentage}% ({count})
+            </span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
 
 export const revalidate = 3600
 
@@ -96,13 +140,30 @@ export default async function HostReviewsPage({ searchParams }: PageProps) {
     take: 30
   })
 
-  // Get overall stats
-  const stats = await prisma.rentalHost.aggregate({
-    where: { active: true, totalTrips: { gt: 0 } },
-    _avg: { rating: true },
-    _sum: { totalTrips: true },
-    _count: true
-  })
+  // Get overall stats and rating distribution
+  const [stats, ratingDistribution, reviewCount] = await Promise.all([
+    prisma.rentalHost.aggregate({
+      where: { active: true, totalTrips: { gt: 0 } },
+      _avg: { rating: true },
+      _sum: { totalTrips: true },
+      _count: true
+    }),
+    prisma.rentalReview.groupBy({
+      by: ['rating'],
+      where: {
+        isVisible: true,
+        host: { active: true }
+      },
+      _count: { rating: true },
+      orderBy: { rating: 'desc' }
+    }),
+    prisma.rentalReview.count({
+      where: {
+        isVisible: true,
+        host: { active: true }
+      }
+    })
+  ])
 
   const avgRating = stats._avg.rating?.toFixed(1) || '4.9'
   const totalTrips = stats._sum.totalTrips || 0
@@ -153,36 +214,61 @@ export default async function HostReviewsPage({ searchParams }: PageProps) {
 
       <Header />
 
-      <main className="min-h-screen bg-gray-50 dark:bg-gray-950">
-        {/* Hero */}
-        <section className="bg-gradient-to-br from-purple-800 via-indigo-700 to-purple-800 text-white pt-20 sm:pt-24 pb-12 sm:pb-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="max-w-3xl">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-500/30 rounded-full text-purple-200 text-xs font-medium mb-4">
-                <IoPersonOutline className="w-4 h-4" />
-                Host Reviews
+      <main className="min-h-screen bg-gray-50 dark:bg-gray-950 pt-16">
+        {/* Hero Section - Improved Typography */}
+        <section className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
+            {/* Header Badge */}
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center gap-2 bg-purple-100 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-800 rounded-full px-4 py-2 mb-6">
+                <IoPersonOutline className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                <span className="text-purple-700 dark:text-purple-400 text-sm font-medium">Verified Host Reviews</span>
               </div>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+
+              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
                 Top-Rated Hosts in Phoenix
               </h1>
-              <p className="text-xl text-purple-100 mb-6">
+
+              <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
                 Meet our verified hosts with excellent reviews, responsive communication, and well-maintained vehicles.
               </p>
-              <div className="flex flex-wrap items-center gap-6 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="flex">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <IoStar key={star} className="w-5 h-5 text-amber-400" />
-                    ))}
-                  </div>
-                  <span className="font-bold text-lg">{avgRating}</span>
-                  <span className="text-purple-200">average</span>
-                </div>
-                <div className="text-purple-200">
-                  <span className="font-semibold text-white">{totalHosts}</span> verified hosts
-                </div>
-                <div className="text-purple-200">
-                  <span className="font-semibold text-white">{totalTrips.toLocaleString()}</span> trips completed
+            </div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 text-center">
+                <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">{avgRating}</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">Average Rating</div>
+              </div>
+              <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 text-center">
+                <div className="text-3xl font-bold text-gray-900 dark:text-white">{reviewCount.toLocaleString()}</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">Host Reviews</div>
+              </div>
+              <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 text-center">
+                <div className="text-3xl font-bold text-gray-900 dark:text-white">{totalHosts}</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">Verified Hosts</div>
+              </div>
+              <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 text-center">
+                <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">{totalTrips.toLocaleString()}</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">Trips Completed</div>
+              </div>
+            </div>
+
+            {/* Rating Breakdown */}
+            <div className="max-w-xl mx-auto mb-8">
+              <RatingBreakdown distribution={ratingDistribution} total={reviewCount} />
+            </div>
+
+            {/* Verification Notice */}
+            <div className="max-w-2xl mx-auto">
+              <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4 flex items-start gap-3">
+                <IoShieldCheckmarkOutline className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-sm text-emerald-700 dark:text-emerald-400 font-medium">Verified Hosts</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    All hosts complete background checks and identity verification.
+                    Reviews are from verified renters who completed trips.
+                  </p>
                 </div>
               </div>
             </div>

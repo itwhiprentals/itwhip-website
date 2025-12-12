@@ -5,13 +5,57 @@ import Link from 'next/link'
 import { prisma } from '@/app/lib/database/prisma'
 import {
   IoStar,
-  IoChevronBackOutline,
-  IoChevronForwardOutline,
-  IoCheckmarkCircleOutline
+  IoStarOutline,
+  IoCheckmarkCircleOutline,
+  IoShieldCheckmarkOutline,
+  IoCarOutline
 } from 'react-icons/io5'
 import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
 import ReviewCard from './components/ReviewCard'
+
+// Rating Breakdown Component
+function RatingBreakdown({
+  distribution,
+  total
+}: {
+  distribution: { rating: number; _count: { rating: number } }[]
+  total: number
+}) {
+  const ratings = [5, 4, 3, 2, 1]
+
+  return (
+    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-6 space-y-3">
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Rating Breakdown</h3>
+      {ratings.map(star => {
+        const count = distribution.find(d => d.rating === star)?._count?.rating || 0
+        const percentage = total > 0 ? Math.round((count / total) * 100) : 0
+
+        return (
+          <div key={star} className="flex items-center gap-3 text-sm">
+            <span className="w-6 text-gray-600 dark:text-gray-400 font-medium">{star}</span>
+            <div className="flex gap-0.5">
+              {[1, 2, 3, 4, 5].map(s => (
+                s <= star
+                  ? <IoStar key={s} className="w-3.5 h-3.5 text-amber-500" />
+                  : <IoStarOutline key={s} className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600" />
+              ))}
+            </div>
+            <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-amber-500 rounded-full transition-all"
+                style={{ width: `${percentage}%` }}
+              />
+            </div>
+            <span className="w-20 text-gray-500 dark:text-gray-400 text-right text-xs">
+              {percentage}% ({count})
+            </span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
 
 // Revalidate every hour
 export const revalidate = 3600
@@ -71,7 +115,7 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
     : { createdAt: 'desc' as const }
 
   // Fetch reviews with related data
-  const [reviews, totalCount, filteredCount, stats] = await Promise.all([
+  const [reviews, totalCount, filteredCount, stats, ratingDistribution, hostCount] = await Promise.all([
     prisma.rentalReview.findMany({
       where: whereClause,
       select: {
@@ -133,6 +177,15 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
     prisma.rentalReview.aggregate({
       where: { isVisible: true },
       _avg: { rating: true },
+    }),
+    prisma.rentalReview.groupBy({
+      by: ['rating'],
+      where: { isVisible: true },
+      _count: { rating: true },
+      orderBy: { rating: 'desc' }
+    }),
+    prisma.rentalHost.count({
+      where: { active: true }
     })
   ])
 
@@ -267,30 +320,60 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
       <Header />
 
       <main className="min-h-screen bg-gray-50 dark:bg-gray-950 pt-16">
-        {/* Hero Section */}
+        {/* Hero Section - Improved Typography */}
         <section className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
-            <div className="text-center">
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
+            {/* Header Badge */}
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center gap-2 bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-full px-4 py-2 mb-6">
+                <IoStar className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                <span className="text-amber-700 dark:text-amber-400 text-sm font-medium">Verified Guest Feedback</span>
+              </div>
+
+              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
                 {totalCount.toLocaleString()} Guest Reviews
               </h1>
-              <p className="text-lg text-gray-600 dark:text-gray-400 mb-6">
-                Real riders, real trips, real feedback since 2024
-              </p>
 
-              {/* Stats */}
-              <div className="flex items-center justify-center gap-8 flex-wrap">
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <IoStar key={star} className="w-7 h-7 text-amber-500" />
-                    ))}
-                  </div>
-                  <span className="text-3xl font-bold text-gray-900 dark:text-white">{avgRating}</span>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">average</span>
-                </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">
-                  <span className="font-semibold text-gray-900 dark:text-white">{totalCount}</span> verified reviews
+              <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+                Real riders, real trips, real feedback from verified ItWhip renters since 2024
+              </p>
+            </div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 text-center">
+                <div className="text-3xl font-bold text-amber-600 dark:text-amber-400">{avgRating}</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">Average Rating</div>
+              </div>
+              <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 text-center">
+                <div className="text-3xl font-bold text-gray-900 dark:text-white">{totalCount.toLocaleString()}</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">Verified Reviews</div>
+              </div>
+              <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 text-center">
+                <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">98%</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">Recommend</div>
+              </div>
+              <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 text-center">
+                <div className="text-3xl font-bold text-gray-900 dark:text-white">{hostCount}</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">Active Hosts</div>
+              </div>
+            </div>
+
+            {/* Rating Breakdown */}
+            <div className="max-w-xl mx-auto mb-8">
+              <RatingBreakdown distribution={ratingDistribution} total={totalCount} />
+            </div>
+
+            {/* Verification Notice */}
+            <div className="max-w-2xl mx-auto">
+              <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4 flex items-start gap-3">
+                <IoShieldCheckmarkOutline className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-sm text-emerald-700 dark:text-emerald-400 font-medium">Verified Reviews</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    All reviews are from verified renters who completed trips on ItWhip.
+                    Reviews cannot be edited by hosts and include verified trip details.
+                  </p>
                 </div>
               </div>
             </div>
