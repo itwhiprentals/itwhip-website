@@ -18,22 +18,49 @@ import HostCard from './HostCard'
 
 export const revalidate = 3600
 
-export const metadata: Metadata = {
-  title: 'Top-Rated Hosts in Phoenix | Verified Car Owners | ItWhip',
-  description: 'Meet our top-rated hosts in Phoenix and Scottsdale. Verified car owners with excellent reviews, responsive communication, and well-maintained vehicles.',
-  keywords: ['car sharing hosts phoenix', 'verified car owners', 'top rated hosts', 'trusted car rental hosts', 'best turo hosts phoenix'],
-  openGraph: {
-    title: 'Top-Rated Hosts in Phoenix | ItWhip',
-    description: 'Meet our verified hosts with excellent reviews and well-maintained vehicles.',
-    url: 'https://itwhip.com/reviews/hosts',
-    type: 'website',
-  },
-  alternates: {
-    canonical: 'https://itwhip.com/reviews/hosts',
-  },
+export async function generateMetadata(): Promise<Metadata> {
+  const hostCount = await prisma.rentalHost.count({
+    where: {
+      active: true,
+      rating: { gte: 4.5 },
+      totalTrips: { gt: 0 },
+      cars: { some: { isActive: true } }
+    }
+  })
+
+  return {
+    title: `Top-Rated Hosts (${hostCount}) | ItWhip Arizona`,
+    description: 'Meet our top-rated hosts in Phoenix and Scottsdale. Verified car owners with excellent reviews, responsive communication, and well-maintained vehicles.',
+    keywords: ['car sharing hosts phoenix', 'verified car owners', 'top rated hosts', 'trusted car rental hosts', 'best turo hosts phoenix'],
+    openGraph: {
+      title: `Top-Rated Hosts (${hostCount}) | ItWhip Arizona`,
+      description: 'Meet our verified hosts with excellent reviews and well-maintained vehicles.',
+      url: 'https://itwhip.com/reviews/hosts',
+      type: 'website',
+    },
+    alternates: {
+      canonical: 'https://itwhip.com/reviews/hosts',
+    },
+  }
 }
 
-export default async function HostReviewsPage() {
+interface PageProps {
+  searchParams: Promise<{ sort?: string }>
+}
+
+export default async function HostReviewsPage({ searchParams }: PageProps) {
+  const params = await searchParams
+  const sortBy = params.sort || 'rating'
+
+  // Build orderBy based on sort parameter
+  const orderBy = sortBy === 'trips'
+    ? [{ totalTrips: 'desc' as const }, { rating: 'desc' as const }]
+    : sortBy === 'response'
+    ? [{ responseRate: 'desc' as const }, { rating: 'desc' as const }]
+    : sortBy === 'newest'
+    ? [{ joinedAt: 'desc' as const }, { rating: 'desc' as const }]
+    : [{ rating: 'desc' as const }, { totalTrips: 'desc' as const }]
+
   // Fetch top-rated hosts with their stats
   // Only include hosts who have at least one active car AND trips
   const hosts = await prisma.rentalHost.findMany({
@@ -65,10 +92,7 @@ export default async function HostReviewsPage() {
         take: 1
       }
     },
-    orderBy: [
-      { rating: 'desc' },
-      { totalTrips: 'desc' }
-    ],
+    orderBy,
     take: 30
   })
 
@@ -176,6 +200,65 @@ export default async function HostReviewsPage() {
             </ol>
           </nav>
         </div>
+
+        {/* Filter Tabs */}
+        <section className="pt-8">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex gap-4 mb-6 border-b border-gray-200 dark:border-gray-700">
+              <Link
+                href="/reviews"
+                className="px-4 py-3 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+              >
+                All Reviews
+              </Link>
+              <Link
+                href="/reviews/hosts"
+                className="px-4 py-3 text-purple-600 border-b-2 border-purple-600 font-medium"
+              >
+                Host Reviews ({hosts.length})
+              </Link>
+              <Link
+                href="/reviews/cars"
+                className="px-4 py-3 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+              >
+                Car Reviews
+              </Link>
+            </div>
+
+            {/* Sort Bar */}
+            <div className="flex flex-wrap items-center gap-3 mb-8 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+              <span className="text-sm text-gray-600 dark:text-gray-400">Sort by:</span>
+              <div className="flex gap-1 flex-wrap">
+                {[
+                  { value: 'rating', label: 'Highest Rated' },
+                  { value: 'trips', label: 'Most Trips' },
+                  { value: 'response', label: 'Best Response' },
+                  { value: 'newest', label: 'Newest' },
+                ].map((option) => (
+                  <Link
+                    key={option.value}
+                    href={option.value === 'rating' ? '/reviews/hosts' : `/reviews/hosts?sort=${option.value}`}
+                    className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                      sortBy === option.value
+                        ? 'bg-purple-600 text-white'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    }`}
+                  >
+                    {option.label}
+                  </Link>
+                ))}
+              </div>
+              {sortBy !== 'rating' && (
+                <Link
+                  href="/reviews/hosts"
+                  className="ml-auto text-sm text-purple-600 hover:text-purple-700 dark:hover:text-purple-500"
+                >
+                  Clear
+                </Link>
+              )}
+            </div>
+          </div>
+        </section>
 
         {/* Why Our Hosts Stand Out */}
         <section className="py-12">

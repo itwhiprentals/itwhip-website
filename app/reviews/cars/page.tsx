@@ -25,29 +25,62 @@ function getFirstName(name: string | null | undefined): string {
 
 export const revalidate = 3600
 
-export const metadata: Metadata = {
-  title: 'Top-Rated Cars in Phoenix | Vehicle Reviews | ItWhip',
-  description: 'Browse reviews for the highest-rated rental cars in Phoenix and Scottsdale. Real guest feedback on sedans, SUVs, luxury cars, and more.',
-  keywords: ['car rental reviews phoenix', 'best rental cars scottsdale', 'top rated cars turo', 'phoenix car reviews', 'rental vehicle ratings'],
-  openGraph: {
-    title: 'Top-Rated Cars in Phoenix | ItWhip',
-    description: 'Real guest reviews for the best rental cars in the Phoenix area.',
-    url: 'https://itwhip.com/reviews/cars',
-    type: 'website',
-  },
-  alternates: {
-    canonical: 'https://itwhip.com/reviews/cars',
-  },
-}
-
-export default async function CarReviewsPage() {
-  // Fetch top-rated cars with reviews
-  const cars = await prisma.rentalCar.findMany({
+export async function generateMetadata(): Promise<Metadata> {
+  const carCount = await prisma.rentalCar.count({
     where: {
       isActive: true,
       rating: { gte: 4.5 },
       totalTrips: { gt: 0 }
+    }
+  })
+
+  return {
+    title: `Top-Rated Cars (${carCount}) | ItWhip Arizona`,
+    description: 'Browse reviews for the highest-rated rental cars in Phoenix and Scottsdale. Real guest feedback on sedans, SUVs, luxury cars, and more.',
+    keywords: ['car rental reviews phoenix', 'best rental cars scottsdale', 'top rated cars turo', 'phoenix car reviews', 'rental vehicle ratings'],
+    openGraph: {
+      title: `Top-Rated Cars (${carCount}) | ItWhip Arizona`,
+      description: 'Real guest reviews for the best rental cars in the Phoenix area.',
+      url: 'https://itwhip.com/reviews/cars',
+      type: 'website',
     },
+    alternates: {
+      canonical: 'https://itwhip.com/reviews/cars',
+    },
+  }
+}
+
+interface PageProps {
+  searchParams: Promise<{ sort?: string; type?: string }>
+}
+
+export default async function CarReviewsPage({ searchParams }: PageProps) {
+  const params = await searchParams
+  const sortBy = params.sort || 'rating'
+  const typeFilter = params.type || null
+
+  // Build orderBy based on sort parameter
+  const orderBy = sortBy === 'trips'
+    ? [{ totalTrips: 'desc' as const }, { rating: 'desc' as const }]
+    : sortBy === 'price_low'
+    ? [{ dailyRate: 'asc' as const }, { rating: 'desc' as const }]
+    : sortBy === 'price_high'
+    ? [{ dailyRate: 'desc' as const }, { rating: 'desc' as const }]
+    : sortBy === 'newest'
+    ? [{ createdAt: 'desc' as const }, { rating: 'desc' as const }]
+    : [{ rating: 'desc' as const }, { totalTrips: 'desc' as const }]
+
+  // Build where clause with optional type filter
+  const whereClause = {
+    isActive: true,
+    rating: { gte: 4.5 },
+    totalTrips: { gt: 0 },
+    ...(typeFilter ? { carType: typeFilter.toUpperCase() } : {})
+  }
+
+  // Fetch top-rated cars with reviews
+  const cars = await prisma.rentalCar.findMany({
+    where: whereClause,
     select: {
       id: true,
       make: true,
@@ -91,10 +124,7 @@ export default async function CarReviewsPage() {
         select: { reviews: true }
       }
     },
-    orderBy: [
-      { rating: 'desc' },
-      { totalTrips: 'desc' }
-    ],
+    orderBy,
     take: 30
   })
 
@@ -226,23 +256,107 @@ export default async function CarReviewsPage() {
           </nav>
         </div>
 
-        {/* Category Quick Links */}
-        <section className="py-8">
+        {/* Filter Tabs */}
+        <section className="pt-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Browse by Category
-            </h2>
-            <div className="flex flex-wrap gap-3">
-              {['SUV', 'Sedan', 'Luxury', 'Sports', 'Truck', 'Convertible'].map((category) => (
-                <Link
-                  key={category}
-                  href={`/rentals/types/${category.toLowerCase()}`}
-                  className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full text-sm font-medium text-gray-700 dark:text-gray-300 hover:border-amber-500 hover:text-amber-600 transition"
-                >
-                  {category}
-                </Link>
-              ))}
+            <div className="flex gap-4 mb-6 border-b border-gray-200 dark:border-gray-700">
+              <Link
+                href="/reviews"
+                className="px-4 py-3 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+              >
+                All Reviews
+              </Link>
+              <Link
+                href="/reviews/hosts"
+                className="px-4 py-3 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+              >
+                Host Reviews
+              </Link>
+              <Link
+                href="/reviews/cars"
+                className="px-4 py-3 text-amber-600 border-b-2 border-amber-600 font-medium"
+              >
+                Car Reviews ({cars.length})
+              </Link>
             </div>
+
+            {/* Sort/Filter Bar */}
+            <div className="flex flex-wrap items-center gap-3 mb-8 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+              {/* Type Filter */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600 dark:text-gray-400">Type:</span>
+                <div className="flex gap-1 flex-wrap">
+                  <Link
+                    href={sortBy === 'rating' ? '/reviews/cars' : `/reviews/cars?sort=${sortBy}`}
+                    className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                      !typeFilter
+                        ? 'bg-amber-600 text-white'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    }`}
+                  >
+                    All
+                  </Link>
+                  {['SUV', 'Sedan', 'Luxury', 'Sports', 'Truck'].map((type) => (
+                    <Link
+                      key={type}
+                      href={`/reviews/cars?type=${type.toLowerCase()}${sortBy !== 'rating' ? `&sort=${sortBy}` : ''}`}
+                      className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                        typeFilter?.toLowerCase() === type.toLowerCase()
+                          ? 'bg-amber-600 text-white'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      {type}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="hidden sm:block w-px h-6 bg-gray-300 dark:bg-gray-600" />
+
+              {/* Sort */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600 dark:text-gray-400">Sort:</span>
+                <div className="flex gap-1 flex-wrap">
+                  {[
+                    { value: 'rating', label: 'Highest Rated' },
+                    { value: 'trips', label: 'Most Trips' },
+                    { value: 'price_low', label: 'Price: Low' },
+                    { value: 'price_high', label: 'Price: High' },
+                  ].map((option) => (
+                    <Link
+                      key={option.value}
+                      href={`/reviews/cars${typeFilter ? `?type=${typeFilter}` : ''}${option.value !== 'rating' ? `${typeFilter ? '&' : '?'}sort=${option.value}` : ''}`}
+                      className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                        sortBy === option.value
+                          ? 'bg-amber-600 text-white'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      {option.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              {/* Clear filters */}
+              {(typeFilter || sortBy !== 'rating') && (
+                <Link
+                  href="/reviews/cars"
+                  className="ml-auto text-sm text-amber-600 hover:text-amber-700 dark:hover:text-amber-500"
+                >
+                  Clear
+                </Link>
+              )}
+            </div>
+
+            {/* Results indicator */}
+            {typeFilter && (
+              <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                Showing {cars.length} {getTypeLabel(typeFilter.toUpperCase())} vehicle{cars.length !== 1 ? 's' : ''}
+              </p>
+            )}
           </div>
         </section>
 
