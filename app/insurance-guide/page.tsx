@@ -169,11 +169,14 @@ export default function HostInsurancePage() {
               </h1>
             </div>
             <div className="hidden md:flex items-center space-x-4">
-              <Link href="/host/signup" className="text-sm text-gray-600 dark:text-gray-300 hover:text-purple-600">
-                Start Hosting
+              <Link href="/host/insurance-options" className="text-sm text-gray-600 dark:text-gray-300 hover:text-purple-600">
+                Host Insurance Tiers
               </Link>
-              <Link href="/host-protection" className="text-sm text-gray-600 dark:text-gray-300 hover:text-purple-600">
-                Host Protection
+              <Link href="/support/insurance" className="text-sm text-gray-600 dark:text-gray-300 hover:text-purple-600">
+                Insurance Support
+              </Link>
+              <Link href="/list-your-car" className="text-sm text-gray-600 dark:text-gray-300 hover:text-purple-600">
+                Start Hosting
               </Link>
             </div>
           </div>
@@ -230,6 +233,36 @@ export default function HostInsurancePage() {
           </div>
         </section>
 
+        {/* Quick Links Banner */}
+        <section className="py-6 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-wrap items-center justify-center gap-4">
+              <span className="text-sm text-gray-500 dark:text-gray-400">Quick Links:</span>
+              <Link
+                href="/host/insurance-options"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-lg text-sm font-medium hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition"
+              >
+                <IoShieldCheckmarkOutline className="w-4 h-4" />
+                Host Insurance Tiers
+              </Link>
+              <Link
+                href="/support/insurance"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-lg text-sm font-medium hover:bg-blue-100 dark:hover:bg-blue-900/50 transition"
+              >
+                <IoHelpCircleOutline className="w-4 h-4" />
+                Insurance Support
+              </Link>
+              <Link
+                href="/host-protection"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded-lg text-sm font-medium hover:bg-purple-100 dark:hover:bg-purple-900/50 transition"
+              >
+                <IoLayersOutline className="w-4 h-4" />
+                Host Protection
+              </Link>
+            </div>
+          </div>
+        </section>
+
         {/* Overview Section */}
         <section ref={overviewRef} id="overview" className="py-12 sm:py-16">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -242,7 +275,7 @@ export default function HostInsurancePage() {
               </p>
             </div>
 
-            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8 mb-8">
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8 mb-8">
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
                 The Simple Version
               </h3>
@@ -257,7 +290,7 @@ export default function HostInsurancePage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6 text-center">
+              <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 text-center">
                 <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
                   <IoLayersOutline className="w-8 h-8 text-purple-600" />
                 </div>
@@ -269,7 +302,7 @@ export default function HostInsurancePage() {
                 </p>
               </div>
 
-              <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6 text-center">
+              <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 text-center">
                 <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
                   <IoSwapHorizontalOutline className="w-8 h-8 text-purple-600" />
                 </div>
@@ -281,7 +314,7 @@ export default function HostInsurancePage() {
                 </p>
               </div>
 
-              <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6 text-center">
+              <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 text-center">
                 <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
                   <IoShieldCheckmarkOutline className="w-8 h-8 text-purple-600" />
                 </div>
@@ -310,7 +343,7 @@ export default function HostInsurancePage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
               {/* BASIC Tier */}
-              <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg overflow-hidden border-2 border-gray-300">
+              <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg overflow-hidden border-2 border-gray-300">
                 <div className="bg-gray-500 text-white py-3 px-6 text-center">
                   <span className="text-sm font-bold">BASIC TIER</span>
                 </div>
@@ -351,7 +384,7 @@ export default function HostInsurancePage() {
               </div>
 
               {/* STANDARD Tier */}
-              <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg overflow-hidden border-2 border-amber-500 relative">
+              <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg overflow-hidden border-2 border-amber-500 relative">
                 <div className="absolute top-0 right-0 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
                   POPULAR
                 </div>
@@ -395,7 +428,7 @@ export default function HostInsurancePage() {
               </div>
 
               {/* PREMIUM Tier */}
-              <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg overflow-hidden border-2 border-emerald-500">
+              <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg overflow-hidden border-2 border-emerald-500">
                 <div className="bg-emerald-500 text-white py-3 px-6 text-center">
                   <span className="text-sm font-bold">PREMIUM TIER</span>
                 </div>
@@ -437,7 +470,7 @@ export default function HostInsurancePage() {
             </div>
 
             {/* Earnings Example */}
-            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8">
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8">
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6 text-center">
                 Real Earnings Example
               </h3>
@@ -492,7 +525,7 @@ export default function HostInsurancePage() {
               </p>
             </div>
 
-            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8 mb-8">
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8 mb-8">
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
                 What Does "Primary" Mean?
               </h3>
@@ -507,7 +540,7 @@ export default function HostInsurancePage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              <div className="bg-gray-100 dark:bg-gray-800 rounded-xl p-6">
+              <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-6">
                 <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                   <span className="w-8 h-8 bg-gray-500 text-white rounded-full flex items-center justify-center text-sm font-bold">1</span>
                   BASIC Tier (40%)
@@ -523,7 +556,7 @@ export default function HostInsurancePage() {
                 </div>
               </div>
 
-              <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-6">
+              <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-6">
                 <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                   <span className="w-8 h-8 bg-amber-500 text-white rounded-full flex items-center justify-center text-sm font-bold">2</span>
                   STANDARD Tier (75%)
@@ -544,7 +577,7 @@ export default function HostInsurancePage() {
               </div>
             </div>
 
-            <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-6 mb-8">
+            <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-6 mb-8">
               <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 <span className="w-8 h-8 bg-emerald-500 text-white rounded-full flex items-center justify-center text-sm font-bold">3</span>
                 PREMIUM Tier (90%)
@@ -565,7 +598,7 @@ export default function HostInsurancePage() {
             </div>
 
             {/* The Insurance Hierarchy */}
-            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8">
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8">
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
                 The Complete Insurance Hierarchy
               </h3>
@@ -617,7 +650,7 @@ export default function HostInsurancePage() {
               </p>
             </div>
 
-            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8 mb-8">
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8 mb-8">
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
                 Step-by-Step Process
               </h3>
@@ -666,7 +699,7 @@ export default function HostInsurancePage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-6">
+              <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-6">
                 <h4 className="font-semibold text-amber-800 dark:text-amber-400 mb-4 flex items-center gap-2">
                   <IoRibbonOutline className="w-6 h-6" />
                   For 75% Tier (P2P Insurance)
@@ -687,7 +720,7 @@ export default function HostInsurancePage() {
                 </div>
               </div>
 
-              <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-6">
+              <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-6">
                 <h4 className="font-semibold text-emerald-800 dark:text-emerald-400 mb-4 flex items-center gap-2">
                   <IoDiamondOutline className="w-6 h-6" />
                   For 90% Tier (Commercial)
@@ -707,7 +740,7 @@ export default function HostInsurancePage() {
               </div>
             </div>
 
-            <div className="mt-8 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl p-6">
+            <div className="mt-8 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-6">
               <div className="flex gap-3">
                 <IoWarningOutline className="w-6 h-6 text-yellow-600 flex-shrink-0" />
                 <div>
@@ -735,7 +768,7 @@ export default function HostInsurancePage() {
               </p>
             </div>
 
-            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg overflow-hidden mb-8">
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg overflow-hidden mb-8">
               <div className="bg-green-500 text-white py-3 px-6">
                 <h3 className="font-semibold flex items-center gap-2">
                   <IoCheckmarkCircle className="w-5 h-5" />
@@ -832,7 +865,7 @@ export default function HostInsurancePage() {
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg overflow-hidden">
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg overflow-hidden">
               <div className="bg-red-500 text-white py-3 px-6">
                 <h3 className="font-semibold flex items-center gap-2">
                   <IoCloseCircleOutline className="w-5 h-5" />
@@ -943,7 +976,7 @@ export default function HostInsurancePage() {
               </p>
             </div>
 
-            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8 mb-8">
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8 mb-8">
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
                 Plain English Explanation
               </h3>
@@ -961,7 +994,7 @@ export default function HostInsurancePage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6 text-center border-2 border-gray-300">
+              <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 text-center border-2 border-gray-300">
                 <div className="text-sm font-bold text-gray-500 mb-2">BASIC (40%)</div>
                 <div className="text-4xl font-black text-gray-600 mb-2">$2,500</div>
                 <div className="text-sm text-gray-500">Deductible</div>
@@ -969,7 +1002,7 @@ export default function HostInsurancePage() {
                   Platform handles all insurance
                 </div>
               </div>
-              <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6 text-center border-2 border-amber-500">
+              <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 text-center border-2 border-amber-500">
                 <div className="text-sm font-bold text-amber-500 mb-2">STANDARD (75%)</div>
                 <div className="text-4xl font-black text-amber-600 mb-2">$1,500</div>
                 <div className="text-sm text-gray-500">Deductible</div>
@@ -977,7 +1010,7 @@ export default function HostInsurancePage() {
                   Your P2P insurance is primary
                 </div>
               </div>
-              <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6 text-center border-2 border-emerald-500">
+              <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 text-center border-2 border-emerald-500">
                 <div className="text-sm font-bold text-emerald-500 mb-2">PREMIUM (90%)</div>
                 <div className="text-4xl font-black text-emerald-600 mb-2">$1,000</div>
                 <div className="text-sm text-gray-500">Deductible</div>
@@ -987,7 +1020,7 @@ export default function HostInsurancePage() {
               </div>
             </div>
 
-            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-6">
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6">
               <h4 className="font-semibold text-blue-800 dark:text-blue-400 mb-4 flex items-center gap-2">
                 <IoHelpCircleOutline className="w-6 h-6" />
                 40% Tier vs Bringing Your Own Insurance
@@ -1019,7 +1052,7 @@ export default function HostInsurancePage() {
               </p>
             </div>
 
-            <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-8 mb-8">
+            <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-8 mb-8">
               <h3 className="text-xl font-semibold text-purple-800 dark:text-purple-400 mb-4">
                 What is FNOL?
               </h3>
@@ -1031,7 +1064,7 @@ export default function HostInsurancePage() {
               </p>
             </div>
 
-            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8 mb-8">
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8 mb-8">
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
                 Our Claims Timeline
               </h3>
@@ -1084,7 +1117,7 @@ export default function HostInsurancePage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6">
+              <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6">
                 <h4 className="font-semibold text-gray-900 dark:text-white mb-4">
                   What We Collect for FNOL
                 </h4>
@@ -1112,7 +1145,7 @@ export default function HostInsurancePage() {
                 </ul>
               </div>
 
-              <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6">
+              <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6">
                 <h4 className="font-semibold text-gray-900 dark:text-white mb-4">
                   FDCR Includes
                 </h4>
@@ -1155,7 +1188,7 @@ export default function HostInsurancePage() {
               </p>
             </div>
 
-            <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-8 mb-8">
+            <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-8 mb-8">
               <div className="flex gap-4">
                 <IoAlertCircleOutline className="w-8 h-8 text-red-600 flex-shrink-0" />
                 <div>
@@ -1169,7 +1202,7 @@ export default function HostInsurancePage() {
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8 mb-8">
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8 mb-8">
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
                 If Your Insurance Lapses
               </h3>
@@ -1214,7 +1247,7 @@ export default function HostInsurancePage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-6">
+              <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-6">
                 <h4 className="font-semibold text-green-800 dark:text-green-400 mb-4 flex items-center gap-2">
                   <IoCheckmarkCircle className="w-6 h-6" />
                   How to Avoid This
@@ -1228,7 +1261,7 @@ export default function HostInsurancePage() {
                 </ul>
               </div>
 
-              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-6">
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6">
                 <h4 className="font-semibold text-blue-800 dark:text-blue-400 mb-4 flex items-center gap-2">
                   <IoRefreshOutline className="w-6 h-6" />
                   How to Restore Your Tier
@@ -1243,7 +1276,7 @@ export default function HostInsurancePage() {
               </div>
             </div>
 
-            <div className="mt-8 bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6">
+            <div className="mt-8 bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6">
               <h4 className="font-semibold text-gray-900 dark:text-white mb-4">
                 We Track Expirations
               </h4>
@@ -1266,7 +1299,7 @@ export default function HostInsurancePage() {
               </p>
             </div>
 
-            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8 mb-8">
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8 mb-8">
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
                 For Guests: You're Already Covered
               </h3>
@@ -1325,7 +1358,7 @@ export default function HostInsurancePage() {
               </div>
             </div>
 
-            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-6">
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6">
               <h4 className="font-semibold text-blue-800 dark:text-blue-400 mb-4">
                 How Guests Add Insurance
               </h4>
@@ -1437,18 +1470,26 @@ Coverage limits are the same, but we take extra precautions to protect valuable 
             <p className="text-lg text-purple-100 mb-8">
               Choose your tier and start earning with confidence.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link 
-                href="/host/signup"
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
+              <Link
+                href="/list-your-car"
                 className="inline-block px-8 py-4 bg-white text-purple-600 rounded-lg font-bold hover:bg-purple-50 transition shadow-lg"
               >
                 List Your Car
               </Link>
-              <Link 
-                href="/host-protection"
+              <Link
+                href="/host/insurance-options"
                 className="inline-block px-8 py-4 bg-purple-500 text-white rounded-lg font-bold hover:bg-purple-400 transition border border-purple-400"
               >
-                View Host Protection
+                View Insurance Tiers
+              </Link>
+            </div>
+            <div className="flex flex-wrap justify-center gap-4 text-sm">
+              <Link href="/support/insurance" className="text-purple-200 hover:text-white transition">
+                Insurance Support &rarr;
+              </Link>
+              <Link href="/host-protection" className="text-purple-200 hover:text-white transition">
+                Host Protection &rarr;
               </Link>
             </div>
           </div>

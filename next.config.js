@@ -33,8 +33,7 @@ const nextConfig = {
       { source: '/insurance', destination: '/insurance-guide', permanent: true },
       { source: '/itwhip-vs-turo', destination: '/switch-from-turo', permanent: true },
       { source: '/press', destination: '/blog', permanent: true },
-      { source: '/help', destination: '/faq', permanent: true },
-      { source: '/support', destination: '/faq', permanent: true },
+      { source: '/help', destination: '/support', permanent: true },
       { source: '/platform-agreement', destination: '/terms', permanent: true },
       { source: '/sitemap', destination: '/sitemap.xml', permanent: true },
       

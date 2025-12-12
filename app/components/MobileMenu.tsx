@@ -108,7 +108,7 @@ const navigationSections = [
     icon: IoHelpCircleOutline,
     items: [
       { href: '/support', label: 'Help Center', icon: IoHelpCircleOutline },
-      { href: '/faq', label: 'FAQ', icon: IoDocumentTextOutline },
+      { href: '/support/insurance', label: 'Insurance Support', icon: IoShieldCheckmarkOutline },
       { href: '/how-it-works', label: 'How It Works', icon: IoHelpCircleOutline },
       { href: '/cancellation-policy', label: 'Cancellation Policy', icon: IoDocumentTextOutline },
       { href: '/contact', label: 'Contact Us', icon: IoMailOutline }
