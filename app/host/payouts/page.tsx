@@ -20,13 +20,13 @@ import {
   IoTrendingUpOutline,
   IoDocumentTextOutline,
   IoPhonePortraitOutline,
-  IoBankOutline,
   IoPersonOutline,
   IoBusinessOutline,
   IoCheckmarkDoneOutline,
   IoInformationCircleOutline,
   IoSpeedometerOutline
 } from 'react-icons/io5'
+import { BsBank2 } from 'react-icons/bs'
 import { SiStripe } from 'react-icons/si'
 
 export const metadata: Metadata = {
@@ -120,7 +120,7 @@ export default function PayoutsPage() {
 
           <div className="grid lg:grid-cols-2 gap-8 items-start">
             {/* Onboarding Steps */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-8 border border-gray-200 dark:border-gray-700 shadow-sm">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-8 border-2 border-gray-200 dark:border-gray-600 shadow-md">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-12 h-12 bg-[#635BFF] rounded-lg flex items-center justify-center">
                   <SiStripe className="w-7 h-4 text-white" />
@@ -132,56 +132,72 @@ export default function PayoutsPage() {
               </div>
 
               <div className="space-y-4">
-                {[
-                  {
-                    step: 1,
-                    title: 'Verify Your Identity',
-                    description: 'Provide your legal name, date of birth, and last 4 digits of SSN',
-                    icon: IoPersonOutline,
-                    time: '2 min'
-                  },
-                  {
-                    step: 2,
-                    title: 'Add Business Details',
-                    description: 'Individual or business account type, address verification',
-                    icon: IoBusinessOutline,
-                    time: '1 min'
-                  },
-                  {
-                    step: 3,
-                    title: 'Link Your Bank Account',
-                    description: 'Connect via Plaid or enter routing/account numbers manually',
-                    icon: IoBankOutline,
-                    time: '2 min'
-                  },
-                  {
-                    step: 4,
-                    title: 'Start Earning',
-                    description: 'Once verified, payouts are automatic after each trip',
-                    icon: IoCheckmarkDoneOutline,
-                    time: 'Done!'
-                  }
-                ].map((item, i) => (
-                  <div key={i} className="flex gap-4">
-                    <div className="flex flex-col items-center">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        i === 3 ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-gray-100 dark:bg-gray-700'
-                      }`}>
-                        <item.icon className={`w-5 h-5 ${
-                          i === 3 ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-600 dark:text-gray-400'
-                        }`} />
-                      </div>
-                      {i < 3 && <div className="w-0.5 h-full bg-gray-200 dark:bg-gray-700 my-1" />}
+                {/* Step 1 */}
+                <div className="flex gap-4">
+                  <div className="flex flex-col items-center">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-100 dark:bg-gray-700">
+                      <IoPersonOutline className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                     </div>
-                    <div className="flex-1 pb-4">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-semibold text-gray-900 dark:text-white">{item.title}</h4>
-                        <span className="text-xs text-emerald-600 font-medium">{item.time}</span>
-                      </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{item.description}</p>
+                    <div className="w-0.5 h-full bg-gray-200 dark:bg-gray-700 my-1" />
+                  </div>
+                  <div className="flex-1 pb-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-semibold text-gray-900 dark:text-white">Verify Your Identity</h4>
+                      <span className="text-xs text-emerald-600 font-medium">2 min</span>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Provide your legal name, date of birth, and last 4 digits of SSN</p>
+                  </div>
+                </div>
+
+                {/* Step 2 */}
+                <div className="flex gap-4">
+                  <div className="flex flex-col items-center">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-100 dark:bg-gray-700">
+                      <IoBusinessOutline className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                    </div>
+                    <div className="w-0.5 h-full bg-gray-200 dark:bg-gray-700 my-1" />
+                  </div>
+                  <div className="flex-1 pb-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-semibold text-gray-900 dark:text-white">Add Business Details</h4>
+                      <span className="text-xs text-emerald-600 font-medium">1 min</span>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Individual or business account type, address verification</p>
+                  </div>
+                </div>
+
+                {/* Step 3 */}
+                <div className="flex gap-4">
+                  <div className="flex flex-col items-center">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-100 dark:bg-gray-700">
+                      <BsBank2 className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                    </div>
+                    <div className="w-0.5 h-full bg-gray-200 dark:bg-gray-700 my-1" />
+                  </div>
+                  <div className="flex-1 pb-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-semibold text-gray-900 dark:text-white">Link Your Bank Account</h4>
+                      <span className="text-xs text-emerald-600 font-medium">2 min</span>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Connect via Plaid or enter routing/account numbers manually</p>
+                  </div>
+                </div>
+
+                {/* Step 4 */}
+                <div className="flex gap-4">
+                  <div className="flex flex-col items-center">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-emerald-100 dark:bg-emerald-900/30">
+                      <IoCheckmarkDoneOutline className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                     </div>
                   </div>
-                ))}
+                  <div className="flex-1 pb-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-semibold text-gray-900 dark:text-white">Start Earning</h4>
+                      <span className="text-xs text-emerald-600 font-medium">Done!</span>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Once verified, payouts are automatic after each trip</p>
+                  </div>
+                </div>
               </div>
 
               <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
@@ -222,7 +238,7 @@ export default function PayoutsPage() {
                 </ul>
               </div>
 
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border-2 border-gray-200 dark:border-gray-600 shadow-md">
                 <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                   <IoInformationCircleOutline className="w-5 h-5 text-emerald-600" />
                   What You'll Need
@@ -254,30 +270,70 @@ export default function PayoutsPage() {
           </h2>
           <div className="max-w-4xl mx-auto">
             <div className="grid md:grid-cols-4 gap-4">
-              {[
-                { step: 'Trip Ends', desc: 'Guest returns the car', time: 'Day 0', icon: IoCheckmarkCircleOutline },
-                { step: 'Processing', desc: 'Trip verified, earnings calculated', time: '24 hours', icon: IoSpeedometerOutline },
-                { step: 'Payout Sent', desc: 'Funds transferred via Stripe', time: '1-2 days', icon: IoCashOutline },
-                { step: 'In Your Bank', desc: 'Money available to spend', time: '2-3 days', icon: IoBankOutline }
-              ].map((item, i) => (
-                <div key={i} className="relative">
-                  <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-5 text-center shadow-sm hover:shadow-md transition-shadow h-full">
-                    <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <item.icon className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
-                    </div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white text-sm">{item.step}</h3>
-                    <p className="text-gray-600 dark:text-gray-400 text-xs mt-1">{item.desc}</p>
-                    <span className="inline-block mt-2 text-xs text-emerald-600 font-semibold bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded">
-                      {item.time}
-                    </span>
+              {/* Step 1: Trip Ends */}
+              <div className="relative">
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-5 text-center border border-gray-200 dark:border-gray-600 shadow-md hover:shadow-lg transition-shadow h-full">
+                  <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <IoCheckmarkCircleOutline className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
                   </div>
-                  {i < 3 && (
-                    <div className="hidden md:block absolute top-1/2 -right-2 transform -translate-y-1/2 z-10">
-                      <IoChevronForwardOutline className="w-4 h-4 text-emerald-400" />
-                    </div>
-                  )}
+                  <h3 className="font-semibold text-gray-900 dark:text-white text-sm">Trip Ends</h3>
+                  <p className="text-gray-600 dark:text-gray-400 text-xs mt-1">Guest returns the car</p>
+                  <span className="inline-block mt-2 text-xs text-emerald-600 font-semibold bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded">
+                    Day 0
+                  </span>
                 </div>
-              ))}
+                <div className="hidden md:block absolute top-1/2 -right-2 transform -translate-y-1/2 z-10">
+                  <IoChevronForwardOutline className="w-4 h-4 text-emerald-400" />
+                </div>
+              </div>
+
+              {/* Step 2: Processing */}
+              <div className="relative">
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-5 text-center border border-gray-200 dark:border-gray-600 shadow-md hover:shadow-lg transition-shadow h-full">
+                  <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <IoSpeedometerOutline className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <h3 className="font-semibold text-gray-900 dark:text-white text-sm">Processing</h3>
+                  <p className="text-gray-600 dark:text-gray-400 text-xs mt-1">Trip verified, earnings calculated</p>
+                  <span className="inline-block mt-2 text-xs text-emerald-600 font-semibold bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded">
+                    24 hours
+                  </span>
+                </div>
+                <div className="hidden md:block absolute top-1/2 -right-2 transform -translate-y-1/2 z-10">
+                  <IoChevronForwardOutline className="w-4 h-4 text-emerald-400" />
+                </div>
+              </div>
+
+              {/* Step 3: Payout Sent */}
+              <div className="relative">
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-5 text-center border border-gray-200 dark:border-gray-600 shadow-md hover:shadow-lg transition-shadow h-full">
+                  <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <IoCashOutline className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <h3 className="font-semibold text-gray-900 dark:text-white text-sm">Payout Sent</h3>
+                  <p className="text-gray-600 dark:text-gray-400 text-xs mt-1">Funds transferred via Stripe</p>
+                  <span className="inline-block mt-2 text-xs text-emerald-600 font-semibold bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded">
+                    1-2 days
+                  </span>
+                </div>
+                <div className="hidden md:block absolute top-1/2 -right-2 transform -translate-y-1/2 z-10">
+                  <IoChevronForwardOutline className="w-4 h-4 text-emerald-400" />
+                </div>
+              </div>
+
+              {/* Step 4: In Your Bank */}
+              <div className="relative">
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-5 text-center border border-gray-200 dark:border-gray-600 shadow-md hover:shadow-lg transition-shadow h-full">
+                  <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <BsBank2 className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <h3 className="font-semibold text-gray-900 dark:text-white text-sm">In Your Bank</h3>
+                  <p className="text-gray-600 dark:text-gray-400 text-xs mt-1">Money available to spend</p>
+                  <span className="inline-block mt-2 text-xs text-emerald-600 font-semibold bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded">
+                    2-3 days
+                  </span>
+                </div>
+              </div>
             </div>
 
             <div className="mt-8 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
@@ -309,37 +365,37 @@ export default function PayoutsPage() {
           </div>
 
           <div className="grid lg:grid-cols-3 gap-6">
-            {/* Protection Plans */}
+            {/* Protection Plans - Based on EARNINGS_TIERS in financial-constants.ts */}
             {[
               {
                 name: 'Basic',
-                fee: '25%',
-                earnings: '75%',
+                fee: '60%',
+                earnings: '40%',
                 color: 'gray',
-                features: ['State minimum liability', 'Basic collision coverage', 'Standard support'],
-                best: 'Budget-conscious hosts'
+                features: ['Platform-provided per-trip insurance', 'No personal insurance required', 'Standard support', 'Great for getting started'],
+                best: 'New hosts without insurance'
               },
               {
                 name: 'Standard',
-                fee: '20%',
-                earnings: '80%',
+                fee: '25%',
+                earnings: '75%',
                 color: 'emerald',
                 popular: true,
-                features: ['$1M liability coverage', 'Comprehensive collision', 'Priority support', '24/7 roadside assistance'],
-                best: 'Most hosts'
+                features: ['Bring your own P2P insurance', 'Verified policy upload', 'Priority support', '24/7 roadside assistance'],
+                best: 'Hosts with P2P coverage'
               },
               {
                 name: 'Premium',
                 fee: '10%',
                 earnings: '90%',
                 color: 'purple',
-                features: ['Commercial-grade coverage', 'Full comprehensive', 'Dedicated account manager', 'Expedited claims'],
-                best: 'Fleet owners with own insurance'
+                features: ['Commercial auto insurance', 'Maximum earnings share', 'Dedicated account manager', 'Expedited claims processing'],
+                best: 'Fleet owners with commercial insurance'
               }
             ].map((plan, i) => (
               <div
                 key={i}
-                className={`relative bg-white dark:bg-gray-800 rounded-lg p-6 border-2 shadow-sm hover:shadow-md transition-shadow ${
+                className={`relative bg-white dark:bg-gray-800 rounded-lg p-6 border-2 shadow-md hover:shadow-lg transition-shadow ${
                   plan.popular
                     ? 'border-emerald-500 dark:border-emerald-400'
                     : 'border-gray-200 dark:border-gray-700'
@@ -376,31 +432,31 @@ export default function PayoutsPage() {
           </div>
 
           {/* Example Calculation */}
-          <div className="mt-10 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-lg p-6 sm:p-8 text-white">
+          <div className="mt-10 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-lg p-6 sm:p-8 text-white shadow-lg">
             <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
               <IoCalculatorOutline className="w-5 h-5" />
               Example Earnings Calculation
             </h3>
             <div className="grid md:grid-cols-4 gap-4 text-center">
-              <div className="bg-white/10 rounded-lg p-4">
-                <p className="text-emerald-200 text-sm">Trip Price</p>
+              <div className="bg-white/20 rounded-lg p-4 border border-white/30">
+                <p className="text-white text-sm font-medium">Trip Price</p>
                 <p className="text-2xl font-bold">$150</p>
-                <p className="text-xs text-emerald-200">3-day rental</p>
+                <p className="text-xs text-white/80">3-day rental</p>
               </div>
-              <div className="bg-white/10 rounded-lg p-4">
-                <p className="text-emerald-200 text-sm">Your Earnings (80%)</p>
-                <p className="text-2xl font-bold">$120</p>
-                <p className="text-xs text-emerald-200">Standard protection</p>
+              <div className="bg-white/20 rounded-lg p-4 border border-white/30">
+                <p className="text-white text-sm font-medium">Your Earnings (75%)</p>
+                <p className="text-2xl font-bold">$112.50</p>
+                <p className="text-xs text-white/80">Standard tier (P2P insurance)</p>
               </div>
-              <div className="bg-white/10 rounded-lg p-4">
-                <p className="text-emerald-200 text-sm">Platform Fee (20%)</p>
-                <p className="text-2xl font-bold">$30</p>
-                <p className="text-xs text-emerald-200">Insurance + support</p>
+              <div className="bg-white/20 rounded-lg p-4 border border-white/30">
+                <p className="text-white text-sm font-medium">Platform Fee (25%)</p>
+                <p className="text-2xl font-bold">$37.50</p>
+                <p className="text-xs text-white/80">Payment processing + support</p>
               </div>
-              <div className="bg-white/20 rounded-lg p-4">
-                <p className="text-emerald-200 text-sm">Deposited to Bank</p>
-                <p className="text-2xl font-bold text-yellow-300">$120</p>
-                <p className="text-xs text-emerald-200">In 2-3 days</p>
+              <div className="bg-white/30 rounded-lg p-4 border border-white/40">
+                <p className="text-white text-sm font-medium">Deposited to Bank</p>
+                <p className="text-2xl font-bold text-yellow-300">$112.50</p>
+                <p className="text-xs text-white/80">In 2-3 days</p>
               </div>
             </div>
           </div>
@@ -414,10 +470,10 @@ export default function PayoutsPage() {
             Payout Methods
           </h2>
           <div className="grid md:grid-cols-3 gap-6">
-            <div className="p-6 bg-gray-50 dark:bg-gray-700 rounded-lg border-2 border-emerald-500 shadow-sm">
+            <div className="p-6 bg-gray-50 dark:bg-gray-700 rounded-lg border-2 border-emerald-500 shadow-md">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg flex items-center justify-center">
-                  <IoBankOutline className="w-6 h-6 text-emerald-600" />
+                  <BsBank2 className="w-6 h-6 text-emerald-600" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-900 dark:text-white">Bank Transfer (ACH)</h3>
@@ -434,7 +490,7 @@ export default function PayoutsPage() {
               </ul>
             </div>
 
-            <div className="p-6 bg-gray-50 dark:bg-gray-700 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+            <div className="p-6 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 shadow-md hover:shadow-lg transition-shadow">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center">
                   <IoFlashOutline className="w-6 h-6 text-yellow-600" />
@@ -454,7 +510,7 @@ export default function PayoutsPage() {
               </ul>
             </div>
 
-            <div className="p-6 bg-gray-50 dark:bg-gray-700 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+            <div className="p-6 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 shadow-md hover:shadow-lg transition-shadow">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
                   <IoCalendarOutline className="w-6 h-6 text-purple-600" />
@@ -489,7 +545,7 @@ export default function PayoutsPage() {
             </p>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-200 dark:border-gray-600 shadow-md overflow-hidden">
             {/* Mock Dashboard Header */}
             <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-6">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-white">
@@ -528,7 +584,7 @@ export default function PayoutsPage() {
                         tx.type === 'Payout' ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-blue-100 dark:bg-blue-900/30'
                       }`}>
                         {tx.type === 'Payout' ? (
-                          <IoBankOutline className="w-5 h-5 text-emerald-600" />
+                          <BsBank2 className="w-5 h-5 text-emerald-600" />
                         ) : (
                           <IoCashOutline className="w-5 h-5 text-blue-600" />
                         )}
@@ -588,7 +644,7 @@ export default function PayoutsPage() {
                 <IoChevronForwardOutline className="w-4 h-4" />
               </Link>
             </div>
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 border border-gray-200 dark:border-gray-600">
+            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 border-2 border-gray-200 dark:border-gray-600 shadow-md">
               <div className="flex items-center gap-3 mb-4">
                 <IoDocumentTextOutline className="w-8 h-8 text-emerald-600" />
                 <div>
@@ -637,14 +693,14 @@ export default function PayoutsPage() {
               },
               {
                 q: 'Are there any hidden fees?',
-                a: 'No hidden fees. The only deduction is the platform fee (10-25% depending on your protection plan), which covers insurance, payment processing, and 24/7 support.'
+                a: 'No hidden fees. The platform fee depends on your insurance tier: 60% for Basic (we provide insurance), 25% for Standard (your P2P insurance), or just 10% for Premium (your commercial insurance). Higher tiers mean more earnings!'
               },
               {
                 q: 'How do I update my bank account?',
                 a: 'Go to Settings > Payout Methods in your host dashboard. You can add a new bank account or debit card anytime. Verification takes 1-2 business days.'
               }
             ].map((faq, i) => (
-              <details key={i} className="group bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+              <details key={i} className="group bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-200 dark:border-gray-600 shadow-md">
                 <summary className="flex items-center justify-between p-4 cursor-pointer list-none">
                   <span className="font-medium text-gray-900 dark:text-white">{faq.q}</span>
                   <IoChevronForwardOutline className="w-5 h-5 text-gray-500 group-open:rotate-90 transition-transform" />

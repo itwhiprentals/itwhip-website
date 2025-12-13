@@ -147,11 +147,6 @@ export default function Footer() {
                   Host Requirements
                 </Link>
               </li>
-              <li>
-                <Link href="/host/tax-benefits" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Tax Benefits
-                </Link>
-              </li>
             </ul>
           </div>
 
