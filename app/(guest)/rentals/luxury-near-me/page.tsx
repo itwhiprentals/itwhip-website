@@ -172,13 +172,13 @@ export default async function LuxuryNearMePage() {
                     '@type': 'QuantitativeValue',
                     minValue: 0,
                     maxValue: 1,
-                    unitCode: 'D01'
+                    unitCode: 'DAY'
                   },
                   transitTime: {
                     '@type': 'QuantitativeValue',
                     minValue: 0,
                     maxValue: 1,
-                    unitCode: 'D01'
+                    unitCode: 'DAY'
                   }
                 },
                 shippingRate: {
