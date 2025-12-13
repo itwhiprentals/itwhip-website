@@ -191,16 +191,7 @@ export default async function HostReviewsPage({ searchParams }: PageProps) {
           '@type': 'Organization',
           name: 'ItWhip',
           url: 'https://itwhip.com'
-        },
-        ...(host.rating && host.totalTrips > 0 ? {
-          aggregateRating: {
-            '@type': 'AggregateRating',
-            ratingValue: host.rating,
-            reviewCount: host.totalTrips,
-            bestRating: 5,
-            worstRating: 1
-          }
-        } : {})
+        }
       }
     }))
   }
