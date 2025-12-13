@@ -36,6 +36,7 @@ const navItems = [
     label: 'Host',
     items: [
       { label: 'List Your Car', href: '/host/signup', highlight: true },
+      { label: 'Switch from Turo', href: '/switch-from-turo' },
       { label: 'Dashboard', href: '/host/dashboard' },
       { label: 'My Cars', href: '/host/cars' },
       { label: 'Bookings', href: '/host/bookings' },
@@ -46,7 +47,7 @@ const navItems = [
     label: 'Business',
     items: [
       { label: 'Corporate Rentals', href: '/corporate' },
-      { label: 'Hotel Partners', href: '/hotels/solutions' },
+      { label: 'Hotel Partners', href: '/hotel-solutions' },
       { label: 'API Access', href: '/developers' },
       { label: 'GDS Integration', href: '/gds', badge: 'NEW' }
     ]
@@ -56,6 +57,8 @@ const navItems = [
     items: [
       { label: 'About', href: '/about' },
       { label: 'How It Works', href: '/how-it-works' },
+      { label: 'Reviews', href: '/reviews' },
+      { label: 'Blog', href: '/blog' },
       { label: 'Help Center', href: '/help' },
       { label: 'Contact', href: '/contact' }
     ]

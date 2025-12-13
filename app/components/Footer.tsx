@@ -79,7 +79,7 @@ export default function Footer() {
 
           {/* For Guests */}
           <div className="md:col-span-1">
-            <h4 className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white mb-2">
+            <h4 className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white mb-2 underline underline-offset-4 decoration-gray-900 dark:decoration-white">
               For Guests
             </h4>
             <ul className="space-y-1.5">
@@ -99,8 +99,13 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/insurance-guide" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Insurance Guide
+                <Link href="/host/insurance-options" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Insurance Options
+                </Link>
+              </li>
+              <li>
+                <Link href="/switch-from-turo" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Switch from Turo
                 </Link>
               </li>
               <li>
@@ -113,7 +118,7 @@ export default function Footer() {
 
           {/* For Hosts */}
           <div className="md:col-span-1">
-            <h4 className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white mb-2">
+            <h4 className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white mb-2 underline underline-offset-4 decoration-gray-900 dark:decoration-white">
               For Hosts
             </h4>
             <ul className="space-y-1.5">
@@ -133,8 +138,8 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/host/insurance-options" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Insurance Options
+                <Link href="/insurance-guide" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Insurance Guide
                 </Link>
               </li>
               <li>
@@ -152,7 +157,7 @@ export default function Footer() {
 
           {/* Support */}
           <div className="md:col-span-1">
-            <h4 className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white mb-2">
+            <h4 className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white mb-2 underline underline-offset-4 decoration-gray-900 dark:decoration-white">
               Support
             </h4>
             <ul className="space-y-1.5">
@@ -186,7 +191,7 @@ export default function Footer() {
 
           {/* Company */}
           <div className="md:col-span-1">
-            <h4 className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white mb-2">
+            <h4 className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white mb-2 underline underline-offset-4 decoration-gray-900 dark:decoration-white">
               Company
             </h4>
             <ul className="space-y-1.5">
@@ -206,13 +211,13 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/developers" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Developers
+                <Link href="/corporate" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Corporate Rentals
                 </Link>
               </li>
               <li>
-                <Link href="/corporate" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Corporate Rentals
+                <Link href="/host/tax-benefits" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Tax Benefits
                 </Link>
               </li>
             </ul>
@@ -220,7 +225,7 @@ export default function Footer() {
 
           {/* Technology */}
           <div className="md:col-span-1">
-            <h4 className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white mb-2">
+            <h4 className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white mb-2 underline underline-offset-4 decoration-gray-900 dark:decoration-white">
               Technology
             </h4>
             <ul className="space-y-1.5">
@@ -254,7 +259,7 @@ export default function Footer() {
 
           {/* Legal */}
           <div className="md:col-span-1">
-            <h4 className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white mb-2">
+            <h4 className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white mb-2 underline underline-offset-4 decoration-gray-900 dark:decoration-white">
               Legal
             </h4>
             <ul className="space-y-1.5">
@@ -284,8 +289,8 @@ export default function Footer() {
         
         {/* App Download Section with Countdown */}
         <div className="border-t border-gray-200 dark:border-gray-800 pt-8 mb-8">
-          <div className="flex flex-col md:flex-row items-center justify-between">
-            <div className="mb-4 md:mb-0">
+          <div className="flex flex-col items-center text-center">
+            <div className="mb-4">
               <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
                 Download the ItWhip App
               </h4>
