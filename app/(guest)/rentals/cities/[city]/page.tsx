@@ -669,6 +669,7 @@ export default async function CityPage({
                 applicableCountry: 'US',
                 returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
                 merchantReturnDays: 3,
+                returnMethod: 'https://schema.org/ReturnAtKiosk',
                 returnFees: 'https://schema.org/FreeReturn',
                 refundType: 'https://schema.org/FullRefund',
                 returnPolicyCountry: 'US'
@@ -691,13 +692,13 @@ export default async function CityPage({
                     '@type': 'QuantitativeValue',
                     minValue: 0,
                     maxValue: 24,
-                    unitCode: 'HUR'
+                    unitCode: 'D01'
                   },
                   transitTime: {
                     '@type': 'QuantitativeValue',
                     minValue: 0,
                     maxValue: 2,
-                    unitCode: 'HUR'
+                    unitCode: 'D01'
                   }
                 }
               }

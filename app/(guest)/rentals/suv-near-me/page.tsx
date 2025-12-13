@@ -171,13 +171,13 @@ export default async function SUVNearMePage() {
                     '@type': 'QuantitativeValue',
                     minValue: 0,
                     maxValue: 1,
-                    unitCode: 'DAY'
+                    unitCode: 'D01'
                   },
                   transitTime: {
                     '@type': 'QuantitativeValue',
                     minValue: 0,
                     maxValue: 1,
-                    unitCode: 'DAY'
+                    unitCode: 'D01'
                   }
                 },
                 shippingRate: {

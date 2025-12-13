@@ -361,6 +361,7 @@ export default async function BudgetRentalsPage() {
                 applicableCountry: 'US',
                 returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
                 merchantReturnDays: 3,
+                returnMethod: 'https://schema.org/ReturnAtKiosk',
                 returnFees: 'https://schema.org/FreeReturn',
                 refundType: 'https://schema.org/FullRefund'
               },
@@ -382,13 +383,13 @@ export default async function BudgetRentalsPage() {
                     '@type': 'QuantitativeValue',
                     minValue: 0,
                     maxValue: 24,
-                    unitCode: 'HUR'
+                    unitCode: 'D01'
                   },
                   transitTime: {
                     '@type': 'QuantitativeValue',
                     minValue: 0,
                     maxValue: 2,
-                    unitCode: 'HUR'
+                    unitCode: 'D01'
                   }
                 }
               }
