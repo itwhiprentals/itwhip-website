@@ -100,13 +100,7 @@ Disallow: /hotels
 # ============================================
 # BLOCK: Wrong Positioning (Hotel/Corporate)
 # ============================================
-Disallow: /corporate
 Disallow: /hotel-portal
-Disallow: /hotel-solutions
-Disallow: /gds
-Disallow: /developers
-Disallow: /sdk
-Disallow: /integrations
 Disallow: /investors
 Disallow: /press
 
@@ -125,6 +119,16 @@ Disallow: /demo
 Disallow: /private-club
 Disallow: /security
 Disallow: /verify
+
+# ============================================
+# BLOCK: Large Media Files (Save Crawl Budget)
+# ============================================
+Disallow: /*.mp4$
+Disallow: /*.webm$
+Disallow: /hero-video.mp4
+Disallow: /hero-video.webm
+Disallow: /itwhip-hero.mp4
+Disallow: /itwhip-hero.webm
 
 # ============================================
 # SITEMAP
