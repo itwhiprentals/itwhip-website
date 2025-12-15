@@ -80,6 +80,16 @@ export default function VerificationProgress({
   const [hasIncompleteCar, setHasIncompleteCar] = useState(false)
   const [incompleteCarId, setIncompleteCarId] = useState<string | null>(null)
   const [carsFetched, setCarsFetched] = useState(false)
+  const [cars, setCars] = useState<any[]>([])
+  
+  // Local state for profile data - fetched to check completion
+  const [profileData, setProfileData] = useState<{
+    name?: string
+    phone?: string
+    bio?: string
+    profilePhoto?: string
+  } | null>(null)
+  const [profileFetched, setProfileFetched] = useState(false)
 
   // Fetch cars directly to check completion status
   useEffect(() => {
@@ -91,13 +101,14 @@ export default function VerificationProgress({
         
         if (response.ok) {
           const data = await response.json()
-          const cars = data.cars || data.data || []
+          const carsData = data.cars || data.data || []
+          setCars(carsData)
           
-          console.log('VerificationProgress - Fetched cars:', cars)
+          console.log('VerificationProgress - Fetched cars:', carsData)
           
-          if (cars.length > 0) {
+          if (carsData.length > 0) {
             // Check each car for completion
-            const incompleteCar = cars.find((car: any) => {
+            const incompleteCar = carsData.find((car: any) => {
               const photoCount = car.photoCount || car._count?.photos || (car.photos?.length || 0)
               const carData: CarData = {
                 id: car.id,
@@ -118,17 +129,16 @@ export default function VerificationProgress({
               setIncompleteCarId(null)
             }
           } else {
-            // No cars at all - check if we should show as incomplete
-            // If host just signed up with vehicle info, car might exist but not fetched
-            console.log('VerificationProgress - No cars found')
-            setHasIncompleteCar(false)
+            // No cars at all - this means incomplete (host needs to add a car)
+            console.log('VerificationProgress - No cars found - marking as INCOMPLETE')
+            setHasIncompleteCar(true)
             setIncompleteCarId(null)
           }
         }
       } catch (error) {
         console.error('Error fetching cars for verification:', error)
-        // Fall back to props
-        setHasIncompleteCar(hasIncompleteCarProp || false)
+        // On error, assume incomplete (safer default)
+        setHasIncompleteCar(true)
         setIncompleteCarId(incompleteCarIdProp || null)
       } finally {
         setCarsFetched(true)
@@ -140,12 +150,45 @@ export default function VerificationProgress({
     }
   }, [hostId, hasIncompleteCarProp, incompleteCarIdProp])
 
-  // Build steps after cars are fetched
+  // Fetch profile data to check completion
   useEffect(() => {
-    if (!carsFetched) return
+    const fetchProfile = async () => {
+      try {
+        const response = await fetch('/api/host/profile', {
+          credentials: 'include'
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          const profile = data.profile || data
+          console.log('DEBUG PROFILE RAW:', profile)
+          setProfileData({
+            name: profile.name,
+            phone: profile.phone,
+            bio: profile.bio,
+            profilePhoto: profile.profilePhoto || profile.image
+          })
+        } else {
+          console.log('DEBUG PROFILE FETCH FAILED:', response.status)
+          setProfileData(null)
+        }
+      } catch (error) {
+        console.error('Error fetching profile for verification:', error)
+        setProfileData(null)
+      } finally {
+        setProfileFetched(true)
+      }
+    }
+    
+    fetchProfile()
+  }, [])
+
+  // Build steps after cars AND profile are fetched
+  useEffect(() => {
+    if (!carsFetched || !profileFetched) return
 
     buildVerificationSteps()
-  }, [carsFetched, hasIncompleteCar, approvalStatus, backgroundCheckStatus, documentStatuses])
+  }, [carsFetched, profileFetched, hasIncompleteCar, approvalStatus, backgroundCheckStatus, documentStatuses, profileData])
 
   // Helper function to check if host has selected insurance tier
   const checkInsuranceTierSelected = async (): Promise<{ selected: boolean; tier: 'BASIC' | 'STANDARD' | 'PREMIUM' | null; percentage: number }> => {
@@ -183,13 +226,28 @@ export default function VerificationProgress({
 
       const verificationSteps: VerificationStep[] = []
 
-      // Step 1: Profile Completion
+      // DEBUG LOGS - Check what we're actually getting
+      console.log('DEBUG PROFILE:', profileData)
+      console.log('DEBUG CARS:', cars)
+      
+      // Step 1: Profile Completion - Dynamic check based on actual fields
+      // Check for truthy values AND non-empty strings
+      const isProfileComplete = !!(
+        profileData?.name &&
+        profileData?.bio && profileData.bio.length > 0 &&
+        profileData?.profilePhoto
+      )
+      
+      console.log('DEBUG CALCULATED STATUS:', { isProfileComplete, hasIncompleteCar })
+      
       verificationSteps.push({
         id: 'profile',
-        title: 'Complete Your Profile',
+        title: 'Complete Your Profile (DEBUG MODE)',
         description: 'Add your bio, profile photo, and basic information',
-        status: 'COMPLETED',
+        status: isProfileComplete ? 'COMPLETED' : 'IN_PROGRESS',
         icon: IoDocumentTextOutline,
+        actionUrl: !isProfileComplete ? '/host/profile?tab=profile' : undefined,
+        actionLabel: 'Complete Profile',
         priority: 'HIGH'
       })
 
@@ -372,7 +430,7 @@ export default function VerificationProgress({
     }
   }
 
-  if (loading || !carsFetched) {
+  if (loading || !carsFetched || !profileFetched) {
     return (
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
         <div className="animate-pulse space-y-4">
