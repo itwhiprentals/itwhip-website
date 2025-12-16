@@ -500,7 +500,6 @@ export default function VerificationProgress({
       <div className="space-y-4">
         {steps.map((step, index) => {
           const isLastStep = index === steps.length - 1
-          const isVehicleStep = step.id === 'vehicle'
           
           return (
             <div key={step.id} className="relative">
@@ -521,9 +520,7 @@ export default function VerificationProgress({
                       : step.status === 'COMPLETED'
                       ? 'border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-900/10'
                       : step.status === 'IN_PROGRESS' || step.status === 'PENDING_REVIEW'
-                      ? isVehicleStep
-                        ? 'border-yellow-300 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/20'
-                        : 'border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-900/10'
+                      ? 'border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-900/10'
                       : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800'
                   }`}
               >
@@ -534,10 +531,6 @@ export default function VerificationProgress({
                       <IoCheckmarkCircle className="w-6 h-6 text-green-500" />
                     ) : step.status === 'FAILED' ? (
                       <IoCloseCircle className="w-6 h-6 text-red-500" />
-                    ) : step.status === 'IN_PROGRESS' && isVehicleStep ? (
-                      <div className="w-6 h-6 bg-yellow-100 dark:bg-yellow-800 rounded-full flex items-center justify-center">
-                        <IoCarSportOutline className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
-                      </div>
                     ) : step.status === 'IN_PROGRESS' || step.status === 'PENDING_REVIEW' ? (
                       <div className="relative">
                         <div className="w-6 h-6 border-3 border-blue-500 border-t-transparent rounded-full animate-spin" />
@@ -581,15 +574,8 @@ export default function VerificationProgress({
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <span className={`text-xs font-medium whitespace-nowrap ${
-                          step.status === 'IN_PROGRESS' && isVehicleStep
-                            ? 'text-yellow-600 dark:text-yellow-400'
-                            : getStatusColor(step.status)
-                        }`}>
-                          {step.status === 'IN_PROGRESS' && isVehicleStep
-                            ? 'Needs Completion'
-                            : getStatusLabel(step.status)
-                          }
+                        <span className={`text-xs font-medium whitespace-nowrap ${getStatusColor(step.status)}`}>
+                          {getStatusLabel(step.status)}
                         </span>
 
                         {/* Arrow Icon - Indicates clickable */}
@@ -645,33 +631,6 @@ export default function VerificationProgress({
         </div>
       )}
 
-      {/* Vehicle Completion Reminder */}
-      {hasIncompleteCar && incompleteCarId && (
-        <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-          <div className="flex items-start gap-3">
-            <IoCarSportOutline className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
-            <div>
-              <h4 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-1">
-                Complete Your Vehicle Listing
-              </h4>
-              <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-3">
-                Your vehicle needs photos, VIN, and pricing before it can go live.
-              </p>
-              <button
-                onClick={() => {
-                  // Navigate directly to edit page - ALWAYS go to edit, never back to dashboard
-                  console.log('[VerificationProgress] Vehicle Reminder button clicked, navigating to:', `/host/cars/${incompleteCarId}/edit`)
-                  router.push(`/host/cars/${incompleteCarId}/edit`)
-                }}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-medium rounded-lg transition-colors"
-              >
-                Complete Listing
-                <IoChevronForwardOutline className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Pending Actions Alert */}
       {pendingActions && pendingActions.length > 0 && !hasIncompleteCar && (
