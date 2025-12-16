@@ -94,14 +94,19 @@ export default function VerificationProgress({
   // Fetch cars directly to check completion status
   useEffect(() => {
     const fetchCars = async () => {
+      console.log('[VerificationProgress] Fetching cars for hostId:', hostId)
       try {
         const response = await fetch(`/api/host/cars?hostId=${hostId}`, {
           credentials: 'include'
         })
-        
+
+        console.log('[VerificationProgress] /api/host/cars response status:', response.status)
+
         if (response.ok) {
           const data = await response.json()
+          console.log('[VerificationProgress] /api/host/cars raw response:', JSON.stringify(data, null, 2))
           const carsData = data.cars || data.data || []
+          console.log('[VerificationProgress] Extracted carsData:', carsData.length, 'cars')
           setCars(carsData)
           
           if (carsData.length > 0) {

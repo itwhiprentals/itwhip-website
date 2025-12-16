@@ -244,7 +244,7 @@ export async function GET(request: NextRequest) {
 
     // Get host data
     const host = await prisma.rentalHost.findUnique({
-      where: { userId: session.user.id },  // lowercase 'user'
+      where: { userId: session.user.id },
       select: {
         id: true,
         name: true,

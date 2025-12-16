@@ -167,7 +167,10 @@ export async function POST(request: NextRequest) {
     let createdCarId: string | null = null
 
     // If vehicle info provided, CREATE ACTUAL CAR RECORD (not just activity log)
-    if (hasVehicle && vehicleMake && vehicleModel && vehicleYear) {
+    // Handle hasVehicle as string "true" or boolean true
+    const shouldCreateCar = (hasVehicle === true || hasVehicle === 'true') && vehicleMake && vehicleModel && vehicleYear
+
+    if (shouldCreateCar) {
       try {
         const newCar = await prisma.rentalCar.create({
           data: {
@@ -223,10 +226,10 @@ export async function POST(request: NextRequest) {
             // Stats start at 0
             totalTrips: 0,
             rating: 0,
-            
-            // Empty arrays for features and rules
-            features: [],
-            rules: [],
+
+            // Features and rules are stored as JSON strings
+            features: '[]',
+            rules: '[]',
             
             // VIN and license plate - MUST be added before going live
             vin: null,
@@ -272,8 +275,8 @@ export async function POST(request: NextRequest) {
             hostId: newHost.id,
             category: 'VEHICLE',
             severity: 'INFO',
-            description: `Vehicle created during signup: ${vehicleYear} ${vehicleMake} ${vehicleModel}`,
             metadata: {
+              description: `Vehicle created during signup: ${vehicleYear} ${vehicleMake} ${vehicleModel}`,
               vehicleMake,
               vehicleModel,
               vehicleYear,
@@ -288,7 +291,7 @@ export async function POST(request: NextRequest) {
       } catch (carError) {
         // Log error but don't fail the signup
         console.error('Failed to create car during signup:', carError)
-        
+
         // Still log the vehicle intent in activity log as fallback
         await prisma.activityLog.create({
           data: {
@@ -379,7 +382,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Host signup error:', error)
-    
+
     // Check for specific Prisma errors
     if (error instanceof Error) {
       if (error.message.includes('Unique constraint')) {
@@ -389,7 +392,7 @@ export async function POST(request: NextRequest) {
         )
       }
     }
-    
+
     return NextResponse.json(
       { error: 'Failed to process application. Please try again.' },
       { status: 500 }

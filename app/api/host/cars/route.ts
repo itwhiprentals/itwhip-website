@@ -242,7 +242,7 @@ export async function GET(request: NextRequest) {
         } : null
       }
     })
-    
+
     return NextResponse.json({
       success: true,
       cars: formattedCars,
