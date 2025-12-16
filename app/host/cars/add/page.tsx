@@ -4,11 +4,13 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Header from '@/app/components/Header'
 import {
   IoArrowBackOutline,
   IoCarSportOutline,
   IoChevronDownOutline,
-  IoCheckmarkCircle
+  IoCheckmarkCircle,
+  IoWarningOutline
 } from 'react-icons/io5'
 import {
   getAllMakes,
@@ -56,6 +58,7 @@ export default function AddCarPage() {
   // Access control states
   const [checkingAccess, setCheckingAccess] = useState(true)
   const [canAccess, setCanAccess] = useState(false)
+  const [accessDeniedReason, setAccessDeniedReason] = useState<'pending' | 'rejected' | null>(null)
 
   // Form data - simplified to just basics + conditional specs
   const [formData, setFormData] = useState({
@@ -87,6 +90,7 @@ export default function AddCarPage() {
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   // Check if host can access this page
+  // Only APPROVED hosts can add additional vehicles
   useEffect(() => {
     const checkAccess = async () => {
       try {
@@ -105,11 +109,16 @@ export default function AddCarPage() {
         const profile = profileData.profile || profileData
         const approvalStatus = profile.approvalStatus
 
-        // PENDING or NEEDS_ATTENTION hosts:
-        // - If they HAVE cars → redirect to edit their first car (complete signup car first)
-        // - If they have NO cars → allow access to /add (they need to add their first car)
+        // Only APPROVED hosts can add additional cars
+        if (approvalStatus === 'APPROVED') {
+          setCanAccess(true)
+          setCheckingAccess(false)
+          return
+        }
+
+        // PENDING or NEEDS_ATTENTION hosts should complete their first car first
         if (approvalStatus === 'PENDING' || approvalStatus === 'NEEDS_ATTENTION') {
-          // Fetch their existing cars
+          // Fetch their existing cars to redirect to edit
           const carsRes = await fetch(`/api/host/cars?hostId=${profile.id}`, {
             credentials: 'include'
           })
@@ -119,26 +128,31 @@ export default function AddCarPage() {
             const cars = carsData.cars || carsData.data || []
 
             if (cars.length > 0) {
-              // Redirect to edit their first car - complete it before adding more
+              // Redirect to edit their first car
               console.log('[AddCarPage] PENDING host has car, redirecting to edit:', cars[0].id)
               router.push(`/host/cars/${cars[0].id}/edit`)
               return
             }
           }
 
-          // No cars found - ALLOW access to /add so they can create their first car
-          console.log('[AddCarPage] PENDING host has no cars, allowing access to add page')
-          setCanAccess(true)
+          // Show "pending" message - they need to complete signup first
+          setAccessDeniedReason('pending')
+          setCheckingAccess(false)
           return
         }
 
-        // APPROVED, DECLINED, or other statuses can access
-        setCanAccess(true)
+        // REJECTED hosts cannot add cars
+        if (approvalStatus === 'REJECTED' || approvalStatus === 'DECLINED') {
+          setAccessDeniedReason('rejected')
+          setCheckingAccess(false)
+          return
+        }
+
+        // Unknown status - redirect to dashboard
+        router.push('/host/dashboard')
       } catch (error) {
         console.error('Error checking access:', error)
         router.push('/host/dashboard')
-      } finally {
-        setCheckingAccess(false)
       }
     }
 
@@ -271,50 +285,124 @@ export default function AddCarPage() {
   // Show loading spinner while checking access
   if (checkingAccess) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
-        </div>
-      </div>
+      <>
+        <Header />
+        <main className="pt-16">
+          <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+            <div className="text-center">
+              <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+            </div>
+          </div>
+        </main>
+      </>
+    )
+  }
+
+  // Show access denied message for PENDING hosts
+  if (accessDeniedReason === 'pending') {
+    return (
+      <>
+        <Header />
+        <main className="pt-16">
+          <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
+            <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
+              <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <IoWarningOutline className="w-8 h-8 text-yellow-600 dark:text-yellow-400" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                Complete Your Application First
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                You need to complete your host application before adding additional vehicles.
+                Please finish setting up your profile and first vehicle listing.
+              </p>
+              <Link
+                href="/host/dashboard"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors"
+              >
+                Go to Dashboard
+              </Link>
+            </div>
+          </div>
+        </main>
+      </>
+    )
+  }
+
+  // Show access denied message for REJECTED hosts
+  if (accessDeniedReason === 'rejected') {
+    return (
+      <>
+        <Header />
+        <main className="pt-16">
+          <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
+            <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
+              <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <IoWarningOutline className="w-8 h-8 text-red-600 dark:text-red-400" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                Unable to Add Vehicles
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                Your host application was not approved. Please contact support if you believe this is an error.
+              </p>
+              <Link
+                href="/host/dashboard"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors"
+              >
+                Go to Dashboard
+              </Link>
+            </div>
+          </div>
+        </main>
+      </>
     )
   }
 
   // Don't render form if access denied (redirect is in progress)
   if (!canAccess) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Redirecting...</p>
-        </div>
-      </div>
+      <>
+        <Header />
+        <main className="pt-16">
+          <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+            <div className="text-center">
+              <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-gray-600 dark:text-gray-400">Redirecting...</p>
+            </div>
+          </div>
+        </main>
+      </>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-xl mx-auto p-4 sm:p-6 lg:p-8">
-        {/* Header */}
-        <div className="mb-8">
-          <Link
-            href="/host/cars"
-            className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white mb-4"
-          >
-            <IoArrowBackOutline className="w-5 h-5" />
-            Back to Cars
-          </Link>
+    <>
+      <Header />
+      <main className="pt-16">
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+          <div className="max-w-xl mx-auto p-4 sm:p-6 lg:p-8">
+            {/* Page Header */}
+            <div className="mb-8">
+              <Link
+                href="/host/cars"
+                className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white mb-4"
+              >
+                <IoArrowBackOutline className="w-5 h-5" />
+                Back to Cars
+              </Link>
 
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
-              <IoCarSportOutline className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+                  <IoCarSportOutline className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Add New Vehicle</h1>
+                  <p className="text-gray-600 dark:text-gray-400">Enter your vehicle details to get started</p>
+                </div>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Add New Vehicle</h1>
-              <p className="text-gray-600 dark:text-gray-400">Enter your vehicle details to get started</p>
-            </div>
-          </div>
-        </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
@@ -555,25 +643,27 @@ export default function AddCarPage() {
             </p>
           </div>
 
-          {/* Submit button */}
-          <div className="mt-6">
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 px-4 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Adding Vehicle...
-                </>
-              ) : (
-                'Continue to Complete Listing'
-              )}
-            </button>
-          </div>
-        </form>
+            {/* Submit button */}
+            <div className="mt-6">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 px-4 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Adding Vehicle...
+                  </>
+                ) : (
+                  'Continue to Complete Listing'
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+    </main>
+  </>
   )
 }
