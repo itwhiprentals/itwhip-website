@@ -104,8 +104,6 @@ export default function VerificationProgress({
           const carsData = data.cars || data.data || []
           setCars(carsData)
           
-          console.log('VerificationProgress - Fetched cars:', carsData)
-          
           if (carsData.length > 0) {
             // Check each car for completion
             const incompleteCar = carsData.find((car: any) => {
@@ -121,7 +119,6 @@ export default function VerificationProgress({
             })
             
             if (incompleteCar) {
-              console.log('VerificationProgress - Found incomplete car:', incompleteCar.id)
               setHasIncompleteCar(true)
               setIncompleteCarId(incompleteCar.id)
             } else {
@@ -129,8 +126,7 @@ export default function VerificationProgress({
               setIncompleteCarId(null)
             }
           } else {
-            // No cars at all - this means incomplete (host needs to add a car)
-            console.log('VerificationProgress - No cars found - marking as INCOMPLETE')
+            // No cars at all - host needs to add a car
             setHasIncompleteCar(true)
             setIncompleteCarId(null)
           }
@@ -161,7 +157,6 @@ export default function VerificationProgress({
         if (response.ok) {
           const data = await response.json()
           const profile = data.profile || data
-          console.log('DEBUG PROFILE RAW:', profile)
           setProfileData({
             name: profile.name,
             phone: profile.phone,
@@ -169,7 +164,6 @@ export default function VerificationProgress({
             profilePhoto: profile.profilePhoto || profile.image
           })
         } else {
-          console.log('DEBUG PROFILE FETCH FAILED:', response.status)
           setProfileData(null)
         }
       } catch (error) {
@@ -188,7 +182,7 @@ export default function VerificationProgress({
     if (!carsFetched || !profileFetched) return
 
     buildVerificationSteps()
-  }, [carsFetched, profileFetched, hasIncompleteCar, approvalStatus, backgroundCheckStatus, documentStatuses, profileData])
+  }, [carsFetched, profileFetched, hasIncompleteCar, incompleteCarId, cars, approvalStatus, backgroundCheckStatus, documentStatuses, profileData])
 
   // Helper function to check if host has selected insurance tier
   const checkInsuranceTierSelected = async (): Promise<{ selected: boolean; tier: 'BASIC' | 'STANDARD' | 'PREMIUM' | null; percentage: number }> => {
@@ -226,10 +220,6 @@ export default function VerificationProgress({
 
       const verificationSteps: VerificationStep[] = []
 
-      // DEBUG LOGS - Check what we're actually getting
-      console.log('DEBUG PROFILE:', profileData)
-      console.log('DEBUG CARS:', cars)
-      
       // Step 1: Profile Completion - Dynamic check based on actual fields
       // Check for truthy values AND non-empty strings
       const isProfileComplete = !!(
@@ -237,8 +227,6 @@ export default function VerificationProgress({
         profileData?.bio && profileData.bio.length > 0 &&
         profileData?.profilePhoto
       )
-      
-      console.log('DEBUG CALCULATED STATUS:', { isProfileComplete, hasIncompleteCar })
       
       verificationSteps.push({
         id: 'profile',
@@ -267,17 +255,23 @@ export default function VerificationProgress({
 
       // Step 3: Vehicle Listing Completion - ALWAYS show this step
       const vehicleStatus = hasIncompleteCar ? 'IN_PROGRESS' : 'COMPLETED'
-      console.log('VerificationProgress - Vehicle step status:', vehicleStatus, 'hasIncompleteCar:', hasIncompleteCar)
-      
+
+      // Route to edit page if car exists, otherwise leave undefined (handleStepClick will route to /add)
+      const vehicleEditUrl = incompleteCarId
+        ? `/host/cars/${incompleteCarId}/edit`
+        : cars.length > 0
+          ? `/host/cars/${cars[0].id}/edit`
+          : undefined
+
       verificationSteps.push({
         id: 'vehicle',
         title: 'Complete Your Vehicle Listing',
-        description: hasIncompleteCar 
+        description: hasIncompleteCar
           ? 'Add photos, VIN, pricing to finish your listing'
           : 'Your vehicle listing is complete and ready for review',
         status: vehicleStatus,
         icon: IoCarSportOutline,
-        actionUrl: hasIncompleteCar && incompleteCarId ? `/host/cars/${incompleteCarId}/edit` : undefined,
+        actionUrl: vehicleEditUrl,
         actionLabel: 'Complete Listing',
         estimatedTime: '10 minutes',
         priority: 'HIGH'
@@ -335,7 +329,6 @@ export default function VerificationProgress({
 
   // Handle navigation when a step is clicked
   const handleStepClick = (step: VerificationStep) => {
-    // Determine the route based on step ID
     let route = ''
 
     switch (step.id) {
@@ -346,14 +339,12 @@ export default function VerificationProgress({
         route = '/host/profile?tab=documents'
         break
       case 'vehicle':
-        // If we have an incomplete car ID, go to its edit page
-        // Otherwise if host has cars, edit the first one
-        // Otherwise go to add new car page
-        if (incompleteCarId) {
-          route = `/host/cars/${incompleteCarId}/edit`
-        } else if (cars.length > 0) {
-          route = `/host/cars/${cars[0].id}/edit`
+        // Try multiple sources for the car ID - prioritize what we have
+        const carId = incompleteCarId || incompleteCarIdProp || cars[0]?.id
+        if (carId) {
+          route = `/host/cars/${carId}/edit`
         } else {
+          // No car exists - go to add page
           route = '/host/cars/add'
         }
         break
@@ -377,6 +368,9 @@ export default function VerificationProgress({
         onActionClick(step.id)
       }
       router.push(route)
+    } else if (onActionClick) {
+      // Fallback: let parent handle navigation if no internal route
+      onActionClick(step.id)
     }
   }
 

@@ -151,7 +151,11 @@ export default function AddCarPage() {
   const [uploadingPhotos, setUploadingPhotos] = useState(false)
   const [photos, setPhotos] = useState<string[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
-  
+
+  // Access control states
+  const [checkingAccess, setCheckingAccess] = useState(true)
+  const [canAccess, setCanAccess] = useState(false)
+
   // Insurance states
   const [checkingInsurance, setCheckingInsurance] = useState(false)
   const [classification, setClassification] = useState<InsuranceClassification | null>(null)
@@ -200,6 +204,62 @@ export default function AddCarPage() {
   })
   
   const [errors, setErrors] = useState<Record<string, string>>({})
+
+  // Check if host can access this page (PENDING hosts should use /edit for their signup car)
+  useEffect(() => {
+    const checkAccess = async () => {
+      try {
+        // Fetch host profile to check approval status
+        const profileRes = await fetch('/api/host/profile', {
+          credentials: 'include'
+        })
+
+        if (!profileRes.ok) {
+          // Not logged in or error - redirect to dashboard
+          router.push('/host/dashboard')
+          return
+        }
+
+        const profileData = await profileRes.json()
+        const profile = profileData.profile || profileData
+        const approvalStatus = profile.approvalStatus
+
+        // PENDING or NEEDS_ATTENTION hosts cannot add new cars
+        // They should complete their signup car first
+        if (approvalStatus === 'PENDING' || approvalStatus === 'NEEDS_ATTENTION') {
+          // Fetch their existing cars
+          const carsRes = await fetch(`/api/host/cars?hostId=${profile.id}`, {
+            credentials: 'include'
+          })
+
+          if (carsRes.ok) {
+            const carsData = await carsRes.json()
+            const cars = carsData.cars || carsData.data || []
+
+            if (cars.length > 0) {
+              // Redirect to edit their first car
+              router.push(`/host/cars/${cars[0].id}/edit`)
+              return
+            }
+          }
+
+          // No cars found - redirect to dashboard
+          router.push('/host/dashboard')
+          return
+        }
+
+        // APPROVED, DECLINED, or other statuses can access
+        setCanAccess(true)
+      } catch (error) {
+        console.error('Error checking access:', error)
+        router.push('/host/dashboard')
+      } finally {
+        setCheckingAccess(false)
+      }
+    }
+
+    checkAccess()
+  }, [router])
 
   // Check insurance classification when make/model/year changes
   useEffect(() => {
@@ -1208,6 +1268,30 @@ export default function AddCarPage() {
     }
   }
 
+  // Show loading spinner while checking access
+  if (checkingAccess) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Checking access...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Don't render form if access denied (redirect is in progress)
+  if (!canAccess) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Redirecting...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
@@ -1220,7 +1304,7 @@ export default function AddCarPage() {
             <IoArrowBackOutline className="w-5 h-5" />
             Back to Cars
           </Link>
-          
+
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Add New Car</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">
             List your car and start earning

@@ -641,12 +641,15 @@ export default function HostDashboardPage() {
                   backgroundCheckStatus={hostData.backgroundCheckStatus}
                   pendingActions={hostData.pendingActions}
                   hasIncompleteCar={hasIncompleteCar}
-                  incompleteCarId={incompleteCars[0]?.id}
+                  incompleteCarId={incompleteCars[0]?.id || hostData.cars?.[0]?.id}
                   onActionClick={(stepId) => {
                     if (stepId === 'documents' || stepId === 'bank_account') {
                       router.push('/host/profile')
-                    } else if (stepId === 'vehicle' && incompleteCars[0]) {
-                      router.push(`/host/cars/${incompleteCars[0].id}/edit`)
+                    } else if (stepId === 'vehicle') {
+                      const carId = incompleteCars[0]?.id || hostData.cars?.[0]?.id
+                      if (carId) {
+                        router.push(`/host/cars/${carId}/edit`)
+                      }
                     }
                   }}
                 />
