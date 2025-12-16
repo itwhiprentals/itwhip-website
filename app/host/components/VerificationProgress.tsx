@@ -242,7 +242,7 @@ export default function VerificationProgress({
       
       verificationSteps.push({
         id: 'profile',
-        title: 'Complete Your Profile (DEBUG MODE)',
+        title: 'Complete Your Profile',
         description: 'Add your bio, profile photo, and basic information',
         status: isProfileComplete ? 'COMPLETED' : 'IN_PROGRESS',
         icon: IoDocumentTextOutline,
@@ -347,10 +347,15 @@ export default function VerificationProgress({
         break
       case 'vehicle':
         // If we have an incomplete car ID, go to its edit page
-        // Otherwise go to the cars list page
-        route = incompleteCarId
-          ? `/host/cars/${incompleteCarId}/edit`
-          : '/host/cars'
+        // Otherwise if host has cars, edit the first one
+        // Otherwise go to add new car page
+        if (incompleteCarId) {
+          route = `/host/cars/${incompleteCarId}/edit`
+        } else if (cars.length > 0) {
+          route = `/host/cars/${cars[0].id}/edit`
+        } else {
+          route = '/host/cars/add'
+        }
         break
       case 'bank_account':
         route = '/host/profile?tab=banking'
