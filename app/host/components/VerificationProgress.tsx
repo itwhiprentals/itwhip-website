@@ -346,6 +346,13 @@ export default function VerificationProgress({
       case 'vehicle':
         // Try multiple sources for the car ID - prioritize what we have
         const carId = incompleteCarId || incompleteCarIdProp || cars[0]?.id
+        console.log('[VerificationProgress] Vehicle click - carId sources:', {
+          incompleteCarId,
+          incompleteCarIdProp,
+          firstCarId: cars[0]?.id,
+          selectedCarId: carId,
+          carsLength: cars.length
+        })
         if (carId) {
           route = `/host/cars/${carId}/edit`
         } else {
@@ -367,14 +374,23 @@ export default function VerificationProgress({
         break
     }
 
+    console.log('[VerificationProgress] handleStepClick navigation:', {
+      stepId: step.id,
+      route,
+      hasOnActionClick: !!onActionClick
+    })
+
     // Navigate if we have a route
     if (route) {
+      // Call parent callback for analytics/tracking only - NOT for navigation
       if (onActionClick) {
         onActionClick(step.id)
       }
+      console.log('[VerificationProgress] Calling router.push with route:', route)
       router.push(route)
     } else if (onActionClick) {
       // Fallback: let parent handle navigation if no internal route
+      console.log('[VerificationProgress] No route, calling onActionClick')
       onActionClick(step.id)
     }
   }
@@ -642,7 +658,11 @@ export default function VerificationProgress({
                 Your vehicle needs photos, VIN, and pricing before it can go live.
               </p>
               <button
-                onClick={() => onActionClick?.('vehicle')}
+                onClick={() => {
+                  // Navigate directly to edit page - ALWAYS go to edit, never back to dashboard
+                  console.log('[VerificationProgress] Vehicle Reminder button clicked, navigating to:', `/host/cars/${incompleteCarId}/edit`)
+                  router.push(`/host/cars/${incompleteCarId}/edit`)
+                }}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-medium rounded-lg transition-colors"
               >
                 Complete Listing
