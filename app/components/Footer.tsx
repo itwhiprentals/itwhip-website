@@ -37,7 +37,7 @@ export default function Footer() {
                 />
                 {/* Dark mode logo */}
                 <Image
-                  src="/logo-white.png?v=2"
+                  src="/logo-white.png?v=3"
                   alt="ItWhip"
                   width={192}
                   height={192}
