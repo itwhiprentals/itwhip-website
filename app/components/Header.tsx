@@ -368,7 +368,7 @@ export default function Header({
         <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Left side - Logo and Nav */}
-            <div className="flex items-center ml-7 sm:ml-0">
+            <div className="flex items-center ml-4 sm:ml-0">
               {/* Logo */}
               <Link
                 href={
@@ -379,20 +379,20 @@ export default function Header({
                 }
                 className="flex items-center mr-4 group"
               >
-                <div className="flex flex-col">
-                  <Image
-                    src="/logo.png"
-                    alt="ItWhip"
-                    width={192}
-                    height={192}
-                    className="h-10 w-10 group-hover:opacity-80 transition-opacity"
-                    priority
-                  />
-                  {(isAdmin || (isHost && isHostPage)) && (
-                    <span className="text-[10px] text-gray-500 dark:text-gray-400 tracking-widest uppercase font-medium mt-0.5">
-                      {isAdmin ? 'ADMIN PORTAL' : 'HOST PORTAL'}
-                    </span>
-                  )}
+                <div className="flex flex-col items-center">
+                  <div className="relative top-1 -left-1.5">
+                    <Image
+                      src="/logo.png"
+                      alt="ItWhip"
+                      width={192}
+                      height={192}
+                      className="h-10 w-10 group-hover:opacity-80 transition-opacity"
+                      priority
+                    />
+                  </div>
+                  <span className="text-[8px] text-gray-700 dark:text-gray-300 tracking-widest uppercase font-medium mt-0.5 ml-1">
+                    {isAdmin ? 'ADMIN PORTAL' : (isHost && isHostPage) ? 'HOST PORTAL' : 'ITWHIP TECHNOLOGY'}
+                  </span>
                 </div>
               </Link>
 

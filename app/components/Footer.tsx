@@ -20,10 +20,28 @@ export default function Footer() {
   return (
     <footer className="bg-gray-100 dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800">
       {/* Main Footer Content */}
-      <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-6 md:py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1 md:py-5">
         <div className="grid grid-cols-2 md:grid-cols-7 gap-2 md:gap-4 mb-8">
           {/* Company Info */}
           <div className="col-span-2 md:col-span-1">
+            {/* Logo and Branding */}
+            <div className="flex flex-col items-start mb-4">
+              <div className="relative top-1 left-8">
+                <Image
+                  src="/logo.png"
+                  alt="ItWhip"
+                  width={192}
+                  height={192}
+                  className="h-10 w-10"
+                />
+              </div>
+              <span className="text-[8px] text-gray-700 dark:text-gray-300 tracking-widest uppercase font-medium mt-0.5 ml-3">
+                ITWHIP TECHNOLOGY
+              </span>
+              <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">
+                Arizona's Peer-to-Peer Car Rentals
+              </p>
+            </div>
             {/* Social Links */}
             <div className="flex space-x-3">
               <a
