@@ -381,12 +381,22 @@ export default function Header({
               >
                 <div className="flex flex-col items-center">
                   <div className="relative top-1 -left-1.5">
+                    {/* Light mode logo */}
                     <Image
                       src="/logo.png"
                       alt="ItWhip"
                       width={192}
                       height={192}
-                      className="h-10 w-10 group-hover:opacity-80 transition-opacity"
+                      className="h-10 w-10 group-hover:opacity-80 transition-opacity dark:hidden"
+                      priority
+                    />
+                    {/* Dark mode logo */}
+                    <Image
+                      src="/logo-white.png"
+                      alt="ItWhip"
+                      width={192}
+                      height={192}
+                      className="h-10 w-10 group-hover:opacity-80 transition-opacity hidden dark:block"
                       priority
                     />
                   </div>

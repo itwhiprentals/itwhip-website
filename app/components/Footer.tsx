@@ -27,12 +27,21 @@ export default function Footer() {
             {/* Logo and Branding */}
             <div className="flex flex-col items-start mb-4">
               <div className="relative top-1 left-8">
+                {/* Light mode logo */}
                 <Image
                   src="/logo.png"
                   alt="ItWhip"
                   width={192}
                   height={192}
-                  className="h-10 w-10"
+                  className="h-10 w-10 dark:hidden"
+                />
+                {/* Dark mode logo */}
+                <Image
+                  src="/logo-white.png"
+                  alt="ItWhip"
+                  width={192}
+                  height={192}
+                  className="h-10 w-10 hidden dark:block"
                 />
               </div>
               <span className="text-[8px] text-gray-700 dark:text-gray-300 tracking-widest uppercase font-medium mt-0.5 ml-3">
