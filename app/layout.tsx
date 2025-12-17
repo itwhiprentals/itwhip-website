@@ -290,7 +290,8 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <meta name="theme-color" content="#7c3aed" />
+        <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#030712" media="(prefers-color-scheme: dark)" />
         {/* REMOVED: Hardcoded canonical - let each page set its own */}
         
         {/* Schema 1: Organization */}

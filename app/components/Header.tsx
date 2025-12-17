@@ -360,11 +360,9 @@ export default function Header({
 
   return (
     <>
-      <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${
-        scrolled 
-          ? 'bg-white/95 dark:bg-gray-950/95 backdrop-blur-xl shadow-sm' 
-          : 'bg-white/80 dark:bg-gray-950/80 backdrop-blur-md'
-      } border-b border-gray-200/50 dark:border-gray-800/50`}>
+      <nav className={`fixed top-0 w-full z-50 transition-all duration-300 pt-safe bg-white dark:bg-gray-950 ${
+        scrolled ? 'shadow-sm' : ''
+      } border-b border-gray-200 dark:border-gray-800`}>
         <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Left side - Logo and Nav */}

@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Safe area inset for iOS status bar integration */
+@supports (padding-top: env(safe-area-inset-top)) {
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
 :root {
   --primary: #5D3FD3;
   --secondary: #FF6B35;
