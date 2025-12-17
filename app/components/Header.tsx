@@ -392,7 +392,7 @@ export default function Header({
                     />
                     {/* Dark mode logo */}
                     <Image
-                      src="/logo-white.png"
+                      src="/logo-white.png?v=2"
                       alt="ItWhip"
                       width={192}
                       height={192}
