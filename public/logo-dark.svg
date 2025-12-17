@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 40" width="160" height="40">
+  <!-- White circle with black W -->
+  <circle cx="20" cy="20" r="18" fill="#FFFFFF"/>
+  <text x="20" y="27" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="20" fill="#000000">W</text>
+
+  <!-- ItWhip text in white -->
+  <text x="48" y="28" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="24" fill="#FFFFFF">ItWhip</text>
+</svg>

@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter, usePathname } from 'next/navigation'
 import { 
   IoSunnyOutline,
@@ -364,29 +365,34 @@ export default function Header({
           ? 'bg-white/95 dark:bg-gray-950/95 backdrop-blur-xl shadow-sm' 
           : 'bg-white/80 dark:bg-gray-950/80 backdrop-blur-md'
       } border-b border-gray-200/50 dark:border-gray-800/50`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Left side - Logo and Nav */}
-            <div className="flex items-center">
+            <div className="flex items-center ml-7 sm:ml-0">
               {/* Logo */}
-              <Link 
+              <Link
                 href={
-                  isAdmin ? '/admin/dashboard' : 
-                  isHost && isHostPage ? '/host/dashboard' : 
+                  isAdmin ? '/admin/dashboard' :
+                  isHost && isHostPage ? '/host/dashboard' :
                   isGuest ? '/dashboard' :
                   '/'
-                } 
-                className="flex items-center mr-8 group"
+                }
+                className="flex items-center mr-4 group"
               >
                 <div className="flex flex-col">
-                  <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                    It<span className="font-black">W</span>hip
-                  </h1>
-                  <span className="text-[10px] text-gray-500 dark:text-gray-400 tracking-widest uppercase font-medium">
-                    {isAdmin ? 'ADMIN PORTAL' : 
-                     isHost && isHostPage ? 'HOST PORTAL' : 
-                     'TECHNOLOGY'}
-                  </span>
+                  <Image
+                    src="/logo.png"
+                    alt="ItWhip"
+                    width={192}
+                    height={192}
+                    className="h-10 w-10 group-hover:opacity-80 transition-opacity"
+                    priority
+                  />
+                  {(isAdmin || (isHost && isHostPage)) && (
+                    <span className="text-[10px] text-gray-500 dark:text-gray-400 tracking-widest uppercase font-medium mt-0.5">
+                      {isAdmin ? 'ADMIN PORTAL' : 'HOST PORTAL'}
+                    </span>
+                  )}
                 </div>
               </Link>
 
