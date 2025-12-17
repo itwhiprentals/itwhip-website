@@ -14,15 +14,18 @@ import MileageForensicsSection from '@/app/components/sections/MileageForensicsS
 import InsuranceTiersSection from '@/app/components/sections/InsuranceTiersSection'
 import MaxACSection from '@/app/components/sections/MaxACSection'
 import ArizonaEventsSection from '@/app/components/sections/ArizonaEventsSection'
+import { useUserLocation } from '@/app/hooks/useUserLocation'
 import { IoArrowForwardOutline, IoLeafOutline, IoLocationOutline } from 'react-icons/io5'
 
 export default function RentalsPage() {
   const [esgCars, setEsgCars] = useState([])
   const [cityCars, setCityCars] = useState([])
-  const [userCity, setUserCity] = useState('Phoenix')
   const [temp, setTemp] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  // Use geolocation hook for dynamic location
+  const userLocation = useUserLocation()
 
   // Transform API data to CompactCarCard format
   const transformCar = (car: any) => ({
@@ -44,47 +47,53 @@ export default function RentalsPage() {
     } : null
   })
 
+  // Fetch cars based on user location
   useEffect(() => {
-    const init = async () => {
+    const fetchCars = async () => {
+      // Wait for location to load
+      if (userLocation.isLoading) return
+
       try {
-        const city = 'Phoenix'
-        setUserCity(city)
         setTemp(75)
-        
+
+        // Build location query - use city if in a served Arizona city, otherwise use state-wide search
+        const searchLocation = userLocation.isServedCity && userLocation.city
+          ? `${userLocation.city},AZ`
+          : 'Arizona'
+
         const [esgRes, cityRes] = await Promise.all([
-          fetch('/api/rentals/search?location=Phoenix,AZ&sortBy=impactScore&limit=6'),
-          fetch('/api/rentals/search?location=Phoenix,AZ&limit=6')
+          fetch(`/api/rentals/search?location=${encodeURIComponent(searchLocation)}&sortBy=impactScore&limit=6`),
+          fetch(`/api/rentals/search?location=${encodeURIComponent(searchLocation)}&limit=6`)
         ])
-        
+
         if (!esgRes.ok || !cityRes.ok) {
           throw new Error(`API failed: ESG=${esgRes.status}, City=${cityRes.status}`)
         }
-        
+
         const [esgData, cityData] = await Promise.all([esgRes.json(), cityRes.json()])
 
         const esgCarsData = esgData.results?.slice(0, 6) || []
         const cityCarsData = cityData.results?.slice(0, 6) || []
-        
+
         setEsgCars(esgCarsData)
         setCityCars(cityCarsData)
-        
+
       } catch (err) {
         console.error('[Homepage] Initialization error:', err)
-        setUserCity('Phoenix')
         setTemp(75)
       } finally {
         setIsLoading(false)
       }
     }
-    init()
-  }, [])
+    fetchCars()
+  }, [userLocation.isLoading, userLocation.isServedCity, userLocation.city])
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header isMobileMenuOpen={mobileMenuOpen} setIsMobileMenuOpen={setMobileMenuOpen} />
 
       <div className="pt-16">
-        <HeroSection userCity={userCity} temp={temp} />
+        <HeroSection userCity={userLocation.displayLocation} />
         <QuickActionsBar />
         <BrowseByTypeSection />
 
@@ -98,7 +107,7 @@ export default function RentalsPage() {
                   ESG Impact Leaders
                 </span>
                 <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mt-1">
-                  Top ESG-Impact Vehicles in Phoenix
+                  Top ESG-Impact Vehicles in Arizona
                 </h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                   Low emissions rentals with verified maintenance scores
@@ -144,7 +153,7 @@ export default function RentalsPage() {
                   Rent From Local Owners
                 </span>
                 <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mt-1">
-                  P2P Rentals in {userCity}, AZ
+                  P2P Rentals in {userLocation.displayLocationFull}
                 </h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                   Luxury  rental car – rent directly from verified local hosts

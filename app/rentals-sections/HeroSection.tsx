@@ -6,7 +6,7 @@ interface HeroSectionProps {
   userCity?: string
 }
 
-export default function HeroSection({ userCity = 'Phoenix' }: HeroSectionProps) {
+export default function HeroSection({ userCity = 'Arizona' }: HeroSectionProps) {
   return (
     <section className="relative w-full min-h-[45vh] md:min-h-[40vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-black">
       {/* Background Image with Overlay */}
