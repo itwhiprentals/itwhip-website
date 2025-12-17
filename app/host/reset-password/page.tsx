@@ -218,7 +218,7 @@ function HostResetPasswordForm() {
             Back to Host Login
           </Link>
 
-          {/* ✅ CHANGED: rounded-2xl → rounded-lg */}
+          {/* ✅ CHANGED: rounded-lg → rounded-lg */}
           <div className="bg-white rounded-lg shadow-xl border border-gray-200 p-8">
             <div className="text-center mb-8">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">

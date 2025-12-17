@@ -163,7 +163,7 @@ export default function MaintenanceDeepDive({ carId }: MaintenanceDeepDiveProps)
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700">
         <div className="animate-pulse space-y-4">
           <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
           <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
@@ -175,7 +175,7 @@ export default function MaintenanceDeepDive({ carId }: MaintenanceDeepDiveProps)
 
   if (error || !data) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700">
         <div className="text-center py-8">
           <IoAlertCircleOutline className="h-12 w-12 text-red-500 mx-auto mb-3" />
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
@@ -201,7 +201,7 @@ export default function MaintenanceDeepDive({ carId }: MaintenanceDeepDiveProps)
     <div className="space-y-4 md:space-y-6">
       
       {/* Header with Stats */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 md:p-6 border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 md:p-6 border border-gray-200 dark:border-gray-700">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
@@ -274,7 +274,7 @@ export default function MaintenanceDeepDive({ carId }: MaintenanceDeepDiveProps)
 
       {/* Overdue Services Alert */}
       {statistics.overdueServices.length > 0 && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
           <div className="flex items-start gap-3">
             <IoAlertCircleOutline className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
@@ -295,7 +295,7 @@ export default function MaintenanceDeepDive({ carId }: MaintenanceDeepDiveProps)
 
       {/* Upcoming Services */}
       {statistics.upcomingServices.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 md:p-6 border border-gray-200 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 md:p-6 border border-gray-200 dark:border-gray-700">
           <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">
             Upcoming Services
           </h3>
@@ -343,7 +343,7 @@ export default function MaintenanceDeepDive({ carId }: MaintenanceDeepDiveProps)
       )}
 
       {/* Service Type Filter */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700">
         <div className="flex items-center gap-2 mb-3">
           <IoFilterOutline className="w-5 h-5 text-gray-500 dark:text-gray-400" />
           <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter by Service Type</p>
@@ -378,7 +378,7 @@ export default function MaintenanceDeepDive({ carId }: MaintenanceDeepDiveProps)
       {/* Service Records List */}
       <div className="space-y-3">
         {filteredRecords.length === 0 ? (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8 border border-gray-200 dark:border-gray-700 text-center">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-8 border border-gray-200 dark:border-gray-700 text-center">
             <IoDocumentTextOutline className="h-12 w-12 text-gray-400 mx-auto mb-3" />
             <p className="text-gray-600 dark:text-gray-400">
               {selectedType === 'all' 
@@ -394,7 +394,7 @@ export default function MaintenanceDeepDive({ carId }: MaintenanceDeepDiveProps)
             return (
               <div 
                 key={record.id}
-                className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
+                className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
               >
                 {/* Record Header */}
                 <div className="p-4">
@@ -535,7 +535,7 @@ export default function MaintenanceDeepDive({ carId }: MaintenanceDeepDiveProps)
 
       {/* Cost Breakdown */}
       {statistics.averageCostByType.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 md:p-6 border border-gray-200 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 md:p-6 border border-gray-200 dark:border-gray-700">
           <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">
             Average Cost by Service Type
           </h3>

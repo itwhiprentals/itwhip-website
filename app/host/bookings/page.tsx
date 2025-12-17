@@ -363,7 +363,7 @@ export default function HostBookingsPage() {
 
   const renderEducationalContent = () => (
     <div className="space-y-6">
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6">
+      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
         <div className="flex items-start gap-4">
           <IoSchoolOutline className="w-8 h-8 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-1" />
           <div>
@@ -408,7 +408,7 @@ export default function HostBookingsPage() {
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
           <IoCalendarOutline className="w-8 h-8 text-purple-600 dark:text-purple-400 mb-3" />
           <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
             Booking Calendar
@@ -418,7 +418,7 @@ export default function HostBookingsPage() {
           </p>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
           <IoChatbubbleOutline className="w-8 h-8 text-green-600 dark:text-green-400 mb-3" />
           <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
             Guest Messaging
@@ -428,7 +428,7 @@ export default function HostBookingsPage() {
           </p>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
           <IoDocumentTextOutline className="w-8 h-8 text-blue-600 dark:text-blue-400 mb-3" />
           <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
             Trip Documentation
@@ -438,7 +438,7 @@ export default function HostBookingsPage() {
           </p>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
           <IoWalletOutline className="w-8 h-8 text-orange-600 dark:text-orange-400 mb-3" />
           <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
             Payment Tracking
@@ -454,7 +454,7 @@ export default function HostBookingsPage() {
   const renderBookingCard = (booking: Booking) => (
     <div 
       key={booking.id} 
-      className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg hover:border-purple-300 dark:hover:border-purple-700 transition-all"
+      className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg hover:border-purple-300 dark:hover:border-purple-700 transition-all"
     >
       <div className="p-4 sm:p-6">
         {/* Header */}
@@ -735,7 +735,7 @@ export default function HostBookingsPage() {
           ) : (
             <>
               {/* Search and Controls */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
                 <div className="flex flex-col sm:flex-row gap-3">
                   <div className="flex-1 relative">
                     <IoSearchOutline className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -770,7 +770,7 @@ export default function HostBookingsPage() {
               </div>
 
               {/* Tabs */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 mb-6 overflow-hidden">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-6 overflow-hidden">
                 <div className="flex overflow-x-auto">
                   {[
                     { key: 'all', label: 'All', icon: IoCalendarOutline },
@@ -807,7 +807,7 @@ export default function HostBookingsPage() {
 
               {/* Bookings List */}
               {filteredBookings.length === 0 ? (
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
                   <IoCalendarOutline className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                     {searchTerm ? 'No bookings found' : `No ${activeTab === 'all' ? '' : activeTab} bookings`}

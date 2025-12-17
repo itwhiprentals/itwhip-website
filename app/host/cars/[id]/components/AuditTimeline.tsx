@@ -313,7 +313,7 @@ export default function AuditTimeline({ carId }: AuditTimelineProps) {
 
   if (loading && timeline.length === 0) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8 border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-8 border border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           <span className="ml-3 text-gray-600 dark:text-gray-400">Loading timeline...</span>
@@ -324,7 +324,7 @@ export default function AuditTimeline({ carId }: AuditTimelineProps) {
 
   if (error) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8 border border-red-200 dark:border-red-900">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-8 border border-red-200 dark:border-red-900">
         <div className="flex items-center text-red-600 dark:text-red-400">
           <IoAlertCircleOutline className="h-6 w-6 mr-2" />
           <span>{error}</span>
@@ -336,7 +336,7 @@ export default function AuditTimeline({ carId }: AuditTimelineProps) {
   return (
     <div className="space-y-4">
       {/* Filters & Statistics */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700">
         <div className="flex flex-col sm:flex-row gap-4">
           {/* Category Filter */}
           <div className="flex-1">
@@ -425,7 +425,7 @@ export default function AuditTimeline({ carId }: AuditTimelineProps) {
       {/* Timeline */}
       <div className="space-y-6">
         {Object.keys(groupedTimeline).length === 0 ? (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8 border border-gray-200 dark:border-gray-700 text-center">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-8 border border-gray-200 dark:border-gray-700 text-center">
             <IoTimeOutline className="h-12 w-12 text-gray-400 mx-auto mb-3" />
             <p className="text-gray-600 dark:text-gray-400">
               No activity found for the selected filters

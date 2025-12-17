@@ -518,7 +518,7 @@ export default function HostEarningsPage() {
         <Header />
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-16">
           <div className="max-w-3xl mx-auto px-4 py-16">
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-8 text-center">
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-8 text-center">
               <IoBanOutline className="w-16 h-16 text-red-600 dark:text-red-400 mx-auto mb-4" />
               <h2 className="text-2xl font-bold text-red-900 dark:text-red-100 mb-3">
                 Application Rejected
@@ -574,7 +574,7 @@ export default function HostEarningsPage() {
             )}
 
             {hostStatus?.statusMessage && (
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6">
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
                 <div className="flex items-start">
                   <IoInformationCircleOutline className="w-5 h-5 text-blue-600 dark:text-blue-400 mr-2 flex-shrink-0 mt-0.5" />
                   <p className="text-sm text-blue-900 dark:text-blue-100">
@@ -585,7 +585,7 @@ export default function HostEarningsPage() {
             )}
 
             {hostStatus?.verificationProgress !== undefined && (
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     Verification Progress
@@ -613,7 +613,7 @@ export default function HostEarningsPage() {
             </div>
 
             {/* ✅ NEW: 3-Tier Calculator */}
-            <div className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-xl shadow-sm border border-purple-200 dark:border-purple-800 p-6 mb-6">
+            <div className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg shadow-sm border border-purple-200 dark:border-purple-800 p-6 mb-6">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-3 bg-purple-100 dark:bg-purple-900/40 rounded-lg">
                   <IoCalculatorOutline className="w-6 h-6 text-purple-600 dark:text-purple-400" />
@@ -636,7 +636,7 @@ export default function HostEarningsPage() {
                 <div className="grid md:grid-cols-3 gap-3">
                   <button
                     onClick={() => setCalculatorTier('BASIC')}
-                    className={`p-4 rounded-xl text-left border-2 transition-all ${
+                    className={`p-4 rounded-lg text-left border-2 transition-all ${
                       calculatorTier === 'BASIC'
                         ? 'border-gray-500 bg-gray-50 dark:bg-gray-900/40'
                         : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
@@ -658,7 +658,7 @@ export default function HostEarningsPage() {
 
                   <button
                     onClick={() => setCalculatorTier('STANDARD')}
-                    className={`p-4 rounded-xl text-left border-2 transition-all ${
+                    className={`p-4 rounded-lg text-left border-2 transition-all ${
                       calculatorTier === 'STANDARD'
                         ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
                         : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
@@ -680,7 +680,7 @@ export default function HostEarningsPage() {
 
                   <button
                     onClick={() => setCalculatorTier('PREMIUM')}
-                    className={`p-4 rounded-xl text-left border-2 transition-all ${
+                    className={`p-4 rounded-lg text-left border-2 transition-all ${
                       calculatorTier === 'PREMIUM'
                         ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
                         : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
@@ -835,7 +835,7 @@ export default function HostEarningsPage() {
         <Header />
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-16">
           <div className="p-4 sm:p-6 max-w-7xl mx-auto">
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6 mb-6">
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 mb-6">
               <div className="flex items-start">
                 <IoAlertCircleOutline className="w-6 h-6 text-red-600 dark:text-red-400 mr-3 flex-shrink-0 mt-0.5" />
                 <div>
@@ -862,7 +862,7 @@ export default function HostEarningsPage() {
             </div>
 
             <div className="grid md:grid-cols-3 gap-4 mb-6">
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 opacity-75">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 opacity-75">
                 <div className="flex items-center justify-between mb-4">
                   <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
                     <IoWalletOutline className="w-6 h-6 text-gray-600 dark:text-gray-400" />
@@ -875,7 +875,7 @@ export default function HostEarningsPage() {
                 </p>
               </div>
 
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="p-2 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg">
                     <IoTimeOutline className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
@@ -887,7 +887,7 @@ export default function HostEarningsPage() {
                 </p>
               </div>
 
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
                     <IoBarChartOutline className="w-6 h-6 text-purple-600 dark:text-purple-400" />
@@ -901,7 +901,7 @@ export default function HostEarningsPage() {
             </div>
 
             <div className="grid lg:grid-cols-2 gap-6">
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                   Past Earnings
                 </h3>
@@ -926,7 +926,7 @@ export default function HostEarningsPage() {
                 )}
               </div>
 
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                   Recent Transactions
                 </h3>
@@ -1036,7 +1036,7 @@ export default function HostEarningsPage() {
           )}
 
           <div className="grid md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
                   <IoWalletOutline className="w-6 h-6 text-green-600 dark:text-green-400" />
@@ -1054,7 +1054,7 @@ export default function HostEarningsPage() {
               </p>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="p-2 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg">
                   <IoTimeOutline className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
@@ -1073,7 +1073,7 @@ export default function HostEarningsPage() {
               </p>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
                   <IoTrendingUpOutline className="w-6 h-6 text-purple-600 dark:text-purple-400" />
@@ -1087,7 +1087,7 @@ export default function HostEarningsPage() {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0">
                 {(['week', 'month', 'quarter', 'year', 'all'] as TimeRange[]).map((range) => (
@@ -1115,7 +1115,7 @@ export default function HostEarningsPage() {
           </div>
 
           <div className="grid lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 <IoStatsChartOutline className="w-5 h-5 text-purple-600" />
                 Monthly Earnings
@@ -1191,7 +1191,7 @@ export default function HostEarningsPage() {
               )}
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 Recent Transactions
               </h3>
@@ -1251,7 +1251,7 @@ export default function HostEarningsPage() {
 
           <div className="mt-6 grid md:grid-cols-2 gap-4">
             {earnings?.lastPayout && (
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
                 <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                   Last Payout
                 </h3>
@@ -1270,7 +1270,7 @@ export default function HostEarningsPage() {
             )}
             
             {earnings?.upcomingPayout && (
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
                 <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                   Next Payout
                 </h3>
@@ -1293,7 +1293,7 @@ export default function HostEarningsPage() {
 
       {showPayoutModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
                 Request Payout
@@ -1370,7 +1370,7 @@ export default function HostEarningsPage() {
 
               {payoutMethods.length > 0 && parseFloat(payoutAmount) > 0 && (
                 <div className="grid md:grid-cols-2 gap-4">
-                  <div className={`border-2 rounded-xl p-4 transition-all ${
+                  <div className={`border-2 rounded-lg p-4 transition-all ${
                     !isInstantPayout() 
                       ? 'border-green-500 bg-green-50 dark:bg-green-900/20' 
                       : 'border-gray-200 dark:border-gray-700'
@@ -1396,7 +1396,7 @@ export default function HostEarningsPage() {
                     </div>
                   </div>
 
-                  <div className={`border-2 rounded-xl p-4 transition-all ${
+                  <div className={`border-2 rounded-lg p-4 transition-all ${
                     isInstantPayout() 
                       ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20' 
                       : 'border-gray-200 dark:border-gray-700'
@@ -1468,7 +1468,7 @@ export default function HostEarningsPage() {
 
       {showConfirmationModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[60]">
-          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
               <IoFlashOutline className="w-6 h-6 text-purple-600" />
               Confirm Instant Payout

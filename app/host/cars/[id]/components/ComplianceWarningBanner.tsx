@@ -66,7 +66,7 @@ export default function ComplianceWarningBanner({
 
   return (
     <>
-      <div className={`${bgClass} border ${borderClass} rounded-xl p-4 md:p-5 mb-4 md:mb-6`}>
+      <div className={`${bgClass} border ${borderClass} rounded-lg p-4 md:p-5 mb-4 md:mb-6`}>
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-4">
           <div className="flex items-start gap-3 flex-1">
             <StatusIcon className={`w-5 h-5 md:w-6 md:h-6 ${textClass} flex-shrink-0 mt-0.5`} />

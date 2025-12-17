@@ -309,7 +309,7 @@ export default function EmbeddedBanking({ hostId }: { hostId: string }) {
     return (
       <div className="min-h-[400px] flex items-center justify-center p-4">
         <div className="max-w-md w-full">
-          <div className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 border border-red-200 dark:border-red-800 rounded-2xl p-8 shadow-lg">
+          <div className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 border border-red-200 dark:border-red-800 rounded-lg p-8 shadow-lg">
             <div className="flex flex-col items-center text-center">
               <div className="w-16 h-16 bg-red-100 dark:bg-red-900/40 rounded-full flex items-center justify-center mb-4">
                 <IoAlertCircleOutline className="w-8 h-8 text-red-600 dark:text-red-400" />
@@ -341,7 +341,7 @@ export default function EmbeddedBanking({ hostId }: { hostId: string }) {
           <div className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-800 dark:to-gray-900 rounded-3xl border border-purple-200 dark:border-gray-700 p-8 md:p-12 shadow-xl">
             
             <div className="text-center mb-10">
-              <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl mb-6 shadow-lg">
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg mb-6 shadow-lg">
                 <IoWalletOutline className="w-10 h-10 text-white" />
               </div>
               
@@ -424,7 +424,7 @@ export default function EmbeddedBanking({ hostId }: { hostId: string }) {
     return (
       <div className="min-h-[400px] flex items-center justify-center p-4">
         <div className="max-w-2xl w-full">
-          <div className="bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border border-yellow-200 dark:border-yellow-800 rounded-2xl p-8 shadow-lg">
+          <div className="bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-8 shadow-lg">
             <div className="flex flex-col md:flex-row items-center gap-6">
               <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-900/40 rounded-full flex items-center justify-center flex-shrink-0">
                 <IoAlertCircleOutline className="w-8 h-8 text-yellow-600 dark:text-yellow-400" />

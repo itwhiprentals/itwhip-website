@@ -123,7 +123,7 @@ export default function HostLoginPage() {
       {/* Login Form */}
       <div className="flex items-center justify-center px-4 py-16">
         <div className="w-full max-w-md">
-          {/* ✅ CHANGED: rounded-xl → rounded-lg */}
+          {/* ✅ CHANGED: rounded-lg → rounded-lg */}
           <div className="bg-white rounded-lg shadow-lg p-8">
             <div className="text-center mb-8">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">

@@ -133,8 +133,8 @@ function ProfileLoadingSkeleton() {
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
           <div className="animate-pulse space-y-6">
             {/* Back button skeleton */}
             <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-32"></div>
@@ -398,7 +398,7 @@ function HostProfileContent() {
     return (
       <>
         <Header />
-        <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900 pt-16">
+        <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900 pt-20">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
             <p className="text-gray-600 dark:text-gray-400">Loading profile...</p>
@@ -414,7 +414,7 @@ function HostProfileContent() {
     return (
       <>
         <Header />
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-16">
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-20">
           <div className="max-w-3xl mx-auto px-4 py-16">
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-8 text-center">
               <IoBanOutline className="w-16 h-16 text-red-600 dark:text-red-400 mx-auto mb-4" />
@@ -443,8 +443,8 @@ function HostProfileContent() {
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
           {/* Pending Banner */}
           {!isApproved && (
             <PendingBanner 

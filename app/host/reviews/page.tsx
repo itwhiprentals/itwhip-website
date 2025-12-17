@@ -237,7 +237,7 @@ export default function HostReviewsPage() {
 
         {/* Stats Overview */}
         {stats && stats.totalReviews > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Left: Average Rating */}
               <div>
@@ -291,7 +291,7 @@ export default function HostReviewsPage() {
         )}
 
         {/* Filters */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex items-center gap-2">
               <IoFilterOutline className="w-5 h-5 text-gray-400" />
@@ -336,7 +336,7 @@ export default function HostReviewsPage() {
 
         {/* Reviews List */}
         {reviews.length === 0 ? (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
             <IoStarOutline className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
               No reviews yet
@@ -350,7 +350,7 @@ export default function HostReviewsPage() {
             {reviews.map((review) => (
               <div
                 key={review.id}
-                className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6"
+                className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6"
               >
                 {/* Review Header */}
                 <div className="flex items-start justify-between mb-4">
@@ -474,7 +474,7 @@ export default function HostReviewsPage() {
       {/* Response Modal */}
       {showResponseModal && selectedReview && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-2xl w-full p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                 Respond to Review

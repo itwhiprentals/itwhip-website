@@ -231,7 +231,7 @@ export default function ClaimsFNOLVault({ carId }: ClaimsFNOLVaultProps) {
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 md:p-6 border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 md:p-6 border border-gray-200 dark:border-gray-700">
         <div className="animate-pulse space-y-3">
           <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
           <div className="h-24 bg-gray-200 dark:bg-gray-700 rounded"></div>
@@ -243,7 +243,7 @@ export default function ClaimsFNOLVault({ carId }: ClaimsFNOLVaultProps) {
   return (
     <div className="space-y-3 md:space-y-4">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 md:p-6 border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 md:p-6 border border-gray-200 dark:border-gray-700">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3 md:mb-4">
           <div className="flex items-center gap-2 md:gap-3">
             <div className="p-1.5 md:p-2 bg-red-100 dark:bg-red-900/20 rounded-lg">
@@ -304,7 +304,7 @@ export default function ClaimsFNOLVault({ carId }: ClaimsFNOLVaultProps) {
 
       {/* Claims List */}
       {claims.length === 0 ? (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8 md:p-12 border border-gray-200 dark:border-gray-700 text-center">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-8 md:p-12 border border-gray-200 dark:border-gray-700 text-center">
           <IoCheckmarkCircleOutline className="h-12 w-12 md:h-16 md:w-16 text-green-500 mx-auto mb-3 md:mb-4" />
           <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white mb-1.5 md:mb-2">No Claims on Record</h3>
           <p className="text-sm text-gray-600 dark:text-gray-400">This vehicle has a clean claims history</p>
@@ -314,7 +314,7 @@ export default function ClaimsFNOLVault({ carId }: ClaimsFNOLVaultProps) {
           {claims.map((claim) => (
             <div
               key={claim.id}
-              className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow cursor-pointer"
+              className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow cursor-pointer"
               onClick={() => {
                 setSelectedClaim(claim)
                 setSelectedPhotoIndex(0)
@@ -447,7 +447,7 @@ export default function ClaimsFNOLVault({ carId }: ClaimsFNOLVaultProps) {
       {/* Claim Detail Modal */}
       {selectedClaim && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-6xl w-full my-8 max-h-[90vh] overflow-hidden flex flex-col">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-6xl w-full my-8 max-h-[90vh] overflow-hidden flex flex-col">
             
             {/* Modal Header */}
             <div className="p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800 z-10">
@@ -496,7 +496,7 @@ export default function ClaimsFNOLVault({ carId }: ClaimsFNOLVaultProps) {
 
                 {/* Damage Photos Gallery */}
                 {selectedClaim.damagePhotos.length > 0 && (
-                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
                     <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                       <IoImagesOutline className="h-5 w-5" />
                       Damage Documentation ({selectedClaim.damagePhotos.length} photos)
@@ -544,7 +544,7 @@ export default function ClaimsFNOLVault({ carId }: ClaimsFNOLVaultProps) {
                 )}
 
                 {/* Incident Details */}
-                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
                   <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                     <IoAlertCircleOutline className="h-5 w-5" />
                     Incident Details
@@ -612,7 +612,7 @@ export default function ClaimsFNOLVault({ carId }: ClaimsFNOLVaultProps) {
 
                 {/* Location Details */}
                 {selectedClaim.incidentCity && (
-                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
                     <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                       <IoLocationOutline className="h-5 w-5" />
                       Incident Location
@@ -643,7 +643,7 @@ export default function ClaimsFNOLVault({ carId }: ClaimsFNOLVaultProps) {
 
                 {/* Conditions */}
                 {(selectedClaim.weatherConditions || selectedClaim.roadConditions) && (
-                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
                     <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                       <IoCloudyOutline className="h-5 w-5" />
                       Weather & Road Conditions
@@ -692,7 +692,7 @@ export default function ClaimsFNOLVault({ carId }: ClaimsFNOLVaultProps) {
 
                 {/* Police Report */}
                 {selectedClaim.wasPoliceContacted && (
-                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
                     <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                       <IoShieldCheckmarkOutline className="h-5 w-5" />
                       Police Report
@@ -741,7 +741,7 @@ export default function ClaimsFNOLVault({ carId }: ClaimsFNOLVaultProps) {
 
                 {/* Other Party */}
                 {selectedClaim.otherPartyInvolved && selectedClaim.otherParty && (
-                  <div className="bg-orange-50 dark:bg-orange-900/20 rounded-xl p-4 border border-orange-200 dark:border-orange-800">
+                  <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4 border border-orange-200 dark:border-orange-800">
                     <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                       <IoPersonOutline className="h-5 w-5" />
                       Other Party Involved
@@ -827,7 +827,7 @@ export default function ClaimsFNOLVault({ carId }: ClaimsFNOLVaultProps) {
 
                 {/* Injuries */}
                 {selectedClaim.wereInjuries && selectedClaim.injuries && Array.isArray(selectedClaim.injuries) && selectedClaim.injuries.length > 0 && (
-                  <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-4 border border-red-200 dark:border-red-800">
+                  <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 border border-red-200 dark:border-red-800">
                     <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                       <IoMedicalOutline className="h-5 w-5" />
                       Injuries Reported
@@ -876,7 +876,7 @@ export default function ClaimsFNOLVault({ carId }: ClaimsFNOLVaultProps) {
 
                 {/* Witnesses */}
                 {selectedClaim.witnesses && Array.isArray(selectedClaim.witnesses) && selectedClaim.witnesses.length > 0 && (
-                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
                     <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                       <IoEyeOutline className="h-5 w-5" />
                       Witnesses
@@ -910,7 +910,7 @@ export default function ClaimsFNOLVault({ carId }: ClaimsFNOLVaultProps) {
                 )}
 
                 {/* Vehicle Status */}
-                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
                   <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                     <IoCarOutline className="h-5 w-5" />
                     Vehicle Status
@@ -953,7 +953,7 @@ export default function ClaimsFNOLVault({ carId }: ClaimsFNOLVaultProps) {
 
                 {/* Review Notes */}
                 {selectedClaim.reviewNotes && (
-                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
+                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
                     <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
                       <IoDocumentTextOutline className="h-5 w-5" />
                       Fleet Review Notes

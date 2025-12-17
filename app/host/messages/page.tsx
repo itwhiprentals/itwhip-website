@@ -596,7 +596,7 @@ export default function HostMessagesPage() {
                           <div className={`text-xs text-gray-500 dark:text-gray-400 mb-1 ${isYou ? 'text-right' : 'text-left'}`}>
                             {isYou ? 'You' : message.senderName} • {format(new Date(message.createdAt), 'MMM d, h:mm a')}
                           </div>
-                          <div className={`rounded-2xl px-4 py-3 ${
+                          <div className={`rounded-lg px-4 py-3 ${
                             isYou
                               ? 'bg-purple-600 text-white rounded-br-none'
                               : `${badge.bg} ${badge.text} rounded-bl-none`

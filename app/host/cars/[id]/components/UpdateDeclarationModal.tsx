@@ -135,7 +135,7 @@ export default function UpdateDeclarationModal({
         {/* Lock Screen Modal - MOBILE OPTIMIZED */}
         <div className="fixed inset-0 z-[70] pointer-events-none flex items-end md:items-center md:justify-center">
           <div className="pointer-events-auto w-full md:max-w-lg">
-            <div className="bg-white dark:bg-gray-800 w-full rounded-t-2xl md:rounded-2xl shadow-2xl min-h-[65vh] max-h-[90vh] overflow-hidden flex flex-col animate-slide-up md:animate-scale-in">
+            <div className="bg-white dark:bg-gray-800 w-full rounded-t-2xl md:rounded-lg shadow-2xl min-h-[65vh] max-h-[90vh] overflow-hidden flex flex-col animate-slide-up md:animate-scale-in">
               
               {/* Mobile Handle */}
               <div className="flex justify-center pt-2 pb-1 md:hidden flex-shrink-0">
@@ -293,7 +293,7 @@ export default function UpdateDeclarationModal({
       {/* Modal Container */}
       <div className="fixed inset-0 z-[70] pointer-events-none flex items-end md:items-center md:justify-center">
         <div className="pointer-events-auto w-full md:max-w-2xl">
-          <div className="bg-white dark:bg-gray-800 w-full rounded-t-2xl md:rounded-2xl shadow-2xl min-h-[65vh] md:h-auto md:max-h-[90vh] overflow-hidden flex flex-col animate-slide-up md:animate-scale-in">
+          <div className="bg-white dark:bg-gray-800 w-full rounded-t-2xl md:rounded-lg shadow-2xl min-h-[65vh] md:h-auto md:max-h-[90vh] overflow-hidden flex flex-col animate-slide-up md:animate-scale-in">
             
             {/* Mobile Handle */}
             <div className="flex justify-center pt-2 pb-1 md:hidden flex-shrink-0">

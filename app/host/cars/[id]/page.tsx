@@ -325,7 +325,7 @@ export default function VehicleIntelligencePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
           
           {/* 1. Vehicle Identity & Trust Bar */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 md:p-6 mb-4 md:mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 md:p-6 mb-4 md:mb-6">
             {/* Mobile Layout */}
             <div className="block lg:hidden">
               <div className="flex items-start justify-between gap-3 mb-3">
@@ -499,7 +499,7 @@ export default function VehicleIntelligencePage() {
                   />
                   
                   {/* Maintenance Compliance Card */}
-                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 md:p-6">
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 md:p-6">
                     <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                       <IoConstructOutline className="w-5 h-5" />
                       Maintenance Compliance
@@ -558,7 +558,7 @@ export default function VehicleIntelligencePage() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
                   
                   {/* Claims & Risk Readiness */}
-                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 md:p-6">
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 md:p-6">
                     <h3 className="text-sm md:text-base font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                       <IoShieldCheckmarkOutline className="w-4 h-4 md:w-5 md:h-5" />
                       Claims & Risk Readiness
@@ -619,7 +619,7 @@ export default function VehicleIntelligencePage() {
                   </div>
                   
                   {/* Evidence Locker Preview */}
-                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 md:p-6">
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 md:p-6">
                     <h3 className="text-sm md:text-base font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                       <IoDocumentsOutline className="w-4 h-4 md:w-5 md:h-5" />
                       Evidence Locker

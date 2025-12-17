@@ -70,7 +70,7 @@ export default function PerformanceMetrics({ carId }: PerformanceMetricsProps) {
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700">
         <div className="animate-pulse space-y-4">
           <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -85,7 +85,7 @@ export default function PerformanceMetrics({ carId }: PerformanceMetricsProps) {
 
   if (error || !data) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700">
         <div className="text-center py-8">
           <IoAlertCircleOutline className="h-12 w-12 text-red-500 mx-auto mb-3" />
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
@@ -111,7 +111,7 @@ export default function PerformanceMetrics({ carId }: PerformanceMetricsProps) {
     <div className="space-y-4 md:space-y-6">
       
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 md:p-6 border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 md:p-6 border border-gray-200 dark:border-gray-700">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
@@ -140,7 +140,7 @@ export default function PerformanceMetrics({ carId }: PerformanceMetricsProps) {
       {/* Key Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Revenue */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-2">
             <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
               <IoCashOutline className="w-6 h-6 text-green-600 dark:text-green-400" />
@@ -170,7 +170,7 @@ export default function PerformanceMetrics({ carId }: PerformanceMetricsProps) {
         </div>
 
         {/* Utilization Rate */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-2">
             <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
               <IoCalendarOutline className="w-6 h-6 text-blue-600 dark:text-blue-400" />
@@ -186,7 +186,7 @@ export default function PerformanceMetrics({ carId }: PerformanceMetricsProps) {
         </div>
 
         {/* Average Rating */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-2">
             <div className="p-2 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg">
               <IoStarOutline className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
@@ -202,7 +202,7 @@ export default function PerformanceMetrics({ carId }: PerformanceMetricsProps) {
         </div>
 
         {/* Average Trip Length */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-2">
             <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
               <IoSpeedometerOutline className="w-6 h-6 text-purple-600 dark:text-purple-400" />
@@ -220,7 +220,7 @@ export default function PerformanceMetrics({ carId }: PerformanceMetricsProps) {
 
       {/* Fleet Comparison */}
       {fleetComparison.fleetAvgRevenue > 0 && (
-        <div className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-xl shadow-sm p-6 border border-purple-200 dark:border-purple-800">
+        <div className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg shadow-sm p-6 border border-purple-200 dark:border-purple-800">
           <div className="flex items-center gap-3 mb-4">
             <div className="p-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
               <IoCarSportOutline className="w-6 h-6 text-purple-600 dark:text-purple-400" />
@@ -297,7 +297,7 @@ export default function PerformanceMetrics({ carId }: PerformanceMetricsProps) {
       )}
 
       {/* Guest Satisfaction Breakdown */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700">
         <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">
           Guest Satisfaction
         </h3>
@@ -324,7 +324,7 @@ export default function PerformanceMetrics({ carId }: PerformanceMetricsProps) {
       </div>
 
       {/* ESG Score */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700">
         <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">
           ESG Performance Score
         </h3>
@@ -403,7 +403,7 @@ export default function PerformanceMetrics({ carId }: PerformanceMetricsProps) {
       </div>
 
       {/* Monthly Revenue Chart */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700">
         <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">
           Revenue Trend (Last 12 Months)
         </h3>

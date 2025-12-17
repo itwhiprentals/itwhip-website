@@ -88,7 +88,7 @@ export default function HostForgotPasswordPage() {
             Back to Host Login
           </Link>
 
-          {/* ✅ CHANGED: rounded-2xl → rounded-lg */}
+          {/* ✅ CHANGED: rounded-lg → rounded-lg */}
           <div className="bg-white rounded-lg shadow-xl border border-gray-200 p-8">
             {/* Header */}
             <div className="text-center mb-8">
