@@ -852,6 +852,19 @@ export default function HostDashboardPage() {
                 </Link>
               </div>
             )}
+
+            {/* Insurance Disclaimer */}
+            <div className="mt-8 p-4 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg">
+              <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-2">
+                Important Information
+              </h4>
+              <p className="text-xs text-gray-500 dark:text-gray-500 leading-relaxed">
+                Protection provided through licensed third-party insurance carriers. Coverage amounts and availability subject to vehicle eligibility, location, and underwriter approval. ItWhip facilitates coverage but is not an insurance company. Protection applies only during active rental periods booked through our platform. Physical damage reimbursement is contractual allocation of risk, not insurance. Deductibles and coverage limits are subject to change.{' '}
+                <Link href="/insurance-guide" className="text-purple-600 dark:text-purple-400 hover:underline font-medium">
+                  Read full insurance guide →
+                </Link>
+              </p>
+            </div>
           </div>
         </main>
       </div>

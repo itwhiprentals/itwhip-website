@@ -161,7 +161,7 @@ export default function InsuranceDetailsForm({
             {/* Modal Content */}
             <div 
               className="relative w-full md:max-w-2xl bg-white dark:bg-gray-900 
-                         md:rounded-xl rounded-t-3xl md:rounded-b-xl
+                         md:rounded-lg rounded-t-3xl md:rounded-b-xl
                          shadow-xl
                          md:my-8 mt-auto
                          max-h-[90vh] md:max-h-[85vh]
@@ -172,7 +172,7 @@ export default function InsuranceDetailsForm({
               {/* Success State */}
               {success ? (
                 <div className="p-6">
-                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-6">
+                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-6">
                     <div className="flex items-center gap-3 mb-3">
                       <IoCheckmarkCircleOutline className="w-8 h-8 text-green-600 dark:text-green-400" />
                       <h3 className="text-lg font-semibold text-green-900 dark:text-green-100">
@@ -446,7 +446,7 @@ export default function InsuranceDetailsForm({
       {/* Skip Modal remains the same */}
       {showSkipModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-xl max-w-md w-full p-6 shadow-2xl">
+          <div className="bg-white dark:bg-gray-900 rounded-lg max-w-md w-full p-6 shadow-2xl">
             <div className="flex items-start gap-4 mb-6">
               <div className="flex-shrink-0 w-12 h-12 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
                 <IoWarningOutline className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />

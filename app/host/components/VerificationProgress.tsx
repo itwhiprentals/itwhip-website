@@ -452,7 +452,7 @@ export default function VerificationProgress({
 
   if (loading || !carsFetched || !profileFetched) {
     return (
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
+      <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">
         <div className="animate-pulse space-y-4">
           <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
           <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded"></div>
@@ -511,32 +511,33 @@ export default function VerificationProgress({
               {/* Step Card - Fully Clickable */}
               <button
                 onClick={() => handleStepClick(step)}
-                className={`group relative rounded-lg p-4 border-2 transition-all w-full text-left cursor-pointer
+                className={`group relative rounded-lg p-4 border shadow-md hover:shadow-lg transition-all w-full text-left cursor-pointer
                   hover:border-purple-400 dark:hover:border-purple-600
-                  hover:bg-opacity-80 dark:hover:bg-opacity-80
                   ${
                     step.status === 'FAILED'
-                      ? 'border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-900/10'
+                      ? 'border-red-300 bg-red-50 dark:bg-red-900 dark:border-red-700'
                       : step.status === 'COMPLETED'
-                      ? 'border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-900/10'
+                      ? 'border-green-300 bg-green-50 dark:bg-green-900 dark:border-green-700'
                       : step.status === 'IN_PROGRESS' || step.status === 'PENDING_REVIEW'
-                      ? 'border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-900/10'
-                      : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800'
+                      ? 'border-blue-300 bg-blue-50 dark:bg-blue-900 dark:border-blue-700'
+                      : 'border-gray-200 bg-gray-50 dark:bg-gray-800 dark:border-gray-600'
                   }`}
               >
                 <div className="flex items-start gap-4">
-                  {/* Status Icon */}
-                  <div className="flex-shrink-0 relative z-10 bg-white dark:bg-gray-800 rounded-full p-1">
+                  {/* Status Icon / Step Number */}
+                  <div className="flex-shrink-0 relative z-10">
                     {step.status === 'COMPLETED' ? (
                       <IoCheckmarkCircle className="w-6 h-6 text-green-500" />
                     ) : step.status === 'FAILED' ? (
                       <IoCloseCircle className="w-6 h-6 text-red-500" />
                     ) : step.status === 'IN_PROGRESS' || step.status === 'PENDING_REVIEW' ? (
-                      <div className="relative">
-                        <div className="w-6 h-6 border-3 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                      <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-sm font-semibold text-white">
+                        {index + 1}
                       </div>
                     ) : (
-                      <div className="w-6 h-6 bg-gray-300 dark:bg-gray-600 rounded-full" />
+                      <div className="w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center text-sm font-semibold text-white">
+                        {index + 1}
+                      </div>
                     )}
                   </div>
 

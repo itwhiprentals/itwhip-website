@@ -54,14 +54,14 @@ export default function PendingBanner({
   const getPendingConfig = () => {
     const configs: Record<string, any> = {
       dashboard: {
-        icon: IoInformationCircleOutline,
+        icon: IoTimeOutline,
         iconColor: 'text-blue-600 dark:text-blue-400',
         bgColor: 'bg-blue-50 dark:bg-blue-900/20',
         borderColor: 'border-blue-200 dark:border-blue-800',
-        title: 'Account Under Review',
-        message: 'Your host application is being reviewed by our team. You\'ll receive an email once approved.',
+        title: 'Account Pending',
+        message: 'Your application is under review. We\'ll email you once approved (typically 2-3 business days).',
         action: null,
-        showProgress: true
+        showProgress: false
       },
       cars: {
         icon: IoLockClosedOutline,
@@ -100,14 +100,14 @@ export default function PendingBanner({
         showProgress: true
       },
       profile: {
-        icon: IoInformationCircleOutline,
+        icon: IoTimeOutline,
         iconColor: 'text-blue-600 dark:text-blue-400',
         bgColor: 'bg-blue-50 dark:bg-blue-900/20',
         borderColor: 'border-blue-200 dark:border-blue-800',
-        title: 'Profile Under Review',
-        message: 'Your profile and documents are being verified. Some fields are temporarily locked.',
+        title: 'Account Pending',
+        message: 'Some fields are locked until your account is approved.',
         action: null,
-        showProgress: true
+        showProgress: false
       }
     }
 
@@ -348,7 +348,7 @@ export default function PendingBanner({
   const Icon = config.icon
 
   return (
-    <div className={`relative ${config.bgColor} border ${config.borderColor} rounded-xl p-4 mb-6 ${
+    <div className={`relative ${config.bgColor} border ${config.borderColor} rounded-lg p-4 mb-6 ${
       config.urgent ? 'shadow-lg' : ''
     }`}>
       <div className="flex items-start gap-4">

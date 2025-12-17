@@ -270,7 +270,7 @@ export default function DocumentUploadSection({
         {documents.map((document) => (
           <div
             key={document.id}
-            className={`bg-white dark:bg-gray-900 rounded-xl border-2 transition-all ${
+            className={`bg-white dark:bg-gray-900 rounded-lg border-2 transition-all ${
               document.status === 'REJECTED'
                 ? 'border-red-300 dark:border-red-800'
                 : document.status === 'APPROVED'
@@ -418,7 +418,7 @@ export default function DocumentUploadSection({
           onClick={() => setPreviewDocument(null)}
         >
           <div 
-            className="relative max-w-4xl w-full max-h-[90vh] bg-white dark:bg-gray-900 rounded-xl overflow-hidden"
+            className="relative max-w-4xl w-full max-h-[90vh] bg-white dark:bg-gray-900 rounded-lg overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close Button */}
@@ -466,7 +466,7 @@ export default function DocumentUploadSection({
       )}
 
       {/* Tips Section */}
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
         <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
           <IoImageOutline className="w-5 h-5" />
           Document Upload Tips

@@ -322,7 +322,7 @@ export default function EmbeddedBanking({ hostId }: { hostId: string }) {
               </p>
               <button
                 onClick={() => window.location.reload()}
-                className="flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-all transform hover:scale-105 shadow-md"
+                className="flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-all transform hover:scale-105 shadow-md"
               >
                 <IoRefreshOutline className="w-5 h-5" />
                 Retry Connection
@@ -355,7 +355,7 @@ export default function EmbeddedBanking({ hostId }: { hostId: string }) {
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                 <IoCheckmarkCircleOutline className="w-8 h-8 text-green-600 dark:text-green-400 mb-2 mx-auto" />
                 <h4 className="font-semibold text-gray-900 dark:text-white mb-1 text-sm text-center">Bank Account</h4>
                 <p className="text-xs text-gray-600 dark:text-gray-400 text-center">
@@ -363,7 +363,7 @@ export default function EmbeddedBanking({ hostId }: { hostId: string }) {
                 </p>
               </div>
 
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                 <IoCheckmarkCircleOutline className="w-8 h-8 text-green-600 dark:text-green-400 mb-2 mx-auto" />
                 <h4 className="font-semibold text-gray-900 dark:text-white mb-1 text-sm text-center">Tax Info</h4>
                 <p className="text-xs text-gray-600 dark:text-gray-400 text-center">
@@ -371,7 +371,7 @@ export default function EmbeddedBanking({ hostId }: { hostId: string }) {
                 </p>
               </div>
 
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                 <IoCheckmarkCircleOutline className="w-8 h-8 text-green-600 dark:text-green-400 mb-2 mx-auto" />
                 <h4 className="font-semibold text-gray-900 dark:text-white mb-1 text-sm text-center">ID Verify</h4>
                 <p className="text-xs text-gray-600 dark:text-gray-400 text-center">
@@ -379,7 +379,7 @@ export default function EmbeddedBanking({ hostId }: { hostId: string }) {
                 </p>
               </div>
 
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                 <IoTimeOutline className="w-8 h-8 text-purple-600 dark:text-purple-400 mb-2 mx-auto" />
                 <h4 className="font-semibold text-gray-900 dark:text-white mb-1 text-sm text-center">Quick</h4>
                 <p className="text-xs text-gray-600 dark:text-gray-400 text-center">
@@ -405,7 +405,7 @@ export default function EmbeddedBanking({ hostId }: { hostId: string }) {
 
             <button
               onClick={handleConnectAccount}
-              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold py-5 px-8 rounded-xl transition-all transform hover:scale-105 shadow-xl flex items-center justify-center gap-3 text-lg"
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold py-5 px-8 rounded-lg transition-all transform hover:scale-105 shadow-xl flex items-center justify-center gap-3 text-lg"
             >
               <IoWalletOutline className="w-6 h-6" />
               Connect with Stripe
@@ -438,7 +438,7 @@ export default function EmbeddedBanking({ hostId }: { hostId: string }) {
                 </p>
                 <button
                   onClick={handleConnectAccount}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-yellow-600 hover:bg-yellow-700 text-white font-semibold rounded-xl transition-all transform hover:scale-105 shadow-md"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-yellow-600 hover:bg-yellow-700 text-white font-semibold rounded-lg transition-all transform hover:scale-105 shadow-md"
                 >
                   Complete Setup Now
                   <IoCheckmarkCircleOutline className="w-5 h-5" />
@@ -456,7 +456,7 @@ export default function EmbeddedBanking({ hostId }: { hostId: string }) {
       
       {/* Success Banner */}
       {accountStatus?.payoutsEnabled && (
-        <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4 md:p-5 shadow-sm">
+        <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 md:p-5 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center flex-shrink-0">
               <IoCheckmarkCircleOutline className="w-6 h-6 text-green-600 dark:text-green-400" />
@@ -480,7 +480,7 @@ export default function EmbeddedBanking({ hostId }: { hostId: string }) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             
             {/* Available Balance */}
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-xl p-6">
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-lg p-6">
               <div className="flex items-start justify-between mb-2">
                 <p className="text-sm font-medium text-green-700 dark:text-green-300">Available Balance</p>
                 <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
@@ -494,7 +494,7 @@ export default function EmbeddedBanking({ hostId }: { hostId: string }) {
             </div>
             
             {/* Pending Balance */}
-            <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-6">
+            <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-6">
               <div className="flex items-start justify-between mb-2">
                 <p className="text-sm font-medium text-amber-700 dark:text-amber-300">Pending (3-day hold)</p>
                 <IoTimeOutline className="w-5 h-5 text-amber-600 dark:text-amber-400" />
@@ -515,7 +515,7 @@ export default function EmbeddedBanking({ hostId }: { hostId: string }) {
             
             {/* Hold Balance (if any) OR YTD Earnings */}
             {earnings.holdBalance > 0 ? (
-              <div className="bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6">
+              <div className="bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
                 <div className="flex items-start justify-between mb-2">
                   <p className="text-sm font-medium text-red-700 dark:text-red-300">On Hold</p>
                   <IoAlertCircleOutline className="w-5 h-5 text-red-600 dark:text-red-400" />
@@ -528,7 +528,7 @@ export default function EmbeddedBanking({ hostId }: { hostId: string }) {
                 </p>
               </div>
             ) : (
-              <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-200 dark:border-purple-800 rounded-xl p-6">
+              <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-6">
                 <div className="flex items-start justify-between mb-2">
                   <p className="text-sm font-medium text-purple-700 dark:text-purple-300">2025 YTD Earnings</p>
                   <IoTrendingUpOutline className="w-5 h-5 text-purple-600 dark:text-purple-400" />
@@ -560,7 +560,7 @@ export default function EmbeddedBanking({ hostId }: { hostId: string }) {
       )}
 
       {/* Payment Methods - Read-Only Display */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
         <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex-1">
@@ -601,7 +601,7 @@ export default function EmbeddedBanking({ hostId }: { hostId: string }) {
               {paymentMethods.map((method) => (
                 <div
                   key={method.id}
-                  className={`group relative rounded-xl p-2.5 transition-all ${
+                  className={`group relative rounded-lg p-2.5 transition-all ${
                     method.isDefault
                       ? 'bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border-2 border-purple-300 dark:border-purple-600'
                       : 'bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700'
@@ -692,7 +692,7 @@ export default function EmbeddedBanking({ hostId }: { hostId: string }) {
       />
 
       {/* Help Section */}
-      <div className="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 sm:p-6">
+      <div className="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 sm:p-6">
         <div className="flex items-start gap-3">
           <IoShieldCheckmarkOutline className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700 dark:text-gray-300 flex-shrink-0 mt-0.5" />
           <div className="flex-1">

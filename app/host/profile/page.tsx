@@ -12,7 +12,6 @@ import { IoArrowBackOutline, IoBuildOutline, IoBanOutline, IoWarningOutline } fr
 
 // Import new components
 import ProfileHeader from './components/ProfileHeader'
-import VerificationProgress from './components/VerificationProgress'
 import TabNavigation, { TabType } from './components/TabNavigation'
 import ProfileTab from './components/tabs/ProfileTab'
 import DocumentsTab from './components/tabs/DocumentsTab'
@@ -147,7 +146,7 @@ function ProfileLoadingSkeleton() {
             </div>
             
             {/* Profile card skeleton */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
               <div className="flex items-center space-x-4">
                 <div className="h-24 w-24 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
                 <div className="flex-1 space-y-3">
@@ -166,7 +165,7 @@ function ProfileLoadingSkeleton() {
             </div>
             
             {/* Content skeleton */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
               <div className="space-y-4">
                 <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
                 <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
@@ -393,14 +392,6 @@ function HostProfileContent() {
   const isPending = profile?.approvalStatus === 'PENDING' || profile?.approvalStatus === 'NEEDS_ATTENTION'
   const isSuspended = profile?.approvalStatus === 'SUSPENDED'
   const isRejected = profile?.approvalStatus === 'REJECTED'
-  
-  const areAllDocsApproved = () => {
-    if (!profile?.documentStatuses) return false
-    const statuses = profile.documentStatuses
-    return statuses.governmentId === 'approved' && 
-           statuses.driversLicense === 'approved' && 
-           statuses.insurance === 'approved'
-  }
 
   // Loading state
   if (loading) {
@@ -425,7 +416,7 @@ function HostProfileContent() {
         <Header />
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-16">
           <div className="max-w-3xl mx-auto px-4 py-16">
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-8 text-center">
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-8 text-center">
               <IoBanOutline className="w-16 h-16 text-red-600 dark:text-red-400 mx-auto mb-4" />
               <h2 className="text-2xl font-bold text-red-900 dark:text-red-100 mb-3">
                 Application Rejected
@@ -467,7 +458,7 @@ function HostProfileContent() {
 
           {/* Suspended Banner */}
           {isSuspended && (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 mb-6">
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
               <div className="flex items-start">
                 <IoWarningOutline className="w-5 h-5 text-red-600 dark:text-red-400 mr-2 flex-shrink-0 mt-0.5" />
                 <div>
@@ -498,21 +489,14 @@ function HostProfileContent() {
               {!editMode && activeTab === 'profile' && !isSuspended && (
                 <button
                   onClick={() => setEditMode(true)}
-                  className="px-3 sm:px-4 py-2 bg-purple-600 text-white text-sm sm:text-base rounded-lg hover:bg-purple-700 transition-colors"
+                  className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-purple-600 text-white text-sm sm:text-base rounded-lg hover:bg-purple-700 transition-colors"
                 >
-                  <span className="hidden sm:inline">Edit Profile</span>
-                  <IoBuildOutline className="w-5 h-5 sm:hidden" />
+                  <IoBuildOutline className="w-4 h-4" />
+                  <span>Edit</span>
                 </button>
               )}
             </div>
           </div>
-
-          {/* Verification Progress */}
-          <VerificationProgress
-            isApproved={isApproved}
-            isPending={isPending}
-            areAllDocsApproved={areAllDocsApproved()}
-          />
 
           {/* Profile Header */}
           <ProfileHeader
@@ -531,7 +515,7 @@ function HostProfileContent() {
           />
 
           {/* Tab Content */}
-          <div className={`bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 ${
+          <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 ${
             activeTab === 'banking' ? '' : 'p-4 sm:p-6'
           }`}>
             {activeTab === 'profile' && (

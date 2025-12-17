@@ -70,7 +70,7 @@ export default function ViewPolicyModal({
       onClick={onClose}
     >
       <div 
-        className="relative max-w-2xl w-full max-h-[90vh] bg-white dark:bg-gray-900 rounded-xl overflow-hidden shadow-2xl flex flex-col"
+        className="relative max-w-2xl w-full max-h-[90vh] bg-white dark:bg-gray-900 rounded-lg overflow-hidden shadow-2xl flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
