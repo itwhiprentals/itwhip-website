@@ -1,55 +1,33 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
+import { useState } from 'react'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
-import { 
-  IoDocumentTextOutline,
+import {
   IoGlobeOutline,
   IoBusinessOutline,
   IoCarOutline,
   IoShieldCheckmarkOutline,
   IoTrendingUpOutline,
-  IoCodeSlashOutline,
   IoPeopleOutline,
   IoLeafOutline,
-  IoTimerOutline,
-  IoServerOutline,
-  IoKeyOutline,
   IoWalletOutline,
-  IoCheckmarkCircle,
   IoChevronDownOutline,
   IoChevronUpOutline,
   IoRocketOutline,
-  IoAnalyticsOutline,
-  IoLockClosedOutline,
   IoMailOutline,
-  IoCashOutline,
-  IoScaleOutline,
-  IoConstructOutline,
-  IoBarChartOutline,
   IoHeartOutline,
   IoLocationOutline
 } from 'react-icons/io5'
 
 export default function AboutPage() {
-  const [expandedSections, setExpandedSections] = useState({})
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  
-  const toggleSection = (sectionId) => {
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({})
+
+  const toggleSection = (sectionId: string) => {
     setExpandedSections(prev => ({
       ...prev,
       [sectionId]: !prev[sectionId]
     }))
-  }
-
-  const handleGetAppClick = () => {
-    // Handle app click
-  }
-
-  const handleSearchClick = () => {
-    // Handle search
   }
 
   const sections = [
@@ -59,13 +37,13 @@ export default function AboutPage() {
       icon: IoBusinessOutline,
       content: `ItWhip is Arizona's first peer-to-peer car sharing marketplace built specifically for the desert environment. We connect vehicle owners (Hosts) with renters (Guests) through a transparent platform that prioritizes trust, fair earnings, and environmental responsibility.
 
-Since our first ride in 2023 in Phoenix, Arizona, our team brings together decades of experience in hospitality technology and transportation logistics. We started by helping hotels connect with global distribution systems, managing over 500 properties across the Southwest. Through this work, we discovered that 87% of hotels lack reliable transportation solutions for their guests.
+Since our first ride in 2023 in Phoenix, Arizona, our team has focused on building the best car sharing experience for the Southwest. We understand Arizona's unique needs—from the extreme summer heat to the diverse terrain spanning desert valleys to mountain retreats.
 
 Unlike traditional rental companies, ItWhip offers hosts up to 90% of rental earnings based on their insurance tier. Our Mileage Forensics™ system provides complete transparency for every trip, while MaxAC™ certification ensures every vehicle is tested for Arizona's extreme heat.
 
 Today, ItWhip serves 18 cities across Arizona, including Phoenix, Scottsdale, Tempe, Mesa, Chandler, Gilbert, Sedona, Tucson, and Flagstaff—covering everything, everywhere across the state.
 
-Our unique advantage comes from our technology heritage. Unlike other platforms, we seamlessly integrate with hotel booking systems, making it easy for properties to offer transportation as an amenity without any operational overhead. This creates a better experience for everyone - hotels, hosts, and guests alike.`
+Our platform offers diverse vehicle options: economy cars for daily errands, luxury vehicles for special occasions, SUVs for outdoor adventures, and everything in between. Whether arriving at Phoenix Sky Harbor Airport or exploring Sedona's red rocks, ItWhip has the perfect vehicle for your journey.`
     },
     {
       id: 'mission-values',
@@ -129,13 +107,13 @@ Keep 40-90% of your rental earnings based on your insurance tier - the most flex
 Comprehensive Protection:
 Your vehicle is protected with physical damage coverage during rentals. Liability insurance up to $1 million is included at no cost to you. Our support team handles any issues that arise, so you can earn passively.
 
-FOR PARTNERS - SEAMLESS INTEGRATION
+FOR PARTNERS - BUSINESS SOLUTIONS
 
-Hotels & Hospitality:
-Offer transportation as an amenity without owning a fleet. Our API integrates directly with your property management system. Guests can book vehicles during their hotel reservation. Earn commission on every booking while enhancing guest satisfaction.
+Corporate Accounts:
+Provide employees with flexible transportation options. Reduce fleet management costs and complexity. Access detailed reporting and centralized billing. Customize policies and approval workflows for your organization.
 
-Corporate Solutions:
-Provide employees with flexible transportation options. Reduce fleet management costs and complexity. Access detailed reporting and centralized billing. Customize policies and approval workflows for your organization.`
+Event & Group Rentals:
+Planning a conference, wedding, or group trip? We offer multi-vehicle bookings with dedicated support. From SUVs for family reunions to luxury cars for special events, our fleet covers every occasion.`
     },
     {
       id: 'why-choose-us',
@@ -170,8 +148,8 @@ SUPERIOR TECHNOLOGY
 Seamless Experience:
 Our platform is built on 9 years of enterprise technology experience. Book in 3 minutes, get verified instantly, and manage everything from your phone. Our technology just works, so you can focus on your journey.
 
-Unique Integrations:
-We're the only P2P car sharing platform integrated with hotel booking systems. This means seamless transportation planning for travelers and new customer channels for hosts. Our API-first approach enables partnerships that benefit everyone.
+Arizona-Specific Features:
+Our MaxAC™ certification ensures every vehicle is tested for Arizona's extreme heat. Mileage Forensics™ provides complete transparency for every trip. From Phoenix Sky Harbor Airport pickups to Sedona weekend getaways, we've built features specifically for Arizona travelers.
 
 TRUST & SAFETY
 
@@ -305,14 +283,9 @@ Join us in revolutionizing transportation in Phoenix and beyond. Whether you're 
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col">
-      {/* Header - Using existing Header component */}
+      {/* Header */}
       <div className="fixed top-0 left-0 right-0 z-50">
-        <Header
-          isMobileMenuOpen={isMobileMenuOpen}
-          setIsMobileMenuOpen={setIsMobileMenuOpen}
-          handleGetAppClick={handleGetAppClick}
-          handleSearchClick={handleSearchClick}
-        />
+        <Header />
       </div>
 
       {/* Page Content */}
@@ -421,31 +394,49 @@ Join us in revolutionizing transportation in Phoenix and beyond. Whether you're 
         <section className="py-8 sm:py-12 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/10">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-4">
-              Join Phoenix's Car Sharing Community
+              Join Arizona&apos;s Car Sharing Community
             </h3>
             <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-6 max-w-2xl mx-auto">
-              Whether you want to earn from your vehicle, find affordable transportation, or partner with us, 
-              you're joining a movement that's making Phoenix more connected and sustainable.
+              Whether you want to earn from your vehicle, find affordable transportation, or partner with us,
+              you&apos;re joining a movement that&apos;s making Arizona more connected and sustainable.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <a 
-                href="/list-your-car" 
+              <a
+                href="/list-your-car"
                 className="px-6 py-3 bg-amber-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 transition"
               >
                 List Your Vehicle
               </a>
-              <a 
-                href="/" 
+              <a
+                href="/rentals"
                 className="px-6 py-3 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-semibold hover:bg-gray-100 dark:hover:bg-gray-700 transition border border-gray-300 dark:border-gray-600"
               >
-                Find a Vehicle
+                Browse Rentals
               </a>
-              <a 
-                href="/contact" 
+              <a
+                href="/contact"
                 className="px-6 py-3 bg-gray-900 dark:bg-gray-700 text-white rounded-lg text-sm font-semibold hover:bg-gray-800 dark:hover:bg-gray-600 transition"
               >
-                Partner With Us
+                Contact Us
               </a>
+            </div>
+
+            {/* Internal Links for SEO */}
+            <div className="mt-8 pt-6 border-t border-amber-200 dark:border-amber-800/30">
+              <p className="text-xs text-gray-500 dark:text-gray-500 mb-3">Popular Destinations</p>
+              <div className="flex flex-wrap justify-center gap-2">
+                <a href="/rentals/cities/phoenix" className="text-xs text-amber-700 dark:text-amber-400 hover:underline">Phoenix</a>
+                <span className="text-gray-300 dark:text-gray-600">•</span>
+                <a href="/rentals/cities/scottsdale" className="text-xs text-amber-700 dark:text-amber-400 hover:underline">Scottsdale</a>
+                <span className="text-gray-300 dark:text-gray-600">•</span>
+                <a href="/rentals/cities/tempe" className="text-xs text-amber-700 dark:text-amber-400 hover:underline">Tempe</a>
+                <span className="text-gray-300 dark:text-gray-600">•</span>
+                <a href="/rentals/airports/phoenix-sky-harbor" className="text-xs text-amber-700 dark:text-amber-400 hover:underline">Sky Harbor Airport</a>
+                <span className="text-gray-300 dark:text-gray-600">•</span>
+                <a href="/rentals/types/luxury" className="text-xs text-amber-700 dark:text-amber-400 hover:underline">Luxury Cars</a>
+                <span className="text-gray-300 dark:text-gray-600">•</span>
+                <a href="/rentals/types/suv" className="text-xs text-amber-700 dark:text-amber-400 hover:underline">SUVs</a>
+              </div>
             </div>
           </div>
         </section>

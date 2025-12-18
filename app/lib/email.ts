@@ -1,6 +1,9 @@
 // app/lib/email.ts - Main orchestrator (replacing the 1600+ line file)
 
 import { sendEmail } from './email/sender'
+
+// Re-export sendEmail as a named export for backward compatibility
+export { sendEmail }
 import {
  getBookingReceivedTemplate,
  getVerificationPendingTemplate,
@@ -261,6 +264,66 @@ export async function sendTwoFactorCode(
  const text = `Your verification code is: ${data.code}`
  
  return sendEmail(to, subject, html, text)
+}
+
+// Host admin notification emails
+export async function sendHostBackgroundCheckStatus(
+  to: string,
+  data: { name: string; status: string; message?: string }
+): Promise<EmailResponse> {
+  const subject = `Background Check ${data.status} - ItWhip Host`
+  const html = `
+    <h2>Hi ${data.name},</h2>
+    <p>Your background check status has been updated to: <strong>${data.status}</strong></p>
+    ${data.message ? `<p>${data.message}</p>` : ''}
+  `
+  const text = `Background check status: ${data.status}`
+  return sendEmail(to, subject, html, text)
+}
+
+export async function sendHostDocumentRequest(
+  to: string,
+  data: { name: string; documents: string[]; message?: string }
+): Promise<EmailResponse> {
+  const subject = 'Document Request - ItWhip Host'
+  const html = `
+    <h2>Hi ${data.name},</h2>
+    <p>We need the following documents to complete your host verification:</p>
+    <ul>${data.documents.map(d => `<li>${d}</li>`).join('')}</ul>
+    ${data.message ? `<p>${data.message}</p>` : ''}
+  `
+  const text = `Document request: ${data.documents.join(', ')}`
+  return sendEmail(to, subject, html, text)
+}
+
+export async function sendHostApproval(
+  to: string,
+  data: { name: string; message?: string }
+): Promise<EmailResponse> {
+  const subject = 'Congratulations! Your Host Application is Approved - ItWhip'
+  const html = `
+    <h2>Welcome to ItWhip, ${data.name}!</h2>
+    <p>Your host application has been approved. You can now list your vehicles and start earning!</p>
+    ${data.message ? `<p>${data.message}</p>` : ''}
+    <p><a href="https://itwhip.com/host/dashboard">Go to Host Dashboard</a></p>
+  `
+  const text = `Congratulations ${data.name}! Your host application has been approved.`
+  return sendEmail(to, subject, html, text)
+}
+
+export async function sendHostRejection(
+  to: string,
+  data: { name: string; reason?: string }
+): Promise<EmailResponse> {
+  const subject = 'Host Application Update - ItWhip'
+  const html = `
+    <h2>Hi ${data.name},</h2>
+    <p>We were unable to approve your host application at this time.</p>
+    ${data.reason ? `<p>Reason: ${data.reason}</p>` : ''}
+    <p>If you have questions, please contact us at hosts@itwhip.com</p>
+  `
+  const text = `Hi ${data.name}, we were unable to approve your host application.`
+  return sendEmail(to, subject, html, text)
 }
 
 // Export default for backward compatibility

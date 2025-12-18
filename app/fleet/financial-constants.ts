@@ -480,6 +480,39 @@ export const PLATFORM_LIMITS = {
 }
 
 // ============================================================================
+// LEGACY EXPORTS (for backward compatibility)
+// ============================================================================
+
+// Platform commission rates by tier (alias for PLATFORM_FEE)
+export const PLATFORM_COMMISSION = {
+  BASIC: 0.60,      // 60% platform commission (host keeps 40%)
+  STANDARD: 0.25,   // 25% platform commission (host keeps 75%)
+  PREMIUM: 0.10,    // 10% platform commission (host keeps 90%)
+}
+
+// Host protection plans (alias for PLATFORM_INSURANCE_TIERS)
+export const HOST_PROTECTION_PLANS = {
+  BASIC: {
+    name: 'Basic Protection',
+    hostPayout: 0.40,
+    platformFee: 0.60,
+    coverage: 'Platform insurance only',
+  },
+  STANDARD: {
+    name: 'Standard Protection',
+    hostPayout: 0.75,
+    platformFee: 0.25,
+    coverage: 'Supplemental coverage',
+  },
+  PREMIUM: {
+    name: 'Premium Protection',
+    hostPayout: 0.90,
+    platformFee: 0.10,
+    coverage: 'Full personal policy',
+  },
+}
+
+// ============================================================================
 // REVENUE DISTRIBUTION PRIORITY
 // ============================================================================
 
