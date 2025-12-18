@@ -43,11 +43,12 @@ interface CachedLocation {
   state: string | null
   region: string | null
   isInArizona: boolean
+  isServedCity: boolean
   timestamp: number
 }
 
 const CACHE_KEY = 'itwhip_user_location'
-const CACHE_DURATION = 24 * 60 * 60 * 1000 // 24 hours in milliseconds
+const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000 // 7 days in milliseconds
 
 // Check if a city is in our served list (case-insensitive)
 function isServedCity(city: string | null): boolean {
@@ -66,6 +67,35 @@ function normalizeCity(city: string | null): string | null {
   return matched || city
 }
 
+// Safe localStorage getter
+function getCachedLocation(): CachedLocation | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const cached = localStorage.getItem(CACHE_KEY)
+    if (!cached) {
+      console.log('[Location] No cached location found')
+      return null
+    }
+    const data = JSON.parse(cached) as CachedLocation
+    console.log('[Location] Loaded from cache:', data)
+    return data
+  } catch (e) {
+    console.error('[Location] Failed to parse cached location:', e)
+    return null
+  }
+}
+
+// Safe localStorage setter
+function setCachedLocation(data: CachedLocation): void {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(data))
+    console.log('[Location] Saved to cache:', data)
+  } catch (e) {
+    console.error('[Location] Failed to save location to cache:', e)
+  }
+}
+
 export function useUserLocation(): UserLocation {
   const [location, setLocation] = useState<UserLocation>({
     city: null,
@@ -80,34 +110,49 @@ export function useUserLocation(): UserLocation {
 
   useEffect(() => {
     const detectLocation = async () => {
-      try {
-        // Check cache first
-        const cached = localStorage.getItem(CACHE_KEY)
-        if (cached) {
-          const cachedData: CachedLocation = JSON.parse(cached)
-          const isExpired = Date.now() - cachedData.timestamp > CACHE_DURATION
+      // Step 1: Check cache first
+      const cached = getCachedLocation()
 
-          if (!isExpired) {
-            const normalizedCity = normalizeCity(cachedData.city)
-            const served = isServedCity(normalizedCity)
+      if (cached) {
+        const age = Date.now() - cached.timestamp
+        const isExpired = age > CACHE_DURATION
+        const daysOld = Math.floor(age / (24 * 60 * 60 * 1000))
 
-            setLocation({
-              city: normalizedCity,
-              state: cachedData.state,
-              displayLocation: cachedData.isInArizona && served ? normalizedCity! : 'Arizona',
-              displayLocationFull: cachedData.isInArizona && served
-                ? `${normalizedCity}, AZ`
-                : 'Arizona',
-              isInArizona: cachedData.isInArizona,
-              isServedCity: served,
-              isLoading: false,
-              error: null
-            })
-            return
-          }
+        console.log(`[Location] Cache age: ${daysOld} days, expired: ${isExpired}`)
+
+        // Use cached value if not expired
+        if (!isExpired) {
+          const normalizedCity = normalizeCity(cached.city)
+          const served = cached.isServedCity || isServedCity(normalizedCity)
+
+          console.log('[Location] Using cached location:', {
+            city: normalizedCity,
+            isServedCity: served,
+            isInArizona: cached.isInArizona
+          })
+
+          setLocation({
+            city: normalizedCity,
+            state: cached.state,
+            displayLocation: cached.isInArizona && served ? normalizedCity! : 'Arizona',
+            displayLocationFull: cached.isInArizona && served
+              ? `${normalizedCity}, AZ`
+              : 'Arizona',
+            isInArizona: cached.isInArizona,
+            isServedCity: served,
+            isLoading: false,
+            error: null
+          })
+          return
         }
 
-        // Fetch location from our API
+        console.log('[Location] Cache expired, will refresh from API')
+      }
+
+      // Step 2: Fetch fresh location from API
+      try {
+        console.log('[Location] Fetching from API...')
+
         const response = await fetch('/api/user-location', {
           method: 'GET',
           headers: {
@@ -116,14 +161,21 @@ export function useUserLocation(): UserLocation {
         })
 
         if (!response.ok) {
-          throw new Error('Failed to detect location')
+          throw new Error(`API returned ${response.status}`)
         }
 
         const data = await response.json()
+        console.log('[Location] API response:', data)
 
         const isInAZ = data.region === 'Arizona' || data.region === 'AZ'
         const normalizedCity = normalizeCity(data.city)
         const served = isServedCity(normalizedCity)
+
+        console.log('[Location] Processed API data:', {
+          city: normalizedCity,
+          isInAZ,
+          served
+        })
 
         // Cache the result
         const cacheData: CachedLocation = {
@@ -131,9 +183,10 @@ export function useUserLocation(): UserLocation {
           state: data.region,
           region: data.region,
           isInArizona: isInAZ,
+          isServedCity: served,
           timestamp: Date.now()
         }
-        localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData))
+        setCachedLocation(cacheData)
 
         setLocation({
           city: normalizedCity,
@@ -147,8 +200,32 @@ export function useUserLocation(): UserLocation {
         })
 
       } catch (error) {
-        console.error('Location detection error:', error)
-        // Default to Arizona on error
+        console.error('[Location] API error:', error)
+
+        // Step 3: On API failure, use cached value even if expired
+        if (cached && cached.city && cached.isServedCity) {
+          console.log('[Location] API failed, using expired cache as fallback')
+
+          const normalizedCity = normalizeCity(cached.city)
+          const served = cached.isServedCity || isServedCity(normalizedCity)
+
+          setLocation({
+            city: normalizedCity,
+            state: cached.state,
+            displayLocation: cached.isInArizona && served ? normalizedCity! : 'Arizona',
+            displayLocationFull: cached.isInArizona && served
+              ? `${normalizedCity}, AZ`
+              : 'Arizona',
+            isInArizona: cached.isInArizona,
+            isServedCity: served,
+            isLoading: false,
+            error: 'Using cached location (API failed)'
+          })
+          return
+        }
+
+        // Step 4: No cache available, default to Arizona
+        console.log('[Location] No cache available, defaulting to Arizona')
         setLocation({
           city: null,
           state: null,
@@ -172,5 +249,14 @@ export function useUserLocation(): UserLocation {
 export function clearLocationCache(): void {
   if (typeof window !== 'undefined') {
     localStorage.removeItem(CACHE_KEY)
+    console.log('[Location] Cache cleared')
+  }
+}
+
+// Helper to force refresh location (clears cache and triggers re-fetch)
+export function forceRefreshLocation(): void {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem(CACHE_KEY)
+    console.log('[Location] Cache cleared, reload page to refresh location')
   }
 }
