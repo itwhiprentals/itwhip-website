@@ -293,6 +293,11 @@ export default function Footer() {
                   Accessibility
                 </Link>
               </li>
+              <li>
+                <Link href="/investors" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Investors
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
