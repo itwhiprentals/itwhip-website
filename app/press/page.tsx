@@ -54,9 +54,9 @@ export default function PressPage() {
       description: '40-90% host payout tiers based on insurance coverage brought to platform.'
     },
     {
-      date: '2024',
-      title: 'Company Founded',
-      description: 'ItWhip Technologies, Inc. incorporated in Phoenix, Arizona.'
+      date: '2023',
+      title: 'First Ride',
+      description: 'ItWhip Technologies, Inc. first ride in Phoenix, Arizona.'
     }
   ]
 
@@ -119,7 +119,7 @@ export default function PressPage() {
                   Unlike traditional rental companies, ItWhip offers hosts up to 90% of rental earnings based on their insurance tier. Our Mileage Forensics™ system provides complete transparency for every trip, while MaxAC™ certification ensures every vehicle is tested for Arizona&apos;s extreme heat.
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Founded in 2024, ItWhip serves 18 cities across Arizona, including Phoenix, Scottsdale, Tempe, Mesa, Chandler, Gilbert, Sedona, Tucson, and Flagstaff—covering everything, everywhere across the state.
+                  Since our first ride in 2023, ItWhip serves 18 cities across Arizona, including Phoenix, Scottsdale, Tempe, Mesa, Chandler, Gilbert, Sedona, Tucson, and Flagstaff—covering everything, everywhere across the state.
                 </p>
               </div>
             </div>

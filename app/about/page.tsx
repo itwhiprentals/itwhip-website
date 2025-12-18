@@ -59,7 +59,7 @@ export default function AboutPage() {
       icon: IoBusinessOutline,
       content: `ItWhip is Arizona's first peer-to-peer car sharing marketplace built specifically for the desert environment. We connect vehicle owners (Hosts) with renters (Guests) through a transparent platform that prioritizes trust, fair earnings, and environmental responsibility.
 
-Founded in 2024 in Phoenix, Arizona, our team brings together decades of experience in hospitality technology and transportation logistics. We started by helping hotels connect with global distribution systems, managing over 500 properties across the Southwest. Through this work, we discovered that 87% of hotels lack reliable transportation solutions for their guests.
+Since our first ride in 2023 in Phoenix, Arizona, our team brings together decades of experience in hospitality technology and transportation logistics. We started by helping hotels connect with global distribution systems, managing over 500 properties across the Southwest. Through this work, we discovered that 87% of hotels lack reliable transportation solutions for their guests.
 
 Unlike traditional rental companies, ItWhip offers hosts up to 90% of rental earnings based on their insurance tier. Our Mileage Forensics™ system provides complete transparency for every trip, while MaxAC™ certification ensures every vehicle is tested for Arizona's extreme heat.
 
@@ -340,7 +340,7 @@ Join us in revolutionizing transportation in Phoenix and beyond. Whether you're 
                 Arizona&apos;s First Desert-Built Car Sharing Platform
               </h2>
               <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-                Connecting vehicle owners with travelers since 2024 • Serving all of Arizona • Building sustainable transportation
+                Connecting vehicle owners with travelers since 2023 • Serving all of Arizona • Building sustainable transportation
               </p>
             </div>
           </div>
