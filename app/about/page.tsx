@@ -57,13 +57,13 @@ export default function AboutPage() {
       id: 'our-story',
       title: '1. OUR STORY',
       icon: IoBusinessOutline,
-      content: `ItWhip was born from a simple observation: while technology has transformed how we book flights and hotels, finding reliable, affordable transportation at your destination remained a challenge.
+      content: `ItWhip is Arizona's first peer-to-peer car sharing marketplace built specifically for the desert environment. We connect vehicle owners (Hosts) with renters (Guests) through a transparent platform that prioritizes trust, fair earnings, and environmental responsibility.
 
-Founded in Phoenix, Arizona, our team brings together decades of experience in hospitality technology and transportation logistics. We started by helping hotels connect with global distribution systems, managing over 500 properties across the Southwest. Through this work, we discovered that 87% of hotels lack reliable transportation solutions for their guests.
+Founded in 2024 in Phoenix, Arizona, our team brings together decades of experience in hospitality technology and transportation logistics. We started by helping hotels connect with global distribution systems, managing over 500 properties across the Southwest. Through this work, we discovered that 87% of hotels lack reliable transportation solutions for their guests.
 
-In 2023, we launched our peer-to-peer car sharing platform to solve this problem. By connecting local vehicle owners with travelers, we create a win-win: hosts earn extra income from their idle vehicles, while guests enjoy affordable, convenient transportation options.
+Unlike traditional rental companies, ItWhip offers hosts up to 90% of rental earnings based on their insurance tier. Our Mileage Forensics™ system provides complete transparency for every trip, while MaxAC™ certification ensures every vehicle is tested for Arizona's extreme heat.
 
-Today, ItWhip operates across Arizona with over 700 vehicles available for rent. We're proud to be Phoenix's homegrown alternative to traditional car rental, offering vehicles that are 25-40% more affordable while providing hosts with the highest revenue share in the industry.
+Today, ItWhip serves 18 cities across Arizona, including Phoenix, Scottsdale, Tempe, Mesa, Chandler, Gilbert, Sedona, Tucson, and Flagstaff—covering everything, everywhere across the state.
 
 Our unique advantage comes from our technology heritage. Unlike other platforms, we seamlessly integrate with hotel booking systems, making it easy for properties to offer transportation as an amenity without any operational overhead. This creates a better experience for everyone - hotels, hosts, and guests alike.`
     },
@@ -84,7 +84,7 @@ Trust & Safety:
 Your safety is our priority. Every host and guest goes through comprehensive verification, including identity checks and driving record reviews. All trips include up to $1 million in liability protection, giving you peace of mind on every journey.
 
 Transparency:
-No hidden fees, no surprises. Our pricing is clear and upfront. Hosts keep 80-85% of rental revenue - the highest in the industry. Guests see the total cost before booking. We believe honest business is good business.
+No hidden fees, no surprises. Our pricing is clear and upfront. Hosts keep 40-90% of rental revenue based on their insurance tier - the most flexible in the industry. Guests see the total cost before booking. We believe honest business is good business.
 
 Sustainability:
 Car sharing reduces the need for vehicle ownership and decreases urban congestion. One shared vehicle on ItWhip replaces 9-13 privately owned cars, reducing CO2 emissions by 3.4 tons annually per vehicle. We're committed to a greener Phoenix.
@@ -102,7 +102,7 @@ Transportation should be available to everyone. We offer multiple payment option
       content: `FOR GUESTS - RENT WITH CONFIDENCE
 
 Finding Your Perfect Vehicle:
-Browse our diverse fleet of 700+ vehicles across Phoenix, from economical daily drivers to luxury experiences. Each listing includes detailed photos, features, and reviews from previous renters. Our search filters help you find exactly what you need, when you need it.
+Browse our growing fleet of 100+ vehicles across Arizona, from economical daily drivers to luxury experiences. Each listing includes detailed photos, features, and reviews from previous renters. Our search filters help you find exactly what you need, when you need it.
 
 Simple Booking Process:
 1. Create your account and verify your driver's license (takes 3 minutes)
@@ -124,7 +124,7 @@ You're In Control:
 Set your own schedule and prices. Approve or decline rental requests. Choose instant booking for qualified renters or review each request individually. Update your availability calendar anytime through our platform.
 
 Industry-Leading Economics:
-Keep 80-85% of your rental earnings - significantly more than other platforms. Most hosts earn $850-$1,100 per month. Payments are deposited within 48-72 hours after each trip. We handle all payment processing and provide tax documentation.
+Keep 40-90% of your rental earnings based on your insurance tier - the most flexible payout structure in the industry. Payments are deposited within 48-72 hours after each trip. We handle all payment processing and provide tax documentation.
 
 Comprehensive Protection:
 Your vehicle is protected with physical damage coverage during rentals. Liability insurance up to $1 million is included at no cost to you. Our support team handles any issues that arise, so you can earn passively.
@@ -337,10 +337,10 @@ Join us in revolutionizing transportation in Phoenix and beyond. Whether you're 
                 <IoBusinessOutline className="w-7 h-7 sm:w-8 sm:h-8 text-amber-600" />
               </div>
               <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-3">
-                Phoenix's Homegrown Car Sharing Platform
+                Arizona&apos;s First Desert-Built Car Sharing Platform
               </h2>
               <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-                Connecting vehicle owners with travelers since 2023 • Supporting local families • Building sustainable transportation
+                Connecting vehicle owners with travelers since 2024 • Serving all of Arizona • Building sustainable transportation
               </p>
             </div>
           </div>
@@ -352,18 +352,18 @@ Join us in revolutionizing transportation in Phoenix and beyond. Whether you're 
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4">
               <div className="bg-white dark:bg-gray-900 rounded-lg p-4 text-center shadow-sm">
                 <IoCarOutline className="w-5 h-5 text-amber-600 mx-auto mb-2" />
-                <div className="text-lg font-bold text-gray-900 dark:text-white">700+</div>
+                <div className="text-lg font-bold text-gray-900 dark:text-white">100+</div>
                 <div className="text-xs text-gray-600 dark:text-gray-400">Vehicles</div>
               </div>
               <div className="bg-white dark:bg-gray-900 rounded-lg p-4 text-center shadow-sm">
                 <IoLocationOutline className="w-5 h-5 text-amber-600 mx-auto mb-2" />
-                <div className="text-lg font-bold text-gray-900 dark:text-white">8</div>
+                <div className="text-lg font-bold text-gray-900 dark:text-white">18</div>
                 <div className="text-xs text-gray-600 dark:text-gray-400">AZ Cities</div>
               </div>
               <div className="bg-white dark:bg-gray-900 rounded-lg p-4 text-center shadow-sm">
                 <IoWalletOutline className="w-5 h-5 text-amber-600 mx-auto mb-2" />
-                <div className="text-lg font-bold text-gray-900 dark:text-white">$850</div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">Avg Monthly</div>
+                <div className="text-lg font-bold text-gray-900 dark:text-white">40-90%</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Host Earnings</div>
               </div>
               <div className="bg-white dark:bg-gray-900 rounded-lg p-4 text-center shadow-sm">
                 <IoShieldCheckmarkOutline className="w-5 h-5 text-amber-600 mx-auto mb-2" />
@@ -372,8 +372,8 @@ Join us in revolutionizing transportation in Phoenix and beyond. Whether you're 
               </div>
               <div className="bg-white dark:bg-gray-900 rounded-lg p-4 text-center shadow-sm">
                 <IoLeafOutline className="w-5 h-5 text-amber-600 mx-auto mb-2" />
-                <div className="text-lg font-bold text-gray-900 dark:text-white">2,465</div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">Tons CO2 Saved</div>
+                <div className="text-lg font-bold text-gray-900 dark:text-white">ESG</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Verified Fleet</div>
               </div>
             </div>
           </div>

@@ -114,8 +114,8 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/host/insurance-options" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Insurance Options
+                <Link href="/trip-planner" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Trip Planner
                 </Link>
               </li>
               <li>
@@ -143,6 +143,11 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/host-university" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Host University
+                </Link>
+              </li>
+              <li>
                 <Link href="/host/fleet-owners" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
                   Fleet Owners
                 </Link>
@@ -155,11 +160,6 @@ export default function Footer() {
               <li>
                 <Link href="/insurance-guide" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
                   Insurance Guide
-                </Link>
-              </li>
-              <li>
-                <Link href="/host-requirements" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Host Requirements
                 </Link>
               </li>
             </ul>
@@ -211,6 +211,11 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/press" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Press
+                </Link>
+              </li>
+              <li>
                 <Link href="/careers" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
                   Careers
                 </Link>
@@ -223,11 +228,6 @@ export default function Footer() {
               <li>
                 <Link href="/corporate" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
                   Corporate Rentals
-                </Link>
-              </li>
-              <li>
-                <Link href="/host/tax-benefits" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Tax Benefits
                 </Link>
               </li>
             </ul>
@@ -279,6 +279,11 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/platform-agreement" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Platform Agreement
+                </Link>
+              </li>
+              <li>
                 <Link href="/privacy" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
                   Privacy Policy
                 </Link>
@@ -286,11 +291,6 @@ export default function Footer() {
               <li>
                 <Link href="/accessibility" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
                   Accessibility
-                </Link>
-              </li>
-              <li>
-                <Link href="/legal" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Legal Center
                 </Link>
               </li>
             </ul>
@@ -361,6 +361,10 @@ export default function Footer() {
                 </Link>
                 <Link href="/accessibility" className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
                   Accessibility
+                </Link>
+                <Link href="/status" className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
+                  Status
                 </Link>
               </div>
             </div>
