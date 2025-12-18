@@ -1,6 +1,6 @@
 // app/(guest)/rentals/[carId]/page.tsx
 import { Metadata } from 'next'
-import { redirect } from 'next/navigation'
+import { redirect, notFound } from 'next/navigation'
 import Script from 'next/script'
 import CarDetailsClient from './CarDetailsClient'
 import { extractCarId, generateCarUrl, isOldUrlFormat } from '@/app/lib/utils/urls'
@@ -143,16 +143,24 @@ export default async function CarDetailsPage({
     }
   }
 
-  // Fetch car data for schema markup
+  // Fetch car data for schema markup and 404 check
   let schemaData = null
+  let car = null
+
   try {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_APP_URL || 'https://itwhip.com'}/api/rentals/cars/${carId}`,
       { cache: 'no-store' }
     )
-    
-    if (response.ok) {
-      const car = await response.json()
+
+    // Return proper 404 for missing cars (fixes soft 404 SEO issue)
+    if (!response.ok) {
+      notFound()
+    }
+
+    car = await response.json()
+
+    if (car) {
       
       // Generate SEO URL
       const seoUrl = generateCarUrl({
@@ -285,6 +293,8 @@ export default async function CarDetailsPage({
     }
   } catch (error) {
     console.error('Error generating schema:', error)
+    // Also return 404 on fetch errors (network issues, etc)
+    notFound()
   }
   
   return (

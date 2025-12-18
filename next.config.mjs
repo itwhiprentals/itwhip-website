@@ -46,9 +46,12 @@ const nextConfig = {
       { source: '/schedule-call', destination: '/contact', permanent: true },
 
       // ============================================
-      // AUTH PAGES
+      // AUTH PAGES - Redirect legacy URLs to new auth paths
       // ============================================
-      { source: '/forgot-password', destination: '/auth/login', permanent: false },
+      { source: '/forgot-password', destination: '/auth/forgot-password', permanent: true },
+      { source: '/reset-password', destination: '/auth/reset-password', permanent: true },
+      { source: '/login', destination: '/auth/login', permanent: true },
+      { source: '/signup', destination: '/auth/signup', permanent: true },
 
       // ============================================
       // Arizona City Hubs

@@ -70,7 +70,17 @@ export async function generateMetadata({
   params: Promise<{ city: string }>
 }): Promise<Metadata> {
   const { city } = await params
-  const cityData = getCitySeoData(city) || getCitySeoData('phoenix')!
+  const cityData = getCitySeoData(city)
+
+  // Return minimal metadata for invalid cities (page will 404)
+  if (!cityData) {
+    return {
+      title: 'City Not Found | ItWhip',
+      description: 'This city page is not available.',
+      robots: { index: false, follow: false }
+    }
+  }
+
   const cityName = cityData.name
 
   const carCount = await prisma.rentalCar.count({
@@ -503,7 +513,13 @@ export default async function CityPage({
   params: Promise<{ city: string }>
 }) {
   const { city } = await params
-  const cityData = getCitySeoData(city) || getCitySeoData('phoenix')!
+  const cityData = getCitySeoData(city)
+
+  // Return 404 for invalid cities (fixes soft 404 SEO issue)
+  if (!cityData) {
+    notFound()
+  }
+
   const cityName = cityData.name
 
   // Fetch all cars for this city
