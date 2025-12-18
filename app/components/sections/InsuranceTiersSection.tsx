@@ -9,9 +9,9 @@ import {
 
 export default function InsuranceTiersSection() {
   return (
-    <section className="py-10 bg-white dark:bg-gray-800">
+    <section className="py-8 bg-white dark:bg-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-10">
+        <div className="text-center mb-6">
           <span className="text-amber-600 dark:text-amber-400 text-xs sm:text-sm font-semibold uppercase tracking-wider">
             Transparent Earnings
           </span>

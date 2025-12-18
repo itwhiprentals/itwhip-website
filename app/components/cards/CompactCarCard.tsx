@@ -32,6 +32,8 @@ export interface CompactCarCardProps {
   }
   /** Accent color for price. Defaults to 'amber' */
   accentColor?: 'amber' | 'emerald' | 'blue' | 'purple'
+  /** Additional CSS classes to apply to the card container */
+  className?: string
 }
 
 const accentColors = {
@@ -77,7 +79,7 @@ const getHostDisplayName = (name: string | null | undefined): string | null => {
   return name.trim().split(' ')[0]
 }
 
-export default function CompactCarCard({ car, accentColor = 'amber' }: CompactCarCardProps) {
+export default function CompactCarCard({ car, accentColor = 'amber', className = '' }: CompactCarCardProps) {
   const [hostAvatarError, setHostAvatarError] = useState(false)
 
   const imageUrl = car.photos?.[0]?.url ||
@@ -106,7 +108,7 @@ export default function CompactCarCard({ car, accentColor = 'amber' }: CompactCa
   return (
     <Link
       href={carUrl}
-      className="group bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl border border-gray-200 dark:border-gray-700 transform hover:-translate-y-0.5 transition-all duration-300"
+      className={`group bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl border border-gray-200 dark:border-gray-700 transform hover:-translate-y-0.5 transition-all duration-300 ${className}`}
     >
       {/* Image Container */}
       <div className="relative h-32 sm:h-36 bg-gray-200 dark:bg-gray-700 overflow-hidden">

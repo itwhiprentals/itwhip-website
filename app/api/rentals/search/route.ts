@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
     
     // Extract search parameters
     const location = searchParams.get('location') || 'Phoenix, AZ'
+    const exactCity = searchParams.get('city') // Exact city match (case-insensitive)
     const pickupDate = searchParams.get('pickupDate')
     const returnDate = searchParams.get('returnDate')
     const pickupTime = searchParams.get('pickupTime') || '10:00'
@@ -23,8 +24,8 @@ export async function GET(request: NextRequest) {
     const carType = searchParams.get('carType')
     const priceMin = searchParams.get('priceMin')
     const priceMax = searchParams.get('priceMax')
-    const radiusMiles = searchParams.get('radius') 
-      ? parseInt(searchParams.get('radius')!) 
+    const radiusMiles = searchParams.get('radius')
+      ? parseInt(searchParams.get('radius')!)
       : DEFAULT_RADIUS_MILES
 
     // ============================================================================
@@ -70,10 +71,13 @@ export async function GET(request: NextRequest) {
       isActive: true
     }
 
-    // Use bounding box to pre-filter cars (optimization)
-    if (searchCoordinates) {
+    // If exact city is specified, filter by city name (case-insensitive)
+    if (exactCity) {
+      whereClause.city = { equals: exactCity, mode: 'insensitive' }
+    } else if (searchCoordinates) {
+      // Use bounding box to pre-filter cars (optimization)
       const boundingBox = getBoundingBox(searchCoordinates, radiusMiles)
-      
+
       whereClause.AND = [
         { latitude: { gte: boundingBox.minLat, lte: boundingBox.maxLat } },
         { longitude: { gte: boundingBox.minLng, lte: boundingBox.maxLng } }
