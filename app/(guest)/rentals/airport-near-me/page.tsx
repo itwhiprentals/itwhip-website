@@ -122,7 +122,7 @@ export default async function AirportNearMePage() {
             name: `${car.year} ${car.make} ${car.model}`,
             url: `https://itwhip.com/rentals/${car.id}`,
             description: `Airport pickup available - ${car.year} ${car.make} ${car.model} in ${car.city}`,
-            image: car.photos?.[0]?.url || 'https://itwhip.com/images/car-default.jpg',
+            image: car.photos?.[0]?.url || 'https://itwhip.com/images/placeholder-car.jpg',
             ...(car.rating && car.totalTrips > 0 ? {
               aggregateRating: {
                 '@type': 'AggregateRating',

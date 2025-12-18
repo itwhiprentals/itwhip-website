@@ -153,7 +153,7 @@ export default async function TeslaNearMePage() {
             name: `${car.year} ${car.make} ${car.model}`,
             url: `https://itwhip.com/rentals/${car.id}`,
             description: `Tesla ${car.model} electric vehicle rental in ${car.city}`,
-            image: car.photos?.[0]?.url || 'https://itwhip.com/images/tesla-default.jpg',
+            image: car.photos?.[0]?.url || 'https://itwhip.com/Electric-Car.png',
             brand: { '@type': 'Brand', name: 'Tesla' },
             ...(car.rating && car.totalTrips > 0 ? {
               aggregateRating: {

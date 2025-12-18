@@ -134,7 +134,7 @@ export default async function SUVNearMePage() {
             name: `${car.year} ${car.make} ${car.model}`,
             url: `https://itwhip.com/rentals/${car.id}`,
             description: `${car.seats || 5}-passenger SUV rental in ${car.city}`,
-            image: car.photos?.[0]?.url || 'https://itwhip.com/images/suv-default.jpg',
+            image: car.photos?.[0]?.url || 'https://itwhip.com/Suv-Car.png',
             ...(car.rating && car.totalTrips > 0 ? {
               aggregateRating: {
                 '@type': 'AggregateRating',

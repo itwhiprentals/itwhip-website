@@ -213,7 +213,7 @@ export default async function NearMePage() {
             name: `${car.year} ${car.make} ${car.model}`,
             url: `https://itwhip.com/rentals/${car.id}`,
             description: `Rent this ${car.year} ${car.make} ${car.model} in ${car.city}, AZ`,
-            image: car.photos?.[0]?.url || 'https://itwhip.com/images/car-default.jpg',
+            image: car.photos?.[0]?.url || 'https://itwhip.com/images/placeholder-car.jpg',
             ...(car.rating && car.totalTrips > 0 ? {
               aggregateRating: {
                 '@type': 'AggregateRating',

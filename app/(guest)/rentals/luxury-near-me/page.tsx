@@ -135,7 +135,7 @@ export default async function LuxuryNearMePage() {
             name: `${car.year} ${car.make} ${car.model}`,
             url: `https://itwhip.com/rentals/${car.id}`,
             description: `Luxury ${car.year} ${car.make} ${car.model} rental in ${car.city}`,
-            image: car.photos?.[0]?.url || 'https://itwhip.com/images/luxury-default.jpg',
+            image: car.photos?.[0]?.url || 'https://itwhip.com/Luxury-car.png',
             ...(car.rating && car.totalTrips > 0 ? {
               aggregateRating: {
                 '@type': 'AggregateRating',
