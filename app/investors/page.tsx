@@ -62,50 +62,49 @@ export default function InvestorsPage() {
   }
 
   const metrics = [
-    { label: 'Annual Recurring Revenue', value: '$2.1M', growth: '+156% YoY' },
-    { label: 'Hotel Partners', value: '73', growth: '+210% YoY' },
-    { label: 'Monthly Active Users', value: '12K+', growth: '+185% YoY' },
-    { label: 'Gross Margin', value: '82%', growth: 'Industry Leading' }
+    { label: 'Vehicles Listed', value: '100+', growth: 'Growing Weekly' },
+    { label: 'Arizona Cities', value: '18', growth: 'Statewide Coverage' },
+    { label: 'Host Earnings', value: '40-90%', growth: 'Industry Leading' },
+    { label: 'Insurance Coverage', value: '$1M', growth: 'Per Trip' }
   ]
 
   const timeline = [
-    { year: '2019', event: 'Founded with $300K bootstrap capital', highlight: false },
-    { year: '2020', event: 'Platform technology completed', highlight: false },
-    { year: '2021', event: 'Amadeus GDS integration achieved', highlight: true },
-    { year: '2022', event: 'First hotel partnerships secured', highlight: false },
-    { year: '2023', event: 'Reached EBITDA positive', highlight: true },
-    { year: '2024', event: 'TU-1-A security certification', highlight: true },
-    { year: '2025', event: 'Series A fundraising', highlight: true }
+    { year: '2024', event: 'ItWhip Technologies, Inc. founded in Phoenix, AZ', highlight: true },
+    { year: 'Sep 2024', event: 'Insurance tier system launched (40-90% host payouts)', highlight: false },
+    { year: 'Oct 2024', event: 'Statewide expansion to 18 Arizona cities', highlight: true },
+    { year: 'Dec 2024', event: 'Mileage Forensics™ & MaxAC™ certification launched', highlight: true },
+    { year: 'Q2 2025', event: 'Native iOS & Android apps with digital key technology', highlight: true },
+    { year: '2025', event: 'Series A fundraising for Southwest expansion', highlight: true }
   ]
 
   const fundAllocation = [
-    { category: 'Geographic Expansion', percentage: 35, description: 'Scale to 10 new markets' },
-    { category: 'Technology Platform', percentage: 25, description: 'AI optimization, mobile apps' },
-    { category: 'Hotel Partnerships', percentage: 20, description: 'Enterprise sales team' },
-    { category: 'Marketing & Growth', percentage: 15, description: 'Customer acquisition' },
+    { category: 'Southwest Expansion', percentage: 35, description: 'Nevada, New Mexico, Texas markets' },
+    { category: 'Technology Platform', percentage: 25, description: 'Mobile apps, digital keys, AI pricing' },
+    { category: 'Host Acquisition', percentage: 20, description: 'Fleet growth & host incentives' },
+    { category: 'Marketing & Growth', percentage: 15, description: 'Guest acquisition & brand building' },
     { category: 'Working Capital', percentage: 5, description: 'Operations & reserves' }
   ]
 
   const advantages = [
     {
-      icon: IoServerOutline,
-      title: 'GDS Integration',
-      description: 'Only ground transport platform integrated with Amadeus GDS system'
+      icon: IoCarOutline,
+      title: 'Arizona-First Focus',
+      description: 'Built specifically for the desert environment with MaxAC™ certification'
     },
     {
-      icon: IoBusinessOutline,
-      title: 'Hotel Network',
-      description: '73 partner hotels with exclusive transportation agreements'
+      icon: IoTrendingUpOutline,
+      title: '40-90% Host Payouts',
+      description: 'Industry-leading earnings based on insurance tier flexibility'
     },
     {
       icon: IoShieldCheckmarkOutline,
-      title: 'TU-1-A Certified',
-      description: 'Enterprise-grade security exceeding industry standards'
+      title: 'Mileage Forensics™',
+      description: 'Complete odometer verification and transparency for every trip'
     },
     {
       icon: IoLeafOutline,
-      title: 'ESG Compliant',
-      description: '30% electric fleet, carbon offset program'
+      title: 'ESG Verified Fleet',
+      description: 'Environmental impact scoring for every vehicle'
     }
   ]
 
@@ -127,27 +126,27 @@ export default function InvestorsPage() {
         <section className="relative bg-gradient-to-b from-blue-50 to-white dark:from-gray-950 dark:to-gray-900 py-16 sm:py-20 lg:py-24 overflow-hidden">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-4xl mx-auto">
-              <div className="inline-flex items-center space-x-2 px-4 py-2 bg-green-100 dark:bg-green-900/20 rounded-full mb-6">
-                <IoCheckmarkCircle className="w-5 h-5 text-green-600" />
-                <span className="text-sm text-green-800 dark:text-green-300 font-medium">
-                  EBITDA Positive • Bootstrapped to Profitability
+              <div className="inline-flex items-center space-x-2 px-4 py-2 bg-amber-100 dark:bg-amber-900/20 rounded-full mb-6">
+                <IoCarOutline className="w-5 h-5 text-amber-600" />
+                <span className="text-sm text-amber-800 dark:text-amber-300 font-medium">
+                  Arizona's First P2P Car Sharing Platform
                 </span>
               </div>
-              
+
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-6">
                 Series A Fundraising
-                <span className="block text-blue-600 mt-2">$5M Target</span>
+                <span className="block text-amber-600 mt-2">$5M Target</span>
               </h1>
-              
+
               <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-400 mb-8 max-w-3xl mx-auto">
-                Bootstrapped with $300K to profitability. Now scaling the only GDS-integrated 
-                ground transportation platform in the $75B addressable market.
+                Disrupting the $35B US car rental market. Arizona's first peer-to-peer car sharing
+                marketplace built for the desert, competing with Turo with industry-leading 40-90% host payouts.
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">
-                <button 
+                <button
                   onClick={() => setShowContactForm(true)}
-                  className="px-8 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition shadow-lg"
+                  className="px-8 py-3 bg-amber-600 text-white rounded-lg font-bold hover:bg-amber-700 transition shadow-lg"
                 >
                   Request Investor Deck
                 </button>
@@ -177,32 +176,32 @@ export default function InvestorsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {metrics.map((metric, idx) => (
                 <div key={idx} className="bg-gray-50 dark:bg-gray-900 rounded-xl p-6 text-center">
-                  <div className="text-3xl font-bold text-blue-600 mb-2">{metric.value}</div>
+                  <div className="text-3xl font-bold text-amber-600 mb-2">{metric.value}</div>
                   <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">{metric.label}</div>
                   <div className="text-xs text-green-600 font-semibold">{metric.growth}</div>
                 </div>
               ))}
             </div>
 
-            <div className="mt-12 bg-blue-50 dark:bg-blue-900/20 rounded-xl p-8">
+            <div className="mt-12 bg-amber-50 dark:bg-amber-900/20 rounded-xl p-8">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
                 <div>
-                  <IoWalletOutline className="w-12 h-12 text-blue-600 mx-auto mb-3" />
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Capital Efficiency</h3>
-                  <p className="text-2xl font-bold text-blue-600">$300K</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Total invested to date</p>
+                  <IoCarOutline className="w-12 h-12 text-amber-600 mx-auto mb-3" />
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Vehicle Types</h3>
+                  <p className="text-2xl font-bold text-amber-600">Economy to Exotic</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Full fleet diversity</p>
                 </div>
                 <div>
                   <IoTrendingUpOutline className="w-12 h-12 text-green-600 mx-auto mb-3" />
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Revenue Multiple</h3>
-                  <p className="text-2xl font-bold text-green-600">7x</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Revenue to investment ratio</p>
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Host Economics</h3>
+                  <p className="text-2xl font-bold text-green-600">40-90%</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Payouts based on insurance tier</p>
                 </div>
                 <div>
                   <IoCashOutline className="w-12 h-12 text-purple-600 mx-auto mb-3" />
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Burn Rate</h3>
-                  <p className="text-2xl font-bold text-purple-600">Positive</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Cash flow positive since 2023</p>
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Avg Host Earnings</h3>
+                  <p className="text-2xl font-bold text-purple-600">$850/mo</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Supplemental income per vehicle</p>
                 </div>
               </div>
             </div>
@@ -217,28 +216,28 @@ export default function InvestorsPage() {
                 Market Opportunity
               </h2>
               <p className="text-lg text-gray-600 dark:text-gray-400">
-                Disrupting ground transportation through GDS integration
+                Disrupting the traditional car rental market with peer-to-peer innovation
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8 text-center">
-                <IoGlobeOutline className="w-16 h-16 text-blue-600 mx-auto mb-4" />
+                <IoGlobeOutline className="w-16 h-16 text-amber-600 mx-auto mb-4" />
                 <h3 className="text-sm text-gray-600 dark:text-gray-400 mb-2">Total Addressable Market</h3>
-                <p className="text-4xl font-bold text-gray-900 dark:text-white mb-2">$450B</p>
-                <p className="text-xs text-gray-500">Global ground transportation</p>
+                <p className="text-4xl font-bold text-gray-900 dark:text-white mb-2">$35B</p>
+                <p className="text-xs text-gray-500">US car rental industry</p>
               </div>
               <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8 text-center">
                 <IoBusinessOutline className="w-16 h-16 text-green-600 mx-auto mb-4" />
                 <h3 className="text-sm text-gray-600 dark:text-gray-400 mb-2">Serviceable Market</h3>
-                <p className="text-4xl font-bold text-gray-900 dark:text-white mb-2">$75B</p>
-                <p className="text-xs text-gray-500">US hotel transportation</p>
+                <p className="text-4xl font-bold text-gray-900 dark:text-white mb-2">$5B</p>
+                <p className="text-xs text-gray-500">P2P car sharing (Turo, Getaround)</p>
               </div>
               <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8 text-center">
                 <IoRocketOutline className="w-16 h-16 text-purple-600 mx-auto mb-4" />
                 <h3 className="text-sm text-gray-600 dark:text-gray-400 mb-2">Obtainable Market</h3>
-                <p className="text-4xl font-bold text-gray-900 dark:text-white mb-2">$8B</p>
-                <p className="text-xs text-gray-500">5-year projection</p>
+                <p className="text-4xl font-bold text-gray-900 dark:text-white mb-2">$500M</p>
+                <p className="text-xs text-gray-500">Southwest US 5-year target</p>
               </div>
             </div>
           </div>
@@ -249,10 +248,10 @@ export default function InvestorsPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
               <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-                Proven Execution
+                Rapid Execution
               </h2>
               <p className="text-lg text-gray-600 dark:text-gray-400">
-                From bootstrap to scale in 6 years
+                From founding to statewide coverage in under 1 year
               </p>
             </div>
 
@@ -267,20 +266,20 @@ export default function InvestorsPage() {
                     </div>
                     <div className="flex-shrink-0">
                       <div className={`w-4 h-4 rounded-full ${
-                        item.highlight 
-                          ? 'bg-blue-600 ring-4 ring-blue-100 dark:ring-blue-900' 
+                        item.highlight
+                          ? 'bg-amber-600 ring-4 ring-amber-100 dark:ring-amber-900'
                           : 'bg-gray-400'
                       }`}></div>
                     </div>
                     <div className="flex-1 pl-4">
                       <div className={`${
-                        item.highlight 
-                          ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-600' 
+                        item.highlight
+                          ? 'bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-600'
                           : 'bg-gray-50 dark:bg-gray-900'
                       } rounded-lg p-4`}>
                         <p className={`text-sm ${
-                          item.highlight 
-                            ? 'font-semibold text-blue-900 dark:text-blue-300' 
+                          item.highlight
+                            ? 'font-semibold text-amber-900 dark:text-amber-300'
                             : 'text-gray-700 dark:text-gray-300'
                         }`}>
                           {item.event}
