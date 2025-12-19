@@ -11,11 +11,25 @@ export async function generateStaticParams() {
   return blogPosts.map((post) => ({ slug: post.slug }))
 }
 
+// Posts that have custom OG images
+const postsWithOgImages = [
+  'turo-vs-itwhip-arizona-2025',
+  'renting-out-car-worth-it',
+  'p2p-insurance-tiers',
+  'esg-car-sharing',
+  'phoenix-airport-alternatives'
+]
+
 // Generate metadata
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
   const post = getPostBySlug(slug)
   if (!post) return { title: 'Post Not Found | ItWhip Blog' }
+
+  // Use custom OG image if exists, otherwise fall back to default
+  const ogImage = postsWithOgImages.includes(post.slug)
+    ? `https://itwhip.com/og/blog/${post.slug}.png`
+    : 'https://itwhip.com/og-image.jpg'
 
   return {
     title: `${post.title} | ItWhip Blog`,
@@ -31,7 +45,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       publishedTime: post.publishedAt,
       images: [
         {
-          url: `https://itwhip.com/og/blog/${post.slug}.png`,
+          url: ogImage,
           width: 1200,
           height: 630,
           alt: post.title
@@ -42,7 +56,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       card: 'summary_large_image',
       title: post.title,
       description: post.excerpt,
-      images: [`https://itwhip.com/og/blog/${post.slug}.png`]
+      images: [ogImage]
     },
     alternates: {
       canonical: `https://itwhip.com/blog/${post.slug}`
@@ -66,6 +80,11 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
   const { prev, next } = getAdjacentPosts(slug)
   
+  // Use custom OG image if exists, otherwise fall back to default
+  const postOgImage = postsWithOgImages.includes(post.slug)
+    ? `https://itwhip.com/og/blog/${post.slug}.png`
+    : 'https://itwhip.com/og-image.jpg'
+
   // Schema - Fixed with proper datetime format and complete fields
   const articleSchema = {
     '@context': 'https://schema.org',
@@ -73,11 +92,9 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     headline: post.title,
     description: post.excerpt,
     url: `https://itwhip.com/blog/${post.slug}`,
-    // Fixed: Added timezone for valid datetime
     datePublished: `${post.publishedAt}T00:00:00-07:00`,
     dateModified: `${post.publishedAt}T00:00:00-07:00`,
-    // Fixed: Added image field
-    image: `https://itwhip.com/og/blog/${post.slug}.png`,
+    image: postOgImage,
     // Fixed: Complete author object with url
     author: {
       '@type': 'Person',
