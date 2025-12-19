@@ -3,13 +3,12 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
-import { 
+import {
   IoChevronBackOutline,
   IoChevronForwardOutline,
-  IoExpandOutline,
   IoCloseOutline,
-  IoGridOutline,
-  IoCameraOutline
+  IoCameraOutline,
+  IoChevronUpOutline
 } from 'react-icons/io5'
 
 interface PhotoGalleryProps {
@@ -25,47 +24,42 @@ interface PhotoGalleryProps {
 
 export default function PhotoGallery({ photos, carName }: PhotoGalleryProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [isFullscreen, setIsFullscreen] = useState(false)
-  const [showThumbnails, setShowThumbnails] = useState(false)
-  const [showGrid, setShowGrid] = useState(false)
+  const [showAllPhotos, setShowAllPhotos] = useState(false)
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [imageLoading, setImageLoading] = useState<{ [key: string]: boolean }>({})
   const [touchStart, setTouchStart] = useState(0)
   const [touchEnd, setTouchEnd] = useState(0)
-  const thumbnailsRef = useRef<HTMLDivElement>(null)
+  const allPhotosRef = useRef<HTMLDivElement>(null)
 
   // Sort photos by order and ensure unique keys
   const sortedPhotos = [...photos]
     .sort((a, b) => a.order - b.order)
     .map((photo, index) => ({
       ...photo,
-      // Ensure unique ID by combining original ID with index if needed
       uniqueId: photo.id || `photo-${index}`,
       id: photo.id || `photo-${index}`
     }))
 
-  // Keyboard navigation
+  // Keyboard navigation for lightbox
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      if (isFullscreen) {
-        if (e.key === 'ArrowLeft') navigatePrev()
-        if (e.key === 'ArrowRight') navigateNext()
-        if (e.key === 'Escape') setIsFullscreen(false)
+      if (lightboxIndex !== null) {
+        if (e.key === 'ArrowLeft') navigateLightboxPrev()
+        if (e.key === 'ArrowRight') navigateLightboxNext()
+        if (e.key === 'Escape') setLightboxIndex(null)
       }
     }
 
     window.addEventListener('keydown', handleKeyPress)
     return () => window.removeEventListener('keydown', handleKeyPress)
-  }, [isFullscreen, currentIndex, sortedPhotos.length])
+  }, [lightboxIndex, sortedPhotos.length])
 
-  // Scroll thumbnail into view
+  // Scroll to top when showing all photos
   useEffect(() => {
-    if (thumbnailsRef.current && showThumbnails) {
-      const thumbnail = thumbnailsRef.current.children[currentIndex] as HTMLElement
-      if (thumbnail) {
-        thumbnail.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
-      }
+    if (showAllPhotos && allPhotosRef.current) {
+      allPhotosRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
-  }, [currentIndex, showThumbnails])
+  }, [showAllPhotos])
 
   const navigateNext = () => {
     setCurrentIndex((prev) => (prev + 1) % sortedPhotos.length)
@@ -73,6 +67,18 @@ export default function PhotoGallery({ photos, carName }: PhotoGalleryProps) {
 
   const navigatePrev = () => {
     setCurrentIndex((prev) => (prev - 1 + sortedPhotos.length) % sortedPhotos.length)
+  }
+
+  const navigateLightboxNext = () => {
+    if (lightboxIndex !== null) {
+      setLightboxIndex((prev) => ((prev ?? 0) + 1) % sortedPhotos.length)
+    }
+  }
+
+  const navigateLightboxPrev = () => {
+    if (lightboxIndex !== null) {
+      setLightboxIndex((prev) => ((prev ?? 0) - 1 + sortedPhotos.length) % sortedPhotos.length)
+    }
   }
 
   const handleImageLoad = (photoId: string) => {
@@ -83,7 +89,7 @@ export default function PhotoGallery({ photos, carName }: PhotoGalleryProps) {
     setImageLoading(prev => ({ ...prev, [photoId]: false }))
   }
 
-  // Touch handlers for swipe
+  // Touch handlers for swipe on main photo
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStart(e.targetTouches[0].clientX)
   }
@@ -94,7 +100,7 @@ export default function PhotoGallery({ photos, carName }: PhotoGalleryProps) {
 
   const handleTouchEnd = () => {
     if (!touchStart || !touchEnd) return
-    
+
     const distance = touchStart - touchEnd
     const isLeftSwipe = distance > 50
     const isRightSwipe = distance < -50
@@ -110,7 +116,7 @@ export default function PhotoGallery({ photos, carName }: PhotoGalleryProps) {
   // Handle empty state
   if (!sortedPhotos.length) {
     return (
-      <div className="aspect-[4/3] lg:aspect-[2.35/1] bg-gray-100 dark:bg-gray-800 sm:rounded-xl flex items-center justify-center">
+      <div className="aspect-[4/3] lg:aspect-[2.35/1] bg-gray-100 dark:bg-gray-800 sm:rounded-lg flex items-center justify-center">
         <div className="text-center">
           <IoCameraOutline className="w-16 h-16 text-gray-400 mx-auto mb-2" />
           <p className="text-gray-500">No photos available</p>
@@ -124,126 +130,222 @@ export default function PhotoGallery({ photos, carName }: PhotoGalleryProps) {
 
   return (
     <>
-      {/* Main Gallery */}
-      <div className="relative">
-        {/* Main Image - 4:3 on mobile/tablet, 2.35:1 cinematic on desktop */}
-        <div
-          className="aspect-[4/3] lg:aspect-[2.35/1] relative bg-gray-100 dark:bg-gray-800 sm:rounded-xl overflow-hidden cursor-pointer"
-          onClick={() => setIsFullscreen(true)}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-        >
-          {sortedPhotos.map((photo, index) => (
-            <div
-              key={`main-${photo.uniqueId}-${index}`}
-              className={`absolute inset-0 transition-opacity duration-300 ${
-                index === safeCurrentIndex ? 'opacity-100' : 'opacity-0 pointer-events-none'
-              }`}
-            >
-              {imageLoading[photo.uniqueId] !== false && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600"></div>
-                </div>
-              )}
-              <Image
-                src={photo.url || '/images/placeholder-car.jpg'}
-                alt={`${carName} - Photo ${index + 1}`}
-                fill
-                className="object-cover"
-                priority={index === 0}
-                onLoad={() => handleImageLoad(photo.uniqueId)}
-                onError={() => handleImageError(photo.uniqueId)}
-              />
-              {photo.caption && (
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-                  <p className="text-white text-sm">{photo.caption}</p>
-                </div>
-              )}
+      {/* Main Gallery - Only show when not in "all photos" view */}
+      {!showAllPhotos && (
+        <div className="relative">
+          {/* Main Image - 4:3 on mobile/tablet, 2.35:1 cinematic on desktop */}
+          <div
+            className="aspect-[4/3] lg:aspect-[2.35/1] relative bg-gray-100 dark:bg-gray-800 sm:rounded-lg overflow-hidden cursor-pointer"
+            onClick={() => setShowAllPhotos(true)}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
+            {sortedPhotos.map((photo, index) => (
+              <div
+                key={`main-${photo.uniqueId}-${index}`}
+                className={`absolute inset-0 transition-opacity duration-300 ${
+                  index === safeCurrentIndex ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                }`}
+              >
+                {imageLoading[photo.uniqueId] !== false && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600"></div>
+                  </div>
+                )}
+                <Image
+                  src={photo.url || '/images/placeholder-car.jpg'}
+                  alt={`${carName} - Photo ${index + 1}`}
+                  fill
+                  className="object-cover"
+                  priority={index === 0}
+                  onLoad={() => handleImageLoad(photo.uniqueId)}
+                  onError={() => handleImageError(photo.uniqueId)}
+                />
+                {photo.caption && (
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
+                    <p className="text-white text-sm">{photo.caption}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* Navigation Buttons - dark on mobile, light on desktop */}
+            {sortedPhotos.length > 1 && (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    navigatePrev()
+                  }}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 sm:bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full p-2 transition-all shadow-lg text-white sm:text-black dark:text-white"
+                  aria-label="Previous photo"
+                >
+                  <IoChevronBackOutline className="w-6 h-6" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    navigateNext()
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 sm:bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full p-2 transition-all shadow-lg text-white sm:text-black dark:text-white"
+                  aria-label="Next photo"
+                >
+                  <IoChevronForwardOutline className="w-6 h-6" />
+                </button>
+              </>
+            )}
+
+            {/* Photo Counter - bottom right on mobile, bottom left on desktop */}
+            <div className="absolute bottom-4 right-4 sm:right-auto sm:left-4 bg-black/50 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-sm font-medium">
+              {safeCurrentIndex + 1} / {sortedPhotos.length}
             </div>
-          ))}
 
-          {/* Navigation Buttons - dark on mobile, light on desktop */}
-          {sortedPhotos.length > 1 && (
-            <>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  navigatePrev()
-                }}
-                className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 sm:bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full p-2 transition-all shadow-lg text-white sm:text-black dark:text-white"
-                aria-label="Previous photo"
-              >
-                <IoChevronBackOutline className="w-6 h-6" />
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  navigateNext()
-                }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 sm:bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full p-2 transition-all shadow-lg text-white sm:text-black dark:text-white"
-                aria-label="Next photo"
-              >
-                <IoChevronForwardOutline className="w-6 h-6" />
-              </button>
-            </>
-          )}
+            {/* Tap to view all indicator - subtle hint */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 sm:hidden bg-black/40 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs">
+              Tap to view all photos
+            </div>
+          </div>
+        </div>
+      )}
 
-          {/* Photo Counter - bottom left on desktop, hidden on mobile */}
-          <div className="hidden sm:block absolute bottom-4 left-4 bg-black/50 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-sm font-medium">
-            {safeCurrentIndex + 1} / {sortedPhotos.length}
+      {/* All Photos Vertical Listing View */}
+      {showAllPhotos && (
+        <div ref={allPhotosRef} className="bg-gray-50 dark:bg-gray-900">
+          {/* Header with collapse button */}
+          <div className="sticky top-0 z-20 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
+            <div className="flex items-center justify-between max-w-4xl mx-auto">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                All Photos ({sortedPhotos.length})
+              </h3>
+              <button
+                onClick={() => setShowAllPhotos(false)}
+                className="flex items-center gap-1 text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 font-medium text-sm"
+              >
+                <IoChevronUpOutline className="w-4 h-4" />
+                Collapse
+              </button>
+            </div>
           </div>
 
-          {/* Action Buttons - bottom right on desktop, hidden on mobile */}
-          <div className="hidden sm:flex absolute bottom-4 right-4 gap-2">
+          {/* Vertical photo listing */}
+          <div className="max-w-4xl mx-auto px-4 py-4 space-y-4">
+            {sortedPhotos.map((photo, index) => (
+              <div
+                key={`listing-${photo.uniqueId}-${index}`}
+                className="relative aspect-[4/3] rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 cursor-pointer hover:ring-2 hover:ring-amber-500 transition-all"
+                onClick={() => setLightboxIndex(index)}
+              >
+                <Image
+                  src={photo.url || '/images/placeholder-car.jpg'}
+                  alt={`${carName} - Photo ${index + 1}`}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 896px"
+                />
+                {/* Photo number badge */}
+                <div className="absolute top-3 left-3 bg-black/50 backdrop-blur-sm text-white px-2.5 py-1 rounded-full text-xs font-medium">
+                  {index + 1} / {sortedPhotos.length}
+                </div>
+                {photo.caption && (
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
+                    <p className="text-white text-sm">{photo.caption}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Back to main view button at bottom */}
+          <div className="sticky bottom-4 flex justify-center pb-4">
             <button
-              onClick={(e) => {
-                e.stopPropagation()
-                setShowGrid(!showGrid)
-              }}
-              className="bg-black/50 backdrop-blur-sm text-white p-2.5 rounded-full hover:bg-black/60 transition-colors"
-              aria-label="Grid view"
+              onClick={() => setShowAllPhotos(false)}
+              className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2.5 rounded-full font-medium shadow-lg transition-colors"
             >
-              <IoGridOutline className="w-5 h-5" />
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                setIsFullscreen(true)
-              }}
-              className="bg-black/50 backdrop-blur-sm text-white p-2.5 rounded-full hover:bg-black/60 transition-colors"
-              aria-label="Fullscreen"
-            >
-              <IoExpandOutline className="w-5 h-5" />
+              Back to car details
             </button>
           </div>
         </div>
+      )}
 
-        {/* Thumbnail Strip */}
-        {sortedPhotos.length > 1 && !showGrid && (
-          <div className="mt-2 sm:mt-4">
-            <div className="flex justify-center items-center mb-2">
-              <button
-                onClick={() => setShowThumbnails(!showThumbnails)}
-                className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors px-4 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
-              >
-                {showThumbnails ? 'Hide' : 'View'} thumbnails
-              </button>
+      {/* Lightbox Popup - appears when clicking a photo in the listing */}
+      {lightboxIndex !== null && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8"
+          onClick={() => setLightboxIndex(null)}
+        >
+          {/* Semi-transparent backdrop */}
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+
+          {/* Lightbox content */}
+          <div
+            className="relative w-full max-w-5xl max-h-[85vh] bg-white dark:bg-gray-900 rounded-xl overflow-hidden shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <button
+              onClick={() => setLightboxIndex(null)}
+              className="absolute top-3 right-3 z-10 bg-black/50 backdrop-blur-sm text-white p-2 rounded-full hover:bg-black/60 transition-colors"
+            >
+              <IoCloseOutline className="w-6 h-6" />
+            </button>
+
+            {/* Photo counter */}
+            <div className="absolute top-3 left-3 z-10 bg-black/50 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-sm font-medium">
+              {lightboxIndex + 1} / {sortedPhotos.length}
             </div>
-            
-            {showThumbnails && (
-              <div 
-                ref={thumbnailsRef}
-                className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600"
-              >
+
+            {/* Image container */}
+            <div className="relative aspect-[4/3] sm:aspect-[16/10]">
+              <Image
+                src={sortedPhotos[lightboxIndex]?.url || '/images/placeholder-car.jpg'}
+                alt={`${carName} - Photo ${lightboxIndex + 1}`}
+                fill
+                className="object-contain bg-gray-100 dark:bg-gray-800"
+                priority
+              />
+            </div>
+
+            {/* Navigation buttons */}
+            {sortedPhotos.length > 1 && (
+              <>
+                <button
+                  onClick={navigateLightboxPrev}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/50 backdrop-blur-sm text-white p-3 rounded-full hover:bg-black/60 transition-colors"
+                  aria-label="Previous photo"
+                >
+                  <IoChevronBackOutline className="w-6 h-6" />
+                </button>
+                <button
+                  onClick={navigateLightboxNext}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/50 backdrop-blur-sm text-white p-3 rounded-full hover:bg-black/60 transition-colors"
+                  aria-label="Next photo"
+                >
+                  <IoChevronForwardOutline className="w-6 h-6" />
+                </button>
+              </>
+            )}
+
+            {/* Caption if exists */}
+            {sortedPhotos[lightboxIndex]?.caption && (
+              <div className="p-4 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
+                <p className="text-gray-700 dark:text-gray-300 text-sm text-center">
+                  {sortedPhotos[lightboxIndex].caption}
+                </p>
+              </div>
+            )}
+
+            {/* Thumbnail strip at bottom */}
+            <div className="p-3 bg-gray-100 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex gap-2 justify-center overflow-x-auto">
                 {sortedPhotos.map((photo, index) => (
                   <button
-                    key={`thumb-${photo.uniqueId}-${index}`}
-                    onClick={() => setCurrentIndex(index)}
-                    className={`relative flex-shrink-0 w-24 h-16 rounded-lg overflow-hidden border-2 transition-all ${
-                      index === safeCurrentIndex 
-                        ? 'border-amber-600 scale-105' 
-                        : 'border-transparent hover:border-gray-300 dark:hover:border-gray-600'
+                    key={`lightbox-thumb-${photo.uniqueId}-${index}`}
+                    onClick={() => setLightboxIndex(index)}
+                    className={`relative flex-shrink-0 w-14 h-10 rounded-md overflow-hidden border-2 transition-all ${
+                      index === lightboxIndex
+                        ? 'border-amber-500 scale-110'
+                        : 'border-transparent hover:border-gray-400 opacity-70 hover:opacity-100'
                     }`}
                   >
                     <Image
@@ -251,126 +353,7 @@ export default function PhotoGallery({ photos, carName }: PhotoGalleryProps) {
                       alt={`Thumbnail ${index + 1}`}
                       fill
                       className="object-cover"
-                      sizes="96px"
-                    />
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Grid View */}
-        {showGrid && (
-          <div className="mt-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-            {sortedPhotos.map((photo, index) => (
-              <button
-                key={`grid-${photo.uniqueId}-${index}`}
-                onClick={() => {
-                  setCurrentIndex(index)
-                  setShowGrid(false)
-                }}
-                className="relative aspect-[4/3] rounded-lg overflow-hidden hover:ring-2 hover:ring-amber-600 transition-all"
-              >
-                <Image
-                  src={photo.url || '/images/placeholder-car.jpg'}
-                  alt={`Grid photo ${index + 1}`}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                />
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Fullscreen Modal */}
-      {isFullscreen && (
-        <div className="fixed inset-0 z-50 bg-black">
-          <div className="relative h-full flex items-center justify-center">
-            {/* Close Button */}
-            <button
-              onClick={() => setIsFullscreen(false)}
-              className="absolute top-4 right-4 z-10 bg-white/10 backdrop-blur-sm text-white p-2 rounded-full hover:bg-white/20 transition-colors"
-            >
-              <IoCloseOutline className="w-6 h-6" />
-            </button>
-
-            {/* Photo Counter */}
-            <div className="absolute top-4 left-4 z-10 bg-white/10 backdrop-blur-sm text-white px-3 py-1 rounded-full">
-              {safeCurrentIndex + 1} / {sortedPhotos.length}
-            </div>
-
-            {/* Fullscreen Image */}
-            <div 
-              className="relative w-full h-full"
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
-            >
-              {sortedPhotos.map((photo, index) => (
-                <div
-                  key={`fullscreen-${photo.uniqueId}-${index}`}
-                  className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${
-                    index === safeCurrentIndex ? 'opacity-100' : 'opacity-0 pointer-events-none'
-                  }`}
-                >
-                  <Image
-                    src={photo.url || '/images/placeholder-car.jpg'}
-                    alt={`${carName} - Fullscreen ${index + 1}`}
-                    fill
-                    className="object-contain"
-                    priority={index === safeCurrentIndex}
-                  />
-                  {photo.caption && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-6">
-                      <p className="text-white text-lg text-center">{photo.caption}</p>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* Fullscreen Navigation */}
-            {sortedPhotos.length > 1 && (
-              <>
-                <button
-                  onClick={navigatePrev}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/10 backdrop-blur-sm text-white p-3 rounded-full hover:bg-white/20 transition-colors"
-                  aria-label="Previous photo"
-                >
-                  <IoChevronBackOutline className="w-8 h-8" />
-                </button>
-                <button
-                  onClick={navigateNext}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/10 backdrop-blur-sm text-white p-3 rounded-full hover:bg-white/20 transition-colors"
-                  aria-label="Next photo"
-                >
-                  <IoChevronForwardOutline className="w-8 h-8" />
-                </button>
-              </>
-            )}
-
-            {/* Fullscreen Thumbnails */}
-            <div className="absolute bottom-0 left-0 right-0 p-4">
-              <div className="flex gap-2 justify-center overflow-x-auto max-w-full">
-                {sortedPhotos.map((photo, index) => (
-                  <button
-                    key={`fullscreen-thumb-${photo.uniqueId}-${index}`}
-                    onClick={() => setCurrentIndex(index)}
-                    className={`relative flex-shrink-0 w-16 h-12 rounded-lg overflow-hidden border-2 transition-all ${
-                      index === safeCurrentIndex 
-                        ? 'border-white scale-110' 
-                        : 'border-white/30 hover:border-white/60 opacity-70 hover:opacity-100'
-                    }`}
-                  >
-                    <Image
-                      src={photo.url || '/images/placeholder-car.jpg'}
-                      alt={`Fullscreen thumbnail ${index + 1}`}
-                      fill
-                      className="object-cover"
-                      sizes="64px"
+                      sizes="56px"
                     />
                   </button>
                 ))}
