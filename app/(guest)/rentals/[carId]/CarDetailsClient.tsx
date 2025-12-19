@@ -181,6 +181,7 @@ export default function CarDetailsClient({ params }: PageProps) {
   const [showGuidelines, setShowGuidelines] = useState(true)
   const [showAllAboutFeatures, setShowAllAboutFeatures] = useState(false)
   const [hasBookingHistory, setHasBookingHistory] = useState(false)
+  const [isViewingAllPhotos, setIsViewingAllPhotos] = useState(false)
 
   useEffect(() => {
     if (carId) {
@@ -476,19 +477,62 @@ export default function CarDetailsClient({ params }: PageProps) {
         {/* Desktop: Constrained width container */}
         <div className="hidden sm:block max-w-7xl mx-auto px-4 pt-4">
           <div className="relative">
-            {/* Overlay buttons on photo - desktop */}
-            <div className="absolute top-4 left-4 right-4 z-30 flex items-center justify-between">
+            {/* Overlay buttons on photo - hidden when viewing all photos */}
+            {!isViewingAllPhotos && (
+              <div className="absolute top-4 left-4 right-4 z-30 flex items-center justify-between">
+                <button
+                  onClick={() => router.back()}
+                  className="bg-black/50 backdrop-blur-md text-white p-2.5 rounded-full shadow-lg hover:bg-black/60 transition-colors flex items-center gap-2"
+                >
+                  <IoArrowBackOutline className="w-5 h-5" />
+                  <span className="text-sm font-medium pr-1">Back</span>
+                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={toggleFavorite}
+                    className="bg-black/50 backdrop-blur-md text-white p-2.5 rounded-full shadow-lg hover:bg-black/60 transition-colors"
+                  >
+                    {isFavorited ? (
+                      <IoHeart className="w-5 h-5 text-red-500" />
+                    ) : (
+                      <IoHeartOutline className="w-5 h-5" />
+                    )}
+                  </button>
+                  <button
+                    onClick={handleShare}
+                    className="bg-black/50 backdrop-blur-md text-white p-2.5 rounded-full shadow-lg hover:bg-black/60 transition-colors"
+                  >
+                    <IoShareSocialOutline className="w-5 h-5" />
+                  </button>
+                  <button className="bg-black/50 backdrop-blur-md text-white p-2.5 rounded-full shadow-lg hover:bg-black/60 transition-colors">
+                    <IoFlagOutline className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            )}
+            <PhotoGallery
+              photos={car.photos || []}
+              carName={`${car.year} ${car.make} ${car.model}`}
+              onViewModeChange={setIsViewingAllPhotos}
+            />
+          </div>
+        </div>
+
+        {/* Mobile: Full width with overlay buttons */}
+        <div className="sm:hidden relative">
+          {/* Overlay buttons - hidden when viewing all photos */}
+          {!isViewingAllPhotos && (
+            <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-4 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)]">
               <button
                 onClick={() => router.back()}
-                className="bg-black/50 backdrop-blur-md text-white p-2.5 rounded-full shadow-lg hover:bg-black/60 transition-colors flex items-center gap-2"
+                className="bg-black/50 backdrop-blur-md text-white p-2.5 rounded-full shadow-lg"
               >
                 <IoArrowBackOutline className="w-5 h-5" />
-                <span className="text-sm font-medium pr-1">Back</span>
               </button>
               <div className="flex items-center gap-2">
                 <button
                   onClick={toggleFavorite}
-                  className="bg-black/50 backdrop-blur-md text-white p-2.5 rounded-full shadow-lg hover:bg-black/60 transition-colors"
+                  className="bg-black/50 backdrop-blur-md text-white p-2.5 rounded-full shadow-lg"
                 >
                   {isFavorited ? (
                     <IoHeart className="w-5 h-5 text-red-500" />
@@ -498,54 +542,23 @@ export default function CarDetailsClient({ params }: PageProps) {
                 </button>
                 <button
                   onClick={handleShare}
-                  className="bg-black/50 backdrop-blur-md text-white p-2.5 rounded-full shadow-lg hover:bg-black/60 transition-colors"
+                  className="bg-black/50 backdrop-blur-md text-white p-2.5 rounded-full shadow-lg"
                 >
                   <IoShareSocialOutline className="w-5 h-5" />
                 </button>
-                <button className="bg-black/50 backdrop-blur-md text-white p-2.5 rounded-full shadow-lg hover:bg-black/60 transition-colors">
-                  <IoFlagOutline className="w-5 h-5" />
-                </button>
               </div>
             </div>
-            <PhotoGallery photos={car.photos || []} carName={`${car.year} ${car.make} ${car.model}`} />
-          </div>
-        </div>
-
-        {/* Mobile: Full width with overlay buttons */}
-        <div className="sm:hidden relative">
-          {/* Overlay buttons - positioned below status bar */}
-          <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-4 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)]">
-            <button
-              onClick={() => router.back()}
-              className="bg-black/50 backdrop-blur-md text-white p-2.5 rounded-full shadow-lg"
-            >
-              <IoArrowBackOutline className="w-5 h-5" />
-            </button>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={toggleFavorite}
-                className="bg-black/50 backdrop-blur-md text-white p-2.5 rounded-full shadow-lg"
-              >
-                {isFavorited ? (
-                  <IoHeart className="w-5 h-5 text-red-500" />
-                ) : (
-                  <IoHeartOutline className="w-5 h-5" />
-                )}
-              </button>
-              <button
-                onClick={handleShare}
-                className="bg-black/50 backdrop-blur-md text-white p-2.5 rounded-full shadow-lg"
-              >
-                <IoShareSocialOutline className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-          <PhotoGallery photos={car.photos || []} carName={`${car.year} ${car.make} ${car.model}`} />
+          )}
+          <PhotoGallery
+            photos={car.photos || []}
+            carName={`${car.year} ${car.make} ${car.model}`}
+            onViewModeChange={setIsViewingAllPhotos}
+          />
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      {/* Main Content - Hidden when viewing all photos */}
+      <div className={`max-w-7xl mx-auto px-4 py-8 ${isViewingAllPhotos ? 'hidden' : ''}`}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Car Details */}
           <div className="lg:col-span-2 space-y-6">

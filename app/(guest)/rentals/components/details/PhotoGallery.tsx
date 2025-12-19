@@ -20,11 +20,17 @@ interface PhotoGalleryProps {
     order: number
   }>
   carName: string
+  onViewModeChange?: (isAllPhotos: boolean) => void
 }
 
-export default function PhotoGallery({ photos, carName }: PhotoGalleryProps) {
+export default function PhotoGallery({ photos, carName, onViewModeChange }: PhotoGalleryProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [showAllPhotos, setShowAllPhotos] = useState(false)
+
+  // Notify parent when view mode changes
+  useEffect(() => {
+    onViewModeChange?.(showAllPhotos)
+  }, [showAllPhotos, onViewModeChange])
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [imageLoading, setImageLoading] = useState<{ [key: string]: boolean }>({})
   const [touchStart, setTouchStart] = useState(0)
@@ -256,11 +262,21 @@ export default function PhotoGallery({ photos, carName }: PhotoGalleryProps) {
             ))}
           </div>
 
-          {/* Back to main view button at bottom */}
-          <div className="sticky bottom-4 flex justify-center pb-4">
+          {/* Spacer for fixed button */}
+          <div className="h-20" />
+        </div>
+      )}
+
+      {/* Fixed "Back to car details" button - always visible when viewing all photos */}
+      {showAllPhotos && (
+        <div
+          className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-white via-white dark:from-gray-900 dark:via-gray-900 to-transparent pt-8 px-4"
+          style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))' }}
+        >
+          <div className="flex justify-center">
             <button
               onClick={() => setShowAllPhotos(false)}
-              className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2.5 rounded-full font-medium shadow-lg transition-colors"
+              className="bg-amber-500 hover:bg-amber-600 text-white px-8 py-3 rounded-full font-semibold shadow-xl transition-colors text-base"
             >
               Back to car details
             </button>
