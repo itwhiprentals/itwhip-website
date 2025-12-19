@@ -1645,6 +1645,12 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
         onClose={() => setShowRentalAgreement(false)}
         carDetails={car}
         bookingDetails={savedBookingDetails}
+        guestDetails={{
+          name: guestName || session?.user?.name || `${driverFirstName} ${driverLastName}`.trim() || '',
+          email: guestEmail || session?.user?.email || driverEmail || '',
+          bookingCode: '',
+          verificationStatus: 'PENDING'
+        }}
         isDraft={true}
       />
       

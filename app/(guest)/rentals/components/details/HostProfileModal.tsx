@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { formatPrivateName, isCompanyName } from '@/app/lib/utils/namePrivacy'
+import { formatPrivateName, isCompanyName, formatReviewerName } from '@/app/lib/utils/namePrivacy'
 import { 
   IoCloseOutline,
   IoStarOutline,
@@ -450,7 +450,7 @@ export default function HostProfileModal({ hostId, isOpen, onClose }: HostProfil
                               <div className="flex-1">
                                 <div className="flex items-center justify-between mb-1">
                                   <span className="font-medium text-gray-900 dark:text-white text-sm">
-                                    {review.reviewer.name}
+                                    {formatReviewerName(review.reviewer.name)}
                                   </span>
                                   <div className="flex">
                                     {[...Array(5)].map((_, i) => (
