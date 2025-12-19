@@ -126,6 +126,13 @@ Disallow: /security
 Disallow: /verify
 
 # ============================================
+# BLOCK: Next.js Static Assets (Save Crawl Budget)
+# ============================================
+Disallow: /_next/static/
+Disallow: /*.woff$
+Disallow: /*.woff2$
+
+# ============================================
 # BLOCK: Large Media Files (Save Crawl Budget)
 # ============================================
 Disallow: /*.mp4$
