@@ -1,9 +1,14 @@
 // app/(guest)/rentals/[carId]/page.tsx
-import { Metadata } from 'next'
+import { Metadata, Viewport } from 'next'
 import { redirect, notFound } from 'next/navigation'
 import Script from 'next/script'
 import CarDetailsClient from './CarDetailsClient'
 import { extractCarId, generateCarUrl, isOldUrlFormat } from '@/app/lib/utils/urls'
+
+// Black theme color for car detail page - makes status bar blend with photo on mobile
+export const viewport: Viewport = {
+  themeColor: '#000000',
+}
 
 // Generate dynamic Open Graph metadata for link previews
 export async function generateMetadata({ 

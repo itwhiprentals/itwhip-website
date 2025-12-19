@@ -10,6 +10,11 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
+  viewportFit: 'cover', // Allow content to extend under status bar
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#030712' },
+  ],
 }
 
 export const metadata: Metadata = {
@@ -84,7 +89,14 @@ export const metadata: Metadata = {
       { url: '/apple-touch-icon.png' },
     ],
   },
-  
+
+  // iOS Add to Home Screen - transparent status bar
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'ItWhip',
+  },
+
   applicationName: 'ItWhip',
   referrer: 'origin-when-cross-origin',
   category: 'car rental',
@@ -232,8 +244,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
-        <meta name="theme-color" content="#030712" media="(prefers-color-scheme: dark)" />
+        {/* Theme color is set via viewport export and can be overridden per-page */}
         {/* REMOVED: Hardcoded canonical - let each page set its own */}
         
         {/* Schema 1: Organization */}

@@ -110,7 +110,7 @@ export default function PhotoGallery({ photos, carName }: PhotoGalleryProps) {
   // Handle empty state
   if (!sortedPhotos.length) {
     return (
-      <div className="aspect-[16/9] bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
+      <div className="aspect-[4/3] lg:aspect-[16/9] bg-gray-100 dark:bg-gray-800 sm:rounded-lg flex items-center justify-center">
         <div className="text-center">
           <IoCameraOutline className="w-16 h-16 text-gray-400 mx-auto mb-2" />
           <p className="text-gray-500">No photos available</p>
@@ -126,9 +126,9 @@ export default function PhotoGallery({ photos, carName }: PhotoGalleryProps) {
     <>
       {/* Main Gallery */}
       <div className="relative">
-        {/* Main Image */}
-        <div 
-          className="aspect-[16/9] relative bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden cursor-pointer"
+        {/* Main Image - Square on mobile, 4:3 on tablet, 16:9 on desktop */}
+        <div
+          className="aspect-[4/3] lg:aspect-[16/9] relative bg-gray-100 dark:bg-gray-800 sm:rounded-lg overflow-hidden cursor-pointer"
           onClick={() => setIsFullscreen(true)}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
@@ -163,7 +163,7 @@ export default function PhotoGallery({ photos, carName }: PhotoGalleryProps) {
             </div>
           ))}
 
-          {/* Navigation Buttons */}
+          {/* Navigation Buttons - dark on mobile, light on desktop */}
           {sortedPhotos.length > 1 && (
             <>
               <button
@@ -171,7 +171,7 @@ export default function PhotoGallery({ photos, carName }: PhotoGalleryProps) {
                   e.stopPropagation()
                   navigatePrev()
                 }}
-                className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 backdrop-blur-sm rounded-full p-2 transition-all shadow-lg"
+                className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 sm:bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full p-2 transition-all shadow-lg text-white sm:text-black dark:text-white"
                 aria-label="Previous photo"
               >
                 <IoChevronBackOutline className="w-6 h-6" />
@@ -181,7 +181,7 @@ export default function PhotoGallery({ photos, carName }: PhotoGalleryProps) {
                   e.stopPropagation()
                   navigateNext()
                 }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 backdrop-blur-sm rounded-full p-2 transition-all shadow-lg"
+                className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 sm:bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full p-2 transition-all shadow-lg text-white sm:text-black dark:text-white"
                 aria-label="Next photo"
               >
                 <IoChevronForwardOutline className="w-6 h-6" />
@@ -189,13 +189,13 @@ export default function PhotoGallery({ photos, carName }: PhotoGalleryProps) {
             </>
           )}
 
-          {/* Photo Counter */}
-          <div className="absolute top-4 left-4 bg-black/50 backdrop-blur-sm text-white px-3 py-1 rounded-full text-sm">
+          {/* Photo Counter - hidden on mobile (CarDetailsClient has overlay buttons) */}
+          <div className="hidden sm:block absolute top-4 left-4 bg-black/50 backdrop-blur-sm text-white px-3 py-1 rounded-full text-sm">
             {safeCurrentIndex + 1} / {sortedPhotos.length}
           </div>
 
-          {/* Action Buttons */}
-          <div className="absolute top-4 right-4 flex gap-2">
+          {/* Action Buttons - hidden on mobile */}
+          <div className="hidden sm:flex absolute top-4 right-4 gap-2">
             <button
               onClick={(e) => {
                 e.stopPropagation()
@@ -221,7 +221,7 @@ export default function PhotoGallery({ photos, carName }: PhotoGalleryProps) {
 
         {/* Thumbnail Strip */}
         {sortedPhotos.length > 1 && !showGrid && (
-          <div className="mt-4">
+          <div className="mt-2 sm:mt-4">
             <div className="flex justify-center items-center mb-2">
               <button
                 onClick={() => setShowThumbnails(!showThumbnails)}
@@ -279,7 +279,6 @@ export default function PhotoGallery({ photos, carName }: PhotoGalleryProps) {
                   className="object-cover"
                   sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
                 />
-                <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition-colors" />
               </button>
             ))}
           </div>

@@ -471,8 +471,8 @@ export default function CarDetailsClient({ params }: PageProps) {
         </div>
       )}
 
-      {/* Header Bar */}
-      <div className="sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+      {/* Header Bar - Hidden on mobile, shown on sm and up */}
+      <div className="hidden sm:block sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <button
@@ -508,9 +508,45 @@ export default function CarDetailsClient({ params }: PageProps) {
         </div>
       </div>
 
-      {/* Photo Gallery - Add opacity if suspended */}
-      <div className={car.isBookable === false ? 'opacity-90' : ''}>
-        <PhotoGallery photos={car.photos || []} carName={`${car.year} ${car.make} ${car.model}`} />
+      {/* Photo Gallery - Hero image with overlay buttons on mobile */}
+      <div className={`relative ${car.isBookable === false ? 'opacity-90' : ''}`}>
+        {/* Mobile: Photo with overlay buttons */}
+        <div className="sm:hidden relative">
+          {/* Overlay buttons - positioned below status bar */}
+          <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-4 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)]">
+            <button
+              onClick={() => router.back()}
+              className="bg-black/50 backdrop-blur-md text-white p-2.5 rounded-full shadow-lg"
+            >
+              <IoArrowBackOutline className="w-5 h-5" />
+            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toggleFavorite}
+                className="bg-black/50 backdrop-blur-md text-white p-2.5 rounded-full shadow-lg"
+              >
+                {isFavorited ? (
+                  <IoHeart className="w-5 h-5 text-red-500" />
+                ) : (
+                  <IoHeartOutline className="w-5 h-5" />
+                )}
+              </button>
+              <button
+                onClick={handleShare}
+                className="bg-black/50 backdrop-blur-md text-white p-2.5 rounded-full shadow-lg"
+              >
+                <IoShareSocialOutline className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          <PhotoGallery photos={car.photos || []} carName={`${car.year} ${car.make} ${car.model}`} />
+        </div>
+
+        {/* Desktop/Tablet: Normal flow */}
+        <div className="hidden sm:block">
+          <PhotoGallery photos={car.photos || []} carName={`${car.year} ${car.make} ${car.model}`} />
+        </div>
       </div>
 
       {/* Main Content */}
@@ -520,8 +556,11 @@ export default function CarDetailsClient({ params }: PageProps) {
           <div className="lg:col-span-2 space-y-6">
             {/* Title Section */}
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">
-                {car.year} {car.make} {car.model}
+              <h1 className="text-2xl sm:text-3xl text-gray-900 dark:text-white mb-3">
+                <span className="font-bold">{car.year} {car.make}</span>
+                <span className="block sm:inline sm:ml-2 text-lg sm:text-xl font-normal text-gray-700 dark:text-gray-300">
+                  {car.model}
+                </span>
               </h1>
               
               {/* Location and Meta Info */}
