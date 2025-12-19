@@ -52,6 +52,9 @@ Allow: /switch-from-turo
 # Platform Features (Public)
 Allow: /mileage-forensics
 Allow: /esg-dashboard
+Allow: /sdk
+Allow: /integrations
+Allow: /developers
 
 # Guest Rental Pages (Public)
 Allow: /rentals
