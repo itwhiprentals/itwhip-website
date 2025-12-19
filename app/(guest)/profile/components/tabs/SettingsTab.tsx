@@ -493,7 +493,7 @@ export default function SettingsTab({
                   Download My Data
                 </h4>
                 <p className="text-xs text-gray-600 dark:text-gray-400">
-                  Export all your data as a JSON file (GDPR)
+                  Get a copy of your profile, trips, and account info
                 </p>
               </div>
               {isExporting ? (

@@ -32,14 +32,6 @@ async function getUserFromToken(req: NextRequest): Promise<string | null> {
 }
 
 // Mask sensitive data
-function maskEmail(email: string | null): string {
-  if (!email) return ''
-  const [local, domain] = email.split('@')
-  if (!domain) return email
-  const maskedLocal = local.charAt(0) + '***' + (local.length > 1 ? local.charAt(local.length - 1) : '')
-  return `${maskedLocal}@${domain}`
-}
-
 function maskPhone(phone: string | null): string {
   if (!phone) return ''
   const digits = phone.replace(/\D/g, '')
@@ -85,7 +77,7 @@ export async function GET(req: NextRequest) {
             status: true,
             startDate: true,
             endDate: true,
-            totalPrice: true,
+            totalAmount: true,
             createdAt: true,
             car: {
               select: {
@@ -184,12 +176,12 @@ export async function GET(req: NextRequest) {
         lastUpdated: user.updatedAt,
         lastActive: user.lastActive
       },
-      bookings: user.rentalBookings.map(booking => ({
+      bookings: user.rentalBookings.map((booking) => ({
         id: booking.id,
         status: booking.status,
         startDate: booking.startDate,
         endDate: booking.endDate,
-        totalPrice: booking.totalPrice ? Number(booking.totalPrice) : null,
+        totalAmount: booking.totalAmount ? Number(booking.totalAmount) : null,
         vehicle: booking.car ? `${booking.car.year} ${booking.car.make} ${booking.car.model}` : null,
         createdAt: booking.createdAt
       })),
