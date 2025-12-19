@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { formatPrivateName, formatReviewerName, isCompanyName } from '@/app/lib/utils/namePrivacy'
 import {
   IoCloseOutline,
   IoStar,
@@ -84,40 +85,6 @@ interface HostProfileSheetProps {
   hostId: string
   isOpen: boolean
   onClose: () => void
-}
-
-// Helper function to extract first name (or full name for companies)
-function getDisplayName(name: string | null, isCompany?: boolean): string {
-  if (!name) return 'Host'
-
-  // Check if it's a company name
-  if (isCompany || isCompanyName(name)) {
-    return name
-  }
-
-  const firstName = name.trim().split(/\s+/)[0]
-  return firstName || 'Host'
-}
-
-// Helper to detect company names
-function isCompanyName(name: string): boolean {
-  if (!name) return false
-
-  const companyIndicators = [
-    'LLC', 'L.L.C.', 'Inc', 'Inc.', 'Corp', 'Corporation',
-    'Company', 'Co.', 'Group', 'Motors', 'Rentals', 'Services',
-    'Automotive', 'Auto', 'Cars', 'Vehicles', 'Fleet'
-  ]
-
-  const nameLower = name.toLowerCase()
-
-  for (const indicator of companyIndicators) {
-    if (nameLower.includes(indicator.toLowerCase())) {
-      return true
-    }
-  }
-
-  return false
 }
 
 // Helper to get badge info
@@ -219,7 +186,7 @@ export default function HostProfileSheet({ hostId, isOpen, onClose }: HostProfil
 
   if (!isOpen) return null
 
-  const displayName = hostData ? getDisplayName(hostData.name, hostData.isCompany) : 'Host'
+  const displayName = hostData ? formatPrivateName(hostData.name, hostData.isCompany) : 'Host'
   const hostInitial = displayName.charAt(0).toUpperCase()
   const badgeInfo = hostData?.badge ? getBadgeInfo(hostData.badge) : null
   const rating = hostData ? getRatingValue(hostData.rating) : 0
@@ -458,7 +425,7 @@ export default function HostProfileSheet({ hostId, isOpen, onClose }: HostProfil
                             <div className="flex-1">
                               <div className="flex items-center justify-between">
                                 <span className="text-xs font-medium text-gray-900 dark:text-white">
-                                  {review.reviewer.name?.split(' ')[0] || 'Guest'}
+                                  {formatReviewerName(review.reviewer.name)}
                                 </span>
                                 <div className="flex">
                                   {[...Array(5)].map((_, i) => (

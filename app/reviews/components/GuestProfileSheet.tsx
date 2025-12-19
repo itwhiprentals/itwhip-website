@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import { getFirstNameOnly, formatReviewerName } from '@/app/lib/utils/namePrivacy'
 import {
   IoCloseOutline,
   IoStar,
@@ -83,13 +84,6 @@ interface GuestProfileSheetProps {
   isOpen: boolean
   onClose: () => void
   guest: GuestProfile | null
-}
-
-// Helper function to extract first name
-function getFirstName(fullName: string | null): string {
-  if (!fullName) return 'Guest'
-  const firstName = fullName.trim().split(/\s+/)[0]
-  return firstName || 'Guest'
 }
 
 export default function GuestProfileSheet({ isOpen, onClose, guest }: GuestProfileSheetProps) {
@@ -197,7 +191,7 @@ export default function GuestProfileSheet({ isOpen, onClose, guest }: GuestProfi
   if (!isOpen || !guest) return null
 
   const profileData = fullProfileData
-  const guestName = getFirstName(guest.name)
+  const guestName = formatReviewerName(guest.name)
   const averageRating = profileData?.stats?.averageRating ||
     (profileData?.recentReviews ? calculateAverageRating(profileData.recentReviews) : 0)
 
@@ -250,7 +244,7 @@ export default function GuestProfileSheet({ isOpen, onClose, guest }: GuestProfi
                   </div>
 
                   <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-                    {getFirstName(profileData?.name) || guestName}
+                    {formatReviewerName(profileData?.name) || guestName}
                   </h3>
 
                   {(profileData?.isVerified || guest.isVerified) && (
@@ -430,7 +424,7 @@ export default function GuestProfileSheet({ isOpen, onClose, guest }: GuestProfi
                                     </div>
                                   )}
                                   <p className="text-xs font-medium text-blue-600 dark:text-blue-400">
-                                    {getFirstName(review.host?.name || 'Host')}
+                                    {getFirstNameOnly(review.host?.name || 'Host')}
                                   </p>
                                   {review.hostRespondedAt && (
                                     <span className="text-xs text-gray-500 dark:text-gray-400">

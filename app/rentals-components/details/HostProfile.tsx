@@ -3,7 +3,8 @@
 
 import { useState } from 'react'
 import HostProfileModal from './HostProfileModal'
-import { 
+import { formatPrivateName, isCompanyName } from '@/app/lib/utils/namePrivacy'
+import {
   IoStarOutline,
   IoStar,
   IoShieldCheckmarkOutline,
@@ -67,77 +68,6 @@ interface HostProfileProps {
   host?: Host | any
 }
 
-// Helper function to determine if a name is a company
-function isCompanyName(name: string): boolean {
-  if (!name) return false
-  
-  const companyIndicators = [
-    'LLC', 'L.L.C.', 'Inc', 'Inc.', 'Corp', 'Corporation',
-    'Company', 'Co.', 'Group', 'Motors', 'Rentals', 'Services',
-    'Automotive', 'Auto', 'Cars', 'Vehicles', 'Fleet',
-    'Enterprise', 'Budget', 'Hertz', 'Avis', 'Thrifty',
-    'Partners', 'Associates', 'Solutions', 'Holdings'
-  ]
-  
-  const nameLower = name.toLowerCase()
-  
-  // Check for explicit company indicators
-  for (const indicator of companyIndicators) {
-    if (nameLower.includes(indicator.toLowerCase())) {
-      return true
-    }
-  }
-  
-  // Check if name doesn't look like a personal name
-  // (e.g., single word that's not a common first name, or multiple words with unusual pattern)
-  const words = name.trim().split(/\s+/)
-  
-  // If it's a single word and longer than typical first names, might be company
-  if (words.length === 1 && words[0].length > 12) {
-    return true
-  }
-  
-  // If more than 3 words, likely a company unless it has middle initial pattern
-  if (words.length > 3) {
-    return true
-  }
-  
-  return false
-}
-
-// Helper function to format display name
-function formatDisplayName(name: string, isCompany?: boolean): string {
-  if (!name) return 'Host'
-  
-  // If explicitly marked as company or detected as company, return full name
-  if (isCompany || isCompanyName(name)) {
-    return name
-  }
-  
-  // For individuals, show first name + last initial
-  const words = name.trim().split(/\s+/)
-  
-  if (words.length === 1) {
-    // Single word name, just return it
-    return words[0]
-  } else if (words.length === 2) {
-    // First and last name
-    const firstName = words[0]
-    const lastInitial = words[1].charAt(0).toUpperCase()
-    return `${firstName} ${lastInitial}.`
-  } else if (words.length === 3 && words[1].length <= 2) {
-    // Likely has middle initial
-    const firstName = words[0]
-    const lastInitial = words[2].charAt(0).toUpperCase()
-    return `${firstName} ${lastInitial}.`
-  } else {
-    // Multiple words, take first and last
-    const firstName = words[0]
-    const lastInitial = words[words.length - 1].charAt(0).toUpperCase()
-    return `${firstName} ${lastInitial}.`
-  }
-}
-
 // Helper function to format member since date
 function formatMemberSince(dateString: string): string {
   if (!dateString) return 'N/A'
@@ -174,7 +104,7 @@ export default function HostProfile({ host }: HostProfileProps) {
   }
   
   // Format the display name based on whether it's a company
-  const displayName = formatDisplayName(
+  const displayName = formatPrivateName(
     host.name || (host.firstName && host.lastName ? `${host.firstName} ${host.lastName}` : 'Host'),
     host.isCompany
   )

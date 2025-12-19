@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import ReviewerProfileModal from './ReviewerProfileModal'
+import { getFirstNameOnly, formatReviewerName } from '@/app/lib/utils/namePrivacy'
 import { 
   IoStarOutline, 
   IoStar,
@@ -92,13 +93,6 @@ interface Review {
 interface ReviewSectionProps {
   carId: string
   reviews?: any[]
-}
-
-// Helper function to extract first name from full name
-function getFirstName(fullName: string): string {
-  if (!fullName) return 'Host'
-  const firstName = fullName.trim().split(/\s+/)[0]
-  return firstName || 'Host'
 }
 
 // Helper function to calculate time ago
@@ -427,7 +421,7 @@ export default function ReviewSection({ carId, reviews = [] }: ReviewSectionProp
                               className="text-sm font-semibold text-gray-900 dark:text-white hover:text-amber-600 transition-colors truncate"
                               disabled={!review.reviewer.id}
                             >
-                              {review.reviewer.name}
+                              {formatReviewerName(review.reviewer.name)}
                             </button>
                             {review.isVerified && (
                               <IoCheckmarkCircleOutline className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-green-600 flex-shrink-0" />
@@ -516,7 +510,7 @@ export default function ReviewSection({ carId, reviews = [] }: ReviewSectionProp
                                       {review.host?.profilePhoto ? (
                                         <img
                                           src={review.host.profilePhoto}
-                                          alt={getFirstName(review.host.name)}
+                                          alt={getFirstNameOnly(review.host.name)}
                                           className="w-full h-full object-cover"
                                         />
                                       ) : (
@@ -529,7 +523,7 @@ export default function ReviewSection({ carId, reviews = [] }: ReviewSectionProp
                                     <div className="flex-1">
                                       <div className="flex items-center gap-1 sm:gap-2 mb-0.5">
                                         <p className="text-xs font-medium text-blue-600 dark:text-blue-400">
-                                          {getFirstName(review.host?.name || 'Host')} (Host)
+                                          {getFirstNameOnly(review.host?.name || 'Host')} (Host)
                                         </p>
                                         {review.hostRespondedAt && (
                                           <span className="text-xs text-gray-500 dark:text-gray-400">

@@ -14,13 +14,7 @@ import {
 } from 'react-icons/io5'
 import GuestProfileSheet from './GuestProfileSheet'
 import HostProfileSheet from './HostProfileSheet'
-
-// Helper function to extract first name
-function getFirstName(fullName: string | null): string {
-  if (!fullName) return 'Guest'
-  const firstName = fullName.trim().split(/\s+/)[0]
-  return firstName || 'Guest'
-}
+import { formatReviewerName, getFirstNameOnly } from '@/app/lib/utils/namePrivacy'
 
 interface ReviewerProfile {
   id: string
@@ -116,7 +110,7 @@ export default function ReviewCard({ review }: ReviewCardProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isHostProfileOpen, setIsHostProfileOpen] = useState(false)
 
-  const guestName = getFirstName(review.reviewerProfile?.name)
+  const guestName = formatReviewerName(review.reviewerProfile?.name)
   const guestInitial = guestName.charAt(0).toUpperCase()
 
   return (
@@ -255,10 +249,10 @@ export default function ReviewCard({ review }: ReviewCardProps) {
                     onClick={() => setIsHostProfileOpen(true)}
                     className="font-medium text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 hover:underline transition-colors"
                   >
-                    {getFirstName(review.host?.name)}
+                    {getFirstNameOnly(review.host?.name)}
                   </button>
                 ) : (
-                  <span className="font-medium">{getFirstName(review.host?.name)}</span>
+                  <span className="font-medium">{getFirstNameOnly(review.host?.name)}</span>
                 )}
               </span>
               {review.hostRespondedAt && (

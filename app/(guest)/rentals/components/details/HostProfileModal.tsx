@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { formatPrivateName, isCompanyName } from '@/app/lib/utils/namePrivacy'
 import { 
   IoCloseOutline,
   IoStarOutline,
@@ -94,66 +95,6 @@ interface HostProfileModalProps {
   hostId: string
   isOpen: boolean
   onClose: () => void
-}
-
-// Helper function to determine if a name is a company
-function isCompanyName(name: string): boolean {
-  if (!name) return false
-  
-  const companyIndicators = [
-    'LLC', 'L.L.C.', 'Inc', 'Inc.', 'Corp', 'Corporation',
-    'Company', 'Co.', 'Group', 'Motors', 'Rentals', 'Services',
-    'Automotive', 'Auto', 'Cars', 'Vehicles', 'Fleet',
-    'Enterprise', 'Budget', 'Hertz', 'Avis', 'Thrifty',
-    'Partners', 'Associates', 'Solutions', 'Holdings'
-  ]
-  
-  const nameLower = name.toLowerCase()
-  
-  for (const indicator of companyIndicators) {
-    if (nameLower.includes(indicator.toLowerCase())) {
-      return true
-    }
-  }
-  
-  const words = name.trim().split(/\s+/)
-  
-  if (words.length === 1 && words[0].length > 12) {
-    return true
-  }
-  
-  if (words.length > 3) {
-    return true
-  }
-  
-  return false
-}
-
-// Helper function to format display name
-function formatDisplayName(name: string, isCompany?: boolean): string {
-  if (!name) return 'Host'
-  
-  if (isCompany || isCompanyName(name)) {
-    return name
-  }
-  
-  const words = name.trim().split(/\s+/)
-  
-  if (words.length === 1) {
-    return words[0]
-  } else if (words.length === 2) {
-    const firstName = words[0]
-    const lastInitial = words[1].charAt(0).toUpperCase()
-    return `${firstName} ${lastInitial}.`
-  } else if (words.length === 3 && words[1].length <= 2) {
-    const firstName = words[0]
-    const lastInitial = words[2].charAt(0).toUpperCase()
-    return `${firstName} ${lastInitial}.`
-  } else {
-    const firstName = words[0]
-    const lastInitial = words[words.length - 1].charAt(0).toUpperCase()
-    return `${firstName} ${lastInitial}.`
-  }
 }
 
 // Helper function to calculate trip count (matching page.tsx logic)
@@ -254,7 +195,7 @@ export default function HostProfileModal({ hostId, isOpen, onClose }: HostProfil
 
   if (!isOpen) return null
 
-  const displayName = hostData ? formatDisplayName(hostData.name, hostData.isCompany) : ''
+  const displayName = hostData ? formatPrivateName(hostData.name, hostData.isCompany) : ''
   // Use the same logic as page.tsx for trip count
   const tripCount = hostData ? calculateTripCount(hostData) : 0
   // Get rating value properly

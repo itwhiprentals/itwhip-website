@@ -20,6 +20,7 @@ import {
 } from 'react-icons/io5'
 import { RentalCarWithDetails } from '@/types/rental'
 import { formatCurrency } from '@/app/(guest)/rentals/lib/rental-utils'
+import { formatPrivateName, isCompanyName } from '@/app/lib/utils/namePrivacy'
 
 interface CarCardProps {
   car: RentalCarWithDetails
@@ -110,7 +111,7 @@ export default function CarCard({
                   {car.host && (
                     <div className="flex items-center gap-2 mt-1">
                       <span className="text-sm text-gray-600 dark:text-gray-400">
-                        Hosted by {car.host.name}
+                        Hosted by {formatPrivateName(car.host.name, car.host.isCompany)}
                       </span>
                       {car.host.isVerified && (
                         <IoShieldCheckmarkOutline className="w-4 h-4 text-blue-500" />
@@ -272,7 +273,7 @@ export default function CarCard({
           {car.host && (
             <div className="flex items-center justify-between mt-1">
               <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
-                <span>{car.host.name}</span>
+                <span>{formatPrivateName(car.host.name, car.host.isCompany)}</span>
                 {car.host.isVerified && (
                   <IoShieldCheckmarkOutline className="w-4 h-4 text-blue-500" />
                 )}

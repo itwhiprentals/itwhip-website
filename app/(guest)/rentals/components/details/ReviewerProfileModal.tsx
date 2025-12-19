@@ -75,12 +75,7 @@ interface ReviewerProfileModalProps {
   onClose: () => void
 }
 
-// Helper function to extract first name
-function getFirstName(fullName: string): string {
-  if (!fullName) return 'Host'
-  const firstName = fullName.trim().split(/\s+/)[0]
-  return firstName || 'Host'
-}
+import { getFirstNameOnly, formatReviewerName } from '@/app/lib/utils/namePrivacy'
 
 export default function ReviewerProfileModal({ reviewer, isOpen, onClose }: ReviewerProfileModalProps) {
   const router = useRouter()
@@ -236,7 +231,7 @@ export default function ReviewerProfileModal({ reviewer, isOpen, onClose }: Revi
                 </div>
                 
                 <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-                  {profileData.name}
+                  {formatReviewerName(profileData.name)}
                 </h3>
                 
                 {profileData.isVerified && (
@@ -399,7 +394,7 @@ export default function ReviewerProfileModal({ reviewer, isOpen, onClose }: Revi
                                   </div>
                                 )}
                                 <p className="text-xs font-medium text-blue-600 dark:text-blue-400">
-                                  {getFirstName(review.host?.name || 'Host')}
+                                  {getFirstNameOnly(review.host?.name || 'Host')}
                                 </p>
                                 {review.hostRespondedAt && (
                                   <span className="text-xs text-gray-500 dark:text-gray-400">

@@ -1640,11 +1640,12 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
       </div>
       
       {/* Modals */}
-      <RentalAgreementModal 
+      <RentalAgreementModal
         isOpen={showRentalAgreement}
         onClose={() => setShowRentalAgreement(false)}
         carDetails={car}
         bookingDetails={savedBookingDetails}
+        isDraft={true}
       />
       
       <InsuranceRequirementsModal

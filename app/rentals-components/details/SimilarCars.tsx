@@ -3,9 +3,9 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { 
-  IoCarOutline, 
-  IoLocationOutline, 
+import {
+  IoCarOutline,
+  IoLocationOutline,
   IoStarOutline,
   IoFlashOutline,
   IoChevronForwardOutline,
@@ -14,6 +14,7 @@ import {
   IoBusinessOutline,
   IoSparklesOutline
 } from 'react-icons/io5'
+import { formatPrivateName, isCompanyName } from '@/app/lib/utils/namePrivacy'
 
 interface SimilarCar {
   id: string
@@ -55,76 +56,6 @@ interface SimilarCarsProps {
   location?: {
     lat?: number
     lng?: number
-  }
-}
-
-// Helper function to determine if a name is a company
-function isCompanyName(name: string): boolean {
-  if (!name) return false
-  
-  const companyIndicators = [
-    'LLC', 'L.L.C.', 'Inc', 'Inc.', 'Corp', 'Corporation',
-    'Company', 'Co.', 'Group', 'Motors', 'Rentals', 'Services',
-    'Automotive', 'Auto', 'Cars', 'Vehicles', 'Fleet',
-    'Enterprise', 'Budget', 'Hertz', 'Avis', 'Thrifty',
-    'Partners', 'Associates', 'Solutions', 'Holdings'
-  ]
-  
-  const nameLower = name.toLowerCase()
-  
-  // Check for explicit company indicators
-  for (const indicator of companyIndicators) {
-    if (nameLower.includes(indicator.toLowerCase())) {
-      return true
-    }
-  }
-  
-  // Check if name doesn't look like a personal name
-  const words = name.trim().split(/\s+/)
-  
-  // If it's a single word and longer than typical first names, might be company
-  if (words.length === 1 && words[0].length > 12) {
-    return true
-  }
-  
-  // If more than 3 words, likely a company unless it has middle initial pattern
-  if (words.length > 3) {
-    return true
-  }
-  
-  return false
-}
-
-// Helper function to format display name
-function formatDisplayName(name: string, isCompany?: boolean): string {
-  if (!name) return 'Host'
-  
-  // If explicitly marked as company or detected as company, return full name
-  if (isCompany || isCompanyName(name)) {
-    return name
-  }
-  
-  // For individuals, show first name + last initial
-  const words = name.trim().split(/\s+/)
-  
-  if (words.length === 1) {
-    // Single word name, just return it
-    return words[0]
-  } else if (words.length === 2) {
-    // First and last name
-    const firstName = words[0]
-    const lastInitial = words[1].charAt(0).toUpperCase()
-    return `${firstName} ${lastInitial}.`
-  } else if (words.length === 3 && words[1].length <= 2) {
-    // Likely has middle initial
-    const firstName = words[0]
-    const lastInitial = words[2].charAt(0).toUpperCase()
-    return `${firstName} ${lastInitial}.`
-  } else {
-    // Multiple words, take first and last
-    const firstName = words[0]
-    const lastInitial = words[words.length - 1].charAt(0).toUpperCase()
-    return `${firstName} ${lastInitial}.`
   }
 }
 
@@ -415,7 +346,7 @@ export default function SimilarCars({
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null)
 
   // Format the display name using privacy rules
-  const displayName = formatDisplayName(hostName || 'Host', isCompany)
+  const displayName = formatPrivateName(hostName || 'Host', isCompany)
   const isCompanyHost = isCompany || isCompanyName(hostName || '')
 
   // Get user location

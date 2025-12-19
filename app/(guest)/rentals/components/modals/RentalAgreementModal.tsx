@@ -4,7 +4,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { format } from 'date-fns'
 import Link from 'next/link'
-import { 
+import {
   IoCloseOutline,
   IoDownloadOutline,
   IoDocumentTextOutline,
@@ -19,8 +19,14 @@ import {
   IoTimeOutline,
   IoCheckmarkDoneOutline,
   IoCarOutline,
-  IoAlertCircleOutline
+  IoAlertCircleOutline,
+  IoChevronDownOutline
 } from 'react-icons/io5'
+import {
+  formatHostNameForAgreement,
+  formatGuestNameForAgreement,
+  isCompanyName
+} from '@/app/lib/utils/namePrivacy'
 
 interface RentalCarWithDetails {
   id: string
@@ -41,6 +47,7 @@ interface RentalCarWithDetails {
     name: string
     profilePhoto?: string
     responseTime?: number
+    isCompany?: boolean
   }
 }
 
@@ -103,6 +110,7 @@ interface RentalAgreementModalProps {
   context?: 'preview' | 'booking' | 'dashboard'
   agreementTracking?: AgreementTracking
   onAgree?: (accepted: boolean) => void
+  isDraft?: boolean // true = pre-booking preview (mask names), false = confirmed legal document (full names)
 }
 
 // Helper function to determine vehicle tier and coverage
@@ -153,15 +161,16 @@ const getVehicleTierInfo = (carType?: string, dailyRate?: number) => {
   }
 }
 
-export default function RentalAgreementModal({ 
-  isOpen, 
+export default function RentalAgreementModal({
+  isOpen,
   onClose,
   carDetails,
   bookingDetails,
   guestDetails,
   context = 'preview',
   agreementTracking,
-  onAgree
+  onAgree,
+  isDraft = true // Default to draft mode (pre-booking preview)
 }: RentalAgreementModalProps) {
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false)
   const [agreementAccepted, setAgreementAccepted] = useState(false)
@@ -170,7 +179,15 @@ export default function RentalAgreementModal({
   const tierInfo = getVehicleTierInfo(carDetails?.carType, carDetails?.dailyRate)
   const isVerified = guestDetails?.verificationStatus === 'APPROVED'
   const isPending = guestDetails?.verificationStatus === 'PENDING'
-  const hostName = carDetails?.host?.name || 'Host'
+
+  // Privacy-aware name formatting based on draft/confirmed state
+  const hostIsCompany = carDetails?.host?.isCompany || isCompanyName(carDetails?.host?.name || '')
+  const hostDisplayName = formatHostNameForAgreement(
+    carDetails?.host?.name,
+    hostIsCompany,
+    isDraft
+  )
+  const guestDisplayName = formatGuestNameForAgreement(guestDetails?.name, isDraft)
 
   useEffect(() => {
     // Track agreement view
@@ -250,8 +267,15 @@ export default function RentalAgreementModal({
         }
       `}</style>
 
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50 no-print">
-        <div className="bg-white rounded-lg max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] flex flex-col relative">
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm no-print"
+        onClick={onClose}
+      />
+
+      {/* Bottom Sheet on mobile, Modal on desktop */}
+      <div className="fixed inset-x-0 bottom-0 md:inset-0 z-50 flex md:items-center md:justify-center pointer-events-none no-print">
+        <div className="bg-white dark:bg-gray-800 w-full md:max-w-4xl md:mx-auto rounded-t-2xl md:rounded-lg border border-gray-200 dark:border-gray-700 shadow-2xl pointer-events-auto max-h-[90vh] md:max-h-[85vh] flex flex-col relative">
           {/* Watermark for Pending/Preview */}
           {(isPending || context === 'preview') && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 opacity-10">
@@ -263,8 +287,13 @@ export default function RentalAgreementModal({
             </div>
           )}
 
+          {/* Drag Handle - Mobile only */}
+          <div className="flex justify-center pt-3 pb-1 md:hidden">
+            <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full" />
+          </div>
+
           {/* Header - Mobile Optimized */}
-          <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 flex items-center justify-between no-print">
+          <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between no-print">
             <div className="flex-1 mr-2">
               <h2 className="text-base sm:text-lg font-semibold text-gray-900">Vehicle Rental Agreement</h2>
               {guestDetails && (
@@ -287,8 +316,8 @@ export default function RentalAgreementModal({
             <div className="px-4 sm:px-6 py-2 sm:py-3 bg-gray-50 border-b border-gray-200 no-print">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
                 <div className="text-xs sm:text-sm">
-                  <span className="font-medium text-gray-900">Renter:</span> {guestDetails.name}
-                  <span className="ml-2 sm:ml-4 text-gray-600 break-all">{guestDetails.email}</span>
+                  <span className="font-medium text-gray-900">Renter:</span> {guestDisplayName}
+                  {!isDraft && <span className="ml-2 sm:ml-4 text-gray-600 break-all">{guestDetails.email}</span>}
                 </div>
                 <div className="flex items-center space-x-2">
                   {isVerified ? (
@@ -313,8 +342,8 @@ export default function RentalAgreementModal({
             {guestDetails && (
               <div className="text-center mt-2">
                 <p>Booking Code: {guestDetails.bookingCode}</p>
-                <p>Renter: {guestDetails.name}</p>
-                <p>Host: {hostName}</p>
+                <p>Renter: {guestDisplayName}</p>
+                <p>Host: {hostDisplayName}</p>
                 <p>Agreement Date: {isVerified && guestDetails.approvedAt ? format(new Date(guestDetails.approvedAt), 'MMMM d, yyyy') : 'Pending Verification'}</p>
               </div>
             )}
@@ -332,8 +361,8 @@ export default function RentalAgreementModal({
               <div className="border border-gray-300 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
                 <h4 className="text-sm font-semibold text-gray-900 mb-2">Rental Agreement Parties</h4>
                 <div className="text-xs text-gray-700 space-y-1">
-                  <div><span className="font-medium">Vehicle Owner (Host):</span> {hostName}</div>
-                  <div><span className="font-medium">Renter (Guest):</span> {guestDetails?.name || '[Guest Name]'}</div>
+                  <div><span className="font-medium">Vehicle Owner (Host):</span> {hostDisplayName}</div>
+                  <div><span className="font-medium">Renter (Guest):</span> {guestDisplayName}</div>
                   <div><span className="font-medium">Platform Facilitator:</span> ItWhip Technologies, Inc.</div>
                   <div><span className="font-medium">Governing Law:</span> State of Arizona</div>
                   <div><span className="font-medium">Venue:</span> Maricopa County Superior Court</div>
@@ -383,8 +412,23 @@ export default function RentalAgreementModal({
                   <IoShieldCheckmarkOutline className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700 mt-0.5 mr-2 sm:mr-3 flex-shrink-0" />
                   <div>
                     <h4 className="text-xs sm:text-sm font-semibold text-gray-900 mb-2">Trip Protection Coverage</h4>
+
+                    {/* Selected Insurance Type */}
+                    {bookingDetails?.insuranceType && (
+                      <div className="mb-3 p-2 bg-amber-50 rounded border border-amber-200">
+                        <p className="text-[10px] sm:text-xs font-medium text-amber-800">
+                          Selected Coverage: {
+                            bookingDetails.insuranceType === 'basic' ? 'Basic Protection' :
+                            bookingDetails.insuranceType === 'standard' ? 'Standard Protection' :
+                            bookingDetails.insuranceType === 'premium' ? 'Premium Protection' :
+                            bookingDetails.insuranceType
+                          }
+                        </p>
+                      </div>
+                    )}
+
                     <p className="text-[10px] sm:text-xs text-gray-700 mb-2">
-                      This rental includes comprehensive trip protection coverage. In the event of an accident or damage, 
+                      This rental includes comprehensive trip protection coverage. In the event of an accident or damage,
                       you are protected with the following coverage limits and responsibilities:
                     </p>
                     <div className="grid grid-cols-2 gap-2 mt-2">
@@ -418,16 +462,11 @@ export default function RentalAgreementModal({
               <section className="mb-3 sm:mb-4">
                 <h4 className="text-xs sm:text-sm font-medium mb-1 sm:mb-2 text-gray-900">1. Driver Eligibility & Requirements</h4>
                 <p className="text-[10px] sm:text-xs text-gray-600 mb-2">
-                  The renter must be at least {tierInfo.minAge} years of age and possess a valid driver's license that has been active for 
-                  a minimum of one year. International renters must provide a valid passport and international driving permit if their 
-                  license is not in English. The renter agrees to be the sole operator of the vehicle unless additional drivers have been 
+                  The renter must be at least {tierInfo.minAge} years of age and possess a valid driver's license that has been active for
+                  a minimum of one year. International renters must provide a valid passport and international driving permit if their
+                  license is not in English. The renter agrees to be the sole operator of the vehicle unless additional drivers have been
                   authorized and added to this agreement with applicable fees paid.
                 </p>
-                {tierInfo.creditScore && (
-                  <p className="text-[10px] sm:text-xs text-gray-600">
-                    Due to the vehicle category, a minimum credit score of {tierInfo.creditScore} is required for this rental.
-                  </p>
-                )}
               </section>
 
               <section className="mb-3 sm:mb-4">
@@ -441,7 +480,7 @@ export default function RentalAgreementModal({
                   <li>• Off-road driving or driving on unpaved surfaces</li>
                   <li>• Commercial use including rideshare or delivery services</li>
                   <li>• Transporting hazardous materials or illegal substances</li>
-                  <li>• Driving outside Arizona, Nevada, California, Utah, or New Mexico without written permission</li>
+                  <li>• Driving outside Arizona without written permission</li>
                   <li>• Allowing unauthorized persons to operate the vehicle</li>
                 </ul>
               </section>
@@ -511,13 +550,13 @@ export default function RentalAgreementModal({
                 <h4 className="text-xs sm:text-sm font-medium mb-1 sm:mb-2 text-gray-900">6. Platform Facilitator Disclosure</h4>
                 <div className="bg-gray-50 rounded p-2 sm:p-3 border border-gray-200">
                   <p className="text-[10px] sm:text-xs text-gray-600 mb-2">
-                    <span className="font-medium">Important:</span> This rental agreement is entered into directly between the vehicle owner 
-                    ({hostName}) and the renter ({guestDetails?.name || 'Guest'}). ItWhip Technologies, Inc. operates solely as a 
+                    <span className="font-medium">Important:</span> This rental agreement is entered into directly between the vehicle owner
+                    ({hostDisplayName}) and the renter ({guestDisplayName}). ItWhip Technologies, Inc. operates solely as a
                     marketplace facilitator under Arizona law (A.R.S. §42-5001) and is not a party to this rental contract.
                   </p>
                   <p className="text-[10px] sm:text-xs text-gray-600">
-                    The platform provides technology services including payment processing, messaging, and trip coordination. 
-                    Any disputes regarding vehicle condition, availability, or rental terms are between host and guest. 
+                    The platform provides technology services including payment processing, messaging, and trip coordination.
+                    Any disputes regarding vehicle condition, availability, or rental terms are between host and guest.
                     The platform's liability is limited to the services it directly provides.
                   </p>
                 </div>
@@ -687,22 +726,63 @@ export default function RentalAgreementModal({
               <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <h4 className="text-xs sm:text-sm font-semibold text-gray-900 mb-2">Additional Information</h4>
                 <div className="grid grid-cols-2 gap-2 text-[10px] sm:text-xs">
-                  <Link href="/policies/insurance-protection" className="text-blue-600 hover:underline flex items-center">
+                  <Link href="/terms" className="text-blue-600 hover:underline flex items-center">
                     <IoInformationCircleOutline className="w-3 h-3 mr-1" />
-                    Full Insurance Details
+                    Terms of Service
                   </Link>
-                  <Link href="/policies/cancellation" className="text-blue-600 hover:underline flex items-center">
+                  <Link href="/privacy" className="text-blue-600 hover:underline flex items-center">
                     <IoInformationCircleOutline className="w-3 h-3 mr-1" />
-                    Cancellation Policy
+                    Privacy Policy
                   </Link>
-                  <Link href="/legal" className="text-blue-600 hover:underline flex items-center">
+                  <Link href="/insurance" className="text-blue-600 hover:underline flex items-center">
                     <IoInformationCircleOutline className="w-3 h-3 mr-1" />
-                    Legal Terms
+                    Insurance Guide
                   </Link>
-                  <Link href="/security" className="text-blue-600 hover:underline flex items-center">
+                  <Link href="/trust-safety" className="text-blue-600 hover:underline flex items-center">
                     <IoInformationCircleOutline className="w-3 h-3 mr-1" />
-                    Privacy & Security
+                    Trust & Safety
                   </Link>
+                  <Link href="/contact" className="text-blue-600 hover:underline flex items-center">
+                    <IoInformationCircleOutline className="w-3 h-3 mr-1" />
+                    Contact Us
+                  </Link>
+                  <a
+                    href="https://www.azleg.gov/arstitle/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline flex items-center"
+                  >
+                    <IoScaleOutline className="w-3 h-3 mr-1" />
+                    Arizona Statutes (A.R.S.)
+                  </a>
+                </div>
+              </div>
+
+              {/* Insurance Guide Summary */}
+              <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex items-start">
+                  <IoShieldCheckmarkOutline className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
+                  <div className="flex-1">
+                    <h4 className="text-xs sm:text-sm font-semibold text-gray-900 mb-2">Protection Plans Overview</h4>
+                    <div className="space-y-2 text-[10px] sm:text-xs">
+                      <div className="flex items-start gap-2">
+                        <span className="font-medium text-gray-900 min-w-[80px] sm:min-w-[100px]">Basic:</span>
+                        <span className="text-gray-600">$1,500 deductible, liability coverage, basic roadside assistance</span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="font-medium text-gray-900 min-w-[80px] sm:min-w-[100px]">Standard:</span>
+                        <span className="text-gray-600">$750 deductible, enhanced liability, 24/7 roadside, personal effects coverage</span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="font-medium text-gray-900 min-w-[80px] sm:min-w-[100px]">Premium:</span>
+                        <span className="text-gray-600">$0 deductible, maximum liability, concierge service, loss of use covered</span>
+                      </div>
+                    </div>
+                    <p className="mt-2 text-[9px] sm:text-[10px] text-gray-500">
+                      For complete coverage details and exclusions, visit our{' '}
+                      <Link href="/insurance" className="text-blue-600 hover:underline">Insurance Guide</Link>.
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -718,8 +798,8 @@ export default function RentalAgreementModal({
                       className="mt-0.5 sm:mt-1 mr-2 sm:mr-3"
                     />
                     <span className="text-xs sm:text-sm text-gray-700">
-                      I have read and agree to all terms and conditions of this rental agreement between {hostName} and myself. 
-                      I authorize the ${tierInfo.deposit} security deposit hold and understand it will be released according to 
+                      I have read and agree to all terms and conditions of this rental agreement between {hostDisplayName} and myself.
+                      I authorize the ${tierInfo.deposit} security deposit hold and understand it will be released according to
                       the terms outlined above and Arizona law A.R.S. §33-1321.
                       {!hasScrolledToBottom && (
                         <span className="block text-[10px] sm:text-xs text-gray-500 mt-1">
@@ -738,13 +818,13 @@ export default function RentalAgreementModal({
                   <div className="bg-gray-50 rounded p-2 sm:p-3 text-[10px] sm:text-xs text-gray-600">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 sm:gap-2">
                       <div>
-                        <span className="font-medium">Renter:</span> {guestDetails?.name}
+                        <span className="font-medium">Renter:</span> {guestDisplayName}
                       </div>
                       <div>
-                        <span className="font-medium">Host:</span> {hostName}
+                        <span className="font-medium">Host:</span> {hostDisplayName}
                       </div>
                       <div>
-                        <span className="font-medium">Agreement Date:</span> {guestDetails.approvedAt && format(new Date(guestDetails.approvedAt), 'MMM d, yyyy h:mm a')}
+                        <span className="font-medium">Agreement Date:</span> {guestDetails?.approvedAt && format(new Date(guestDetails.approvedAt), 'MMM d, yyyy h:mm a')}
                       </div>
                       <div>
                         <span className="font-medium">Booking Reference:</span> {guestDetails?.bookingCode}
