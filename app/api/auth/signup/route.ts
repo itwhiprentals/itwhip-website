@@ -4,6 +4,12 @@ import * as argon2 from 'argon2'
 import { SignJWT } from 'jose'
 import { nanoid } from 'nanoid'
 import db from '@/app/lib/db'
+import { prisma } from '@/app/lib/database/prisma'
+
+// Generate 6-digit verification code
+function generateVerificationCode(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString()
+}
 
 // Get JWT secrets - UPDATED FOR GUEST SEPARATION
 const GUEST_JWT_SECRET = new TextEncoder().encode(
@@ -151,6 +157,53 @@ export async function POST(request: NextRequest) {
       role: 'CLAIMED' // Guest users start as CLAIMED
     })
 
+    // Generate email verification code
+    const verificationCode = generateVerificationCode()
+    const verificationExpiry = new Date(Date.now() + 15 * 60 * 1000) // 15 minutes
+
+    // Update user with verification code
+    await prisma.user.update({
+      where: { id: newUser.id },
+      data: {
+        emailVerificationCode: verificationCode,
+        emailVerificationExpiry: verificationExpiry
+      }
+    })
+
+    // Send verification email
+    try {
+      const { sendEmail } = await import('@/app/lib/email/sender')
+
+      const htmlContent = generateVerificationEmail(name || 'User', verificationCode)
+      const textContent = `
+Welcome to ItWhip!
+
+Hi ${name || 'User'},
+
+Thank you for signing up! Please verify your email address using this code:
+
+${verificationCode}
+
+This code will expire in 15 minutes.
+
+If you didn't create an account, please ignore this email.
+
+- ItWhip Team
+      `.trim()
+
+      await sendEmail(
+        email.toLowerCase(),
+        'Verify Your ItWhip Account',
+        htmlContent,
+        textContent
+      )
+
+      console.log(`[Signup] Verification email sent to: ${email}`)
+    } catch (emailError) {
+      console.error('[Signup] Verification email failed:', emailError)
+      // Don't block signup if email fails, but log it
+    }
+
     // Create JWT tokens with guest-specific secrets
     const { accessToken, refreshToken, userType } = await createTokens(
       newUser.id,
@@ -171,7 +224,7 @@ export async function POST(request: NextRequest) {
     // Create response
     const response = NextResponse.json({
       success: true,
-      message: 'Account created successfully',
+      message: 'Account created successfully. Please verify your email.',
       user: {
         id: newUser.id,
         email: newUser.email,
@@ -179,7 +232,8 @@ export async function POST(request: NextRequest) {
         role: newUser.role,
         userType // Include user type in response
       },
-      accessToken
+      accessToken,
+      requiresVerification: true // Flag for frontend to redirect to verification page
     }, { status: 201 })
 
     // Set refresh token as httpOnly cookie
@@ -234,7 +288,7 @@ export async function POST(request: NextRequest) {
 
 // Health check endpoint
 export async function GET() {
-  return NextResponse.json({ 
+  return NextResponse.json({
     status: 'ok',
     endpoint: '/api/auth/signup',
     method: 'POST',
@@ -243,4 +297,59 @@ export async function GET() {
     security: 'Argon2id with 64MB memory cost',
     authentication: 'Guest-specific JWT secrets'
   })
+}
+
+// Email template for verification
+function generateVerificationEmail(name: string, code: string): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 40px 20px;">
+          <tr>
+            <td align="center">
+              <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <tr>
+                  <td style="padding: 40px 40px 20px; text-align: center; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 8px 8px 0 0;">
+                    <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">ItWhip</h1>
+                    <p style="margin: 8px 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">Welcome!</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 40px;">
+                    <h2 style="margin: 0 0 20px; color: #1f2937; font-size: 24px; font-weight: 600; text-align: center;">Verify Your Email</h2>
+                    <p style="margin: 0 0 24px; color: #4b5563; font-size: 16px; line-height: 24px; text-align: center;">
+                      Hi ${name}, thanks for signing up! Use the code below to verify your email:
+                    </p>
+                    <div style="background-color: #f9fafb; border: 2px dashed #d1d5db; padding: 24px; border-radius: 8px; margin-bottom: 24px; text-align: center;">
+                      <p style="margin: 0 0 8px; color: #6b7280; font-size: 14px;">Your verification code:</p>
+                      <p style="margin: 0; color: #1f2937; font-size: 36px; font-weight: 700; letter-spacing: 8px; font-family: monospace;">${code}</p>
+                    </div>
+                    <p style="margin: 0 0 24px; color: #6b7280; font-size: 14px; line-height: 20px; text-align: center;">
+                      This code will expire in <strong>15 minutes</strong>.
+                    </p>
+                    <div style="padding: 16px; background-color: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px; margin-bottom: 24px;">
+                      <p style="margin: 0; color: #92400e; font-size: 14px;">
+                        If you didn't create an account, please ignore this email.
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 30px 40px; background-color: #f9fafb; border-radius: 0 0 8px 8px; text-align: center;">
+                    <p style="margin: 0 0 8px; color: #6b7280; font-size: 14px;">ItWhip Technologies, Inc.</p>
+                    <p style="margin: 0; color: #9ca3af; font-size: 12px;">© 2025 ItWhip. All rights reserved.</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+    </html>
+  `
 }

@@ -3,7 +3,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { 
+import {
   IoSaveOutline,
   IoNotificationsOutline,
   IoMailOutline,
@@ -18,8 +18,12 @@ import {
   IoCloseOutline,
   IoCheckmarkCircle,
   IoAlertCircleOutline,
-  IoLogOutOutline
+  IoLogOutOutline,
+  IoDownloadOutline,
+  IoTrashOutline,
+  IoWarningOutline
 } from 'react-icons/io5'
+import DeleteAccountModal from '../DeleteAccountModal'
 
 interface SettingsTabProps {
   profile: {
@@ -39,6 +43,9 @@ interface SettingsTabProps {
   saving: boolean
   onFormChange: (data: Partial<SettingsTabProps['formData']>) => void
   onSave: () => void
+  userEmail?: string
+  userStatus?: 'ACTIVE' | 'PENDING_DELETION' | 'DELETED' | 'SUSPENDED'
+  deletionScheduledFor?: string | null
 }
 
 const LANGUAGES = [
@@ -66,11 +73,18 @@ export default function SettingsTab({
   formData,
   saving,
   onFormChange,
-  onSave
+  onSave,
+  userEmail = '',
+  userStatus = 'ACTIVE',
+  deletionScheduledFor
 }: SettingsTabProps) {
-  
+
   const [hasChanges, setHasChanges] = useState(false)
   const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
+  const [exportError, setExportError] = useState('')
+  const [isCancellingDeletion, setIsCancellingDeletion] = useState(false)
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
     newPassword: '',
@@ -194,6 +208,59 @@ export default function SettingsTab({
       confirmPassword: ''
     })
     setLogoutOtherDevices(true)
+  }
+
+  // Handle data export
+  const handleExportData = async () => {
+    setIsExporting(true)
+    setExportError('')
+
+    try {
+      const response = await fetch('/api/user/export-data')
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to export data')
+      }
+
+      // Get the blob and create download
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `itwhip-data-export-${new Date().toISOString().split('T')[0]}.json`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (error: any) {
+      setExportError(error.message)
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
+  // Handle cancel deletion
+  const handleCancelDeletion = async () => {
+    setIsCancellingDeletion(true)
+
+    try {
+      const response = await fetch('/api/user/cancel-deletion', {
+        method: 'POST'
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to cancel deletion')
+      }
+
+      // Reload the page to reflect the change
+      window.location.reload()
+    } catch (error: any) {
+      alert(error.message)
+    } finally {
+      setIsCancellingDeletion(false)
+    }
   }
 
   return (
@@ -413,8 +480,75 @@ export default function SettingsTab({
               <IoChevronForwardOutline className="w-4 h-4 text-gray-400 flex-shrink-0" />
             </div>
           </Link>
+
+          {/* Download My Data */}
+          <button
+            onClick={handleExportData}
+            disabled={isExporting}
+            className="w-full text-left p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-0.5">
+                  Download My Data
+                </h4>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  Export all your data as a JSON file (GDPR)
+                </p>
+              </div>
+              {isExporting ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-400 border-t-transparent flex-shrink-0" />
+              ) : (
+                <IoDownloadOutline className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              )}
+            </div>
+          </button>
+          {exportError && (
+            <p className="text-xs text-red-600 dark:text-red-400 mt-1">{exportError}</p>
+          )}
         </div>
       </div>
+
+      {/* Pending Deletion Warning */}
+      {userStatus === 'PENDING_DELETION' && (
+        <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+          <div className="flex items-start gap-3">
+            <IoWarningOutline className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <h4 className="text-sm font-semibold text-amber-800 dark:text-amber-300 mb-1">
+                Account Scheduled for Deletion
+              </h4>
+              <p className="text-sm text-amber-700 dark:text-amber-400 mb-3">
+                Your account will be permanently deleted on{' '}
+                <strong>
+                  {deletionScheduledFor
+                    ? new Date(deletionScheduledFor).toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })
+                    : '30 days from request'}
+                </strong>
+              </p>
+              <button
+                onClick={handleCancelDeletion}
+                disabled={isCancellingDeletion}
+                className="px-4 py-2 text-sm bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {isCancellingDeletion ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                    <span>Cancelling...</span>
+                  </>
+                ) : (
+                  <span>Cancel Deletion</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Save Button */}
       {hasChanges && (
@@ -689,6 +823,44 @@ export default function SettingsTab({
           </div>
         </div>
       )}
+
+      {/* Danger Zone */}
+      {userStatus !== 'PENDING_DELETION' && (
+        <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-1.5 mb-3">
+            <IoWarningOutline className="w-4 h-4 text-red-500" />
+            <h3 className="text-sm font-semibold text-red-600 dark:text-red-400">
+              Danger Zone
+            </h3>
+          </div>
+          <div className="p-4 border border-red-200 dark:border-red-900/50 rounded-lg bg-red-50/50 dark:bg-red-900/10">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-1">
+                  Delete Account
+                </h4>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  Permanently delete your account and all associated data. This action cannot be undone after the 30-day grace period.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex-shrink-0 flex items-center gap-2"
+              >
+                <IoTrashOutline className="w-4 h-4" />
+                <span>Delete</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Account Modal */}
+      <DeleteAccountModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        userEmail={userEmail}
+      />
     </div>
   )
 }

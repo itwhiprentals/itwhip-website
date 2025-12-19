@@ -16,10 +16,11 @@ datasource db {
 // ============================================================================
 
 model User {
-  id    String   @id @default(cuid())
-  email String?  @unique
-  name  String?
-  role  UserRole @default(ANONYMOUS)
+  id     String     @id @default(cuid())
+  email  String?    @unique
+  name   String?
+  role   UserRole   @default(ANONYMOUS)
+  status UserStatus @default(ACTIVE)
 
   // Authentication
   passwordHash     String?
@@ -27,6 +28,20 @@ model User {
   phoneVerified    Boolean @default(false)
   isActive         Boolean @default(true)
   twoFactorEnabled Boolean @default(false)
+
+  // Email Verification
+  emailVerificationCode   String?
+  emailVerificationExpiry DateTime?
+
+  // Account Deletion (GDPR)
+  deletionRequestedAt  DateTime?
+  deletionScheduledFor DateTime?
+  deletionReason       String?
+
+  // Account Lockout
+  failedLoginAttempts Int       @default(0)
+  lastFailedLoginAt   DateTime?
+  lockedUntil         DateTime?
 
   // PASSWORD RESET FIELDS
   resetToken               String?   @unique
@@ -64,6 +79,9 @@ model User {
   // Payment methods
   paymentMethods PaymentMethod[] @relation("UserPaymentMethods")
 
+  // GDPR Data Exports
+  dataExports DataExportLog[]
+
   // Timestamps
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
@@ -72,6 +90,7 @@ model User {
   @@index([email])
   @@index([hotelId])
   @@index([role])
+  @@index([status])
   @@index([resetToken])
 }
 
@@ -92,6 +111,21 @@ model UserNotificationSettings {
   updatedAt        DateTime @updatedAt
   
   @@index([userId])
+}
+
+model DataExportLog {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  requestedAt DateTime  @default(now())
+  completedAt DateTime?
+  downloadUrl String?
+  expiresAt   DateTime?
+  status      String    @default("pending") // pending, completed, expired
+  fileSize    Int?
+
+  @@index([userId])
+  @@index([status])
 }
 
 model NotificationDismissal {
@@ -3889,6 +3923,13 @@ enum UserRole {
   BUSINESS
   ENTERPRISE
   ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  PENDING_DELETION
+  DELETED
+  SUSPENDED
 }
 
 enum CertificationTier {

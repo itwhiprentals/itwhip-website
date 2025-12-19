@@ -122,9 +122,15 @@ export default function SignupPage() {
       if (!response.ok) {
         throw new Error(data.error || 'Signup failed')
       }
-      
-      // Success! Redirect to dashboard
-      router.push('/dashboard')
+
+      // Check if email verification is required
+      if (data.requiresVerification) {
+        // Redirect to email verification page
+        router.push(`/auth/verify-email?email=${encodeURIComponent(formData.email)}`)
+      } else {
+        // Success! Redirect to dashboard
+        router.push('/dashboard')
+      }
       
     } catch (err: any) {
       setError(err.message || 'Failed to create account. Please try again.')

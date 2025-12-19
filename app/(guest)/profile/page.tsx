@@ -28,12 +28,16 @@ interface GuestProfile {
   state?: string
   zipCode?: string
   dateOfBirth?: string
-  
+
+  // Account Status (GDPR)
+  status?: 'ACTIVE' | 'PENDING_DELETION' | 'DELETED' | 'SUSPENDED'
+  deletionScheduledFor?: string | null
+
   // Emergency Contact
   emergencyContactName?: string
   emergencyContactPhone?: string
   emergencyContactRelation?: string
-  
+
   // Verification
   emailVerified: boolean
   phoneVerified: boolean
@@ -45,7 +49,7 @@ interface GuestProfile {
   documentVerifiedAt?: string
   fullyVerified: boolean
   canInstantBook: boolean
-  
+
   // Insurance
   insuranceProvider?: string
   insurancePolicyNumber?: string
@@ -53,14 +57,14 @@ interface GuestProfile {
   insuranceCardUrl?: string
   insuranceVerified: boolean
   insuranceVerifiedAt?: string
-  
+
   // Stats
   totalTrips: number
   averageRating: number
   loyaltyPoints: number
   memberTier: string
   memberSince: string
-  
+
   // Preferences
   preferredLanguage: string
   preferredCurrency: string
@@ -487,6 +491,9 @@ function GuestProfileContent() {
               saving={saving}
               onFormChange={(data) => setFormData({ ...formData, ...data })}
               onSave={handleSaveSettings}
+              userEmail={profile.email}
+              userStatus={profile.status}
+              deletionScheduledFor={profile.deletionScheduledFor}
             />
           )}
 

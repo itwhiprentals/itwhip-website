@@ -34,7 +34,9 @@ export async function GET(request: NextRequest) {
         user: {
           select: {
             email: true,
-            avatar: true
+            avatar: true,
+            status: true,
+            deletionScheduledFor: true
           }
         }
       }
@@ -102,13 +104,17 @@ export async function GET(request: NextRequest) {
       id: profile.id,
       email: profile.email || user.email,
       name: profile.name,
-      phone: profile.phoneNumber,  // ✅ Maps DB field phoneNumber → API field phone
+      phone: profile.phoneNumber,  // Maps DB field phoneNumber -> API field phone
       profilePhoto: profile.profilePhotoUrl || user.avatar,
       bio: profile.bio,
       city: profile.city,
       state: profile.state,
       zipCode: profile.zipCode,
       dateOfBirth: profile.dateOfBirth,
+
+      // Account Status (GDPR)
+      status: profile.user?.status || 'ACTIVE',
+      deletionScheduledFor: profile.user?.deletionScheduledFor || null,
 
       // Emergency Contact
       emergencyContactName: profile.emergencyContactName,
