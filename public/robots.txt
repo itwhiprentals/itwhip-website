@@ -1,7 +1,7 @@
 # ============================================
 # ITWHIP ROBOTS.TXT
 # Peer-to-Peer Car Sharing Platform - Arizona
-# Updated: November 2025
+# Updated: December 2025
 # ============================================
 
 User-agent: *
@@ -24,9 +24,17 @@ Allow: /calculator
 Allow: /book
 Allow: /phoenix
 Allow: /faq
+Allow: /status
+Allow: /support
+Allow: /trip-planner
+Allow: /platform-agreement
 
 # Blog (Public)
 Allow: /blog
+
+# Company Pages (Public)
+Allow: /press
+Allow: /investors
 
 # Host Acquisition Pages (Public)
 Allow: /host/signup
@@ -37,6 +45,7 @@ Allow: /host-earnings
 Allow: /host-insurance
 Allow: /host-requirements
 Allow: /host-protection
+Allow: /host-university
 Allow: /insurance-guide
 Allow: /switch-from-turo
 
@@ -48,6 +57,9 @@ Allow: /esg-dashboard
 Allow: /rentals
 Allow: /rentals/search
 Allow: /rentals/cities
+Allow: /rentals/airports
+Allow: /rentals/types
+Allow: /rentals/makes
 
 # ============================================
 # BLOCK: Admin & Fleet Portals
@@ -98,16 +110,9 @@ Disallow: /rentals/verify
 Disallow: /hotels
 
 # ============================================
-# BLOCK: Wrong Positioning (Hotel/Corporate)
+# BLOCK: Legacy/Deprecated Pages
 # ============================================
 Disallow: /hotel-portal
-Disallow: /investors
-Disallow: /press
-
-# ============================================
-# BLOCK: Rideshare Positioning (Old)
-# ============================================
-Disallow: /drive
 Disallow: /driver-portal
 Disallow: /driver-requirements
 Disallow: /rides
