@@ -110,7 +110,7 @@ export default function PhotoGallery({ photos, carName }: PhotoGalleryProps) {
   // Handle empty state
   if (!sortedPhotos.length) {
     return (
-      <div className="aspect-[4/3] lg:aspect-[16/9] bg-gray-100 dark:bg-gray-800 sm:rounded-lg flex items-center justify-center">
+      <div className="aspect-[4/3] lg:aspect-[2.35/1] bg-gray-100 dark:bg-gray-800 sm:rounded-xl flex items-center justify-center">
         <div className="text-center">
           <IoCameraOutline className="w-16 h-16 text-gray-400 mx-auto mb-2" />
           <p className="text-gray-500">No photos available</p>
@@ -126,9 +126,9 @@ export default function PhotoGallery({ photos, carName }: PhotoGalleryProps) {
     <>
       {/* Main Gallery */}
       <div className="relative">
-        {/* Main Image - Square on mobile, 4:3 on tablet, 16:9 on desktop */}
+        {/* Main Image - 4:3 on mobile/tablet, 2.35:1 cinematic on desktop */}
         <div
-          className="aspect-[4/3] lg:aspect-[16/9] relative bg-gray-100 dark:bg-gray-800 sm:rounded-lg overflow-hidden cursor-pointer"
+          className="aspect-[4/3] lg:aspect-[2.35/1] relative bg-gray-100 dark:bg-gray-800 sm:rounded-xl overflow-hidden cursor-pointer"
           onClick={() => setIsFullscreen(true)}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
@@ -189,19 +189,19 @@ export default function PhotoGallery({ photos, carName }: PhotoGalleryProps) {
             </>
           )}
 
-          {/* Photo Counter - hidden on mobile (CarDetailsClient has overlay buttons) */}
-          <div className="hidden sm:block absolute top-4 left-4 bg-black/50 backdrop-blur-sm text-white px-3 py-1 rounded-full text-sm">
+          {/* Photo Counter - bottom left on desktop, hidden on mobile */}
+          <div className="hidden sm:block absolute bottom-4 left-4 bg-black/50 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-sm font-medium">
             {safeCurrentIndex + 1} / {sortedPhotos.length}
           </div>
 
-          {/* Action Buttons - hidden on mobile */}
-          <div className="hidden sm:flex absolute top-4 right-4 gap-2">
+          {/* Action Buttons - bottom right on desktop, hidden on mobile */}
+          <div className="hidden sm:flex absolute bottom-4 right-4 gap-2">
             <button
               onClick={(e) => {
                 e.stopPropagation()
                 setShowGrid(!showGrid)
               }}
-              className="bg-black/50 backdrop-blur-sm text-white p-2 rounded-full hover:bg-black/60 transition-colors"
+              className="bg-black/50 backdrop-blur-sm text-white p-2.5 rounded-full hover:bg-black/60 transition-colors"
               aria-label="Grid view"
             >
               <IoGridOutline className="w-5 h-5" />
@@ -211,7 +211,7 @@ export default function PhotoGallery({ photos, carName }: PhotoGalleryProps) {
                 e.stopPropagation()
                 setIsFullscreen(true)
               }}
-              className="bg-black/50 backdrop-blur-sm text-white p-2 rounded-full hover:bg-black/60 transition-colors"
+              className="bg-black/50 backdrop-blur-sm text-white p-2.5 rounded-full hover:bg-black/60 transition-colors"
               aria-label="Fullscreen"
             >
               <IoExpandOutline className="w-5 h-5" />

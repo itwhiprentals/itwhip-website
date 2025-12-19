@@ -471,46 +471,47 @@ export default function CarDetailsClient({ params }: PageProps) {
         </div>
       )}
 
-      {/* Header Bar - Hidden on mobile, shown on sm and up */}
-      <div className="hidden sm:block sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            <button
-              onClick={() => router.back()}
-              className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-            >
-              <IoArrowBackOutline className="w-5 h-5" />
-              <span className="hidden sm:inline">Back</span>
-            </button>
-
-            <div className="flex items-center gap-2">
+      {/* Photo Gallery - Hero image with overlay buttons */}
+      <div className={`relative ${car.isBookable === false ? 'opacity-90' : ''}`}>
+        {/* Desktop: Constrained width container */}
+        <div className="hidden sm:block max-w-7xl mx-auto px-4 pt-4">
+          <div className="relative">
+            {/* Overlay buttons on photo - desktop */}
+            <div className="absolute top-4 left-4 right-4 z-30 flex items-center justify-between">
               <button
-                onClick={toggleFavorite}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                onClick={() => router.back()}
+                className="bg-black/50 backdrop-blur-md text-white p-2.5 rounded-full shadow-lg hover:bg-black/60 transition-colors flex items-center gap-2"
               >
-                {isFavorited ? (
-                  <IoHeart className="w-6 h-6 text-red-500" />
-                ) : (
-                  <IoHeartOutline className="w-6 h-6 text-gray-600 dark:text-gray-400" />
-                )}
+                <IoArrowBackOutline className="w-5 h-5" />
+                <span className="text-sm font-medium pr-1">Back</span>
               </button>
-              <button
-                onClick={handleShare}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              >
-                <IoShareSocialOutline className="w-6 h-6 text-gray-600 dark:text-gray-400" />
-              </button>
-              <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                <IoFlagOutline className="w-6 h-6 text-gray-600 dark:text-gray-400" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={toggleFavorite}
+                  className="bg-black/50 backdrop-blur-md text-white p-2.5 rounded-full shadow-lg hover:bg-black/60 transition-colors"
+                >
+                  {isFavorited ? (
+                    <IoHeart className="w-5 h-5 text-red-500" />
+                  ) : (
+                    <IoHeartOutline className="w-5 h-5" />
+                  )}
+                </button>
+                <button
+                  onClick={handleShare}
+                  className="bg-black/50 backdrop-blur-md text-white p-2.5 rounded-full shadow-lg hover:bg-black/60 transition-colors"
+                >
+                  <IoShareSocialOutline className="w-5 h-5" />
+                </button>
+                <button className="bg-black/50 backdrop-blur-md text-white p-2.5 rounded-full shadow-lg hover:bg-black/60 transition-colors">
+                  <IoFlagOutline className="w-5 h-5" />
+                </button>
+              </div>
             </div>
+            <PhotoGallery photos={car.photos || []} carName={`${car.year} ${car.make} ${car.model}`} />
           </div>
         </div>
-      </div>
 
-      {/* Photo Gallery - Hero image with overlay buttons on mobile */}
-      <div className={`relative ${car.isBookable === false ? 'opacity-90' : ''}`}>
-        {/* Mobile: Photo with overlay buttons */}
+        {/* Mobile: Full width with overlay buttons */}
         <div className="sm:hidden relative">
           {/* Overlay buttons - positioned below status bar */}
           <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-4 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)]">
@@ -539,12 +540,6 @@ export default function CarDetailsClient({ params }: PageProps) {
               </button>
             </div>
           </div>
-
-          <PhotoGallery photos={car.photos || []} carName={`${car.year} ${car.make} ${car.model}`} />
-        </div>
-
-        {/* Desktop/Tablet: Normal flow */}
-        <div className="hidden sm:block">
           <PhotoGallery photos={car.photos || []} carName={`${car.year} ${car.make} ${car.model}`} />
         </div>
       </div>
