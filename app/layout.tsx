@@ -203,65 +203,7 @@ const autoRentalSchema = {
     closes: '23:59'
   },
   currenciesAccepted: 'USD',
-  paymentAccepted: 'Credit Card, Debit Card',
-  makesOffer: [
-    {
-      '@type': 'Offer',
-      itemOffered: {
-        '@type': 'Service',
-        name: 'Economy Car Rentals',
-        description: 'Affordable vehicles for everyday use'
-      },
-      priceSpecification: {
-        '@type': 'PriceSpecification',
-        priceCurrency: 'USD',
-        minPrice: '30',
-        maxPrice: '75'
-      }
-    },
-    {
-      '@type': 'Offer',
-      itemOffered: {
-        '@type': 'Service',
-        name: 'SUV & Truck Rentals',
-        description: 'Spacious vehicles for families and adventures'
-      },
-      priceSpecification: {
-        '@type': 'PriceSpecification',
-        priceCurrency: 'USD',
-        minPrice: '75',
-        maxPrice: '150'
-      }
-    },
-    {
-      '@type': 'Offer',
-      itemOffered: {
-        '@type': 'Service',
-        name: 'Luxury & Exotic Rentals',
-        description: 'Premium vehicles for special occasions'
-      },
-      priceSpecification: {
-        '@type': 'PriceSpecification',
-        priceCurrency: 'USD',
-        minPrice: '150',
-        maxPrice: '700'
-      }
-    },
-    {
-      '@type': 'Offer',
-      itemOffered: {
-        '@type': 'Service',
-        name: 'Electric Vehicle Rentals',
-        description: 'Eco-friendly EVs and hybrids'
-      },
-      priceSpecification: {
-        '@type': 'PriceSpecification',
-        priceCurrency: 'USD',
-        minPrice: '60',
-        maxPrice: '200'
-      }
-    }
-  ]
+  paymentAccepted: 'Credit Card, Debit Card'
 }
 
 // Schema 3: WebSite with SearchAction (standalone - no publisher reference)
