@@ -13,7 +13,13 @@ export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json()
 
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+    console.log('🔐 HOST LOGIN DEBUG')
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+    console.log('📧 Email:', email)
+
     if (!email || !password) {
+      console.log('❌ Missing email or password')
       return NextResponse.json(
         { error: 'Email and password are required' },
         { status: 400 }
@@ -44,7 +50,15 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    console.log('🔍 Host found:', !!host)
+    console.log('🔍 Host ID:', host?.id)
+    console.log('🔍 Host approvalStatus:', host?.approvalStatus)
+    console.log('🔍 Host active:', host?.active)
+    console.log('🔍 Host has user:', !!host?.user)
+    console.log('🔍 Host userId:', host?.userId)
+
     if (!host || !host.user) {  // lowercase 'user'
+      console.log('❌ 401: Host not found or no associated user')
       return NextResponse.json(
         { error: 'Invalid credentials' },
         { status: 401 }
@@ -57,7 +71,12 @@ export async function POST(request: NextRequest) {
       select: { passwordHash: true }
     })
 
+    console.log('🔍 User found for password check:', !!user)
+    console.log('🔍 User has passwordHash:', !!user?.passwordHash)
+    console.log('🔍 passwordHash length:', user?.passwordHash?.length || 0)
+
     if (!user?.passwordHash) {
+      console.log('❌ 401: No password hash found')
       return NextResponse.json(
         { error: 'Invalid credentials' },
         { status: 401 }
@@ -65,8 +84,10 @@ export async function POST(request: NextRequest) {
     }
 
     const passwordValid = await verify(user.passwordHash, password)
+    console.log('🔍 Password valid:', passwordValid)
 
     if (!passwordValid) {
+      console.log('❌ 401: Password verification failed')
       // Log failed attempt
       await prisma.loginAttempt.create({
         data: {
@@ -84,6 +105,9 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       )
     }
+
+    console.log('✅ Password verified - generating tokens')
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
 
     // Generate JWT tokens
     const accessToken = sign(
