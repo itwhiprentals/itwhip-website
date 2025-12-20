@@ -26,6 +26,19 @@ export async function GET(request: NextRequest) {
 
     console.log(`[OAuth Redirect] User authenticated: ${email}, roleHint: ${roleHint}`)
 
+    // Get user with phone number
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        phone: true,
+        email: true
+      }
+    })
+
+    // Check if user has phone number - if not, redirect to complete profile
+    const hasPhone = user?.phone && user.phone.length >= 10
+
     // Check if user has host profile
     const hostProfile = await prisma.hostProfile.findFirst({
       where: {
@@ -46,11 +59,12 @@ export async function GET(request: NextRequest) {
       where: { userId: userId },
       select: {
         id: true,
-        userId: true
+        userId: true,
+        phone: true
       }
     })
 
-    console.log(`[OAuth Redirect] Host profile: ${hostProfile ? 'exists' : 'none'}, Guest profile: ${guestProfile ? 'exists' : 'none'}`)
+    console.log(`[OAuth Redirect] Host profile: ${hostProfile ? 'exists' : 'none'}, Guest profile: ${guestProfile ? 'exists' : 'none'}, Has phone: ${hasPhone}`)
 
     // Determine redirect based on roleHint and existing profiles
     if (roleHint === 'host') {
@@ -58,6 +72,11 @@ export async function GET(request: NextRequest) {
       if (hostProfile) {
         // User has host profile, check status
         if (hostProfile.status === 'APPROVED') {
+          // Check phone before allowing access to dashboard
+          if (!hasPhone) {
+            console.log('[OAuth Redirect] Host missing phone, redirecting to complete profile')
+            return NextResponse.redirect(new URL('/auth/complete-profile?roleHint=host&redirectTo=/host/dashboard', request.url))
+          }
           console.log('[OAuth Redirect] Redirecting to host dashboard')
           return NextResponse.redirect(new URL('/host/dashboard', request.url))
         } else if (hostProfile.status === 'PENDING') {
@@ -79,14 +98,8 @@ export async function GET(request: NextRequest) {
 
     if (roleHint === 'guest') {
       // User came from guest auth pages
-      if (guestProfile) {
-        // User has guest profile, redirect to profile/dashboard
-        const redirectUrl = returnTo || '/profile'
-        console.log(`[OAuth Redirect] Redirecting to guest profile: ${redirectUrl}`)
-        return NextResponse.redirect(new URL(redirectUrl, request.url))
-      }
 
-      // Create guest profile if it doesn't exist (shouldn't happen normally as NextAuth handles this)
+      // Create guest profile if it doesn't exist
       if (!guestProfile && userId) {
         try {
           await prisma.reviewerProfile.create({
@@ -108,8 +121,15 @@ export async function GET(request: NextRequest) {
         }
       }
 
+      // Check if user has phone number
+      if (!hasPhone) {
+        const redirectUrl = returnTo || '/profile'
+        console.log('[OAuth Redirect] Guest missing phone, redirecting to complete profile')
+        return NextResponse.redirect(new URL(`/auth/complete-profile?roleHint=guest&redirectTo=${encodeURIComponent(redirectUrl)}`, request.url))
+      }
+
       const redirectUrl = returnTo || '/profile'
-      console.log(`[OAuth Redirect] Redirecting to: ${redirectUrl}`)
+      console.log(`[OAuth Redirect] Redirecting to guest profile: ${redirectUrl}`)
       return NextResponse.redirect(new URL(redirectUrl, request.url))
     }
 
@@ -117,11 +137,22 @@ export async function GET(request: NextRequest) {
     // Priority: If user has approved host profile, go to host dashboard
     //           Otherwise, go to guest profile
     if (hostProfile?.status === 'APPROVED') {
+      // Check phone before allowing access to dashboard
+      if (!hasPhone) {
+        console.log('[OAuth Redirect] Host missing phone, redirecting to complete profile')
+        return NextResponse.redirect(new URL('/auth/complete-profile?roleHint=host&redirectTo=/host/dashboard', request.url))
+      }
       console.log('[OAuth Redirect] No roleHint, user is approved host, redirecting to host dashboard')
       return NextResponse.redirect(new URL('/host/dashboard', request.url))
     }
 
-    // Default to guest profile
+    // Default to guest profile - but check phone first
+    if (!hasPhone) {
+      const redirectUrl = returnTo || '/profile'
+      console.log('[OAuth Redirect] Missing phone, redirecting to complete profile')
+      return NextResponse.redirect(new URL(`/auth/complete-profile?roleHint=guest&redirectTo=${encodeURIComponent(redirectUrl)}`, request.url))
+    }
+
     const redirectUrl = returnTo || '/profile'
     console.log(`[OAuth Redirect] No roleHint, defaulting to: ${redirectUrl}`)
     return NextResponse.redirect(new URL(redirectUrl, request.url))
