@@ -269,7 +269,22 @@ export default function StatusTab({ guestId }: StatusTabProps) {
     )
   }
 
-  const { summary, timeline, activeRestrictions, recentNotifications } = statusData
+  // Handle both API response formats (status vs summary)
+  // Cast to any to handle dynamic API response structure
+  const statusDataAny = statusData as any
+  const rawStatus = statusDataAny.status || statusData
+  const timeline = statusData.timeline || []
+  const activeRestrictions = statusData.activeRestrictions || []
+  const recentNotifications = statusData.recentNotifications || []
+
+  // Build summary from available data
+  const summary = statusData.summary || {
+    status: rawStatus.accountStatus || moderationData.accountStatus || 'GOOD_STANDING',
+    warningCount: rawStatus.activeWarningCount ?? moderationData.activeWarningCount ?? 0,
+    restrictionCount: rawStatus.activeRestrictions?.length ?? 0,
+    healthScore: calculateHealthScore(moderationData),
+    healthStatus: calculateHealthStatus(moderationData)
+  }
   
   // ✅ FIX: Don't filter out warnings - API already returns only active warnings
   // The API now properly handles warnings with denied appeals
@@ -511,7 +526,6 @@ export default function StatusTab({ guestId }: StatusTabProps) {
                 
                 // ✅ FIX: Use the hasDeniedAppeal flag from API response
                 const hasDeniedAppeal = warning.hasDeniedAppeal || warning.appealEligibility?.hasDeniedAppeal || false
-                const deniedAppeal = deniedAppeals.find(appeal => appeal.moderationId === warning.id)
                 
                 return (
                   <div 
@@ -1203,10 +1217,44 @@ function formatRestrictionType(type: string): string {
 
 function formatWarningCategory(category: string): string {
   if (!category) return 'Policy Violation'
-  
+
   // Handle underscores - convert to spaces and title case
   return category
     .split('_')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ')
+}
+
+// Calculate health score based on moderation data
+function calculateHealthScore(moderationData: ModerationData): number {
+  if (!moderationData) return 100
+
+  let score = 100
+
+  // Deduct for account status
+  if (moderationData.accountStatus === 'BANNED') return 0
+  if (moderationData.accountStatus === 'SUSPENDED') score -= 50
+  if (moderationData.accountStatus === 'WARNED') score -= 20
+
+  // Deduct for active warnings
+  const warningCount = moderationData.activeWarningCount || 0
+  score -= warningCount * 10
+
+  // Deduct for restrictions
+  if (!moderationData.restrictions?.canBookLuxury) score -= 5
+  if (!moderationData.restrictions?.canBookPremium) score -= 5
+  if (!moderationData.restrictions?.canInstantBook) score -= 5
+  if (moderationData.restrictions?.requiresManualApproval) score -= 5
+
+  return Math.max(0, Math.min(100, score))
+}
+
+// Calculate health status label from score
+function calculateHealthStatus(moderationData: ModerationData): string {
+  const score = calculateHealthScore(moderationData)
+
+  if (score >= 90) return 'EXCELLENT'
+  if (score >= 70) return 'GOOD'
+  if (score >= 50) return 'FAIR'
+  return 'POOR'
 }
