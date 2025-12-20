@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!type || !['governmentId', 'driversLicense', 'selfie'].includes(type)) {
+    if (!type || !['governmentId', 'driversLicense', 'selfie', 'additionalDocument'].includes(type)) {
       return NextResponse.json(
         { success: false, error: 'Invalid document type' },
         { status: 400 }
@@ -91,7 +91,8 @@ export async function POST(request: NextRequest) {
     const folderMap = {
       governmentId: 'guest-documents/government-ids',
       driversLicense: 'guest-documents/drivers-licenses',
-      selfie: 'guest-documents/selfies'
+      selfie: 'guest-documents/selfies',
+      additionalDocument: 'guest-documents/additional-documents'
     }
 
     const folder = folderMap[type as keyof typeof folderMap]
@@ -128,6 +129,12 @@ export async function POST(request: NextRequest) {
       updateData.driversLicenseUrl = documentUrl
     } else if (type === 'selfie') {
       updateData.selfieUrl = documentUrl
+    } else if (type === 'additionalDocument') {
+      updateData.additionalDocumentUrl = documentUrl
+      const additionalType = formData.get('additionalType') as string
+      if (additionalType) {
+        updateData.additionalDocumentType = additionalType
+      }
     }
 
     // Update profile
@@ -153,7 +160,8 @@ export async function POST(request: NextRequest) {
       const documentNames: Record<string, string> = {
         governmentId: idType ? `${idType.replace('_', ' ')} ID` : 'Government ID',
         driversLicense: "Driver's License",
-        selfie: 'Verification Selfie'
+        selfie: 'Verification Selfie',
+        additionalDocument: 'Additional Document'
       }
 
       const documentName = documentNames[type] || type
@@ -250,7 +258,7 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type')
 
-    if (!type || !['governmentId', 'driversLicense', 'selfie'].includes(type)) {
+    if (!type || !['governmentId', 'driversLicense', 'selfie', 'additionalDocument'].includes(type)) {
       return NextResponse.json(
         { success: false, error: 'Invalid document type' },
         { status: 400 }
@@ -272,6 +280,9 @@ export async function DELETE(request: NextRequest) {
       updateData.driversLicenseUrl = null
     } else if (type === 'selfie') {
       updateData.selfieUrl = null
+    } else if (type === 'additionalDocument') {
+      updateData.additionalDocumentUrl = null
+      updateData.additionalDocumentType = null
     }
 
     await prisma.reviewerProfile.update({
@@ -284,7 +295,8 @@ export async function DELETE(request: NextRequest) {
       const documentNames: Record<string, string> = {
         governmentId: 'Government ID',
         driversLicense: "Driver's License",
-        selfie: 'Verification Selfie'
+        selfie: 'Verification Selfie',
+        additionalDocument: 'Additional Document'
       }
 
       const documentName = documentNames[type] || type
