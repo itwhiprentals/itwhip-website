@@ -1,6 +1,7 @@
 // app/api/user/export-data/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
+import { UserDataPdfGenerator } from '@/app/lib/pdf/userDataPdfGenerator'
 
 // Helper to get user ID from JWT
 async function getUserFromToken(req: NextRequest): Promise<string | null> {
@@ -36,11 +37,11 @@ function maskPhone(phone: string | null): string {
   if (!phone) return ''
   const digits = phone.replace(/\D/g, '')
   if (digits.length < 4) return '***'
-  return '***' + digits.slice(-4)
+  return '***-***-' + digits.slice(-4)
 }
 
 function maskCardNumber(last4: string | null): string {
-  return last4 ? `****${last4}` : '****'
+  return last4 ? `${last4}` : '****'
 }
 
 export async function GET(req: NextRequest) {
@@ -131,11 +132,11 @@ export async function GET(req: NextRequest) {
             id: true,
             ipAddress: true,
             userAgent: true,
-            successful: true,
-            createdAt: true
+            success: true,
+            timestamp: true
           },
-          orderBy: { createdAt: 'desc' },
-          take: 50 // Last 50 login attempts
+          orderBy: { timestamp: 'desc' },
+          take: 50
         },
         // Sessions
         sessions: {
@@ -158,10 +159,9 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    // Build export data with masked sensitive info
+    // Build export data for PDF
     const exportData = {
       exportDate: new Date().toISOString(),
-      exportVersion: '1.0',
       account: {
         id: user.id,
         email: user.email,
@@ -206,8 +206,8 @@ export async function GET(req: NextRequest) {
         recentLoginAttempts: user.loginAttempts.map(attempt => ({
           ipAddress: attempt.ipAddress,
           device: attempt.userAgent,
-          successful: attempt.successful,
-          timestamp: attempt.createdAt
+          successful: attempt.success,
+          timestamp: attempt.timestamp
         })),
         activeSessions: user.sessions.map(session => ({
           id: session.id,
@@ -216,14 +216,13 @@ export async function GET(req: NextRequest) {
           createdAt: session.createdAt,
           lastActivity: session.lastActivity
         }))
-      },
-      dataRights: {
-        exportGeneratedAt: new Date().toISOString(),
-        gdprCompliant: true,
-        dataRetentionPolicy: 'Data is retained for the duration of your account. Upon account deletion, data is permanently removed after a 30-day grace period.',
-        contactForDataQuestions: 'privacy@itwhip.com'
       }
     }
+
+    // Generate PDF
+    const pdfGenerator = new UserDataPdfGenerator()
+    pdfGenerator.generate(exportData)
+    const pdfBuffer = pdfGenerator.getBuffer()
 
     // Log the export
     try {
@@ -232,23 +231,23 @@ export async function GET(req: NextRequest) {
           userId,
           status: 'completed',
           completedAt: new Date(),
-          fileSize: JSON.stringify(exportData).length
+          fileSize: pdfBuffer.length
         }
       })
     } catch (logError) {
       console.error('[Export Data] Failed to log export:', logError)
     }
 
-    console.log(`[Export Data] Data exported for user: ${userId}`)
+    console.log(`[Export Data] PDF exported for user: ${userId}`)
 
-    // Return as downloadable JSON file
-    const jsonString = JSON.stringify(exportData, null, 2)
+    // Return as downloadable PDF file
+    const fileName = `ItWhip-My-Data-${new Date().toISOString().split('T')[0]}.pdf`
 
-    return new NextResponse(jsonString, {
+    return new NextResponse(pdfBuffer, {
       status: 200,
       headers: {
-        'Content-Type': 'application/json',
-        'Content-Disposition': `attachment; filename="itwhip-data-export-${new Date().toISOString().split('T')[0]}.json"`,
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="${fileName}"`,
         'Cache-Control': 'no-store'
       }
     })

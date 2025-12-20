@@ -223,12 +223,12 @@ export default function SettingsTab({
         throw new Error(data.error || 'Failed to export data')
       }
 
-      // Get the blob and create download
+      // Get the blob and create download as PDF
       const blob = await response.blob()
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `itwhip-data-export-${new Date().toISOString().split('T')[0]}.json`
+      a.download = `ItWhip-My-Data-${new Date().toISOString().split('T')[0]}.pdf`
       document.body.appendChild(a)
       a.click()
       window.URL.revokeObjectURL(url)
