@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
-import { 
+import {
   IoMailOutline,
   IoLockClosedOutline,
   IoEyeOutline,
@@ -15,9 +15,9 @@ import {
   IoCarOutline,
   IoBusinessOutline,
   IoCheckmarkCircle,
-  IoKeyOutline,
   IoArrowForwardOutline
 } from 'react-icons/io5'
+import OAuthButtons from '@/app/components/auth/OAuthButtons'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -100,15 +100,23 @@ export default function LoginPage() {
         {/* Left side - Login Form */}
         <div className="flex-1 flex items-center justify-center px-8 py-12">
           <div className="w-full max-w-md">
-            {/* Logo/Header */}
+            {/* Header */}
             <div className="text-center mb-8">
-              <h1 className="text-4xl font-bold text-white mb-2">
-                Welcome Back
+              <h1 className="text-3xl font-bold text-white mb-2">
+                Guest / Renter Login
               </h1>
               <p className="text-gray-400">
-                Sign in to access your account
+                Sign in to book cars and manage your trips
               </p>
             </div>
+
+            {/* OAuth Buttons */}
+            <OAuthButtons
+              theme="guest"
+              roleHint="guest"
+              callbackUrl="/profile"
+              showDivider={true}
+            />
 
             {/* Error Alert */}
             {error && (
@@ -218,31 +226,17 @@ export default function LoginPage() {
               </p>
             </form>
 
-            {/* Host Portal Section - NEW */}
-            <div className="mt-8 pt-8 border-t border-gray-700">
-              <div className="bg-gradient-to-r from-green-900/20 to-green-800/20 border border-green-700/30 rounded-lg p-6">
-                <div className="flex items-start space-x-3">
-                  <div className="flex-shrink-0">
-                    <div className="w-10 h-10 bg-green-600/20 rounded-lg flex items-center justify-center">
-                      <IoKeyOutline className="w-6 h-6 text-green-400" />
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-white font-semibold mb-1">
-                      Managing rental cars?
-                    </h3>
-                    <p className="text-gray-400 text-sm mb-3">
-                      Access your host dashboard to manage vehicles, bookings, and earnings.
-                    </p>
-                    <Link
-                      href="/host/login"
-                      className="inline-flex items-center space-x-2 text-green-400 hover:text-green-300 font-medium text-sm transition-colors group"
-                    >
-                      <span>Sign in to Host Portal</span>
-                      <IoArrowForwardOutline className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
-                    </Link>
-                  </div>
-                </div>
+            {/* Host Portal Link */}
+            <div className="mt-8 pt-6 border-t border-gray-700">
+              <div className="text-center">
+                <p className="text-gray-500 text-sm mb-2">Are you a car owner?</p>
+                <Link
+                  href="/host/login"
+                  className="inline-flex items-center space-x-2 text-green-400 hover:text-green-300 font-medium transition-colors group"
+                >
+                  <span>Host / Car Owner Login</span>
+                  <IoArrowForwardOutline className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
+                </Link>
               </div>
             </div>
 

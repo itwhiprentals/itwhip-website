@@ -2,10 +2,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
+import OAuthButtons from '@/app/components/auth/OAuthButtons'
 import {
   IoPersonOutline,
   IoMailOutline,
@@ -102,12 +104,17 @@ const CAR_COLORS = [
 
 export default function HostSignupPage() {
   const router = useRouter()
-  const [currentStep, setCurrentStep] = useState(1)
+  const searchParams = useSearchParams()
+  const { data: session, status } = useSession()
+  const isOAuthUser = searchParams.get('oauth') === 'true' && session?.user
+
+  // Start at step 2 if OAuth user (they already have account, just need vehicle info)
+  const [currentStep, setCurrentStep] = useState(isOAuthUser ? 2 : 1)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  
-  // Personal info
+
+  // Personal info - pre-fill from OAuth session if available
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -117,6 +124,21 @@ export default function HostSignupPage() {
     confirmPassword: '',
     agreeToTerms: false
   })
+
+  // Pre-fill form data from OAuth session
+  useEffect(() => {
+    if (isOAuthUser && session?.user) {
+      const nameParts = (session.user.name || '').split(' ')
+      setFormData(prev => ({
+        ...prev,
+        firstName: nameParts[0] || '',
+        lastName: nameParts.slice(1).join(' ') || '',
+        email: session.user?.email || ''
+      }))
+      // OAuth users start at step 2
+      setCurrentStep(2)
+    }
+  }, [isOAuthUser, session])
 
   // Vehicle + Location info
   const [vehicleData, setVehicleData] = useState({
@@ -151,6 +173,15 @@ export default function HostSignupPage() {
   }, [vehicleData.make])
 
   const isStep1Valid = () => {
+    // OAuth users skip password requirements
+    if (isOAuthUser) {
+      return (
+        formData.firstName.trim() !== '' &&
+        formData.lastName.trim() !== '' &&
+        formData.email.trim() !== ''
+      )
+    }
+
     return (
       formData.firstName.trim() !== '' &&
       formData.lastName.trim() !== '' &&
@@ -192,68 +223,87 @@ export default function HostSignupPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-    
+
     if (!isStep2Valid()) {
       setError('Please complete all required fields')
       return
     }
-    
+
     setIsLoading(true)
-    
+
     try {
+      // Build request body - OAuth users don't need password
+      const requestBody: any = {
+        name: `${formData.firstName} ${formData.lastName}`,
+        email: formData.email,
+        phone: formData.phone,
+        // Location info
+        city: vehicleData.city,
+        state: vehicleData.state,
+        zipCode: vehicleData.zipCode,
+        // Vehicle info
+        hasVehicle: true,
+        vehicleMake: vehicleData.make,
+        vehicleModel: vehicleData.model,
+        vehicleYear: vehicleData.year,
+        vehicleColor: vehicleData.color,
+        vehicleTrim: vehicleData.trim || null,
+        agreeToTerms: formData.agreeToTerms
+      }
+
+      // Only include password for non-OAuth users
+      if (!isOAuthUser && formData.password) {
+        requestBody.password = formData.password
+      }
+
+      // Mark as OAuth user if applicable
+      if (isOAuthUser) {
+        requestBody.isOAuthUser = true
+        requestBody.oauthUserId = (session?.user as any)?.id
+      }
+
       const response = await fetch('/api/host/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: `${formData.firstName} ${formData.lastName}`,
-          email: formData.email,
-          password: formData.password,
-          phone: formData.phone,
-          // Location info
-          city: vehicleData.city,
-          state: vehicleData.state,
-          zipCode: vehicleData.zipCode,
-          // Vehicle info
-          hasVehicle: true,
-          vehicleMake: vehicleData.make,
-          vehicleModel: vehicleData.model,
-          vehicleYear: vehicleData.year,
-          vehicleColor: vehicleData.color,
-          vehicleTrim: vehicleData.trim || null,
-          agreeToTerms: formData.agreeToTerms
-        })
+        body: JSON.stringify(requestBody)
       })
-      
+
       const data = await response.json()
-      
+
       if (!response.ok) {
         throw new Error(data.error || 'Signup failed')
       }
-      
+
       // Store hostId for verification page (use localStorage for persistence)
       if (data.data?.hostId) {
         localStorage.setItem('pendingHostId', data.data.hostId)
         localStorage.setItem('pendingHostEmail', formData.email)
       }
-      
+
       // Store carId if created
       if (data.data?.carId) {
         localStorage.setItem('pendingCarId', data.data.carId)
       }
-      
-      // Trigger verification email
+
+      // For OAuth users, email is already verified - go straight to pending review
+      if (isOAuthUser) {
+        router.push('/host/login?status=pending')
+        return
+      }
+
+      // Trigger verification email for non-OAuth users
       await fetch('/api/host/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           hostId: data.data.hostId,
           verificationType: 'email'
         })
       })
-      
+
       // Redirect to verification page
       router.push('/verify?message=check-email')
-      
+
     } catch (err: any) {
       setError(err.message || 'Failed to create account')
     } finally {
@@ -306,6 +356,14 @@ export default function HostSignupPage() {
                   <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                     Personal Information
                   </h2>
+
+                  {/* OAuth Buttons */}
+                  <OAuthButtons
+                    theme="host"
+                    roleHint="host"
+                    callbackUrl="/host/dashboard"
+                    showDivider={true}
+                  />
 
                   {/* Name Fields */}
                   <div className="grid grid-cols-2 gap-4">
@@ -438,6 +496,23 @@ export default function HostSignupPage() {
               {/* Step 2: Vehicle + Location Info */}
               {currentStep === 2 && (
                 <div className="space-y-4">
+                  {/* OAuth User Welcome Message */}
+                  {isOAuthUser && (
+                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-4">
+                      <div className="flex items-center gap-3">
+                        <IoCheckmarkCircle className="w-6 h-6 text-green-600 flex-shrink-0" />
+                        <div>
+                          <p className="font-medium text-green-900 dark:text-green-100">
+                            Welcome, {session?.user?.name || 'Host'}!
+                          </p>
+                          <p className="text-sm text-green-700 dark:text-green-300">
+                            Complete your host profile by adding your vehicle details.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                     Vehicle & Location
                   </h2>
@@ -694,19 +769,22 @@ export default function HostSignupPage() {
 
                   {/* Buttons */}
                   <div className="flex gap-3 mt-6">
-                    <button
-                      type="button"
-                      onClick={handlePrevStep}
-                      className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-3 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium"
-                    >
-                      Back
-                    </button>
+                    {/* Only show back button for non-OAuth users */}
+                    {!isOAuthUser && (
+                      <button
+                        type="button"
+                        onClick={handlePrevStep}
+                        className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-3 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium"
+                      >
+                        Back
+                      </button>
+                    )}
                     <button
                       type="submit"
                       disabled={isLoading || !isStep2Valid()}
-                      className="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
+                      className={`${isOAuthUser ? 'w-full' : 'flex-1'} bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium`}
                     >
-                      {isLoading ? 'Creating Account...' : 'Create Account'}
+                      {isLoading ? 'Creating Host Profile...' : isOAuthUser ? 'Complete Host Registration' : 'Create Account'}
                     </button>
                   </div>
                 </div>
@@ -721,6 +799,16 @@ export default function HostSignupPage() {
                   Sign In
                 </Link>
               </p>
+            </div>
+
+            {/* Renter Signup Link */}
+            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 text-center">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+                Looking to rent a car instead?
+              </p>
+              <Link href="/auth/signup" className="text-blue-600 hover:text-blue-700 font-medium text-sm">
+                Create Renter Account
+              </Link>
             </div>
           </div>
 

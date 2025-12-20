@@ -1,22 +1,24 @@
 // app/host/login/page.tsx
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { 
-  IoMailOutline, 
-  IoLockClosedOutline, 
+import Header from '@/app/components/Header'
+import {
+  IoMailOutline,
+  IoLockClosedOutline,
   IoEyeOutline,
   IoEyeOffOutline,
   IoAlertCircleOutline,
   IoTimeOutline,
-  IoCloseCircleOutline,
-  IoArrowBackOutline
+  IoCloseCircleOutline
 } from 'react-icons/io5'
+import OAuthButtons from '@/app/components/auth/OAuthButtons'
 
 export default function HostLoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -26,6 +28,27 @@ export default function HostLoginPage() {
     type: 'pending' | 'rejected' | 'suspended' | null
     message: string
   }>({ type: null, message: '' })
+
+  // Handle OAuth redirect status params
+  useEffect(() => {
+    const status = searchParams.get('status')
+    if (status === 'pending') {
+      setStatusMessage({
+        type: 'pending',
+        message: 'Your application is being reviewed. We\'ll notify you within 24-48 hours once approved.'
+      })
+    } else if (status === 'rejected') {
+      setStatusMessage({
+        type: 'rejected',
+        message: 'Your host application was rejected. Please contact support for details.'
+      })
+    } else if (status === 'suspended') {
+      setStatusMessage({
+        type: 'suspended',
+        message: 'Your account has been suspended. Please contact support.'
+      })
+    }
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -88,49 +111,19 @@ export default function HostLoginPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100">
-      {/* Minimal Header with Back Button */}
-      <div className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link 
-                href="/" 
-                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                <IoArrowBackOutline className="text-xl" />
-                <span className="text-sm font-medium">Back to Home</span>
-              </Link>
-              <div className="h-6 w-px bg-gray-300" />
-              <Link href="/" className="flex flex-col">
-                <h1 className="text-2xl font-bold text-gray-900 tracking-tight hover:text-blue-600 transition-colors">
-                  It<span className="font-black">W</span>hip
-                </h1>
-                <span className="text-[10px] text-gray-500 tracking-widest uppercase font-medium -mt-1">
-                  TECHNOLOGY
-                </span>
-              </Link>
-            </div>
-            <Link 
-              href="/host/signup" 
-              className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              Become a host
-            </Link>
-          </div>
-        </div>
-      </div>
+      <Header />
 
       {/* Login Form */}
-      <div className="flex items-center justify-center px-4 py-16">
+      <div className="flex items-center justify-center px-4 py-16 pt-24">
         <div className="w-full max-w-md">
           {/* ✅ CHANGED: rounded-lg → rounded-lg */}
           <div className="bg-white rounded-lg shadow-lg p-8">
             <div className="text-center mb-8">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Host Portal
+                Host / Car Owner Login
               </h1>
               <p className="text-gray-600">
-                Sign in to manage your vehicles and bookings
+                Sign in to manage your vehicles and earnings
               </p>
             </div>
 
@@ -193,6 +186,14 @@ export default function HostLoginPage() {
                 <p className="text-sm text-red-800">{error}</p>
               </div>
             )}
+
+            {/* OAuth Buttons */}
+            <OAuthButtons
+              theme="host"
+              roleHint="host"
+              callbackUrl="/host/dashboard"
+              showDivider={true}
+            />
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
@@ -288,13 +289,26 @@ export default function HostLoginPage() {
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
                 New to ItWhip?{' '}
-                <Link 
-                  href="/host/signup" 
+                <Link
+                  href="/host/signup"
                   className="font-medium text-green-600 hover:text-green-700"
                 >
                   Become a host
                 </Link>
               </p>
+            </div>
+
+            {/* Renter Login Link */}
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <div className="text-center">
+                <p className="text-gray-500 text-sm mb-2">Looking to rent a car?</p>
+                <Link
+                  href="/auth/login"
+                  className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                >
+                  Guest / Renter Login
+                </Link>
+              </div>
             </div>
           </div>
 

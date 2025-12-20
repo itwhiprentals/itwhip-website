@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/app/components/Header'
-import { 
+import {
   IoPersonOutline,
   IoMailOutline,
   IoLockClosedOutline,
@@ -19,6 +19,7 @@ import {
   IoRocketOutline,
   IoSparklesOutline
 } from 'react-icons/io5'
+import OAuthButtons from '@/app/components/auth/OAuthButtons'
 
 export default function SignupPage() {
   const router = useRouter()
@@ -158,7 +159,7 @@ export default function SignupPage() {
               {/* Welcome Message */}
               <div className="mb-6">
                 <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-                  Start Renting Cars Today
+                  Create Renter Account
                 </h2>
                 <p className="text-slate-600 dark:text-slate-400">
                   Join thousands of renters and find your perfect ride
@@ -186,7 +187,15 @@ export default function SignupPage() {
                   </div>
                 </div>
               </div>
-              
+
+              {/* OAuth Buttons */}
+              <OAuthButtons
+                theme="guest"
+                roleHint="guest"
+                callbackUrl="/profile"
+                showDivider={true}
+              />
+
               {/* Signup Form */}
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Name (Optional) */}
@@ -361,6 +370,18 @@ export default function SignupPage() {
                     Sign in
                   </Link>
                 </p>
+
+                {/* Host Signup Link */}
+                <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
+                  <p className="text-center text-sm text-slate-500 dark:text-slate-400 mb-2">
+                    Want to list your car and earn?
+                  </p>
+                  <p className="text-center">
+                    <Link href="/host/signup" className="text-green-600 hover:text-green-700 font-medium">
+                      Become a Host / Car Owner
+                    </Link>
+                  </p>
+                </div>
               </form>
             </div>
           </div>
