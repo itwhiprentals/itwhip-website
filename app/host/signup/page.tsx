@@ -1,7 +1,7 @@
 // app/host/signup/page.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
@@ -102,7 +102,7 @@ const CAR_COLORS = [
   { value: 'Other', label: 'Other' }
 ]
 
-export default function HostSignupPage() {
+function HostSignupContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { data: session, status } = useSession()
@@ -840,5 +840,17 @@ export default function HostSignupPage() {
       </div>
       <Footer />
     </>
+  )
+}
+
+export default function HostSignupPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+      </div>
+    }>
+      <HostSignupContent />
+    </Suspense>
   )
 }
