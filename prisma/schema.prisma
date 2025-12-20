@@ -55,6 +55,7 @@ model User {
   jobTitle String?
   phone    String?
   avatar   String?
+  image    String?  // Required by NextAuth PrismaAdapter
 
   // Relationships
   hotelId String?
