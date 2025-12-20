@@ -13,10 +13,10 @@ function generateVerificationCode(): string {
 
 // Get JWT secrets - UPDATED FOR GUEST SEPARATION
 const GUEST_JWT_SECRET = new TextEncoder().encode(
-  process.env.GUEST_JWT_SECRET || 'fallback-guest-secret-change-in-production'
+  process.env.GUEST_JWT_SECRET || 'fallback-guest-secret-key'
 )
 const GUEST_JWT_REFRESH_SECRET = new TextEncoder().encode(
-  process.env.GUEST_JWT_REFRESH_SECRET || 'fallback-guest-refresh-secret-change'
+  process.env.GUEST_JWT_REFRESH_SECRET || 'fallback-guest-refresh-secret-key'
 )
 
 // Fallback to general secrets if guest secrets not available
@@ -169,6 +169,39 @@ export async function POST(request: NextRequest) {
         emailVerificationExpiry: verificationExpiry
       }
     })
+
+    // Create ReviewerProfile for the new user (required for guest profile page)
+    try {
+      await prisma.reviewerProfile.create({
+        data: {
+          userId: newUser.id,
+          email: newUser.email,
+          name: newUser.name || '',
+          phoneNumber: phone || null,
+          memberSince: new Date(),
+          loyaltyPoints: 0,
+          memberTier: 'BRONZE',
+          emailVerified: false,
+          phoneVerified: false,
+          documentsVerified: false,
+          insuranceVerified: false,
+          fullyVerified: false,
+          canInstantBook: false,
+          totalTrips: 0,
+          averageRating: 0,
+          profileCompletion: 10, // Basic info only
+          emailNotifications: true,
+          smsNotifications: true,
+          pushNotifications: true,
+          preferredLanguage: 'en',
+          preferredCurrency: 'USD'
+        }
+      })
+      console.log(`[Signup] ReviewerProfile created for user: ${newUser.id}`)
+    } catch (profileError) {
+      console.error('[Signup] Failed to create ReviewerProfile:', profileError)
+      // Don't block signup if profile creation fails
+    }
 
     // Send verification email
     try {

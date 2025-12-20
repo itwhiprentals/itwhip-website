@@ -802,7 +802,7 @@ export default function GuestDashboard() {
                       state.userProfile?.reviewerProfile?.profilePhotoUrl || 
                       state.userProfile?.profilePhotoUrl ||
                       state.authenticatedUser?.avatar || 
-                      '/default-avatar.png'
+                      '/default-avatar.svg'
 
   const availableServices = getAvailableServices(state.suspensionInfo?.suspensionLevel || null)
 
@@ -993,7 +993,7 @@ export default function GuestDashboard() {
                   alt={`${userName}'s profile picture`}
                   className="h-12 w-12 rounded-full ring-2 ring-green-500 flex-shrink-0 object-cover"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/default-avatar.png'
+                    (e.target as HTMLImageElement).src = '/default-avatar.svg'
                   }}
                 />
                 <div className="flex-1 min-w-0">
@@ -1034,7 +1034,7 @@ export default function GuestDashboard() {
                 alt={`${userName}'s profile picture`}
                 className="h-14 w-14 md:h-16 md:w-16 rounded-full ring-2 ring-green-500 ring-offset-2 object-cover"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/default-avatar.png'
+                  (e.target as HTMLImageElement).src = '/default-avatar.svg'
                 }}
               />
               

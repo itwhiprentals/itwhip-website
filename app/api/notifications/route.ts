@@ -2,14 +2,31 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { verify } from 'jsonwebtoken'
+import { jwtVerify } from 'jose'
 import { prisma } from '@/app/lib/database/prisma'
+
+// Helper to get user ID from JWT (tries both guest and admin secrets)
+async function getUserIdFromToken(token: string): Promise<string | null> {
+  const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-key')
+  const GUEST_JWT_SECRET = new TextEncoder().encode(process.env.GUEST_JWT_SECRET || 'fallback-guest-secret-key')
+
+  for (const secret of [GUEST_JWT_SECRET, JWT_SECRET]) {
+    try {
+      const { payload } = await jwtVerify(token, secret)
+      return payload.userId as string
+    } catch {
+      continue
+    }
+  }
+
+  return null
+}
 
 export async function GET(request: NextRequest) {
   try {
     const cookieStore = await cookies()
     const token = cookieStore.get('accessToken')?.value
-    
+
     if (!token) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -17,8 +34,14 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const decoded = verify(token, process.env.JWT_SECRET!) as any
-    const userId = decoded.userId
+    const userId = await getUserIdFromToken(token)
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Invalid token' },
+        { status: 401 }
+      )
+    }
 
     const user = await prisma.user.findUnique({
       where: { id: userId },

@@ -77,6 +77,23 @@ export async function POST(req: NextRequest) {
       }
     })
 
+    // Also sync emailVerified to ReviewerProfile
+    try {
+      await prisma.reviewerProfile.updateMany({
+        where: {
+          OR: [
+            { userId: user.id },
+            { email: user.email }
+          ]
+        },
+        data: {
+          emailVerified: true
+        }
+      })
+    } catch (syncError) {
+      console.error('[Verify Email] Failed to sync emailVerified to ReviewerProfile:', syncError)
+    }
+
     console.log(`[Verify Email] Email verified for user: ${user.id}`)
 
     // Send welcome email

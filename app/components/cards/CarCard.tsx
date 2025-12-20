@@ -24,7 +24,7 @@ interface CarCardProps {
 const isValidHostPhoto = (url: string | undefined | null): boolean => {
   if (!url) return false
   // Filter out default/placeholder URLs
-  if (url === '/default-avatar.png') return false
+  if (url === '/default-avatar.svg') return false
   if (url.includes('default-avatar')) return false
   if (url.includes('placeholder')) return false
   // Must start with http or be a valid path to actual image

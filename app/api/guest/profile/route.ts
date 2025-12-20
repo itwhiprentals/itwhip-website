@@ -42,11 +42,75 @@ export async function GET(request: NextRequest) {
       }
     })
 
+    // If no profile exists, auto-create one for this user (handles existing users)
+    let profileData = profile
     if (!profile) {
-      return NextResponse.json(
-        { success: false, error: 'Profile not found' },
-        { status: 404 }
-      )
+      console.log(`[Guest Profile] No ReviewerProfile found for user ${userId}, auto-creating...`)
+
+      // Get full user data to populate profile
+      const userData = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          phone: true,
+          avatar: true,
+          emailVerified: true,
+          phoneVerified: true,
+          createdAt: true
+        }
+      })
+
+      if (!userData) {
+        return NextResponse.json(
+          { success: false, error: 'User not found' },
+          { status: 404 }
+        )
+      }
+
+      // Create ReviewerProfile with defaults for existing user
+      profileData = await prisma.reviewerProfile.create({
+        data: {
+          userId: userData.id,
+          email: userData.email,
+          name: userData.name || '',
+          phoneNumber: userData.phone || null,
+          profilePhotoUrl: userData.avatar || null,
+          memberSince: userData.createdAt,
+          city: '',
+          state: '',
+          zipCode: '',
+          loyaltyPoints: 0,
+          memberTier: 'BRONZE',
+          emailVerified: userData.emailVerified || false,
+          phoneVerified: userData.phoneVerified || false,
+          documentsVerified: false,
+          insuranceVerified: false,
+          fullyVerified: false,
+          canInstantBook: false,
+          totalTrips: 0,
+          averageRating: 0,
+          profileCompletion: 10,
+          emailNotifications: true,
+          smsNotifications: true,
+          pushNotifications: true,
+          preferredLanguage: 'en',
+          preferredCurrency: 'USD'
+        },
+        include: {
+          user: {
+            select: {
+              email: true,
+              avatar: true,
+              status: true,
+              deletionScheduledFor: true
+            }
+          }
+        }
+      })
+
+      console.log(`[Guest Profile] Auto-created ReviewerProfile for: ${userData.email}`)
     }
 
     // Calculate stats
@@ -59,7 +123,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    const completedBookings = bookings.filter(b => b.status === 'COMPLETED').length
+    const completedBookings = bookings.filter((b: { status: string }) => b.status === 'COMPLETED').length
     const totalTrips = completedBookings
 
     // Calculate loyalty points (10 points per completed trip)
@@ -78,22 +142,22 @@ export async function GET(request: NextRequest) {
     // Get reviews to calculate average rating
     const reviews = await prisma.rentalReview.findMany({
       where: {
-        reviewerProfileId: profile.id
+        reviewerProfileId: profileData.id
       }
     })
 
     const averageRating = reviews.length > 0
-      ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+      ? reviews.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) / reviews.length
       : 0
 
     // Check if fully verified
     const fullyVerified = !!(
-      profile.emailVerified &&
-      profile.phoneVerified &&
-      profile.documentsVerified &&
-      profile.governmentIdUrl &&
-      profile.driversLicenseUrl &&
-      profile.selfieUrl
+      profileData.emailVerified &&
+      profileData.phoneVerified &&
+      profileData.documentsVerified &&
+      profileData.governmentIdUrl &&
+      profileData.driversLicenseUrl &&
+      profileData.selfieUrl
     )
 
     // Can instant book if fully verified
@@ -101,59 +165,59 @@ export async function GET(request: NextRequest) {
 
     // Prepare response
     const guestProfile = {
-      id: profile.id,
-      email: profile.email || user.email,
-      name: profile.name,
-      phone: profile.phoneNumber,  // Maps DB field phoneNumber -> API field phone
-      profilePhoto: profile.profilePhotoUrl || user.avatar,
-      bio: profile.bio,
-      city: profile.city,
-      state: profile.state,
-      zipCode: profile.zipCode,
-      dateOfBirth: profile.dateOfBirth,
+      id: profileData.id,
+      email: profileData.email || user.email,
+      name: profileData.name,
+      phone: profileData.phoneNumber,  // Maps DB field phoneNumber -> API field phone
+      profilePhoto: profileData.profilePhotoUrl,
+      bio: profileData.bio,
+      city: profileData.city,
+      state: profileData.state,
+      zipCode: profileData.zipCode,
+      dateOfBirth: profileData.dateOfBirth,
 
       // Account Status (GDPR)
-      status: profile.user?.status || 'ACTIVE',
-      deletionScheduledFor: profile.user?.deletionScheduledFor || null,
+      status: profileData.user?.status || 'ACTIVE',
+      deletionScheduledFor: profileData.user?.deletionScheduledFor || null,
 
       // Emergency Contact
-      emergencyContactName: profile.emergencyContactName,
-      emergencyContactPhone: profile.emergencyContactPhone,
-      emergencyContactRelation: profile.emergencyContactRelation,
+      emergencyContactName: profileData.emergencyContactName,
+      emergencyContactPhone: profileData.emergencyContactPhone,
+      emergencyContactRelation: profileData.emergencyContactRelation,
 
       // Verification
-      emailVerified: profile.emailVerified,
-      phoneVerified: profile.phoneVerified,
-      governmentIdUrl: profile.governmentIdUrl,
-      governmentIdType: profile.governmentIdType,
-      driversLicenseUrl: profile.driversLicenseUrl,
-      selfieUrl: profile.selfieUrl,
-      documentsVerified: profile.documentsVerified,
-      documentVerifiedAt: profile.documentVerifiedAt,
+      emailVerified: profileData.emailVerified,
+      phoneVerified: profileData.phoneVerified,
+      governmentIdUrl: profileData.governmentIdUrl,
+      governmentIdType: profileData.governmentIdType,
+      driversLicenseUrl: profileData.driversLicenseUrl,
+      selfieUrl: profileData.selfieUrl,
+      documentsVerified: profileData.documentsVerified,
+      documentVerifiedAt: profileData.documentVerifiedAt,
       fullyVerified,
       canInstantBook,
 
       // Insurance - ✅ CORRECTED FIELD NAMES
-      insuranceProvider: profile.insuranceProvider,
-      insurancePolicyNumber: profile.policyNumber,
-      insuranceExpires: profile.expiryDate,
-      insuranceCardUrl: profile.insuranceCardFrontUrl || profile.insuranceCardBackUrl,
-      insuranceVerified: profile.insuranceVerified,
-      insuranceVerifiedAt: profile.insuranceVerifiedAt,
+      insuranceProvider: profileData.insuranceProvider,
+      insurancePolicyNumber: profileData.policyNumber,
+      insuranceExpires: profileData.expiryDate,
+      insuranceCardUrl: profileData.insuranceCardFrontUrl || profileData.insuranceCardBackUrl,
+      insuranceVerified: profileData.insuranceVerified,
+      insuranceVerifiedAt: profileData.insuranceVerifiedAt,
 
       // Stats
       totalTrips,
       averageRating,
       loyaltyPoints,
       memberTier,
-      memberSince: profile.memberSince,
+      memberSince: profileData.memberSince,
 
       // Preferences
-      preferredLanguage: profile.preferredLanguage,
-      preferredCurrency: profile.preferredCurrency,
-      emailNotifications: profile.emailNotifications,
-      smsNotifications: profile.smsNotifications,
-      pushNotifications: profile.pushNotifications
+      preferredLanguage: profileData.preferredLanguage,
+      preferredCurrency: profileData.preferredCurrency,
+      emailNotifications: profileData.emailNotifications,
+      smsNotifications: profileData.smsNotifications,
+      pushNotifications: profileData.pushNotifications
     }
 
     // 🔍 DEBUG LOGGING - Remove after testing
@@ -162,12 +226,12 @@ export async function GET(request: NextRequest) {
     console.log('=' .repeat(80))
     console.log('📧 User Email:', user.email)
     console.log('🆔 User ID:', user.id)
-    console.log('📧 Profile Email:', profile.email)
-    console.log('👤 Profile Name:', profile.name)
-    console.log('📱 DB phoneNumber field value:', profile.phoneNumber)
-    console.log('📱 DB phoneNumber type:', typeof profile.phoneNumber)
-    console.log('📱 DB phoneNumber is null?:', profile.phoneNumber === null)
-    console.log('📱 DB phoneNumber is undefined?:', profile.phoneNumber === undefined)
+    console.log('📧 Profile Email:', profileData.email)
+    console.log('👤 Profile Name:', profileData.name)
+    console.log('📱 DB phoneNumber field value:', profileData.phoneNumber)
+    console.log('📱 DB phoneNumber type:', typeof profileData.phoneNumber)
+    console.log('📱 DB phoneNumber is null?:', profileData.phoneNumber === null)
+    console.log('📱 DB phoneNumber is undefined?:', profileData.phoneNumber === undefined)
     console.log('---')
     console.log('📱 Mapped "phone" in response:', guestProfile.phone)
     console.log('📱 Mapped phone type:', typeof guestProfile.phone)

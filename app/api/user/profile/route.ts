@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
       name: userProfile.name,
       phone: userProfile.phone,
       role: userProfile.role,
-      avatar: userProfile.avatar || userProfile.reviewerProfile?.profilePhotoUrl || '/default-avatar.png',
+      avatar: userProfile.avatar || userProfile.reviewerProfile?.profilePhotoUrl || '/default-avatar.svg',
       emailVerified: userProfile.emailVerified,
       phoneVerified: userProfile.phoneVerified,
       isActive: userProfile.isActive,

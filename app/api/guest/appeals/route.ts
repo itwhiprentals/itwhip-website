@@ -7,15 +7,21 @@ import { jwtVerify } from 'jose'
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'fallback-secret-key-change-in-production'
 )
+const GUEST_JWT_SECRET = new TextEncoder().encode(
+  process.env.GUEST_JWT_SECRET || 'fallback-guest-secret-key'
+)
 
-// Helper to verify guest token and get user ID
+// Helper to verify guest token (tries both guest and admin secrets)
 async function verifyGuestToken(token: string) {
-  try {
-    const { payload } = await jwtVerify(token, JWT_SECRET)
-    return payload
-  } catch (error) {
-    return null
+  for (const secret of [GUEST_JWT_SECRET, JWT_SECRET]) {
+    try {
+      const { payload } = await jwtVerify(token, secret)
+      return payload
+    } catch {
+      continue
+    }
   }
+  return null
 }
 
 // ✅ FIXED: Check appeal limits PER WARNING (not globally)

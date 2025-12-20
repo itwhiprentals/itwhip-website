@@ -189,7 +189,7 @@ async function getInitialCars(location: string, pickupDate: string, returnDate: 
         },
         host: {
           name: car.host.name,
-          avatar: car.host.profilePhoto || '/default-avatar.png',
+          avatar: car.host.profilePhoto || '/default-avatar.svg',
           verified: car.host.isVerified,
           responseRate: car.host.responseRate || 95,
           responseTime: car.host.responseTime || 60,
