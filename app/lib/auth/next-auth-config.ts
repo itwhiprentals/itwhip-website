@@ -2,10 +2,9 @@
 // NextAuth.js configuration for OAuth (Google + Apple)
 
 import { NextAuthOptions } from 'next-auth'
-import { JWT } from 'next-auth/jwt'
 import GoogleProvider from 'next-auth/providers/google'
 import AppleProvider from 'next-auth/providers/apple'
-import { PrismaAdapter } from '@auth/prisma-adapter'
+import { PrismaAdapter } from '@next-auth/prisma-adapter'
 import { prisma } from '@/app/lib/database/prisma'
 import { SignJWT, importPKCS8 } from 'jose'
 
