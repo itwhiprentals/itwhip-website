@@ -145,7 +145,7 @@ export async function GET(request: NextRequest) {
       select: {
         id: true,
         userId: true,
-        phone: true
+        phoneNumber: true
       }
     })
 
