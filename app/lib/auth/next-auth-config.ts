@@ -192,8 +192,10 @@ async function buildAuthOptions(): Promise<NextAuthOptions> {
 
       async session({ session, token }) {
         if (session.user && token) {
-          (session.user as any).id = token.userId
-          (session.user as any).provider = token.provider
+          // Use userId if set, otherwise fall back to sub (NextAuth's default user identifier)
+          const userId = token.userId || token.sub
+          ;(session.user as any).id = userId
+          ;(session.user as any).provider = token.provider
         }
         return session
       },
@@ -357,8 +359,10 @@ export const authOptions: NextAuthOptions = {
 
     async session({ session, token }) {
       if (session.user && token) {
-        (session.user as any).id = token.userId
-        (session.user as any).provider = token.provider
+        // Use userId if set, otherwise fall back to sub (NextAuth's default user identifier)
+        const userId = token.userId || token.sub
+        ;(session.user as any).id = userId
+        ;(session.user as any).provider = token.provider
       }
       return session
     },
