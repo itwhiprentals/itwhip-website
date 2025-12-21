@@ -4,7 +4,7 @@
 import { NextAuthOptions } from 'next-auth'
 import GoogleProvider from 'next-auth/providers/google'
 import AppleProvider from 'next-auth/providers/apple'
-import { PrismaAdapter } from '@next-auth/prisma-adapter'
+import { DeferredPrismaAdapter } from './deferred-prisma-adapter'
 import { prisma } from '@/app/lib/database/prisma'
 import { SignJWT, importPKCS8 } from 'jose'
 
@@ -68,11 +68,34 @@ async function generateCustomJWT(userId: string, email: string, name: string | n
   return { accessToken, refreshToken }
 }
 
-// Extend JWT type
+// Extend JWT type for pending OAuth data
 declare module 'next-auth/jwt' {
   interface JWT {
     userId?: string
     provider?: string
+    // Pending OAuth data (not yet in database - user hasn't completed profile)
+    pendingOAuth?: {
+      email: string
+      name: string | null
+      image: string | null
+      provider: string
+      providerAccountId: string
+      access_token?: string
+      refresh_token?: string
+      expires_at?: number
+      token_type?: string
+      scope?: string
+      id_token?: string
+    }
+    // Flag to indicate profile is not yet created
+    isProfileComplete?: boolean
+  }
+}
+
+// Extend User type for pending flag
+declare module 'next-auth' {
+  interface User {
+    isPending?: boolean
   }
 }
 
@@ -89,7 +112,7 @@ async function buildAuthOptions(): Promise<NextAuthOptions> {
   }
 
   return {
-    adapter: PrismaAdapter(prisma) as any,
+    adapter: DeferredPrismaAdapter(prisma) as any,
 
     providers: [
       GoogleProvider({
@@ -124,11 +147,39 @@ async function buildAuthOptions(): Promise<NextAuthOptions> {
 
       async jwt({ token, user, account }) {
         // Initial sign in
-        if (user) {
-          token.userId = user.id
+        if (user && account) {
+          // Check if this is a pending (new OAuth) user from DeferredPrismaAdapter
+          const isPending = (user as any).isPending || user.id.startsWith('pending_')
+
+          if (isPending) {
+            // NEW USER: Store OAuth data in token for later user creation
+            console.log(`[NextAuth JWT] Pending user detected - storing OAuth data in token`)
+            token.pendingOAuth = {
+              email: user.email!,
+              name: user.name || null,
+              image: user.image || null,
+              provider: account.provider,
+              providerAccountId: account.providerAccountId,
+              access_token: account.access_token,
+              refresh_token: account.refresh_token,
+              expires_at: account.expires_at,
+              token_type: account.token_type,
+              scope: account.scope,
+              id_token: account.id_token
+            }
+            token.isProfileComplete = false
+            // Don't set userId - user doesn't exist in DB yet
+            token.userId = undefined
+          } else {
+            // EXISTING USER: Normal flow
+            console.log(`[NextAuth JWT] Existing user detected - normal flow`)
+            token.userId = user.id
+            token.isProfileComplete = true
+          }
+
           token.email = user.email
           token.name = user.name
-          token.provider = account?.provider
+          token.provider = account.provider
         }
 
         return token
@@ -140,6 +191,9 @@ async function buildAuthOptions(): Promise<NextAuthOptions> {
           const userId = token.userId || token.sub
           ;(session.user as any).id = userId
           ;(session.user as any).provider = token.provider
+          // Include pending OAuth data and profile completion status
+          ;(session.user as any).isProfileComplete = token.isProfileComplete ?? true
+          ;(session.user as any).pendingOAuth = token.pendingOAuth
         }
         return session
       },
@@ -159,47 +213,11 @@ async function buildAuthOptions(): Promise<NextAuthOptions> {
     },
 
     events: {
-      async createUser({ user }) {
-        // When a new user is created via OAuth, set up their profile
-        try {
-          if (user.email) {
-            // Update user role
-            await prisma.user.update({
-              where: { id: user.id },
-              data: {
-                role: 'CLAIMED',
-                emailVerified: true
-              }
-            })
-
-            // Check if ReviewerProfile exists
-            const existingProfile = await prisma.reviewerProfile.findUnique({
-              where: { userId: user.id }
-            })
-
-            if (!existingProfile) {
-              // Create ReviewerProfile for guest
-              await prisma.reviewerProfile.create({
-                data: {
-                  userId: user.id,
-                  email: user.email,
-                  name: user.name || '',
-                  memberSince: new Date(),
-                  city: '',
-                  state: '',
-                  zipCode: '',
-                  emailVerified: true
-                }
-              })
-            }
-          }
-        } catch (error) {
-          console.error('Error in createUser event:', error)
-        }
-      },
-
+      // Note: createUser event will fire but with pending_xxx ID for new users
+      // We ignore it since we'll create the real user in complete-profile
       async signIn({ user, account, isNewUser }) {
-        console.log(`OAuth sign-in: ${user.email} via ${account?.provider}${isNewUser ? ' (new user)' : ''}`)
+        const isPending = user.id.startsWith('pending_')
+        console.log(`OAuth sign-in: ${user.email} via ${account?.provider}${isPending ? ' (pending - needs phone)' : isNewUser ? ' (new user)' : ' (returning user)'}`)
       }
     },
 
@@ -230,7 +248,7 @@ export async function getAuthOptions(): Promise<NextAuthOptions> {
 // For static export (used by NextAuth handler)
 // We need a synchronous version for initial setup
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma) as any,
+  adapter: DeferredPrismaAdapter(prisma) as any,
 
   providers: [
     GoogleProvider({
@@ -258,12 +276,42 @@ export const authOptions: NextAuthOptions = {
     },
 
     async jwt({ token, user, account }) {
-      if (user) {
-        token.userId = user.id
+      // Initial sign in
+      if (user && account) {
+        // Check if this is a pending (new OAuth) user from DeferredPrismaAdapter
+        const isPending = (user as any).isPending || user.id.startsWith('pending_')
+
+        if (isPending) {
+          // NEW USER: Store OAuth data in token for later user creation
+          console.log(`[NextAuth JWT] Pending user detected - storing OAuth data in token`)
+          token.pendingOAuth = {
+            email: user.email!,
+            name: user.name || null,
+            image: user.image || null,
+            provider: account.provider,
+            providerAccountId: account.providerAccountId,
+            access_token: account.access_token,
+            refresh_token: account.refresh_token,
+            expires_at: account.expires_at,
+            token_type: account.token_type,
+            scope: account.scope,
+            id_token: account.id_token
+          }
+          token.isProfileComplete = false
+          // Don't set userId - user doesn't exist in DB yet
+          token.userId = undefined
+        } else {
+          // EXISTING USER: Normal flow
+          console.log(`[NextAuth JWT] Existing user detected - normal flow`)
+          token.userId = user.id
+          token.isProfileComplete = true
+        }
+
         token.email = user.email
         token.name = user.name
-        token.provider = account?.provider
+        token.provider = account.provider
       }
+
       return token
     },
 
@@ -273,6 +321,9 @@ export const authOptions: NextAuthOptions = {
         const userId = token.userId || token.sub
         ;(session.user as any).id = userId
         ;(session.user as any).provider = token.provider
+        // Include pending OAuth data and profile completion status
+        ;(session.user as any).isProfileComplete = token.isProfileComplete ?? true
+        ;(session.user as any).pendingOAuth = token.pendingOAuth
       }
       return session
     },
@@ -290,43 +341,11 @@ export const authOptions: NextAuthOptions = {
   },
 
   events: {
-    async createUser({ user }) {
-      try {
-        if (user.email) {
-          await prisma.user.update({
-            where: { id: user.id },
-            data: {
-              role: 'CLAIMED',
-              emailVerified: true
-            }
-          })
-
-          const existingProfile = await prisma.reviewerProfile.findUnique({
-            where: { userId: user.id }
-          })
-
-          if (!existingProfile) {
-            await prisma.reviewerProfile.create({
-              data: {
-                userId: user.id,
-                email: user.email,
-                name: user.name || '',
-                memberSince: new Date(),
-                city: '',
-                state: '',
-                zipCode: '',
-                emailVerified: true
-              }
-            })
-          }
-        }
-      } catch (error) {
-        console.error('Error in createUser event:', error)
-      }
-    },
-
+    // Note: createUser event will fire but with pending_xxx ID for new users
+    // We ignore it since we'll create the real user in complete-profile
     async signIn({ user, account, isNewUser }) {
-      console.log(`OAuth sign-in: ${user.email} via ${account?.provider}${isNewUser ? ' (new user)' : ''}`)
+      const isPending = user.id.startsWith('pending_')
+      console.log(`OAuth sign-in: ${user.email} via ${account?.provider}${isPending ? ' (pending - needs phone)' : isNewUser ? ' (new user)' : ' (returning user)'}`)
     }
   },
 

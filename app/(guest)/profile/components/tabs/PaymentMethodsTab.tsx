@@ -125,7 +125,7 @@ export default function PaymentMethodsTab() {
       </div>
 
       {/* Security Banner */}
-      <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+      <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border-2 border-green-300 dark:border-green-700 rounded-lg shadow-md">
         <div className="flex items-start gap-2.5">
           <IoShieldCheckmarkOutline className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
           <div>
@@ -274,7 +274,7 @@ export default function PaymentMethodsTab() {
       )}
 
       {/* Information */}
-      <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+      <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border-2 border-green-300 dark:border-green-700 shadow-md">
         <div className="flex items-start gap-2.5">
           <IoInformationCircleOutline className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
           <div>

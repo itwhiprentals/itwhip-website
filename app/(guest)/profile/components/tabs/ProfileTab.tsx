@@ -1,13 +1,15 @@
 // app/(guest)/profile/components/tabs/ProfileTab.tsx
 'use client'
 
-import { useState, useRef } from 'react'
-import { IoSaveOutline, IoCloseOutline, IoPencilOutline, IoCameraOutline } from 'react-icons/io5'
+import { useState, useRef, useMemo } from 'react'
+import { IoSaveOutline, IoCloseOutline, IoPencilOutline, IoCameraOutline, IoAlertCircleOutline } from 'react-icons/io5'
 import Image from 'next/image'
 
 interface ProfileTabProps {
   profile: {
-    name: string
+    firstName?: string
+    lastName?: string
+    name: string  // Keep for backwards compatibility
     email: string
     phone: string
     bio?: string
@@ -20,7 +22,9 @@ interface ProfileTabProps {
     dateOfBirth?: string
   }
   formData: {
-    name: string
+    firstName: string
+    lastName: string
+    name: string  // Keep for backwards compatibility
     phone: string
     bio: string
     city: string
@@ -37,6 +41,39 @@ interface ProfileTabProps {
   onSave: () => void
   onCancel: () => void
   onFormChange: (data: Partial<ProfileTabProps['formData']>) => void
+}
+
+// Helper to format phone number as +1 (XXX) XXX-XXXX
+function formatPhoneNumber(value: string): string {
+  const digits = value.replace(/\D/g, '')
+
+  // Remove leading 1 if present (we'll add it back)
+  const phoneDigits = digits.startsWith('1') ? digits.slice(1) : digits
+
+  if (phoneDigits.length === 0) return ''
+  if (phoneDigits.length <= 3) return `+1 (${phoneDigits}`
+  if (phoneDigits.length <= 6) return `+1 (${phoneDigits.slice(0, 3)}) ${phoneDigits.slice(3)}`
+  return `+1 (${phoneDigits.slice(0, 3)}) ${phoneDigits.slice(3, 6)}-${phoneDigits.slice(6, 10)}`
+}
+
+// Helper to calculate age from date of birth
+function calculateAge(dateOfBirth: string): number | null {
+  if (!dateOfBirth) return null
+  const today = new Date()
+  const birthDate = new Date(dateOfBirth)
+  let age = today.getFullYear() - birthDate.getFullYear()
+  const monthDiff = today.getMonth() - birthDate.getMonth()
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--
+  }
+  return age
+}
+
+// Helper to split full name into first/last
+function splitName(fullName: string): { firstName: string; lastName: string } {
+  const parts = fullName.trim().split(/\s+/)
+  if (parts.length === 1) return { firstName: parts[0], lastName: '' }
+  return { firstName: parts[0], lastName: parts.slice(1).join(' ') }
 }
 
 const US_STATES = [
@@ -62,13 +99,57 @@ export default function ProfileTab({
   onCancel,
   onFormChange
 }: ProfileTabProps) {
-  
+
+  // Calculate age from DOB
+  const age = useMemo(() => calculateAge(formData.dateOfBirth || profile.dateOfBirth || ''), [formData.dateOfBirth, profile.dateOfBirth])
+
+  // Get first/last name from profile (split if only full name available)
+  const profileFirstName = profile.firstName || splitName(profile.name || '').firstName
+  const profileLastName = profile.lastName || splitName(profile.name || '').lastName
+
+  // Check for validation errors
+  const firstNameMissing = editMode && !formData.firstName?.trim()
+  const lastNameMissing = editMode && !formData.lastName?.trim()
+  const phoneMissing = !formData.phone?.trim() && !profile.phone?.trim()
+
   const handleInputChange = (field: string, value: string) => {
     onFormChange({ [field]: value })
   }
 
+  const handlePhoneChange = (value: string) => {
+    const formatted = formatPhoneNumber(value)
+    onFormChange({ phone: formatted })
+  }
+
+  const handleNameChange = (field: 'firstName' | 'lastName', value: string) => {
+    onFormChange({
+      [field]: value,
+      // Also update the combined name field for backwards compatibility
+      name: field === 'firstName'
+        ? `${value} ${formData.lastName || ''}`.trim()
+        : `${formData.firstName || ''} ${value}`.trim()
+    })
+  }
+
   return (
     <div>
+      {/* Phone Missing Banner */}
+      {phoneMissing && (
+        <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border-2 border-red-300 dark:border-red-700 rounded-lg shadow-sm">
+          <div className="flex items-start gap-2.5">
+            <IoAlertCircleOutline className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <h3 className="text-sm font-semibold text-red-900 dark:text-red-100 mb-1">
+                Phone Number Required
+              </h3>
+              <p className="text-xs text-red-800 dark:text-red-300">
+                Please add your phone number to complete your profile. This is required for booking confirmations.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div>
@@ -77,7 +158,7 @@ export default function ProfileTab({
             Update your profile and emergency contact
           </p>
         </div>
-        
+
         {!editMode && (
           <button
             onClick={onEditToggle}
@@ -93,23 +174,57 @@ export default function ProfileTab({
       <div className="mb-6">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Basic Information</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {/* Full Name */}
+          {/* First Name */}
           <div>
             <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-              Full Name <span className="text-red-500">*</span>
+              First Name <span className="text-red-500">*</span>
             </label>
             {editMode ? (
               <input
                 type="text"
-                value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
-                placeholder="Enter your full name"
+                value={formData.firstName}
+                onChange={(e) => handleNameChange('firstName', e.target.value)}
+                className={`w-full px-3 py-2 text-sm rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 ${
+                  firstNameMissing
+                    ? 'border-2 border-red-500 dark:border-red-500'
+                    : 'border border-gray-400 dark:border-gray-500'
+                }`}
+                placeholder="John"
               />
             ) : (
-              <p className="px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900/50 rounded-lg text-gray-900 dark:text-white">
-                {profile.name || 'Not set'}
+              <p className="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white shadow-sm">
+                {profileFirstName || <span className="text-red-500">Not set</span>}
               </p>
+            )}
+            {firstNameMissing && (
+              <p className="text-[10px] text-red-500 mt-1">First name is required</p>
+            )}
+          </div>
+
+          {/* Last Name */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              Last Name <span className="text-red-500">*</span>
+            </label>
+            {editMode ? (
+              <input
+                type="text"
+                value={formData.lastName}
+                onChange={(e) => handleNameChange('lastName', e.target.value)}
+                className={`w-full px-3 py-2 text-sm rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 ${
+                  lastNameMissing
+                    ? 'border-2 border-red-500 dark:border-red-500'
+                    : 'border border-gray-400 dark:border-gray-500'
+                }`}
+                placeholder="Doe"
+              />
+            ) : (
+              <p className="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white shadow-sm">
+                {profileLastName || <span className="text-red-500">Not set</span>}
+              </p>
+            )}
+            {lastNameMissing && (
+              <p className="text-[10px] text-red-500 mt-1">Last name is required</p>
             )}
           </div>
 
@@ -118,7 +233,7 @@ export default function ProfileTab({
             <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
               Email Address
             </label>
-            <p className="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-600 dark:text-gray-400">
+            <p className="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-600 dark:text-gray-400 shadow-sm">
               {profile.email}
             </p>
             <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">
@@ -135,14 +250,25 @@ export default function ProfileTab({
               <input
                 type="tel"
                 value={formData.phone}
-                onChange={(e) => handleInputChange('phone', e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
+                onChange={(e) => handlePhoneChange(e.target.value)}
+                className={`w-full px-3 py-2 text-sm rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 ${
+                  phoneMissing
+                    ? 'border-2 border-red-500 dark:border-red-500'
+                    : 'border border-gray-400 dark:border-gray-500'
+                }`}
                 placeholder="+1 (555) 123-4567"
               />
             ) : (
-              <p className="px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900/50 rounded-lg text-gray-900 dark:text-white">
-                {profile.phone || 'Not set'}
+              <p className={`px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 border rounded-lg shadow-sm ${
+                phoneMissing
+                  ? 'border-2 border-red-500 dark:border-red-500 text-red-500'
+                  : 'border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white'
+              }`}>
+                {profile.phone ? formatPhoneNumber(profile.phone) : <span className="text-red-500">Not set - Required</span>}
               </p>
+            )}
+            {phoneMissing && editMode && (
+              <p className="text-[10px] text-red-500 mt-1">Phone number is required</p>
             )}
           </div>
 
@@ -150,17 +276,25 @@ export default function ProfileTab({
           <div>
             <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
               Date of Birth
+              {age !== null && (
+                <span className="ml-2 text-green-600 dark:text-green-400 font-normal">
+                  (Age: {age} years)
+                </span>
+              )}
             </label>
             {editMode ? (
               <input
                 type="date"
                 value={formData.dateOfBirth}
                 onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
+                className="w-full px-3 py-2 text-sm border border-gray-400 dark:border-gray-500 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
               />
             ) : (
-              <p className="px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900/50 rounded-lg text-gray-900 dark:text-white">
+              <p className="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white shadow-sm">
                 {profile.dateOfBirth ? new Date(profile.dateOfBirth).toLocaleDateString() : 'Not set'}
+                {age !== null && !editMode && (
+                  <span className="ml-2 text-green-600 dark:text-green-400">({age} years old)</span>
+                )}
               </p>
             )}
           </div>
@@ -175,11 +309,11 @@ export default function ProfileTab({
                 type="text"
                 value={formData.city}
                 onChange={(e) => handleInputChange('city', e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
+                className="w-full px-3 py-2 text-sm border border-gray-400 dark:border-gray-500 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
                 placeholder="Phoenix"
               />
             ) : (
-              <p className="px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900/50 rounded-lg text-gray-900 dark:text-white">
+              <p className="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white shadow-sm">
                 {profile.city || 'Not set'}
               </p>
             )}
@@ -194,7 +328,7 @@ export default function ProfileTab({
               <select
                 value={formData.state}
                 onChange={(e) => handleInputChange('state', e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
+                className="w-full px-3 py-2 text-sm border border-gray-400 dark:border-gray-500 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
               >
                 <option value="">Select State</option>
                 {US_STATES.map((state) => (
@@ -204,7 +338,7 @@ export default function ProfileTab({
                 ))}
               </select>
             ) : (
-              <p className="px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900/50 rounded-lg text-gray-900 dark:text-white">
+              <p className="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white shadow-sm">
                 {profile.state || 'Not set'}
               </p>
             )}
@@ -220,12 +354,12 @@ export default function ProfileTab({
                 type="text"
                 value={formData.zipCode}
                 onChange={(e) => handleInputChange('zipCode', e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
+                className="w-full px-3 py-2 text-sm border border-gray-400 dark:border-gray-500 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
                 placeholder="85001"
                 maxLength={5}
               />
             ) : (
-              <p className="px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900/50 rounded-lg text-gray-900 dark:text-white">
+              <p className="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white shadow-sm">
                 {profile.zipCode || 'Not set'}
               </p>
             )}
@@ -242,11 +376,11 @@ export default function ProfileTab({
               value={formData.bio}
               onChange={(e) => handleInputChange('bio', e.target.value)}
               rows={3}
-              className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
+              className="w-full px-3 py-2 text-sm border border-gray-400 dark:border-gray-500 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
               placeholder="Tell us about yourself..."
             />
           ) : (
-            <p className="px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900/50 rounded-lg text-gray-900 dark:text-white min-h-[70px]">
+            <p className="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white shadow-sm min-h-[70px]">
               {profile.bio || 'No bio added yet'}
             </p>
           )}
@@ -273,11 +407,11 @@ export default function ProfileTab({
                 type="text"
                 value={formData.emergencyContactName}
                 onChange={(e) => handleInputChange('emergencyContactName', e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
+                className="w-full px-3 py-2 text-sm border border-gray-400 dark:border-gray-500 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
                 placeholder="Contact name"
               />
             ) : (
-              <p className="px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900/50 rounded-lg text-gray-900 dark:text-white">
+              <p className="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white shadow-sm">
                 {profile.emergencyContactName || 'Not set'}
               </p>
             )}
@@ -292,13 +426,16 @@ export default function ProfileTab({
               <input
                 type="tel"
                 value={formData.emergencyContactPhone}
-                onChange={(e) => handleInputChange('emergencyContactPhone', e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
+                onChange={(e) => {
+                  const formatted = formatPhoneNumber(e.target.value)
+                  handleInputChange('emergencyContactPhone', formatted)
+                }}
+                className="w-full px-3 py-2 text-sm border border-gray-400 dark:border-gray-500 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
                 placeholder="+1 (555) 987-6543"
               />
             ) : (
-              <p className="px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900/50 rounded-lg text-gray-900 dark:text-white">
-                {profile.emergencyContactPhone || 'Not set'}
+              <p className="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white shadow-sm">
+                {profile.emergencyContactPhone ? formatPhoneNumber(profile.emergencyContactPhone) : 'Not set'}
               </p>
             )}
           </div>
@@ -312,7 +449,7 @@ export default function ProfileTab({
               <select
                 value={formData.emergencyContactRelation}
                 onChange={(e) => handleInputChange('emergencyContactRelation', e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
+                className="w-full px-3 py-2 text-sm border border-gray-400 dark:border-gray-500 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
               >
                 <option value="">Select Relationship</option>
                 {RELATIONSHIPS.map((rel) => (
@@ -322,7 +459,7 @@ export default function ProfileTab({
                 ))}
               </select>
             ) : (
-              <p className="px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900/50 rounded-lg text-gray-900 dark:text-white">
+              <p className="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white shadow-sm">
                 {profile.emergencyContactRelation || 'Not set'}
               </p>
             )}
@@ -336,15 +473,15 @@ export default function ProfileTab({
           <button
             onClick={onCancel}
             disabled={saving}
-            className="px-4 py-2 min-h-[36px] text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+            className="px-4 py-2 min-h-[36px] text-sm border border-gray-400 dark:border-gray-500 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
           >
             <IoCloseOutline className="w-4 h-4 inline mr-1.5" />
             Cancel
           </button>
           <button
             onClick={onSave}
-            disabled={saving}
-            className="px-4 py-2 min-h-[36px] text-sm bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1.5"
+            disabled={saving || firstNameMissing || lastNameMissing}
+            className="px-4 py-2 min-h-[36px] text-sm bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
           >
             {saving ? (
               <>
@@ -359,6 +496,11 @@ export default function ProfileTab({
             )}
           </button>
         </div>
+      )}
+      {editMode && (firstNameMissing || lastNameMissing) && (
+        <p className="text-xs text-red-500 text-right mt-2">
+          Please fill in all required fields before saving
+        </p>
       )}
     </div>
   )

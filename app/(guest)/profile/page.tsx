@@ -140,6 +140,8 @@ function GuestProfileContent() {
   const [activeTab, setActiveTab] = useState<TabType>('profile')
   
   const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
     name: '',
     phone: '',
     bio: '',
@@ -156,6 +158,13 @@ function GuestProfileContent() {
     smsNotifications: true,
     pushNotifications: true
   })
+
+  // Helper to split name into first/last
+  const splitName = (fullName: string) => {
+    const parts = fullName.trim().split(/\s+/)
+    if (parts.length === 1) return { firstName: parts[0], lastName: '' }
+    return { firstName: parts[0], lastName: parts.slice(1).join(' ') }
+  }
 
   // ✅ FIXED: Fetch profile only once on mount
   useEffect(() => {
@@ -188,7 +197,11 @@ function GuestProfileContent() {
       
       if (data.success && data.profile) {
         setProfile(data.profile)
+        // Parse first/last name from full name
+        const { firstName, lastName } = splitName(data.profile.name || '')
         setFormData({
+          firstName: data.profile.firstName || firstName,
+          lastName: data.profile.lastName || lastName,
           name: data.profile.name || '',
           phone: data.profile.phone || '',
           bio: data.profile.bio || '',
@@ -400,6 +413,7 @@ function GuestProfileContent() {
             fullyVerified={profile.fullyVerified}
             email={profile.email}
             phone={profile.phone}
+            onTabChange={setActiveTab}
           />
         </div>
 
@@ -410,7 +424,7 @@ function GuestProfileContent() {
         />
 
         {/* Tab Content */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border-2 border-gray-300 dark:border-gray-600 p-4 sm:p-6">
           {activeTab === 'profile' && (
             <ProfileTab
               profile={{

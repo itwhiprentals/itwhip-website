@@ -82,6 +82,16 @@ export default function OAuthButtons({
       // See: https://github.com/nextauthjs/next-auth/issues/3300
       await signOut({ redirect: false })
 
+      // Store OAuth params in cookies BEFORE redirecting to OAuth provider
+      // These will be read by oauth-redirect route since NextAuth redirect callback
+      // doesn't preserve our custom callbackUrl params
+      const role = roleHint || (mode === 'login' ? 'guest' : 'guest')
+      document.cookie = `oauth_role_hint=${role}; path=/; max-age=300; SameSite=Lax`
+      document.cookie = `oauth_mode=${mode || 'signup'}; path=/; max-age=300; SameSite=Lax`
+      if (callbackUrl) {
+        document.cookie = `oauth_return_to=${encodeURIComponent(callbackUrl)}; path=/; max-age=300; SameSite=Lax`
+      }
+
       // Use NextAuth signIn with redirect to our OAuth redirect handler
       const result = await signIn(provider, {
         callbackUrl: buildCallbackUrl(),

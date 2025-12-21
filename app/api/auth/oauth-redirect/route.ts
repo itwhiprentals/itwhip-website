@@ -52,9 +52,14 @@ async function generateCustomTokens(user: { id: string; email: string; name: str
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const roleHint = searchParams.get('roleHint') // 'guest' or 'host'
-    const returnTo = searchParams.get('returnTo')
-    const mode = searchParams.get('mode') // 'login' or 'signup'
+
+    // Read from cookies as fallback (cookies are set by OAuthButtons before OAuth redirect)
+    // URL params get lost during OAuth flow, so cookies preserve the original intent
+    const cookies = request.cookies
+    const roleHint = searchParams.get('roleHint') || cookies.get('oauth_role_hint')?.value || 'guest'
+    const mode = searchParams.get('mode') || cookies.get('oauth_mode')?.value || 'signup'
+    const returnTo = searchParams.get('returnTo') ||
+      (cookies.get('oauth_return_to')?.value ? decodeURIComponent(cookies.get('oauth_return_to')?.value) : null)
 
     // Get the authenticated session
     const session = await getServerSession(authOptions)
@@ -67,8 +72,35 @@ export async function GET(request: NextRequest) {
 
     const email = session.user.email
     const userId = (session.user as any).id
+    const pendingOAuth = (session.user as any).pendingOAuth
+    const isProfileComplete = (session.user as any).isProfileComplete
 
-    console.log(`[OAuth Redirect] User authenticated: ${email}, roleHint: ${roleHint}, mode: ${mode}`)
+    console.log(`[OAuth Redirect] User authenticated: ${email}, roleHint: ${roleHint}, mode: ${mode}, pending: ${!!pendingOAuth}`)
+
+    // ========================================================================
+    // PENDING OAUTH USER (New user - not yet in database)
+    // ========================================================================
+    if (pendingOAuth && !isProfileComplete) {
+      console.log(`[OAuth Redirect] Pending OAuth user - needs to complete profile first (mode: ${mode})`)
+
+      // For BOTH login and signup mode, redirect to complete-profile
+      // If mode is 'login', complete-profile will show "No Account Found" message
+      // but still allow user to create account by entering phone
+      const redirectUrl = returnTo || '/dashboard'
+      const completeProfileUrl = `/auth/complete-profile?roleHint=${roleHint}&mode=${mode}&redirectTo=${encodeURIComponent(redirectUrl)}`
+      console.log(`[OAuth Redirect] Redirecting pending user to complete profile: ${completeProfileUrl}`)
+
+      const response = NextResponse.redirect(new URL(completeProfileUrl, request.url))
+      // Clear OAuth cookies after reading
+      response.cookies.delete('oauth_role_hint')
+      response.cookies.delete('oauth_mode')
+      response.cookies.delete('oauth_return_to')
+      return response
+    }
+
+    // ========================================================================
+    // EXISTING USER (Has account in database)
+    // ========================================================================
 
     // Get full user data for token generation
     const user = await prisma.user.findUnique({
@@ -83,33 +115,27 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Check if this is a new user (created within last 30 seconds)
-    const isNewUser = user?.createdAt && (Date.now() - new Date(user.createdAt).getTime()) < 30000
-
-    // If mode is 'login' and user is new, they don't have an account - redirect with error
-    if (mode === 'login' && isNewUser) {
-      console.log('[OAuth Redirect] Login mode but user is new - no existing account')
-      const loginPage = roleHint === 'host' ? '/host/login' : '/auth/login'
-      return NextResponse.redirect(new URL(`${loginPage}?error=no_account`, request.url))
+    // If user not found in DB but we got here (shouldn't happen), redirect to login
+    if (!user) {
+      console.log('[OAuth Redirect] User not found in database - redirecting to login')
+      return NextResponse.redirect(new URL('/auth/login', request.url))
     }
 
     // Check if user has phone number - if not, redirect to complete profile
-    const hasPhone = user?.phone && user.phone.length >= 10
+    const hasPhone = user.phone && user.phone.length >= 10
 
     // Generate custom JWT tokens for the existing auth system
     let accessToken = ''
     let refreshToken = ''
-    if (user) {
-      const tokens = await generateCustomTokens({
-        id: user.id,
-        email: user.email || email,
-        name: user.name,
-        role: user.role || 'CLAIMED'
-      })
-      accessToken = tokens.accessToken
-      refreshToken = tokens.refreshToken
-      console.log('[OAuth Redirect] Generated custom JWT tokens for existing API compatibility')
-    }
+    const tokens = await generateCustomTokens({
+      id: user.id,
+      email: user.email || email,
+      name: user.name,
+      role: user.role || 'CLAIMED'
+    })
+    accessToken = tokens.accessToken
+    refreshToken = tokens.refreshToken
+    console.log('[OAuth Redirect] Generated custom JWT tokens for existing API compatibility')
 
     // Helper to create redirect response with JWT cookies
     const createRedirectWithCookies = (url: string) => {
@@ -132,6 +158,11 @@ export async function GET(request: NextRequest) {
           path: '/'
         })
       }
+
+      // Clear OAuth cookies after reading (they were only needed for this redirect)
+      response.cookies.delete('oauth_role_hint')
+      response.cookies.delete('oauth_mode')
+      response.cookies.delete('oauth_return_to')
 
       return response
     }
@@ -172,7 +203,7 @@ export async function GET(request: NextRequest) {
           // Check phone before allowing access to dashboard
           if (!hasPhone) {
             console.log('[OAuth Redirect] Host missing phone, redirecting to complete profile')
-            return createRedirectWithCookies('/auth/complete-profile?roleHint=host&redirectTo=/host/dashboard')
+            return createRedirectWithCookies(`/auth/complete-profile?roleHint=host&mode=${mode}&redirectTo=/host/dashboard`)
           }
           console.log('[OAuth Redirect] Redirecting to host dashboard')
           return createRedirectWithCookies('/host/dashboard')
@@ -222,7 +253,7 @@ export async function GET(request: NextRequest) {
       if (!hasPhone) {
         const redirectUrl = returnTo || '/dashboard'
         console.log('[OAuth Redirect] Guest missing phone, redirecting to complete profile')
-        return createRedirectWithCookies(`/auth/complete-profile?roleHint=guest&redirectTo=${encodeURIComponent(redirectUrl)}`)
+        return createRedirectWithCookies(`/auth/complete-profile?roleHint=guest&mode=${mode}&redirectTo=${encodeURIComponent(redirectUrl)}`)
       }
 
       const redirectUrl = returnTo || '/dashboard'
@@ -237,7 +268,7 @@ export async function GET(request: NextRequest) {
       // Check phone before allowing access to dashboard
       if (!hasPhone) {
         console.log('[OAuth Redirect] Host missing phone, redirecting to complete profile')
-        return createRedirectWithCookies('/auth/complete-profile?roleHint=host&redirectTo=/host/dashboard')
+        return createRedirectWithCookies(`/auth/complete-profile?roleHint=host&mode=${mode}&redirectTo=/host/dashboard`)
       }
       console.log('[OAuth Redirect] No roleHint, user is approved host, redirecting to host dashboard')
       return createRedirectWithCookies('/host/dashboard')
@@ -247,7 +278,7 @@ export async function GET(request: NextRequest) {
     if (!hasPhone) {
       const redirectUrl = returnTo || '/dashboard'
       console.log('[OAuth Redirect] Missing phone, redirecting to complete profile')
-      return createRedirectWithCookies(`/auth/complete-profile?roleHint=guest&redirectTo=${encodeURIComponent(redirectUrl)}`)
+      return createRedirectWithCookies(`/auth/complete-profile?roleHint=guest&mode=${mode}&redirectTo=${encodeURIComponent(redirectUrl)}`)
     }
 
     const redirectUrl = returnTo || '/dashboard'

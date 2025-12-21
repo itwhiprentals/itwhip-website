@@ -143,7 +143,7 @@ export default function InsuranceTab() {
       </div>
 
       {/* Benefits Banner */}
-      <div className="mb-4 p-3 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+      <div className="mb-4 p-3 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 border-2 border-green-300 dark:border-green-700 rounded-lg shadow-md">
         <div className="flex items-start gap-2.5">
           <IoShieldCheckmarkOutline className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
           <div>
@@ -367,7 +367,7 @@ export default function InsuranceTab() {
       )}
 
       {/* Information Section */}
-      <div className="mb-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+      <div className="mb-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border-2 border-green-300 dark:border-green-700 shadow-md">
         <div className="flex items-start gap-2.5">
           <IoInformationCircleOutline className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
           <div>
@@ -386,7 +386,7 @@ export default function InsuranceTab() {
       </div>
 
       {/* Requirements */}
-      <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
+      <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border-2 border-gray-300 dark:border-gray-600 shadow-md">
         <div className="flex items-start gap-2.5">
           <IoCheckmarkCircle className="w-4 h-4 text-gray-600 dark:text-gray-400 flex-shrink-0 mt-0.5" />
           <div>

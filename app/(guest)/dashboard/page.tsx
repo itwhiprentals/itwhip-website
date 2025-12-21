@@ -978,8 +978,8 @@ export default function GuestDashboard() {
       <div className="max-w-7xl mx-auto px-0 sm:px-2 lg:px-4">
         
         {/* Profile Card */}
-        <div 
-          className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 sm:p-4 -mt-8 transition-all duration-700 ${
+        <div
+          className={`bg-white dark:bg-gray-800 rounded-lg shadow-md border-2 border-gray-300 dark:border-gray-600 p-3 sm:p-4 -mt-8 transition-all duration-700 ${
             state.profileLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
         >
@@ -1169,8 +1169,8 @@ export default function GuestDashboard() {
                   animationDelay: `${index * 100}ms`,
                   animation: state.statsLoaded ? 'fadeInUp 0.5s ease-out forwards' : 'none'
                 }}
-                className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm p-3 sm:p-4 border border-gray-200 dark:border-gray-700 min-h-[88px] ${
-                  stat.clickable ? 'cursor-pointer hover:shadow-md active:scale-95 transition-all' : ''
+                className={`bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 sm:p-4 border-2 border-gray-300 dark:border-gray-600 min-h-[88px] ${
+                  stat.clickable ? 'cursor-pointer hover:shadow-lg active:scale-95 transition-all' : ''
                 }`}
               >
                 <div className="flex items-center justify-between">
@@ -1201,10 +1201,10 @@ export default function GuestDashboard() {
                   animationDelay: `${index * 100}ms`,
                   animation: state.statsLoaded ? 'fadeInUp 0.5s ease-out forwards' : 'none'
                 }}
-                className={`bg-white dark:bg-gray-800 p-4 sm:p-6 min-h-[44px] rounded-lg shadow-sm transition-all group border border-gray-200 dark:border-gray-700 ${
-                  isDisabled 
-                    ? 'opacity-50 cursor-not-allowed' 
-                    : 'hover:shadow-md active:scale-95'
+                className={`bg-white dark:bg-gray-800 p-4 sm:p-6 min-h-[44px] rounded-lg shadow-md transition-all group border-2 border-gray-300 dark:border-gray-600 ${
+                  isDisabled
+                    ? 'opacity-50 cursor-not-allowed'
+                    : 'hover:shadow-lg active:scale-95'
                 }`}
                 aria-label={`${service.name}: ${service.description}${isDisabled ? ' (Disabled due to account suspension)' : ''}`}
               >
@@ -1261,7 +1261,7 @@ export default function GuestDashboard() {
           </div>
 
           <div className="space-y-4 sm:space-y-6">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6 border-2 border-gray-300 dark:border-gray-600">
               <h3 className="font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4 text-sm sm:text-base">
                 Account Overview
               </h3>
@@ -1302,7 +1302,7 @@ export default function GuestDashboard() {
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6 border-2 border-gray-300 dark:border-gray-600">
               <h3 className="font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4 text-sm sm:text-base">
                 Recent Activity
               </h3>
@@ -1369,7 +1369,7 @@ export default function GuestDashboard() {
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-800 dark:to-gray-700 rounded-lg p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
+            <div className="bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-800 dark:to-gray-700 rounded-lg p-4 sm:p-6 border-2 border-gray-300 dark:border-gray-600 shadow-md">
               <h3 className="font-semibold text-gray-900 dark:text-white mb-2 text-sm sm:text-base">
                 Need Help?
               </h3>

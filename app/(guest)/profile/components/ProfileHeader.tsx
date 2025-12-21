@@ -80,7 +80,7 @@ export default function ProfileHeader({
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 sm:p-4">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border-2 border-gray-300 dark:border-gray-600 p-3 sm:p-4">
       <div className="flex items-start gap-3 sm:gap-4">
         {/* Profile Photo */}
         <div className="relative flex-shrink-0">

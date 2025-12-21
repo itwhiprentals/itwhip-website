@@ -363,6 +363,7 @@ function HostSignupContent() {
                     roleHint="host"
                     callbackUrl="/host/dashboard"
                     showDivider={true}
+                    mode="signup"
                   />
 
                   {/* Name Fields */}

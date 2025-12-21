@@ -383,7 +383,7 @@ export default function DocumentsTab({ profile, onDocumentUpdate, onSwitchTab }:
       )}
 
       {/* Required Documents Notice */}
-      <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
+      <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border-2 border-gray-300 dark:border-gray-600 shadow-md">
         <div className="flex items-start gap-2.5">
           <IoInformationCircleOutline className="w-4 h-4 text-gray-600 dark:text-gray-400 flex-shrink-0 mt-0.5" />
           <div>
@@ -401,7 +401,7 @@ export default function DocumentsTab({ profile, onDocumentUpdate, onSwitchTab }:
 
       {/* Staged Files Preview */}
       {stagedFiles.length > 0 && (
-        <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+        <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-300 dark:border-blue-700 rounded-lg shadow-md">
           <h4 className="text-xs font-semibold text-blue-900 dark:text-blue-100 mb-2">
             Ready to Upload ({stagedFiles.length} file{stagedFiles.length !== 1 ? 's' : ''})
           </h4>
@@ -683,7 +683,7 @@ export default function DocumentsTab({ profile, onDocumentUpdate, onSwitchTab }:
       </div>
 
       {/* Tips Section */}
-      <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
+      <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border-2 border-gray-300 dark:border-gray-600 shadow-md">
         <div className="flex items-start gap-2.5">
           <IoInformationCircleOutline className="w-4 h-4 text-gray-600 dark:text-gray-400 flex-shrink-0 mt-0.5" />
           <div>

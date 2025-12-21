@@ -8,7 +8,8 @@ import Header from '@/app/components/Header'
 import {
   IoPhonePortraitOutline,
   IoCheckmarkCircle,
-  IoPersonOutline
+  IoPersonOutline,
+  IoAlertCircleOutline
 } from 'react-icons/io5'
 
 function CompleteProfileContent() {
@@ -19,9 +20,20 @@ function CompleteProfileContent() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
 
-  // Get redirect destination from query params
-  const redirectTo = searchParams.get('redirectTo') || '/profile'
+  // Get params from query
+  const redirectTo = searchParams.get('redirectTo') || '/dashboard'
   const roleHint = searchParams.get('roleHint') || 'guest'
+  const mode = searchParams.get('mode') || 'signup'
+
+  // Get pending OAuth data from session
+  const pendingOAuth = (session?.user as any)?.pendingOAuth
+  const isProfileComplete = (session?.user as any)?.isProfileComplete
+
+  // Determine if this is a new user (pending) or existing user
+  const isPendingUser = pendingOAuth && !isProfileComplete
+
+  // For login mode with pending user, this means "no account found"
+  const isLoginModeNoAccount = mode === 'login' && isPendingUser
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -30,12 +42,17 @@ function CompleteProfileContent() {
     }
   }, [status, router])
 
+  // If profile is already complete and this is an existing user, redirect
+  useEffect(() => {
+    if (status === 'authenticated' && isProfileComplete && !isPendingUser) {
+      // User already has complete profile, redirect to dashboard
+      router.push(redirectTo)
+    }
+  }, [status, isProfileComplete, isPendingUser, router, redirectTo])
+
   // Format phone number as user types
   const formatPhoneNumber = (value: string) => {
-    // Remove all non-digits
     const digits = value.replace(/\D/g, '')
-
-    // Format as (XXX) XXX-XXXX
     if (digits.length <= 3) {
       return digits
     } else if (digits.length <= 6) {
@@ -73,7 +90,8 @@ function CompleteProfileContent() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          phone: phone.replace(/\D/g, ''), // Send digits only
+          phone: phone.replace(/\D/g, ''),
+          roleHint: roleHint // Pass roleHint so API knows whether to create guest or host profile
         })
       })
 
@@ -83,18 +101,30 @@ function CompleteProfileContent() {
         throw new Error(data.error || 'Failed to save phone number')
       }
 
-      // Update the session to reflect the change
-      await update()
-
-      // Redirect to appropriate dashboard
-      if (roleHint === 'host') {
-        router.push('/host/dashboard')
+      // If this was a new user creation, we got new JWT cookies
+      // Force a hard redirect to get fresh session state
+      if (data.isNewUser) {
+        console.log('[Complete Profile] New user created - doing hard redirect')
+        // Small delay to ensure cookies are set
+        setTimeout(() => {
+          if (roleHint === 'host') {
+            // For hosts, redirect to login with pending status (they need approval)
+            window.location.href = '/host/login?status=pending'
+          } else {
+            window.location.href = redirectTo
+          }
+        }, 100)
       } else {
-        router.push(redirectTo)
+        // Existing user - update session and redirect normally
+        await update()
+        if (roleHint === 'host') {
+          router.push('/host/dashboard')
+        } else {
+          router.push(redirectTo)
+        }
       }
     } catch (err: any) {
       setError(err.message || 'Something went wrong')
-    } finally {
       setIsLoading(false)
     }
   }
@@ -107,6 +137,11 @@ function CompleteProfileContent() {
     )
   }
 
+  // Get user info from pendingOAuth or session
+  const userName = pendingOAuth?.name || session?.user?.name || 'there'
+  const userEmail = pendingOAuth?.email || session?.user?.email
+  const userImage = pendingOAuth?.image || session?.user?.image
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
       <Header />
@@ -114,29 +149,48 @@ function CompleteProfileContent() {
       <div className="flex items-center justify-center px-4 py-16 pt-24">
         <div className="w-full max-w-md">
           <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-xl p-8 border border-gray-700">
-            {/* Success Icon */}
+            {/* Icon - Different based on mode */}
             <div className="flex justify-center mb-6">
-              <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center">
-                <IoCheckmarkCircle className="w-10 h-10 text-green-500" />
-              </div>
+              {isLoginModeNoAccount ? (
+                <div className="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center">
+                  <IoAlertCircleOutline className="w-10 h-10 text-yellow-500" />
+                </div>
+              ) : (
+                <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center">
+                  <IoCheckmarkCircle className="w-10 h-10 text-green-500" />
+                </div>
+              )}
             </div>
 
-            {/* Header */}
+            {/* Header - Different based on mode */}
             <div className="text-center mb-8">
-              <h1 className="text-2xl font-bold text-white mb-2">
-                Almost Done!
-              </h1>
-              <p className="text-gray-400">
-                Welcome, {session?.user?.name || 'there'}! Just one more step to complete your profile.
-              </p>
+              {isLoginModeNoAccount ? (
+                <>
+                  <h1 className="text-2xl font-bold text-white mb-2">
+                    No Account Found
+                  </h1>
+                  <p className="text-gray-400">
+                    No account exists with <span className="text-white">{userEmail}</span>. Would you like to create one?
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h1 className="text-2xl font-bold text-white mb-2">
+                    Almost Done!
+                  </h1>
+                  <p className="text-gray-400">
+                    Welcome, {userName}! Just one more step to complete your profile.
+                  </p>
+                </>
+              )}
             </div>
 
             {/* User Info Preview */}
             <div className="bg-gray-700/50 rounded-lg p-4 mb-6">
               <div className="flex items-center gap-3">
-                {session?.user?.image ? (
+                {userImage ? (
                   <img
-                    src={session.user.image}
+                    src={userImage}
                     alt="Profile"
                     className="w-12 h-12 rounded-full"
                   />
@@ -146,8 +200,8 @@ function CompleteProfileContent() {
                   </div>
                 )}
                 <div>
-                  <p className="text-white font-medium">{session?.user?.name}</p>
-                  <p className="text-gray-400 text-sm">{session?.user?.email}</p>
+                  <p className="text-white font-medium">{userName}</p>
+                  <p className="text-gray-400 text-sm">{userEmail}</p>
                 </div>
               </div>
             </div>
@@ -170,7 +224,10 @@ function CompleteProfileContent() {
                   />
                 </div>
                 <p className="mt-2 text-xs text-gray-500">
-                  We'll use this for booking confirmations and important updates
+                  {isLoginModeNoAccount
+                    ? 'Enter your phone number to create your account'
+                    : "We'll use this for booking confirmations and important updates"
+                  }
                 </p>
               </div>
 
@@ -193,25 +250,25 @@ function CompleteProfileContent() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Saving...
+                    {isLoginModeNoAccount ? 'Creating Account...' : 'Saving...'}
                   </span>
                 ) : (
-                  'Complete Profile'
+                  isLoginModeNoAccount ? 'Create Account' : 'Complete Profile'
                 )}
               </button>
             </form>
 
-            {/* Skip Link (optional - you may want to remove this) */}
-            {/*
-            <div className="mt-4 text-center">
-              <button
-                onClick={() => router.push(redirectTo)}
-                className="text-sm text-gray-500 hover:text-gray-400"
-              >
-                Skip for now
-              </button>
-            </div>
-            */}
+            {/* Back to Login Link (only for login mode with no account) */}
+            {isLoginModeNoAccount && (
+              <div className="mt-4 text-center">
+                <button
+                  onClick={() => router.push('/auth/login')}
+                  className="text-sm text-gray-400 hover:text-white transition-colors"
+                >
+                  Back to Login
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Privacy Note */}

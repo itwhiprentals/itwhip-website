@@ -287,7 +287,7 @@ export default function SettingsTab({
 
         <div className="space-y-2.5">
           {/* Email Notifications */}
-          <div className="flex items-start justify-between p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
+          <div className="flex items-start justify-between p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border-2 border-gray-300 dark:border-gray-600 shadow-sm">
             <div className="flex items-start gap-2.5 flex-1">
               <div className="p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg">
                 <IoMailOutline className="w-4 h-4 text-green-600 dark:text-green-400" />
@@ -313,7 +313,7 @@ export default function SettingsTab({
           </div>
 
           {/* SMS Notifications */}
-          <div className="flex items-start justify-between p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
+          <div className="flex items-start justify-between p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border-2 border-gray-300 dark:border-gray-600 shadow-sm">
             <div className="flex items-start gap-2.5 flex-1">
               <div className="p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg">
                 <IoChatbubbleOutline className="w-4 h-4 text-green-600 dark:text-green-400" />
@@ -339,7 +339,7 @@ export default function SettingsTab({
           </div>
 
           {/* Push Notifications */}
-          <div className="flex items-start justify-between p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
+          <div className="flex items-start justify-between p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border-2 border-gray-300 dark:border-gray-600 shadow-sm">
             <div className="flex items-start gap-2.5 flex-1">
               <div className="p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg">
                 <IoPhonePortraitOutline className="w-4 h-4 text-green-600 dark:text-green-400" />
@@ -431,9 +431,9 @@ export default function SettingsTab({
 
         <div className="space-y-2">
           {/* Change Password - Modal Trigger */}
-          <button 
+          <button
             onClick={() => setShowPasswordModal(true)}
-            className="w-full text-left p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="w-full text-left p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border-2 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors shadow-sm"
           >
             <div className="flex items-center justify-between">
               <div>
@@ -449,7 +449,7 @@ export default function SettingsTab({
           </button>
 
           {/* Two-Factor Authentication */}
-          <button className="w-full text-left p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+          <button className="w-full text-left p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border-2 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors shadow-sm">
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-0.5">
@@ -466,7 +466,7 @@ export default function SettingsTab({
           {/* Forgot Password Link */}
           <Link
             href="/auth/forgot-password"
-            className="w-full text-left p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors block"
+            className="w-full text-left p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border-2 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors block shadow-sm"
           >
             <div className="flex items-center justify-between">
               <div>
@@ -485,7 +485,7 @@ export default function SettingsTab({
           <button
             onClick={handleExportData}
             disabled={isExporting}
-            className="w-full text-left p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+            className="w-full text-left p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border-2 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50 shadow-sm"
           >
             <div className="flex items-center justify-between">
               <div>

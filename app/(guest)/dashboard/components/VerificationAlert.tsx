@@ -40,10 +40,17 @@ const FileText = ({ className = "w-5 h-5" }: { className?: string }) => (
   </svg>
 )
 
+const Phone = ({ className = "w-5 h-5" }: { className?: string }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+  </svg>
+)
+
 // ========== TYPES ==========
 interface DocumentVerificationState {
   emailVerified: boolean
   phoneVerified: boolean
+  phoneNumber?: string | null
   documentsVerified: boolean
   driversLicenseUrl: string | null
   selfieUrl: string | null
@@ -140,9 +147,12 @@ export default function VerificationAlert({
 
   const Icon = alertConfig.icon
 
+  // Check if phone is missing
+  const hasPhone = !!verificationState.phoneNumber
+
   return (
-    <div 
-      className={`${alertConfig.bgColor} border ${alertConfig.borderColor} rounded-lg p-3 sm:p-4 mt-4 transition-all duration-300 animate-fadeIn`}
+    <div
+      className={`${alertConfig.bgColor} border-2 ${alertConfig.borderColor} rounded-lg p-3 sm:p-4 mt-4 transition-all duration-300 animate-fadeIn shadow-md`}
       role="alert"
       aria-live="polite"
     >
@@ -166,9 +176,21 @@ export default function VerificationAlert({
               {alertConfig.description}
             </p>
 
-            {/* ✅ Show document checklist for NOT_UPLOADED state - Only 2 documents */}
+            {/* ✅ Show document checklist for NOT_UPLOADED state */}
             {alertConfig.state === 'NOT_UPLOADED' && (
               <div className="mt-3 space-y-1.5">
+                {/* Phone Number */}
+                <div className="flex items-center text-xs">
+                  {hasPhone ? (
+                    <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400 mr-2" />
+                  ) : (
+                    <div className="w-4 h-4 rounded-full border-2 border-red-400 dark:border-red-500 mr-2" />
+                  )}
+                  <span className={hasPhone ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300 font-medium'}>
+                    Phone Number {hasPhone ? '✓' : '(Required)'}
+                  </span>
+                </div>
+                {/* Driver's License */}
                 <div className="flex items-center text-xs">
                   {verificationState.driversLicenseUrl ? (
                     <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400 mr-2" />
@@ -179,6 +201,7 @@ export default function VerificationAlert({
                     Driver's License {verificationState.driversLicenseUrl && '✓'}
                   </span>
                 </div>
+                {/* Selfie */}
                 <div className="flex items-center text-xs">
                   {verificationState.selfieUrl ? (
                     <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400 mr-2" />

@@ -30,16 +30,16 @@ const tabs: { value: TabType; label: string; icon: React.ComponentType<{ classNa
 
 export default function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
   return (
-    <div className="border-b border-gray-200 dark:border-gray-700 mb-4 sm:mb-6">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border-2 border-gray-300 dark:border-gray-600 p-1 mb-4 sm:mb-6">
       <nav
-        className="flex space-x-4 sm:space-x-8 overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth"
+        className="flex space-x-1 sm:space-x-2 overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth"
         role="tablist"
         aria-label="Profile sections"
       >
         {tabs.map((tab) => {
           const isActive = activeTab === tab.value
           const Icon = tab.icon
-          
+
           return (
             <button
               key={tab.value}
@@ -48,14 +48,13 @@ export default function TabNavigation({ activeTab, onTabChange }: TabNavigationP
               aria-selected={isActive}
               aria-controls={`${tab.value}-panel`}
               className={`
-                py-3 px-1 border-b-2 font-medium text-xs sm:text-sm capitalize
-                whitespace-nowrap flex-shrink-0 transition-colors cursor-pointer
+                py-2 px-3 rounded-md font-medium text-xs sm:text-sm capitalize
+                whitespace-nowrap flex-shrink-0 transition-all cursor-pointer
                 ${isActive
-                  ? 'border-green-600 text-green-600 dark:text-green-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:hover:text-gray-300'
+                  ? 'bg-green-600 text-white shadow-sm'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
                 }
               `}
-              style={{ marginBottom: '-2px' }}
             >
               <span className="flex items-center gap-1.5">
                 <Icon className="w-4 h-4" />

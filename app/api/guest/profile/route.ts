@@ -150,15 +150,21 @@ export async function GET(request: NextRequest) {
       ? reviews.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) / reviews.length
       : 0
 
-    // Check if fully verified
+    // Check if fully verified - requires all verification steps complete
     const fullyVerified = !!(
       profileData.emailVerified &&
       profileData.phoneVerified &&
       profileData.documentsVerified &&
-      profileData.governmentIdUrl &&
       profileData.driversLicenseUrl &&
       profileData.selfieUrl
     )
+
+    // PENDING STATUS: TRUE if profile is incomplete (onboarding not finished)
+    // Pending until: phone is verified, driver's license uploaded, selfie uploaded
+    const hasPhone = !!(profileData.phoneNumber && profileData.phoneNumber.length >= 10)
+    const hasDriversLicense = !!profileData.driversLicenseUrl
+    const hasSelfie = !!profileData.selfieUrl
+    const pending = !hasPhone || !hasDriversLicense || !hasSelfie
 
     // Can instant book if fully verified
     const canInstantBook = fullyVerified
@@ -196,6 +202,7 @@ export async function GET(request: NextRequest) {
       documentVerifiedAt: profileData.documentVerifiedAt,
       fullyVerified,
       canInstantBook,
+      pending,  // TRUE if onboarding incomplete (missing phone, license, or selfie)
 
       // Insurance - ✅ CORRECTED FIELD NAMES
       insuranceProvider: profileData.insuranceProvider,
