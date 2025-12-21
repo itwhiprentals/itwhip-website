@@ -1,8 +1,8 @@
 // app/auth/login/page.tsx
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
@@ -19,8 +19,9 @@ import {
 } from 'react-icons/io5'
 import OAuthButtons from '@/app/components/auth/OAuthButtons'
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
@@ -28,6 +29,14 @@ export default function LoginPage() {
     email: '',
     password: ''
   })
+
+  // Handle OAuth error params
+  useEffect(() => {
+    const errorParam = searchParams.get('error')
+    if (errorParam === 'no_account') {
+      setError('No account found with this email. Please sign up first.')
+    }
+  }, [searchParams])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
@@ -114,8 +123,9 @@ export default function LoginPage() {
             <OAuthButtons
               theme="guest"
               roleHint="guest"
-              callbackUrl="/profile"
+              callbackUrl="/dashboard"
               showDivider={true}
+              mode="login"
             />
 
             {/* Error Alert */}
@@ -305,5 +315,13 @@ export default function LoginPage() {
       {/* Footer */}
       <Footer />
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-900" />}>
+      <LoginContent />
+    </Suspense>
   )
 }

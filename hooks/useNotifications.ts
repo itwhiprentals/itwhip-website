@@ -48,7 +48,7 @@ interface UnreadCountResponse {
 // ✅ FIXED: Route to correct endpoint based on user role
 async function fetchNotifications(userRole: string): Promise<Notification[]> {
   let endpoint = `/api/notifications?userRole=${userRole}`;
-  
+
   // ✅ Use role-specific endpoints
   if (userRole === 'HOST') {
     endpoint = '/api/host/notifications?limit=10';
@@ -59,6 +59,12 @@ async function fetchNotifications(userRole: string): Promise<Notification[]> {
   const response = await fetch(endpoint, {
     credentials: 'include',
   });
+
+  // ✅ Return empty array on 401 (token expired) instead of throwing
+  // This prevents spamming console with errors and stops unnecessary retries
+  if (response.status === 401) {
+    return [];
+  }
 
   if (!response.ok) {
     throw new Error('Failed to fetch notifications');
@@ -216,7 +222,7 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
   const {
     userRole = 'GUEST',
     autoRefresh = true,
-    refreshInterval = 30000,
+    refreshInterval = 60000, // ✅ Increased to 60 seconds to reduce server load
   } = options;
 
   const queryClient = useQueryClient();

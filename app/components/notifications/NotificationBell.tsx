@@ -18,10 +18,10 @@ export default function NotificationBell({ userRole }: NotificationBellProps) {
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   // ✅ NOW USING REACT QUERY HOOK - SHARED ACROSS ALL COMPONENTS
-  const { notifications, unreadCount, dismissNotification, refresh } = useNotifications({ 
+  const { notifications, unreadCount, dismissNotification, refresh } = useNotifications({
     userRole,
     autoRefresh: true,
-    refreshInterval: 30000
+    refreshInterval: 60000 // ✅ Reduced polling to 60 seconds
   })
 
   // Close dropdown when clicking outside

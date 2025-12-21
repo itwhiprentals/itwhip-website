@@ -54,6 +54,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const roleHint = searchParams.get('roleHint') // 'guest' or 'host'
     const returnTo = searchParams.get('returnTo')
+    const mode = searchParams.get('mode') // 'login' or 'signup'
 
     // Get the authenticated session
     const session = await getServerSession(authOptions)
@@ -67,7 +68,7 @@ export async function GET(request: NextRequest) {
     const email = session.user.email
     const userId = (session.user as any).id
 
-    console.log(`[OAuth Redirect] User authenticated: ${email}, roleHint: ${roleHint}`)
+    console.log(`[OAuth Redirect] User authenticated: ${email}, roleHint: ${roleHint}, mode: ${mode}`)
 
     // Get full user data for token generation
     const user = await prisma.user.findUnique({
@@ -77,9 +78,20 @@ export async function GET(request: NextRequest) {
         phone: true,
         email: true,
         name: true,
-        role: true
+        role: true,
+        createdAt: true
       }
     })
+
+    // Check if this is a new user (created within last 30 seconds)
+    const isNewUser = user?.createdAt && (Date.now() - new Date(user.createdAt).getTime()) < 30000
+
+    // If mode is 'login' and user is new, they don't have an account - redirect with error
+    if (mode === 'login' && isNewUser) {
+      console.log('[OAuth Redirect] Login mode but user is new - no existing account')
+      const loginPage = roleHint === 'host' ? '/host/login' : '/auth/login'
+      return NextResponse.redirect(new URL(`${loginPage}?error=no_account`, request.url))
+    }
 
     // Check if user has phone number - if not, redirect to complete profile
     const hasPhone = user?.phone && user.phone.length >= 10
@@ -208,13 +220,13 @@ export async function GET(request: NextRequest) {
 
       // Check if user has phone number
       if (!hasPhone) {
-        const redirectUrl = returnTo || '/profile'
+        const redirectUrl = returnTo || '/dashboard'
         console.log('[OAuth Redirect] Guest missing phone, redirecting to complete profile')
         return createRedirectWithCookies(`/auth/complete-profile?roleHint=guest&redirectTo=${encodeURIComponent(redirectUrl)}`)
       }
 
-      const redirectUrl = returnTo || '/profile'
-      console.log(`[OAuth Redirect] Redirecting to guest profile: ${redirectUrl}`)
+      const redirectUrl = returnTo || '/dashboard'
+      console.log(`[OAuth Redirect] Redirecting to guest dashboard: ${redirectUrl}`)
       return createRedirectWithCookies(redirectUrl)
     }
 
@@ -231,14 +243,14 @@ export async function GET(request: NextRequest) {
       return createRedirectWithCookies('/host/dashboard')
     }
 
-    // Default to guest profile - but check phone first
+    // Default to guest dashboard - but check phone first
     if (!hasPhone) {
-      const redirectUrl = returnTo || '/profile'
+      const redirectUrl = returnTo || '/dashboard'
       console.log('[OAuth Redirect] Missing phone, redirecting to complete profile')
       return createRedirectWithCookies(`/auth/complete-profile?roleHint=guest&redirectTo=${encodeURIComponent(redirectUrl)}`)
     }
 
-    const redirectUrl = returnTo || '/profile'
+    const redirectUrl = returnTo || '/dashboard'
     console.log(`[OAuth Redirect] No roleHint, defaulting to: ${redirectUrl}`)
     return createRedirectWithCookies(redirectUrl)
 

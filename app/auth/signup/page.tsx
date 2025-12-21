@@ -192,7 +192,7 @@ export default function SignupPage() {
               <OAuthButtons
                 theme="guest"
                 roleHint="guest"
-                callbackUrl="/profile"
+                callbackUrl="/dashboard"
                 showDivider={true}
               />
 

@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
       await prisma.reviewerProfile.update({
         where: { userId: userId },
         data: {
-          phone: digitsOnly
+          phoneNumber: digitsOnly
         }
       })
     } catch {

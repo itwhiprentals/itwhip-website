@@ -13,6 +13,12 @@ const prismaClientSingleton = () => {
       ? ['error', 'warn']
       : ['error'],
     errorFormat: 'pretty',
+    datasources: {
+      db: {
+        // Use pooled connection for serverless environments (handles idle connection lifecycle)
+        url: process.env.DATABASE_URL_POOLED || process.env.DATABASE_URL,
+      },
+    },
   })
 }
 

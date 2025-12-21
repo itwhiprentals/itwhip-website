@@ -2,7 +2,7 @@
 'use client'
 
 import { useState } from 'react'
-import { signIn } from 'next-auth/react'
+import { signIn, signOut } from 'next-auth/react'
 
 // Theme variants for different auth contexts
 type ThemeVariant = 'guest' | 'host'
@@ -15,6 +15,8 @@ interface OAuthButtonsProps {
   theme?: ThemeVariant
   // Role hint for the OAuth callback - used for role-based redirects
   roleHint?: 'guest' | 'host'
+  // Mode: 'login' requires existing account, 'signup' creates new account
+  mode?: 'login' | 'signup'
 }
 
 export default function OAuthButtons({
@@ -23,7 +25,8 @@ export default function OAuthButtons({
   showDivider = true,
   buttonSize = 'md',
   theme = 'guest',
-  roleHint
+  roleHint,
+  mode = 'signup'
 }: OAuthButtonsProps) {
   const [isLoading, setIsLoading] = useState<'google' | 'apple' | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -62,6 +65,9 @@ export default function OAuthButtons({
     if (callbackUrl) {
       params.set('returnTo', callbackUrl)
     }
+    if (mode) {
+      params.set('mode', mode)
+    }
 
     return params.toString() ? `${baseUrl}?${params.toString()}` : baseUrl
   }
@@ -70,6 +76,11 @@ export default function OAuthButtons({
     try {
       setIsLoading(provider)
       setError(null)
+
+      // IMPORTANT: Sign out first to clear any existing session
+      // This prevents NextAuth from linking new OAuth accounts to the wrong user
+      // See: https://github.com/nextauthjs/next-auth/issues/3300
+      await signOut({ redirect: false })
 
       // Use NextAuth signIn with redirect to our OAuth redirect handler
       const result = await signIn(provider, {

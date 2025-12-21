@@ -32,7 +32,11 @@ function HostLoginContent() {
   // Handle OAuth redirect status params
   useEffect(() => {
     const status = searchParams.get('status')
-    if (status === 'pending') {
+    const errorParam = searchParams.get('error')
+
+    if (errorParam === 'no_account') {
+      setError('No host account found with this email. Please sign up first.')
+    } else if (status === 'pending') {
       setStatusMessage({
         type: 'pending',
         message: 'Your application is being reviewed. We\'ll notify you within 24-48 hours once approved.'
@@ -193,6 +197,7 @@ function HostLoginContent() {
               roleHint="host"
               callbackUrl="/host/dashboard"
               showDivider={true}
+              mode="login"
             />
 
             <form onSubmit={handleSubmit} className="space-y-5">
