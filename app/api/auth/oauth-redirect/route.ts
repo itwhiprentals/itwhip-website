@@ -5,6 +5,49 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/lib/auth/next-auth-config'
 import { prisma } from '@/app/lib/database/prisma'
+import { SignJWT } from 'jose'
+import { nanoid } from 'nanoid'
+
+// JWT secrets (same as login route)
+const JWT_SECRET = new TextEncoder().encode(
+  process.env.JWT_SECRET || 'fallback-secret-key'
+)
+const JWT_REFRESH_SECRET = new TextEncoder().encode(
+  process.env.JWT_REFRESH_SECRET || 'fallback-refresh-secret'
+)
+
+// Helper to generate and set custom JWT tokens
+async function generateCustomTokens(user: { id: string; email: string; name: string | null; role: string }) {
+  const tokenId = nanoid()
+  const refreshTokenId = nanoid()
+  const refreshFamily = nanoid()
+
+  // Create access token (15 minutes)
+  const accessToken = await new SignJWT({
+    userId: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    jti: tokenId
+  })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('15m')
+    .sign(JWT_SECRET)
+
+  // Create refresh token (7 days)
+  const refreshToken = await new SignJWT({
+    userId: user.id,
+    family: refreshFamily,
+    jti: refreshTokenId
+  })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('7d')
+    .sign(JWT_REFRESH_SECRET)
+
+  return { accessToken, refreshToken, refreshFamily }
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -26,18 +69,60 @@ export async function GET(request: NextRequest) {
 
     console.log(`[OAuth Redirect] User authenticated: ${email}, roleHint: ${roleHint}`)
 
-    // Get user with phone number
+    // Get full user data for token generation
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
         id: true,
         phone: true,
-        email: true
+        email: true,
+        name: true,
+        role: true
       }
     })
 
     // Check if user has phone number - if not, redirect to complete profile
     const hasPhone = user?.phone && user.phone.length >= 10
+
+    // Generate custom JWT tokens for the existing auth system
+    let accessToken = ''
+    let refreshToken = ''
+    if (user) {
+      const tokens = await generateCustomTokens({
+        id: user.id,
+        email: user.email || email,
+        name: user.name,
+        role: user.role || 'CLAIMED'
+      })
+      accessToken = tokens.accessToken
+      refreshToken = tokens.refreshToken
+      console.log('[OAuth Redirect] Generated custom JWT tokens for existing API compatibility')
+    }
+
+    // Helper to create redirect response with JWT cookies
+    const createRedirectWithCookies = (url: string) => {
+      const response = NextResponse.redirect(new URL(url, request.url))
+
+      if (accessToken && refreshToken) {
+        response.cookies.set('accessToken', accessToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 15 * 60, // 15 minutes
+          path: '/'
+        })
+
+        response.cookies.set('refreshToken', refreshToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 7 * 24 * 60 * 60, // 7 days
+          path: '/'
+        })
+      }
+
+      return response
+    }
 
     // Check if user has host profile
     const hostProfile = await prisma.hostProfile.findFirst({
@@ -75,25 +160,25 @@ export async function GET(request: NextRequest) {
           // Check phone before allowing access to dashboard
           if (!hasPhone) {
             console.log('[OAuth Redirect] Host missing phone, redirecting to complete profile')
-            return NextResponse.redirect(new URL('/auth/complete-profile?roleHint=host&redirectTo=/host/dashboard', request.url))
+            return createRedirectWithCookies('/auth/complete-profile?roleHint=host&redirectTo=/host/dashboard')
           }
           console.log('[OAuth Redirect] Redirecting to host dashboard')
-          return NextResponse.redirect(new URL('/host/dashboard', request.url))
+          return createRedirectWithCookies('/host/dashboard')
         } else if (hostProfile.status === 'PENDING') {
           console.log('[OAuth Redirect] Host pending, redirecting to login with message')
-          return NextResponse.redirect(new URL('/host/login?status=pending', request.url))
+          return createRedirectWithCookies('/host/login?status=pending')
         } else if (hostProfile.status === 'REJECTED') {
           console.log('[OAuth Redirect] Host rejected, redirecting to login with message')
-          return NextResponse.redirect(new URL('/host/login?status=rejected', request.url))
+          return createRedirectWithCookies('/host/login?status=rejected')
         } else if (hostProfile.status === 'SUSPENDED') {
           console.log('[OAuth Redirect] Host suspended, redirecting to login with message')
-          return NextResponse.redirect(new URL('/host/login?status=suspended', request.url))
+          return createRedirectWithCookies('/host/login?status=suspended')
         }
       }
 
       // No host profile, redirect to host signup to complete registration
       console.log('[OAuth Redirect] No host profile, redirecting to host signup')
-      return NextResponse.redirect(new URL('/host/signup?oauth=true', request.url))
+      return createRedirectWithCookies('/host/signup?oauth=true')
     }
 
     if (roleHint === 'guest') {
@@ -125,12 +210,12 @@ export async function GET(request: NextRequest) {
       if (!hasPhone) {
         const redirectUrl = returnTo || '/profile'
         console.log('[OAuth Redirect] Guest missing phone, redirecting to complete profile')
-        return NextResponse.redirect(new URL(`/auth/complete-profile?roleHint=guest&redirectTo=${encodeURIComponent(redirectUrl)}`, request.url))
+        return createRedirectWithCookies(`/auth/complete-profile?roleHint=guest&redirectTo=${encodeURIComponent(redirectUrl)}`)
       }
 
       const redirectUrl = returnTo || '/profile'
       console.log(`[OAuth Redirect] Redirecting to guest profile: ${redirectUrl}`)
-      return NextResponse.redirect(new URL(redirectUrl, request.url))
+      return createRedirectWithCookies(redirectUrl)
     }
 
     // No roleHint - determine best redirect based on existing profiles
@@ -140,22 +225,22 @@ export async function GET(request: NextRequest) {
       // Check phone before allowing access to dashboard
       if (!hasPhone) {
         console.log('[OAuth Redirect] Host missing phone, redirecting to complete profile')
-        return NextResponse.redirect(new URL('/auth/complete-profile?roleHint=host&redirectTo=/host/dashboard', request.url))
+        return createRedirectWithCookies('/auth/complete-profile?roleHint=host&redirectTo=/host/dashboard')
       }
       console.log('[OAuth Redirect] No roleHint, user is approved host, redirecting to host dashboard')
-      return NextResponse.redirect(new URL('/host/dashboard', request.url))
+      return createRedirectWithCookies('/host/dashboard')
     }
 
     // Default to guest profile - but check phone first
     if (!hasPhone) {
       const redirectUrl = returnTo || '/profile'
       console.log('[OAuth Redirect] Missing phone, redirecting to complete profile')
-      return NextResponse.redirect(new URL(`/auth/complete-profile?roleHint=guest&redirectTo=${encodeURIComponent(redirectUrl)}`, request.url))
+      return createRedirectWithCookies(`/auth/complete-profile?roleHint=guest&redirectTo=${encodeURIComponent(redirectUrl)}`)
     }
 
     const redirectUrl = returnTo || '/profile'
     console.log(`[OAuth Redirect] No roleHint, defaulting to: ${redirectUrl}`)
-    return NextResponse.redirect(new URL(redirectUrl, request.url))
+    return createRedirectWithCookies(redirectUrl)
 
   } catch (error) {
     console.error('[OAuth Redirect] Error:', error)

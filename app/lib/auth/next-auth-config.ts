@@ -201,11 +201,16 @@ async function buildAuthOptions(): Promise<NextAuthOptions> {
       },
 
       async redirect({ url, baseUrl }) {
-        // After OAuth sign-in, redirect to profile or dashboard
+        // After OAuth sign-in, redirect through oauth-redirect to set custom JWT cookies
+        // Check if this is a callback URL (successful OAuth)
+        if (url.includes('/api/auth/callback')) {
+          // Redirect to oauth-redirect to set custom JWT tokens
+          return `${baseUrl}/api/auth/oauth-redirect?roleHint=guest`
+        }
         if (url.startsWith(baseUrl)) {
           return url
         }
-        return `${baseUrl}/profile`
+        return `${baseUrl}/api/auth/oauth-redirect?roleHint=guest`
       }
     },
 
@@ -368,10 +373,14 @@ export const authOptions: NextAuthOptions = {
     },
 
     async redirect({ url, baseUrl }) {
+      // After OAuth sign-in, redirect through oauth-redirect to set custom JWT cookies
+      if (url.includes('/api/auth/callback')) {
+        return `${baseUrl}/api/auth/oauth-redirect?roleHint=guest`
+      }
       if (url.startsWith(baseUrl)) {
         return url
       }
-      return `${baseUrl}/profile`
+      return `${baseUrl}/api/auth/oauth-redirect?roleHint=guest`
     }
   },
 
