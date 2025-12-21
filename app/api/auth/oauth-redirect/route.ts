@@ -125,7 +125,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Check if user has host profile
-    const hostProfile = await prisma.hostProfile.findFirst({
+    const hostProfile = await prisma.rentalHost.findFirst({
       where: {
         OR: [
           { userId: userId },
@@ -134,7 +134,7 @@ export async function GET(request: NextRequest) {
       },
       select: {
         id: true,
-        status: true,
+        approvalStatus: true,
         userId: true
       }
     })
@@ -156,7 +156,7 @@ export async function GET(request: NextRequest) {
       // User came from host auth pages
       if (hostProfile) {
         // User has host profile, check status
-        if (hostProfile.status === 'APPROVED') {
+        if (hostProfile.approvalStatus === 'APPROVED') {
           // Check phone before allowing access to dashboard
           if (!hasPhone) {
             console.log('[OAuth Redirect] Host missing phone, redirecting to complete profile')
@@ -164,13 +164,13 @@ export async function GET(request: NextRequest) {
           }
           console.log('[OAuth Redirect] Redirecting to host dashboard')
           return createRedirectWithCookies('/host/dashboard')
-        } else if (hostProfile.status === 'PENDING') {
+        } else if (hostProfile.approvalStatus === 'PENDING') {
           console.log('[OAuth Redirect] Host pending, redirecting to login with message')
           return createRedirectWithCookies('/host/login?status=pending')
-        } else if (hostProfile.status === 'REJECTED') {
+        } else if (hostProfile.approvalStatus === 'REJECTED') {
           console.log('[OAuth Redirect] Host rejected, redirecting to login with message')
           return createRedirectWithCookies('/host/login?status=rejected')
-        } else if (hostProfile.status === 'SUSPENDED') {
+        } else if (hostProfile.approvalStatus === 'SUSPENDED') {
           console.log('[OAuth Redirect] Host suspended, redirecting to login with message')
           return createRedirectWithCookies('/host/login?status=suspended')
         }
@@ -221,7 +221,7 @@ export async function GET(request: NextRequest) {
     // No roleHint - determine best redirect based on existing profiles
     // Priority: If user has approved host profile, go to host dashboard
     //           Otherwise, go to guest profile
-    if (hostProfile?.status === 'APPROVED') {
+    if (hostProfile?.approvalStatus === 'APPROVED') {
       // Check phone before allowing access to dashboard
       if (!hasPhone) {
         console.log('[OAuth Redirect] Host missing phone, redirecting to complete profile')

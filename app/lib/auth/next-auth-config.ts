@@ -95,6 +95,7 @@ async function buildAuthOptions(): Promise<NextAuthOptions> {
       GoogleProvider({
         clientId: process.env.GOOGLE_CLIENT_ID!,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+        allowDangerousEmailAccountLinking: true, // Allow linking OAuth to existing email accounts
         authorization: {
           params: {
             prompt: 'consent',
@@ -112,70 +113,13 @@ async function buildAuthOptions(): Promise<NextAuthOptions> {
     ],
 
     callbacks: {
-      async signIn({ user, account }) {
-        // Allow sign in
+      async signIn({ user }) {
+        // Simple validation - let NextAuth handle account linking with allowDangerousEmailAccountLinking
         if (!user.email) {
           console.error('OAuth sign-in failed: No email provided')
           return false
         }
-
-        try {
-          // Check if user exists with this email
-          const existingUser = await prisma.user.findUnique({
-            where: { email: user.email },
-            include: { accounts: true }
-          })
-
-          if (existingUser) {
-            // Check if this OAuth account is already linked
-            const existingAccount = existingUser.accounts.find(
-              (acc: { provider: string }) => acc.provider === account?.provider
-            )
-
-            if (!existingAccount && account) {
-              // Link new OAuth provider to existing user
-              await prisma.account.create({
-                data: {
-                  userId: existingUser.id,
-                  type: account.type,
-                  provider: account.provider,
-                  providerAccountId: account.providerAccountId,
-                  access_token: account.access_token,
-                  refresh_token: account.refresh_token,
-                  expires_at: account.expires_at,
-                  token_type: account.token_type,
-                  scope: account.scope,
-                  id_token: account.id_token,
-                  session_state: account.session_state as string | undefined,
-                }
-              })
-            }
-
-            // Update user info if needed
-            if (!existingUser.name && user.name) {
-              await prisma.user.update({
-                where: { id: existingUser.id },
-                data: {
-                  name: user.name,
-                  emailVerified: true // OAuth emails are verified
-                }
-              })
-            }
-
-            // Ensure user is marked as email verified
-            if (!existingUser.emailVerified) {
-              await prisma.user.update({
-                where: { id: existingUser.id },
-                data: { emailVerified: true }
-              })
-            }
-          }
-
-          return true
-        } catch (error) {
-          console.error('OAuth signIn callback error:', error)
-          return false
-        }
+        return true
       },
 
       async jwt({ token, user, account }) {
@@ -292,6 +236,7 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || '',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+      allowDangerousEmailAccountLinking: true, // Allow linking OAuth to existing email accounts
       authorization: {
         params: {
           prompt: 'consent',
@@ -303,53 +248,13 @@ export const authOptions: NextAuthOptions = {
   ],
 
   callbacks: {
-    async signIn({ user, account }) {
+    async signIn({ user }) {
+      // Simple validation - let NextAuth handle account linking with allowDangerousEmailAccountLinking
       if (!user.email) {
+        console.error('OAuth sign-in failed: No email provided')
         return false
       }
-
-      try {
-        const existingUser = await prisma.user.findUnique({
-          where: { email: user.email },
-          include: { accounts: true }
-        })
-
-        if (existingUser) {
-          const existingAccount = existingUser.accounts.find(
-            (acc: { provider: string }) => acc.provider === account?.provider
-          )
-
-          if (!existingAccount && account) {
-            await prisma.account.create({
-              data: {
-                userId: existingUser.id,
-                type: account.type,
-                provider: account.provider,
-                providerAccountId: account.providerAccountId,
-                access_token: account.access_token,
-                refresh_token: account.refresh_token,
-                expires_at: account.expires_at,
-                token_type: account.token_type,
-                scope: account.scope,
-                id_token: account.id_token,
-                session_state: account.session_state as string | undefined,
-              }
-            })
-          }
-
-          if (!existingUser.emailVerified) {
-            await prisma.user.update({
-              where: { id: existingUser.id },
-              data: { emailVerified: true }
-            })
-          }
-        }
-
-        return true
-      } catch (error) {
-        console.error('OAuth signIn callback error:', error)
-        return false
-      }
+      return true
     },
 
     async jwt({ token, user, account }) {
