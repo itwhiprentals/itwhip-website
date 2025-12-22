@@ -1877,6 +1877,1803 @@ export const vehicleSpecsByYear: YearBasedVehicleDatabase = {
       },
     },
   },
+  'Hyundai': {
+    'Elantra': {
+      // ===== 5TH GENERATION (2011-2016) =====
+      '2015': {
+        trims: ['SE', 'Sport', 'Limited'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['SE', 'Sport', 'Value Edition', 'Limited', 'Eco'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      // ===== 6TH GENERATION (2017-2020) =====
+      '2017': {
+        trims: ['SE', 'SEL', 'Value Edition', 'Limited', 'Sport', 'Eco'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['SE', 'SEL', 'Value Edition', 'Limited', 'Sport', 'Eco'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2019': {
+        trims: ['SE', 'SEL', 'Value Edition', 'Limited', 'Sport', 'Eco'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2020': {
+        trims: ['SE', 'SEL', 'Value Edition', 'Limited', 'Sport', 'Eco'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      // ===== 7TH GENERATION (2021-Present) =====
+      '2021': {
+        trims: ['SE', 'SEL', 'N Line', 'Limited', 'Hybrid Blue', 'Hybrid Limited'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2022': {
+        trims: ['SE', 'SEL', 'N Line', 'Limited', 'Hybrid Blue', 'Hybrid SEL', 'Hybrid Limited'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2023': {
+        trims: ['SE', 'SEL', 'N Line', 'Limited', 'Hybrid Blue', 'Hybrid SEL', 'Hybrid Limited'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2024': {
+        trims: ['SE', 'SEL', 'N Line', 'Limited', 'Hybrid Blue', 'Hybrid SEL', 'Hybrid Limited'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2025': {
+        trims: ['SE', 'SEL', 'N Line', 'Limited', 'Hybrid Blue', 'Hybrid SEL', 'Hybrid Limited'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+    },
+    'Sonata': {
+      // ===== 6TH GENERATION (2011-2014) - Partial =====
+      '2015': {
+        trims: ['SE', 'Sport', 'Sport 2.0T', 'Limited', 'Eco'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['SE', 'Sport', 'Sport 2.0T', 'Limited', 'Eco', 'Hybrid SE', 'Hybrid Limited'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2017': {
+        trims: ['SE', 'Sport', 'Sport 2.0T', 'Limited', 'Eco', 'Hybrid SE', 'Hybrid Limited'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      // ===== 7TH GENERATION (2018-2019) =====
+      '2018': {
+        trims: ['SE', 'SEL', 'Sport', 'Limited', 'Hybrid SE', 'Hybrid SEL', 'Hybrid Limited'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2019': {
+        trims: ['SE', 'SEL', 'SEL Plus', 'Sport', 'Limited', 'Hybrid SE', 'Hybrid SEL', 'Hybrid Limited'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      // ===== 8TH GENERATION (2020-Present) =====
+      '2020': {
+        trims: ['SE', 'SEL', 'SEL Plus', 'Limited', 'N Line', 'Hybrid SE', 'Hybrid SEL', 'Hybrid Limited'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2021': {
+        trims: ['SE', 'SEL', 'SEL Plus', 'Limited', 'N Line', 'Hybrid SE', 'Hybrid SEL', 'Hybrid Limited'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2022': {
+        trims: ['SE', 'SEL', 'SEL Plus', 'Limited', 'N Line', 'Hybrid SE', 'Hybrid SEL', 'Hybrid Limited'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2023': {
+        trims: ['SE', 'SEL', 'SEL Plus', 'Limited', 'N Line', 'Hybrid SE', 'Hybrid SEL', 'Hybrid Limited'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2024': {
+        trims: ['SE', 'SEL', 'SEL Plus', 'Limited', 'N Line', 'Hybrid SE', 'Hybrid SEL', 'Hybrid Limited'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2025': {
+        trims: ['SE', 'SEL', 'SEL Plus', 'Limited', 'N Line', 'Hybrid SE', 'Hybrid SEL', 'Hybrid Limited'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+    },
+    'Tucson': {
+      // ===== 3RD GENERATION (2016-2020) =====
+      '2015': {
+        trims: ['SE', 'Eco', 'Sport', 'Limited'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['SE', 'Eco', 'Sport', 'Limited'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2017': {
+        trims: ['SE', 'Eco', 'Sport', 'Value', 'Limited', 'Night'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['SE', 'SEL', 'Value', 'Sport', 'Limited', 'Night', 'Ultimate'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2019': {
+        trims: ['SE', 'SEL', 'Value', 'Sport', 'Limited', 'Night', 'Ultimate'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2020': {
+        trims: ['SE', 'SEL', 'Value', 'Sport', 'Limited', 'Night', 'Ultimate'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      // ===== 4TH GENERATION (2021-Present) =====
+      '2021': {
+        trims: ['SE', 'SEL', 'N Line', 'Limited', 'Ultimate'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2022': {
+        trims: ['SE', 'SEL', 'N Line', 'Limited', 'Ultimate', 'Hybrid Blue', 'Hybrid SEL', 'Hybrid Limited', 'Plug-in Hybrid Limited'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2023': {
+        trims: ['SE', 'SEL', 'N Line', 'Limited', 'Ultimate', 'Hybrid Blue', 'Hybrid SEL', 'Hybrid Limited', 'Plug-in Hybrid Limited'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2024': {
+        trims: ['SE', 'SEL', 'N Line', 'Limited', 'Ultimate', 'Hybrid Blue', 'Hybrid SEL', 'Hybrid Limited', 'Plug-in Hybrid Limited'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2025': {
+        trims: ['SE', 'SEL', 'N Line', 'Limited', 'Ultimate', 'Hybrid Blue', 'Hybrid SEL', 'Hybrid Limited', 'Plug-in Hybrid Limited'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+    },
+    'Santa Fe': {
+      // ===== 3RD GENERATION (2013-2018) =====
+      '2015': {
+        trims: ['SE', 'Sport', 'Limited'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['SE', 'Sport', 'Limited', 'Ultimate'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2017': {
+        trims: ['SE', 'SEL', 'Sport', 'Limited', 'Ultimate'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['SE', 'SEL', 'SEL Plus', 'Sport', 'Limited', 'Limited Ultimate'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      // ===== 4TH GENERATION (2019-Present) =====
+      '2019': {
+        trims: ['SE', 'SEL', 'SEL Plus', 'Limited', 'Limited 2.0T', 'Ultimate'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2020': {
+        trims: ['SE', 'SEL', 'SEL Plus', 'Limited', 'Limited 2.0T', 'Ultimate'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2021': {
+        trims: ['SE', 'SEL', 'SEL Plus', 'Limited', 'Calligraphy'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2022': {
+        trims: ['SE', 'SEL', 'SEL Plus', 'Limited', 'Calligraphy', 'Hybrid SEL', 'Hybrid Limited', 'Hybrid Calligraphy', 'Plug-in Hybrid Limited', 'Plug-in Hybrid Calligraphy'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2023': {
+        trims: ['SE', 'SEL', 'XRT', 'Limited', 'Calligraphy', 'Hybrid SEL', 'Hybrid Limited', 'Hybrid Calligraphy', 'Plug-in Hybrid Limited', 'Plug-in Hybrid Calligraphy'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2024': {
+        trims: ['SE', 'SEL', 'XRT', 'Limited', 'Calligraphy', 'Hybrid SEL', 'Hybrid Limited', 'Hybrid Calligraphy', 'Plug-in Hybrid Limited', 'Plug-in Hybrid Calligraphy'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2025': {
+        trims: ['SE', 'SEL', 'XRT', 'Limited', 'Calligraphy', 'Hybrid SEL', 'Hybrid Limited', 'Hybrid Calligraphy', 'Plug-in Hybrid Limited', 'Plug-in Hybrid Calligraphy'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+    },
+  },
+  'Kia': {
+    'Forte': {
+      // ===== 2ND GENERATION (2014-2018) =====
+      '2015': {
+        trims: ['LX', 'EX', 'SX'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['LX', 'EX', 'SX'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2017': {
+        trims: ['LX', 'S', 'EX', 'SX'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['LX', 'S', 'EX', 'SX'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      // ===== 3RD GENERATION (2019-Present) =====
+      '2019': {
+        trims: ['FE', 'LXS', 'EX', 'GT-Line'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2020': {
+        trims: ['FE', 'LXS', 'EX', 'GT-Line'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2021': {
+        trims: ['FE', 'LXS', 'EX', 'GT-Line'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2022': {
+        trims: ['LX', 'LXS', 'GT-Line', 'GT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2023': {
+        trims: ['LX', 'LXS', 'GT-Line', 'GT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2024': {
+        trims: ['LX', 'LXS', 'GT-Line', 'GT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2025': {
+        trims: ['LX', 'LXS', 'GT-Line', 'GT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+    },
+    'Optima': {
+      // ===== 3RD GENERATION (2011-2015) =====
+      '2015': {
+        trims: ['LX', 'EX', 'SX', 'SXL Turbo'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      // ===== 4TH GENERATION (2016-2020) =====
+      '2016': {
+        trims: ['LX', 'LX Turbo', 'EX', 'SX', 'SXL Turbo', 'Hybrid EX', 'Hybrid LX'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2017': {
+        trims: ['LX', 'LX Turbo', 'EX', 'SX', 'SX Limited', 'SXL Turbo', 'Hybrid EX', 'Hybrid LX', 'Plug-in Hybrid EX'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2018': {
+        trims: ['LX', 'LX Turbo', 'S', 'EX', 'SX', 'SX Limited', 'SXL Turbo', 'Hybrid EX', 'Hybrid LX'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2019': {
+        trims: ['LX', 'LX Turbo', 'S', 'EX', 'SX', 'SXL Turbo', 'Hybrid EX', 'Hybrid LX'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2020': {
+        trims: ['LX', 'LX Turbo', 'S', 'EX', 'SX', 'SXL Turbo', 'Hybrid EX'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+    },
+    'K5': {
+      // ===== 1ST GENERATION (2021-Present) - Replaced Optima =====
+      '2021': {
+        trims: ['LX', 'LXS', 'GT-Line', 'EX', 'GT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2022': {
+        trims: ['LX', 'LXS', 'GT-Line', 'EX', 'GT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2023': {
+        trims: ['LX', 'LXS', 'GT-Line', 'EX', 'GT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2024': {
+        trims: ['LX', 'LXS', 'GT-Line', 'EX', 'GT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2025': {
+        trims: ['LX', 'LXS', 'GT-Line', 'EX', 'GT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+    },
+    'Sportage': {
+      // ===== 3RD GENERATION (2011-2016) =====
+      '2015': {
+        trims: ['LX', 'EX', 'SX'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['LX', 'EX', 'SX', 'SX Turbo'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      // ===== 4TH GENERATION (2017-2022) =====
+      '2017': {
+        trims: ['LX', 'EX', 'SX', 'SX Turbo'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['LX', 'EX', 'SX', 'SX Turbo'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2019': {
+        trims: ['LX', 'S', 'EX', 'SX', 'SX Turbo'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2020': {
+        trims: ['LX', 'S', 'EX', 'SX', 'SX Turbo'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2021': {
+        trims: ['LX', 'S', 'EX', 'SX', 'SX Turbo'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2022': {
+        trims: ['LX', 'S', 'EX', 'SX', 'SX Turbo'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      // ===== 5TH GENERATION (2023-Present) =====
+      '2023': {
+        trims: ['LX', 'EX', 'X-Line', 'SX', 'SX Prestige', 'Hybrid LX', 'Hybrid EX', 'Hybrid SX', 'Hybrid SX Prestige'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2024': {
+        trims: ['LX', 'EX', 'X-Line', 'SX', 'SX Prestige', 'Hybrid LX', 'Hybrid EX', 'Hybrid SX', 'Hybrid SX Prestige'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2025': {
+        trims: ['LX', 'EX', 'X-Line', 'SX', 'SX Prestige', 'Hybrid LX', 'Hybrid EX', 'Hybrid SX', 'Hybrid SX Prestige'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+    },
+    'Sorento': {
+      // ===== 2ND GENERATION (2011-2015) =====
+      '2015': {
+        trims: ['LX', 'EX', 'SX', 'SX Limited'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      // ===== 3RD GENERATION (2016-2020) =====
+      '2016': {
+        trims: ['L', 'LX', 'EX', 'SX', 'SX Limited'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2017': {
+        trims: ['L', 'LX', 'EX', 'SX', 'SX Limited', 'SXL'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['L', 'LX', 'EX', 'SX', 'SX Limited', 'SXL'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2019': {
+        trims: ['L', 'LX', 'EX', 'SX', 'SX Limited', 'SXL'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2020': {
+        trims: ['L', 'LX', 'S', 'EX', 'SX', 'SX Limited', 'SXL'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      // ===== 4TH GENERATION (2021-Present) =====
+      '2021': {
+        trims: ['LX', 'S', 'EX', 'SX', 'SX Prestige', 'Hybrid LX', 'Hybrid EX', 'Hybrid SX', 'Hybrid SX Prestige'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2022': {
+        trims: ['LX', 'S', 'EX', 'SX', 'SX Prestige', 'Hybrid LX', 'Hybrid EX', 'Hybrid SX', 'Hybrid SX Prestige', 'Plug-in Hybrid SX', 'Plug-in Hybrid SX Prestige'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2023': {
+        trims: ['LX', 'S', 'EX', 'SX', 'SX Prestige', 'X-Line', 'Hybrid LX', 'Hybrid EX', 'Hybrid SX', 'Hybrid SX Prestige', 'Plug-in Hybrid SX', 'Plug-in Hybrid SX Prestige'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2024': {
+        trims: ['LX', 'S', 'EX', 'SX', 'SX Prestige', 'X-Line', 'Hybrid LX', 'Hybrid EX', 'Hybrid SX', 'Hybrid SX Prestige', 'Plug-in Hybrid SX', 'Plug-in Hybrid SX Prestige'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2025': {
+        trims: ['LX', 'S', 'EX', 'SX', 'SX Prestige', 'X-Line', 'Hybrid LX', 'Hybrid EX', 'Hybrid SX', 'Hybrid SX Prestige', 'Plug-in Hybrid SX', 'Plug-in Hybrid SX Prestige'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+    },
+  },
+  'Jeep': {
+    'Cherokee': {
+      // ===== 5TH GENERATION (2014-Present) =====
+      '2015': {
+        trims: ['Sport', 'Latitude', 'Limited', 'Trailhawk'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['Sport', 'Latitude', 'Limited', 'Trailhawk', 'Overland'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2017': {
+        trims: ['Sport', 'Latitude', 'Limited', 'Trailhawk', 'Overland'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['Sport', 'Latitude', 'Latitude Plus', 'Limited', 'Trailhawk', 'Overland'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2019': {
+        trims: ['Latitude', 'Latitude Plus', 'Limited', 'Trailhawk', 'Overland', 'High Altitude'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2020': {
+        trims: ['Latitude', 'Latitude Plus', 'Latitude Lux', 'Limited', 'Trailhawk', 'Overland', 'High Altitude'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2021': {
+        trims: ['Latitude', 'Latitude Plus', 'Latitude Lux', 'Limited', '80th Anniversary', 'Trailhawk', 'Overland', 'High Altitude'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2022': {
+        trims: ['Latitude', 'Latitude Lux', 'Limited', 'Trailhawk', 'Altitude', 'Overland', 'High Altitude'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2023': {
+        trims: ['Latitude', 'Latitude Lux', 'Limited', 'Trailhawk', 'Altitude', 'Overland', 'High Altitude'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2024': {
+        trims: ['Latitude', 'Latitude Lux', 'Limited', 'Trailhawk', 'Altitude', 'Overland', 'High Altitude'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2025': {
+        trims: ['Latitude', 'Latitude Lux', 'Limited', 'Trailhawk', 'Altitude', 'Overland', 'High Altitude'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+    },
+    'Grand Cherokee': {
+      // ===== 4TH GENERATION (2011-2021) =====
+      '2015': {
+        trims: ['Laredo', 'Limited', 'Overland', 'Summit', 'SRT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['Laredo', 'Limited', '75th Anniversary', 'Overland', 'Summit', 'SRT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2017': {
+        trims: ['Laredo', 'Limited', 'Trailhawk', 'Overland', 'Summit', 'SRT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['Laredo', 'Limited', 'Trailhawk', 'Overland', 'Summit', 'SRT', 'Trackhawk'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2019': {
+        trims: ['Laredo', 'Limited', 'Trailhawk', 'Overland', 'Summit', 'High Altitude', 'SRT', 'Trackhawk'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2020': {
+        trims: ['Laredo', 'Limited', 'Trailhawk', 'Overland', 'Summit', 'High Altitude', 'SRT', 'Trackhawk'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2021': {
+        trims: ['Laredo', 'Limited', '80th Anniversary', 'Trailhawk', 'Overland', 'Summit', 'High Altitude', 'SRT', 'Trackhawk'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      // ===== 5TH GENERATION (2021-Present) =====
+      '2022': {
+        trims: ['Laredo', 'Limited', 'Trailhawk', 'Altitude', 'Overland', 'Summit', 'Summit Reserve', '4xe', 'Trailhawk 4xe'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2023': {
+        trims: ['Laredo', 'Altitude', 'Limited', 'Trailhawk', 'Overland', 'Summit', 'Summit Reserve', '4xe', 'Trailhawk 4xe'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2024': {
+        trims: ['Laredo', 'Altitude', 'Limited', 'Trailhawk', 'Overland', 'Summit', 'Summit Reserve', '4xe', 'Trailhawk 4xe'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2025': {
+        trims: ['Laredo', 'Altitude', 'Limited', 'Trailhawk', 'Overland', 'Summit', 'Summit Reserve', '4xe', 'Trailhawk 4xe'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+    },
+    'Wrangler': {
+      // ===== 3RD GENERATION (2007-2018) =====
+      '2015': {
+        trims: ['Sport', 'Willys Wheeler', 'Sahara', 'Rubicon'],
+        seats: 4,
+        doors: 2,
+        transmission: 'automatic/manual',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['Sport', 'Willys Wheeler', 'Black Bear', 'Sahara', 'Rubicon'],
+        seats: 4,
+        doors: 2,
+        transmission: 'automatic/manual',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2017': {
+        trims: ['Sport', 'Sport S', 'Willys Wheeler', 'Sahara', 'Rubicon', 'Rubicon Recon'],
+        seats: 4,
+        doors: 2,
+        transmission: 'automatic/manual',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['Sport', 'Sport S', 'Willys Wheeler', 'Sahara', 'Moab', 'Rubicon', 'Rubicon Recon'],
+        seats: 4,
+        doors: 2,
+        transmission: 'automatic/manual',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      // ===== 4TH GENERATION (2018-Present) =====
+      '2019': {
+        trims: ['Sport', 'Sport S', 'Sahara', 'Moab', 'Rubicon'],
+        seats: 4,
+        doors: 2,
+        transmission: 'automatic/manual',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2020': {
+        trims: ['Sport', 'Sport S', 'Willys', 'Sahara', 'Rubicon', 'Rubicon Recon'],
+        seats: 4,
+        doors: 2,
+        transmission: 'automatic/manual',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2021': {
+        trims: ['Sport', 'Sport S', 'Willys', 'Sahara', '80th Anniversary', 'Rubicon', 'Rubicon 392', '4xe', 'Sahara 4xe', 'Rubicon 4xe'],
+        seats: 4,
+        doors: 2,
+        transmission: 'automatic/manual',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2022': {
+        trims: ['Sport', 'Sport S', 'Willys', 'Sahara', 'Rubicon', 'Rubicon 392', '4xe', 'Sahara 4xe', 'Rubicon 4xe'],
+        seats: 4,
+        doors: 2,
+        transmission: 'automatic/manual',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2023': {
+        trims: ['Sport', 'Sport S', 'Willys', 'Sahara', 'Rubicon', 'Rubicon 392', '4xe', 'Sahara 4xe', 'Rubicon 4xe'],
+        seats: 4,
+        doors: 2,
+        transmission: 'automatic/manual',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2024': {
+        trims: ['Sport', 'Sport S', 'Willys', 'Sahara', 'Rubicon', 'Rubicon 392', '4xe', 'Sahara 4xe', 'Rubicon 4xe'],
+        seats: 4,
+        doors: 2,
+        transmission: 'automatic/manual',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2025': {
+        trims: ['Sport', 'Sport S', 'Willys', 'Sahara', 'Rubicon', 'Rubicon 392', '4xe', 'Sahara 4xe', 'Rubicon 4xe'],
+        seats: 4,
+        doors: 2,
+        transmission: 'automatic/manual',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+    },
+    'Compass': {
+      // ===== 2ND GENERATION (2017-Present) =====
+      '2017': {
+        trims: ['Sport', 'Latitude', 'Limited', 'Trailhawk'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['Sport', 'Latitude', 'Limited', 'Trailhawk'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2019': {
+        trims: ['Sport', 'Latitude', 'Altitude', 'Limited', 'Trailhawk'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2020': {
+        trims: ['Sport', 'Latitude', 'Altitude', 'Limited', 'Trailhawk'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2021': {
+        trims: ['Sport', 'Latitude', 'Altitude', 'Limited', '80th Anniversary', 'Trailhawk'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2022': {
+        trims: ['Sport', 'Latitude', 'Latitude Lux', 'Altitude', 'Limited', 'Trailhawk'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2023': {
+        trims: ['Sport', 'Latitude', 'Latitude Lux', 'Altitude', 'Limited', 'Trailhawk'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2024': {
+        trims: ['Sport', 'Latitude', 'Latitude Lux', 'Altitude', 'Limited', 'Trailhawk'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2025': {
+        trims: ['Sport', 'Latitude', 'Latitude Lux', 'Altitude', 'Limited', 'Trailhawk'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+    },
+  },
+  'Subaru': {
+    'Impreza': {
+      // ===== 4TH GENERATION (2012-2016) =====
+      '2015': {
+        trims: ['2.0i', '2.0i Premium', '2.0i Sport Premium', '2.0i Limited', '2.0i Sport Limited'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['2.0i', '2.0i Premium', '2.0i Sport Premium', '2.0i Limited', '2.0i Sport Limited'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      // ===== 5TH GENERATION (2017-Present) =====
+      '2017': {
+        trims: ['2.0i', '2.0i Premium', '2.0i Sport', '2.0i Limited'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['2.0i', '2.0i Premium', '2.0i Sport', '2.0i Limited'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2019': {
+        trims: ['2.0i', '2.0i Premium', '2.0i Sport', '2.0i Limited'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2020': {
+        trims: ['Base', 'Premium', 'Sport', 'Limited'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2021': {
+        trims: ['Base', 'Premium', 'Sport', 'Limited'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2022': {
+        trims: ['Base', 'Premium', 'Sport', 'Limited', 'RS'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2023': {
+        trims: ['Base', 'Premium', 'Sport', 'Limited', 'RS'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2024': {
+        trims: ['Base', 'Premium', 'Sport', 'Limited', 'RS'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2025': {
+        trims: ['Base', 'Premium', 'Sport', 'Limited', 'RS'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+    },
+    'Legacy': {
+      // ===== 6TH GENERATION (2015-2019) =====
+      '2015': {
+        trims: ['2.5i', '2.5i Premium', '2.5i Limited', '3.6R Limited'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['2.5i', '2.5i Premium', '2.5i Limited', '3.6R Limited'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2017': {
+        trims: ['2.5i', '2.5i Premium', '2.5i Sport', '2.5i Limited', '3.6R Limited'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['2.5i', '2.5i Premium', '2.5i Sport', '2.5i Limited', '3.6R Limited', '3.6R Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2019': {
+        trims: ['2.5i', '2.5i Premium', '2.5i Sport', '2.5i Limited', '3.6R Limited', '3.6R Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      // ===== 7TH GENERATION (2020-Present) =====
+      '2020': {
+        trims: ['Base', 'Premium', 'Sport', 'Limited', 'Limited XT', 'Touring XT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2021': {
+        trims: ['Base', 'Premium', 'Sport', 'Limited', 'Limited XT', 'Touring XT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2022': {
+        trims: ['Base', 'Premium', 'Sport', 'Limited', 'Limited XT', 'Touring XT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2023': {
+        trims: ['Base', 'Premium', 'Sport', 'Limited', 'Limited XT', 'Touring XT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2024': {
+        trims: ['Base', 'Premium', 'Sport', 'Limited', 'Limited XT', 'Touring XT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2025': {
+        trims: ['Base', 'Premium', 'Sport', 'Limited', 'Limited XT', 'Touring XT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+    },
+    'Outback': {
+      // ===== 5TH GENERATION (2015-2019) =====
+      '2015': {
+        trims: ['2.5i', '2.5i Premium', '2.5i Limited', '3.6R Limited'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'wagon',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['2.5i', '2.5i Premium', '2.5i Limited', '3.6R Limited', '3.6R Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'wagon',
+        fuelType: 'gas'
+      },
+      '2017': {
+        trims: ['2.5i', '2.5i Premium', '2.5i Limited', '3.6R Limited', '3.6R Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'wagon',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['2.5i', '2.5i Premium', '2.5i Limited', '3.6R Limited', '3.6R Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'wagon',
+        fuelType: 'gas'
+      },
+      '2019': {
+        trims: ['2.5i', '2.5i Premium', '2.5i Limited', '3.6R Limited', '3.6R Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'wagon',
+        fuelType: 'gas'
+      },
+      // ===== 6TH GENERATION (2020-Present) =====
+      '2020': {
+        trims: ['Base', 'Premium', 'Onyx Edition XT', 'Limited', 'Limited XT', 'Touring XT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'wagon',
+        fuelType: 'gas'
+      },
+      '2021': {
+        trims: ['Base', 'Premium', 'Onyx Edition XT', 'Limited', 'Limited XT', 'Touring XT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'wagon',
+        fuelType: 'gas'
+      },
+      '2022': {
+        trims: ['Base', 'Premium', 'Onyx Edition XT', 'Limited', 'Limited XT', 'Touring XT', 'Wilderness'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'wagon',
+        fuelType: 'gas'
+      },
+      '2023': {
+        trims: ['Base', 'Premium', 'Onyx Edition XT', 'Limited', 'Limited XT', 'Touring XT', 'Wilderness'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'wagon',
+        fuelType: 'gas'
+      },
+      '2024': {
+        trims: ['Base', 'Premium', 'Onyx Edition XT', 'Limited', 'Limited XT', 'Touring XT', 'Wilderness'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'wagon',
+        fuelType: 'gas'
+      },
+      '2025': {
+        trims: ['Base', 'Premium', 'Onyx Edition XT', 'Limited', 'Limited XT', 'Touring XT', 'Wilderness'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'wagon',
+        fuelType: 'gas'
+      },
+    },
+    'Forester': {
+      // ===== 4TH GENERATION (2014-2018) =====
+      '2015': {
+        trims: ['2.5i', '2.5i Premium', '2.5i Limited', '2.5i Touring', '2.0XT Premium', '2.0XT Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['2.5i', '2.5i Premium', '2.5i Limited', '2.5i Touring', '2.0XT Premium', '2.0XT Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2017': {
+        trims: ['2.5i', '2.5i Premium', '2.5i Limited', '2.5i Touring', '2.0XT Premium', '2.0XT Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['2.5i', '2.5i Premium', '2.5i Limited', '2.5i Touring', '2.0XT Premium', '2.0XT Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      // ===== 5TH GENERATION (2019-Present) =====
+      '2019': {
+        trims: ['Base', 'Premium', 'Sport', 'Limited', 'Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2020': {
+        trims: ['Base', 'Premium', 'Sport', 'Limited', 'Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2021': {
+        trims: ['Base', 'Premium', 'Sport', 'Limited', 'Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2022': {
+        trims: ['Base', 'Premium', 'Sport', 'Limited', 'Touring', 'Wilderness'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2023': {
+        trims: ['Base', 'Premium', 'Sport', 'Limited', 'Touring', 'Wilderness'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2024': {
+        trims: ['Base', 'Premium', 'Sport', 'Limited', 'Touring', 'Wilderness'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2025': {
+        trims: ['Base', 'Premium', 'Sport', 'Limited', 'Touring', 'Wilderness'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+    },
+  },
+  'Mazda': {
+    'Mazda3': {
+      // ===== 3RD GENERATION (2014-2018) =====
+      '2015': {
+        trims: ['i Sport', 'i Touring', 'i Grand Touring', 's Touring', 's Grand Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['i Sport', 'i Touring', 'i Grand Touring', 's Touring', 's Grand Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2017': {
+        trims: ['Sport', 'Touring', 'Touring 2.5', 'Grand Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['Sport', 'Touring', 'Grand Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      // ===== 4TH GENERATION (2019-Present) =====
+      '2019': {
+        trims: ['Base', 'Preferred', 'Select', 'Premium'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2020': {
+        trims: ['Base', 'Preferred', 'Select', 'Premium'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2021': {
+        trims: ['Base', 'Preferred', 'Select', 'Premium', '2.5 Turbo', '2.5 Turbo Premium Plus'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2022': {
+        trims: ['Base', 'Preferred', 'Select', 'Premium', '2.5 Turbo', '2.5 Turbo Premium Plus'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2023': {
+        trims: ['Base', 'Preferred', 'Select', 'Premium', '2.5 Turbo', '2.5 Turbo Premium Plus'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2024': {
+        trims: ['Base', 'Preferred', 'Select', 'Premium', '2.5 Turbo', '2.5 Turbo Premium Plus'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2025': {
+        trims: ['Base', 'Preferred', 'Select', 'Premium', '2.5 Turbo', '2.5 Turbo Premium Plus'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+    },
+    'Mazda6': {
+      // ===== 3RD GENERATION (2014-2021) =====
+      '2015': {
+        trims: ['Sport', 'Touring', 'Grand Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['Sport', 'Touring', 'Grand Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2017': {
+        trims: ['Sport', 'Touring', 'Grand Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['Sport', 'Touring', 'Grand Touring', 'Grand Touring Reserve', 'Signature'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2019': {
+        trims: ['Sport', 'Touring', 'Grand Touring', 'Grand Touring Reserve', 'Signature'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2020': {
+        trims: ['Sport', 'Touring', 'Grand Touring', 'Grand Touring Reserve', 'Signature'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2021': {
+        trims: ['Sport', 'Touring', 'Carbon Edition', 'Grand Touring', 'Grand Touring Reserve', 'Signature'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+    },
+    'CX-5': {
+      // ===== 1ST GENERATION (2013-2016) =====
+      '2015': {
+        trims: ['Sport', 'Touring', 'Grand Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['Sport', 'Touring', 'Grand Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      // ===== 2ND GENERATION (2017-Present) =====
+      '2017': {
+        trims: ['Sport', 'Touring', 'Grand Touring', 'Grand Select'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['Sport', 'Touring', 'Grand Touring', 'Grand Touring Reserve'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2019': {
+        trims: ['Sport', 'Touring', 'Grand Touring', 'Grand Touring Reserve', 'Signature'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2020': {
+        trims: ['Sport', 'Touring', 'Grand Touring', 'Grand Touring Reserve', 'Signature'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2021': {
+        trims: ['Sport', 'Touring', 'Carbon Edition', 'Grand Touring', 'Grand Touring Reserve', 'Signature'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2022': {
+        trims: ['Sport', 'Touring', 'Carbon Edition', 'Grand Touring', 'Grand Touring Reserve', 'Signature', '2.5 Turbo'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2023': {
+        trims: ['Sport', 'Preferred', 'Select', 'Premium', 'Premium Plus', '2.5 Turbo', '2.5 Turbo Premium Plus'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2024': {
+        trims: ['Sport', 'Preferred', 'Select', 'Premium', 'Premium Plus', '2.5 Turbo', '2.5 Turbo Premium Plus'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2025': {
+        trims: ['Sport', 'Preferred', 'Select', 'Premium', 'Premium Plus', '2.5 Turbo', '2.5 Turbo Premium Plus'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+    },
+    'CX-9': {
+      // ===== 2ND GENERATION (2016-Present) =====
+      '2016': {
+        trims: ['Sport', 'Touring', 'Grand Touring'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2017': {
+        trims: ['Sport', 'Touring', 'Grand Touring', 'Signature'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['Sport', 'Touring', 'Grand Touring', 'Signature'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2019': {
+        trims: ['Sport', 'Touring', 'Grand Touring', 'Signature'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2020': {
+        trims: ['Sport', 'Touring', 'Grand Touring', 'Signature'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2021': {
+        trims: ['Sport', 'Touring', 'Carbon Edition', 'Grand Touring', 'Signature'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2022': {
+        trims: ['Sport', 'Touring', 'Carbon Edition', 'Grand Touring', 'Signature'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2023': {
+        trims: ['Sport', 'Touring', 'Carbon Edition', 'Grand Touring', 'Signature'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2024': {
+        trims: ['Sport', 'Touring', 'Carbon Edition', 'Grand Touring', 'Signature'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2025': {
+        trims: ['Sport', 'Touring', 'Carbon Edition', 'Grand Touring', 'Signature'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+    },
+  },
 }
 
 // ============================================
