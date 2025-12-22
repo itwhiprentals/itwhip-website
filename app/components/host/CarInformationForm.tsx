@@ -6,9 +6,15 @@ import {
   IoCarSportOutline,
   IoChevronDownOutline,
   IoLocationOutline,
-  IoColorPaletteOutline
+  IoColorPaletteOutline,
+  IoPeopleOutline,
+  IoEnterOutline
 } from 'react-icons/io5'
 import { getAllMakes, getModelsByMake, getYears, getPopularMakes, getTrimsByModel } from '@/app/lib/data/vehicles'
+import { getCarColorHex } from '@/app/lib/constants/carColors'
+import { getVehicleSpecData, VehicleSpecData } from '@/app/lib/utils/vehicleSpec'
+import { getVehicleClass, formatFuelTypeBadge } from '@/app/lib/utils/vehicleClassification'
+import VehicleBadge from '@/app/components/VehicleBadge'
 
 // US States - Arizona first, then alphabetical
 const US_STATES = [
@@ -116,6 +122,12 @@ export default function CarInformationForm({
 }: CarInformationFormProps) {
   const [availableModels, setAvailableModels] = useState<string[]>([])
   const [availableTrims, setAvailableTrims] = useState<string[]>([])
+  const [vehicleSpec, setVehicleSpec] = useState<VehicleSpecData>({
+    seats: null,
+    doors: null,
+    carType: null,
+    fuelType: null
+  })
   const allMakes = getAllMakes()
   const popularMakes = getPopularMakes()
   const years = getYears()
@@ -151,6 +163,16 @@ export default function CarInformationForm({
     }
   }, [carData.make, carData.model, carData.year])
 
+  // Fetch vehicle specifications (seats/doors/carType/fuelType) when make/model/year changes
+  useEffect(() => {
+    if (carData.make && carData.model && carData.year) {
+      const spec = getVehicleSpecData(carData.make, carData.model, carData.year)
+      setVehicleSpec(spec)
+    } else {
+      setVehicleSpec({ seats: null, doors: null, carType: null, fuelType: null })
+    }
+  }, [carData.make, carData.model, carData.year])
+
   // Validate form and notify parent
   useEffect(() => {
     const isValid =
@@ -172,6 +194,10 @@ export default function CarInformationForm({
   const handleChange = (field: keyof CarData, value: string) => {
     onCarDataChange({ [field]: value })
   }
+
+  // Compute vehicle classification badges
+  const vehicleClass = getVehicleClass(carData.make, carData.model, vehicleSpec.carType)
+  const fuelTypeBadge = formatFuelTypeBadge(vehicleSpec.fuelType)
 
   return (
     <div className={`space-y-4 ${className}`}>
@@ -328,18 +354,63 @@ export default function CarInformationForm({
       {carData.make && carData.model && carData.year && carData.color && (
         <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-800/50 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-800/50 flex items-center justify-center flex-shrink-0">
               <IoCarSportOutline className="w-6 h-6 text-green-600" />
             </div>
-            <div>
-              <p className="font-semibold text-gray-900 dark:text-white">
-                {carData.year} {carData.make} {carData.model}
-                {carData.trim && ` ${carData.trim}`}
+            <div className="flex-1">
+              {/* Line 1: Year, Make, and Badges */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="font-semibold text-gray-900 dark:text-white">
+                  {carData.year} {carData.make}
+                </p>
+                {vehicleClass && <VehicleBadge label={vehicleClass} />}
+                {fuelTypeBadge && <VehicleBadge label={fuelTypeBadge} />}
+              </div>
+
+              {/* Line 2: Model and Trim (smaller) */}
+              <p className="text-xs text-gray-700 dark:text-gray-300">
+                {carData.model}{carData.trim && ` ${carData.trim}`}
               </p>
-              <p className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-1">
-                <IoColorPaletteOutline className="w-4 h-4" />
-                {carData.color} • Ready to list on ItWhip
-              </p>
+
+              {/* Line 3: Color • Seats • Doors */}
+              <div className="flex items-center gap-2 flex-wrap text-sm text-gray-600 dark:text-gray-300 mt-1">
+                {/* Color circle and name */}
+                <div className="flex items-center gap-1.5">
+                  <div
+                    className="w-3 h-3 rounded-full border border-gray-300 dark:border-gray-500"
+                    style={{ backgroundColor: getCarColorHex(carData.color) }}
+                    aria-label={`Color: ${carData.color}`}
+                  />
+                  <span>{carData.color}</span>
+                </div>
+
+                {/* Seats (if available) */}
+                {vehicleSpec.seats !== null && (
+                  <>
+                    <span className="text-gray-400">•</span>
+                    <div className="flex items-center gap-1">
+                      <IoPeopleOutline className="w-4 h-4" />
+                      <span>{vehicleSpec.seats} Seats</span>
+                    </div>
+                  </>
+                )}
+
+                {/* Doors (if available) */}
+                {vehicleSpec.doors !== null && (
+                  <>
+                    <span className="text-gray-400">•</span>
+                    <div className="flex items-center gap-1">
+                      <IoEnterOutline className="w-4 h-4" />
+                      <span>{vehicleSpec.doors} Doors</span>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Line 4: Ready to list message */}
+              <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Ready to list on ItWhip
+              </div>
             </div>
           </div>
         </div>
