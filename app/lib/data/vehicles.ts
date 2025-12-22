@@ -669,6 +669,365 @@ export const vehicleSpecsByYear: YearBasedVehicleDatabase = {
         fuelType: 'gas/hybrid'
       },
     },
+    'C-Class': {
+      // ===== W205 GENERATION (2015-2021) =====
+      '2015': {
+        trims: ['C 300', 'C 300 4MATIC', 'C 400 4MATIC'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['C 300', 'C 300 4MATIC', 'C 350e', 'AMG C 43 4MATIC', 'AMG C 63', 'AMG C 63 S'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2017': {
+        trims: ['C 300', 'C 300 4MATIC', 'C 350e', 'AMG C 43 4MATIC', 'AMG C 63', 'AMG C 63 S'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['C 300', 'C 300 4MATIC', 'C 350e', 'AMG C 43 4MATIC', 'AMG C 63', 'AMG C 63 S'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2019': {
+        trims: ['C 300', 'C 300 4MATIC', 'AMG C 43 4MATIC', 'AMG C 63', 'AMG C 63 S'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2020': {
+        trims: ['C 300', 'C 300 4MATIC', 'AMG C 43 4MATIC', 'AMG C 63', 'AMG C 63 S'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2021': {
+        trims: ['C 300', 'C 300 4MATIC', 'AMG C 43 4MATIC', 'AMG C 63', 'AMG C 63 S'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      // ===== W206 GENERATION (2022-2025) =====
+      '2022': {
+        trims: ['C 300', 'C 300 4MATIC'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2023': {
+        trims: ['C 300', 'C 300 4MATIC', 'AMG C 43 4MATIC'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2024': {
+        trims: ['C 300', 'C 300 4MATIC', 'AMG C 43 4MATIC', 'AMG C 63 S E PERFORMANCE'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2025': {
+        trims: ['C 300', 'C 300 4MATIC', 'AMG C 43 4MATIC', 'AMG C 63 S E PERFORMANCE'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+    },
+    'E-Class': {
+      // ===== W212 GENERATION (2010-2016) =====
+      '2015': {
+        trims: ['E 250 BlueTEC', 'E 250 BlueTEC 4MATIC', 'E 350', 'E 350 4MATIC', 'E 400 4MATIC', 'E 550 4MATIC', 'E 63 AMG', 'E 63 AMG S'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['E 300', 'E 300 4MATIC', 'E 350', 'E 350 4MATIC', 'E 400 4MATIC', 'AMG E 63 S 4MATIC'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      // ===== W213 GENERATION (2017-2025) =====
+      '2017': {
+        trims: ['E 300', 'E 300 4MATIC', 'E 400 4MATIC', 'AMG E 43 4MATIC'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['E 300', 'E 300 4MATIC', 'E 400 4MATIC', 'AMG E 43 4MATIC', 'AMG E 63 S 4MATIC'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2019': {
+        trims: ['E 300', 'E 300 4MATIC', 'E 450 4MATIC', 'AMG E 53 4MATIC', 'AMG E 63 S 4MATIC'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2020': {
+        trims: ['E 350', 'E 350 4MATIC', 'E 450 4MATIC', 'AMG E 53 4MATIC', 'AMG E 63 S 4MATIC'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2021': {
+        trims: ['E 350', 'E 350 4MATIC', 'E 450 4MATIC', 'AMG E 53 4MATIC', 'AMG E 63 S 4MATIC'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2022': {
+        trims: ['E 350', 'E 350 4MATIC', 'E 450 4MATIC', 'AMG E 53 4MATIC', 'AMG E 63 S 4MATIC'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2023': {
+        trims: ['E 350', 'E 350 4MATIC', 'E 450 4MATIC', 'AMG E 53 4MATIC', 'AMG E 63 S 4MATIC'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2024': {
+        trims: ['E 350', 'E 350 4MATIC', 'E 450 4MATIC', 'AMG E 53 4MATIC'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2025': {
+        trims: ['E 350', 'E 350 4MATIC', 'E 450 4MATIC', 'AMG E 53 4MATIC'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+    },
+    'GLE': {
+      // ===== W166 GENERATION (2016-2019) - Note: Called ML-Class prior to 2016 =====
+      '2015': {
+        trims: ['ML 250 BlueTEC', 'ML 350', 'ML 350 BlueTEC', 'ML 400 4MATIC', 'ML 63 AMG'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['GLE 300d 4MATIC', 'GLE 350', 'GLE 350 4MATIC', 'GLE 450 AMG 4MATIC', 'AMG GLE 63 S 4MATIC'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2017': {
+        trims: ['GLE 300d 4MATIC', 'GLE 350', 'GLE 350 4MATIC', 'GLE 450 AMG 4MATIC', 'AMG GLE 43 4MATIC', 'AMG GLE 63 S 4MATIC'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['GLE 350', 'GLE 350 4MATIC', 'GLE 450 AMG 4MATIC', 'AMG GLE 43 4MATIC', 'AMG GLE 63 S 4MATIC'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2019': {
+        trims: ['GLE 350', 'GLE 350 4MATIC', 'GLE 450 AMG 4MATIC', 'AMG GLE 43 4MATIC', 'AMG GLE 63 S 4MATIC'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      // ===== W167 GENERATION (2020-2025) =====
+      '2020': {
+        trims: ['GLE 350', 'GLE 350 4MATIC', 'GLE 450 4MATIC', 'AMG GLE 53 4MATIC', 'AMG GLE 63 S 4MATIC'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2021': {
+        trims: ['GLE 350', 'GLE 350 4MATIC', 'GLE 450 4MATIC', 'GLE 580 4MATIC', 'AMG GLE 53 4MATIC', 'AMG GLE 63 S 4MATIC'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2022': {
+        trims: ['GLE 350', 'GLE 350 4MATIC', 'GLE 450 4MATIC', 'GLE 580 4MATIC', 'AMG GLE 53 4MATIC', 'AMG GLE 63 S 4MATIC'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2023': {
+        trims: ['GLE 350', 'GLE 350 4MATIC', 'GLE 450 4MATIC', 'GLE 580 4MATIC', 'AMG GLE 53 4MATIC', 'AMG GLE 63 S 4MATIC'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2024': {
+        trims: ['GLE 350', 'GLE 350 4MATIC', 'GLE 450 4MATIC', 'GLE 580 4MATIC', 'AMG GLE 53 4MATIC', 'AMG GLE 63 S 4MATIC'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2025': {
+        trims: ['GLE 350', 'GLE 350 4MATIC', 'GLE 450 4MATIC', 'GLE 580 4MATIC', 'AMG GLE 53 4MATIC'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+    },
+    'GLC': {
+      // ===== X253 GENERATION (2016-2025) =====
+      '2016': {
+        trims: ['GLC 300', 'GLC 300 4MATIC'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2017': {
+        trims: ['GLC 300', 'GLC 300 4MATIC', 'AMG GLC 43 4MATIC'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['GLC 300', 'GLC 300 4MATIC', 'AMG GLC 43 4MATIC', 'AMG GLC 63 4MATIC', 'AMG GLC 63 S 4MATIC'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2019': {
+        trims: ['GLC 300', 'GLC 300 4MATIC', 'AMG GLC 43 4MATIC', 'AMG GLC 63 4MATIC', 'AMG GLC 63 S 4MATIC'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2020': {
+        trims: ['GLC 300', 'GLC 300 4MATIC', 'AMG GLC 43 4MATIC', 'AMG GLC 63 4MATIC', 'AMG GLC 63 S 4MATIC'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2021': {
+        trims: ['GLC 300', 'GLC 300 4MATIC', 'AMG GLC 43 4MATIC', 'AMG GLC 63 4MATIC', 'AMG GLC 63 S 4MATIC'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2022': {
+        trims: ['GLC 300', 'GLC 300 4MATIC', 'AMG GLC 43 4MATIC', 'AMG GLC 63 4MATIC', 'AMG GLC 63 S 4MATIC'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2023': {
+        trims: ['GLC 300', 'GLC 300 4MATIC', 'AMG GLC 43 4MATIC', 'AMG GLC 63 S E PERFORMANCE'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2024': {
+        trims: ['GLC 300', 'GLC 300 4MATIC', 'AMG GLC 43 4MATIC', 'AMG GLC 63 S E PERFORMANCE'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2025': {
+        trims: ['GLC 300', 'GLC 300 4MATIC', 'AMG GLC 43 4MATIC', 'AMG GLC 63 S E PERFORMANCE'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+    },
   },
   'Toyota': {
     'Camry': {
@@ -3671,6 +4030,1435 @@ export const vehicleSpecsByYear: YearBasedVehicleDatabase = {
         transmission: 'automatic',
         carType: 'suv',
         fuelType: 'gas'
+      },
+    },
+  },
+
+  // ===== TIER 3: PREMIUM BRANDS =====
+  'BMW': {
+    '3 Series': {
+      // ===== F30 GENERATION (2012-2018) =====
+      '2015': {
+        trims: ['320i', '320i xDrive', '328i', '328i xDrive', '328d', '328d xDrive', '335i', '335i xDrive', 'ActiveHybrid 3'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['320i', '320i xDrive', '328i', '328i xDrive', '328d', '328d xDrive', '340i', '340i xDrive'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2017': {
+        trims: ['320i', '320i xDrive', '330i', '330i xDrive', '330e iPerformance', '340i', '340i xDrive', '340i xDrive Gran Turismo'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['320i', '320i xDrive', '330i', '330i xDrive', '330e iPerformance', '340i', '340i xDrive', '340i xDrive Gran Turismo'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      // ===== G20 GENERATION (2019-2025) =====
+      '2019': {
+        trims: ['330i', '330i xDrive', 'M340i', 'M340i xDrive'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2020': {
+        trims: ['330i', '330i xDrive', '330e', 'M340i', 'M340i xDrive'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2021': {
+        trims: ['330i', '330i xDrive', '330e', 'M340i', 'M340i xDrive'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2022': {
+        trims: ['330i', '330i xDrive', '330e', 'M340i', 'M340i xDrive'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2023': {
+        trims: ['330i', '330i xDrive', '330e', 'M340i', 'M340i xDrive'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2024': {
+        trims: ['330i', '330i xDrive', '330e', 'M340i', 'M340i xDrive'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2025': {
+        trims: ['330i', '330i xDrive', '330e', 'M340i', 'M340i xDrive'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+    },
+    '5 Series': {
+      // ===== F10 GENERATION (2011-2016) =====
+      '2015': {
+        trims: ['528i', '528i xDrive', '535d', '535d xDrive', '535i', '535i xDrive', '535i Gran Turismo', '550i', '550i xDrive', 'ActiveHybrid 5'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['528i', '528i xDrive', '535d', '535d xDrive', '535i', '535i xDrive', '535i Gran Turismo', '550i', '550i xDrive'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      // ===== G30 GENERATION (2017-2025) =====
+      '2017': {
+        trims: ['530i', '530i xDrive', '540i', '540i xDrive'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['530i', '530i xDrive', '530e', '530e xDrive', '540i', '540i xDrive', 'M550i xDrive'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2019': {
+        trims: ['530i', '530i xDrive', '530e', '530e xDrive', '540i', '540i xDrive', 'M550i xDrive'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2020': {
+        trims: ['530i', '530i xDrive', '530e', '530e xDrive', '540i', '540i xDrive', 'M550i xDrive'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2021': {
+        trims: ['530i', '530i xDrive', '530e', '530e xDrive', '540i', '540i xDrive', 'M550i xDrive'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2022': {
+        trims: ['530i', '530i xDrive', '530e', '530e xDrive', '540i', '540i xDrive', 'M550i xDrive'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2023': {
+        trims: ['530i', '530i xDrive', '530e', '530e xDrive', '540i', '540i xDrive', 'M550i xDrive'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2024': {
+        trims: ['530i', '530i xDrive', '530e', '530e xDrive', '540i', '540i xDrive', 'M550i xDrive'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2025': {
+        trims: ['530i', '530i xDrive', '530e', '530e xDrive', '540i', '540i xDrive', 'M550i xDrive'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+    },
+    'X3': {
+      // ===== F25 GENERATION (2011-2017) =====
+      '2015': {
+        trims: ['sDrive28i', 'xDrive28i', 'xDrive28d', 'xDrive35i'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['sDrive28i', 'xDrive28i', 'xDrive28d', 'xDrive35i'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2017': {
+        trims: ['sDrive28i', 'xDrive28i', 'xDrive28d', 'xDrive35i'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      // ===== G01 GENERATION (2018-2025) =====
+      '2018': {
+        trims: ['sDrive30i', 'xDrive30i', 'M40i'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2019': {
+        trims: ['sDrive30i', 'xDrive30i', 'M40i'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2020': {
+        trims: ['sDrive30i', 'xDrive30i', 'xDrive30e', 'M40i'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2021': {
+        trims: ['sDrive30i', 'xDrive30i', 'xDrive30e', 'M40i'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2022': {
+        trims: ['sDrive30i', 'xDrive30i', 'xDrive30e', 'M40i'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2023': {
+        trims: ['sDrive30i', 'xDrive30i', 'xDrive30e', 'M40i'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2024': {
+        trims: ['sDrive30i', 'xDrive30i', 'xDrive30e', 'M40i'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2025': {
+        trims: ['sDrive30i', 'xDrive30i', 'xDrive30e', 'M40i'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+    },
+    'X5': {
+      // ===== F15 GENERATION (2014-2018) =====
+      '2015': {
+        trims: ['sDrive35i', 'xDrive35i', 'xDrive35d', 'xDrive50i'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['sDrive35i', 'xDrive35i', 'xDrive35d', 'xDrive40e', 'xDrive50i'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2017': {
+        trims: ['sDrive35i', 'xDrive35i', 'xDrive35d', 'xDrive40e', 'xDrive50i'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['sDrive35i', 'xDrive35i', 'xDrive35d', 'xDrive40e', 'xDrive50i'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      // ===== G05 GENERATION (2019-2025) =====
+      '2019': {
+        trims: ['sDrive40i', 'xDrive40i', 'xDrive50i'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2020': {
+        trims: ['sDrive40i', 'xDrive40i', 'xDrive45e', 'xDrive50i', 'M50i'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2021': {
+        trims: ['sDrive40i', 'xDrive40i', 'xDrive45e', 'xDrive50i', 'M50i'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2022': {
+        trims: ['sDrive40i', 'xDrive40i', 'xDrive45e', 'xDrive50i', 'M50i'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2023': {
+        trims: ['sDrive40i', 'xDrive40i', 'xDrive45e', 'xDrive50i', 'M60i'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2024': {
+        trims: ['sDrive40i', 'xDrive40i', 'xDrive45e', 'xDrive50i', 'M60i'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2025': {
+        trims: ['sDrive40i', 'xDrive40i', 'xDrive45e', 'xDrive50i', 'M60i'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+    },
+  },
+
+  'Audi': {
+    'A4': {
+      // ===== B8 GENERATION (2008-2016) =====
+      '2015': {
+        trims: ['Premium', 'Premium Plus', 'Prestige', 'allroad Premium', 'allroad Premium Plus', 'allroad Prestige'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['Premium', 'Premium Plus', 'Prestige', 'allroad Premium', 'allroad Premium Plus', 'allroad Prestige'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      // ===== B9 GENERATION (2017-2025) =====
+      '2017': {
+        trims: ['Premium', 'Premium Plus', 'Prestige', 'allroad Premium', 'allroad Premium Plus', 'allroad Prestige'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['Premium', 'Premium Plus', 'Prestige', 'allroad Premium', 'allroad Premium Plus', 'allroad Prestige'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2019': {
+        trims: ['Premium', 'Premium Plus', 'Prestige', 'allroad Premium', 'allroad Premium Plus', 'allroad Prestige'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2020': {
+        trims: ['Premium', 'Premium Plus', 'Premium Plus 45 TFSI', 'Prestige', 'allroad Premium', 'allroad Premium Plus', 'allroad Prestige'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2021': {
+        trims: ['Premium', 'Premium Plus', 'Premium Plus 45 TFSI', 'Prestige', 'allroad Premium', 'allroad Premium Plus', 'allroad Prestige'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2022': {
+        trims: ['Premium', 'Premium Plus', 'Premium Plus 45 TFSI', 'Prestige', 'allroad Premium', 'allroad Premium Plus', 'allroad Prestige'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2023': {
+        trims: ['Premium', 'Premium Plus', 'Premium Plus 45 TFSI', 'Prestige', 'allroad Premium', 'allroad Premium Plus', 'allroad Prestige'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2024': {
+        trims: ['Premium', 'Premium Plus', 'Premium Plus 45 TFSI', 'Prestige', 'allroad Premium', 'allroad Premium Plus', 'allroad Prestige'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2025': {
+        trims: ['Premium', 'Premium Plus', 'Premium Plus 45 TFSI', 'Prestige', 'allroad Premium', 'allroad Premium Plus', 'allroad Prestige'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+    },
+    'A6': {
+      // ===== C7 GENERATION (2012-2018) =====
+      '2015': {
+        trims: ['Premium', 'Premium Plus', 'Prestige', 'TDI Premium Plus', 'TDI Prestige'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['Premium', 'Premium Plus', 'Prestige', 'TDI Premium Plus', 'TDI Prestige'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2017': {
+        trims: ['Premium', 'Premium Plus', 'Prestige', 'Competition Prestige'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['Premium', 'Premium Plus', 'Prestige'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      // ===== C8 GENERATION (2019-2025) =====
+      '2019': {
+        trims: ['Premium', 'Premium Plus', 'Prestige'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2020': {
+        trims: ['Premium', 'Premium Plus', 'Premium Plus 45 TFSI', 'Prestige'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2021': {
+        trims: ['Premium', 'Premium Plus', 'Premium Plus 45 TFSI', 'Prestige'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2022': {
+        trims: ['Premium', 'Premium Plus', 'Premium Plus 45 TFSI', 'Prestige'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2023': {
+        trims: ['Premium', 'Premium Plus', 'Premium Plus 45 TFSI', 'Prestige'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2024': {
+        trims: ['Premium', 'Premium Plus', 'Premium Plus 45 TFSI', 'Prestige'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2025': {
+        trims: ['Premium', 'Premium Plus', 'Premium Plus 45 TFSI', 'Prestige'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+    },
+    'Q5': {
+      // ===== 8R GENERATION (2009-2017) =====
+      '2015': {
+        trims: ['Premium', 'Premium Plus', 'Prestige', 'TDI Premium', 'TDI Premium Plus', 'TDI Prestige'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['Premium', 'Premium Plus', 'Prestige', 'TDI Premium', 'TDI Premium Plus', 'TDI Prestige'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2017': {
+        trims: ['Premium', 'Premium Plus', 'Prestige'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      // ===== FY GENERATION (2018-2025) =====
+      '2018': {
+        trims: ['Premium', 'Premium Plus', 'Prestige'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2019': {
+        trims: ['Premium', 'Premium Plus', 'Premium Plus 45 TFSI', 'Prestige'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2020': {
+        trims: ['Premium', 'Premium Plus', 'Premium Plus 45 TFSI', 'Prestige'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2021': {
+        trims: ['Premium', 'Premium Plus', 'Premium Plus 45 TFSI', 'Prestige'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2022': {
+        trims: ['Premium', 'Premium Plus', 'Premium Plus 45 TFSI', 'Prestige'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2023': {
+        trims: ['Premium', 'Premium Plus', 'Premium Plus 45 TFSI', 'Prestige'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2024': {
+        trims: ['Premium', 'Premium Plus', 'Premium Plus 45 TFSI', 'Prestige'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2025': {
+        trims: ['Premium', 'Premium Plus', 'Premium Plus 45 TFSI', 'Prestige'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+    },
+    'Q7': {
+      // ===== 4L GENERATION (2007-2015) =====
+      '2015': {
+        trims: ['Premium', 'Premium Plus', 'Prestige', 'TDI Premium', 'TDI Premium Plus', 'TDI Prestige'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['Premium', 'Premium Plus', 'Prestige'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      // ===== 4M GENERATION (2017-2025) =====
+      '2017': {
+        trims: ['Premium', 'Premium Plus', 'Prestige'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['Premium', 'Premium Plus', 'Prestige'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2019': {
+        trims: ['Premium', 'Premium Plus', 'Premium Plus 45 TFSI', 'Prestige'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2020': {
+        trims: ['Premium', 'Premium Plus', 'Premium Plus 45 TFSI', 'Premium Plus 55 TFSI', 'Prestige'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2021': {
+        trims: ['Premium', 'Premium Plus', 'Premium Plus 45 TFSI', 'Premium Plus 55 TFSI', 'Prestige'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2022': {
+        trims: ['Premium', 'Premium Plus', 'Premium Plus 45 TFSI', 'Premium Plus 55 TFSI', 'Prestige'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2023': {
+        trims: ['Premium', 'Premium Plus', 'Premium Plus 45 TFSI', 'Premium Plus 55 TFSI', 'Prestige'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2024': {
+        trims: ['Premium', 'Premium Plus', 'Premium Plus 45 TFSI', 'Premium Plus 55 TFSI', 'Prestige'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2025': {
+        trims: ['Premium', 'Premium Plus', 'Premium Plus 45 TFSI', 'Premium Plus 55 TFSI', 'Prestige'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+    },
+  },
+
+  'Lexus': {
+    'ES': {
+      // ===== XV60 GENERATION (2013-2018) =====
+      '2015': {
+        trims: ['ES 300h', 'ES 350'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['ES 300h', 'ES 350'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2017': {
+        trims: ['ES 300h', 'ES 350'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['ES 300h', 'ES 350'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      // ===== XV70 GENERATION (2019-2025) =====
+      '2019': {
+        trims: ['ES 300h', 'ES 350', 'ES 350 F SPORT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2020': {
+        trims: ['ES 300h', 'ES 350', 'ES 350 F SPORT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2021': {
+        trims: ['ES 250 AWD', 'ES 300h', 'ES 350', 'ES 350 F SPORT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2022': {
+        trims: ['ES 250 AWD', 'ES 300h', 'ES 350', 'ES 350 F SPORT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2023': {
+        trims: ['ES 250 AWD', 'ES 300h', 'ES 350', 'ES 350 F SPORT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2024': {
+        trims: ['ES 250 AWD', 'ES 300h', 'ES 350', 'ES 350 F SPORT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2025': {
+        trims: ['ES 250 AWD', 'ES 300h', 'ES 350', 'ES 350 F SPORT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+    },
+    'RX': {
+      // ===== AL20 GENERATION (2016-2019) =====
+      '2015': {
+        trims: ['RX 350', 'RX 350 F SPORT', 'RX 450h', 'RX 450h F SPORT'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['RX 350', 'RX 350 F SPORT', 'RX 450h', 'RX 450h F SPORT'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2017': {
+        trims: ['RX 350', 'RX 350 F SPORT', 'RX 450h', 'RX 450h F SPORT'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['RX 350', 'RX 350 F SPORT', 'RX 350L', 'RX 450h', 'RX 450h F SPORT', 'RX 450hL'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2019': {
+        trims: ['RX 350', 'RX 350 F SPORT', 'RX 350L', 'RX 450h', 'RX 450h F SPORT', 'RX 450hL'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      // ===== AL25 GENERATION (2020-2025) =====
+      '2020': {
+        trims: ['RX 350', 'RX 350 F SPORT', 'RX 350L', 'RX 450h', 'RX 450h F SPORT', 'RX 450hL'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2021': {
+        trims: ['RX 350', 'RX 350 F SPORT', 'RX 350L', 'RX 450h', 'RX 450h F SPORT', 'RX 450hL'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2022': {
+        trims: ['RX 350', 'RX 350 F SPORT', 'RX 350L', 'RX 450h', 'RX 450h F SPORT', 'RX 450hL'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2023': {
+        trims: ['RX 350', 'RX 350 F SPORT', 'RX 350h', 'RX 450h+', 'RX 500h F SPORT'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2024': {
+        trims: ['RX 350', 'RX 350 F SPORT', 'RX 350h', 'RX 450h+', 'RX 500h F SPORT'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2025': {
+        trims: ['RX 350', 'RX 350 F SPORT', 'RX 350h', 'RX 450h+', 'RX 500h F SPORT'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+    },
+    'NX': {
+      // ===== XZ10 GENERATION (2015-2021) =====
+      '2015': {
+        trims: ['NX 200t', 'NX 200t F SPORT', 'NX 300h', 'NX 300h F SPORT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['NX 200t', 'NX 200t F SPORT', 'NX 300h', 'NX 300h F SPORT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2017': {
+        trims: ['NX 200t', 'NX 200t F SPORT', 'NX 300h', 'NX 300h F SPORT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['NX 300', 'NX 300 F SPORT', 'NX 300h', 'NX 300h F SPORT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2019': {
+        trims: ['NX 300', 'NX 300 F SPORT', 'NX 300h', 'NX 300h F SPORT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2020': {
+        trims: ['NX 300', 'NX 300 F SPORT', 'NX 300h', 'NX 300h F SPORT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2021': {
+        trims: ['NX 300', 'NX 300 F SPORT', 'NX 300h', 'NX 300h F SPORT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      // ===== XZ25 GENERATION (2022-2025) =====
+      '2022': {
+        trims: ['NX 250', 'NX 350', 'NX 350 F SPORT', 'NX 350h', 'NX 450h+'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2023': {
+        trims: ['NX 250', 'NX 350', 'NX 350 F SPORT', 'NX 350h', 'NX 450h+'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2024': {
+        trims: ['NX 250', 'NX 350', 'NX 350 F SPORT', 'NX 350h', 'NX 450h+'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2025': {
+        trims: ['NX 250', 'NX 350', 'NX 350 F SPORT', 'NX 350h', 'NX 450h+'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+    },
+    'IS': {
+      // ===== XE30 GENERATION (2014-2020) =====
+      '2015': {
+        trims: ['IS 250', 'IS 250 F SPORT', 'IS 350', 'IS 350 F SPORT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['IS 200t', 'IS 200t F SPORT', 'IS 300', 'IS 300 F SPORT', 'IS 350', 'IS 350 F SPORT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2017': {
+        trims: ['IS 200t', 'IS 200t F SPORT', 'IS 300', 'IS 300 F SPORT', 'IS 350', 'IS 350 F SPORT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['IS 300', 'IS 300 F SPORT', 'IS 350', 'IS 350 F SPORT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2019': {
+        trims: ['IS 300', 'IS 300 F SPORT', 'IS 350', 'IS 350 F SPORT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2020': {
+        trims: ['IS 300', 'IS 300 F SPORT', 'IS 350', 'IS 350 F SPORT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      // ===== XE40 GENERATION (2021-2025) =====
+      '2021': {
+        trims: ['IS 300', 'IS 300 F SPORT', 'IS 350', 'IS 350 F SPORT', 'IS 500 F SPORT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2022': {
+        trims: ['IS 300', 'IS 300 F SPORT', 'IS 350', 'IS 350 F SPORT', 'IS 500 F SPORT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2023': {
+        trims: ['IS 300', 'IS 300 F SPORT', 'IS 350', 'IS 350 F SPORT', 'IS 500 F SPORT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2024': {
+        trims: ['IS 300', 'IS 300 F SPORT', 'IS 350', 'IS 350 F SPORT', 'IS 500 F SPORT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2025': {
+        trims: ['IS 300', 'IS 300 F SPORT', 'IS 350', 'IS 350 F SPORT', 'IS 500 F SPORT'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+    },
+  },
+
+  'Tesla': {
+    'Model S': {
+      // ===== 1ST GENERATION (2012-2016) =====
+      '2015': {
+        trims: ['70D', '85', '85D', 'P85D', 'P90D'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'electric'
+      },
+      '2016': {
+        trims: ['60', '60D', '70', '70D', '75', '75D', '90D', 'P90D', 'P100D'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'electric'
+      },
+      // ===== 2ND GENERATION REFRESH (2017-2020) =====
+      '2017': {
+        trims: ['75', '75D', '90D', '100D', 'P100D'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'electric'
+      },
+      '2018': {
+        trims: ['75D', '100D', 'P100D'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'electric'
+      },
+      '2019': {
+        trims: ['Standard Range', 'Long Range', 'Performance'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'electric'
+      },
+      '2020': {
+        trims: ['Long Range', 'Performance'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'electric'
+      },
+      // ===== PLAID REFRESH (2021-2025) =====
+      '2021': {
+        trims: ['Long Range', 'Plaid'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'electric'
+      },
+      '2022': {
+        trims: ['Long Range', 'Plaid'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'electric'
+      },
+      '2023': {
+        trims: ['Long Range', 'Plaid'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'electric'
+      },
+      '2024': {
+        trims: ['Long Range', 'Plaid'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'electric'
+      },
+      '2025': {
+        trims: ['Long Range', 'Plaid'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'electric'
+      },
+    },
+    'Model X': {
+      // ===== 1ST GENERATION (2015-2020) =====
+      '2015': {
+        trims: ['70D', '90D', 'P90D'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'electric'
+      },
+      '2016': {
+        trims: ['60D', '70D', '75D', '90D', 'P90D', 'P100D'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'electric'
+      },
+      '2017': {
+        trims: ['75D', '90D', '100D', 'P100D'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'electric'
+      },
+      '2018': {
+        trims: ['75D', '100D', 'P100D'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'electric'
+      },
+      '2019': {
+        trims: ['Standard Range', 'Long Range', 'Performance'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'electric'
+      },
+      '2020': {
+        trims: ['Long Range', 'Performance'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'electric'
+      },
+      // ===== PLAID REFRESH (2021-2025) =====
+      '2021': {
+        trims: ['Long Range', 'Plaid'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'electric'
+      },
+      '2022': {
+        trims: ['Long Range', 'Plaid'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'electric'
+      },
+      '2023': {
+        trims: ['Long Range', 'Plaid'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'electric'
+      },
+      '2024': {
+        trims: ['Long Range', 'Plaid'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'electric'
+      },
+      '2025': {
+        trims: ['Long Range', 'Plaid'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'electric'
+      },
+    },
+    'Model 3': {
+      // ===== 1ST GENERATION (2017-2023) =====
+      '2017': {
+        trims: ['Long Range'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'electric'
+      },
+      '2018': {
+        trims: ['Mid Range', 'Long Range', 'Performance'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'electric'
+      },
+      '2019': {
+        trims: ['Standard Range Plus', 'Long Range', 'Performance'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'electric'
+      },
+      '2020': {
+        trims: ['Standard Range Plus', 'Long Range', 'Performance'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'electric'
+      },
+      '2021': {
+        trims: ['Standard Range Plus', 'Long Range', 'Performance'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'electric'
+      },
+      '2022': {
+        trims: ['Rear-Wheel Drive', 'Long Range', 'Performance'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'electric'
+      },
+      '2023': {
+        trims: ['Rear-Wheel Drive', 'Long Range', 'Performance'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'electric'
+      },
+      // ===== HIGHLAND REFRESH (2024-2025) =====
+      '2024': {
+        trims: ['Rear-Wheel Drive', 'Long Range', 'Performance'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'electric'
+      },
+      '2025': {
+        trims: ['Rear-Wheel Drive', 'Long Range', 'Performance'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'electric'
+      },
+    },
+    'Model Y': {
+      // ===== 1ST GENERATION (2020-2025) =====
+      '2020': {
+        trims: ['Long Range', 'Performance'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'electric'
+      },
+      '2021': {
+        trims: ['Standard Range', 'Long Range', 'Performance'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'electric'
+      },
+      '2022': {
+        trims: ['Long Range', 'Performance'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'electric'
+      },
+      '2023': {
+        trims: ['Rear-Wheel Drive', 'Long Range', 'Performance'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'electric'
+      },
+      '2024': {
+        trims: ['Rear-Wheel Drive', 'Long Range', 'Performance'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'electric'
+      },
+      '2025': {
+        trims: ['Rear-Wheel Drive', 'Long Range', 'Performance'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'electric'
       },
     },
   },
