@@ -337,6 +337,7 @@ export async function GET(request: NextRequest) {
         // ✅ NEW: Document verification fields for VerificationAlert
         emailVerified: reviewerProfile?.emailVerified || false,
         phoneVerified: reviewerProfile?.phoneVerified || false,
+        phoneNumber: reviewerProfile?.phoneNumber || userProfile?.phone || null,  // ✅ FIXED: Include phone number for verification check
         documentsVerified: reviewerProfile?.documentsVerified || false,
         driversLicenseUrl: reviewerProfile?.driversLicenseUrl || null,
         selfieUrl: reviewerProfile?.selfieUrl || null

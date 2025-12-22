@@ -194,6 +194,7 @@ export default function SignupPage() {
                 roleHint="guest"
                 callbackUrl="/dashboard"
                 showDivider={true}
+                mode="signup"
               />
 
               {/* Signup Form */}

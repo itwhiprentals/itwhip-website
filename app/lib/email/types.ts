@@ -306,6 +306,19 @@ export interface DeclarationUpdatedData {
 }
 
 // ============================================================================
+// OAUTH WELCOME EMAIL - NEW USER SIGNUP
+// ============================================================================
+
+// OAuth welcome - sent after user completes profile with phone number
+export interface OAuthWelcomeData {
+  userName: string
+  userEmail: string
+  documentsUrl: string  // /profile?tab=documents
+  insuranceUrl: string  // /profile?tab=insurance
+  dashboardUrl: string  // /dashboard
+}
+
+// ============================================================================
 // RESPONSE TYPES
 // ============================================================================
 

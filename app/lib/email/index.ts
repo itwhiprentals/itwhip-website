@@ -14,15 +14,18 @@ import {
   getHostBackgroundCheckTemplate,
   getHostActionRequiredTemplate,
   getHostRejectionTemplate,
-  getHostApprovalTemplate
+  getHostApprovalTemplate,
+  // OAuth Welcome Template
+  getOAuthWelcomeTemplate
 } from './templates'
-import type { 
+import type {
   EmailResponse,
   HostDocumentRequestData,
   HostBackgroundCheckData,
   HostActionRequiredData,
   HostRejectionData,
-  HostApprovalData
+  HostApprovalData,
+  OAuthWelcomeData
 } from './types'
 
 /**
@@ -664,6 +667,26 @@ export async function sendHostApproval(
   } catch (error) {
     console.error('Error sending host approval email:', error)
     return { success: false, error: 'Failed to send host approval email' }
+  }
+}
+
+// ============================================================================
+// OAUTH WELCOME EMAIL - NEW USER SIGNUP
+// ============================================================================
+
+/**
+ * Send OAuth welcome email after user completes profile with phone number
+ */
+export async function sendOAuthWelcomeEmail(
+  to: string,
+  data: OAuthWelcomeData
+): Promise<EmailResponse> {
+  try {
+    const template = getOAuthWelcomeTemplate(data)
+    return await sendEmail(to, template.subject, template.html, template.text)
+  } catch (error) {
+    console.error('Error sending OAuth welcome email:', error)
+    return { success: false, error: 'Failed to send OAuth welcome email' }
   }
 }
 

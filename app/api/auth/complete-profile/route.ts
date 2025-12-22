@@ -9,6 +9,7 @@ import { authOptions } from '@/app/lib/auth/next-auth-config'
 import { prisma } from '@/app/lib/database/prisma'
 import { SignJWT } from 'jose'
 import { nanoid } from 'nanoid'
+import { sendOAuthWelcomeEmail } from '@/app/lib/email/oauth-welcome-sender'
 
 // JWT secrets (same as oauth-redirect)
 const JWT_SECRET = new TextEncoder().encode(
@@ -215,6 +216,24 @@ export async function POST(request: NextRequest) {
       })
 
       console.log(`[Complete Profile] Transaction complete - new user created: ${newUser.id}`)
+
+      // Send welcome email for GUEST signups only (hosts have separate approval flow)
+      if (roleHint !== 'host' && newUser.email) {
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://itwhip.com'
+        try {
+          await sendOAuthWelcomeEmail(newUser.email, {
+            userName: newUser.name || 'Guest',
+            userEmail: newUser.email,
+            documentsUrl: `${appUrl}/profile?tab=documents`,
+            insuranceUrl: `${appUrl}/profile?tab=insurance`,
+            dashboardUrl: `${appUrl}/dashboard`
+          })
+          console.log(`[Complete Profile] Sent welcome email to: ${newUser.email}`)
+        } catch (emailError) {
+          // Don't fail the signup if email fails - just log it
+          console.error(`[Complete Profile] Failed to send welcome email:`, emailError)
+        }
+      }
 
       // Generate tokens and return response with cookies
       return await createSuccessResponse(newUser, digitsOnly)

@@ -179,17 +179,15 @@ export default function VerificationAlert({
             {/* ✅ Show document checklist for NOT_UPLOADED state */}
             {alertConfig.state === 'NOT_UPLOADED' && (
               <div className="mt-3 space-y-1.5">
-                {/* Phone Number */}
-                <div className="flex items-center text-xs">
-                  {hasPhone ? (
-                    <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400 mr-2" />
-                  ) : (
+                {/* Phone Number - Only show if missing */}
+                {!hasPhone && (
+                  <div className="flex items-center text-xs">
                     <div className="w-4 h-4 rounded-full border-2 border-red-400 dark:border-red-500 mr-2" />
-                  )}
-                  <span className={hasPhone ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300 font-medium'}>
-                    Phone Number {hasPhone ? '✓' : '(Required)'}
-                  </span>
-                </div>
+                    <span className="text-red-700 dark:text-red-300 font-medium">
+                      Phone Number (Required)
+                    </span>
+                  </div>
+                )}
                 {/* Driver's License */}
                 <div className="flex items-center text-xs">
                   {verificationState.driversLicenseUrl ? (

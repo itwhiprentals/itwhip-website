@@ -37,6 +37,9 @@ export { getClaimReminderGuestTemplate } from './claim-reminder-guest'
 // ✅ NEW: DECLARATION SYSTEM TEMPLATE - PHASE 2D
 export { declarationUpdatedTemplate } from './declaration-updated'
 
+// OAuth Welcome Email - New User Signup
+export { getOAuthWelcomeTemplate } from './oauth-welcome'
+
 // Re-export all types for convenience
 export type {
   // Base types
@@ -73,5 +76,8 @@ export type {
   ClaimNotificationFleetData,
   ClaimApprovedHostData,
   ClaimDecisionGuestData,
-  ClaimReminderGuestData
+  ClaimReminderGuestData,
+
+  // OAuth Welcome type
+  OAuthWelcomeData
 } from '../types'

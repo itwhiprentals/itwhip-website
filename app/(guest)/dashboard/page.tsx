@@ -593,6 +593,7 @@ export default function GuestDashboard() {
         payload: {
           emailVerified: dashboardData.profile.emailVerified || false,
           phoneVerified: dashboardData.profile.phoneVerified || false,
+          phoneNumber: dashboardData.profile.phoneNumber || null,  // ✅ FIXED: Include phone number for verification check
           documentsVerified: dashboardData.profile.documentsVerified || false,
           driversLicenseUrl: dashboardData.profile.driversLicenseUrl || null,
           selfieUrl: dashboardData.profile.selfieUrl || null
