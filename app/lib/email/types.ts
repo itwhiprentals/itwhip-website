@@ -318,6 +318,18 @@ export interface OAuthWelcomeData {
   dashboardUrl: string  // /dashboard
 }
 
+// Host OAuth welcome - sent after host completes profile with phone and car info
+export interface HostOAuthWelcomeData {
+  userName: string
+  userEmail: string
+  profileUrl: string      // /host/profile?tab=profile
+  documentsUrl: string    // /host/profile?tab=documents
+  carsUrl: string         // /host/cars
+  earningsUrl: string     // /host/earnings
+  insuranceUrl: string    // /host/profile?tab=insurance
+  dashboardUrl: string    // /host/dashboard
+}
+
 // ============================================================================
 // RESPONSE TYPES
 // ============================================================================

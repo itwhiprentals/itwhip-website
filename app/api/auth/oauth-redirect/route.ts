@@ -5,59 +5,108 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/lib/auth/next-auth-config'
 import { prisma } from '@/app/lib/database/prisma'
-import { SignJWT } from 'jose'
+import { sign } from 'jsonwebtoken'
 import { nanoid } from 'nanoid'
 
 // JWT secrets (same as login route)
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-key'
-)
-const JWT_REFRESH_SECRET = new TextEncoder().encode(
-  process.env.JWT_REFRESH_SECRET || 'fallback-refresh-secret'
-)
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key'
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'fallback-refresh-secret'
 
-// Helper to generate and set custom JWT tokens
-async function generateCustomTokens(user: { id: string; email: string; name: string | null; role: string }) {
+// Helper to generate HOST JWT tokens (for rental hosts)
+function generateHostTokens(host: {
+  id: string
+  userId: string
+  email: string
+  name: string
+  approvalStatus: string
+}) {
+  // Generate access token with HOST claims
+  const accessToken = sign(
+    {
+      userId: host.userId,
+      hostId: host.id,
+      email: host.email,
+      name: host.name,
+      role: 'BUSINESS',
+      isRentalHost: true,
+      approvalStatus: host.approvalStatus
+    },
+    JWT_SECRET,
+    { expiresIn: '15m' }
+  )
+
+  // Generate refresh token
+  const refreshToken = sign(
+    {
+      userId: host.userId,
+      hostId: host.id,
+      email: host.email,
+      type: 'refresh'
+    },
+    JWT_REFRESH_SECRET,
+    { expiresIn: '7d' }
+  )
+
+  return { accessToken, refreshToken }
+}
+
+// Helper to generate GUEST JWT tokens (for regular users)
+function generateGuestTokens(user: {
+  id: string
+  email: string
+  name: string | null
+  role: string
+}) {
   const tokenId = nanoid()
   const refreshTokenId = nanoid()
-  const refreshFamily = nanoid()
 
   // Create access token (15 minutes)
-  const accessToken = await new SignJWT({
-    userId: user.id,
-    email: user.email,
-    name: user.name,
-    role: user.role,
-    jti: tokenId
-  })
-    .setProtectedHeader({ alg: 'HS256' })
-    .setIssuedAt()
-    .setExpirationTime('15m')
-    .sign(JWT_SECRET)
+  const accessToken = sign(
+    {
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      jti: tokenId
+    },
+    JWT_SECRET,
+    { expiresIn: '15m' }
+  )
 
   // Create refresh token (7 days)
-  const refreshToken = await new SignJWT({
-    userId: user.id,
-    family: refreshFamily,
-    jti: refreshTokenId
-  })
-    .setProtectedHeader({ alg: 'HS256' })
-    .setIssuedAt()
-    .setExpirationTime('7d')
-    .sign(JWT_REFRESH_SECRET)
+  const refreshToken = sign(
+    {
+      userId: user.id,
+      jti: refreshTokenId
+    },
+    JWT_REFRESH_SECRET,
+    { expiresIn: '7d' }
+  )
 
-  return { accessToken, refreshToken, refreshFamily }
+  return { accessToken, refreshToken }
 }
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
 
-    // Read from cookies as fallback (cookies are set by OAuthButtons before OAuth redirect)
-    // URL params get lost during OAuth flow, so cookies preserve the original intent
+    // Read from cookies FIRST - they are set by OAuthButtons right before signIn
+    // NextAuth doesn't preserve our callbackUrl query params correctly, so cookies are the source of truth
     const cookies = request.cookies
-    const roleHint = searchParams.get('roleHint') || cookies.get('oauth_role_hint')?.value || 'guest'
-    const mode = searchParams.get('mode') || cookies.get('oauth_mode')?.value || 'signup'
+    const cookieRoleHint = cookies.get('oauth_role_hint')?.value
+    const queryRoleHint = searchParams.get('roleHint')
+    // IMPORTANT: Prioritize cookie over query param - cookie is always correct
+    const roleHint = cookieRoleHint || queryRoleHint || 'guest'
+    const cookieMode = cookies.get('oauth_mode')?.value
+    const queryMode = searchParams.get('mode')
+    const mode = cookieMode || queryMode || 'signup'
+
+    console.log('[OAuth Redirect] Debug cookies:', {
+      queryRoleHint,
+      cookieRoleHint,
+      finalRoleHint: roleHint,
+      allCookies: cookies.getAll().map(c => c.name)
+    })
     const returnTo = searchParams.get('returnTo') ||
       (cookies.get('oauth_return_to')?.value ? decodeURIComponent(cookies.get('oauth_return_to')?.value) : null)
 
@@ -121,13 +170,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL('/auth/login', request.url))
     }
 
-    // Check if user has phone number - if not, redirect to complete profile
-    const hasPhone = user.phone && user.phone.length >= 10
-
-    // Generate custom JWT tokens for the existing auth system
+    // Generate role-specific JWT tokens
     let accessToken = ''
     let refreshToken = ''
-    const tokens = await generateCustomTokens({
+    let isHost = false
+
+    // Start with guest tokens - will regenerate if user is a host
+    const tokens = generateGuestTokens({
       id: user.id,
       email: user.email || email,
       name: user.name,
@@ -135,13 +184,14 @@ export async function GET(request: NextRequest) {
     })
     accessToken = tokens.accessToken
     refreshToken = tokens.refreshToken
-    console.log('[OAuth Redirect] Generated custom JWT tokens for existing API compatibility')
+    console.log('[OAuth Redirect] Generated initial JWT tokens')
 
     // Helper to create redirect response with JWT cookies
     const createRedirectWithCookies = (url: string) => {
       const response = NextResponse.redirect(new URL(url, request.url))
 
       if (accessToken && refreshToken) {
+        // Set standard accessToken and refreshToken
         response.cookies.set('accessToken', accessToken, {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
@@ -157,6 +207,26 @@ export async function GET(request: NextRequest) {
           maxAge: 7 * 24 * 60 * 60, // 7 days
           path: '/'
         })
+
+        // ALSO set host-specific cookies if this is a host
+        if (isHost) {
+          response.cookies.set('hostAccessToken', accessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 15 * 60, // 15 minutes
+            path: '/'
+          })
+
+          response.cookies.set('hostRefreshToken', refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 7 * 24 * 60 * 60, // 7 days
+            path: '/'
+          })
+          console.log('[OAuth Redirect] Set both accessToken AND hostAccessToken cookies for host')
+        }
       }
 
       // Clear OAuth cookies after reading (they were only needed for this redirect)
@@ -178,7 +248,8 @@ export async function GET(request: NextRequest) {
       select: {
         id: true,
         approvalStatus: true,
-        userId: true
+        userId: true,
+        phone: true  // Include host phone
       }
     })
 
@@ -192,7 +263,28 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    console.log(`[OAuth Redirect] Host profile: ${hostProfile ? 'exists' : 'none'}, Guest profile: ${guestProfile ? 'exists' : 'none'}, Has phone: ${hasPhone}`)
+    // If user has host profile and roleHint is 'host', regenerate tokens with host claims
+    if (roleHint === 'host' && hostProfile) {
+      const hostTokens = generateHostTokens({
+        id: hostProfile.id,
+        userId: hostProfile.userId || user.id,
+        email: email,
+        name: user.name || '',
+        approvalStatus: hostProfile.approvalStatus
+      })
+      accessToken = hostTokens.accessToken
+      refreshToken = hostTokens.refreshToken
+      isHost = true
+      console.log('[OAuth Redirect] Regenerated HOST tokens with approvalStatus:', hostProfile.approvalStatus)
+    }
+
+    // Check for phone in User, RentalHost, or ReviewerProfile
+    const hasPhoneFromUser = user.phone && user.phone.length >= 10
+    const hasPhoneFromHost = hostProfile?.phone && hostProfile.phone.length >= 10
+    const hasPhoneFromGuest = guestProfile?.phoneNumber && guestProfile.phoneNumber.length >= 10
+    const hasPhoneAny = hasPhoneFromUser || hasPhoneFromHost || hasPhoneFromGuest
+
+    console.log(`[OAuth Redirect] Host profile: ${hostProfile ? 'exists' : 'none'}, Guest profile: ${guestProfile ? 'exists' : 'none'}, Has phone: ${hasPhoneAny} (user: ${hasPhoneFromUser}, host: ${hasPhoneFromHost}, guest: ${hasPhoneFromGuest})`)
 
     // Determine redirect based on roleHint and existing profiles
     if (roleHint === 'host') {
@@ -201,7 +293,7 @@ export async function GET(request: NextRequest) {
         // User has host profile, check status
         if (hostProfile.approvalStatus === 'APPROVED') {
           // Check phone before allowing access to dashboard
-          if (!hasPhone) {
+          if (!hasPhoneAny) {
             console.log('[OAuth Redirect] Host missing phone, redirecting to complete profile')
             return createRedirectWithCookies(`/auth/complete-profile?roleHint=host&mode=${mode}&redirectTo=/host/dashboard`)
           }
@@ -219,9 +311,44 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // No host profile, redirect to host signup to complete registration
-      console.log('[OAuth Redirect] No host profile, redirecting to host signup')
-      return createRedirectWithCookies('/host/signup?oauth=true')
+      // No host profile - handle based on mode
+      if (mode === 'login') {
+        // LOGIN mode: User trying to login without an account
+        console.log('[OAuth Redirect] No host profile for login, redirecting to login with error')
+        return createRedirectWithCookies('/host/login?error=no-account')
+      }
+
+      // SIGNUP mode: Auto-create host profile (similar to guest flow)
+      if (!hostProfile && userId) {
+        try {
+          // Update User emailVerified since this is OAuth
+          await prisma.user.update({
+            where: { id: userId },
+            data: { emailVerified: true }
+          })
+
+          // Create RentalHost profile (PENDING approval)
+          await prisma.rentalHost.create({
+            data: {
+              userId: userId,
+              email: email,
+              name: session.user.name || '',
+              profilePhoto: session.user.image,
+              approvalStatus: 'PENDING',
+              isVerified: false,
+              phone: '' // Will be filled in complete-profile
+            }
+          })
+          console.log('[OAuth Redirect] Created host profile (PENDING) with verified email')
+        } catch (err) {
+          // Profile might already exist
+          console.error('[OAuth Redirect] Failed to create host profile:', err)
+        }
+      }
+
+      // Redirect to complete-profile to collect phone number
+      console.log('[OAuth Redirect] Host needs phone, redirecting to complete profile')
+      return createRedirectWithCookies(`/auth/complete-profile?roleHint=host&mode=${mode}&redirectTo=/host/dashboard`)
     }
 
     if (roleHint === 'guest') {
@@ -230,6 +357,12 @@ export async function GET(request: NextRequest) {
       // Create guest profile if it doesn't exist
       if (!guestProfile && userId) {
         try {
+          // Update User emailVerified since this is OAuth
+          await prisma.user.update({
+            where: { id: userId },
+            data: { emailVerified: true }
+          })
+
           await prisma.reviewerProfile.create({
             data: {
               userId: userId,
@@ -242,7 +375,7 @@ export async function GET(request: NextRequest) {
               emailVerified: true
             }
           })
-          console.log('[OAuth Redirect] Created guest profile')
+          console.log('[OAuth Redirect] Created guest profile with verified email')
         } catch (err) {
           // Profile might already exist with different userId
           console.error('[OAuth Redirect] Failed to create guest profile:', err)
@@ -250,7 +383,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Check if user has phone number
-      if (!hasPhone) {
+      if (!hasPhoneAny) {
         const redirectUrl = returnTo || '/dashboard'
         console.log('[OAuth Redirect] Guest missing phone, redirecting to complete profile')
         return createRedirectWithCookies(`/auth/complete-profile?roleHint=guest&mode=${mode}&redirectTo=${encodeURIComponent(redirectUrl)}`)
@@ -266,7 +399,7 @@ export async function GET(request: NextRequest) {
     //           Otherwise, go to guest profile
     if (hostProfile?.approvalStatus === 'APPROVED') {
       // Check phone before allowing access to dashboard
-      if (!hasPhone) {
+      if (!hasPhoneAny) {
         console.log('[OAuth Redirect] Host missing phone, redirecting to complete profile')
         return createRedirectWithCookies(`/auth/complete-profile?roleHint=host&mode=${mode}&redirectTo=/host/dashboard`)
       }
@@ -275,7 +408,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Default to guest dashboard - but check phone first
-    if (!hasPhone) {
+    if (!hasPhoneAny) {
       const redirectUrl = returnTo || '/dashboard'
       console.log('[OAuth Redirect] Missing phone, redirecting to complete profile')
       return createRedirectWithCookies(`/auth/complete-profile?roleHint=guest&mode=${mode}&redirectTo=${encodeURIComponent(redirectUrl)}`)

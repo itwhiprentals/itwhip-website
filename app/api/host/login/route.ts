@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { verify } from 'argon2'
-import { sign } from 'jsonwebtoken'
+import { sign, verify as jwtVerify } from 'jsonwebtoken'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key'
@@ -220,7 +220,7 @@ export async function POST(request: NextRequest) {
 // GET - Verify host session
 export async function GET(request: NextRequest) {
   try {
-    const accessToken = request.cookies.get('hostAccessToken')?.value || 
+    const accessToken = request.cookies.get('hostAccessToken')?.value ||
                        request.cookies.get('accessToken')?.value
 
     if (!accessToken) {
@@ -230,7 +230,9 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Find session
+    let userId: string | null = null
+
+    // Try to find session in database first (traditional login)
     const session = await prisma.session.findFirst({
       where: {
         OR: [
@@ -239,7 +241,7 @@ export async function GET(request: NextRequest) {
         ]
       },
       include: {
-        user: {  // lowercase 'user'
+        user: {
           select: {
             id: true,
             email: true,
@@ -251,15 +253,33 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    if (!session || !session.user) {  // lowercase 'user'
-      return NextResponse.json(
-        { authenticated: false },
-        { status: 401 }
-      )
+    if (session && session.user) {
+      // Check if session is expired
+      if (session.expiresAt && session.expiresAt < new Date()) {
+        return NextResponse.json(
+          { authenticated: false },
+          { status: 401 }
+        )
+      }
+      userId = session.user.id
+    } else {
+      // No session found - try JWT verification (OAuth login)
+      try {
+        const decoded = jwtVerify(accessToken, JWT_SECRET) as any
+        if (decoded && decoded.userId) {
+          userId = decoded.userId
+          console.log('[Host Login GET] Verified JWT token for userId:', userId)
+        }
+      } catch (jwtError) {
+        console.error('[Host Login GET] JWT verification failed:', jwtError)
+        return NextResponse.json(
+          { authenticated: false },
+          { status: 401 }
+        )
+      }
     }
 
-    // Check if session is expired
-    if (session.expiresAt && session.expiresAt < new Date()) {
+    if (!userId) {
       return NextResponse.json(
         { authenticated: false },
         { status: 401 }
@@ -268,7 +288,7 @@ export async function GET(request: NextRequest) {
 
     // Get host data
     const host = await prisma.rentalHost.findUnique({
-      where: { userId: session.user.id },
+      where: { userId: userId },
       select: {
         id: true,
         name: true,

@@ -77,20 +77,48 @@ export default function OAuthButtons({
       setIsLoading(provider)
       setError(null)
 
-      // IMPORTANT: Sign out first to clear any existing session
+      // Store OAuth params in cookies FIRST (before signOut)
+      // These will be read by oauth-redirect route since NextAuth redirect callback
+      // doesn't preserve our custom callbackUrl params
+      const role = roleHint || 'guest'
+      console.log('[OAuthButtons] Setting OAuth cookies FIRST:', { roleHint, role, mode, callbackUrl })
+
+      // Set cookies with longer expiry and explicit SameSite
+      const cookieOptions = 'path=/; max-age=600; SameSite=Lax'
+      document.cookie = `oauth_role_hint=${role}; ${cookieOptions}`
+      document.cookie = `oauth_mode=${mode || 'signup'}; ${cookieOptions}`
+      if (callbackUrl) {
+        document.cookie = `oauth_return_to=${encodeURIComponent(callbackUrl)}; ${cookieOptions}`
+      }
+
+      // Wait briefly to ensure cookies are set
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      // Verify cookies were set
+      const cookiesSet = document.cookie.includes('oauth_role_hint')
+      console.log('[OAuthButtons] Initial cookies set:', cookiesSet)
+
+      // IMPORTANT: Sign out to clear any existing session
       // This prevents NextAuth from linking new OAuth accounts to the wrong user
       // See: https://github.com/nextauthjs/next-auth/issues/3300
       await signOut({ redirect: false })
 
-      // Store OAuth params in cookies BEFORE redirecting to OAuth provider
-      // These will be read by oauth-redirect route since NextAuth redirect callback
-      // doesn't preserve our custom callbackUrl params
-      const role = roleHint || (mode === 'login' ? 'guest' : 'guest')
-      document.cookie = `oauth_role_hint=${role}; path=/; max-age=300; SameSite=Lax`
-      document.cookie = `oauth_mode=${mode || 'signup'}; path=/; max-age=300; SameSite=Lax`
+      // CRITICAL: Re-set cookies immediately after signOut
+      // signOut() may clear all cookies, so we need to restore ours
+      console.log('[OAuthButtons] Re-setting cookies after signOut')
+      document.cookie = `oauth_role_hint=${role}; ${cookieOptions}`
+      document.cookie = `oauth_mode=${mode || 'signup'}; ${cookieOptions}`
       if (callbackUrl) {
-        document.cookie = `oauth_return_to=${encodeURIComponent(callbackUrl)}; path=/; max-age=300; SameSite=Lax`
+        document.cookie = `oauth_return_to=${encodeURIComponent(callbackUrl)}; ${cookieOptions}`
       }
+
+      // Final verification before redirecting
+      const finalCheck = document.cookie.includes('oauth_role_hint')
+      console.log('[OAuthButtons] Final verification before signIn:', {
+        cookiesPresent: finalCheck,
+        role,
+        allCookies: document.cookie.split(';').map(c => c.trim().substring(0, 20))
+      })
 
       // Use NextAuth signIn with redirect to our OAuth redirect handler
       const result = await signIn(provider, {

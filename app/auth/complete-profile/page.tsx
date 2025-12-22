@@ -5,11 +5,13 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Header from '@/app/components/Header'
+import CarInformationForm, { type CarData } from '@/app/components/host/CarInformationForm'
 import {
   IoPhonePortraitOutline,
   IoCheckmarkCircle,
   IoPersonOutline,
-  IoAlertCircleOutline
+  IoAlertCircleOutline,
+  IoArrowBackOutline
 } from 'react-icons/io5'
 
 function CompleteProfileContent() {
@@ -24,6 +26,21 @@ function CompleteProfileContent() {
   const redirectTo = searchParams.get('redirectTo') || '/dashboard'
   const roleHint = searchParams.get('roleHint') || 'guest'
   const mode = searchParams.get('mode') || 'signup'
+
+  // Multi-step wizard state (for hosts)
+  const totalSteps = roleHint === 'host' ? 2 : 1
+  const [currentStep, setCurrentStep] = useState(1)
+  const [carData, setCarData] = useState<CarData>({
+    make: '',
+    model: '',
+    year: '',
+    color: '',
+    trim: '',
+    city: '',
+    state: '',
+    zipCode: ''
+  })
+  const [isCarValid, setIsCarValid] = useState(false)
 
   // Get pending OAuth data from session
   const pendingOAuth = (session?.user as any)?.pendingOAuth
@@ -82,6 +99,13 @@ function CompleteProfileContent() {
 
     if (!validatePhone()) return
 
+    // For hosts at step 1, just validate and proceed to step 2
+    if (roleHint === 'host' && currentStep === 1) {
+      setCurrentStep(2)
+      return
+    }
+
+    // For hosts at step 2 or guests at step 1, submit to API
     setIsLoading(true)
     setError('')
 
@@ -91,7 +115,19 @@ function CompleteProfileContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           phone: phone.replace(/\D/g, ''),
-          roleHint: roleHint // Pass roleHint so API knows whether to create guest or host profile
+          roleHint: roleHint,
+          ...(roleHint === 'host' && {
+            carData: {
+              make: carData.make,
+              model: carData.model,
+              year: carData.year,
+              color: carData.color,
+              trim: carData.trim || null,
+              city: carData.city,
+              state: carData.state,
+              zipCode: carData.zipCode
+            }
+          })
         })
       })
 
@@ -167,10 +203,18 @@ function CompleteProfileContent() {
               {isLoginModeNoAccount ? (
                 <>
                   <h1 className="text-2xl font-bold text-white mb-2">
-                    No Account Found
+                    {roleHint === 'host' ? 'No Host Account Found' : 'No Account Found'}
                   </h1>
                   <p className="text-gray-400">
-                    No account exists with <span className="text-white">{userEmail}</span>. Would you like to create one?
+                    {roleHint === 'host' ? (
+                      <>
+                        No host account exists with <span className="text-white">{userEmail}</span>. Would you like to become a host?
+                      </>
+                    ) : (
+                      <>
+                        No account exists with <span className="text-white">{userEmail}</span>. Would you like to create one?
+                      </>
+                    )}
                   </p>
                 </>
               ) : (
@@ -184,6 +228,40 @@ function CompleteProfileContent() {
                 </>
               )}
             </div>
+
+            {/* Progress Indicator (hosts only) */}
+            {roleHint === 'host' && (
+              <div className="flex items-center justify-center mb-8">
+                {/* Step 1 Circle */}
+                <div className="flex flex-col items-center">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all ${
+                    currentStep >= 1
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-700 text-gray-400'
+                  }`}>
+                    {currentStep > 1 ? '✓' : '1'}
+                  </div>
+                  <span className="text-xs text-gray-400 mt-2">Phone</span>
+                </div>
+
+                {/* Connector */}
+                <div className={`w-16 h-1 mx-2 transition-all ${
+                  currentStep >= 2 ? 'bg-blue-600' : 'bg-gray-700'
+                }`}></div>
+
+                {/* Step 2 Circle */}
+                <div className="flex flex-col items-center">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all ${
+                    currentStep >= 2
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-700 text-gray-400'
+                  }`}>
+                    2
+                  </div>
+                  <span className="text-xs text-gray-400 mt-2">Vehicle</span>
+                </div>
+              </div>
+            )}
 
             {/* User Info Preview */}
             <div className="bg-gray-700/50 rounded-lg p-4 mb-6">
@@ -206,7 +284,8 @@ function CompleteProfileContent() {
               </div>
             </div>
 
-            {/* Phone Form */}
+            {/* Step 1: Phone Form */}
+            {currentStep === 1 && (
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -225,7 +304,9 @@ function CompleteProfileContent() {
                 </div>
                 <p className="mt-2 text-xs text-gray-500">
                   {isLoginModeNoAccount
-                    ? 'Enter your phone number to create your account'
+                    ? roleHint === 'host'
+                      ? 'Enter your phone number to become a host'
+                      : 'Enter your phone number to create your account'
                     : "We'll use this for booking confirmations and important updates"
                   }
                 </p>
@@ -250,19 +331,85 @@ function CompleteProfileContent() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    {isLoginModeNoAccount ? 'Creating Account...' : 'Saving...'}
+                    {isLoginModeNoAccount
+                      ? roleHint === 'host'
+                        ? 'Creating Host Account...'
+                        : 'Creating Account...'
+                      : 'Saving...'}
                   </span>
                 ) : (
-                  isLoginModeNoAccount ? 'Create Account' : 'Complete Profile'
+                  roleHint === 'host' && currentStep === 1
+                    ? 'Continue to Vehicle Info'
+                    : isLoginModeNoAccount
+                      ? roleHint === 'host'
+                        ? 'Become a Host'
+                        : 'Create Account'
+                      : 'Complete Profile'
                 )}
               </button>
             </form>
+            )}
+
+            {/* Step 2: Car Information (hosts only) */}
+            {currentStep === 2 && roleHint === 'host' && (
+              <div className="space-y-6">
+                <div className="text-center mb-6">
+                  <h2 className="text-xl font-bold text-white mb-2">Vehicle Information</h2>
+                  <p className="text-gray-400 text-sm">Add your first vehicle to start earning on ItWhip</p>
+                </div>
+
+                <CarInformationForm
+                  carData={carData}
+                  onCarDataChange={(data) => setCarData({ ...carData, ...data })}
+                  onValidationChange={setIsCarValid}
+                  showLocationFields={true}
+                  className="mb-6"
+                />
+
+                {/* Error Message */}
+                {error && (
+                  <div className="p-3 bg-red-500/10 border border-red-500/50 rounded-lg">
+                    <p className="text-red-400 text-sm">{error}</p>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep(1)}
+                    className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-all duration-200"
+                  >
+                    <IoArrowBackOutline className="w-5 h-5" />
+                    Back
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSubmit}
+                    disabled={isLoading || !isCarValid}
+                    className="flex-1 py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? (
+                      <span className="flex items-center justify-center">
+                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Creating Host Account...
+                      </span>
+                    ) : (
+                      'Complete Registration'
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Back to Login Link (only for login mode with no account) */}
             {isLoginModeNoAccount && (
               <div className="mt-4 text-center">
                 <button
-                  onClick={() => router.push('/auth/login')}
+                  onClick={() => router.push(roleHint === 'host' ? '/host/login' : '/auth/login')}
                   className="text-sm text-gray-400 hover:text-white transition-colors"
                 >
                   Back to Login

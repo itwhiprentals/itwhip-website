@@ -20,6 +20,15 @@ export interface VehicleDatabase {
   }
 }
 
+// Year-based vehicle database interface
+export interface YearBasedVehicleDatabase {
+  [make: string]: {
+    [model: string]: {
+      [year: string]: CarSpec
+    }
+  }
+}
+
 // ============================================
 // COMPREHENSIVE VEHICLE DATABASE
 // ============================================
@@ -113,47 +122,47 @@ export const vehicleSpecs: VehicleDatabase = {
     '3 Series': { trims: ['330i', '330i xDrive', '330e', 'M340i', 'M340i xDrive'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas/hybrid' },
     '4 Series': { trims: ['430i', '430i xDrive', 'M440i', 'M440i xDrive'], seats: 4, doors: 2, transmission: 'automatic', carType: 'coupe', fuelType: 'gas' },
     '4 Series Gran Coupe': { trims: ['430i', '430i xDrive', 'M440i', 'M440i xDrive'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
-    '5 Series': { trims: ['530i', '530i xDrive', '540i', '540i xDrive', '530e', 'M550i xDrive'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas/hybrid' },
-    '7 Series': { trims: ['740i', '740i xDrive', '760i xDrive', 'M760e xDrive'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas/hybrid' },
+    '5 Series': { trims: ['530i', '530i xDrive', '540i xDrive', '550e xDrive'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas/hybrid' },
+    '7 Series': { trims: ['740i', '740i xDrive', '750e xDrive', '760i xDrive'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas/hybrid' },
     '8 Series': { trims: ['840i', '840i xDrive', 'M850i xDrive'], seats: 4, doors: 2, transmission: 'automatic', carType: 'coupe', fuelType: 'gas' },
     '8 Series Gran Coupe': { trims: ['840i', '840i xDrive', 'M850i xDrive'], seats: 4, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
     'X1': { trims: ['sDrive28i', 'xDrive28i'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas' },
     'X2': { trims: ['sDrive28i', 'xDrive28i', 'M35i'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas' },
-    'X3': { trims: ['sDrive30i', 'xDrive30i', 'xDrive30e', 'M40i'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas/hybrid' },
+    'X3': { trims: ['xDrive30', 'M50'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas' },
     'X4': { trims: ['xDrive30i', 'M40i'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas' },
-    'X5': { trims: ['sDrive40i', 'xDrive40i', 'xDrive45e', 'xDrive50e', 'M50i'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas/hybrid' },
+    'X5': { trims: ['sDrive40i', 'xDrive40i', 'xDrive50e', 'M60i', 'M Competition'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas/hybrid' },
     'X6': { trims: ['sDrive40i', 'xDrive40i', 'M50i'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas' },
-    'X7': { trims: ['xDrive40i', 'xDrive60i', 'M60i'], seats: 7, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas' },
+    'X7': { trims: ['xDrive40i', 'M60i', 'ALPINA XB7'], seats: 7, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas' },
     'Z4': { trims: ['sDrive30i', 'M40i'], seats: 2, doors: 2, transmission: 'automatic', carType: 'convertible', fuelType: 'gas' },
-    'i4': { trims: ['eDrive35', 'eDrive40', 'xDrive40', 'M50'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'electric' },
+    'i4': { trims: ['eDrive40', 'xDrive40', 'M50'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'electric' },
     'i5': { trims: ['eDrive40', 'xDrive40', 'M60 xDrive'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'electric' },
-    'i7': { trims: ['xDrive60', 'M70 xDrive'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'electric' },
-    'iX': { trims: ['xDrive40', 'xDrive50', 'M60'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'electric' },
+    'i7': { trims: ['eDrive50', 'xDrive60', 'M70 xDrive'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'electric' },
+    'iX': { trims: ['xDrive50', 'M60'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'electric' },
     'M2': { trims: ['Base'], seats: 4, doors: 2, transmission: 'both', carType: 'coupe', fuelType: 'gas' },
     'M3': { trims: ['Base', 'Competition', 'Competition xDrive'], seats: 5, doors: 4, transmission: 'both', carType: 'sedan', fuelType: 'gas' },
-    'M4': { trims: ['Base', 'Competition', 'Competition xDrive'], seats: 4, doors: 2, transmission: 'both', carType: 'coupe', fuelType: 'gas' },
-    'M5': { trims: ['Base', 'Competition'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
+    'M4': { trims: ['Base', 'Competition', 'Competition xDrive', 'CS'], seats: 4, doors: 2, transmission: 'both', carType: 'coupe', fuelType: 'gas' },
+    'M5': { trims: ['Base'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'hybrid' },
     'M8': { trims: ['Base', 'Competition'], seats: 4, doors: 2, transmission: 'automatic', carType: 'coupe', fuelType: 'gas' },
     'X3 M': { trims: ['Base', 'Competition'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas' },
     'X5 M': { trims: ['Base', 'Competition'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas' },
     'X6 M': { trims: ['Base', 'Competition'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas' },
-    'XM': { trims: ['Base', 'Label'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'hybrid' },
+    'XM': { trims: ['Base', 'Label Red'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'hybrid' },
   },
   'Mercedes-Benz': {
     'A-Class': { trims: ['A 220', 'A 220 4MATIC', 'AMG A 35 4MATIC'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
-    'C-Class': { trims: ['C 300', 'C 300 4MATIC', 'AMG C 43 4MATIC', 'AMG C 63 S'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas/hybrid' },
-    'E-Class': { trims: ['E 350', 'E 350 4MATIC', 'E 450 4MATIC', 'AMG E 53 4MATIC+', 'AMG E 63 S 4MATIC+'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas/hybrid' },
+    'C-Class': { trims: ['C 300', 'C 300 4MATIC', 'AMG C 43 4MATIC', 'AMG C 63 S E PERFORMANCE'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas/hybrid' },
+    'E-Class': { trims: ['E 350', 'E 350 4MATIC', 'E 450 4MATIC', 'E 450 4MATIC All-Terrain', 'AMG E 53 Hybrid'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas/hybrid' },
     'S-Class': { trims: ['S 500 4MATIC', 'S 580 4MATIC', 'S 580e 4MATIC', 'AMG S 63 E PERFORMANCE'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas/hybrid' },
     'CLA': { trims: ['CLA 250', 'CLA 250 4MATIC', 'AMG CLA 35 4MATIC', 'AMG CLA 45 4MATIC+'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
     'CLS': { trims: ['CLS 450 4MATIC', 'AMG CLS 53 4MATIC+'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas/hybrid' },
     'GLA': { trims: ['GLA 250', 'GLA 250 4MATIC', 'AMG GLA 35 4MATIC', 'AMG GLA 45 4MATIC+'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas' },
     'GLB': { trims: ['GLB 250', 'GLB 250 4MATIC', 'AMG GLB 35 4MATIC'], seats: 7, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas' },
-    'GLC': { trims: ['GLC 300', 'GLC 300 4MATIC', 'AMG GLC 43 4MATIC', 'AMG GLC 63 S 4MATIC+'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas/hybrid' },
-    'GLC Coupe': { trims: ['GLC 300 4MATIC', 'AMG GLC 43 4MATIC', 'AMG GLC 63 S 4MATIC+'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas/hybrid' },
-    'GLE': { trims: ['GLE 350', 'GLE 350 4MATIC', 'GLE 450 4MATIC', 'GLE 580 4MATIC', 'AMG GLE 53 4MATIC+', 'AMG GLE 63 S 4MATIC+'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas/hybrid' },
+    'GLC': { trims: ['GLC 300', 'GLC 300 4MATIC', 'GLC 350e 4MATIC', 'AMG GLC 43 4MATIC', 'AMG GLC 63 S E PERFORMANCE'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas/hybrid' },
+    'GLC Coupe': { trims: ['GLC 300 4MATIC', 'AMG GLC 43 4MATIC', 'AMG GLC 63 S E PERFORMANCE'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas/hybrid' },
+    'GLE': { trims: ['GLE 350', 'GLE 350 4MATIC', 'GLE 450 4MATIC', 'GLE 450e 4MATIC', 'GLE 580 4MATIC', 'AMG GLE 53 4MATIC+', 'AMG GLE 63 S 4MATIC+'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas/hybrid' },
     'GLE Coupe': { trims: ['GLE 450 4MATIC', 'AMG GLE 53 4MATIC+', 'AMG GLE 63 S 4MATIC+'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas/hybrid' },
     'GLS': { trims: ['GLS 450 4MATIC', 'GLS 580 4MATIC', 'AMG GLS 63 4MATIC+', 'Maybach GLS 600 4MATIC'], seats: 7, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas' },
-    'G-Class': { trims: ['G 550', 'AMG G 63', 'AMG G 63 4x4²'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas' },
+    'G-Class': { trims: ['G 550', 'AMG G 63', 'G 580 with EQ Technology'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas/electric' },
     'SL': { trims: ['SL 55 4MATIC+', 'SL 63 4MATIC+'], seats: 2, doors: 2, transmission: 'automatic', carType: 'convertible', fuelType: 'gas' },
     'AMG GT': { trims: ['43', '53', '55', '63', '63 S E PERFORMANCE'], seats: 4, doors: 2, transmission: 'automatic', carType: 'coupe', fuelType: 'gas/hybrid' },
     'AMG GT Roadster': { trims: ['Roadster', 'C Roadster', 'R Roadster'], seats: 2, doors: 2, transmission: 'automatic', carType: 'convertible', fuelType: 'gas' },
@@ -165,40 +174,40 @@ export const vehicleSpecs: VehicleDatabase = {
     'Maybach S-Class': { trims: ['S 580 4MATIC', 'S 680 4MATIC'], seats: 4, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
   },
   'Audi': {
-    'A3': { trims: ['Premium', 'Premium Plus', 'Prestige', 'S line'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
-    'A4': { trims: ['Premium', 'Premium Plus', 'Prestige', 'S line'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
-    'A5': { trims: ['Premium', 'Premium Plus', 'Prestige', 'S line'], seats: 4, doors: 2, transmission: 'automatic', carType: 'coupe', fuelType: 'gas' },
-    'A5 Sportback': { trims: ['Premium', 'Premium Plus', 'Prestige', 'S line'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
+    'A3': { trims: ['Premium', 'Premium Plus'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
+    'A4': { trims: ['Premium', 'Premium Plus', 'Prestige'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
+    'A5 Sportback': { trims: ['Premium', 'Premium Plus', 'Prestige'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
     'A6': { trims: ['Premium', 'Premium Plus', 'Prestige'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas/hybrid' },
-    'A7': { trims: ['Premium Plus', 'Prestige'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas/hybrid' },
-    'A8': { trims: ['55 TFSI', '60 TFSI e', 'L 55 TFSI', 'L 60 TFSI e'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas/hybrid' },
-    'Q3': { trims: ['Premium', 'Premium Plus', 'Prestige', 'S line'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas' },
+    'A6 allroad': { trims: ['Premium', 'Premium Plus', 'Prestige'], seats: 5, doors: 4, transmission: 'automatic', carType: 'wagon', fuelType: 'gas' },
+    'A7': { trims: ['Premium', 'Premium Plus', 'Prestige'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas/hybrid' },
+    'A8 L': { trims: ['55 TFSI', '60 TFSI e'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas/hybrid' },
+    'Q3': { trims: ['Premium', 'Premium Plus'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas' },
     'Q4 e-tron': { trims: ['Premium', 'Premium Plus', 'Prestige'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'electric' },
-    'Q5': { trims: ['Premium', 'Premium Plus', 'Prestige', 'S line'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas/hybrid' },
-    'Q5 Sportback': { trims: ['Premium', 'Premium Plus', 'Prestige', 'S line'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas/hybrid' },
+    'Q4 Sportback e-tron': { trims: ['Premium', 'Premium Plus', 'Prestige'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'electric' },
+    'Q5': { trims: ['Premium', 'Premium Plus', 'Prestige'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas/hybrid' },
+    'Q5 Sportback': { trims: ['Premium', 'Premium Plus', 'Prestige'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas/hybrid' },
     'Q7': { trims: ['Premium', 'Premium Plus', 'Prestige'], seats: 7, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas/hybrid' },
     'Q8': { trims: ['Premium', 'Premium Plus', 'Prestige'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas/hybrid' },
-    'Q8 e-tron': { trims: ['Premium', 'Premium Plus', 'Prestige'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'electric' },
-    'e-tron GT': { trims: ['Premium Plus', 'Prestige'], seats: 4, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'electric' },
     'TT': { trims: ['45 TFSI', '45 TFSI quattro'], seats: 4, doors: 2, transmission: 'automatic', carType: 'coupe', fuelType: 'gas' },
     'TT Roadster': { trims: ['45 TFSI', '45 TFSI quattro'], seats: 2, doors: 2, transmission: 'automatic', carType: 'convertible', fuelType: 'gas' },
     'R8': { trims: ['V10 performance', 'V10 performance Spyder'], seats: 2, doors: 2, transmission: 'automatic', carType: 'sports', fuelType: 'gas' },
-    'S3': { trims: ['Premium Plus', 'Prestige'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
+    'S3': { trims: ['Base'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
     'S4': { trims: ['Premium Plus', 'Prestige'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
-    'S5': { trims: ['Premium Plus', 'Prestige'], seats: 4, doors: 2, transmission: 'automatic', carType: 'coupe', fuelType: 'gas' },
     'S5 Sportback': { trims: ['Premium Plus', 'Prestige'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
     'S6': { trims: ['Premium Plus', 'Prestige'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
     'S7': { trims: ['Premium Plus', 'Prestige'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
     'S8': { trims: ['Base'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
+    'S e-tron GT': { trims: ['Premium Plus', 'Prestige'], seats: 4, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'electric' },
     'RS3': { trims: ['Base'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
-    'RS5': { trims: ['Coupe', 'Sportback'], seats: 4, doors: 2, transmission: 'automatic', carType: 'coupe', fuelType: 'gas' },
-    'RS6 Avant': { trims: ['Base', 'performance'], seats: 5, doors: 4, transmission: 'automatic', carType: 'wagon', fuelType: 'gas' },
-    'RS7': { trims: ['Base', 'performance'], seats: 4, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
-    'RS e-tron GT': { trims: ['Base'], seats: 4, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'electric' },
+    'RS5 Sportback': { trims: ['Base'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
+    'RS6 Avant': { trims: ['Performance', 'GT'], seats: 5, doors: 4, transmission: 'automatic', carType: 'wagon', fuelType: 'gas' },
+    'RS7': { trims: ['Performance'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
+    'RS e-tron GT': { trims: ['Performance'], seats: 4, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'electric' },
     'SQ5': { trims: ['Premium Plus', 'Prestige'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas' },
+    'SQ5 Sportback': { trims: ['Premium Plus', 'Prestige'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas' },
     'SQ7': { trims: ['Premium Plus', 'Prestige'], seats: 7, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas' },
     'SQ8': { trims: ['Premium Plus', 'Prestige'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas' },
-    'RS Q8': { trims: ['Base'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas' },
+    'RS Q8': { trims: ['Performance'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas' },
   },
 
   // ============================================
@@ -207,24 +216,24 @@ export const vehicleSpecs: VehicleDatabase = {
   'Lexus': {
     'IS': { trims: ['IS 300', 'IS 300 AWD', 'IS 350', 'IS 350 AWD', 'IS 500 F SPORT Performance'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
     'ES': { trims: ['ES 250 AWD', 'ES 300h', 'ES 350', 'ES 350 F SPORT'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas/hybrid' },
-    'LS': { trims: ['LS 500', 'LS 500 AWD', 'LS 500h', 'LS 500h AWD'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas/hybrid' },
+    'LS': { trims: ['LS 500', 'LS 500 AWD', 'LS 500h AWD'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas/hybrid' },
     'LC': { trims: ['LC 500', 'LC 500 Convertible', 'LC 500h'], seats: 4, doors: 2, transmission: 'automatic', carType: 'coupe', fuelType: 'gas/hybrid' },
-    'RC': { trims: ['RC 300', 'RC 300 AWD', 'RC 350', 'RC 350 AWD', 'RC F', 'RC F Fuji Speedway Edition'], seats: 4, doors: 2, transmission: 'automatic', carType: 'coupe', fuelType: 'gas' },
-    'UX': { trims: ['UX 200', 'UX 250h', 'UX 250h AWD'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas/hybrid' },
+    'RC': { trims: ['RC 300', 'RC 300 AWD', 'RC 350', 'RC 350 AWD', 'RC F', 'RC F Final Edition'], seats: 4, doors: 2, transmission: 'automatic', carType: 'coupe', fuelType: 'gas' },
+    'UX': { trims: ['UX 300h', 'UX 300h AWD'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'hybrid' },
     'NX': { trims: ['NX 250', 'NX 250 AWD', 'NX 350', 'NX 350h', 'NX 450h+'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas/hybrid' },
     'RX': { trims: ['RX 350', 'RX 350 AWD', 'RX 350h', 'RX 350h AWD', 'RX 450h+', 'RX 500h'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas/hybrid' },
-    'GX': { trims: ['GX 460', 'GX 550 Premium', 'GX 550 Premium+', 'GX 550 Luxury', 'GX 550 Overtrail', 'GX 550 Overtrail+'], seats: 7, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas/hybrid' },
-    'LX': { trims: ['LX 600 Standard', 'LX 600 Premium', 'LX 600 Luxury', 'LX 600 Ultra Luxury'], seats: 7, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas' },
+    'GX': { trims: ['GX 550 Premium', 'GX 550 Premium+', 'GX 550 Luxury', 'GX 550 Luxury+', 'GX 550 Overtrail', 'GX 550 Overtrail+'], seats: 7, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas' },
+    'LX 600': { trims: ['Premium', 'Luxury', 'F Sport Handling'], seats: 7, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas' },
+    'LX 700h': { trims: ['Luxury', 'F Sport Handling', 'Ultra Luxury', 'Overtrail'], seats: 7, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'hybrid' },
     'TX': { trims: ['TX 350', 'TX 500h', 'TX 550h+'], seats: 7, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas/hybrid' },
     'RZ': { trims: ['RZ 300e', 'RZ 450e'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'electric' },
   },
   'Acura': {
-    'ILX': { trims: ['Base', 'Premium', 'Technology', 'A-Spec'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
-    'Integra': { trims: ['Base', 'A-Spec', 'A-Spec Technology', 'Type S'], seats: 5, doors: 4, transmission: 'both', carType: 'hatchback', fuelType: 'gas' },
+    'Integra': { trims: ['Base', 'A-Spec', 'A-Spec w/ Technology', 'Type S'], seats: 5, doors: 4, transmission: 'both', carType: 'hatchback', fuelType: 'gas' },
     'TLX': { trims: ['Base', 'Technology', 'A-Spec', 'Advance', 'Type S', 'Type S Advance'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
     'RDX': { trims: ['Base', 'Technology', 'A-Spec', 'Advance', 'A-Spec Advance'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas' },
     'MDX': { trims: ['Base', 'Technology', 'A-Spec', 'Advance', 'Type S', 'Type S Advance'], seats: 7, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas' },
-    'NSX': { trims: ['Base', 'Type S'], seats: 2, doors: 2, transmission: 'automatic', carType: 'sports', fuelType: 'hybrid' },
+    'ZDX': { trims: ['A-Spec', 'Type S'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'electric' },
   },
   'Infiniti': {
     'Q50': { trims: ['Pure', 'Luxe', 'Sensory', 'Red Sport 400'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
@@ -255,7 +264,7 @@ export const vehicleSpecs: VehicleDatabase = {
     'Prius': { trims: ['LE', 'XLE', 'Limited', 'Prime LE', 'Prime XSE', 'Prime Limited'], seats: 5, doors: 4, transmission: 'automatic', carType: 'hatchback', fuelType: 'hybrid' },
     'GR86': { trims: ['Base', 'Premium', 'Special Edition'], seats: 4, doors: 2, transmission: 'both', carType: 'coupe', fuelType: 'gas' },
     'Supra': { trims: ['2.0', '3.0', '3.0 Premium', 'A91-MT Edition', 'A91-CF Edition'], seats: 2, doors: 2, transmission: 'both', carType: 'sports', fuelType: 'gas' },
-    'Mirai': { trims: ['XLE', 'Limited'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'electric' },
+    'Mirai': { trims: ['XLE', 'Limited'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'hydrogen' },
     'C-HR': { trims: ['LE', 'XLE', 'Nightshade', 'Limited'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas' },
     'Corolla Cross': { trims: ['L', 'LE', 'XLE', 'S', 'SE'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas/hybrid' },
     'RAV4': { trims: ['LE', 'XLE', 'XLE Premium', 'Adventure', 'TRD Off-Road', 'Limited', 'Prime SE', 'Prime XSE'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas/hybrid' },
@@ -274,7 +283,6 @@ export const vehicleSpecs: VehicleDatabase = {
     'Civic': { trims: ['LX', 'Sport', 'EX', 'EX-L', 'Touring', 'Si', 'Type R'], seats: 5, doors: 4, transmission: 'both', carType: 'sedan', fuelType: 'gas' },
     'Civic Hatchback': { trims: ['LX', 'Sport', 'EX-L', 'Sport Touring', 'Si', 'Type R'], seats: 5, doors: 4, transmission: 'both', carType: 'hatchback', fuelType: 'gas' },
     'Accord': { trims: ['LX', 'EX', 'EX-L', 'Sport', 'Sport-L', 'Touring'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas/hybrid' },
-    'Insight': { trims: ['LX', 'EX', 'Touring'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'hybrid' },
     'HR-V': { trims: ['LX', 'Sport', 'EX-L'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas' },
     'CR-V': { trims: ['LX', 'EX', 'EX-L', 'Sport', 'Sport-L', 'Touring', 'Sport Touring'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas/hybrid' },
     'Passport': { trims: ['Sport', 'EX-L', 'TrailSport', 'Touring', 'Elite'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas' },
@@ -286,14 +294,12 @@ export const vehicleSpecs: VehicleDatabase = {
   'Nissan': {
     'Sentra': { trims: ['S', 'SV', 'SR', 'SR Midnight Edition'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
     'Altima': { trims: ['S', 'SV', 'SR', 'SR VC-Turbo', 'SL', 'Platinum'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
-    'Maxima': { trims: ['SV', 'SR', 'Platinum'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
     'Versa': { trims: ['S', 'SV', 'SR'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
     'Leaf': { trims: ['S', 'SV Plus'], seats: 5, doors: 4, transmission: 'automatic', carType: 'hatchback', fuelType: 'electric' },
     'Z': { trims: ['Sport', 'Performance', 'NISMO'], seats: 2, doors: 2, transmission: 'both', carType: 'sports', fuelType: 'gas' },
     'GT-R': { trims: ['Premium', 'T-Spec', 'NISMO'], seats: 4, doors: 2, transmission: 'automatic', carType: 'sports', fuelType: 'gas' },
     'Kicks': { trims: ['S', 'SV', 'SR'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas' },
     'Rogue': { trims: ['S', 'SV', 'SL', 'Platinum', 'Rock Creek'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas' },
-    'Rogue Sport': { trims: ['S', 'SV', 'SL'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas' },
     'Murano': { trims: ['S', 'SV', 'SL', 'Platinum'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas' },
     'Pathfinder': { trims: ['S', 'SV', 'SL', 'Rock Creek', 'Platinum'], seats: 8, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas' },
     'Armada': { trims: ['S', 'SV', 'SL', 'Platinum', 'Midnight Edition'], seats: 8, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas' },
@@ -567,6 +573,1313 @@ export const vehicleSpecs: VehicleDatabase = {
 }
 
 // ============================================
+// YEAR-BASED VEHICLE DATABASE (2015-2025)
+// ============================================
+export const vehicleSpecsByYear: YearBasedVehicleDatabase = {
+  'Mercedes-Benz': {
+    'S-Class': {
+      // ===== W222 GENERATION (2014-2020) =====
+      '2015': {
+        trims: ['S 550', 'S 550 4MATIC', 'S 600', 'S 63 AMG 4MATIC', 'S 65 AMG'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['S 550', 'S 550 4MATIC', 'S 550e', 'S 600', 'AMG S 63 4MATIC', 'AMG S 65'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2017': {
+        trims: ['S 550', 'S 550 4MATIC', 'S 550e', 'S 600', 'AMG S 63 4MATIC', 'AMG S 65'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2018': {
+        trims: ['S 560', 'S 560 4MATIC', 'S 560e', 'AMG S 63 4MATIC', 'AMG S 65'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2019': {
+        trims: ['S 560', 'S 560 4MATIC', 'S 560e', 'AMG S 63 4MATIC', 'AMG S 65'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2020': {
+        trims: ['S 560', 'S 560 4MATIC', 'S 560e', 'AMG S 63 4MATIC', 'AMG S 65'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      // ===== W223 GENERATION (2021-Present) =====
+      '2021': {
+        trims: ['S 500 4MATIC', 'S 580 4MATIC', 'AMG S 63 E PERFORMANCE'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2022': {
+        trims: ['S 500 4MATIC', 'S 580 4MATIC', 'AMG S 63 E PERFORMANCE'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2023': {
+        trims: ['S 500 4MATIC', 'S 580 4MATIC', 'AMG S 63 E PERFORMANCE'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2024': {
+        trims: ['S 500 4MATIC', 'S 580 4MATIC', 'AMG S 63 E PERFORMANCE'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2025': {
+        trims: ['S 500 4MATIC', 'S 580 4MATIC', 'AMG S 63 E PERFORMANCE'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+    },
+  },
+  'Toyota': {
+    'Camry': {
+      // ===== XV50 GENERATION (2012-2017) =====
+      '2015': {
+        trims: ['L', 'LE', 'SE', 'XLE', 'XSE', 'Hybrid LE', 'Hybrid SE', 'Hybrid XLE'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2016': {
+        trims: ['LE', 'SE', 'XLE', 'XSE', 'Hybrid LE', 'Hybrid SE', 'Hybrid XLE'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2017': {
+        trims: ['LE', 'SE', 'XLE', 'XSE', 'Hybrid LE', 'Hybrid SE', 'Hybrid XLE'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      // ===== XV70 GENERATION (2018-Present) =====
+      '2018': {
+        trims: ['L', 'LE', 'SE', 'XLE', 'XSE', 'Hybrid LE', 'Hybrid SE', 'Hybrid XLE', 'Hybrid XSE'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2019': {
+        trims: ['L', 'LE', 'SE', 'XLE', 'XSE', 'Hybrid LE', 'Hybrid SE', 'Hybrid XLE', 'Hybrid XSE'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2020': {
+        trims: ['L', 'LE', 'SE', 'XLE', 'XSE', 'TRD', 'Hybrid LE', 'Hybrid SE', 'Hybrid XLE', 'Hybrid XSE'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2021': {
+        trims: ['LE', 'SE', 'SE Nightshade', 'XLE', 'XSE', 'TRD', 'Hybrid LE', 'Hybrid SE', 'Hybrid SE Nightshade', 'Hybrid XLE', 'Hybrid XSE'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2022': {
+        trims: ['LE', 'SE', 'SE Nightshade', 'XLE', 'XSE', 'TRD', 'Hybrid LE', 'Hybrid SE', 'Hybrid SE Nightshade', 'Hybrid XLE', 'Hybrid XSE'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2023': {
+        trims: ['LE', 'SE', 'SE Nightshade', 'XLE', 'XSE', 'TRD', 'Hybrid LE', 'Hybrid SE', 'Hybrid SE Nightshade', 'Hybrid XLE', 'Hybrid XSE'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2024': {
+        trims: ['LE', 'SE', 'SE Nightshade', 'XLE', 'XSE', 'TRD', 'Hybrid LE', 'Hybrid SE', 'Hybrid SE Nightshade', 'Hybrid XLE', 'Hybrid XSE'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2025': {
+        trims: ['LE', 'SE', 'SE Nightshade', 'XLE', 'XSE', 'TRD', 'Hybrid LE', 'Hybrid SE', 'Hybrid XLE', 'Hybrid XSE'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+    },
+    'Corolla': {
+      // ===== E170 GENERATION (2014-2018) =====
+      '2015': {
+        trims: ['L', 'LE', 'LE Eco', 'S', 'S Plus'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['L', 'LE', 'LE Eco', 'S', 'S Plus', 'S Premium'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2017': {
+        trims: ['L', 'LE', 'LE Eco', 'SE', 'XLE', 'XSE', 'iM'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['L', 'LE', 'LE Eco', 'SE', 'XLE', 'XSE'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      // ===== E210 GENERATION (2019-Present) =====
+      '2019': {
+        trims: ['L', 'LE', 'SE', 'XLE', 'XSE', 'Hatchback SE', 'Hatchback XSE'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2020': {
+        trims: ['L', 'LE', 'SE', 'XLE', 'XSE', 'Hybrid LE', 'Hybrid XLE'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2021': {
+        trims: ['L', 'LE', 'SE', 'XLE', 'XSE', 'Apex Edition', 'Hybrid LE', 'Hybrid XLE'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2022': {
+        trims: ['LE', 'SE', 'XLE', 'XSE', 'Apex Edition', 'Hybrid LE', 'Hybrid SE', 'Hybrid XLE'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2023': {
+        trims: ['LE', 'SE', 'XLE', 'XSE', 'Hybrid LE', 'Hybrid SE', 'Hybrid XLE', 'Hybrid XSE'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2024': {
+        trims: ['LE', 'SE', 'XLE', 'XSE', 'Hybrid LE', 'Hybrid SE', 'Hybrid XLE', 'Hybrid XSE'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2025': {
+        trims: ['LE', 'SE', 'XLE', 'XSE', 'Hybrid LE', 'Hybrid SE', 'Hybrid XLE', 'Hybrid XSE'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+    },
+    'RAV4': {
+      // ===== XA40 GENERATION (2013-2018) =====
+      '2015': {
+        trims: ['LE', 'XLE', 'Limited', 'Limited Platinum'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['LE', 'XLE', 'Limited', 'Limited Platinum', 'Hybrid LE', 'Hybrid XLE', 'Hybrid Limited'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2017': {
+        trims: ['LE', 'XLE', 'SE', 'Limited', 'Platinum', 'Hybrid LE', 'Hybrid XLE', 'Hybrid SE', 'Hybrid Limited'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2018': {
+        trims: ['LE', 'XLE', 'SE', 'Limited', 'Platinum', 'Adventure', 'Hybrid LE', 'Hybrid XLE', 'Hybrid SE', 'Hybrid Limited'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      // ===== XA50 GENERATION (2019-Present) =====
+      '2019': {
+        trims: ['LE', 'XLE', 'XLE Premium', 'Adventure', 'Limited', 'Hybrid LE', 'Hybrid XLE', 'Hybrid XSE', 'Hybrid Limited'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2020': {
+        trims: ['LE', 'XLE', 'XLE Premium', 'Adventure', 'TRD Off-Road', 'Limited', 'Hybrid LE', 'Hybrid XLE', 'Hybrid XSE', 'Hybrid Limited'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2021': {
+        trims: ['LE', 'XLE', 'XLE Premium', 'Adventure', 'TRD Off-Road', 'Limited', 'Prime SE', 'Prime XSE'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2022': {
+        trims: ['LE', 'XLE', 'XLE Premium', 'Adventure', 'TRD Off-Road', 'Limited', 'Hybrid Woodland Edition', 'Prime SE', 'Prime XSE'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2023': {
+        trims: ['LE', 'XLE', 'XLE Premium', 'Adventure', 'TRD Off-Road', 'Limited', 'Hybrid Woodland Edition', 'Prime SE', 'Prime XSE', 'Prime XSE Premium'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2024': {
+        trims: ['LE', 'XLE', 'XLE Premium', 'Adventure', 'TRD Off-Road', 'Limited', 'Hybrid Woodland Edition', 'Prime SE', 'Prime XSE'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2025': {
+        trims: ['LE', 'XLE', 'XLE Premium', 'Adventure', 'TRD Off-Road', 'Limited', 'Hybrid Woodland Edition', 'Prime SE', 'Prime XSE'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+    },
+    'Highlander': {
+      // ===== XU50 GENERATION (2014-2019) =====
+      '2015': {
+        trims: ['LE', 'LE Plus', 'XLE', 'Limited', 'Limited Platinum', 'Hybrid LE', 'Hybrid XLE', 'Hybrid Limited'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2016': {
+        trims: ['LE', 'LE Plus', 'XLE', 'SE', 'Limited', 'Limited Platinum', 'Hybrid LE', 'Hybrid XLE', 'Hybrid Limited', 'Hybrid Limited Platinum'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2017': {
+        trims: ['LE', 'LE Plus', 'XLE', 'SE', 'Limited', 'Limited Platinum', 'Hybrid LE', 'Hybrid XLE', 'Hybrid SE', 'Hybrid Limited', 'Hybrid Limited Platinum'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2018': {
+        trims: ['LE', 'LE Plus', 'XLE', 'SE', 'Limited', 'Limited Platinum', 'Hybrid LE', 'Hybrid XLE', 'Hybrid SE', 'Hybrid Limited', 'Hybrid Limited Platinum'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2019': {
+        trims: ['LE', 'LE Plus', 'XLE', 'SE', 'Limited', 'Limited Platinum', 'Hybrid LE', 'Hybrid XLE', 'Hybrid SE', 'Hybrid Limited', 'Hybrid Limited Platinum'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      // ===== XU70 GENERATION (2020-Present) =====
+      '2020': {
+        trims: ['L', 'LE', 'XLE', 'Limited', 'Platinum', 'Hybrid LE', 'Hybrid XLE', 'Hybrid Limited', 'Hybrid Platinum'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2021': {
+        trims: ['L', 'LE', 'XLE', 'XSE', 'Limited', 'Platinum', 'Hybrid LE', 'Hybrid XLE', 'Hybrid XSE', 'Hybrid Limited', 'Hybrid Platinum'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2022': {
+        trims: ['L', 'LE', 'XLE', 'XSE', 'Limited', 'Platinum', 'Hybrid LE', 'Hybrid XLE', 'Hybrid XSE', 'Hybrid Limited', 'Hybrid Platinum'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2023': {
+        trims: ['L', 'LE', 'XLE', 'XSE', 'Limited', 'Platinum', 'Hybrid LE', 'Hybrid XLE', 'Hybrid XSE', 'Hybrid Limited', 'Hybrid Platinum', 'Hybrid Bronze Edition'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2024': {
+        trims: ['L', 'LE', 'XLE', 'XSE', 'Limited', 'Platinum', 'Hybrid LE', 'Hybrid XLE', 'Hybrid XSE', 'Hybrid Limited', 'Hybrid Platinum'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2025': {
+        trims: ['LE', 'XLE', 'XSE', 'Limited', 'Platinum', 'Hybrid LE', 'Hybrid XLE', 'Hybrid XSE', 'Hybrid Limited', 'Hybrid Platinum'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+    },
+  },
+  'Honda': {
+    'Civic': {
+      // ===== 9TH GENERATION (2012-2015) =====
+      '2015': {
+        trims: ['LX', 'EX', 'EX-L', 'Si', 'EX-L Navi'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      // ===== 10TH GENERATION (2016-2021) =====
+      '2016': {
+        trims: ['LX', 'EX', 'EX-T', 'EX-L', 'Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2017': {
+        trims: ['LX', 'EX', 'EX-T', 'EX-L', 'Touring', 'Si', 'Type R', 'Hatchback LX', 'Hatchback Sport', 'Hatchback EX', 'Hatchback EX-L'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['LX', 'EX', 'EX-T', 'EX-L', 'Touring', 'Si', 'Type R'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2019': {
+        trims: ['LX', 'EX', 'Sport', 'EX-L', 'Touring', 'Si', 'Type R'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2020': {
+        trims: ['LX', 'Sport', 'EX', 'EX-L', 'Touring', 'Si', 'Type R'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2021': {
+        trims: ['LX', 'Sport', 'EX', 'EX-L', 'Touring', 'Si', 'Type R'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      // ===== 11TH GENERATION (2022-Present) =====
+      '2022': {
+        trims: ['LX', 'Sport', 'EX', 'Touring', 'Si'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2023': {
+        trims: ['LX', 'Sport', 'EX', 'Touring', 'Si', 'Type R'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2024': {
+        trims: ['LX', 'Sport', 'EX', 'Touring', 'Si', 'Type R'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2025': {
+        trims: ['LX', 'Sport', 'EX', 'Touring', 'Si', 'Type R', 'Hybrid Sport', 'Hybrid Sport Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+    },
+    'Accord': {
+      // ===== 9TH GENERATION (2013-2017) =====
+      '2015': {
+        trims: ['LX', 'Sport', 'EX', 'EX-L', 'EX-L V6', 'Touring', 'Hybrid EX-L', 'Hybrid Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2016': {
+        trims: ['LX', 'Sport', 'EX', 'EX-L', 'EX-L V6', 'Touring', 'Touring V6'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2017': {
+        trims: ['LX', 'Sport', 'Sport SE', 'EX', 'EX-L', 'EX-L V6', 'Touring', 'Touring V6', 'Hybrid EX-L', 'Hybrid Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      // ===== 10TH GENERATION (2018-2022) =====
+      '2018': {
+        trims: ['LX', 'Sport', 'EX', 'EX-L', 'Touring', 'Hybrid EX-L', 'Hybrid Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2019': {
+        trims: ['LX', 'Sport', 'EX', 'EX-L', 'Touring', 'Hybrid EX-L', 'Hybrid Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2020': {
+        trims: ['LX', 'Sport', 'EX', 'EX-L', 'Touring', 'Hybrid EX-L', 'Hybrid Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2021': {
+        trims: ['LX', 'Sport', 'Sport SE', 'EX', 'EX-L', 'Touring', 'Hybrid EX-L', 'Hybrid Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2022': {
+        trims: ['LX', 'Sport', 'Sport SE', 'EX', 'EX-L', 'Touring', 'Hybrid Sport', 'Hybrid EX-L', 'Hybrid Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic/manual',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      // ===== 11TH GENERATION (2023-Present) =====
+      '2023': {
+        trims: ['LX', 'Sport', 'EX-L', 'Sport-L', 'Touring', 'Hybrid Sport', 'Hybrid Sport-L', 'Hybrid Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2024': {
+        trims: ['LX', 'Sport', 'EX-L', 'Sport-L', 'Touring', 'Hybrid Sport', 'Hybrid Sport-L', 'Hybrid Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2025': {
+        trims: ['LX', 'Sport', 'EX-L', 'Sport-L', 'Touring', 'Hybrid Sport', 'Hybrid Sport-L', 'Hybrid Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+    },
+    'CR-V': {
+      // ===== 4TH GENERATION (2012-2016) =====
+      '2015': {
+        trims: ['LX', 'SE', 'EX', 'EX-L', 'Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['LX', 'SE', 'EX', 'EX-L', 'Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      // ===== 5TH GENERATION (2017-2022) =====
+      '2017': {
+        trims: ['LX', 'EX', 'EX-L', 'Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['LX', 'EX', 'EX-L', 'Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2019': {
+        trims: ['LX', 'EX', 'EX-L', 'Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2020': {
+        trims: ['LX', 'EX', 'EX-L', 'Touring', 'Hybrid LX', 'Hybrid EX', 'Hybrid EX-L', 'Hybrid Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2021': {
+        trims: ['LX', 'EX', 'EX-L', 'Touring', 'Special Edition', 'Hybrid LX', 'Hybrid EX', 'Hybrid EX-L', 'Hybrid Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2022': {
+        trims: ['LX', 'EX', 'EX-L', 'Touring', 'Special Edition', 'Hybrid LX', 'Hybrid Sport', 'Hybrid EX-L', 'Hybrid Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      // ===== 6TH GENERATION (2023-Present) =====
+      '2023': {
+        trims: ['LX', 'EX', 'EX-L', 'Sport', 'Sport Touring', 'Hybrid Sport', 'Hybrid Sport Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2024': {
+        trims: ['LX', 'EX', 'EX-L', 'Sport', 'Sport Touring', 'Hybrid Sport', 'Hybrid Sport Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2025': {
+        trims: ['LX', 'EX', 'EX-L', 'Sport', 'Sport Touring', 'Hybrid Sport', 'Hybrid Sport Touring'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+    },
+  },
+  'Ford': {
+    'F-150': {
+      // ===== 13TH GENERATION (2015-2020) =====
+      '2015': {
+        trims: ['XL', 'XLT', 'Lariat', 'King Ranch', 'Platinum', 'Limited'],
+        seats: 6,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'truck',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['XL', 'XLT', 'Lariat', 'King Ranch', 'Platinum', 'Limited'],
+        seats: 6,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'truck',
+        fuelType: 'gas'
+      },
+      '2017': {
+        trims: ['XL', 'XLT', 'Lariat', 'Raptor', 'King Ranch', 'Platinum', 'Limited'],
+        seats: 6,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'truck',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['XL', 'XLT', 'Lariat', 'Raptor', 'King Ranch', 'Platinum', 'Limited'],
+        seats: 6,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'truck',
+        fuelType: 'gas'
+      },
+      '2019': {
+        trims: ['XL', 'XLT', 'Lariat', 'Raptor', 'King Ranch', 'Platinum', 'Limited'],
+        seats: 6,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'truck',
+        fuelType: 'gas'
+      },
+      '2020': {
+        trims: ['XL', 'XLT', 'Lariat', 'Raptor', 'King Ranch', 'Platinum', 'Limited'],
+        seats: 6,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'truck',
+        fuelType: 'gas'
+      },
+      // ===== 14TH GENERATION (2021-Present) =====
+      '2021': {
+        trims: ['XL', 'XLT', 'Lariat', 'King Ranch', 'Platinum', 'Limited', 'Tremor'],
+        seats: 6,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'truck',
+        fuelType: 'gas/hybrid'
+      },
+      '2022': {
+        trims: ['XL', 'XLT', 'Lariat', 'Raptor', 'King Ranch', 'Platinum', 'Limited', 'Tremor', 'Lightning'],
+        seats: 6,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'truck',
+        fuelType: 'gas/hybrid/electric'
+      },
+      '2023': {
+        trims: ['XL', 'XLT', 'Lariat', 'Raptor', 'Raptor R', 'King Ranch', 'Platinum', 'Limited', 'Tremor', 'Lightning'],
+        seats: 6,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'truck',
+        fuelType: 'gas/hybrid/electric'
+      },
+      '2024': {
+        trims: ['XL', 'XLT', 'Lariat', 'Raptor', 'Raptor R', 'King Ranch', 'Platinum', 'Limited', 'Tremor', 'Lightning'],
+        seats: 6,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'truck',
+        fuelType: 'gas/hybrid/electric'
+      },
+      '2025': {
+        trims: ['XL', 'XLT', 'Lariat', 'Raptor', 'King Ranch', 'Platinum', 'Limited', 'Tremor', 'Lightning'],
+        seats: 6,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'truck',
+        fuelType: 'gas/hybrid/electric'
+      },
+    },
+    'Explorer': {
+      // ===== 5TH GENERATION (2011-2019) =====
+      '2015': {
+        trims: ['Base', 'XLT', 'Limited', 'Sport', 'Platinum'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['Base', 'XLT', 'Limited', 'Sport', 'Platinum'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2017': {
+        trims: ['Base', 'XLT', 'Limited', 'Sport', 'Platinum'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['Base', 'XLT', 'Limited', 'Sport', 'Platinum'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2019': {
+        trims: ['Base', 'XLT', 'Limited', 'Sport', 'Platinum'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      // ===== 6TH GENERATION (2020-Present) =====
+      '2020': {
+        trims: ['XLT', 'Limited', 'ST', 'Platinum', 'Hybrid Limited', 'Hybrid Platinum'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2021': {
+        trims: ['XLT', 'Limited', 'ST', 'Timberline', 'King Ranch', 'Platinum', 'Hybrid XLT', 'Hybrid Limited', 'Hybrid Platinum'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2022': {
+        trims: ['XLT', 'Limited', 'ST', 'Timberline', 'King Ranch', 'Platinum', 'Hybrid XLT', 'Hybrid Limited', 'Hybrid Platinum'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2023': {
+        trims: ['XLT', 'Limited', 'ST', 'ST-Line', 'Timberline', 'King Ranch', 'Platinum', 'Hybrid XLT', 'Hybrid Limited'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2024': {
+        trims: ['XLT', 'Limited', 'ST', 'ST-Line', 'Timberline', 'King Ranch', 'Platinum', 'Hybrid XLT', 'Hybrid Limited'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2025': {
+        trims: ['XLT', 'Limited', 'ST', 'ST-Line', 'Timberline', 'King Ranch', 'Platinum', 'Hybrid XLT', 'Hybrid Limited'],
+        seats: 7,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+    },
+    'Escape': {
+      // ===== 3RD GENERATION (2013-2019) =====
+      '2015': {
+        trims: ['S', 'SE', 'Titanium'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['S', 'SE', 'Titanium'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2017': {
+        trims: ['S', 'SE', 'Titanium'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['S', 'SE', 'SEL', 'Titanium'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2019': {
+        trims: ['S', 'SE', 'SEL', 'Titanium'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      // ===== 4TH GENERATION (2020-Present) =====
+      '2020': {
+        trims: ['S', 'SE', 'SEL', 'Titanium', 'Hybrid SE', 'Hybrid SEL', 'Hybrid Titanium'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2021': {
+        trims: ['S', 'SE', 'SEL', 'Titanium', 'Hybrid SE', 'Hybrid SEL', 'Hybrid Titanium'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2022': {
+        trims: ['S', 'SE', 'SEL', 'Titanium', 'Hybrid SE', 'Hybrid SEL', 'Hybrid Titanium'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2023': {
+        trims: ['Active', 'ST-Line', 'ST-Line Elite', 'Hybrid Active', 'Plug-In Hybrid ST-Line Elite'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2024': {
+        trims: ['Active', 'ST-Line', 'ST-Line Elite', 'Platinum', 'Hybrid Active', 'Plug-In Hybrid ST-Line Elite', 'Plug-In Hybrid Platinum'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+      '2025': {
+        trims: ['Active', 'ST-Line', 'ST-Line Elite', 'Platinum', 'Hybrid Active', 'Plug-In Hybrid ST-Line Elite', 'Plug-In Hybrid Platinum'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas/hybrid'
+      },
+    },
+  },
+  'Chevrolet': {
+    'Silverado 1500': {
+      // ===== 3RD GENERATION (2014-2018) =====
+      '2015': {
+        trims: ['WT', 'LS', 'LT', 'LTZ', 'High Country'],
+        seats: 6,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'truck',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['WT', 'LS', 'LT', 'LTZ', 'High Country'],
+        seats: 6,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'truck',
+        fuelType: 'gas'
+      },
+      '2017': {
+        trims: ['WT', 'LS', 'LT', 'LTZ', 'High Country'],
+        seats: 6,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'truck',
+        fuelType: 'gas'
+      },
+      '2018': {
+        trims: ['WT', 'LS', 'Custom', 'LT', 'LTZ', 'High Country'],
+        seats: 6,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'truck',
+        fuelType: 'gas'
+      },
+      // ===== 4TH GENERATION (2019-Present) =====
+      '2019': {
+        trims: ['WT', 'Custom', 'Custom Trail Boss', 'LT', 'RST', 'LT Trail Boss', 'LTZ', 'High Country'],
+        seats: 6,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'truck',
+        fuelType: 'gas'
+      },
+      '2020': {
+        trims: ['WT', 'Custom', 'Custom Trail Boss', 'LT', 'RST', 'LT Trail Boss', 'LTZ', 'High Country'],
+        seats: 6,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'truck',
+        fuelType: 'gas'
+      },
+      '2021': {
+        trims: ['WT', 'Custom', 'Custom Trail Boss', 'LT', 'RST', 'LT Trail Boss', 'LTZ', 'High Country'],
+        seats: 6,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'truck',
+        fuelType: 'gas'
+      },
+      '2022': {
+        trims: ['WT', 'Custom', 'Custom Trail Boss', 'LT', 'RST', 'LT Trail Boss', 'LTZ', 'High Country', 'ZR2'],
+        seats: 6,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'truck',
+        fuelType: 'gas'
+      },
+      '2023': {
+        trims: ['WT', 'Custom', 'Custom Trail Boss', 'LT', 'RST', 'LT Trail Boss', 'LTZ', 'High Country', 'ZR2'],
+        seats: 6,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'truck',
+        fuelType: 'gas'
+      },
+      '2024': {
+        trims: ['WT', 'Custom', 'Custom Trail Boss', 'LT', 'RST', 'LT Trail Boss', 'LTZ', 'High Country', 'ZR2'],
+        seats: 6,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'truck',
+        fuelType: 'gas'
+      },
+      '2025': {
+        trims: ['WT', 'Custom', 'LT', 'RST', 'LT Trail Boss', 'LTZ', 'High Country', 'ZR2'],
+        seats: 6,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'truck',
+        fuelType: 'gas'
+      },
+    },
+    'Equinox': {
+      // ===== 2ND GENERATION (2010-2017) =====
+      '2015': {
+        trims: ['L', 'LS', 'LT', 'LTZ'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2016': {
+        trims: ['L', 'LS', 'LT', 'LTZ'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2017': {
+        trims: ['L', 'LS', 'LT', 'Premier'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      // ===== 3RD GENERATION (2018-Present) =====
+      '2018': {
+        trims: ['L', 'LS', 'LT', 'Premier'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2019': {
+        trims: ['L', 'LS', 'LT', 'Premier'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2020': {
+        trims: ['L', 'LS', 'LT', 'Premier'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2021': {
+        trims: ['L', 'LS', 'LT', 'Premier'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2022': {
+        trims: ['LS', 'LT', 'RS', 'Premier'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2023': {
+        trims: ['LS', 'LT', 'RS', 'Premier'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2024': {
+        trims: ['LS', 'LT', 'RS', 'Premier', 'ACTIV'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+      '2025': {
+        trims: ['LS', 'LT', 'RS', 'Premier', 'ACTIV'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'suv',
+        fuelType: 'gas'
+      },
+    },
+    'Malibu': {
+      // ===== 8TH GENERATION (2013-2015) =====
+      '2015': {
+        trims: ['LS', 'LT', 'LTZ'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      // ===== 9TH GENERATION (2016-Present) =====
+      '2016': {
+        trims: ['L', 'LS', 'LT', 'Premier', 'Hybrid'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2017': {
+        trims: ['L', 'LS', 'LT', 'Premier', 'Hybrid'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2018': {
+        trims: ['L', 'LS', 'LT', 'Premier', 'Hybrid'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2019': {
+        trims: ['LS', 'LT', 'RS', 'Premier', 'Hybrid'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas/hybrid'
+      },
+      '2020': {
+        trims: ['LS', 'LT', 'RS', 'Premier'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2021': {
+        trims: ['LS', 'LT', 'RS', 'Premier'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2022': {
+        trims: ['LS', 'LT', 'RS', 'Premier'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2023': {
+        trims: ['LS', 'LT', 'RS', 'Premier'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2024': {
+        trims: ['LS', 'LT', 'RS', 'Premier'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+      '2025': {
+        trims: ['LS', 'LT', 'RS', 'Premier'],
+        seats: 5,
+        doors: 4,
+        transmission: 'automatic',
+        carType: 'sedan',
+        fuelType: 'gas'
+      },
+    },
+  },
+}
+
+// ============================================
 // HELPER FUNCTIONS
 // ============================================
 
@@ -586,9 +1899,64 @@ export function getModelSpec(make: string, model: string): CarSpec | null {
   return vehicleSpecs[make]?.[model] || null
 }
 
-// Get trims for a specific make/model
-export function getTrimsByModel(make: string, model: string): string[] {
+// Get trims for a specific make/model (optionally filtered by year)
+export function getTrimsByModel(make: string, model: string, year?: string): string[] {
+  // If year provided and year-specific data exists, use it
+  if (year && vehicleSpecsByYear[make]?.[model]?.[year]) {
+    return vehicleSpecsByYear[make][model][year].trims
+  }
+
+  // Fallback to current year if available in year-based data
+  if (vehicleSpecsByYear[make]?.[model]) {
+    const currentYear = new Date().getFullYear().toString()
+    if (vehicleSpecsByYear[make][model][currentYear]) {
+      return vehicleSpecsByYear[make][model][currentYear].trims
+    }
+  }
+
+  // Final fallback to legacy database
   return vehicleSpecs[make]?.[model]?.trims || []
+}
+
+// Get available years for a specific make/model from year-based data
+export function getYearsByModel(make: string, model: string): string[] {
+  if (!vehicleSpecsByYear[make]?.[model]) {
+    return []
+  }
+  return Object.keys(vehicleSpecsByYear[make][model]).sort((a, b) => parseInt(b) - parseInt(a))
+}
+
+// Check if year-specific data exists for a make/model/year
+export function hasYearData(make: string, model: string, year: string): boolean {
+  return Boolean(vehicleSpecsByYear[make]?.[model]?.[year])
+}
+
+// Get the closest available year for a make/model if exact year is missing
+export function getClosestYear(make: string, model: string, targetYear: string): string | null {
+  const availableYears = getYearsByModel(make, model)
+  if (availableYears.length === 0) {
+    return null
+  }
+
+  // If exact year exists, return it
+  if (availableYears.includes(targetYear)) {
+    return targetYear
+  }
+
+  // Find closest year
+  const target = parseInt(targetYear)
+  let closest = availableYears[0]
+  let minDiff = Math.abs(parseInt(closest) - target)
+
+  for (const year of availableYears) {
+    const diff = Math.abs(parseInt(year) - target)
+    if (diff < minDiff) {
+      minDiff = diff
+      closest = year
+    }
+  }
+
+  return closest
 }
 
 // Get available years (from current year down to 2000)

@@ -7,45 +7,81 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/lib/auth/next-auth-config'
 import { prisma } from '@/app/lib/database/prisma'
-import { SignJWT } from 'jose'
+import { sign } from 'jsonwebtoken'
 import { nanoid } from 'nanoid'
 import { sendOAuthWelcomeEmail } from '@/app/lib/email/oauth-welcome-sender'
+import { sendHostOAuthWelcomeEmail } from '@/app/lib/email/host-oauth-welcome-sender'
 
 // JWT secrets (same as oauth-redirect)
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-key'
-)
-const JWT_REFRESH_SECRET = new TextEncoder().encode(
-  process.env.JWT_REFRESH_SECRET || 'fallback-refresh-secret'
-)
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key'
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'fallback-refresh-secret'
 
-// Helper to generate custom JWT tokens
-async function generateCustomTokens(user: { id: string; email: string; name: string | null; role: string }) {
+// Helper to generate HOST JWT tokens (for rental hosts)
+function generateHostTokens(host: {
+  id: string
+  userId: string
+  email: string
+  name: string
+  approvalStatus: string
+}) {
+  const accessToken = sign(
+    {
+      userId: host.userId,
+      hostId: host.id,
+      email: host.email,
+      name: host.name,
+      role: 'BUSINESS',
+      isRentalHost: true,
+      approvalStatus: host.approvalStatus
+    },
+    JWT_SECRET,
+    { expiresIn: '15m' }
+  )
+
+  const refreshToken = sign(
+    {
+      userId: host.userId,
+      hostId: host.id,
+      email: host.email,
+      type: 'refresh'
+    },
+    JWT_REFRESH_SECRET,
+    { expiresIn: '7d' }
+  )
+
+  return { accessToken, refreshToken }
+}
+
+// Helper to generate GUEST JWT tokens (for regular users)
+function generateGuestTokens(user: {
+  id: string
+  email: string
+  name: string | null
+  role: string
+}) {
   const tokenId = nanoid()
   const refreshTokenId = nanoid()
-  const refreshFamily = nanoid()
 
-  const accessToken = await new SignJWT({
-    userId: user.id,
-    email: user.email,
-    name: user.name,
-    role: user.role,
-    jti: tokenId
-  })
-    .setProtectedHeader({ alg: 'HS256' })
-    .setIssuedAt()
-    .setExpirationTime('15m')
-    .sign(JWT_SECRET)
+  const accessToken = sign(
+    {
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      jti: tokenId
+    },
+    JWT_SECRET,
+    { expiresIn: '15m' }
+  )
 
-  const refreshToken = await new SignJWT({
-    userId: user.id,
-    family: refreshFamily,
-    jti: refreshTokenId
-  })
-    .setProtectedHeader({ alg: 'HS256' })
-    .setIssuedAt()
-    .setExpirationTime('7d')
-    .sign(JWT_REFRESH_SECRET)
+  const refreshToken = sign(
+    {
+      userId: user.id,
+      jti: refreshTokenId
+    },
+    JWT_REFRESH_SECRET,
+    { expiresIn: '7d' }
+  )
 
   return { accessToken, refreshToken }
 }
@@ -63,7 +99,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { phone, roleHint } = body
+    const { phone, roleHint, carData } = body
 
     if (!phone) {
       return NextResponse.json(
@@ -79,6 +115,48 @@ export async function POST(request: NextRequest) {
         { error: 'Invalid phone number format' },
         { status: 400 }
       )
+    }
+
+    // Validate car data for hosts
+    if (roleHint === 'host') {
+      if (!carData) {
+        return NextResponse.json(
+          { error: 'Vehicle information is required for hosts' },
+          { status: 400 }
+        )
+      }
+
+      const { make, model, year, color, city, state, zipCode } = carData
+
+      if (!make || !model || !year || !color) {
+        return NextResponse.json(
+          { error: 'Vehicle make, model, year, and color are required' },
+          { status: 400 }
+        )
+      }
+
+      if (!city || !state || !zipCode) {
+        return NextResponse.json(
+          { error: 'Vehicle location (city, state, zip code) is required' },
+          { status: 400 }
+        )
+      }
+
+      if (!/^\d{5}$/.test(zipCode)) {
+        return NextResponse.json(
+          { error: 'Invalid zip code format. Must be 5 digits.' },
+          { status: 400 }
+        )
+      }
+
+      const yearNum = parseInt(year)
+      const currentYear = new Date().getFullYear()
+      if (yearNum < 1990 || yearNum > currentYear + 1) {
+        return NextResponse.json(
+          { error: `Invalid vehicle year. Must be between 1990 and ${currentYear + 1}.` },
+          { status: 400 }
+        )
+      }
     }
 
     const pendingOAuth = (session.user as any).pendingOAuth
@@ -181,18 +259,111 @@ export async function POST(request: NextRequest) {
         if (roleHint === 'host') {
           // Create RentalHost for host signup
           // Note: Host will still need approval, this just creates the profile
-          await tx.rentalHost.create({
+          const host = await tx.rentalHost.create({
             data: {
               userId: user.id,
               email: pendingOAuth.email,
               name: pendingOAuth.name || '',
               phone: digitsOnly,
               profilePhoto: pendingOAuth.image,
+
+              // Location from car data
+              city: carData!.city,
+              state: carData!.state,
+              zipCode: carData!.zipCode,
+
+              // Status
               approvalStatus: 'PENDING',
-              isVerified: false
+              isVerified: true, // OAuth email is verified
+              active: false,
+              dashboardAccess: false,
+
+              // Permissions (all false initially)
+              canViewBookings: false,
+              canEditCalendar: false,
+              canSetPricing: false,
+              canMessageGuests: false,
+              canWithdrawFunds: false,
+
+              // Default commission
+              commissionRate: 0.20,
+              hostType: 'REAL'
             }
           })
-          console.log(`[Complete Profile] Created RentalHost profile (pending approval)`)
+          console.log(`[Complete Profile] Created RentalHost profile (pending approval) with verified email`)
+
+          // 4. Create Car
+          await tx.rentalCar.create({
+            data: {
+              hostId: host.id,
+
+              // Vehicle info from form
+              make: carData!.make,
+              model: carData!.model,
+              year: parseInt(carData!.year),
+              trim: carData!.trim || null,
+              color: carData!.color,
+
+              // Location (matches host)
+              city: carData!.city,
+              state: carData!.state,
+              zipCode: carData!.zipCode,
+              address: '',
+
+              // Status - NOT ACTIVE until fully completed
+              isActive: false,
+
+              // Defaults
+              carType: 'midsize',
+              seats: 5,
+              doors: 4,
+              transmission: 'automatic',
+              fuelType: 'gas',
+
+              // Pricing - must be set before activation
+              dailyRate: 0,
+              weeklyRate: 0,
+              monthlyRate: 0,
+              weeklyDiscount: 15,
+              monthlyDiscount: 30,
+              deliveryFee: 35,
+
+              // Delivery options
+              airportPickup: true,
+              hotelDelivery: true,
+              homeDelivery: false,
+
+              // Availability
+              instantBook: false,
+              advanceNotice: 24,
+              minTripDuration: 1,
+              maxTripDuration: 30,
+
+              // Insurance
+              insuranceIncluded: false,
+              insuranceDaily: 25,
+
+              // Stats
+              totalTrips: 0,
+              rating: 0,
+
+              // JSON fields
+              features: '[]',
+              rules: '[]',
+
+              // Required fields (null until completed)
+              vin: null,
+              licensePlate: null,
+              description: null,
+              currentMileage: null,
+              registeredOwner: null,
+              registrationState: carData!.state,
+              registrationExpiryDate: null,
+              titleStatus: 'Clean',
+              garageAddress: null
+            }
+          })
+          console.log(`[Complete Profile] Created RentalCar for host`)
         } else {
           // Create ReviewerProfile for guest signup
           await tx.reviewerProfile.create({
@@ -217,18 +388,34 @@ export async function POST(request: NextRequest) {
 
       console.log(`[Complete Profile] Transaction complete - new user created: ${newUser.id}`)
 
-      // Send welcome email for GUEST signups only (hosts have separate approval flow)
-      if (roleHint !== 'host' && newUser.email) {
+      // Send role-specific welcome email
+      if (newUser.email) {
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://itwhip.com'
         try {
-          await sendOAuthWelcomeEmail(newUser.email, {
-            userName: newUser.name || 'Guest',
-            userEmail: newUser.email,
-            documentsUrl: `${appUrl}/profile?tab=documents`,
-            insuranceUrl: `${appUrl}/profile?tab=insurance`,
-            dashboardUrl: `${appUrl}/dashboard`
-          })
-          console.log(`[Complete Profile] Sent welcome email to: ${newUser.email}`)
+          if (roleHint === 'host') {
+            // Send host OAuth welcome email with verification checklist
+            await sendHostOAuthWelcomeEmail(newUser.email, {
+              userName: newUser.name || 'Host',
+              userEmail: newUser.email,
+              profileUrl: `${appUrl}/host/profile?tab=profile`,
+              documentsUrl: `${appUrl}/host/profile?tab=documents`,
+              carsUrl: `${appUrl}/host/cars`,
+              earningsUrl: `${appUrl}/host/earnings`,
+              insuranceUrl: `${appUrl}/host/profile?tab=insurance`,
+              dashboardUrl: `${appUrl}/host/dashboard`
+            })
+            console.log(`[Complete Profile] Sent host OAuth welcome email to: ${newUser.email}`)
+          } else {
+            // Send guest OAuth welcome email
+            await sendOAuthWelcomeEmail(newUser.email, {
+              userName: newUser.name || 'Guest',
+              userEmail: newUser.email,
+              documentsUrl: `${appUrl}/profile?tab=documents`,
+              insuranceUrl: `${appUrl}/profile?tab=insurance`,
+              dashboardUrl: `${appUrl}/dashboard`
+            })
+            console.log(`[Complete Profile] Sent guest OAuth welcome email to: ${newUser.email}`)
+          }
         } catch (emailError) {
           // Don't fail the signup if email fails - just log it
           console.error(`[Complete Profile] Failed to send welcome email:`, emailError)
@@ -236,7 +423,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Generate tokens and return response with cookies
-      return await createSuccessResponse(newUser, digitsOnly)
+      return await createSuccessResponse(newUser, digitsOnly, roleHint || 'guest')
     }
 
     // ========================================================================
@@ -285,6 +472,22 @@ export async function POST(request: NextRequest) {
       console.log(`[Complete Profile] No ReviewerProfile to update (this is OK):`, err instanceof Error ? err.message : 'unknown')
     }
 
+    // Also update RentalHost if exists
+    try {
+      const updatedHost = await prisma.rentalHost.updateMany({
+        where: { userId: userId },
+        data: {
+          phone: digitsOnly
+        }
+      })
+      console.log(`[Complete Profile] RentalHost.updateMany result:`, {
+        count: updatedHost.count
+      })
+    } catch (err) {
+      // RentalHost might not exist, that's okay
+      console.log(`[Complete Profile] No RentalHost to update (this is OK):`, err instanceof Error ? err.message : 'unknown')
+    }
+
     console.log(`[Complete Profile] Phone saved successfully for existing user ${email}: ${digitsOnly}`)
 
     // For existing users, just return success (they already have JWT cookies)
@@ -303,13 +506,51 @@ export async function POST(request: NextRequest) {
 }
 
 // Helper function to create response with JWT cookies for new users
-async function createSuccessResponse(user: any, phone: string) {
-  const tokens = await generateCustomTokens({
-    id: user.id,
-    email: user.email,
-    name: user.name,
-    role: user.role || 'CLAIMED'
-  })
+async function createSuccessResponse(user: any, phone: string, roleHint: string = 'guest') {
+  let tokens: { accessToken: string; refreshToken: string }
+  let isHost = false
+
+  // Generate role-specific tokens
+  if (roleHint === 'host') {
+    // Fetch the RentalHost profile to get hostId and approvalStatus
+    const hostProfile = await prisma.rentalHost.findFirst({
+      where: { userId: user.id },
+      select: {
+        id: true,
+        approvalStatus: true
+      }
+    })
+
+    if (hostProfile) {
+      tokens = generateHostTokens({
+        id: hostProfile.id,
+        userId: user.id,
+        email: user.email,
+        name: user.name || '',
+        approvalStatus: hostProfile.approvalStatus
+      })
+      isHost = true
+      console.log(`[Complete Profile] Generated HOST tokens with approvalStatus: ${hostProfile.approvalStatus}`)
+    } else {
+      // Fallback to guest tokens if host profile not found
+      tokens = generateGuestTokens({
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role || 'CLAIMED'
+      })
+      console.log(`[Complete Profile] Host profile not found, generated guest tokens`)
+    }
+  } else {
+    // Generate guest tokens
+    tokens = generateGuestTokens({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role || 'CLAIMED'
+    })
+    console.log(`[Complete Profile] Generated GUEST tokens`)
+  }
 
   const response = NextResponse.json({
     success: true,
@@ -323,7 +564,7 @@ async function createSuccessResponse(user: any, phone: string) {
     isNewUser: true // Flag for frontend to know this was a new user creation
   })
 
-  // Set JWT cookies
+  // Set standard JWT cookies
   response.cookies.set('accessToken', tokens.accessToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -339,6 +580,26 @@ async function createSuccessResponse(user: any, phone: string) {
     maxAge: 7 * 24 * 60 * 60, // 7 days
     path: '/'
   })
+
+  // ALSO set host-specific cookies if this is a host
+  if (isHost) {
+    response.cookies.set('hostAccessToken', tokens.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 15 * 60, // 15 minutes
+      path: '/'
+    })
+
+    response.cookies.set('hostRefreshToken', tokens.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60, // 7 days
+      path: '/'
+    })
+    console.log(`[Complete Profile] Set both accessToken AND hostAccessToken cookies for host`)
+  }
 
   console.log(`[Complete Profile] Generated JWT tokens for new user: ${user.id}`)
 
