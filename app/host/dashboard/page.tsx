@@ -30,6 +30,7 @@ import {
 import VerificationProgress from '../components/VerificationProgress'
 import PendingBanner from '../components/PendingBanner'
 import ClaimBanner from './components/ClaimBanner'
+import SuspensionBanner from '@/app/components/SuspensionBanner'
 import ESGDashboardCard from '@/app/components/host/ESGDashboardCard'
 import ServiceMetricsDashboardCard from '@/app/components/host/ServiceMetricsDashboardCard'
 
@@ -599,23 +600,26 @@ export default function HostDashboardPage() {
               )}
             </div>
 
+            {/* Suspension Banner - Highest Priority */}
+            <SuspensionBanner />
+
             {/* Priority Banner System */}
             {(() => {
-              const claimNotifications = notifications.filter(n => 
+              const claimNotifications = notifications.filter(n =>
                 ['CLAIM_FILED', 'CLAIM_APPROVED', 'CLAIM_REJECTED', 'GUEST_RESPONSE', 'GUEST_NO_RESPONSE'].includes(n.type)
               ) as ClaimNotification[]
-              
-              const priority = 
+
+              const priority =
                 claimNotifications.find(n => n.type === 'CLAIM_APPROVED') ||
                 claimNotifications.find(n => n.type === 'GUEST_RESPONSE') ||
                 claimNotifications.find(n => n.type === 'CLAIM_REJECTED') ||
                 claimNotifications.find(n => n.type === 'GUEST_NO_RESPONSE') ||
                 claimNotifications.find(n => n.type === 'CLAIM_FILED')
-              
+
               if (priority) {
                 return <ClaimBanner notification={priority} onDismiss={markNotificationAsRead} />
               }
-              
+
               if (!isApproved) {
                 return (
                   <PendingBanner
@@ -627,7 +631,7 @@ export default function HostDashboardPage() {
                   />
                 )
               }
-              
+
               return null
             })()}
 

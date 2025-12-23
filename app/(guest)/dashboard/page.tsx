@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 
 // ========== COMPONENT IMPORTS ==========
+import SuspensionBanner from '@/app/components/SuspensionBanner'
 import WarningBanner from './components/WarningBanner'
 import AppealModal from './components/AppealModal'
 import GoodStandingBanner from './components/GoodStandingBanner'
@@ -1083,6 +1084,9 @@ export default function GuestDashboard() {
             </div>
           </div>
         </div>
+
+        {/* Dual-Role Suspension Banner - Highest Priority */}
+        <SuspensionBanner />
 
         {/* ========================================================================
             ✅ UPDATED PRIORITY BANNER SYSTEM - 4 LEVELS

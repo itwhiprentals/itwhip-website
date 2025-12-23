@@ -347,10 +347,15 @@ function generatePasswordChangedEmail(
                     <p style="margin: 0 0 20px; color: #4b5563; font-size: 16px; line-height: 24px;">
                       Hi ${name},
                     </p>
-                    
-                    <p style="margin: 0 0 24px; color: #4b5563; font-size: 16px; line-height: 24px;">
+
+                    <p style="margin: 0 0 16px; color: #4b5563; font-size: 16px; line-height: 24px;">
                       We're confirming that your ItWhip account password was successfully changed on <strong>${new Date().toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' })}</strong>.
                     </p>
+
+                    <div style="background: #dbeafe; padding: 16px; border-left: 4px solid #3b82f6; border-radius: 4px; margin-bottom: 24px;">
+                      <strong style="color: #1e40af;">🔒 Important:</strong><br>
+                      <span style="color: #1e3a8a; font-size: 14px;">This change affects both your host and guest account access. Use your new password when logging into either role.</span>
+                    </div>
 
                     <!-- Security Details Box -->
                     <div style="background-color: #f9fafb; border-left: 4px solid #10b981; padding: 20px; border-radius: 4px; margin-bottom: 24px;">

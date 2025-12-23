@@ -4,6 +4,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { headers } from 'next/headers'
 
+// ========== DUAL-ROLE SYNC IMPORTS ==========
+import { syncEmailAcrossProfiles, syncPhoneAcrossProfiles } from '@/app/lib/dual-role/sync-profile'
+import { sendEmailChangeNotification, sendPhoneChangeNotification } from '@/app/lib/dual-role/notifications'
+
 // Helper to get host from headers
 async function getHostFromHeaders() {
   const headersList = await headers()
@@ -231,6 +235,80 @@ export async function PUT(request: NextRequest) {
       }, { status: 403 })
     }
     // ========== END NAME LOCK ==========
+
+    // ========== DUAL-ROLE EMAIL/PHONE SYNC ==========
+    // Handle email change - sync across User + RentalHost + ReviewerProfile
+    if (body.email && body.email !== host.email) {
+      const oldEmail = host.email
+      const userId = host.userId || host.user?.id
+
+      if (!userId) {
+        return NextResponse.json(
+          { error: 'Cannot sync email: User ID not found' },
+          { status: 400 }
+        )
+      }
+
+      const result = await syncEmailAcrossProfiles(userId, body.email, oldEmail)
+
+      if (!result.success) {
+        console.error('[Host Profile] Email sync failed:', result.error)
+        return NextResponse.json(
+          { error: result.error || 'Failed to sync email across profiles' },
+          { status: 500 }
+        )
+      }
+
+      // Send security notifications to both old and new email addresses
+      try {
+        await sendEmailChangeNotification(
+          host.name || 'User',
+          oldEmail,
+          body.email,
+          request.headers.get('user-agent') || 'Unknown device',
+          request.headers.get('x-forwarded-for') || 'Unknown IP'
+        )
+      } catch (emailError) {
+        console.error('[Host Profile] Email notification failed:', emailError)
+        // Continue - don't block profile update if email fails
+      }
+    }
+
+    // Handle phone change - sync across User + RentalHost + ReviewerProfile
+    if (body.phone && body.phone !== host.phone) {
+      const userId = host.userId || host.user?.id
+
+      if (!userId) {
+        return NextResponse.json(
+          { error: 'Cannot sync phone: User ID not found' },
+          { status: 400 }
+        )
+      }
+
+      const result = await syncPhoneAcrossProfiles(userId, body.phone)
+
+      if (!result.success) {
+        console.error('[Host Profile] Phone sync failed:', result.error)
+        return NextResponse.json(
+          { error: result.error || 'Failed to sync phone across profiles' },
+          { status: 500 }
+        )
+      }
+
+      // Send notification
+      try {
+        await sendPhoneChangeNotification(
+          host.name || 'User',
+          host.email,
+          host.phone || 'None',
+          body.phone
+        )
+      } catch (emailError) {
+        console.error('[Host Profile] Phone notification failed:', emailError)
+        // Continue - don't block profile update if email fails
+      }
+    }
+    // ========== END DUAL-ROLE SYNC ==========
 
     // Validate input - Remove 'name' from allowedFields for approved hosts
     const allowedFields = host.approvedAt

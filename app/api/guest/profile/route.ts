@@ -6,6 +6,10 @@ import { verifyRequest } from '@/app/lib/auth/verify-request'
 // ========== 🆕 ACTIVITY TRACKING IMPORT ==========
 import { trackActivity } from '@/lib/helpers/guestProfileStatus'
 
+// ========== DUAL-ROLE SYNC IMPORTS ==========
+import { syncEmailAcrossProfiles, syncPhoneAcrossProfiles } from '@/app/lib/dual-role/sync-profile'
+import { sendEmailChangeNotification, sendPhoneChangeNotification } from '@/app/lib/dual-role/notifications'
+
 // GET: Fetch guest profile
 export async function GET(request: NextRequest) {
   try {
@@ -297,6 +301,62 @@ export async function PUT(request: NextRequest) {
         { status: 404 }
       )
     }
+
+    // ========== DUAL-ROLE EMAIL/PHONE SYNC ==========
+    // Handle email change - sync across User + RentalHost + ReviewerProfile
+    if (body.email && body.email !== profile.email) {
+      const oldEmail = profile.email || ''
+      const result = await syncEmailAcrossProfiles(userId, body.email, oldEmail)
+
+      if (!result.success) {
+        console.error('[Guest Profile] Email sync failed:', result.error)
+        return NextResponse.json(
+          { success: false, error: result.error || 'Failed to sync email across profiles' },
+          { status: 500 }
+        )
+      }
+
+      // Send security notifications to both old and new email addresses
+      try {
+        await sendEmailChangeNotification(
+          user.name || 'User',
+          oldEmail,
+          body.email,
+          request.headers.get('user-agent') || 'Unknown device',
+          request.headers.get('x-forwarded-for') || 'Unknown IP'
+        )
+      } catch (emailError) {
+        console.error('[Guest Profile] Email notification failed:', emailError)
+        // Continue - don't block profile update if email fails
+      }
+    }
+
+    // Handle phone change - sync across User + RentalHost + ReviewerProfile
+    if (body.phone && body.phone !== profile.phoneNumber) {
+      const result = await syncPhoneAcrossProfiles(userId, body.phone)
+
+      if (!result.success) {
+        console.error('[Guest Profile] Phone sync failed:', result.error)
+        return NextResponse.json(
+          { success: false, error: result.error || 'Failed to sync phone across profiles' },
+          { status: 500 }
+        )
+      }
+
+      // Send notification
+      try {
+        await sendPhoneChangeNotification(
+          user.name || 'User',
+          user.email,
+          profile.phoneNumber || 'None',
+          body.phone
+        )
+      } catch (emailError) {
+        console.error('[Guest Profile] Phone notification failed:', emailError)
+        // Continue - don't block profile update if email fails
+      }
+    }
+    // ========== END DUAL-ROLE SYNC ==========
 
     // ========== 🆕 TRACK WHAT CHANGED (BEFORE UPDATE) ==========
     const changedFields: string[] = []

@@ -614,6 +614,66 @@ export async function middleware(request: NextRequest) {
       }
     }
 
+    // ========== GUEST SUSPENSION CHECKS ==========
+    // Check guest suspension for booking routes
+    if (pathname.startsWith('/api/rentals/book') ||
+        pathname.startsWith('/rentals/') ||
+        pathname.startsWith('/api/bookings')) {
+      try {
+        const guestProfile = await prisma.reviewerProfile.findFirst({
+          where: {
+            OR: [
+              { userId: payload.userId as string },
+              { email: payload.email as string }
+            ]
+          },
+          select: {
+            suspensionLevel: true,
+            suspendedAt: true,
+            suspensionExpiresAt: true,
+            bannedAt: true
+          }
+        })
+
+        if (guestProfile) {
+          // Check if banned (permanent)
+          if (guestProfile.bannedAt) {
+            console.log('🚫 Guest banned - redirecting to suspended page:', {
+              userId: payload.userId,
+              email: payload.email,
+              bannedAt: guestProfile.bannedAt
+            })
+            return NextResponse.redirect(new URL('/suspended?role=guest', request.url))
+          }
+
+          // Check if suspended and not expired
+          if (guestProfile.suspendedAt && guestProfile.suspensionLevel) {
+            const now = new Date()
+            const isExpired = guestProfile.suspensionExpiresAt &&
+                            guestProfile.suspensionExpiresAt < now
+
+            if (!isExpired) {
+              console.log('🚫 Guest suspended - redirecting to suspended page:', {
+                userId: payload.userId,
+                email: payload.email,
+                suspensionLevel: guestProfile.suspensionLevel,
+                expiresAt: guestProfile.suspensionExpiresAt
+              })
+              return NextResponse.redirect(new URL('/suspended?role=guest', request.url))
+            } else {
+              console.log('✅ Guest suspension expired - allowing access:', {
+                userId: payload.userId,
+                expiresAt: guestProfile.suspensionExpiresAt
+              })
+            }
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error checking guest suspension status:', error)
+        // Don't block on error - allow access
+      }
+    }
+
     const response = NextResponse.next()
     response.headers.set('x-user-id', payload.userId as string)
     response.headers.set('x-user-email', payload.email as string)
