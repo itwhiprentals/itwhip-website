@@ -50,10 +50,11 @@ export default function ProfileTab({
   onCancel,
   onFormChange
 }: ProfileTabProps) {
-  const isFieldLocked = (field: 'email' | 'phone') => {
-    // Email is always locked, phone is locked until approved
+  const isFieldLocked = (field: 'email' | 'phone' | 'name') => {
+    // Email is always locked, phone is locked until approved, name is locked after approval
     if (field === 'email') return true
     if (field === 'phone') return !isApproved
+    if (field === 'name') return isApproved // Name locked once approved to protect reputation
     return false
   }
 
@@ -63,16 +64,27 @@ export default function ProfileTab({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         {/* Full Name */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
             Full Name
+            {isFieldLocked('name') && (
+              <span className="flex items-center gap-1 text-xs text-yellow-600 dark:text-yellow-400">
+                <IoLockClosedOutline className="w-3 h-3" />
+                <span className="hidden sm:inline">Locked after approval</span>
+              </span>
+            )}
           </label>
           <input
             type="text"
             value={formData.name}
             onChange={(e) => onFormChange({ name: e.target.value })}
-            disabled={!editMode || isSuspended}
+            disabled={!editMode || isSuspended || isFieldLocked('name')}
             className="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed"
           />
+          {isFieldLocked('name') && (
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Your display name is locked to protect your reputation and guest trust. Contact support if you need to update it.
+            </p>
+          )}
         </div>
 
         {/* Email (Locked) */}

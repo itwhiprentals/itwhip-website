@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { 
   IoCloseOutline,
@@ -247,20 +248,40 @@ export default function MobileMenu({
         `}
       >
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
-          <div className="flex flex-col">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-              It<span className="font-black">W</span>hip
-            </h2>
-            <span className="text-[10px] text-gray-500 dark:text-gray-400 tracking-widest uppercase font-medium">
-              {isAdmin ? 'ADMIN PORTAL' :
-               isHost && isHostPage ? 'HOST PORTAL' :
-               isGuest && isGuestPage ? 'GUEST PORTAL' : 
-               'TECHNOLOGY'}
-            </span>
+          <div className="flex items-center gap-2">
+            {/* Logo */}
+            <div className="relative">
+              {/* Light mode logo */}
+              <Image
+                src="/logo.png"
+                alt="ItWhip"
+                width={40}
+                height={40}
+                className="h-10 w-10 dark:hidden"
+                priority
+              />
+              {/* Dark mode logo */}
+              <Image
+                src="/logo-white.png"
+                alt="ItWhip"
+                width={40}
+                height={40}
+                className="h-10 w-10 hidden dark:block"
+                priority
+              />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] text-gray-500 dark:text-gray-400 tracking-widest uppercase font-medium">
+                {isAdmin ? 'ADMIN PORTAL' :
+                 isHost && isHostPage ? 'HOST PORTAL' :
+                 isGuest && isGuestPage ? 'GUEST PORTAL' :
+                 'ITWHIP TECHNOLOGY'}
+              </span>
+            </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900
               transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
             aria-label="Close menu"
           >

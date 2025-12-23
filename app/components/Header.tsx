@@ -21,6 +21,7 @@ import {
 import MobileMenu from './MobileMenu'
 import ProfileModal from '../(guest)/dashboard/modals/ProfileModal'
 import NotificationBell from './notifications/NotificationBell'
+import RoleSwitcher from './RoleSwitcher'
 
 // Desktop Navigation Items
 const navItems = [
@@ -516,7 +517,10 @@ export default function Header({
                   {isAdmin && <NotificationBell userRole="ADMIN" />}
                 </>
               )}
-              
+
+              {/* Role Switcher - Only for dual-role users */}
+              {isLoggedIn && !isCheckingAuth && <RoleSwitcher />}
+
               {/* Profile/Sign In Button */}
               {!isCheckingAuth && (
                 <div>

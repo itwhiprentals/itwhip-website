@@ -185,6 +185,56 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // ========== SELF-BOOKING PREVENTION GUARD ==========
+    // Prevent guests from booking their own host vehicles
+
+    // PRIMARY CHECK: Email matching
+    const isOwnVehicleByEmail = car.host.email.toLowerCase() === bookingData.guestEmail.toLowerCase()
+
+    // SECONDARY CHECK: For authenticated users, also check userId
+    const accessToken = request.cookies.get('accessToken')?.value ||
+                       request.cookies.get('hostAccessToken')?.value
+    let authenticatedUserId: string | null = null
+
+    if (accessToken) {
+      try {
+        const jwt = await import('jsonwebtoken')
+        const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key'
+        const decoded = jwt.verify(accessToken, JWT_SECRET) as any
+        authenticatedUserId = decoded.userId
+      } catch (err) {
+        // Token invalid or expired - continue without userId check
+      }
+    }
+
+    const isOwnVehicleByUserId = authenticatedUserId && car.host.userId === authenticatedUserId
+
+    if (isOwnVehicleByEmail || isOwnVehicleByUserId) {
+      // Log self-booking attempt for fraud detection
+      await prisma.activityLog.create({
+        data: {
+          action: 'self_booking_attempt',
+          entityType: 'RentalBooking',
+          entityId: bookingData.carId,
+          metadata: {
+            guestEmail: bookingData.guestEmail,
+            hostEmail: car.host.email,
+            userId: authenticatedUserId,
+            reason: 'Guest attempted to book their own vehicle'
+          },
+          ipAddress: extractIpAddress(request.headers)
+        }
+      })
+
+      return NextResponse.json({
+        error: 'Cannot book your own vehicle',
+        message: 'You cannot book a vehicle you own. To block personal use dates, please use the calendar in your host dashboard.',
+        code: 'SELF_BOOKING_NOT_ALLOWED'
+      }, { status: 403 })
+    }
+
+    // ========== END SELF-BOOKING GUARD ==========
+
     // Check availability - TEMPORARILY BYPASSED FOR TESTING
     // TODO: Fix checkAvailability function - it's returning false incorrectly
     // const isAvailable = await checkAvailability(

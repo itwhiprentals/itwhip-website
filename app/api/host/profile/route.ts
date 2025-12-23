@@ -220,19 +220,42 @@ export async function PUT(request: NextRequest) {
     }
     
     const body = await request.json()
-    
-    // Validate input
-    const allowedFields = [
-      'name',
-      'phone',
-      'bio',
-      'city',
-      'state',
-      'zipCode',
-      'autoApproveBookings',
-      'requireDeposit',
-      'depositAmount'
-    ]
+
+    // ========== HOST DISPLAY NAME LOCK ==========
+    // Prevent approved hosts from changing their display name
+    if (host.approvedAt && body.name) {
+      return NextResponse.json({
+        error: 'Display name is locked',
+        message: 'Your display name cannot be changed after approval. This protects your reputation and guest trust. Contact support if you need to update it.',
+        code: 'NAME_LOCKED_AFTER_APPROVAL'
+      }, { status: 403 })
+    }
+    // ========== END NAME LOCK ==========
+
+    // Validate input - Remove 'name' from allowedFields for approved hosts
+    const allowedFields = host.approvedAt
+      ? [
+          // No 'name' field for approved hosts
+          'phone',
+          'bio',
+          'city',
+          'state',
+          'zipCode',
+          'autoApproveBookings',
+          'requireDeposit',
+          'depositAmount'
+        ]
+      : [
+          'name', // Unapproved hosts can update name
+          'phone',
+          'bio',
+          'city',
+          'state',
+          'zipCode',
+          'autoApproveBookings',
+          'requireDeposit',
+          'depositAmount'
+        ]
     
     const updateData: any = {}
     

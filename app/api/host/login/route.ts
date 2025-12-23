@@ -286,25 +286,40 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get host data
-    const host = await prisma.rentalHost.findUnique({
-      where: { userId: userId },
+    // Get host data - use findFirst with OR to check both userId and email
+    // This handles cases where OAuth created the host or legacy hosts without userId
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true }
+    })
+
+    const host = await prisma.rentalHost.findFirst({
+      where: {
+        OR: [
+          { userId: userId },
+          { email: user?.email }
+        ]
+      },
       select: {
         id: true,
         name: true,
         email: true,
         profilePhoto: true,
         approvalStatus: true,
-        active: true
+        active: true,
+        userId: true
       }
     })
 
     if (!host) {
+      console.log('[Host Login GET] No host found for userId:', userId, 'or email:', user?.email)
       return NextResponse.json(
         { authenticated: false },
         { status: 401 }
       )
     }
+
+    console.log('[Host Login GET] Found host:', host.id, 'approvalStatus:', host.approvalStatus)
 
     return NextResponse.json({
       authenticated: true,
