@@ -437,7 +437,11 @@ export default function HostProfile({ host }: HostProfileProps) {
                 </div>
                 <div className="flex items-center gap-1">
                   <IoCheckmarkCircleOutline className="w-3 h-3" />
-                  <span>{processedHost.responseRate || 'N/A'}% response rate</span>
+                  <span>
+                    {processedHost.responseRate
+                      ? `${Math.round(processedHost.responseRate)}%`
+                      : 'N/A'} response rate
+                  </span>
                 </div>
               </div>
             </div>

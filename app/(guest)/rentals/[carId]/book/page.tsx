@@ -1489,50 +1489,50 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-400">Rental ({numberOfDays} days)</span>
-                <span className="font-medium">${savedBookingDetails.pricing.basePrice.toLocaleString()}</span>
+                <span className="font-medium text-gray-900 dark:text-white">${savedBookingDetails.pricing.basePrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-400">Insurance</span>
-                <span className="font-medium">${savedBookingDetails.pricing.insurancePrice.toLocaleString()}</span>
+                <span className="font-medium text-gray-900 dark:text-white">${savedBookingDetails.pricing.insurancePrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               {savedBookingDetails.pricing.deliveryFee > 0 && (
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Delivery</span>
-                  <span className="font-medium">${savedBookingDetails.pricing.deliveryFee}</span>
+                  <span className="font-medium text-gray-900 dark:text-white">${savedBookingDetails.pricing.deliveryFee.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
               )}
-              {(savedBookingDetails.pricing.breakdown.refuelService + 
-                savedBookingDetails.pricing.breakdown.additionalDriver + 
-                savedBookingDetails.pricing.breakdown.extraMiles + 
+              {(savedBookingDetails.pricing.breakdown.refuelService +
+                savedBookingDetails.pricing.breakdown.additionalDriver +
+                savedBookingDetails.pricing.breakdown.extraMiles +
                 savedBookingDetails.pricing.breakdown.vipConcierge) > 0 && (
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Enhancements</span>
-                  <span className="font-medium">
-                    ${(savedBookingDetails.pricing.breakdown.refuelService + 
-                       savedBookingDetails.pricing.breakdown.additionalDriver + 
-                       savedBookingDetails.pricing.breakdown.extraMiles + 
-                       savedBookingDetails.pricing.breakdown.vipConcierge).toLocaleString()}
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    ${(savedBookingDetails.pricing.breakdown.refuelService +
+                       savedBookingDetails.pricing.breakdown.additionalDriver +
+                       savedBookingDetails.pricing.breakdown.extraMiles +
+                       savedBookingDetails.pricing.breakdown.vipConcierge).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
               )}
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-400">Service fee</span>
-                <span className="font-medium">${savedBookingDetails.pricing.serviceFee.toLocaleString()}</span>
+                <span className="font-medium text-gray-900 dark:text-white">${savedBookingDetails.pricing.serviceFee.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-400">Taxes</span>
-                <span className="font-medium">${savedBookingDetails.pricing.taxes.toLocaleString()}</span>
+                <span className="font-medium text-gray-900 dark:text-white">${savedBookingDetails.pricing.taxes.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
-              
+
               <div className="pt-4 mt-4 border-t dark:border-gray-700">
                 <div className="flex justify-between items-baseline">
-                  <span className="text-base font-semibold">Total</span>
+                  <span className="text-base font-semibold text-gray-900 dark:text-white">Total</span>
                   <div className="text-right">
                     <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                      ${savedBookingDetails.pricing.total.toLocaleString()}
+                      ${savedBookingDetails.pricing.total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Plus ${adjustedDeposit.toLocaleString()} security deposit
+                      Plus ${adjustedDeposit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} security deposit
                       {userProfile?.insuranceVerified && (
                         <span className="text-green-600 dark:text-green-400 font-medium ml-1">
                           (50% off!)
@@ -1602,16 +1602,16 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
             <div>
               <div className="flex items-baseline gap-2">
                 <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                  ${savedBookingDetails.pricing.total.toLocaleString()}
+                  ${savedBookingDetails.pricing.total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
-                <span className="text-sm text-gray-500">total</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">total</span>
               </div>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
                 {numberOfDays} {numberOfDays === 1 ? 'day' : 'days'} • Taxes & fees included
               </p>
               {userProfile?.insuranceVerified && (
                 <p className="text-xs text-green-600 dark:text-green-400 font-medium">
-                  💚 Deposit reduced to ${adjustedDeposit.toLocaleString()}
+                  💚 Deposit reduced to ${adjustedDeposit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
               )}
             </div>

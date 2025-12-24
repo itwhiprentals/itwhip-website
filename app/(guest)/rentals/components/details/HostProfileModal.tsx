@@ -324,7 +324,7 @@ export default function HostProfileModal({ hostId, isOpen, onClose }: HostProfil
 
                   <div className="text-center p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
                     <div className="text-sm font-bold text-gray-900 dark:text-white">
-                      {hostData.stats.responseRate}%
+                      {Math.round(hostData.stats.responseRate)}%
                     </div>
                     <div className="text-xs text-gray-600 dark:text-gray-400">
                       Response

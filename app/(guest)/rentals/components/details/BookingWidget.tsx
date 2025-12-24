@@ -588,7 +588,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
           </button>
           
           {showDelivery && (
-            <div className="p-3 border-x border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-b-lg">
+            <div className="p-3 border-x border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-b-lg">
               <div className="grid grid-cols-2 gap-2">
                 {deliveryOptions.map((option) => {
                   const Icon = option.icon
@@ -647,7 +647,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
           </button>
           
           {showEnhancements && (
-            <div className="p-3 border-x border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-b-lg space-y-2">
+            <div className="p-3 border-x border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-b-lg space-y-2">
               <label className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer border border-gray-100 dark:border-gray-700 rounded-lg">
                 <div className="flex items-center gap-3">
                   <input
@@ -812,7 +812,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
 
       {/* Floating Price Bar (Mobile) */}
       {showFloatingPrice && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 shadow-2xl z-50 lg:hidden">
+        <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-2xl z-50 lg:hidden">
           <div className="max-w-7xl mx-auto px-4 py-3">
             <div className="flex items-center justify-between">
               <div>

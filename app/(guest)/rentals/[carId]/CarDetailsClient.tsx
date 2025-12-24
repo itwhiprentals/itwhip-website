@@ -454,7 +454,7 @@ export default function CarDetailsClient({ params }: PageProps) {
 
       {/* SUSPENSION WARNING BANNER */}
       {car.suspensionMessage && (
-        <div className="bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800">
+        <div className="pt-16 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800">
           <div className="max-w-7xl mx-auto px-4 py-4">
             <div className="flex items-start gap-3">
               <IoWarningOutline className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
@@ -492,7 +492,7 @@ export default function CarDetailsClient({ params }: PageProps) {
       )}
 
       {/* Photo Gallery - Hero image with overlay buttons */}
-      <div className={`relative pt-16 ${car.isBookable === false ? 'opacity-90' : ''}`}>
+      <div className={`relative pt-0 ${car.isBookable === false ? 'opacity-90' : ''}`}>
         {/* Desktop: Constrained width container */}
         <div className="hidden sm:block max-w-7xl mx-auto px-4 pt-4">
           <div className="relative">
