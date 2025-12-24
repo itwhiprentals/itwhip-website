@@ -364,8 +364,9 @@ export async function POST(request: NextRequest) {
             }
           })
           console.log(`[Complete Profile] Created RentalCar for host`)
-        } else {
-          // Create ReviewerProfile for guest signup
+        } else if (roleHint === 'guest') {
+          // Create ReviewerProfile ONLY for explicit guest signup
+          // ⚠️ CRITICAL: No auto-creation - must explicitly specify roleHint='guest'
           await tx.reviewerProfile.create({
             data: {
               userId: user.id,
@@ -380,7 +381,10 @@ export async function POST(request: NextRequest) {
               emailVerified: true
             }
           })
-          console.log(`[Complete Profile] Created ReviewerProfile`)
+          console.log(`[Complete Profile] Created ReviewerProfile for GUEST`)
+        } else {
+          console.log(`[Complete Profile] ⚠️ No profile created - roleHint: ${roleHint || 'NOT PROVIDED'}`)
+          console.log(`[Complete Profile] User must complete proper guest/host signup flow`)
         }
 
         return user
