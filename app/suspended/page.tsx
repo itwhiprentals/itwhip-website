@@ -218,10 +218,10 @@ function SuspendedContent() {
           <p className="mt-6 text-center text-xs text-gray-500 dark:text-gray-400">
             Need help?{' '}
             <a
-              href="mailto:support@itwhip.com"
+              href="mailto:info@itwhip.com"
               className="text-red-600 dark:text-red-400 hover:underline"
             >
-              support@itwhip.com
+              info@itwhip.com
             </a>
           </p>
         </div>

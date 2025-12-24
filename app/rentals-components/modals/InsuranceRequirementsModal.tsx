@@ -426,7 +426,7 @@ export default function InsuranceRequirementsModal({
                   </div>
                   <div>
                     <p className="text-xs font-medium text-purple-800 mb-1">General Support</p>
-                    <p className="text-xs sm:text-sm font-bold text-purple-900">support@itwhip.com</p>
+                    <p className="text-xs sm:text-sm font-bold text-purple-900">info@itwhip.com</p>
                   </div>
                 </div>
               </div>

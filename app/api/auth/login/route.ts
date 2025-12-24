@@ -418,7 +418,7 @@ async function sendSecurityAlertEmail(
 
                       <p style="margin: 24px 0 0; color: #6b7280; font-size: 14px; line-height: 20px;">
                         If you have any questions or concerns, please contact our support team at
-                        <a href="mailto:support@itwhip.com" style="color: #dc2626; text-decoration: none;">support@itwhip.com</a>
+                        <a href="mailto:info@itwhip.com" style="color: #dc2626; text-decoration: none;">info@itwhip.com</a>
                       </p>
                     </td>
                   </tr>
@@ -459,7 +459,7 @@ Wasn't you?
 If you didn't attempt to log in, someone may be trying to access your account. We recommend resetting your password immediately at:
 ${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_URL || 'https://itwhip.com'}/auth/forgot-password
 
-If you have any questions, contact support@itwhip.com
+If you have any questions, contact info@itwhip.com
 
 - ItWhip Security Team
     `.trim()

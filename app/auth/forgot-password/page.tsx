@@ -213,7 +213,7 @@ export default function ForgotPasswordPage() {
           <div className="mt-6 text-center text-xs text-gray-500">
             Need help?{' '}
             <a 
-              href="mailto:support@itwhip.com" 
+              href="mailto:info@itwhip.com" 
               className="text-green-400 hover:text-green-300 font-medium transition-colors"
             >
               Contact Support

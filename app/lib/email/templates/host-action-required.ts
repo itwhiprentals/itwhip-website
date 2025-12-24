@@ -267,7 +267,7 @@ export function getHostActionRequiredTemplate(data: HostActionRequiredData): Ema
             <div class="help-section">
               <strong>Need assistance?</strong><br>
               Our host support team is standing by to help you resolve this quickly.<br>
-              Email us at <a href="mailto:${data.supportEmail || 'hosts@itwhip.com'}">${data.supportEmail || 'hosts@itwhip.com'}</a><br>
+              Email us at <a href="mailto:${data.supportEmail || 'info@itwhip.com'}">${data.supportEmail || 'info@itwhip.com'}</a><br>
               or visit our <a href="https://itwhip.com/host/help">Host Help Center</a>
             </div>
             
@@ -316,7 +316,7 @@ ${data.actionUrl}
 
 Need assistance?
 Our host support team is standing by to help you resolve this quickly.
-Email: ${data.supportEmail || 'hosts@itwhip.com'}
+Email: ${data.supportEmail || 'info@itwhip.com'}
 Help Center: https://itwhip.com/host/help
 
 This is an important notice regarding your host account status. 

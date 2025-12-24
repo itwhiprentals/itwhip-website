@@ -315,14 +315,6 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
 
         <div className="space-y-3">
           <Link
-            href="/rentals/dashboard/bookings"
-            className="w-full py-3 px-4 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-lg flex items-center justify-center gap-2 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-          >
-            <IoCalendarOutline className="w-5 h-5" />
-            View Booking History
-          </Link>
-
-          <Link
             href={`/rentals/search?location=${car?.city || 'Phoenix'}&carType=${car?.carType || ''}`}
             className="w-full py-3 px-4 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-lg transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
           >
@@ -332,7 +324,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
 
           {/* ✅ FUNCTIONAL: Email support with vehicle context */}
           <a
-            href={`mailto:support@itwhip.com?subject=Vehicle Unavailable - ${car?.year} ${car?.make} ${car?.model}&body=Hello ItWhip Support,%0A%0AI'm interested in this vehicle but it shows as unavailable:%0A%0AVehicle: ${car?.year} ${car?.make} ${car?.model}%0ACar ID: ${car?.id}%0ALocation: ${car?.city}, ${car?.state}%0A%0ACould you please let me know when it becomes available or suggest similar options?%0A%0AThank you!`}
+            href={`mailto:info@itwhip.com?subject=Vehicle Unavailable - ${car?.year} ${car?.make} ${car?.model}&body=Hello ItWhip Support,%0A%0AI'm interested in this vehicle but it shows as unavailable:%0A%0AVehicle: ${car?.year} ${car?.make} ${car?.model}%0ACar ID: ${car?.id}%0ALocation: ${car?.city}, ${car?.state}%0A%0ACould you please let me know when it becomes available or suggest similar options?%0A%0AThank you!`}
             className="w-full py-2 text-sm text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-500 font-medium flex items-center justify-center gap-1 hover:bg-amber-50 dark:hover:bg-amber-900/10 rounded-lg transition-colors"
           >
             <IoInformationCircleOutline className="w-4 h-4" />

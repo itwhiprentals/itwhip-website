@@ -243,7 +243,7 @@ export function getClaimDecisionGuestTemplate(data: ClaimDecisionGuestData): Ema
 
               <div class="action-buttons">
                 ${data.appealUrl ? `<a href="${data.appealUrl}" class="btn btn-secondary" style="color: white; text-decoration: none; padding: 12px 20px; display: block; text-align: center; border-radius: 6px;">File an Appeal</a>` : ''}
-                <a href="mailto:claims@itwhip.com" class="btn btn-secondary" style="color: white; text-decoration: none; padding: 12px 20px; display: block; text-align: center; border-radius: 6px;">Contact Support</a>
+                <a href="mailto:info@itwhip.com" class="btn btn-secondary" style="color: white; text-decoration: none; padding: 12px 20px; display: block; text-align: center; border-radius: 6px;">Contact Support</a>
               </div>
             ` : `
               <div class="success-box">
@@ -289,7 +289,7 @@ export function getClaimDecisionGuestTemplate(data: ClaimDecisionGuestData): Ema
             </div>
 
             <p style="color: #6b7280; font-size: 13px; margin-top: 24px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
-              <strong>Questions about this decision?</strong> Contact us at <a href="mailto:claims@itwhip.com" style="color: #3b82f6;">claims@itwhip.com</a> or call (602) 555-0100
+              <strong>Questions about this decision?</strong> Contact us at <a href="mailto:info@itwhip.com" style="color: #3b82f6;">info@itwhip.com</a> or call (602) 555-0100
             </p>
           </div>
 
@@ -345,7 +345,7 @@ Booking Code: ${data.bookingCode}
 Vehicle: ${data.carDetails}
 Decision: ${data.decision.toUpperCase()}
 
-Questions about this decision? Contact us at claims@itwhip.com or call (602) 555-0100
+Questions about this decision? Contact us at info@itwhip.com or call (602) 555-0100
 
 © 2024 ItWhip. All rights reserved.
 Phoenix, Arizona

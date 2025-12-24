@@ -175,7 +175,7 @@ export function getBookingCancelledTemplate(data: BookingCancelledData): EmailTe
            
            <p style="text-align: center; margin-top: 24px; font-size: 14px; color: #6b7280;">
              Questions about this cancellation?<br>
-             Contact support@itwhip.com with booking code #${data.bookingCode}
+             Contact info@itwhip.com with booking code #${data.bookingCode}
            </p>
          </div>
          
@@ -212,7 +212,7 @@ Since your booking was pending verification, no charges were processed.`}
 Book another vehicle: https://itwhip.com/rentals/search
 
 Questions about this cancellation?
-Contact support@itwhip.com with booking code #${data.bookingCode}
+Contact info@itwhip.com with booking code #${data.bookingCode}
 
 ITWHIP - Premium Vehicle Rentals
 © 2024 ItWhip Technologies. All rights reserved.

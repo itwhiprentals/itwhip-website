@@ -171,7 +171,7 @@ interface DeclarationUpdatedData {
                 <!-- Support -->
                 <p style="margin: 24px 0 0 0; padding-top: 24px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 13px; line-height: 1.6;">
                   Questions? Contact us at 
-                  <a href="mailto:support@itwhip.com" style="color: #9333ea; text-decoration: none;">support@itwhip.com</a>
+                  <a href="mailto:info@itwhip.com" style="color: #9333ea; text-decoration: none;">info@itwhip.com</a>
                 </p>
   
               </td>

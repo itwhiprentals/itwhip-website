@@ -172,7 +172,7 @@ export async function POST(
                 { checkType: 'Insurance Verification', status: 'pending' }
               ],
               estimatedCompletion: '72 hours',
-              supportEmail: process.env.SUPPORT_EMAIL || 'support@itwhip.com'
+              supportEmail: process.env.SUPPORT_EMAIL || 'info@itwhip.com'
             })
           }
         } catch (emailError) {
@@ -370,7 +370,7 @@ export async function POST(
                 : overallStatus === 'PASSED'
                 ? 'You can now list your vehicles!'
                 : undefined,
-              supportEmail: process.env.SUPPORT_EMAIL || 'support@itwhip.com'
+              supportEmail: process.env.SUPPORT_EMAIL || 'info@itwhip.com'
             })
           }
         } catch (emailError) {

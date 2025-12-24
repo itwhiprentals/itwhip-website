@@ -320,7 +320,7 @@ export async function sendHostRejection(
     <h2>Hi ${data.name},</h2>
     <p>We were unable to approve your host application at this time.</p>
     ${data.reason ? `<p>Reason: ${data.reason}</p>` : ''}
-    <p>If you have questions, please contact us at hosts@itwhip.com</p>
+    <p>If you have questions, please contact us at info@itwhip.com</p>
   `
   const text = `Hi ${data.name}, we were unable to approve your host application.`
   return sendEmail(to, subject, html, text)

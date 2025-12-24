@@ -226,7 +226,7 @@ export default function HostForgotPasswordPage() {
           <div className="mt-6 text-center text-xs text-gray-500">
             Need help?{' '}
             <a 
-              href="mailto:hosts@itwhip.com" 
+              href="mailto:info@itwhip.com" 
               className="text-green-600 hover:text-green-700 font-medium transition-colors"
             >
               Contact Host Support

@@ -394,7 +394,7 @@ async function completeBackgroundCheck(checkId: string, backgroundCheck: any) {
             'No action is required from you at this time'
           ],
       dashboardUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/host/dashboard`,
-      supportEmail: 'support@itwhip.com'
+      supportEmail: 'info@itwhip.com'
     })
   } catch (emailError) {
     console.error('Failed to send completion email:', emailError)

@@ -492,7 +492,7 @@ export default function CarDetailsClient({ params }: PageProps) {
       )}
 
       {/* Photo Gallery - Hero image with overlay buttons */}
-      <div className={`relative pt-0 ${car.isBookable === false ? 'opacity-90' : ''}`}>
+      <div className={`relative ${car.isBookable === false ? 'pt-0 opacity-90' : 'pt-16'}`}>
         {/* Desktop: Constrained width container */}
         <div className="hidden sm:block max-w-7xl mx-auto px-4 pt-4">
           <div className="relative">

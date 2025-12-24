@@ -136,7 +136,7 @@ interface HostPasswordResetEmailProps {
                       <!-- Additional Help -->
                       <p style="margin: 32px 0 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
                         Need help? Contact our host support team at 
-                        <a href="mailto:hosts@itwhip.com" style="color: #16a34a; text-decoration: none; font-weight: 500;">hosts@itwhip.com</a>
+                        <a href="mailto:info@itwhip.com" style="color: #16a34a; text-decoration: none; font-weight: 500;">info@itwhip.com</a>
                       </p>
                     </td>
                   </tr>
@@ -272,7 +272,7 @@ interface HostPasswordResetEmailProps {
                         </p>
                         <p style="margin: 0; color: #92400e; font-size: 14px; line-height: 1.5;">
                           If you didn't make this change, please contact our host support team immediately at 
-                          <a href="mailto:hosts@itwhip.com" style="color: #92400e; text-decoration: underline; font-weight: 500;">hosts@itwhip.com</a>
+                          <a href="mailto:info@itwhip.com" style="color: #92400e; text-decoration: underline; font-weight: 500;">info@itwhip.com</a>
                         </p>
                       </div>
                       

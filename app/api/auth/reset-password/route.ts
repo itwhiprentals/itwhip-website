@@ -127,7 +127,7 @@ export async function POST(req: NextRequest) {
                           <div style="padding: 20px; background-color: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px; margin-top: 30px;">
                             <p style="margin: 0; color: #92400e; font-size: 14px; line-height: 20px;">
                               <strong>⚠️ Didn't change your password?</strong><br>
-                              If you didn't make this change, please contact our support team immediately at support@itwhip.com
+                              If you didn't make this change, please contact our support team immediately at info@itwhip.com
                             </p>
                           </div>
                         </td>
@@ -164,7 +164,7 @@ Changed on: ${new Date().toLocaleString('en-US', { dateStyle: 'long', timeStyle:
 You can now sign in with your new password.
 
 ⚠️ Didn't change your password?
-If you didn't make this change, please contact our support team immediately at support@itwhip.com
+If you didn't make this change, please contact our support team immediately at info@itwhip.com
 
 ItWhip Technologies, Inc.
 © 2025 ItWhip. All rights reserved.

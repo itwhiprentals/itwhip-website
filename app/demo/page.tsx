@@ -549,11 +549,11 @@ export default function DemoPage() {
                     <span>(602) 555-0100</span>
                   </a>
                   
-                  <a href="mailto:hotels@itwhip.com" 
+                  <a href="mailto:info@itwhip.com" 
                     className="flex items-center space-x-3 text-sm text-gray-600 dark:text-gray-400 
                       hover:text-gray-900 dark:hover:text-white transition">
                     <IoMailOutline className="w-5 h-5" />
-                    <span>hotels@itwhip.com</span>
+                    <span>info@itwhip.com</span>
                   </a>
                 </div>
                 

@@ -71,7 +71,7 @@ ItWhip operates a technology platform that facilitates peer-to-peer car sharing 
 
 ItWhip Technologies, Inc. is the data controller responsible for your personal information. For privacy-related inquiries or to exercise your rights, contact us at:
 
-Email: support@itwhip.com
+Email: info@itwhip.com
 Response Time: Within 2-4 hours during business hours (7:00 AM - 9:00 PM MST)
 Mailing Address: Provided upon request for legal notices
 
@@ -566,7 +566,7 @@ Data Portability:
 • Retrieve your communication history
 
 How to Request Access:
-• Submit request via support@itwhip.com
+• Submit request via info@itwhip.com
 • Verify your identity for security
 • Receive response within 30 days
 • No fee for first request annually
@@ -727,7 +727,7 @@ Cross-Border Transfers:
 6.9 HOW TO EXERCISE YOUR RIGHTS
 
 Submit Requests:
-• Email: support@itwhip.com
+• Email: info@itwhip.com
 • Subject line: "Privacy Rights Request"
 • Include: Full name, account email, specific request
 • Verification: Government ID may be required
@@ -1147,7 +1147,7 @@ We do not knowingly collect information from children under 18:
 • Immediate deletion if discovered
 
 If you believe a child has provided information:
-• Contact us immediately at support@itwhip.com
+• Contact us immediately at info@itwhip.com
 • Provide relevant details
 • We will investigate promptly
 • Account will be terminated
@@ -1298,7 +1298,7 @@ You may designate an agent to make requests:
 11.5 CONTACT FOR CALIFORNIA RIGHTS
 
 Submit requests:
-• Email: support@itwhip.com
+• Email: info@itwhip.com
 • Subject: "California Privacy Rights"
 • Include: Full name, email, specific request
 • Verification: Government ID required
@@ -1378,7 +1378,7 @@ We maintain records of:
 
 Access previous versions:
 • Account settings archive
-• Email support@itwhip.com
+• Email info@itwhip.com
 • Legal documentation portal
 
 12.6 QUESTIONS ABOUT CHANGES
@@ -1405,7 +1405,7 @@ Response commitment:
 For privacy-related inquiries:
 
 Primary Contact:
-Email: support@itwhip.com
+Email: info@itwhip.com
 Response Time: 2-4 hours during business hours
 Business Hours: 7:00 AM - 9:00 PM MST, Daily
 Language Support: English (other languages via translation)
@@ -1512,7 +1512,7 @@ We welcome your input:
 • Transparency reports
 • Best practice recommendations
 
-Submit feedback to support@itwhip.com with subject "Privacy Feedback"
+Submit feedback to info@itwhip.com with subject "Privacy Feedback"
 
 Your input helps us improve our privacy practices and better serve our community.`
     }
@@ -1635,7 +1635,7 @@ Your input helps us improve our privacy practices and better serve our community
               </h3>
               <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 space-y-1">
                 <p><strong>Privacy Team Contact:</strong></p>
-                <p>Email: support@itwhip.com</p>
+                <p>Email: info@itwhip.com</p>
                 <p>Response Time: Within 2-4 hours during business hours</p>
                 <p>Business Hours: Monday - Sunday, 7:00 AM - 9:00 PM MST</p>
                 <p className="pt-2">For privacy rights requests, data access, corrections, deletions, or any privacy concerns.</p>

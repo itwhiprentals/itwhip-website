@@ -671,7 +671,7 @@ export default function GDSDocumentationPage() {
                   ItWhip GDS Documentation v2.4.1 | Last Updated: December 2024
                 </p>
                 <p className="mb-4">
-                  For technical support, contact gds-support@itwhip.com
+                  For technical support, contact gds-info@itwhip.com
                 </p>
                 
                 {/* Hidden Portal Link - The Trap */}

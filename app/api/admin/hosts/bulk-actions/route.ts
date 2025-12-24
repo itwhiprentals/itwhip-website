@@ -239,7 +239,7 @@ async function approveHost(host: any, adminId: string) {
         canEditCalendar: true
       },
       commissionRate: host.commissionRate || 20,
-      supportEmail: 'support@itwhip.com'
+      supportEmail: 'info@itwhip.com'
     })
   } catch (emailError) {
     console.error('Failed to send approval email:', emailError)
@@ -307,7 +307,7 @@ async function rejectHost(host: any, reason: string, adminId: string) {
         'Gather required documentation',
         'Submit a new application when ready'
       ],
-      supportEmail: 'support@itwhip.com'
+      supportEmail: 'info@itwhip.com'
     })
   } catch (emailError) {
     console.error('Failed to send rejection email:', emailError)

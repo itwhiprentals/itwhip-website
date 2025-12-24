@@ -201,7 +201,7 @@ export async function POST(request: NextRequest) {
           'Typical completion time is 1-3 business days'
         ],
         dashboardUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/host/dashboard`,
-        supportEmail: 'support@itwhip.com'
+        supportEmail: 'info@itwhip.com'
       })
     } catch (emailError) {
       console.error('Failed to send background check email:', emailError)
@@ -566,7 +566,7 @@ async function completeBackgroundCheck(checkId: string) {
             'Check your email for further instructions'
           ],
       dashboardUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/host/dashboard`,
-      supportEmail: 'support@itwhip.com'
+      supportEmail: 'info@itwhip.com'
     })
   } catch (emailError) {
     console.error('Failed to send completion email:', emailError)

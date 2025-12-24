@@ -170,7 +170,7 @@ export async function POST(req: NextRequest) {
                       
                       <p style="margin: 30px 0 0; color: #6b7280; font-size: 14px; line-height: 20px;">
                         Need help? Contact our host support team at 
-                        <a href="mailto:hosts@itwhip.com" style="color: #16a34a; text-decoration: none;">hosts@itwhip.com</a>
+                        <a href="mailto:info@itwhip.com" style="color: #16a34a; text-decoration: none;">info@itwhip.com</a>
                       </p>
                     </td>
                   </tr>
@@ -207,7 +207,7 @@ ${resetUrl}
 This link expires in 1 hour and can only be used once.
 If you didn't request this, you can safely ignore this email.
 
-Need help? Contact our host support team at hosts@itwhip.com
+Need help? Contact our host support team at info@itwhip.com
 
 ItWhip Technologies, Inc. - Host Portal
 © 2025 ItWhip. All rights reserved.

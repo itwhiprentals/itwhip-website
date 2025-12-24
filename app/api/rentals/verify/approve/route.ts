@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
          carModel: booking.car.model,
          reason: reviewNotes || 'Verification requirements not met',
          canRebook: true,
-         supportEmail: 'support@itwhip.com'
+         supportEmail: 'info@itwhip.com'
        })
      }
    }

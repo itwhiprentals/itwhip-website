@@ -321,7 +321,7 @@ DISCLOSURE 5 - OWNER'S INSURANCE MAY NOT COVER:
 The shared vehicle owner's motor vehicle liability insurance MIGHT NOT provide coverage for a shared vehicle used through a peer-to-peer car sharing program. Personal auto policies may exclude peer-to-peer car sharing use per A.R.S. § 28-9604.
 
 DISCLOSURE 6 - EMERGENCY ASSISTANCE:
-Emergency telephone number for roadside assistance and customer service: Contact through the ItWhip app or support@itwhip.com. For emergencies, contact 911 first.
+Emergency telephone number for roadside assistance and customer service: Contact through the ItWhip app or info@itwhip.com. For emergencies, contact 911 first.
 
 DISCLOSURE 7 - DRIVER INSURANCE REQUIREMENTS:
 There may be conditions requiring a person to maintain a personal motor vehicle liability insurance policy with certain minimum applicable coverage limits on a primary basis in order for the person to become a shared vehicle driver. Minimum coverage requirements are disclosed during the booking process.
@@ -783,7 +783,7 @@ Time to File Claims:
       content: `14.1 TERMINATION BY USER
 
 Voluntary Termination:
-• Request via email to support@itwhip.com
+• Request via email to info@itwhip.com
 • Complete all active bookings first
 • Pay all outstanding amounts
 • Data retained per A.R.S. § 28-9605 (6 years minimum)
@@ -887,7 +887,7 @@ ItWhip Rights:
 15.5 NOTICES
 
 Legal Notices to ItWhip:
-• Email: support@itwhip.com
+• Email: info@itwhip.com
 • Response within 2-4 business hours (7am-9pm MST)
 • Physical address provided upon request
 • Certified mail for legal service
@@ -921,7 +921,7 @@ ItWhip Maintains Compliance With:
 15.8 CONTACT INFORMATION
 
 ItWhip Technologies, Inc.
-Email: support@itwhip.com
+Email: info@itwhip.com
 Support Hours: 7:00 AM - 9:00 PM MST, 7 days
 Response Time: 2-4 hours typical
 
@@ -1071,7 +1071,7 @@ Service of process per Arizona Rules of Civil Procedure`
               </h3>
               <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 space-y-1">
                 <p><strong>ItWhip Technologies, Inc.</strong></p>
-                <p>Email: support@itwhip.com</p>
+                <p>Email: info@itwhip.com</p>
                 <p>Support Response Time: Within 2-4 hours during business hours</p>
                 <p>Business Hours: Monday - Sunday, 7:00 AM - 9:00 PM MST</p>
                 <p>Emergency: For accidents or urgent safety issues, contact 911 first</p>

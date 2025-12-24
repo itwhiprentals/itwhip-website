@@ -333,7 +333,7 @@ async function requestDocuments(
       })),
       deadline: requestDeadline.toLocaleDateString(),
       uploadUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/host/profile`,
-      supportEmail: 'support@itwhip.com'
+      supportEmail: 'info@itwhip.com'
     })
   } catch (emailError) {
     console.error('Failed to send document request email:', emailError)

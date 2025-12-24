@@ -280,7 +280,7 @@ export default function RentalAgreementModal({
           {(isPending || context === 'preview') && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 opacity-10">
               <div className="transform -rotate-45">
-                <p className="text-4xl sm:text-6xl font-bold text-gray-900">
+                <p className="text-4xl sm:text-6xl font-bold text-gray-900 dark:text-white">
                   {context === 'preview' ? 'DRAFT' : 'PENDING VERIFICATION'}
                 </p>
               </div>

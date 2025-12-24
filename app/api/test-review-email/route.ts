@@ -398,7 +398,7 @@ export async function GET() {
               </div>
               
               <p style="text-align: center; color: #6b7280; font-size: 14px; margin-top: 32px;">
-                Questions? Contact us at <a href="mailto:support@itwhip.com" style="color: #3b82f6; text-decoration: none;">support@itwhip.com</a>
+                Questions? Contact us at <a href="mailto:info@itwhip.com" style="color: #3b82f6; text-decoration: none;">info@itwhip.com</a>
               </p>
             </div>
             

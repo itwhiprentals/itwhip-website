@@ -222,7 +222,7 @@ export function getPickupReminderTemplate(data: PickupReminderData): EmailTempla
            </div>
            
            <p style="text-align: center; margin-top: 24px; font-size: 14px; color: #6b7280;">
-             Questions? Contact support@itwhip.com or call your host directly
+             Questions? Contact info@itwhip.com or call your host directly
            </p>
          </div>
          
@@ -271,7 +271,7 @@ IMPORTANT REMINDERS:
 
 View booking details: ${data.dashboardUrl}
 
-Questions? Contact support@itwhip.com or call your host directly
+Questions? Contact info@itwhip.com or call your host directly
 
 ITWHIP - Premium Vehicle Rentals
 © 2024 ItWhip Technologies. All rights reserved.

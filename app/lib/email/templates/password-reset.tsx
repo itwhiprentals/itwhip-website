@@ -113,7 +113,7 @@ interface PasswordResetEmailProps {
                       <!-- Additional Help -->
                       <p style="margin: 32px 0 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
                         Need help? Contact our support team at 
-                        <a href="mailto:support@itwhip.com" style="color: #16a34a; text-decoration: none;">support@itwhip.com</a>
+                        <a href="mailto:info@itwhip.com" style="color: #16a34a; text-decoration: none;">info@itwhip.com</a>
                       </p>
                     </td>
                   </tr>
@@ -232,7 +232,7 @@ interface PasswordResetEmailProps {
                         </p>
                         <p style="margin: 0; color: #92400e; font-size: 14px; line-height: 1.5;">
                           If you didn't make this change, please contact our support team immediately at 
-                          <a href="mailto:support@itwhip.com" style="color: #92400e; text-decoration: underline;">support@itwhip.com</a>
+                          <a href="mailto:info@itwhip.com" style="color: #92400e; text-decoration: underline;">info@itwhip.com</a>
                         </p>
                       </div>
                     </td>

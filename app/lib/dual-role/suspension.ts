@@ -227,7 +227,7 @@ async function sendSuspensionNotification(
 
                     <p style="margin: 20px 0 0; color: #6b7280; font-size: 12px; line-height: 18px; text-align: center;">
                       If you have questions about this suspension, please contact our support team at
-                      <a href="mailto:support@itwhip.com" style="color: #3b82f6; text-decoration: none;">support@itwhip.com</a>
+                      <a href="mailto:info@itwhip.com" style="color: #3b82f6; text-decoration: none;">info@itwhip.com</a>
                     </p>
                   </td>
                 </tr>

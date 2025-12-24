@@ -137,7 +137,7 @@ export async function POST(req: NextRequest) {
                             <p style="margin: 0; color: #92400e; font-size: 14px; line-height: 20px;">
                               <strong>⚠️ Didn't change your password?</strong><br>
                               If you didn't make this change, please contact our host support team immediately at 
-                              <a href="mailto:hosts@itwhip.com" style="color: #92400e; text-decoration: underline;">hosts@itwhip.com</a>
+                              <a href="mailto:info@itwhip.com" style="color: #92400e; text-decoration: underline;">info@itwhip.com</a>
                             </p>
                           </div>
                         </td>
@@ -174,7 +174,7 @@ Changed on: ${new Date().toLocaleString('en-US', { dateStyle: 'long', timeStyle:
 You can now sign in to the Host Portal with your new password.
 
 ⚠️ Didn't change your password?
-If you didn't make this change, please contact our host support team immediately at hosts@itwhip.com
+If you didn't make this change, please contact our host support team immediately at info@itwhip.com
 
 ItWhip Technologies, Inc. - Host Portal
 © 2025 ItWhip. All rights reserved.

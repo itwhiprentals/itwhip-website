@@ -278,8 +278,8 @@ export function getHostRejectionTemplate(data: HostRejectionData): EmailTemplate
             
             <p style="font-size: 14px; color: #6b7280; text-align: center; margin-top: 32px;">
               If you have questions about this decision, please contact our support team:<br>
-              <a href="mailto:${data.supportEmail || 'hosts@itwhip.com'}" style="color: #3b82f6;">
-                ${data.supportEmail || 'hosts@itwhip.com'}
+              <a href="mailto:${data.supportEmail || 'info@itwhip.com'}" style="color: #3b82f6;">
+                ${data.supportEmail || 'info@itwhip.com'}
               </a>
             </p>
             
@@ -333,7 +333,7 @@ ${data.reapplyUrl ? `Prepare to reapply: ${data.reapplyUrl}` : ''}
 
 ${data.appealUrl ? `Appeal this decision: ${data.appealUrl}` : ''}
 
-Questions? Contact our support team at ${data.supportEmail || 'hosts@itwhip.com'}
+Questions? Contact our support team at ${data.supportEmail || 'info@itwhip.com'}
 
 We value your interest in ItWhip and hope to work with you in the future.
 

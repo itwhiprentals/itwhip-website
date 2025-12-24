@@ -235,8 +235,8 @@ export function getHostDocumentRequestTemplate(data: HostDocumentRequestData): E
             
             <p style="font-size: 14px; color: #6b7280; text-align: center; margin-top: 32px;">
               Need help? Our host support team is here to assist:<br>
-              <a href="mailto:${data.supportEmail || 'hosts@itwhip.com'}" style="color: #f59e0b;">
-                ${data.supportEmail || 'hosts@itwhip.com'}
+              <a href="mailto:${data.supportEmail || 'info@itwhip.com'}" style="color: #f59e0b;">
+                ${data.supportEmail || 'info@itwhip.com'}
               </a>
             </p>
           </div>
@@ -283,7 +283,7 @@ Tips for Document Photos:
 - Make sure the document isn't expired
 - File size should be under 10MB
 
-Need help? Contact our host support team at ${data.supportEmail || 'hosts@itwhip.com'}
+Need help? Contact our host support team at ${data.supportEmail || 'info@itwhip.com'}
 
 ITWHIP HOST PORTAL
 Your Partner in Vehicle Sharing

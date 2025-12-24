@@ -1581,8 +1581,8 @@ X-RateLimit-Reset: 1640995200`}
                   <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
                     Our security team is available 24/7 to address your concerns
                   </p>
-                  <a href="mailto:security@itwhip.com" className="text-sm font-semibold text-amber-600 hover:text-amber-700">
-                    security@itwhip.com
+                  <a href="mailto:info@itwhip.com" className="text-sm font-semibold text-amber-600 hover:text-amber-700">
+                    info@itwhip.com
                   </a>
                 </div>
               </section>

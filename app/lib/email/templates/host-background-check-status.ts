@@ -315,8 +315,8 @@ export function getHostBackgroundCheckStatusTemplate(data: HostBackgroundCheckDa
             <p style="font-size: 14px; color: #6b7280; text-align: center; margin-top: 32px;">
               Questions about the background check process?<br>
               Contact our host support team at<br>
-              <a href="mailto:${data.supportEmail || 'hosts@itwhip.com'}" style="color: ${statusColors[data.checkStatus]};">
-                ${data.supportEmail || 'hosts@itwhip.com'}
+              <a href="mailto:${data.supportEmail || 'info@itwhip.com'}" style="color: ${statusColors[data.checkStatus]};">
+                ${data.supportEmail || 'info@itwhip.com'}
               </a>
             </p>
           </div>
@@ -375,7 +375,7 @@ You're ready to start hosting!
 - Start earning with ItWhip
 ` : ''}
 
-Questions? Contact our host support team at ${data.supportEmail || 'hosts@itwhip.com'}
+Questions? Contact our host support team at ${data.supportEmail || 'info@itwhip.com'}
 
 ITWHIP HOST PORTAL
 Building Trust in Vehicle Sharing

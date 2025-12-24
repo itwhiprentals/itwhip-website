@@ -150,7 +150,7 @@ const organizationSchema = {
     '@type': 'ContactPoint',
     contactType: 'customer service',
     telephone: '+1-305-399-9069',
-    email: 'support@itwhip.com',
+    email: 'info@itwhip.com',
     url: 'https://itwhip.com/contact',
     availableLanguage: ['English', 'Spanish']
   },

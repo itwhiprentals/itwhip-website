@@ -450,10 +450,10 @@ Join us in revolutionizing transportation in Phoenix and beyond. Whether you're 
                 Get in Touch
               </h3>
               <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                <p><strong>General Inquiries:</strong> support@itwhip.com</p>
-                <p><strong>Host Support:</strong> hosts@itwhip.com</p>
-                <p><strong>Partner Inquiries:</strong> partners@itwhip.com</p>
-                <p><strong>Media Inquiries:</strong> media@itwhip.com</p>
+                <p><strong>General Inquiries:</strong> info@itwhip.com</p>
+                <p><strong>Host Support:</strong> info@itwhip.com</p>
+                <p><strong>Partner Inquiries:</strong> info@itwhip.com</p>
+                <p><strong>Media Inquiries:</strong> info@itwhip.com</p>
                 <p className="pt-2">Response Time: Within 2-4 hours during business hours</p>
                 <p>Business Hours: Monday - Sunday, 7:00 AM - 9:00 PM MST</p>
                 <p className="pt-2 italic">Based in Phoenix, Arizona • Serving communities across the Southwest</p>

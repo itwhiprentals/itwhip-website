@@ -558,7 +558,7 @@ export default function CancellationPolicyContent() {
                     <IoMailOutline className="w-4 h-4 mr-2" />
                     Email Support
                   </h3>
-                  <p className="text-sm text-amber-100">support@itwhip.com</p>
+                  <p className="text-sm text-amber-100">info@itwhip.com</p>
                   <p className="text-xs text-amber-200 mt-1">Response within 2-4 hours</p>
                 </div>
                 <div className="bg-white/10 rounded-lg p-4">

@@ -547,7 +547,7 @@ Hosts must maintain:
 
 For protection plan questions or to report an incident:
 • Submit a claim at itwhip.com/claims
-• Email: support@itwhip.com
+• Email: info@itwhip.com
 • Response time: Within 2 business hours during business days
 • Emergency roadside assistance: Available 24/7 through app
 
@@ -1059,7 +1059,7 @@ If any provision is found invalid:
 
 You may terminate your account by:
 • Submitting request via app/website
-• Emailing support@itwhip.com
+• Emailing info@itwhip.com
 • Completing all active bookings
 • Paying all outstanding amounts
 • Removing vehicle listings (Hosts)
@@ -1301,7 +1301,7 @@ Neither party liable for failure due to:
 Legal notices must be sent to:
 ItWhip Technologies, Inc.
 Legal Department
-support@itwhip.com
+info@itwhip.com
 
 User notices sent to:
 • Registered email address
@@ -1459,7 +1459,7 @@ If any provision is invalid:
               </h3>
               <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 space-y-1">
                 <p><strong>ItWhip Technologies, Inc.</strong></p>
-                <p>Email: support@itwhip.com</p>
+                <p>Email: info@itwhip.com</p>
                 <p>Support Response Time: Within 2-4 hours during business hours</p>
                 <p>Business Hours: Monday - Sunday, 7:00 AM - 9:00 PM MST</p>
                 <p>Emergency: For accidents or urgent safety issues, contact local authorities first, then notify us immediately</p>

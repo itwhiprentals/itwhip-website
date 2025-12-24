@@ -226,7 +226,7 @@ export async function POST(
           documentIssues,
           uploadUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/host/profile`,
           deadline: `${Math.ceil((deadlineDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))} days`,
-          supportEmail: process.env.SUPPORT_EMAIL || 'support@itwhip.com'
+          supportEmail: process.env.SUPPORT_EMAIL || 'info@itwhip.com'
         })
       }
     } catch (emailError) {

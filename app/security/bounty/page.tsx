@@ -557,7 +557,7 @@ export default function BugBountyPage() {
             </Link>
           </div>
           <p className="text-sm text-green-200 mt-6">
-            Questions? Email security@itwhip.com with subject "Bug Bounty"
+            Questions? Email info@itwhip.com with subject "Bug Bounty"
           </p>
         </div>
 

@@ -227,7 +227,7 @@ export function getApprovalEmailTemplate(data: any): string {
             </div>
             
             <p style="text-align: center; margin-top: 24px; font-size: 13px; color: #6b7280;">
-              Questions? Contact support@itwhip.com
+              Questions? Contact info@itwhip.com
             </p>
           </div>
           

@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
 
     // Determine sender info based on senderType
     let senderName = 'ItWhip Support'
-    let senderEmail = 'support@itwhip.com'
+    let senderEmail = 'info@itwhip.com'
     let senderTypeForDb = 'support'
 
     // Try RentalMessage first (booking messages)
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
       } else {
         // Default: support
         senderName = 'ItWhip Support'
-        senderEmail = 'support@itwhip.com'
+        senderEmail = 'info@itwhip.com'
         senderTypeForDb = 'support'
       }
 
@@ -211,7 +211,7 @@ export async function POST(request: NextRequest) {
       senderTypeForDb = 'admin'
     } else {
       senderName = 'ItWhip Support'
-      senderEmail = 'support@itwhip.com'
+      senderEmail = 'info@itwhip.com'
       senderTypeForDb = 'support'
     }
 
@@ -289,7 +289,7 @@ export async function POST(request: NextRequest) {
               <p style="margin: 0; white-space: pre-wrap;">${reply || '[File attachment only]'}</p>
             </div>
             ${attachmentsHtml}
-            <p>If you have more questions, feel free to reply to this email or contact us at support@itwhip.com</p>
+            <p>If you have more questions, feel free to reply to this email or contact us at info@itwhip.com</p>
             <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
               Best regards,<br>
               ItWhip Support Team

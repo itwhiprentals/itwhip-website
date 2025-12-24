@@ -327,7 +327,7 @@ export function getClaimNotificationFleetTemplate(data: ClaimNotificationFleetDa
 
             <p style="color: #6b7280; font-size: 13px; margin-top: 24px; padding-top: 24px; border-top: 1px solid #e5e7eb; text-align: center;">
               <strong>Fleet Admin Portal</strong><br>
-              Need help? Contact tech support at <a href="mailto:support@itwhip.com" style="color: #3b82f6;">support@itwhip.com</a>
+              Need help? Contact tech support at <a href="mailto:info@itwhip.com" style="color: #3b82f6;">info@itwhip.com</a>
             </p>
           </div>
 
@@ -382,7 +382,7 @@ Quick Actions:
 - Deny: ${data.reviewUrl}?action=deny
 
 Fleet Admin Portal
-Need help? Contact tech support at support@itwhip.com
+Need help? Contact tech support at info@itwhip.com
 
 ItWhip Fleet Management System
 © 2024 ItWhip. All rights reserved.

@@ -255,8 +255,8 @@ export function getOAuthWelcomeTemplate(data: OAuthWelcomeData): EmailTemplate {
 
             <p style="font-size: 14px; color: #6b7280; text-align: center; margin-top: 32px;">
               Questions? We're here to help:<br>
-              <a href="mailto:support@itwhip.com" style="color: #10b981;">
-                support@itwhip.com
+              <a href="mailto:info@itwhip.com" style="color: #10b981;">
+                info@itwhip.com
               </a>
             </p>
           </div>
@@ -307,7 +307,7 @@ Takes less than 5 minutes!
 WHY VERIFY?
 Verified renters get instant booking approval, lower deposits, and access to premium vehicles.
 
-Questions? Contact us at support@itwhip.com
+Questions? Contact us at info@itwhip.com
 
 ---
 ITWHIP - Premium Car Rentals

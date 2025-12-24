@@ -190,7 +190,7 @@ export default function ViewPolicyModal({
                   <li>• Coverage applies only to trips booked through the platform</li>
                   <li>• Guest selects coverage tier during booking</li>
                   <li>• Keep your personal auto insurance active for non-platform use</li>
-                  <li>• Report any incidents within 24 hours to support@itwhip.com</li>
+                  <li>• Report any incidents within 24 hours to info@itwhip.com</li>
                   <li>• Claims are typically processed within 24-48 hours</li>
                 </ul>
               </div>
@@ -215,7 +215,7 @@ export default function ViewPolicyModal({
               Questions about coverage?
             </p>
             <a 
-              href="mailto:support@itwhip.com"
+              href="mailto:info@itwhip.com"
               className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
             >
               Contact Support

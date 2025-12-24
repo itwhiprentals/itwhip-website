@@ -201,7 +201,7 @@ export function getPaymentReceiptTemplate(data: PaymentReceiptData): EmailTempla
            </div>
            
            <p style="text-align: center; margin-top: 24px; font-size: 14px; color: #6b7280;">
-             For billing questions, contact support@itwhip.com
+             For billing questions, contact info@itwhip.com
            </p>
          </div>
          
@@ -244,7 +244,7 @@ TAX INFORMATION:
 This receipt serves as proof of payment for tax purposes.
 Transaction ID: ${data.transactionId}
 
-For billing questions, contact support@itwhip.com
+For billing questions, contact info@itwhip.com
 
 ITWHIP - Premium Vehicle Rentals
 Phoenix, AZ 85255

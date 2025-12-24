@@ -312,8 +312,8 @@ export function getHostOAuthWelcomeTemplate(data: HostOAuthWelcomeData): EmailTe
 
             <p style="font-size: 14px; color: #6b7280; text-align: center; margin-top: 32px;">
               Questions about becoming a host? We're here to help:<br>
-              <a href="mailto:hosts@itwhip.com" style="color: #3b82f6;">
-                hosts@itwhip.com
+              <a href="mailto:info@itwhip.com" style="color: #3b82f6;">
+                info@itwhip.com
               </a>
             </p>
           </div>
@@ -389,7 +389,7 @@ ${data.dashboardUrl}
 
 Start earning in under 30 minutes!
 
-Questions about becoming a host? Contact us at hosts@itwhip.com
+Questions about becoming a host? Contact us at info@itwhip.com
 
 ---
 ITWHIP HOST PLATFORM - Premium Car Rental Hosting

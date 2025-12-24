@@ -225,7 +225,7 @@ export function getBookingConfirmedTemplate(data: BookingConfirmedData): EmailTe
            </div>
            
            <p style="text-align: center; margin-top: 24px; font-size: 14px; color: #6b7280;">
-             Questions? Contact support@itwhip.com
+             Questions? Contact info@itwhip.com
            </p>
          </div>
          
@@ -271,7 +271,7 @@ WHAT HAPPENS NEXT:
 
 View booking details: ${data.dashboardUrl}
 
-Questions? Contact support@itwhip.com
+Questions? Contact info@itwhip.com
 
 ITWHIP - Premium Vehicle Rentals
 © 2025 ItWhip Technologies. All rights reserved.

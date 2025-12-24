@@ -192,7 +192,7 @@ export async function POST(
     // Send notification email to HR
     try {
       await sendEmail({
-        to: process.env.CAREERS_EMAIL || 'careers@itwhip.com',
+        to: process.env.CAREERS_EMAIL || 'info@itwhip.com',
         subject: `New Application: ${job.title} - ${firstName} ${lastName}`,
         html: `
           <!DOCTYPE html>

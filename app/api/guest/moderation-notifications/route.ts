@@ -107,7 +107,7 @@ export async function GET(request: NextRequest) {
           type = 'ban'
           title = 'Account Permanently Banned'
           message = 'Your account has been permanently restricted from using our services.'
-          actionLink = 'mailto:support@itwhip.com'
+          actionLink = 'mailto:info@itwhip.com'
           actionLabel = 'Contact Support'
           break
 

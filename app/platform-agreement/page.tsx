@@ -303,7 +303,7 @@ This Agreement is governed by:
 10.3 CONTACT
 
 For questions about this Agreement:
-• Email: legal@itwhip.com
+• Email: info@itwhip.com
 • Mail: ItWhip Technologies, Inc., Phoenix, AZ
 
 Last Updated: December 2024`
@@ -399,7 +399,7 @@ Last Updated: December 2024`
               Contact our legal team for clarification on any terms.
             </p>
             <a
-              href="mailto:legal@itwhip.com"
+              href="mailto:info@itwhip.com"
               className="inline-flex items-center gap-2 px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium transition-colors"
             >
               Contact Legal Team

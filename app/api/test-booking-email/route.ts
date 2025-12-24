@@ -374,7 +374,7 @@ export async function GET() {
               
               <div class="help-text">
                 Need assistance? Our concierge team is available at<br>
-                <a href="mailto:support@itwhip.com">support@itwhip.com</a> or (480) 555-0100
+                <a href="mailto:info@itwhip.com">info@itwhip.com</a> or (480) 555-0100
               </div>
             </div>
             

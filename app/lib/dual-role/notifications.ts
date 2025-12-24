@@ -191,7 +191,7 @@ export async function sendPhoneChangeNotification(
                       <span style="color: #1e3a8a; font-size: 14px;">This change applies to both your host and guest profiles.</span>
                     </div>
                     <p style="margin: 0; color: #6b7280; font-size: 14px; line-height: 20px;">
-                      If you didn't make this change, contact support immediately at <a href="mailto:support@itwhip.com" style="color: #10b981;">support@itwhip.com</a>
+                      If you didn't make this change, contact support immediately at <a href="mailto:info@itwhip.com" style="color: #10b981;">info@itwhip.com</a>
                     </p>
                   </td>
                 </tr>

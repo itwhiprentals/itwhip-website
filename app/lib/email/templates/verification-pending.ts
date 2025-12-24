@@ -232,7 +232,7 @@ export function getVerificationPendingTemplate(data: VerificationPendingData): E
            </div>
            
            <p style="text-align: center; margin-top: 24px; font-size: 14px; color: #6b7280;">
-             Questions? Contact support@itwhip.com
+             Questions? Contact info@itwhip.com
            </p>
          </div>
          
@@ -265,7 +265,7 @@ BOOKING DETAILS:
 
 Track your booking: ${data.trackingUrl}
 
-Questions? Contact support@itwhip.com
+Questions? Contact info@itwhip.com
 
 ITWHIP - Premium Vehicle Rentals
 © 2025 ItWhip Technologies. All rights reserved.

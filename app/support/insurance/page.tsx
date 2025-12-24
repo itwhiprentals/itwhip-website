@@ -66,7 +66,7 @@ const COMMON_QUESTIONS = [
   },
   {
     question: 'What if my claim is denied?',
-    answer: 'If your primary insurance denies a claim, platform secondary coverage may still apply. You can appeal a denial by providing additional documentation. Contact our claims team at claims@itwhip.com for assistance.'
+    answer: 'If your primary insurance denies a claim, platform secondary coverage may still apply. You can appeal a denial by providing additional documentation. Contact our claims team at info@itwhip.com for assistance.'
   },
   {
     question: 'Do guests need their own insurance?',
@@ -461,8 +461,8 @@ export default function InsuranceSupportPage() {
                 <IoMailOutline className="w-8 h-8 text-emerald-500 mx-auto mb-3" />
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Email</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">For claims & questions</p>
-                <a href="mailto:claims@itwhip.com" className="text-blue-600 hover:text-blue-700 font-medium text-sm">
-                  claims@itwhip.com
+                <a href="mailto:info@itwhip.com" className="text-blue-600 hover:text-blue-700 font-medium text-sm">
+                  info@itwhip.com
                 </a>
                 <p className="text-xs text-gray-500 mt-1">Response within 24 hours</p>
               </div>

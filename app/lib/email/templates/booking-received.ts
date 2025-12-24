@@ -179,7 +179,7 @@ export function getBookingReceivedTemplate(data: BookingReceivedData): EmailTemp
             </div>
             
             <p style="text-align: center; margin-top: 24px; font-size: 14px; color: #6b7280;">
-              Questions? Contact support@itwhip.com
+              Questions? Contact info@itwhip.com
             </p>
           </div>
           
@@ -225,7 +225,7 @@ ${data.isP2P ?
 3. Bring your driver's license and insurance
 4. Enjoy your rental!`}
 
-Questions? Contact support@itwhip.com
+Questions? Contact info@itwhip.com
 
 ITWHIP - Premium Vehicle Rentals
 © 2024 ItWhip Technologies. All rights reserved.

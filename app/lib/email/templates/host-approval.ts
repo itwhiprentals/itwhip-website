@@ -294,8 +294,8 @@ export function getHostApprovalTemplate(data: HostApprovalData): EmailTemplate {
             
             <p style="font-size: 14px; color: #6b7280; text-align: center; margin-top: 32px;">
               Need help getting started? Our host success team is here for you:<br>
-              <a href="mailto:${data.supportEmail || 'hosts@itwhip.com'}" style="color: #8b5cf6;">
-                ${data.supportEmail || 'hosts@itwhip.com'}
+              <a href="mailto:${data.supportEmail || 'info@itwhip.com'}" style="color: #8b5cf6;">
+                ${data.supportEmail || 'info@itwhip.com'}
               </a><br>
               <span style="font-size: 13px;">Response time: Usually within 2 hours during business hours</span>
             </p>
@@ -353,7 +353,7 @@ ${data.trainingUrl ? `- Host Training Videos: ${data.trainingUrl}` : ''}
 
 💡 PRO TIP: Hosts who list their first vehicle within 48 hours typically get their first booking 3x faster!
 
-Need help getting started? Contact our host success team at ${data.supportEmail || 'hosts@itwhip.com'}
+Need help getting started? Contact our host success team at ${data.supportEmail || 'info@itwhip.com'}
 Response time: Usually within 2 hours during business hours
 
 Welcome to our host community!

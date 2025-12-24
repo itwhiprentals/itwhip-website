@@ -293,7 +293,7 @@ export function getClaimNotificationGuestTemplate(data: ClaimNotificationGuestDa
             </p>
 
             <p style="color: #6b7280; font-size: 13px; margin-top: 24px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
-              <strong>Questions?</strong> Contact us immediately at <a href="mailto:claims@itwhip.com" style="color: #3b82f6;">claims@itwhip.com</a> or call (602) 555-0100
+              <strong>Questions?</strong> Contact us immediately at <a href="mailto:info@itwhip.com" style="color: #3b82f6;">info@itwhip.com</a> or call (602) 555-0100
             </p>
           </div>
 
@@ -351,7 +351,7 @@ WHAT TO INCLUDE IN YOUR RESPONSE:
 - Contact information for follow-up
 
 Questions? Contact us immediately:
-Email: claims@itwhip.com
+Email: info@itwhip.com
 Phone: (602) 555-0100
 
 © 2024 ItWhip. All rights reserved.

@@ -130,7 +130,7 @@ Video Content:
 
 Customer Support:
 • Text-based chat support
-• Email support: support@itwhip.com
+• Email support: info@itwhip.com
 • TTY/TDD relay service compatible
 • Video relay service (VRS) compatible
 • Response within 2-4 business hours`
@@ -376,8 +376,8 @@ Third-Party Audits:
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                   For accessibility inquiries and feedback
                 </p>
-                <a href="mailto:accessibility@itwhip.com" className="text-blue-600 hover:text-blue-700 font-medium">
-                  accessibility@itwhip.com
+                <a href="mailto:info@itwhip.com" className="text-blue-600 hover:text-blue-700 font-medium">
+                  info@itwhip.com
                 </a>
               </div>
               

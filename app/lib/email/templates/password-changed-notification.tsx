@@ -86,7 +86,7 @@ export interface PasswordChangedEmailData {
   
                       <p style="margin: 20px 0 0; color: #6b7280; font-size: 14px; line-height: 20px;">
                         Need help? Contact 
-                        <a href="mailto:security@itwhip.com" style="color: #10b981; text-decoration: none;">security@itwhip.com</a>
+                        <a href="mailto:info@itwhip.com" style="color: #10b981; text-decoration: none;">info@itwhip.com</a>
                       </p>
                     </td>
                   </tr>
@@ -133,7 +133,7 @@ export interface PasswordChangedEmailData {
   
   If you made this change, you can safely ignore this email.
   
-  Need help? Contact security@itwhip.com
+  Need help? Contact info@itwhip.com
   
   ItWhip Technologies, Inc.
   © 2025 ItWhip. All rights reserved.

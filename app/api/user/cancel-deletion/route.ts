@@ -196,7 +196,7 @@ function generateCancellationEmail(name: string): string {
 
                     <p style="margin: 24px 0 0; color: #6b7280; font-size: 14px; line-height: 20px;">
                       If you didn't cancel this deletion, please contact our support team immediately at
-                      <a href="mailto:support@itwhip.com" style="color: #10b981; text-decoration: none;">support@itwhip.com</a>
+                      <a href="mailto:info@itwhip.com" style="color: #10b981; text-decoration: none;">info@itwhip.com</a>
                     </p>
                   </td>
                 </tr>

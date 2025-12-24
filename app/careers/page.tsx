@@ -451,7 +451,7 @@ export default function CareersPage() {
               <p className="text-gray-600 dark:text-gray-400 mb-4">
                 We're always looking for exceptional talent. Send us your resume and tell us how you can contribute.
               </p>
-              <a href="mailto:careers@itwhip.com" className="inline-flex items-center space-x-2 px-6 py-3 bg-amber-600 text-white rounded-lg font-semibold hover:bg-amber-700 transition">
+              <a href="mailto:info@itwhip.com" className="inline-flex items-center space-x-2 px-6 py-3 bg-amber-600 text-white rounded-lg font-semibold hover:bg-amber-700 transition">
                 <IoMailOutline className="w-5 h-5" />
                 <span>Send Your Resume</span>
               </a>

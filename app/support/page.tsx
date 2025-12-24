@@ -163,11 +163,11 @@ export default function SupportPage() {
               {/* Quick Contact */}
               <div className="flex flex-wrap gap-4">
                 <a
-                  href="mailto:support@itwhip.com"
+                  href="mailto:info@itwhip.com"
                   className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors text-sm font-medium"
                 >
                   <IoMailOutline className="w-5 h-5" />
-                  support@itwhip.com
+                  info@itwhip.com
                 </a>
                 <a
                   href="tel:+14805550100"

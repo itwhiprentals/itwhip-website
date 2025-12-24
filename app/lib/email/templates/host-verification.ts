@@ -211,7 +211,7 @@ export function getHostVerificationTemplate(data: HostVerificationData): EmailTe
             
             <p style="font-size: 14px; color: #6b7280; text-align: center; margin-top: 32px;">
               Need help? Contact our host support team at<br>
-              <a href="mailto:hosts@itwhip.com" style="color: #8b5cf6;">hosts@itwhip.com</a>
+              <a href="mailto:info@itwhip.com" style="color: #8b5cf6;">info@itwhip.com</a>
             </p>
           </div>
           
@@ -250,7 +250,7 @@ What happens after verification?
 
 If you didn't request this verification, please ignore this email.
 
-Need help? Contact our host support team at hosts@itwhip.com
+Need help? Contact our host support team at info@itwhip.com
 
 ITWHIP HOST PORTAL
 Empowering Vehicle Owners in Phoenix

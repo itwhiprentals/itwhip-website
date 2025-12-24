@@ -579,7 +579,7 @@ export default function CancellationPolicyModal({
                     <strong>Phone:</strong> 1-800-ITWHIP-1 (Priority for same-day trips)
                   </p>
                   <p className="text-xs text-gray-700 dark:text-gray-200">
-                    <strong>Email:</strong> support@itwhip.com
+                    <strong>Email:</strong> info@itwhip.com
                   </p>
                   <p className="text-xs text-gray-700 dark:text-gray-200">
                     <strong>In-App:</strong> Chat with support directly

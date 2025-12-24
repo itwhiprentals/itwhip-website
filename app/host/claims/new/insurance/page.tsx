@@ -197,10 +197,10 @@ export default function InsuranceClaimPage() {
               <p className="text-gray-600 dark:text-gray-400">
                 Contact our support team at{' '}
                 <a 
-                  href="mailto:claims@itwhip.com" 
+                  href="mailto:info@itwhip.com" 
                   className="text-purple-600 dark:text-purple-400 hover:underline"
                 >
-                  claims@itwhip.com
+                  info@itwhip.com
                 </a>
                 {' '}or call{' '}
                 <a 

@@ -177,7 +177,7 @@ export function HackerTransparency() {
       { delay: 8000, text: '' },
       { delay: 8500, text: 'Want to try hacking us? Join our bug bounty program!' },
       { delay: 9000, text: 'Maximum payout: $50,000 for critical vulnerabilities' },
-      { delay: 9500, text: 'Email: security@itwhip.com' }
+      { delay: 9500, text: 'Email: info@itwhip.com' }
     ]
 
     commands.forEach(cmd => {
@@ -372,7 +372,7 @@ export function HackerTransparency() {
                 <div className="w-3 h-3 bg-red-500 rounded-full"></div>
                 <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
                 <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-gray-400 text-sm ml-3">security@itwhip.com</span>
+                <span className="text-gray-400 text-sm ml-3">info@itwhip.com</span>
               </div>
               <button
                 onClick={runTerminalDemo}

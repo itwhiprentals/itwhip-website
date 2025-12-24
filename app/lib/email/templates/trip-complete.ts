@@ -197,7 +197,7 @@ export function getTripCompleteTemplate(data: TripCompleteData): EmailTemplate {
            
            <p style="text-align: center; margin-top: 24px; font-size: 14px; color: #6b7280;">
              Thank you for choosing ItWhip. We look forward to your next trip!<br>
-             Questions? Contact support@itwhip.com
+             Questions? Contact info@itwhip.com
            </p>
          </div>
          
@@ -235,7 +235,7 @@ Valid for 30 days
 
 Thank you for choosing ItWhip. We look forward to your next trip!
 
-Questions? Contact support@itwhip.com
+Questions? Contact info@itwhip.com
 
 ITWHIP - Premium Vehicle Rentals
 © 2024 ItWhip Technologies. All rights reserved.
