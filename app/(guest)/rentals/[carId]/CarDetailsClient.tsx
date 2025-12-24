@@ -36,6 +36,7 @@ import HostProfile from '../components/details/HostProfile'
 import ReviewSection from '../components/details/ReviewSection'
 import SimilarCars from '../components/details/SimilarCars'
 import { formatCurrency } from '@/app/(guest)/rentals/lib/rental-utils'
+import Header from '@/app/components/Header'
 
 // Updated type definition with suspension fields
 interface RentalCarWithDetails {
@@ -170,9 +171,18 @@ export default function CarDetailsClient({ params }: PageProps) {
   const router = useRouter()
   const resolvedParams = use(params)
   const urlSlug = resolvedParams.carId
-  
+
   // Extract the real car ID from the URL
   const carId = extractCarId(urlSlug)
+
+  // Smart back navigation: go back if history exists, otherwise go home
+  const handleBackNavigation = () => {
+    if (window.history.length > 1) {
+      router.back()
+    } else {
+      router.push('/')
+    }
+  }
   
   const [car, setCar] = useState<RentalCarWithDetails | null>(null)
   const [loading, setLoading] = useState(true)
@@ -433,6 +443,9 @@ export default function CarDetailsClient({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Header */}
+      <Header />
+
       {/* SUSPENSION WARNING BANNER */}
       {car.suspensionMessage && (
         <div className="bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800">
@@ -481,7 +494,7 @@ export default function CarDetailsClient({ params }: PageProps) {
             {!isViewingAllPhotos && (
               <div className="absolute top-4 left-4 right-4 z-30 flex items-center justify-between">
                 <button
-                  onClick={() => router.back()}
+                  onClick={handleBackNavigation}
                   className="bg-black/50 backdrop-blur-md text-white p-2.5 rounded-full shadow-lg hover:bg-black/60 transition-colors flex items-center gap-2"
                 >
                   <IoArrowBackOutline className="w-5 h-5" />
@@ -524,7 +537,7 @@ export default function CarDetailsClient({ params }: PageProps) {
           {!isViewingAllPhotos && (
             <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-4 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)]">
               <button
-                onClick={() => router.back()}
+                onClick={handleBackNavigation}
                 className="bg-black/50 backdrop-blur-md text-white p-2.5 rounded-full shadow-lg"
               >
                 <IoArrowBackOutline className="w-5 h-5" />
@@ -885,8 +898,8 @@ export default function CarDetailsClient({ params }: PageProps) {
 
           {/* Right Column - Booking Widget */}
           <div className="lg:sticky lg:top-20 h-fit">
-            <BookingWidget 
-              car={car} 
+            <BookingWidget
+              car={car}
               isBookable={car.isBookable}
               suspensionMessage={car.suspensionMessage}
             />
@@ -894,7 +907,7 @@ export default function CarDetailsClient({ params }: PageProps) {
         </div>
 
         {/* Similar Cars Section */}
-        <SimilarCars 
+        <SimilarCars
           currentCarId={car.id}
           carType={car.carType || car.type}
           city={car.city}
@@ -907,6 +920,27 @@ export default function CarDetailsClient({ params }: PageProps) {
           hostProfilePhoto={car.host?.profilePhoto || car.host?.profileImage}
           isCompany={car.host?.isCompany}
         />
+
+        {/* Important Information Footer */}
+        <section className="pt-3 pb-16 bg-gray-50 dark:bg-gray-900">
+          <div className="flex items-start gap-2">
+            <IoInformationCircleOutline className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                Important Information
+              </h4>
+              <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-relaxed">
+                Protection provided through licensed third-party insurance carriers. Coverage amounts and availability subject to vehicle eligibility, location, and underwriter approval. ItWhip facilitates coverage but is not an insurance company. Protection applies only during active rental periods booked through our platform. Physical damage reimbursement is contractual allocation of risk, not insurance. Deductibles and coverage limits are subject to change. Individual insurance requirements and coverage may vary. Consult with your personal insurance provider before participating in car sharing. FNOL and claims processes are subject to documentation requirements and may vary based on incident complexity. Insurance tier eligibility requires fleet verification of provided documentation. Lapsed insurance results in automatic tier downgrade. Platform reserves right to modify terms, features, and tier requirements with notice. Arizona-specific regulations apply. This information does not constitute insurance, legal, or financial advice.{' '}
+                <Link
+                  href="/insurance-guide"
+                  className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline"
+                >
+                  Read more about insurance coverage
+                </Link>
+              </p>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   )

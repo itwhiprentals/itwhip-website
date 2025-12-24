@@ -540,9 +540,9 @@ export default function SimilarCars({
           <div className="mb-3 pl-4">
             <h2 className="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-1.5">
               {hostProfilePhoto ? (
-                <img 
-                  src={hostProfilePhoto} 
-                  alt={displayName} 
+                <img
+                  src={hostProfilePhoto}
+                  alt={displayName}
                   className="w-5 h-5 rounded-full object-cover"
                   style={{ width: '20px', height: '20px' }}
                 />
@@ -551,15 +551,15 @@ export default function SimilarCars({
               ) : (
                 <IoPersonOutline className="w-5 h-5" />
               )}
-              
+
               {isCompanyHost ? (
                 <>More from {displayName}</>
               ) : (
                 <>{displayName ? `${displayName}'s` : "Host's"} Other Whips</>
               )}
-              
-              {hostCars.some(car => 
-                car.carType?.toLowerCase() === 'luxury' || 
+
+              {hostCars.some(car =>
+                car.carType?.toLowerCase() === 'luxury' ||
                 car.carType?.toLowerCase() === 'exotic' ||
                 car.dailyRate > 200
               ) && (
@@ -572,7 +572,7 @@ export default function SimilarCars({
               )}
             </h2>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              {isCompanyHost 
+              {isCompanyHost
                 ? 'Explore more vehicles from our fleet'
                 : 'Check out more cars from this trusted host'
               }
@@ -582,8 +582,8 @@ export default function SimilarCars({
           {loadingHost ? (
             <LoadingSkeleton />
           ) : (
-            <CarCarousel 
-              cars={hostCars} 
+            <CarCarousel
+              cars={hostCars}
               scrollId="host-cars-container"
               currentLocation={location || userLocation}
               currentCarPrice={dailyRate}
@@ -594,7 +594,7 @@ export default function SimilarCars({
 
       {/* Similar Cars Section */}
       {(similarCars.length > 0 || loading) && (
-        <div className={`${hostCars.length > 0 ? 'pt-6' : 'pt-6 border-t border-gray-200 dark:border-gray-700'} pb-6`}>
+        <div className={`${hostCars.length > 0 ? 'pt-6' : 'pt-6 border-t border-gray-200 dark:border-gray-700'}`}>
           <div className="pl-4">
             <h2 className="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-1.5 mb-1">
               <IoCarOutline className="w-4 h-4" />
@@ -608,8 +608,8 @@ export default function SimilarCars({
           {loading ? (
             <LoadingSkeleton />
           ) : (
-            <CarCarousel 
-              cars={similarCars} 
+            <CarCarousel
+              cars={similarCars}
               scrollId="similar-cars-container"
               currentLocation={location || userLocation}
               currentCarPrice={dailyRate}
