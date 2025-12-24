@@ -4,6 +4,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
 
 interface AccountLinkingProps {
   currentUser: {
@@ -11,9 +12,12 @@ interface AccountLinkingProps {
     email: string
     legacyDualId?: string | null
   }
+  userType?: 'host' | 'guest'
 }
 
-export function AccountLinking({ currentUser }: AccountLinkingProps) {
+export function AccountLinking({ currentUser, userType = 'guest' }: AccountLinkingProps) {
+  const router = useRouter()
+  const pathname = usePathname()
   const [targetEmail, setTargetEmail] = useState('')
   const [verificationCode, setVerificationCode] = useState('')
   const [requestId, setRequestId] = useState<string | null>(null)
@@ -21,6 +25,7 @@ export function AccountLinking({ currentUser }: AccountLinkingProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+  const [showAccountOptions, setShowAccountOptions] = useState(false)
 
   const handleRequestLink = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -38,6 +43,12 @@ export function AccountLinking({ currentUser }: AccountLinkingProps) {
       const data = await response.json()
 
       if (!response.ok) {
+        // If account not found, show login/signup options
+        if (data.error?.includes('No account found')) {
+          setShowAccountOptions(true)
+          setLoading(false)
+          return
+        }
         throw new Error(data.error || 'Failed to send link request')
       }
 
@@ -54,6 +65,29 @@ export function AccountLinking({ currentUser }: AccountLinkingProps) {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleCreateOrLogin = (action: 'login' | 'signup') => {
+    // Store linking intent in sessionStorage
+    sessionStorage.setItem('linkingIntent', JSON.stringify({
+      currentUserId: currentUser.id,
+      currentUserEmail: currentUser.email,
+      targetEmail,
+      userType,
+      returnPath: pathname
+    }))
+
+    // Redirect to appropriate page with linking context
+    const targetPath = userType === 'host'
+      ? (action === 'login' ? '/auth/login' : '/auth/signup')
+      : (action === 'login' ? '/host/login' : '/host/signup')
+
+    const url = new URL(targetPath, window.location.origin)
+    url.searchParams.set('linking', 'true')
+    url.searchParams.set('email', targetEmail)
+    url.searchParams.set('returnTo', pathname)
+
+    router.push(url.toString())
   }
 
   const handleVerify = async (e: React.FormEvent) => {
@@ -114,12 +148,12 @@ export function AccountLinking({ currentUser }: AccountLinkingProps) {
       </div>
 
       {/* Info Box */}
-      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
-        <h3 className="font-semibold text-blue-900 mb-2">What is Account Linking?</h3>
-        <p className="text-sm text-blue-800">
-          Link your guest and host accounts to switch between roles seamlessly while maintaining
-          separate profiles. This is useful if you have both a guest account and a host account
-          with different emails.
+      <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
+        <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">What is Account Linking?</h3>
+        <p className="text-sm text-blue-800 dark:text-blue-200">
+          {userType === 'host'
+            ? 'Link your host account with a guest account to access bookings and switch between roles seamlessly. Since one ID belongs to one person, you can only link one guest account to this host profile.'
+            : 'Link your guest and host accounts to switch between roles seamlessly while maintaining separate profiles. Since one ID belongs to one person, you can only link one host account to this guest profile.'}
         </p>
       </div>
 
@@ -147,24 +181,30 @@ export function AccountLinking({ currentUser }: AccountLinkingProps) {
       ) : (
         <>
           {/* Step 1: Request Link */}
-          {step === 'initial' && (
+          {step === 'initial' && !showAccountOptions && (
             <form onSubmit={handleRequestLink} className="space-y-4">
               <div>
-                <label htmlFor="targetEmail" className="block text-sm font-medium text-gray-700 mb-2">
-                  Email of Account to Link
+                <label htmlFor="targetEmail" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  {userType === 'host'
+                    ? 'Email of Your Guest Account'
+                    : 'Email of Your Host Account'}
                 </label>
                 <input
                   id="targetEmail"
                   type="email"
                   value={targetEmail}
                   onChange={(e) => setTargetEmail(e.target.value)}
-                  placeholder="Enter the email of your other account"
+                  placeholder={userType === 'host'
+                    ? 'Enter your guest account email'
+                    : 'Enter your host account email'}
                   required
                   disabled={loading}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed dark:bg-gray-800 dark:text-white"
                 />
-                <p className="mt-1 text-sm text-gray-500">
-                  Enter the email address of your guest or host account that you want to link with this account.
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  {userType === 'host'
+                    ? 'Enter the email address of your guest account that you want to link with this host account to access bookings.'
+                    : 'Enter the email address of your host account that you want to link with this guest account.'}
                 </p>
               </div>
 
@@ -173,9 +213,51 @@ export function AccountLinking({ currentUser }: AccountLinkingProps) {
                 disabled={loading || !targetEmail}
                 className="w-full px-6 py-3 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
               >
-                {loading ? 'Sending...' : 'Send Verification Code'}
+                {loading ? 'Checking...' : 'Continue'}
               </button>
             </form>
+          )}
+
+          {/* Account Options (Login or Create) */}
+          {step === 'initial' && showAccountOptions && (
+            <div className="space-y-4">
+              <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md">
+                <h3 className="font-semibold text-amber-900 dark:text-amber-100 mb-2">
+                  No {userType === 'host' ? 'Guest' : 'Host'} Account Found
+                </h3>
+                <p className="text-sm text-amber-800 dark:text-amber-200 mb-4">
+                  We couldn't find a {userType === 'host' ? 'guest' : 'host'} account with the email <strong>{targetEmail}</strong>.
+                  You can either login to an existing account or create a new one.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <button
+                  onClick={() => handleCreateOrLogin('login')}
+                  className="w-full px-6 py-3 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                >
+                  <span>Login to Existing {userType === 'host' ? 'Guest' : 'Host'} Account</span>
+                </button>
+
+                <button
+                  onClick={() => handleCreateOrLogin('signup')}
+                  className="w-full px-6 py-3 bg-green-600 text-white font-medium rounded-md hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+                >
+                  <span>Create New {userType === 'host' ? 'Guest' : 'Host'} Account</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowAccountOptions(false)
+                    setTargetEmail('')
+                    setError(null)
+                  }}
+                  className="w-full px-6 py-3 bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-md hover:bg-gray-400 dark:hover:bg-gray-600 transition-colors"
+                >
+                  Try Different Email
+                </button>
+              </div>
+            </div>
           )}
 
           {/* Step 2: Verify Code */}

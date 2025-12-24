@@ -1,7 +1,8 @@
 // app/host/profile/components/tabs/SettingsTab.tsx
 'use client'
 
-import { IoSaveOutline, IoTimeOutline, IoBanOutline, IoTrendingUpOutline, IoShieldCheckmarkOutline } from 'react-icons/io5'
+import Link from 'next/link'
+import { IoSaveOutline, IoTimeOutline, IoBanOutline, IoTrendingUpOutline, IoShieldCheckmarkOutline, IoLinkOutline, IoChevronForwardOutline } from 'react-icons/io5'
 import { EARNINGS_TIERS, determineHostTier, getTierConfig } from '@/app/fleet/financial-constants'
 
 interface HostProfile {
@@ -287,6 +288,29 @@ export default function SettingsTab({
           </button>
         </div>
       )}
+
+      {/* Account Linking Section */}
+      <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+        <Link
+          href="/host/settings/account-linking"
+          className="flex items-center justify-between p-4 border-2 border-red-200 dark:border-red-900/50 rounded-lg bg-red-50/50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/20 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+              <IoLinkOutline className="w-5 h-5 text-red-600 dark:text-red-400" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-red-900 dark:text-red-100 text-sm sm:text-base">
+                Link Guest & Host Accounts
+              </h3>
+              <p className="text-xs sm:text-sm text-red-700 dark:text-red-300 mt-1">
+                Connect your guest and host accounts for seamless role switching
+              </p>
+            </div>
+          </div>
+          <IoChevronForwardOutline className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" />
+        </Link>
+      </div>
     </div>
   )
 }

@@ -67,8 +67,9 @@ export async function verifyRequest(
   request: NextRequest
 ): Promise<VerifiedUser | null> {
   try {
-    // Get token from cookie
-    const token = request.cookies.get('accessToken')?.value
+    // Get token from cookie - check both guest and host tokens
+    const token = request.cookies.get('accessToken')?.value ||
+                 request.cookies.get('hostAccessToken')?.value
 
     if (!token) {
       return null

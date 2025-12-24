@@ -40,6 +40,7 @@ const protectedRoutes = {
 const HOST_ACCESSIBLE_ROUTES = [
   '/host/dashboard',
   '/host/profile',
+  '/host/settings',
   '/host/cars',
   '/host/bookings',
   '/host/messages',
@@ -65,6 +66,7 @@ const HOST_ACCESSIBLE_ROUTES = [
   '/api/host/banking',
   '/api/host/payout-methods',
   '/api/host/upload',
+  '/api/account/link',
 ]
 
 // ✅ FIXED: Routes that require APPROVED status

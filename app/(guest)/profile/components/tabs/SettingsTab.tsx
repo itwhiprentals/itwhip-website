@@ -448,6 +448,24 @@ export default function SettingsTab({
             </div>
           </button>
 
+          {/* Account Linking */}
+          <Link
+            href="/settings/account-linking"
+            className="w-full text-left p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border-2 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors block shadow-sm"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-0.5">
+                  Link Guest & Host Accounts
+                </h4>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  Connect your guest and host accounts for easy role switching
+                </p>
+              </div>
+              <IoChevronForwardOutline className="w-4 h-4 text-gray-400 flex-shrink-0" />
+            </div>
+          </Link>
+
           {/* Two-Factor Authentication */}
           <button className="w-full text-left p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border-2 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors shadow-sm">
             <div className="flex items-center justify-between">
