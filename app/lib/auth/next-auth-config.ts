@@ -136,12 +136,42 @@ async function buildAuthOptions(): Promise<NextAuthOptions> {
     ],
 
     callbacks: {
-      async signIn({ user }) {
+      async signIn({ user, account }) {
         // Simple validation - let NextAuth handle account linking with allowDangerousEmailAccountLinking
         if (!user.email) {
           console.error('OAuth sign-in failed: No email provided')
           return false
         }
+
+        // ========================================================================
+        // SECURITY GUARD: Prevent OAuth account linking to different user
+        // ========================================================================
+        // If this is an existing user (not pending), verify their DB email matches OAuth email
+        // This prevents a scenario where OAuth account A gets erroneously linked to User B
+        if (account && user.id && !user.id.startsWith('pending_')) {
+          try {
+            // Fetch the user from database to verify email matches
+            const dbUser = await prisma.user.findUnique({
+              where: { id: user.id },
+              select: { email: true }
+            })
+
+            if (dbUser && dbUser.email !== user.email) {
+              console.error('[NextAuth] SECURITY BLOCK: OAuth email mismatch!', {
+                oauthEmail: user.email,
+                dbEmail: dbUser.email,
+                userId: user.id,
+                provider: account.provider
+              })
+              // Block the login - this is a potential account bleeding issue
+              return '/auth/login?error=account-mismatch'
+            }
+          } catch (error) {
+            console.error('[NextAuth] Error checking email match:', error)
+            // Don't block on error, but log it
+          }
+        }
+
         return true
       },
 
@@ -266,12 +296,42 @@ export const authOptions: NextAuthOptions = {
   ],
 
   callbacks: {
-    async signIn({ user }) {
+    async signIn({ user, account }) {
       // Simple validation - let NextAuth handle account linking with allowDangerousEmailAccountLinking
       if (!user.email) {
         console.error('OAuth sign-in failed: No email provided')
         return false
       }
+
+      // ========================================================================
+      // SECURITY GUARD: Prevent OAuth account linking to different user
+      // ========================================================================
+      // If this is an existing user (not pending), verify their DB email matches OAuth email
+      // This prevents a scenario where OAuth account A gets erroneously linked to User B
+      if (account && user.id && !user.id.startsWith('pending_')) {
+        try {
+          // Fetch the user from database to verify email matches
+          const dbUser = await prisma.user.findUnique({
+            where: { id: user.id },
+            select: { email: true }
+          })
+
+          if (dbUser && dbUser.email !== user.email) {
+            console.error('[NextAuth] SECURITY BLOCK: OAuth email mismatch!', {
+              oauthEmail: user.email,
+              dbEmail: dbUser.email,
+              userId: user.id,
+              provider: account.provider
+            })
+            // Block the login - this is a potential account bleeding issue
+            return '/auth/login?error=account-mismatch'
+          }
+        } catch (error) {
+          console.error('[NextAuth] Error checking email match:', error)
+          // Don't block on error, but log it
+        }
+      }
+
       return true
     },
 

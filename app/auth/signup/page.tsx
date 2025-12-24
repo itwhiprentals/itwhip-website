@@ -114,14 +114,38 @@ export default function SignupPage() {
           email: formData.email,
           password: formData.password,
           name: formData.name,
-          phone: formData.phone
+          phone: formData.phone,
+          roleHint: 'guest' // ✅ CRITICAL: Ensures ReviewerProfile is created
         })
       })
-      
+
       const data = await response.json()
-      
+
       if (!response.ok) {
         throw new Error(data.error || 'Signup failed')
+      }
+
+      // Check if this is an account linking flow
+      const linkingIntentStr = sessionStorage.getItem('linkingIntent')
+      if (linkingIntentStr) {
+        try {
+          const linkingIntent = JSON.parse(linkingIntentStr)
+          console.log('[Signup] Account linking flow detected:', linkingIntent)
+
+          // Clear the intent
+          sessionStorage.removeItem('linkingIntent')
+
+          // Redirect back to the linking page to complete the link
+          // The returnTo param should already be in the URL
+          const returnTo = new URLSearchParams(window.location.search).get('returnTo')
+          if (returnTo) {
+            router.push(returnTo)
+            return
+          }
+        } catch (e) {
+          console.error('[Signup] Failed to parse linking intent:', e)
+          sessionStorage.removeItem('linkingIntent')
+        }
       }
 
       // Check if email verification is required

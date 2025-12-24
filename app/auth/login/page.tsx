@@ -68,7 +68,29 @@ function LoginContent() {
 
       // Success! Redirect based on role
       console.log('Login successful:', data.user)
-      
+
+      // Check if this is an account linking flow
+      const linkingIntentStr = sessionStorage.getItem('linkingIntent')
+      if (linkingIntentStr) {
+        try {
+          const linkingIntent = JSON.parse(linkingIntentStr)
+          console.log('[Login] Account linking flow detected:', linkingIntent)
+
+          // Clear the intent
+          sessionStorage.removeItem('linkingIntent')
+
+          // Redirect back to the linking page to complete the link
+          const returnTo = searchParams.get('returnTo')
+          if (returnTo) {
+            router.push(returnTo)
+            return
+          }
+        } catch (e) {
+          console.error('[Login] Failed to parse linking intent:', e)
+          sessionStorage.removeItem('linkingIntent')
+        }
+      }
+
       // Redirect to appropriate dashboard based on role
       switch(data.user.role) {
         case 'ADMIN':

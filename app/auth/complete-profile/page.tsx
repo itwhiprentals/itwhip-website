@@ -52,6 +52,10 @@ function CompleteProfileContent() {
   // For login mode with pending user, this means "no account found"
   const isLoginModeNoAccount = mode === 'login' && isPendingUser
 
+  // Track if existing HOST user is trying to access guest without guest profile
+  const [isHostWithoutGuestProfile, setIsHostWithoutGuestProfile] = useState(false)
+  const [checkingProfile, setCheckingProfile] = useState(roleHint === 'guest')
+
   // Redirect if not authenticated
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -59,13 +63,46 @@ function CompleteProfileContent() {
     }
   }, [status, router])
 
+  // Check if existing HOST user is trying to login as GUEST without a guest profile
+  // This scenario should be BLOCKED - they must use account linking flow
+  useEffect(() => {
+    async function checkGuestProfile() {
+      if (status !== 'authenticated' || isPendingUser || roleHint !== 'guest') {
+        setCheckingProfile(false)
+        return
+      }
+
+      try {
+        const response = await fetch('/api/guest/profile')
+        if (response.status === 404) {
+          // HOST user trying to access GUEST without profile
+          // BLOCK this - they must use account linking flow
+          console.log('[Complete Profile] ⚠️ HOST user trying to access GUEST - blocking (must use account linking)')
+          setIsHostWithoutGuestProfile(true)
+        }
+      } catch (error) {
+        console.error('[Complete Profile] Error checking guest profile:', error)
+      }
+      setCheckingProfile(false)
+    }
+
+    if (status === 'authenticated' && !isPendingUser && roleHint === 'guest') {
+      checkGuestProfile()
+    }
+  }, [status, isPendingUser, roleHint])
+
   // If profile is already complete and this is an existing user, redirect
   useEffect(() => {
-    if (status === 'authenticated' && isProfileComplete && !isPendingUser) {
+    if (status === 'authenticated' && isProfileComplete && !isPendingUser && !checkingProfile) {
+      // If HOST user trying to access GUEST without profile, don't redirect - show blocking message
+      if (isHostWithoutGuestProfile) {
+        console.log('[Complete Profile] Showing blocking message for HOST without GUEST profile')
+        return
+      }
       // User already has complete profile, redirect to dashboard
       router.push(redirectTo)
     }
-  }, [status, isProfileComplete, isPendingUser, router, redirectTo])
+  }, [status, isProfileComplete, isPendingUser, router, redirectTo, isHostWithoutGuestProfile, checkingProfile])
 
   // Format phone number as user types
   const formatPhoneNumber = (value: string) => {
@@ -165,7 +202,7 @@ function CompleteProfileContent() {
     }
   }
 
-  if (status === 'loading') {
+  if (status === 'loading' || checkingProfile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
@@ -177,6 +214,82 @@ function CompleteProfileContent() {
   const userName = pendingOAuth?.name || session?.user?.name || 'there'
   const userEmail = pendingOAuth?.email || session?.user?.email
   const userImage = pendingOAuth?.image || session?.user?.image
+
+  // ========================================================================
+  // BLOCKING STATE: HOST user trying to access GUEST without profile
+  // They must use account linking flow - NO automatic profile creation
+  // ========================================================================
+  if (isHostWithoutGuestProfile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+        <Header />
+        <div className="flex items-center justify-center px-4 py-16 pt-24">
+          <div className="w-full max-w-md">
+            <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-xl p-8 border border-gray-700">
+              {/* Warning Icon */}
+              <div className="flex justify-center mb-6">
+                <div className="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center">
+                  <IoAlertCircleOutline className="w-10 h-10 text-yellow-500" />
+                </div>
+              </div>
+
+              {/* Message */}
+              <div className="text-center mb-8">
+                <h1 className="text-2xl font-bold text-white mb-2">
+                  Account Already Exists
+                </h1>
+                <p className="text-gray-400 mb-4">
+                  You are already registered as a <span className="text-blue-400 font-semibold">Host</span> with this email.
+                </p>
+                <p className="text-gray-400 text-sm">
+                  To also use this account as a Guest, please use the <span className="text-white">Account Linking</span> feature from your Host dashboard.
+                </p>
+              </div>
+
+              {/* User Info */}
+              <div className="bg-gray-700/50 rounded-lg p-4 mb-6">
+                <div className="flex items-center gap-3">
+                  {userImage ? (
+                    <img src={userImage} alt="Profile" className="w-12 h-12 rounded-full" />
+                  ) : (
+                    <div className="w-12 h-12 bg-gray-600 rounded-full flex items-center justify-center">
+                      <IoPersonOutline className="w-6 h-6 text-gray-400" />
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-white font-medium">{userName}</p>
+                    <p className="text-gray-400 text-sm">{userEmail}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="space-y-3">
+                <button
+                  onClick={() => router.push('/host/dashboard')}
+                  className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-lg transition-all duration-200"
+                >
+                  Go to Host Dashboard
+                </button>
+                <button
+                  onClick={() => router.push('/host/settings/account-linking')}
+                  className="w-full py-3 px-4 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-all duration-200"
+                >
+                  Link a Guest Account
+                </button>
+                <button
+                  onClick={() => router.push('/auth/login')}
+                  className="w-full py-2 text-sm text-gray-400 hover:text-white transition-colors"
+                >
+                  Use a Different Account
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">

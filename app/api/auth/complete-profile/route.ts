@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/lib/auth/next-auth-config'
 import { prisma } from '@/app/lib/database/prisma'
+import { Prisma } from '@prisma/client'
 import { sign } from 'jsonwebtoken'
 import { nanoid } from 'nanoid'
 import { sendOAuthWelcomeEmail } from '@/app/lib/email/oauth-welcome-sender'
@@ -223,7 +224,7 @@ export async function POST(request: NextRequest) {
       // Create NEW user with phone - USE TRANSACTION
       console.log(`[Complete Profile] Creating new user in transaction`)
 
-      const newUser = await prisma.$transaction(async (tx) => {
+      const newUser = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         // 1. Create User
         const user = await tx.user.create({
           data: {
@@ -432,6 +433,8 @@ export async function POST(request: NextRequest) {
 
     // ========================================================================
     // EXISTING USER - Just update phone number
+    // NOTE: This does NOT create profiles automatically. Users must use the
+    // account linking flow to become dual-role (HOST + GUEST).
     // ========================================================================
     const userId = (session.user as any).id
     const email = session.user.email
@@ -452,14 +455,7 @@ export async function POST(request: NextRequest) {
       phoneVerified: updatedUser.phoneVerified
     })
 
-    // Verify the phone was saved by re-reading
-    const verifyUser = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { id: true, phone: true, email: true }
-    })
-    console.log(`[Complete Profile] Verify user phone after update:`, verifyUser)
-
-    // Also update ReviewerProfile if exists
+    // Also update ReviewerProfile if exists (phone sync only - NO creation)
     try {
       const updatedProfile = await prisma.reviewerProfile.update({
         where: { userId: userId },
@@ -472,11 +468,11 @@ export async function POST(request: NextRequest) {
         phoneNumber: updatedProfile.phoneNumber
       })
     } catch (err) {
-      // ReviewerProfile might not exist, that's okay
-      console.log(`[Complete Profile] No ReviewerProfile to update (this is OK):`, err instanceof Error ? err.message : 'unknown')
+      // ReviewerProfile might not exist, that's okay - NO auto-creation
+      console.log(`[Complete Profile] No ReviewerProfile to update (this is OK - must use account linking to create)`)
     }
 
-    // Also update RentalHost if exists
+    // Also update RentalHost if exists (phone sync only - NO creation)
     try {
       const updatedHost = await prisma.rentalHost.updateMany({
         where: { userId: userId },
@@ -489,7 +485,7 @@ export async function POST(request: NextRequest) {
       })
     } catch (err) {
       // RentalHost might not exist, that's okay
-      console.log(`[Complete Profile] No RentalHost to update (this is OK):`, err instanceof Error ? err.message : 'unknown')
+      console.log(`[Complete Profile] No RentalHost to update (this is OK)`)
     }
 
     console.log(`[Complete Profile] Phone saved successfully for existing user ${email}: ${digitsOnly}`)
