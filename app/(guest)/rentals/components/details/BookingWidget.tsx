@@ -364,7 +364,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
                 <span className="text-4xl font-bold text-gray-900 dark:text-white">
                   ${dailyRate.toLocaleString()}
                 </span>
-                <span className="text-gray-500 dark:text-gray-400">/ day</span>
+                <span className="text-gray-500 dark:text-gray-300">/ day</span>
               </div>
               <div className="flex items-center gap-2 mt-2">
                 {carClass === 'exotic' && (
@@ -388,8 +388,8 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
               </div>
             </div>
             <div className="text-right">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Min 1 day</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">200 mi/day included</p>
+              <p className="text-xs text-gray-500 dark:text-gray-300">Min 1 day</p>
+              <p className="text-xs text-gray-500 dark:text-gray-300">200 mi/day included</p>
             </div>
           </div>
         </div>
@@ -405,7 +405,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
           <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3">
             <div className="flex items-center gap-1.5 mb-2">
               <div className="w-2 h-2 rounded-full bg-green-500"></div>
-              <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Pickup</span>
+              <span className="text-xs font-medium text-gray-700 dark:text-gray-200">Pickup</span>
             </div>
             <div className="grid grid-cols-2 gap-6">
               <input
@@ -438,7 +438,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
           <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3">
             <div className="flex items-center gap-1.5 mb-2">
               <div className="w-2 h-2 rounded-full bg-red-500"></div>
-              <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Return</span>
+              <span className="text-xs font-medium text-gray-700 dark:text-gray-200">Return</span>
             </div>
             <div className="grid grid-cols-2 gap-6">
               <input
@@ -511,7 +511,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
                             className="w-4 h-4 text-amber-600 focus:ring-amber-500"
                           />
                           <div>
-                            <span className="text-sm font-medium">{getInsuranceTierName(tier)} Protection</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">{getInsuranceTierName(tier)} Protection</span>
                             <button
                               type="button"
                               onClick={(e) => {
@@ -525,21 +525,21 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
                             </button>
                           </div>
                         </div>
-                        <span className="text-sm font-semibold">
-                          {quote.dailyPremium === 0 ? 'Included' : `$${quote.dailyPremium}/day`}
+                        <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                          {quote.dailyPremium === 0 ? 'Included' : `$${quote.dailyPremium.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/day`}
                         </span>
                       </div>
                     </label>
                     {expandedInsurance === tier && (
-                      <div className="px-6 pb-3 text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50">
+                      <div className="px-6 pb-3 text-xs text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800/50">
                         {tier === 'LUXURY' && (
                           <div className="mt-2 mb-2">
-                            <span className="text-green-600 font-semibold">✓ RECOMMENDED OPTION</span>
+                            <span className="text-green-600 dark:text-green-400 font-semibold">✓ RECOMMENDED OPTION</span>
                           </div>
                         )}
                         {tier === 'MINIMUM' && quote.increasedDeposit && (
                           <div className="mt-2 mb-2">
-                            <span className="text-orange-600 font-semibold flex items-center gap-1">
+                            <span className="text-orange-600 dark:text-orange-400 font-semibold flex items-center gap-1">
                               <IoWarningOutline className="w-3 h-3" />
                               Requires ${quote.increasedDeposit.toLocaleString()} deposit
                             </span>
@@ -549,10 +549,10 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
                           <li>• Liability: ${quote.coverage.liability.toLocaleString()}</li>
                           <li>• Collision: {typeof quote.coverage.collision === 'number' ? `$${quote.coverage.collision.toLocaleString()}` : quote.coverage.collision}</li>
                           <li>• Deductible: {quote.coverage.deductible === 0 ? 'None' : `$${quote.coverage.deductible.toLocaleString()}`}</li>
-                          <li className="text-gray-500 mt-1">• {quote.coverage.description}</li>
+                          <li className="text-gray-500 dark:text-gray-400 mt-1">• {quote.coverage.description}</li>
                         </ul>
                         <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
                             Provider: {quote.provider.name}
                           </p>
                         </div>
@@ -572,18 +572,18 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
             className="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
             <div className="flex items-center gap-2">
-              <IoLocationOutline className="w-4 h-4 text-gray-600" />
-              <span className="text-sm font-medium">Delivery Method</span>
+              <IoLocationOutline className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+              <span className="text-sm font-medium text-gray-900 dark:text-white">Delivery Method</span>
               {deliveryType !== 'pickup' && (
                 <span className="text-xs text-amber-600 ml-2">
-                  • {deliveryOptions.find(o => o.value === deliveryType)?.label} (+${deliveryOptions.find(o => o.value === deliveryType)?.fee})
+                  • {deliveryOptions.find(o => o.value === deliveryType)?.label} (+${deliveryOptions.find(o => o.value === deliveryType)?.fee.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
                 </span>
               )}
             </div>
             {showDelivery ? (
-              <IoChevronUpOutline className="w-5 h-5 text-gray-400" />
+              <IoChevronUpOutline className="w-5 h-5 text-gray-400 dark:text-gray-300" />
             ) : (
-              <IoChevronDownOutline className="w-5 h-5 text-gray-400" />
+              <IoChevronDownOutline className="w-5 h-5 text-gray-400 dark:text-gray-300" />
             )}
           </button>
           
@@ -602,10 +602,10 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
                           : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
                       }`}
                     >
-                      <Icon className="w-4 h-4 mx-auto mb-1" />
-                      <div className="text-xs font-semibold">{option.label}</div>
-                      <div className="text-xs text-gray-500">{option.desc}</div>
-                      {option.fee > 0 && <div className="text-xs font-medium mt-1">+${option.fee}</div>}
+                      <Icon className="w-4 h-4 mx-auto mb-1 text-gray-700 dark:text-gray-300" />
+                      <div className="text-xs font-semibold text-gray-900 dark:text-white">{option.label}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">{option.desc}</div>
+                      {option.fee > 0 && <div className="text-xs font-medium text-gray-900 dark:text-white mt-1">+${option.fee.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>}
                     </button>
                   )
                 })}
@@ -631,8 +631,8 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
             className="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
             <div className="flex items-center gap-2">
-              <IoSparklesOutline className="w-4 h-4 text-gray-600" />
-              <span className="text-sm font-medium">Experience Enhancements</span>
+              <IoSparklesOutline className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+              <span className="text-sm font-medium text-gray-900 dark:text-white">Experience Enhancements</span>
               {Object.values(addOns).filter(v => v).length > 0 && (
                 <span className="text-xs text-amber-600 ml-2">
                   • {Object.values(addOns).filter(v => v).length} selected
@@ -640,9 +640,9 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
               )}
             </div>
             {showEnhancements ? (
-              <IoChevronUpOutline className="w-5 h-5 text-gray-400" />
+              <IoChevronUpOutline className="w-5 h-5 text-gray-400 dark:text-gray-300" />
             ) : (
-              <IoChevronDownOutline className="w-5 h-5 text-gray-400" />
+              <IoChevronDownOutline className="w-5 h-5 text-gray-400 dark:text-gray-300" />
             )}
           </button>
           
@@ -657,14 +657,14 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
                     className="w-4 h-4 text-amber-600 focus:ring-amber-500 rounded"
                   />
                   <div>
-                    <span className="text-sm font-medium flex items-center gap-2">
+                    <span className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
                       <IoWaterOutline className="w-4 h-4" />
                       Refuel Service
                     </span>
-                    <p className="text-xs text-gray-500">Skip the gas station - we'll refuel for you</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Skip the gas station - we'll refuel for you</p>
                   </div>
                 </div>
-                <span className="text-sm font-semibold">$75</span>
+                <span className="text-sm font-semibold text-gray-900 dark:text-white">$75.00</span>
               </label>
               
               <label className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer border border-gray-100 dark:border-gray-700 rounded-lg">
@@ -676,16 +676,16 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
                     className="w-4 h-4 text-amber-600 focus:ring-amber-500 rounded"
                   />
                   <div>
-                    <span className="text-sm font-medium flex items-center gap-2">
+                    <span className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
                       <IoPersonAddOutline className="w-4 h-4" />
                       Additional Driver
                     </span>
-                    <p className="text-xs text-gray-500">Add another authorized driver</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Add another authorized driver</p>
                   </div>
                 </div>
-                <span className="text-sm font-semibold">${50}/day</span>
+                <span className="text-sm font-semibold text-gray-900 dark:text-white">$50.00/day</span>
               </label>
-              
+
               <label className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer border border-gray-100 dark:border-gray-700 rounded-lg">
                 <div className="flex items-center gap-3">
                   <input
@@ -695,16 +695,16 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
                     className="w-4 h-4 text-amber-600 focus:ring-amber-500 rounded"
                   />
                   <div>
-                    <span className="text-sm font-medium flex items-center gap-2">
+                    <span className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
                       <IoCarOutline className="w-4 h-4" />
                       Extra Miles Package
                     </span>
-                    <p className="text-xs text-gray-500">+500 miles added to your trip</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">+500 miles added to your trip</p>
                   </div>
                 </div>
-                <span className="text-sm font-semibold">$295</span>
+                <span className="text-sm font-semibold text-gray-900 dark:text-white">$295.00</span>
               </label>
-              
+
               <label className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer border border-gray-100 dark:border-gray-700 rounded-lg">
                 <div className="flex items-center gap-3">
                   <input
@@ -714,11 +714,11 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
                     className="w-4 h-4 text-amber-600 focus:ring-amber-500 rounded"
                   />
                   <div>
-                    <span className="text-sm font-medium">VIP Concierge Service</span>
-                    <p className="text-xs text-gray-500">24/7 personal assistant</p>
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">VIP Concierge Service</span>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">24/7 personal assistant</p>
                   </div>
                 </div>
-                <span className="text-sm font-semibold">${150}/day</span>
+                <span className="text-sm font-semibold text-gray-900 dark:text-white">$150.00/day</span>
               </label>
             </div>
           )}
@@ -727,52 +727,52 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
         {/* Price Breakdown */}
         <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mb-4 space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600 dark:text-gray-400">
-              ${dailyRate.toLocaleString()} × {days} {days === 1 ? 'day' : 'days'}
+            <span className="text-gray-600 dark:text-gray-300">
+              ${dailyRate.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} × {days} {days === 1 ? 'day' : 'days'}
             </span>
-            <span>${basePrice.toLocaleString()}</span>
+            <span className="text-gray-900 dark:text-white">${basePrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
-          
+
           {insurancePrice > 0 && (
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600 dark:text-gray-400">Insurance ({getInsuranceTierName(insuranceTier)})</span>
-              <span>${insurancePrice.toLocaleString()}</span>
+              <span className="text-gray-600 dark:text-gray-300">Insurance ({getInsuranceTierName(insuranceTier)})</span>
+              <span className="text-gray-900 dark:text-white">${insurancePrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           )}
-          
+
           {(refuelService + additionalDriver + extraMiles + vipConcierge) > 0 && (
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600 dark:text-gray-400">Enhancements</span>
-              <span>${(refuelService + additionalDriver + extraMiles + vipConcierge).toLocaleString()}</span>
+              <span className="text-gray-600 dark:text-gray-300">Enhancements</span>
+              <span className="text-gray-900 dark:text-white">${(refuelService + additionalDriver + extraMiles + vipConcierge).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           )}
-          
+
           {deliveryFee > 0 && (
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600 dark:text-gray-400">Delivery</span>
-              <span>${deliveryFee}</span>
+              <span className="text-gray-600 dark:text-gray-300">Delivery</span>
+              <span className="text-gray-900 dark:text-white">${deliveryFee.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           )}
-          
+
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600 dark:text-gray-400">Service fee</span>
-            <span>${serviceFee.toLocaleString()}</span>
+            <span className="text-gray-600 dark:text-gray-300">Service fee</span>
+            <span className="text-gray-900 dark:text-white">${serviceFee.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
-          
+
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600 dark:text-gray-400">Taxes</span>
-            <span>${taxes.toLocaleString()}</span>
+            <span className="text-gray-600 dark:text-gray-300">Taxes</span>
+            <span className="text-gray-900 dark:text-white">${taxes.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
-          
+
           <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
             <div className="flex justify-between items-baseline">
-              <span className="font-semibold">Total</span>
+              <span className="font-semibold text-gray-900 dark:text-white">Total</span>
               <div className="text-right">
                 <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                  ${total.toLocaleString()}
+                  ${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Plus ${actualDeposit.toLocaleString()} security deposit (hold)
+                <p className="text-xs text-gray-500 dark:text-gray-300 mt-1">
+                  Plus ${actualDeposit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} security deposit (hold)
                 </p>
               </div>
             </div>
@@ -797,7 +797,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
         
         {/* Trust Badges */}
         <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+          <div className="flex items-center justify-center gap-4 text-xs text-gray-500 dark:text-gray-300">
             <div className="flex items-center gap-1">
               <IoCheckmarkCircleOutline className="w-4 h-4" />
               <span>Free cancellation</span>
@@ -809,7 +809,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
           </div>
         </div>
       </div>
-      
+
       {/* Floating Price Bar (Mobile) */}
       {showFloatingPrice && (
         <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 shadow-2xl z-50 lg:hidden">
@@ -818,11 +818,10 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
               <div>
                 <div className="flex items-baseline gap-2">
                   <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                    ${total.toLocaleString()}
+                    ${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
-                  <span className="text-sm text-gray-500">total</span>
                 </div>
-                <p className="text-xs text-gray-500">{days} {days === 1 ? 'day' : 'days'} • {car?.make} {car?.model}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-300">{days} {days === 1 ? 'day' : 'days'} • Tax included</p>
               </div>
               <button
                 onClick={handleBooking}
