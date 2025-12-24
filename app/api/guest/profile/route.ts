@@ -46,76 +46,20 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // If no profile exists, auto-create one for this user (handles existing users)
-    let profileData = profile
+    // If no profile exists, return 404 - profile must be created through explicit signup
     if (!profile) {
-      console.log(`[Guest Profile] No ReviewerProfile found for user ${userId}, auto-creating...`)
-
-      // Get full user data to populate profile
-      const userData = await prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          phone: true,
-          avatar: true,
-          emailVerified: true,
-          phoneVerified: true,
-          createdAt: true
-        }
-      })
-
-      if (!userData) {
-        return NextResponse.json(
-          { success: false, error: 'User not found' },
-          { status: 404 }
-        )
-      }
-
-      // Create ReviewerProfile with defaults for existing user
-      profileData = await prisma.reviewerProfile.create({
-        data: {
-          userId: userData.id,
-          email: userData.email,
-          name: userData.name || '',
-          phoneNumber: userData.phone || null,
-          profilePhotoUrl: userData.avatar || null,
-          memberSince: userData.createdAt,
-          city: '',
-          state: '',
-          zipCode: '',
-          loyaltyPoints: 0,
-          memberTier: 'BRONZE',
-          emailVerified: userData.emailVerified || false,
-          phoneVerified: userData.phoneVerified || false,
-          documentsVerified: false,
-          insuranceVerified: false,
-          fullyVerified: false,
-          canInstantBook: false,
-          totalTrips: 0,
-          averageRating: 0,
-          profileCompletion: 10,
-          emailNotifications: true,
-          smsNotifications: true,
-          pushNotifications: true,
-          preferredLanguage: 'en',
-          preferredCurrency: 'USD'
+      console.log(`[Guest Profile] No ReviewerProfile found for user ${userId}`)
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Guest profile not found. Please complete guest signup first.',
+          requiresSignup: true
         },
-        include: {
-          user: {
-            select: {
-              email: true,
-              avatar: true,
-              status: true,
-              deletionScheduledFor: true
-            }
-          }
-        }
-      })
-
-      console.log(`[Guest Profile] Auto-created ReviewerProfile for: ${userData.email}`)
+        { status: 404 }
+      )
     }
+
+    let profileData = profile
 
     // Calculate stats
     const bookings = await prisma.rentalBooking.findMany({

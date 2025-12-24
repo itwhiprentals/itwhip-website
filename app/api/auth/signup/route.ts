@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
   try {
     // Parse request body
     const body = await request.json()
-    const { email, password, name, phone } = body
+    const { email, password, name, phone, roleHint } = body
 
     // Validate required fields
     if (!email || !password) {
@@ -170,37 +170,43 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Create ReviewerProfile for the new user (required for guest profile page)
-    try {
-      await prisma.reviewerProfile.create({
-        data: {
-          userId: newUser.id,
-          email: newUser.email,
-          name: newUser.name || '',
-          phoneNumber: phone || null,
-          memberSince: new Date(),
-          loyaltyPoints: 0,
-          memberTier: 'BRONZE',
-          emailVerified: false,
-          phoneVerified: false,
-          documentsVerified: false,
-          insuranceVerified: false,
-          fullyVerified: false,
-          canInstantBook: false,
-          totalTrips: 0,
-          averageRating: 0,
-          profileCompletion: 10, // Basic info only
-          emailNotifications: true,
-          smsNotifications: true,
-          pushNotifications: true,
-          preferredLanguage: 'en',
-          preferredCurrency: 'USD'
-        }
-      })
-      console.log(`[Signup] ReviewerProfile created for user: ${newUser.id}`)
-    } catch (profileError) {
-      console.error('[Signup] Failed to create ReviewerProfile:', profileError)
-      // Don't block signup if profile creation fails
+    // Create ReviewerProfile ONLY for guest signups
+    // Host signups will create RentalHost profile through separate flow
+    if (roleHint === 'guest' || !roleHint) {
+      // Default to guest if no roleHint (backward compatibility)
+      try {
+        await prisma.reviewerProfile.create({
+          data: {
+            userId: newUser.id,
+            email: newUser.email,
+            name: newUser.name || '',
+            phoneNumber: phone || null,
+            memberSince: new Date(),
+            loyaltyPoints: 0,
+            memberTier: 'BRONZE',
+            emailVerified: false,
+            phoneVerified: false,
+            documentsVerified: false,
+            insuranceVerified: false,
+            fullyVerified: false,
+            canInstantBook: false,
+            totalTrips: 0,
+            averageRating: 0,
+            profileCompletion: 10, // Basic info only
+            emailNotifications: true,
+            smsNotifications: true,
+            pushNotifications: true,
+            preferredLanguage: 'en',
+            preferredCurrency: 'USD'
+          }
+        })
+        console.log(`[Signup] ReviewerProfile created for GUEST user: ${newUser.id}`)
+      } catch (profileError) {
+        console.error('[Signup] Failed to create ReviewerProfile:', profileError)
+        // Don't block signup if profile creation fails
+      }
+    } else {
+      console.log(`[Signup] Skipping ReviewerProfile creation for roleHint: ${roleHint}`)
     }
 
     // Send verification email
