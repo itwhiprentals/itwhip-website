@@ -524,11 +524,14 @@ export async function middleware(request: NextRequest) {
   const guestToken = request.cookies.get('accessToken')?.value
 
   if (authRoutes.some(route => pathname.startsWith(route))) {
-    if (guestToken) {
+    // Check if this is account linking flow - allow access even if logged in
+    const isLinking = request.nextUrl.searchParams.get('linking') === 'true'
+
+    if (guestToken && !isLinking) {
       try {
         const { payload } = await verifyGuestToken(guestToken)
         const userRole = (payload.role as string).toUpperCase()
-        
+
         switch (userRole) {
           case 'DRIVER':
             return NextResponse.redirect(new URL('/driver/dashboard', request.url))
