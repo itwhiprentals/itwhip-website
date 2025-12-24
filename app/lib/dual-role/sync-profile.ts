@@ -8,6 +8,8 @@ import { prisma } from '@/app/lib/database/prisma'
  * Syncs email change across all user profiles (User, RentalHost, ReviewerProfile)
  * Resets email verification flags to require re-verification
  * Uses transaction to ensure atomicity
+ *
+ * ✅ FIXED: Uses findFirst + update instead of updateMany to avoid unique constraint violations
  */
 export async function syncEmailAcrossProfiles(
   userId: string,
@@ -17,7 +19,19 @@ export async function syncEmailAcrossProfiles(
   try {
     console.log('[Sync Email] Starting sync:', { userId, oldEmail, newEmail })
 
-    await prisma.$transaction([
+    // Find profiles first to avoid unique constraint violations
+    const host = await prisma.rentalHost.findFirst({
+      where: { userId: userId },
+      select: { id: true }
+    })
+
+    const reviewerProfile = await prisma.reviewerProfile.findFirst({
+      where: { userId: userId },
+      select: { id: true }
+    })
+
+    // Build transaction operations dynamically
+    const operations: any[] = [
       // Update User table
       prisma.user.update({
         where: { id: userId },
@@ -25,34 +39,33 @@ export async function syncEmailAcrossProfiles(
           email: newEmail,
           emailVerified: false // Require re-verification for security
         }
-      }),
-
-      // Update RentalHost if exists
-      // Uses OR to handle cases where userId or email might not match
-      prisma.rentalHost.updateMany({
-        where: {
-          OR: [
-            { userId: userId },
-            { email: oldEmail }
-          ]
-        },
-        data: { email: newEmail }
-      }),
-
-      // Update ReviewerProfile if exists
-      prisma.reviewerProfile.updateMany({
-        where: {
-          OR: [
-            { userId: userId },
-            { email: oldEmail }
-          ]
-        },
-        data: {
-          email: newEmail,
-          emailVerified: false // Require re-verification
-        }
       })
-    ])
+    ]
+
+    // Add RentalHost update if exists
+    if (host) {
+      operations.push(
+        prisma.rentalHost.update({
+          where: { id: host.id },
+          data: { email: newEmail }
+        })
+      )
+    }
+
+    // Add ReviewerProfile update if exists
+    if (reviewerProfile) {
+      operations.push(
+        prisma.reviewerProfile.update({
+          where: { id: reviewerProfile.id },
+          data: {
+            email: newEmail,
+            emailVerified: false // Require re-verification
+          }
+        })
+      )
+    }
+
+    await prisma.$transaction(operations)
 
     console.log('[Sync Email] ✅ Successfully synced email across all profiles')
     return { success: true }
