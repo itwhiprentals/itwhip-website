@@ -37,6 +37,8 @@ import ReviewSection from '../components/details/ReviewSection'
 import SimilarCars from '../components/details/SimilarCars'
 import { formatCurrency } from '@/app/(guest)/rentals/lib/rental-utils'
 import Header from '@/app/components/Header'
+import VehicleBadge from '@/app/components/VehicleBadge'
+import { getVehicleClass, formatFuelTypeBadge } from '@/app/lib/utils/vehicleClassification'
 
 // Updated type definition with suspension fields
 interface RentalCarWithDetails {
@@ -437,9 +439,13 @@ export default function CarDetailsClient({ params }: PageProps) {
     ]
   }
   
-  const dailyRate = typeof car.dailyRate === 'string' 
-    ? parseFloat(car.dailyRate) 
+  const dailyRate = typeof car.dailyRate === 'string'
+    ? parseFloat(car.dailyRate)
     : car.dailyRate
+
+  // Calculate vehicle classification and fuel type badges
+  const vehicleClass = getVehicleClass(car.make, car.model, car.carType || car.type || undefined)
+  const fuelTypeBadge = formatFuelTypeBadge(car.fuelType)
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -577,12 +583,16 @@ export default function CarDetailsClient({ params }: PageProps) {
           <div className="lg:col-span-2 space-y-6">
             {/* Title Section */}
             <div>
-              <h1 className="text-2xl sm:text-3xl text-gray-900 dark:text-white mb-3">
-                <span className="font-bold">{car.year} {car.make}</span>
-                <span className="block sm:inline sm:ml-2 text-lg sm:text-xl font-normal text-gray-700 dark:text-gray-300">
-                  {car.model}
-                </span>
-              </h1>
+              <div className="flex items-center gap-2 flex-wrap mb-1">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+                  {car.year} {car.make}
+                </h1>
+                {vehicleClass && <VehicleBadge label={vehicleClass} />}
+                {fuelTypeBadge && <VehicleBadge label={fuelTypeBadge} />}
+              </div>
+              <p className="text-lg sm:text-xl text-gray-700 dark:text-gray-300 mb-3">
+                {car.model}
+              </p>
               
               {/* Location and Meta Info */}
               <div className="flex flex-wrap items-center gap-4 text-sm mb-4">

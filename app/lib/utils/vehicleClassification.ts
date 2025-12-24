@@ -53,6 +53,34 @@ export function getVehicleClass(
     return 'Sport'
   }
 
+  // American Performance Models
+  // Dodge: SRT, Hellcat, Demon, Redeye, Viper
+  if (makeUpper === 'DODGE' && (
+      modelUpper.includes('SRT') || modelUpper.includes('HELLCAT') ||
+      modelUpper.includes('DEMON') || modelUpper.includes('REDEYE') ||
+      modelUpper.includes('VIPER') || modelUpper.includes('R/T SCAT PACK')
+  )) {
+    return 'Sport'
+  }
+
+  // Chevrolet: Corvette, Camaro ZL1/SS/1LE, Silverado ZR2
+  if (makeUpper === 'CHEVROLET' && (
+      modelUpper.includes('CORVETTE') || modelUpper.includes('ZL1') ||
+      modelUpper.includes('2SS') || modelUpper.includes('1SS') ||
+      modelUpper.includes('1LE') || modelUpper.includes('ZR2')
+  )) {
+    return 'Sport'
+  }
+
+  // Ford: Mustang GT/Shelby, F-150 Raptor, GT
+  if (makeUpper === 'FORD' && (
+      modelUpper.includes('SHELBY') || modelUpper.includes('GT500') ||
+      modelUpper.includes('GT350') || modelUpper.includes('RAPTOR') ||
+      modelUpper.includes('MUSTANG GT') || modelUpper === 'GT'
+  )) {
+    return 'Sport'
+  }
+
   // LUXURY - High-end luxury models
   const luxuryMakes = ['MAYBACH']
   if (luxuryMakes.includes(makeUpper)) {
