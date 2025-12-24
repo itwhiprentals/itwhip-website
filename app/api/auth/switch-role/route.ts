@@ -16,6 +16,7 @@ function generateHostTokens(host: {
   email: string
   name: string
   approvalStatus: string
+  legacyDualId?: string | null
 }) {
   const accessToken = sign(
     {
@@ -25,7 +26,8 @@ function generateHostTokens(host: {
       name: host.name,
       role: 'BUSINESS',
       isRentalHost: true,
-      approvalStatus: host.approvalStatus
+      approvalStatus: host.approvalStatus,
+      legacyDualId: host.legacyDualId || null  // Include for dual-role account linking
     },
     JWT_SECRET,
     { expiresIn: '15m' }
@@ -36,7 +38,8 @@ function generateHostTokens(host: {
       userId: host.userId,
       hostId: host.id,
       email: host.email,
-      type: 'refresh'
+      type: 'refresh',
+      legacyDualId: host.legacyDualId || null
     },
     JWT_REFRESH_SECRET,
     { expiresIn: '7d' }
@@ -51,6 +54,7 @@ function generateGuestTokens(user: {
   email: string
   name: string | null
   role: string
+  legacyDualId?: string | null
 }) {
   const tokenId = nanoid()
   const refreshTokenId = nanoid()
@@ -61,7 +65,8 @@ function generateGuestTokens(user: {
       email: user.email,
       name: user.name,
       role: user.role,
-      jti: tokenId
+      jti: tokenId,
+      legacyDualId: user.legacyDualId || null  // Include for dual-role account linking
     },
     JWT_SECRET,
     { expiresIn: '15m' }
@@ -70,7 +75,8 @@ function generateGuestTokens(user: {
   const refreshToken = sign(
     {
       userId: user.id,
-      jti: refreshTokenId
+      jti: refreshTokenId,
+      legacyDualId: user.legacyDualId || null
     },
     JWT_REFRESH_SECRET,
     { expiresIn: '7d' }
@@ -131,7 +137,8 @@ export async function POST(request: NextRequest) {
         id: true,
         email: true,
         name: true,
-        role: true
+        role: true,
+        legacyDualId: true  // For dual-role account linking
       }
     })
 
@@ -144,37 +151,69 @@ export async function POST(request: NextRequest) {
 
     // Check if user has the target profile
     if (targetRole === 'host') {
-      // Use flexible query with OR to check both userId and email
+      // SECURITY: STRICT query - only match by userId (no email fallback)
       const hostProfile = await prisma.rentalHost.findFirst({
-        where: {
-          OR: [
-            { userId: userId },
-            { email: user.email }
-          ]
-        },
+        where: { userId: userId },  // Only match by userId for security
         select: {
           id: true,
           approvalStatus: true,
           userId: true,
           email: true,
-          name: true
+          name: true,
+          legacyDualId: true  // For dual-role account linking validation
         }
       })
 
       if (!hostProfile) {
+        console.error('[Role Switch] ❌ SECURITY: No host profile with matching userId', {
+          userId: userId,
+          email: user.email
+        })
         return NextResponse.json(
-          { error: 'You do not have a host profile' },
+          { error: 'Host profile not found or not linked to your account' },
+          { status: 404 }
+        )
+      }
+
+      // CRITICAL VALIDATION: Verify userId matches authenticated user
+      if (hostProfile.userId && hostProfile.userId !== userId) {
+        console.error('[Role Switch] 🚨 SECURITY BREACH: userId mismatch!', {
+          authenticatedUserId: userId,
+          profileUserId: hostProfile.userId,
+          email: user.email
+        })
+        return NextResponse.json(
+          { error: 'Account security issue detected. Contact support.' },
           { status: 403 }
         )
       }
 
-      // Generate host tokens (use hostProfile.name if available, fallback to user.name)
+      // DUAL-ROLE VALIDATION: If both accounts have legacyDualId, they must match
+      if (user.legacyDualId && hostProfile.legacyDualId) {
+        if (user.legacyDualId !== hostProfile.legacyDualId) {
+          console.error('[Role Switch] 🚨 SECURITY BREACH: legacyDualId mismatch!', {
+            userLegacyDualId: user.legacyDualId,
+            hostLegacyDualId: hostProfile.legacyDualId,
+            userId: userId
+          })
+          return NextResponse.json(
+            { error: 'Accounts are not linked. Please link your accounts first.' },
+            { status: 403 }
+          )
+        }
+        console.log('[Role Switch] ✅ Legacy dual ID validation passed:', user.legacyDualId)
+      }
+
+      console.log('[Role Switch] Switched to host mode for user:', userId)
+
+      // Generate host tokens with AUTHENTICATED user.id (NOT hostProfile.userId)
       const tokens = generateHostTokens({
         id: hostProfile.id,
-        userId: hostProfile.userId || user.id,
+        userId: userId,  // ✅ ALWAYS use authenticated user.id
         email: hostProfile.email,
         name: hostProfile.name || user.name || '',
-        approvalStatus: hostProfile.approvalStatus
+        approvalStatus: hostProfile.approvalStatus,
+        legacyDualId: user.legacyDualId  // Include dual-role link ID
       })
 
       // Create response with redirect
@@ -221,51 +260,66 @@ export async function POST(request: NextRequest) {
       return response
 
     } else if (targetRole === 'guest') {
-      // Get host profile to check for alternate email (same logic as check-dual-role)
-      const hostProfile = await prisma.rentalHost.findFirst({
-        where: {
-          OR: [
-            { userId: userId },
-            { email: user.email }
-          ]
-        },
-        select: { email: true }
-      })
-
-      // Build email list to check (include host email if different)
-      const emailsToCheck = [user.email]
-      if (hostProfile?.email && hostProfile.email !== user.email) {
-        emailsToCheck.push(hostProfile.email)
-      }
-
-      // Use flexible query with OR to check both userId and email
+      // SECURITY: STRICT query - only match by userId (no email fallback)
       const guestProfile = await prisma.reviewerProfile.findFirst({
-        where: {
-          OR: [
-            { userId: userId },
-            { email: { in: emailsToCheck } }
-          ]
-        },
+        where: { userId: userId },  // Only match by userId for security
         select: {
           id: true,
           userId: true,
-          email: true
+          email: true,
+          legacyDualId: true  // For dual-role account linking validation
         }
       })
 
       if (!guestProfile) {
+        console.error('[Role Switch] ❌ SECURITY: No guest profile with matching userId', {
+          userId: userId,
+          email: user.email
+        })
         return NextResponse.json(
-          { error: 'You do not have a guest profile' },
+          { error: 'Guest profile not found or not linked to your account' },
+          { status: 404 }
+        )
+      }
+
+      // CRITICAL VALIDATION: Verify userId matches authenticated user
+      if (guestProfile.userId && guestProfile.userId !== userId) {
+        console.error('[Role Switch] 🚨 SECURITY BREACH: userId mismatch!', {
+          authenticatedUserId: userId,
+          profileUserId: guestProfile.userId,
+          email: user.email
+        })
+        return NextResponse.json(
+          { error: 'Account security issue detected. Contact support.' },
           { status: 403 }
         )
       }
 
-      // Generate guest tokens
+      // DUAL-ROLE VALIDATION: If both accounts have legacyDualId, they must match
+      if (user.legacyDualId && guestProfile.legacyDualId) {
+        if (user.legacyDualId !== guestProfile.legacyDualId) {
+          console.error('[Role Switch] 🚨 SECURITY BREACH: legacyDualId mismatch!', {
+            userLegacyDualId: user.legacyDualId,
+            guestLegacyDualId: guestProfile.legacyDualId,
+            userId: userId
+          })
+          return NextResponse.json(
+            { error: 'Accounts are not linked. Please link your accounts first.' },
+            { status: 403 }
+          )
+        }
+        console.log('[Role Switch] ✅ Legacy dual ID validation passed:', user.legacyDualId)
+      }
+
+      console.log('[Role Switch] Switched to guest mode for user:', userId)
+
+      // Generate guest tokens with AUTHENTICATED user.id
       const tokens = generateGuestTokens({
-        id: user.id,
+        id: user.id,  // ✅ Using authenticated user.id
         email: user.email,
         name: user.name,
-        role: user.role || 'CLAIMED'
+        role: user.role || 'CLAIMED',
+        legacyDualId: user.legacyDualId  // Include dual-role link ID
       })
 
       // Create response with redirect

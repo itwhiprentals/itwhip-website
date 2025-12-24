@@ -60,41 +60,45 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Check for host profile - use OR to check both userId and email
-    const hostProfile = await prisma.rentalHost.findFirst({
-      where: {
-        OR: [
-          { userId: userId },
-          { email: user.email }
-        ]
-      },
-      select: {
-        id: true,
-        approvalStatus: true,
-        userId: true,
-        email: true  // Need this to check for guest profile
-      }
-    })
+    // SECURITY: STRICT query - only match by userId (no email fallback)
+    const [hostProfile, guestProfile] = await Promise.all([
+      prisma.rentalHost.findFirst({
+        where: { userId: userId },  // Only match by userId for security
+        select: {
+          id: true,
+          approvalStatus: true,
+          userId: true,
+          email: true
+          // fullyVerified removed - only exists on ReviewerProfile, not RentalHost
+        }
+      }),
+      prisma.reviewerProfile.findFirst({
+        where: { userId: userId },  // Only match by userId for security
+        select: {
+          id: true,
+          userId: true,
+          email: true,
+          fullyVerified: true
+        }
+      })
+    ])
 
-    // Check for guest profile - use the HOST'S email (not User's email)
-    // This handles cases where RentalHost has a contact email different from the User account email
-    const emailsToCheck = [user.email]
-    if (hostProfile?.email && hostProfile.email !== user.email) {
-      emailsToCheck.push(hostProfile.email)
+    // Log if profiles exist with mismatched userId (data integrity issue)
+    if (hostProfile && hostProfile.userId !== userId) {
+      console.error('[Dual-Role Check] ⚠️ Host profile userId mismatch', {
+        authenticatedUserId: userId,
+        hostProfileUserId: hostProfile.userId,
+        email: user.email
+      })
     }
 
-    const guestProfile = await prisma.reviewerProfile.findFirst({
-      where: {
-        OR: [
-          { userId: userId },
-          { email: { in: emailsToCheck } }
-        ]
-      },
-      select: {
-        id: true,
-        userId: true
-      }
-    })
+    if (guestProfile && guestProfile.userId !== userId) {
+      console.error('[Dual-Role Check] ⚠️ Guest profile userId mismatch', {
+        authenticatedUserId: userId,
+        guestProfileUserId: guestProfile.userId,
+        email: user.email
+      })
+    }
 
     const hasHostProfile = !!hostProfile
     const hasGuestProfile = !!guestProfile

@@ -21,6 +21,7 @@ export interface VerifiedUser {
   name: string
   role: string
   userType: 'guest' | 'platform'
+  legacyDualId?: string | null // For dual-role account linking
   jti?: string
   iat?: number
   exp?: number
@@ -100,6 +101,7 @@ export async function verifyRequest(
       name: (payload.name as string) || '',
       role: (payload.role as string) || 'CLAIMED',
       userType: (payload.userType as 'guest' | 'platform') || secretType,
+      legacyDualId: (payload.legacyDualId as string) || null,
       jti: payload.jti as string,
       iat: payload.iat as number,
       exp: payload.exp as number,

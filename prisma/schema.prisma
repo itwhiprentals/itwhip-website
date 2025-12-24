@@ -22,12 +22,17 @@ model User {
   role   UserRole   @default(ANONYMOUS)
   status UserStatus @default(ACTIVE)
 
+  // Dual-Role Account Linking (NEW)
+  // When user has both host and guest accounts, BOTH User records share the same legacyDualId
+  // This allows seamless role switching while keeping separate userIds for security
+  legacyDualId String? @unique
+
   // Authentication
   passwordHash     String?
   emailVerified    Boolean? @default(false)
-  phoneVerified    Boolean @default(false)
-  isActive         Boolean @default(true)
-  twoFactorEnabled Boolean @default(false)
+  phoneVerified    Boolean  @default(false)
+  isActive         Boolean  @default(true)
+  twoFactorEnabled Boolean  @default(false)
 
   // Email Verification
   emailVerificationCode   String?
@@ -55,7 +60,7 @@ model User {
   jobTitle String?
   phone    String?
   avatar   String?
-  image    String?  // Required by NextAuth PrismaAdapter
+  image    String? // Required by NextAuth PrismaAdapter
 
   // Relationships
   hotelId String?
@@ -96,6 +101,7 @@ model User {
   @@index([role])
   @@index([status])
   @@index([resetToken])
+  @@index([legacyDualId])
 }
 
 // OAuth Account model for NextAuth.js
@@ -120,10 +126,10 @@ model Account {
 }
 
 model UserNotificationSettings {
-  id               String  @id @default(cuid())
-  userId           String  @unique
-  user             User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   claimFiled       Boolean @default(true)
   claimApproved    Boolean @default(true)
   claimDenied      Boolean @default(true)
@@ -131,10 +137,10 @@ model UserNotificationSettings {
   guestHoldNotice  Boolean @default(true)
   responseReminder Boolean @default(true)
   claimResolved    Boolean @default(true)
-  
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([userId])
 }
 
@@ -527,8 +533,13 @@ model Driver {
 // ============================================================================
 
 model RentalHost {
-  id           String  @id @default(cuid())
-  userId       String? @unique
+  id     String  @id @default(cuid())
+  userId String? @unique
+
+  // Dual-Role Account Linking (NEW)
+  // Copy of User.legacyDualId for faster queries when checking linked accounts
+  legacyDualId String?
+
   email        String  @unique
   name         String
   phone        String
@@ -576,11 +587,12 @@ model RentalHost {
   commissionRate Float  @default(0.25)
 
   // Approval tracking
-  approvedBy      String?
-  approvedAt      DateTime?
-  rejectedReason  String?
-  suspendedAt     DateTime?
-  suspendedReason String?
+  approvedBy          String?
+  approvedAt          DateTime?
+  rejectedReason      String?
+  suspendedAt         DateTime?
+  suspendedReason     String?
+  suspensionExpiresAt DateTime?
 
   // Document uploads (URLs to Cloudinary)
   governmentIdUrl   String?
@@ -800,6 +812,7 @@ model RentalHost {
   @@index([p2pInsuranceStatus])
   @@index([commercialInsuranceStatus])
   @@index([usingLegacyInsurance])
+  @@index([legacyDualId])
 }
 
 // ============================================================================
@@ -1174,8 +1187,8 @@ model ProviderDocument {
   uploadedBy        String
 
   expiresAt    DateTime?
-  reminderSent Boolean  @default(false)
-  status       String   @default("active") // "active", "archived", "expired"
+  reminderSent Boolean   @default(false)
+  status       String    @default("active") // "active", "archived", "expired"
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1359,7 +1372,7 @@ model Claim {
   incidentZip         String?
   incidentLatitude    Float?
   incidentLongitude   Float?
-  incidentDescription String?   @db.Text // Additional location details
+  incidentDescription String? @db.Text // Additional location details
   weatherConditions   String? // "Clear", "Rain", "Snow", "Fog", etc.
   roadConditions      String? // "Dry", "Wet", "Icy", "Construction", etc.
   policeReportNumber  String?
@@ -1368,7 +1381,7 @@ model Claim {
   // ===== NEW: FNOL INCIDENT-SPECIFIC FIELDS =====
 
   // Odometer & Vehicle Condition
-  odometerAtIncident Int?    // Odometer reading at time of incident
+  odometerAtIncident Int? // Odometer reading at time of incident
   vehicleDrivable    Boolean @default(true) // Can vehicle be driven?
   vehicleLocation    String? // Current location if not drivable
 
@@ -1395,10 +1408,10 @@ model Claim {
   injuries     Json? // [{person, description, severity, medicalAttention, hospital}]
 
   // ===== NEW: FNOL WORKFLOW FIELDS =====
-  fnolStatus         String?   @default("NOT_STARTED") // "NOT_STARTED" | "PARTIAL" | "SUBMITTED" | "COMPLETE"
-  fnolSubmittedAt    DateTime?
-  fnolSubmittedBy    String?
-  fnolNumber         String?   @unique
+  fnolStatus      String?   @default("NOT_STARTED") // "NOT_STARTED" | "PARTIAL" | "SUBMITTED" | "COMPLETE"
+  fnolSubmittedAt DateTime?
+  fnolSubmittedBy String?
+  fnolNumber      String?   @unique
 
   adjusterAssigned   Boolean   @default(false)
   adjusterName       String?
@@ -1406,9 +1419,9 @@ model Claim {
   adjusterPhone      String?
   adjusterAssignedAt DateTime?
 
-  claimOpenedAt              DateTime?
-  claimSubmittedToInsurer    DateTime?
-  claimClosedAt              DateTime?
+  claimOpenedAt           DateTime?
+  claimSubmittedToInsurer DateTime?
+  claimClosedAt           DateTime?
 
   // Assessment
   estimatedCost Float
@@ -1475,8 +1488,8 @@ model Claim {
   statusHistory Json? // All status changes
 
   // ===== PHASE 5 - VEHICLE REACTIVATION WORKFLOW =====
-  repairDocumentUrls  Json?   // Photos of repairs
-  safetyChecklistData Json?   // Verification checklist
+  repairDocumentUrls  Json? // Photos of repairs
+  safetyChecklistData Json? // Verification checklist
   reactivationNotes   String? @db.Text
 
   // ===== PHASE 7 - CLAIMS MESSAGING (FUTURE) =====
@@ -1527,7 +1540,7 @@ model ClaimMessage {
 
   // Sender Information
   senderId   String
-  senderType String  // "HOST", "GUEST", "FLEET_ADMIN"
+  senderType String // "HOST", "GUEST", "FLEET_ADMIN"
   senderName String?
 
   // Message Content
@@ -1535,7 +1548,7 @@ model ClaimMessage {
   attachments Json? // Array of file URLs
 
   // Read Tracking
-  readBy Json?   // Array of user IDs who read it
+  readBy Json? // Array of user IDs who read it
   isRead Boolean @default(false)
 
   // Timestamps
@@ -1552,21 +1565,21 @@ model ClaimMessage {
 // ============================================================================
 
 model ClaimEdit {
-  id           String   @id @default(cuid())
-  claimId      String
-  claim        Claim    @relation(fields: [claimId], references: [id], onDelete: Cascade)
-  
-  fieldChanged String   // "description", "photos", "estimatedCost", etc.
-  oldValue     String?  @db.Text
-  newValue     String?  @db.Text
-  
+  id      String @id @default(cuid())
+  claimId String
+  claim   Claim  @relation(fields: [claimId], references: [id], onDelete: Cascade)
+
+  fieldChanged String // "description", "photos", "estimatedCost", etc.
+  oldValue     String? @db.Text
+  newValue     String? @db.Text
+
   editedAt     DateTime @default(now())
-  editedBy     String   // hostId or adminId
-  editedByType String   // "HOST" or "ADMIN"
+  editedBy     String // hostId or adminId
+  editedByType String // "HOST" or "ADMIN"
   reason       String?  @db.Text // Optional: why they edited
-  
-  createdAt    DateTime @default(now())
-  
+
+  createdAt DateTime @default(now())
+
   @@index([claimId])
   @@index([editedBy])
   @@index([editedAt])
@@ -1586,7 +1599,7 @@ model ClaimDamagePhoto {
   caption String?
   order   Int     @default(0)
 
-  uploadedBy String   // "HOST" or "GUEST"
+  uploadedBy String // "HOST" or "GUEST"
   uploadedAt DateTime @default(now())
 
   deletedAt DateTime?
@@ -1721,8 +1734,8 @@ model RentalCar {
   modifications String? @db.Text // Turbo, lift kit, body kit, etc.
 
   // Usage Information
-  annualMileage Int?    @default(12000) // Expected yearly miles
-  primaryUse    String  @default("Rental") // "Rental", "Personal", "Commercial"
+  annualMileage Int?   @default(12000) // Expected yearly miles
+  primaryUse    String @default("Rental") // "Rental", "Personal", "Commercial"
 
   // ===== NEW: DECLARATION-BASED INSURANCE INTEGRITY SYSTEM =====
   declarationType String @default("Rental") // "Rental", "Rental+Personal", "Commercial"
@@ -1734,20 +1747,20 @@ model RentalCar {
   lienholderAddress String? // ✅ NEW FIELD ADDED
 
   // ===== NEW: DOCUMENT VERIFICATION TRACKING =====
-  vinVerifiedBy         String?   // adminId who verified VIN
+  vinVerifiedBy         String? // adminId who verified VIN
   vinVerifiedAt         DateTime? // When VIN was verified
-  vinVerificationMethod String?   // "MANUAL", "API", "PHOTO_OCR"
+  vinVerificationMethod String? // "MANUAL", "API", "PHOTO_OCR"
 
-  registrationVerifiedBy String?   // adminId who verified registration
+  registrationVerifiedBy String? // adminId who verified registration
   registrationVerifiedAt DateTime? // When registration verified
   registrationExpiryDate DateTime? // Registration expiration
   registrationState      String? // Registration state
 
-  insuranceVerifiedBy String?   // adminId who verified insurance
+  insuranceVerifiedBy String? // adminId who verified insurance
   insuranceVerifiedAt DateTime? // When insurance verified
   insuranceExpiryDate DateTime? // Insurance policy expiration
 
-  titleVerifiedBy String?   // adminId who verified title
+  titleVerifiedBy String? // adminId who verified title
   titleVerifiedAt DateTime? // When title verified
   // ===== END DOCUMENT VERIFICATION FIELDS =====
 
@@ -1765,9 +1778,9 @@ model RentalCar {
 
   // ===== NEW: CLAIM LOCKING & SAFETY =====
   claimLockUntil     DateTime?
-  safetyHold         Boolean @default(false)
+  safetyHold         Boolean   @default(false)
   safetyHoldReason   String?
-  requiresInspection Boolean @default(false)
+  requiresInspection Boolean   @default(false)
 
   // ===== PHASE 2A: REPAIR VERIFICATION =====
   repairVerified Boolean @default(false)
@@ -1932,11 +1945,11 @@ model RentalCarPhoto {
   order   Int     @default(0)
 
   // ===== NEW: PHOTO METADATA & TRACKING =====
-  uploadedBy     String?   // hostId or adminId who uploaded
+  uploadedBy     String? // hostId or adminId who uploaded
   uploadedByType String? // "HOST", "ADMIN", "GUEST"
 
   // EXIF Data (from photo metadata)
-  metadata       Json?     // Complete EXIF data
+  metadata       Json? // Complete EXIF data
   photoTimestamp DateTime? // Original photo timestamp
   gpsLatitude    Float? // GPS coordinates from EXIF
   gpsLongitude   Float? // GPS coordinates from EXIF
@@ -1976,46 +1989,46 @@ model RentalCarPhoto {
 // ============================================================================
 
 model VehicleServiceRecord {
-  id               String      @id @default(cuid())
-  carId            String
-  car              RentalCar   @relation(fields: [carId], references: [id], onDelete: Cascade)
-  
+  id    String    @id @default(cuid())
+  carId String
+  car   RentalCar @relation(fields: [carId], references: [id], onDelete: Cascade)
+
   // Service Type
-  serviceType      ServiceType
-  serviceDate      DateTime
-  mileageAtService Int
-  nextServiceDue   DateTime?
+  serviceType        ServiceType
+  serviceDate        DateTime
+  mileageAtService   Int
+  nextServiceDue     DateTime?
   nextServiceMileage Int?
-  
+
   // Service Provider
-  shopName         String
-  shopAddress      String
-  technicianName   String?
-  invoiceNumber    String?
-  
+  shopName       String
+  shopAddress    String
+  technicianName String?
+  invoiceNumber  String?
+
   // Documentation (REQUIRED)
-  receiptUrl          String  // Uploaded receipt/invoice
+  receiptUrl          String // Uploaded receipt/invoice
   inspectionReportUrl String? // For inspections
-  
+
   // Service Details
   itemsServiced String[] // Array of items
   costTotal     Float
   notes         String?
-  
+
   // ===== NEW: WHO ADDED THIS RECORD (OPTIONAL FOR BACKFILL) =====
   addedBy     String? @default("SYSTEM") // ⭐ OPTIONAL with default for existing records
   addedByType String? @default("HOST") // ⭐ OPTIONAL with default for existing records
   // ===== END NEW FIELDS =====
-  
+
   // Verification
   verifiedByFleet Boolean   @default(false)
   verifiedAt      DateTime?
   verifiedBy      String? // Fleet admin ID
-  
+
   // Metadata
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   @@index([carId, serviceDate])
   @@index([carId, serviceType])
   @@index([addedBy])
@@ -2064,26 +2077,26 @@ model RentalAvailability {
 // ============================================================================
 
 model TripInspectionPhoto {
-  id         String   @id @default(cuid())
-  bookingId  String
-  booking    RentalBooking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  
-  photoType  String   // "CHECK_IN" | "CHECK_OUT"
-  category   String   // "EXTERIOR_FRONT" | "EXTERIOR_BACK" | "INTERIOR" | "ODOMETER" | "FUEL"
-  url        String
-  caption    String?
-  
+  id        String        @id @default(cuid())
+  bookingId String
+  booking   RentalBooking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  photoType String // "CHECK_IN" | "CHECK_OUT"
+  category  String // "EXTERIOR_FRONT" | "EXTERIOR_BACK" | "INTERIOR" | "ODOMETER" | "FUEL"
+  url       String
+  caption   String?
+
   uploadedBy     String
   uploadedByType String // "HOST" | "GUEST"
   uploadedAt     DateTime @default(now())
-  
+
   // EXIF metadata
-  gpsLatitude  Float?
-  gpsLongitude Float?
+  gpsLatitude    Float?
+  gpsLongitude   Float?
   photoTimestamp DateTime?
-  
+
   createdAt DateTime @default(now())
-  
+
   @@index([bookingId])
   @@index([photoType])
   @@index([uploadedAt])
@@ -2161,7 +2174,7 @@ model RentalBooking {
   insurancePolicyId      String? // Policy ID from Tint/Liberty or internal
   insuranceProvider      String? // "Liberty Mutual", "Host P2P", "Guest Personal", etc.
   insuranceBoundAt       DateTime? // When policy was bound
-  depositDiscountApplied Boolean @default(false) // 50% discount if guest provided insurance
+  depositDiscountApplied Boolean   @default(false) // 50% discount if guest provided insurance
   policySnapshot         Json? // IMMUTABLE snapshot of policy at booking time
 
   // Insurance tier info
@@ -2340,6 +2353,10 @@ model ReviewerProfile {
   userId String? @unique
   user   User?   @relation(fields: [userId], references: [id])
 
+  // Dual-Role Account Linking (NEW)
+  // Copy of User.legacyDualId for faster queries when checking linked accounts
+  legacyDualId String?
+
   // Personal Information
   phoneNumber String?
   bio         String?   @db.Text
@@ -2488,6 +2505,7 @@ model ReviewerProfile {
   @@index([accountHoldClaimId])
   @@index([driverLicenseNumber])
   @@index([driverLicenseExpiry])
+  @@index([legacyDualId])
 }
 
 // ============================================================================
@@ -2495,19 +2513,19 @@ model ReviewerProfile {
 // ============================================================================
 
 model GuestInsurance {
-  id           String          @id @default(cuid())
-  guestId      String
-  guest        ReviewerProfile @relation(fields: [guestId], references: [id], onDelete: Cascade)
-  
+  id      String          @id @default(cuid())
+  guestId String
+  guest   ReviewerProfile @relation(fields: [guestId], references: [id], onDelete: Cascade)
+
   providerName String
   policyNumber String
   verified     Boolean   @default(false)
   verifiedAt   DateTime?
   expiresAt    DateTime?
-  
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([guestId])
   @@index([verified])
   @@index([expiresAt])
@@ -2521,18 +2539,18 @@ model AccountHold {
   id      String          @id @default(cuid())
   guestId String
   guest   ReviewerProfile @relation(fields: [guestId], references: [id], onDelete: Cascade)
-  
+
   reason  String
   amount  Decimal @db.Decimal(10, 2)
   claimId String?
-  
-  active    Boolean  @default(true)
-  startedAt DateTime @default(now())
+
+  active    Boolean   @default(true)
+  startedAt DateTime  @default(now())
   endedAt   DateTime?
-  
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   @@index([guestId])
   @@index([active])
   @@index([claimId])
@@ -3938,6 +3956,32 @@ model HostBadgeEarned {
 }
 
 // ============================================================================
+// ACCOUNT LINKING SYSTEM
+// ============================================================================
+
+model AccountLinkRequest {
+  id               String @id @default(cuid())
+  initiatingUserId String
+  targetEmail      String
+
+  // Verification
+  verificationCode String
+  codeExpiresAt    DateTime
+
+  // Status tracking
+  status       MergeStatus @default(PENDING)
+  legacyDualId String? // Generated after verification
+
+  // Timestamps
+  requestedAt DateTime  @default(now())
+  verifiedAt  DateTime?
+
+  @@index([initiatingUserId])
+  @@index([targetEmail])
+  @@index([status])
+}
+
+// ============================================================================
 // ENUMS
 // ============================================================================
 
@@ -4448,4 +4492,12 @@ enum ServiceType {
   MAJOR_SERVICE_60K
   MAJOR_SERVICE_90K
   CUSTOM
+}
+
+enum MergeStatus {
+  PENDING // Request created, waiting for verification
+  VERIFIED // Code verified, ready to assign legacy ID
+  COMPLETED // Legacy ID assigned to both accounts
+  REJECTED // User rejected the merge
+  EXPIRED // Verification code expired
 }

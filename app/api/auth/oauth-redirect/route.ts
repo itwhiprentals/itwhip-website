@@ -265,9 +265,27 @@ export async function GET(request: NextRequest) {
 
     // If user has host profile and roleHint is 'host', regenerate tokens with host claims
     if (roleHint === 'host' && hostProfile) {
+      // CRITICAL VALIDATION: Check for userId mismatch
+      if (hostProfile.userId && hostProfile.userId !== user.id) {
+        console.error('[OAuth] 🚨 SECURITY BREACH: Host profile userId mismatch - BLOCKING LOGIN!', {
+          authenticatedUserId: user.id,
+          profileUserId: hostProfile.userId,
+          email
+        })
+
+        // ✅ SECURITY FIX: BLOCK login immediately when userId mismatch detected
+        // This prevents account bleeding where User A sees User B's data
+        const response = NextResponse.redirect(new URL('/host/login?error=account-security-issue', request.url))
+        response.cookies.delete('oauth_role_hint')
+        response.cookies.delete('oauth_mode')
+        response.cookies.delete('oauth_return_to')
+        return response
+      }
+
+      // Generate tokens with AUTHENTICATED user.id (NOT hostProfile.userId)
       const hostTokens = generateHostTokens({
         id: hostProfile.id,
-        userId: hostProfile.userId || user.id,
+        userId: user.id,  // ✅ ALWAYS use authenticated user.id
         email: email,
         name: user.name || '',
         approvalStatus: hostProfile.approvalStatus
@@ -318,77 +336,42 @@ export async function GET(request: NextRequest) {
         return createRedirectWithCookies('/host/login?error=no-account')
       }
 
-      // SIGNUP mode: Auto-create host profile (similar to guest flow)
+      // ✅ SECURITY FIX: Never auto-create profiles without phone validation
+      // Always redirect to complete-profile if no host profile exists
       if (!hostProfile && userId) {
-        try {
-          // Update User emailVerified since this is OAuth
-          await prisma.user.update({
-            where: { id: userId },
-            data: { emailVerified: true }
-          })
-
-          // Create RentalHost profile (PENDING approval)
-          await prisma.rentalHost.create({
-            data: {
-              userId: userId,
-              email: email,
-              name: session.user.name || '',
-              profilePhoto: session.user.image,
-              approvalStatus: 'PENDING',
-              isVerified: false,
-              phone: '' // Will be filled in complete-profile
-            }
-          })
-          console.log('[OAuth Redirect] Created host profile (PENDING) with verified email')
-        } catch (err) {
-          // Profile might already exist
-          console.error('[OAuth Redirect] Failed to create host profile:', err)
-        }
+        console.log('[OAuth Redirect] No host profile, redirecting to complete profile')
+        return createRedirectWithCookies(`/auth/complete-profile?roleHint=host&mode=signup&redirectTo=/host/dashboard`)
       }
 
-      // Redirect to complete-profile to collect phone number
-      console.log('[OAuth Redirect] Host needs phone, redirecting to complete profile')
-      return createRedirectWithCookies(`/auth/complete-profile?roleHint=host&mode=${mode}&redirectTo=/host/dashboard`)
+      // If profile exists but missing phone, redirect to complete it
+      if (!hasPhoneAny) {
+        console.log('[OAuth Redirect] Host needs phone, redirecting to complete profile')
+        return createRedirectWithCookies(`/auth/complete-profile?roleHint=host&mode=${mode}&redirectTo=/host/dashboard`)
+      }
+
+      // Both profile and phone exist - continue with host flow
+      console.log('[OAuth Redirect] Host profile and phone exist, continuing...')
     }
 
     if (roleHint === 'guest') {
-      // User came from guest auth pages
+      // ✅ SECURITY FIX: Never auto-create profiles without phone validation
+      // Always check for profile AND phone BEFORE allowing access
 
-      // Create guest profile if it doesn't exist
+      // If no guest profile exists, redirect to complete-profile to create it WITH phone
       if (!guestProfile && userId) {
-        try {
-          // Update User emailVerified since this is OAuth
-          await prisma.user.update({
-            where: { id: userId },
-            data: { emailVerified: true }
-          })
-
-          await prisma.reviewerProfile.create({
-            data: {
-              userId: userId,
-              email: email,
-              name: session.user.name || '',
-              memberSince: new Date(),
-              city: '',
-              state: '',
-              zipCode: '',
-              emailVerified: true
-            }
-          })
-          console.log('[OAuth Redirect] Created guest profile with verified email')
-        } catch (err) {
-          // Profile might already exist with different userId
-          console.error('[OAuth Redirect] Failed to create guest profile:', err)
-        }
+        const redirectUrl = returnTo || '/dashboard'
+        console.log('[OAuth Redirect] No guest profile, redirecting to complete profile')
+        return createRedirectWithCookies(`/auth/complete-profile?roleHint=guest&mode=signup&redirectTo=${encodeURIComponent(redirectUrl)}`)
       }
 
-      // Check if user has phone number
+      // If profile exists but missing phone, redirect to complete it
       if (!hasPhoneAny) {
         const redirectUrl = returnTo || '/dashboard'
         console.log('[OAuth Redirect] Guest missing phone, redirecting to complete profile')
         return createRedirectWithCookies(`/auth/complete-profile?roleHint=guest&mode=${mode}&redirectTo=${encodeURIComponent(redirectUrl)}`)
       }
 
+      // Both profile and phone exist - allow access
       const redirectUrl = returnTo || '/dashboard'
       console.log(`[OAuth Redirect] Redirecting to guest dashboard: ${redirectUrl}`)
       return createRedirectWithCookies(redirectUrl)
