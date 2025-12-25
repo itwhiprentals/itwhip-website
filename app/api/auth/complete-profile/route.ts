@@ -576,6 +576,7 @@ async function createSuccessResponse(user: any, phone: string, roleHint: string 
     console.log(`[Complete Profile] Generated GUEST tokens`)
   }
 
+  // New OAuth users always require phone verification
   const response = NextResponse.json({
     success: true,
     message: 'Profile completed successfully',
@@ -585,7 +586,9 @@ async function createSuccessResponse(user: any, phone: string, roleHint: string 
       name: user.name,
       phone: phone
     },
-    isNewUser: true // Flag for frontend to know this was a new user creation
+    isNewUser: true, // Flag for frontend to know this was a new user creation
+    requiresPhoneVerification: true, // New OAuth users always need phone verification
+    phone: phone // Phone number for redirect
   })
 
   // Set standard JWT cookies

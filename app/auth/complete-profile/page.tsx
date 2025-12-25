@@ -196,16 +196,31 @@ function CompleteProfileContent() {
       // If this was a new user creation, we got new JWT cookies
       // Force a hard redirect to get fresh session state
       if (data.isNewUser) {
-        console.log('[Complete Profile] New user created - doing hard redirect')
-        // Small delay to ensure cookies are set
-        setTimeout(() => {
-          if (roleHint === 'host') {
-            // For hosts, redirect to login with pending status (they need approval)
-            window.location.href = '/host/login?status=pending'
-          } else {
-            window.location.href = redirectTo
-          }
-        }, 100)
+        console.log('[Complete Profile] New user created')
+
+        // Check if phone verification is required
+        if (data.requiresPhoneVerification && data.phone) {
+          console.log('[Complete Profile] Redirecting to phone verification')
+          // Small delay to ensure cookies are set
+          setTimeout(() => {
+            const phoneParam = encodeURIComponent(data.phone)
+            if (roleHint === 'host') {
+              // For hosts, after phone verification redirect to pending status
+              window.location.href = `/auth/verify-phone?phone=${phoneParam}&returnTo=${encodeURIComponent('/host/login?status=pending')}&roleHint=host`
+            } else {
+              window.location.href = `/auth/verify-phone?phone=${phoneParam}&returnTo=${encodeURIComponent(redirectTo)}&roleHint=guest`
+            }
+          }, 100)
+        } else {
+          // No phone verification needed - redirect normally
+          setTimeout(() => {
+            if (roleHint === 'host') {
+              window.location.href = '/host/login?status=pending'
+            } else {
+              window.location.href = redirectTo
+            }
+          }, 100)
+        }
       } else {
         // Existing user - update session and redirect normally
         await update()

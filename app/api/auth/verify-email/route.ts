@@ -24,7 +24,10 @@ export async function POST(req: NextRequest) {
         emailVerified: true,
         emailVerificationCode: true,
         emailVerificationExpiry: true,
-        role: true
+        role: true,
+        phone: true,
+        phoneVerified: true,
+        createdAt: true
       }
     })
 
@@ -156,10 +159,24 @@ The ItWhip Team
       .setExpirationTime('7d')
       .sign(GUEST_JWT_SECRET)
 
+    // Check if phone verification is required
+    const PHONE_CUTOFF = new Date(process.env.PHONE_VERIFICATION_CUTOFF || '2025-01-01')
+    const isNewUser = user.createdAt > PHONE_CUTOFF
+    const requiresPhoneVerification = isNewUser && !user.phoneVerified && !!user.phone
+
+    console.log(`[Verify Email] Phone verification check:`, {
+      isNewUser,
+      hasPhone: !!user.phone,
+      phoneVerified: user.phoneVerified,
+      requiresPhoneVerification
+    })
+
     // Set cookies
     const response = NextResponse.json({
       success: true,
-      message: 'Email verified successfully'
+      message: 'Email verified successfully',
+      requiresPhoneVerification,
+      phone: user.phone // Pass phone for redirect
     })
 
     response.cookies.set('accessToken', accessToken, {

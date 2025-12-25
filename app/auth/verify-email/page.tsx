@@ -106,12 +106,22 @@ function VerifyEmailContent() {
         throw new Error(data.error || 'Verification failed')
       }
 
-      setSuccess(true)
-
-      // Redirect to dashboard after 2 seconds
-      setTimeout(() => {
-        router.push('/dashboard')
-      }, 2000)
+      // Check if phone verification is required
+      if (data.requiresPhoneVerification && data.phone) {
+        setRedirectMessage('Redirecting to phone verification...')
+        setSuccess(true)
+        // Redirect to phone verification after 2 seconds
+        setTimeout(() => {
+          router.push(`/auth/verify-phone?phone=${encodeURIComponent(data.phone)}&returnTo=/dashboard`)
+        }, 2000)
+      } else {
+        setRedirectMessage('Redirecting to dashboard...')
+        setSuccess(true)
+        // Redirect to dashboard after 2 seconds
+        setTimeout(() => {
+          router.push('/dashboard')
+        }, 2000)
+      }
 
     } catch (err: any) {
       setError(err.message)
@@ -152,6 +162,16 @@ function VerifyEmailContent() {
     }
   }
 
+  // State for redirect destination
+  const [redirectMessage, setRedirectMessage] = useState('Redirecting to dashboard...')
+
+  // Update redirect message when success changes
+  useEffect(() => {
+    if (success) {
+      // The redirect message will be updated in handleVerify
+    }
+  }, [success])
+
   if (success) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
@@ -163,7 +183,7 @@ function VerifyEmailContent() {
             Email Verified!
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            Your email has been successfully verified. Redirecting to dashboard...
+            {redirectMessage}
           </p>
           <div className="animate-spin rounded-full h-8 w-8 border-2 border-green-600 border-t-transparent mx-auto" />
         </div>
