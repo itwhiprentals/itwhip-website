@@ -25,7 +25,7 @@ model User {
   // Dual-Role Account Linking (NEW)
   // When user has both host and guest accounts, BOTH User records share the same legacyDualId
   // This allows seamless role switching while keeping separate userIds for security
-  legacyDualId String? @unique
+  legacyDualId String?
 
   // Authentication
   passwordHash     String?
@@ -3964,21 +3964,28 @@ model AccountLinkRequest {
   initiatingUserId String
   targetEmail      String
 
-  // Verification
+  // Verification Code (for host to enter)
   verificationCode String
   codeExpiresAt    DateTime
 
+  // Secure Link Tokens (for clicking email links)
+  guestLinkToken String? @unique // Token for guest to click
+  hostLinkToken  String? @unique // Token for host (generated when guest confirms)
+
   // Status tracking
   status       MergeStatus @default(PENDING)
-  legacyDualId String? // Generated after verification
+  legacyDualId String?     // Generated after verification
 
   // Timestamps
-  requestedAt DateTime  @default(now())
-  verifiedAt  DateTime?
+  requestedAt      DateTime  @default(now())
+  guestConfirmedAt DateTime? // When guest clicked their link
+  verifiedAt       DateTime? // When fully completed
 
   @@index([initiatingUserId])
   @@index([targetEmail])
   @@index([status])
+  @@index([guestLinkToken])
+  @@index([hostLinkToken])
 }
 
 // ============================================================================
@@ -4495,9 +4502,10 @@ enum ServiceType {
 }
 
 enum MergeStatus {
-  PENDING // Request created, waiting for verification
-  VERIFIED // Code verified, ready to assign legacy ID
-  COMPLETED // Legacy ID assigned to both accounts
-  REJECTED // User rejected the merge
-  EXPIRED // Verification code expired
+  PENDING          // Request created, waiting for verification
+  GUEST_CONFIRMED  // Guest clicked link, waiting for host confirmation
+  VERIFIED         // Code verified, ready to assign legacy ID
+  COMPLETED        // Legacy ID assigned to both accounts
+  REJECTED         // User rejected the merge
+  EXPIRED          // Verification code expired
 }

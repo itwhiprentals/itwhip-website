@@ -1,5 +1,6 @@
 // app/api/auth/check-dual-role/route.ts
 // API endpoint to check if authenticated user has both host and guest profiles
+// Also checks linked accounts via legacyDualId
 
 import { NextRequest, NextResponse } from 'next/server'
 import { verify } from 'jsonwebtoken'
@@ -47,10 +48,10 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get user email for fallback queries
+    // Get user data including legacyDualId
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { email: true }
+      select: { email: true, legacyDualId: true }
     })
 
     if (!user) {
@@ -83,6 +84,52 @@ export async function GET(request: NextRequest) {
       })
     ])
 
+    // Check for linked accounts via legacyDualId
+    let linkedHostProfile = null
+    let linkedGuestProfile = null
+    let linkedUserId: string | null = null
+
+    if (user.legacyDualId) {
+      // Find the linked user (different user with same legacyDualId)
+      const linkedUser = await prisma.user.findFirst({
+        where: {
+          legacyDualId: user.legacyDualId,
+          id: { not: userId }
+        },
+        select: { id: true, email: true }
+      })
+
+      if (linkedUser) {
+        linkedUserId = linkedUser.id
+        console.log(`[Dual-Role Check] Found linked user: ${linkedUser.email} (${linkedUser.id})`)
+
+        // Check linked user's profiles
+        const [linkedHost, linkedGuest] = await Promise.all([
+          prisma.rentalHost.findFirst({
+            where: { userId: linkedUser.id },
+            select: {
+              id: true,
+              approvalStatus: true,
+              userId: true,
+              email: true
+            }
+          }),
+          prisma.reviewerProfile.findFirst({
+            where: { userId: linkedUser.id },
+            select: {
+              id: true,
+              userId: true,
+              email: true,
+              fullyVerified: true
+            }
+          })
+        ])
+
+        linkedHostProfile = linkedHost
+        linkedGuestProfile = linkedGuest
+      }
+    }
+
     // Log if profiles exist with mismatched userId (data integrity issue)
     if (hostProfile && hostProfile.userId !== userId) {
       console.error('[Dual-Role Check] ⚠️ Host profile userId mismatch', {
@@ -100,16 +147,26 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    const hasHostProfile = !!hostProfile
-    const hasGuestProfile = !!guestProfile
+    // User has profile if they have it directly OR via linked account
+    const hasHostProfile = !!hostProfile || !!linkedHostProfile
+    const hasGuestProfile = !!guestProfile || !!linkedGuestProfile
     const hasBothRoles = hasHostProfile && hasGuestProfile
+
+    // Determine which host profile to use for approval status
+    const effectiveHostProfile = hostProfile || linkedHostProfile
 
     return NextResponse.json({
       hasBothRoles,
       hasHostProfile,
       hasGuestProfile,
       currentRole,
-      hostApprovalStatus: hostProfile?.approvalStatus || null
+      hostApprovalStatus: effectiveHostProfile?.approvalStatus || null,
+      // Include linked account info for role switching
+      isLinkedAccount: !!user.legacyDualId,
+      linkedUserId: linkedUserId,
+      // Indicate which profiles are from linked account
+      hostProfileIsLinked: !hostProfile && !!linkedHostProfile,
+      guestProfileIsLinked: !guestProfile && !!linkedGuestProfile
     })
 
   } catch (error) {

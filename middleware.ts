@@ -101,6 +101,7 @@ const publicRoutes = [
   '/host/reset-password',
   '/auth/forgot-password',
   '/auth/reset-password',
+  '/auth/confirm-link',  // Account linking confirmation page
   '/api/host/signup',
   '/api/host/login',
   '/api/host/verify',
@@ -108,6 +109,8 @@ const publicRoutes = [
   '/api/host/reset-password',
   '/api/auth/forgot-password',
   '/api/auth/reset-password',
+  '/api/account/link/confirm-guest',  // Account linking confirmation endpoints
+  '/api/account/link/confirm-host',
   '/verify',
   // Host landing pages (public SEO pages)
   '/host/fleet-owners',

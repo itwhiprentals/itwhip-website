@@ -1,5 +1,6 @@
 // app/api/auth/switch-role/route.ts
 // API endpoint to switch between host and guest modes for dual-role users
+// Supports switching to linked accounts via legacyDualId
 
 import { NextRequest, NextResponse } from 'next/server'
 import { verify, sign } from 'jsonwebtoken'
@@ -152,7 +153,7 @@ export async function POST(request: NextRequest) {
     // Check if user has the target profile
     if (targetRole === 'host') {
       // SECURITY: STRICT query - only match by userId (no email fallback)
-      const hostProfile = await prisma.rentalHost.findFirst({
+      let hostProfile = await prisma.rentalHost.findFirst({
         where: { userId: userId },  // Only match by userId for security
         select: {
           id: true,
@@ -164,8 +165,43 @@ export async function POST(request: NextRequest) {
         }
       })
 
+      // If no host profile on current user, check linked account
+      let switchingToLinkedUser = false
+      let linkedUser: { id: string; email: string; name: string | null; role: string; legacyDualId: string | null } | null = null
+
+      if (!hostProfile && user.legacyDualId) {
+        // Find linked user
+        linkedUser = await prisma.user.findFirst({
+          where: {
+            legacyDualId: user.legacyDualId,
+            id: { not: userId }
+          },
+          select: { id: true, email: true, name: true, role: true, legacyDualId: true }
+        })
+
+        if (linkedUser) {
+          // Check if linked user has host profile
+          hostProfile = await prisma.rentalHost.findFirst({
+            where: { userId: linkedUser.id },
+            select: {
+              id: true,
+              approvalStatus: true,
+              userId: true,
+              email: true,
+              name: true,
+              legacyDualId: true
+            }
+          })
+
+          if (hostProfile) {
+            switchingToLinkedUser = true
+            console.log(`[Role Switch] Switching to linked user's host profile: ${linkedUser.email}`)
+          }
+        }
+      }
+
       if (!hostProfile) {
-        console.error('[Role Switch] ❌ SECURITY: No host profile with matching userId', {
+        console.error('[Role Switch] ❌ SECURITY: No host profile with matching userId or linked account', {
           userId: userId,
           email: user.email
         })
@@ -175,10 +211,12 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // CRITICAL VALIDATION: Verify userId matches authenticated user
-      if (hostProfile.userId && hostProfile.userId !== userId) {
+      // CRITICAL VALIDATION: Verify userId matches authenticated user or linked user
+      const expectedUserId = switchingToLinkedUser ? linkedUser!.id : userId
+      if (hostProfile.userId && hostProfile.userId !== expectedUserId) {
         console.error('[Role Switch] 🚨 SECURITY BREACH: userId mismatch!', {
           authenticatedUserId: userId,
+          expectedUserId: expectedUserId,
           profileUserId: hostProfile.userId,
           email: user.email
         })
@@ -188,12 +226,12 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // DUAL-ROLE VALIDATION: If both accounts have legacyDualId, they must match
-      if (user.legacyDualId && hostProfile.legacyDualId) {
-        if (user.legacyDualId !== hostProfile.legacyDualId) {
+      // DUAL-ROLE VALIDATION: If switching to linked user, verify legacyDualId matches
+      if (switchingToLinkedUser && linkedUser) {
+        if (user.legacyDualId !== linkedUser.legacyDualId) {
           console.error('[Role Switch] 🚨 SECURITY BREACH: legacyDualId mismatch!', {
             userLegacyDualId: user.legacyDualId,
-            hostLegacyDualId: hostProfile.legacyDualId,
+            linkedUserLegacyDualId: linkedUser.legacyDualId,
             userId: userId
           })
           return NextResponse.json(
@@ -204,14 +242,17 @@ export async function POST(request: NextRequest) {
         console.log('[Role Switch] ✅ Legacy dual ID validation passed:', user.legacyDualId)
       }
 
-      console.log('[Role Switch] Switched to host mode for user:', userId)
+      // Determine which user ID to use for tokens
+      const tokenUserId = switchingToLinkedUser ? linkedUser!.id : userId
 
-      // Generate host tokens with AUTHENTICATED user.id (NOT hostProfile.userId)
+      console.log('[Role Switch] Switched to host mode for user:', tokenUserId, switchingToLinkedUser ? '(linked account)' : '')
+
+      // Generate host tokens - use linked user's ID if switching to linked account
       const tokens = generateHostTokens({
         id: hostProfile.id,
-        userId: userId,  // ✅ ALWAYS use authenticated user.id
+        userId: tokenUserId,  // Use linked user's ID when switching to linked account
         email: hostProfile.email,
-        name: hostProfile.name || user.name || '',
+        name: hostProfile.name || (switchingToLinkedUser ? linkedUser!.name : user.name) || '',
         approvalStatus: hostProfile.approvalStatus,
         legacyDualId: user.legacyDualId  // Include dual-role link ID
       })
@@ -219,7 +260,8 @@ export async function POST(request: NextRequest) {
       // Create response with redirect
       const response = NextResponse.json({
         success: true,
-        redirectUrl: '/host/dashboard'
+        redirectUrl: '/host/dashboard',
+        switchedToLinkedAccount: switchingToLinkedUser
       })
 
       // Set host cookies
@@ -256,12 +298,12 @@ export async function POST(request: NextRequest) {
         path: '/'
       })
 
-      console.log('[Role Switch] Switched to host mode for user:', userId)
+      console.log('[Role Switch] Switched to host mode for user:', tokenUserId)
       return response
 
     } else if (targetRole === 'guest') {
       // SECURITY: STRICT query - only match by userId (no email fallback)
-      const guestProfile = await prisma.reviewerProfile.findFirst({
+      let guestProfile = await prisma.reviewerProfile.findFirst({
         where: { userId: userId },  // Only match by userId for security
         select: {
           id: true,
@@ -271,8 +313,41 @@ export async function POST(request: NextRequest) {
         }
       })
 
+      // If no guest profile on current user, check linked account
+      let switchingToLinkedUser = false
+      let linkedUser: { id: string; email: string; name: string | null; role: string; legacyDualId: string | null } | null = null
+
+      if (!guestProfile && user.legacyDualId) {
+        // Find linked user
+        linkedUser = await prisma.user.findFirst({
+          where: {
+            legacyDualId: user.legacyDualId,
+            id: { not: userId }
+          },
+          select: { id: true, email: true, name: true, role: true, legacyDualId: true }
+        })
+
+        if (linkedUser) {
+          // Check if linked user has guest profile
+          guestProfile = await prisma.reviewerProfile.findFirst({
+            where: { userId: linkedUser.id },
+            select: {
+              id: true,
+              userId: true,
+              email: true,
+              legacyDualId: true
+            }
+          })
+
+          if (guestProfile) {
+            switchingToLinkedUser = true
+            console.log(`[Role Switch] Switching to linked user's guest profile: ${linkedUser.email}`)
+          }
+        }
+      }
+
       if (!guestProfile) {
-        console.error('[Role Switch] ❌ SECURITY: No guest profile with matching userId', {
+        console.error('[Role Switch] ❌ SECURITY: No guest profile with matching userId or linked account', {
           userId: userId,
           email: user.email
         })
@@ -282,10 +357,12 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // CRITICAL VALIDATION: Verify userId matches authenticated user
-      if (guestProfile.userId && guestProfile.userId !== userId) {
+      // CRITICAL VALIDATION: Verify userId matches authenticated user or linked user
+      const expectedUserId = switchingToLinkedUser ? linkedUser!.id : userId
+      if (guestProfile.userId && guestProfile.userId !== expectedUserId) {
         console.error('[Role Switch] 🚨 SECURITY BREACH: userId mismatch!', {
           authenticatedUserId: userId,
+          expectedUserId: expectedUserId,
           profileUserId: guestProfile.userId,
           email: user.email
         })
@@ -295,12 +372,12 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // DUAL-ROLE VALIDATION: If both accounts have legacyDualId, they must match
-      if (user.legacyDualId && guestProfile.legacyDualId) {
-        if (user.legacyDualId !== guestProfile.legacyDualId) {
+      // DUAL-ROLE VALIDATION: If switching to linked user, verify legacyDualId matches
+      if (switchingToLinkedUser && linkedUser) {
+        if (user.legacyDualId !== linkedUser.legacyDualId) {
           console.error('[Role Switch] 🚨 SECURITY BREACH: legacyDualId mismatch!', {
             userLegacyDualId: user.legacyDualId,
-            guestLegacyDualId: guestProfile.legacyDualId,
+            linkedUserLegacyDualId: linkedUser.legacyDualId,
             userId: userId
           })
           return NextResponse.json(
@@ -311,21 +388,25 @@ export async function POST(request: NextRequest) {
         console.log('[Role Switch] ✅ Legacy dual ID validation passed:', user.legacyDualId)
       }
 
-      console.log('[Role Switch] Switched to guest mode for user:', userId)
+      // Determine which user to use for tokens
+      const targetUser = switchingToLinkedUser ? linkedUser! : user
 
-      // Generate guest tokens with AUTHENTICATED user.id
+      console.log('[Role Switch] Switched to guest mode for user:', targetUser.id, switchingToLinkedUser ? '(linked account)' : '')
+
+      // Generate guest tokens - use linked user if switching to linked account
       const tokens = generateGuestTokens({
-        id: user.id,  // ✅ Using authenticated user.id
-        email: user.email,
-        name: user.name,
-        role: user.role || 'CLAIMED',
-        legacyDualId: user.legacyDualId  // Include dual-role link ID
+        id: targetUser.id,
+        email: targetUser.email,
+        name: targetUser.name,
+        role: targetUser.role || 'CLAIMED',
+        legacyDualId: targetUser.legacyDualId  // Include dual-role link ID
       })
 
       // Create response with redirect
       const response = NextResponse.json({
         success: true,
-        redirectUrl: '/dashboard'
+        redirectUrl: '/dashboard',
+        switchedToLinkedAccount: switchingToLinkedUser
       })
 
       // Set guest cookies
@@ -349,7 +430,7 @@ export async function POST(request: NextRequest) {
       response.cookies.delete('hostAccessToken')
       response.cookies.delete('hostRefreshToken')
 
-      console.log('[Role Switch] Switched to guest mode for user:', userId)
+      console.log('[Role Switch] Switched to guest mode for user:', targetUser.id)
       return response
     }
 

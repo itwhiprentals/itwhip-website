@@ -1,90 +1,97 @@
-// app/api/account/link/verify/route.ts
-// POST /api/account/link/verify - Verify code and assign legacyDualId to both accounts
+// app/api/account/link/confirm-host/route.ts
+// POST /api/account/link/confirm-host - Host clicks email link to complete linking
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
+import { verifyRequest } from '@/app/lib/auth/verify-request'
 import { nanoid } from 'nanoid'
 import { sendEmail } from '@/app/lib/email/sender'
 
 export async function POST(request: NextRequest) {
-  const { requestId, verificationCode } = await request.json()
+  // Get token from request body
+  const { token } = await request.json()
 
-  // Validate input
-  if (!requestId || !verificationCode) {
-    return NextResponse.json(
-      { error: 'Request ID and verification code are required' },
-      { status: 400 }
-    )
+  if (!token) {
+    return NextResponse.json({ error: 'Token is required' }, { status: 400 })
   }
 
-  // Find link request
+  // Find link request by host token
   const linkRequest = await prisma.accountLinkRequest.findUnique({
-    where: { id: requestId }
+    where: { hostLinkToken: token }
   })
 
   if (!linkRequest) {
-    return NextResponse.json({ error: 'Link request not found' }, { status: 404 })
+    return NextResponse.json({ error: 'Invalid or expired link' }, { status: 404 })
   }
 
-  // Check status - accept both PENDING and GUEST_CONFIRMED
-  if (linkRequest.status !== 'PENDING' && linkRequest.status !== 'GUEST_CONFIRMED') {
-    return NextResponse.json(
-      { error: `Link request is ${linkRequest.status.toLowerCase()}` },
-      { status: 400 }
-    )
+  // Check status - must be GUEST_CONFIRMED
+  if (linkRequest.status !== 'GUEST_CONFIRMED') {
+    if (linkRequest.status === 'COMPLETED') {
+      return NextResponse.json({
+        error: 'Accounts are already linked',
+        alreadyLinked: true
+      }, { status: 400 })
+    }
+    if (linkRequest.status === 'PENDING') {
+      return NextResponse.json({
+        error: 'Waiting for guest to confirm first',
+        waitingForGuest: true
+      }, { status: 400 })
+    }
+    return NextResponse.json({
+      error: `This link request is ${linkRequest.status.toLowerCase()}`
+    }, { status: 400 })
   }
 
   // Check expiration
   if (new Date() > linkRequest.codeExpiresAt) {
     await prisma.accountLinkRequest.update({
-      where: { id: requestId },
+      where: { id: linkRequest.id },
       data: { status: 'EXPIRED' }
     })
-    return NextResponse.json(
-      { error: 'Verification code expired' },
-      { status: 400 }
-    )
+    return NextResponse.json({ error: 'This link has expired. Please request a new link.' }, { status: 400 })
   }
 
-  // Verify code (case-insensitive)
-  if (linkRequest.verificationCode.toUpperCase() !== verificationCode.toUpperCase()) {
-    return NextResponse.json(
-      { error: 'Invalid verification code' },
-      { status: 400 }
-    )
+  // Verify the logged-in user is the initiator (host)
+  const user = await verifyRequest(request)
+  if (!user) {
+    return NextResponse.json({
+      error: 'Please log in to your host account first',
+      requiresAuth: true
+    }, { status: 401 })
   }
 
-  // Find target user
+  // Check if logged-in user is the initiating user
+  if (user.id !== linkRequest.initiatingUserId) {
+    return NextResponse.json({
+      error: 'This link is for a different account. Please log in with the correct host account.',
+      wrongAccount: true
+    }, { status: 403 })
+  }
+
+  // Check if user is already linked
+  if (user.legacyDualId) {
+    return NextResponse.json({
+      error: 'Your account is already linked to another account',
+      alreadyLinked: true
+    }, { status: 400 })
+  }
+
+  // Find target user (guest)
   const targetUser = await prisma.user.findUnique({
     where: { email: linkRequest.targetEmail },
     select: { id: true, email: true, name: true, legacyDualId: true }
   })
 
   if (!targetUser) {
-    return NextResponse.json(
-      { error: 'Target user not found' },
-      { status: 404 }
-    )
-  }
-
-  // Double-check that neither user has been linked since request was created
-  const initiatingUser = await prisma.user.findUnique({
-    where: { id: linkRequest.initiatingUserId },
-    select: { id: true, email: true, name: true, legacyDualId: true }
-  })
-
-  if (initiatingUser?.legacyDualId) {
-    return NextResponse.json(
-      { error: 'Initiating account has been linked to another account since this request was created' },
-      { status: 400 }
-    )
+    return NextResponse.json({ error: 'Guest account not found' }, { status: 404 })
   }
 
   if (targetUser.legacyDualId) {
-    return NextResponse.json(
-      { error: 'Target account has been linked to another account since this request was created' },
-      { status: 400 }
-    )
+    return NextResponse.json({
+      error: 'The guest account has already been linked to another account',
+      alreadyLinked: true
+    }, { status: 400 })
   }
 
   // Generate legacyDualId (16 characters)
@@ -93,13 +100,13 @@ export async function POST(request: NextRequest) {
   // Assign to both Users and their profiles in transaction
   try {
     await prisma.$transaction(async (tx) => {
-      // Update initiating user
+      // Update initiating user (host)
       await tx.user.update({
         where: { id: linkRequest.initiatingUserId },
         data: { legacyDualId: legacyDualId }
       })
 
-      // Update target user
+      // Update target user (guest)
       await tx.user.update({
         where: { id: targetUser.id },
         data: { legacyDualId: legacyDualId }
@@ -132,7 +139,7 @@ export async function POST(request: NextRequest) {
 
       // Mark request as completed
       await tx.accountLinkRequest.update({
-        where: { id: requestId },
+        where: { id: linkRequest.id },
         data: {
           status: 'COMPLETED',
           legacyDualId: legacyDualId,
@@ -141,21 +148,22 @@ export async function POST(request: NextRequest) {
       })
     })
 
-    console.log(`[Account Link] ✅ Successfully linked accounts:`)
-    console.log(`   Initiating User: ${linkRequest.initiatingUserId}`)
-    console.log(`   Target User: ${targetUser.id}`)
+    console.log(`[Account Link] ✅ Successfully linked accounts (via host link):`)
+    console.log(`   Host User: ${linkRequest.initiatingUserId}`)
+    console.log(`   Guest User: ${targetUser.id}`)
     console.log(`   Legacy Dual ID: ${legacyDualId}`)
 
-    // Send thank-you email to guest (target user)
-    try {
-      const targetEmail = targetUser.email || linkRequest.targetEmail
-      const hostEmail = initiatingUser?.email || 'Host Account'
+    // Send thank-you emails to both parties
+    const hostEmail = user.email || 'Host Account'
+    const guestEmail = targetUser.email || linkRequest.targetEmail
 
-      const htmlContent = generateThankYouEmail(targetEmail, hostEmail, 'guest')
-      const textContent = `
+    // Send to guest
+    try {
+      const guestHtmlContent = generateThankYouEmail(guestEmail, hostEmail, 'guest')
+      const guestTextContent = `
 Your accounts are now linked!
 
-Your guest account (${targetEmail}) has been successfully linked with the host account (${hostEmail}).
+Your guest account (${guestEmail}) has been successfully linked with the host account (${hostEmail}).
 
 You can now switch between roles seamlessly using the role switcher in the header.
 
@@ -163,21 +171,48 @@ You can now switch between roles seamlessly using the role switcher in the heade
       `.trim()
 
       await sendEmail(
-        targetEmail,
+        guestEmail,
         'ItWhip - Your Accounts Are Now Linked!',
-        htmlContent,
-        textContent
+        guestHtmlContent,
+        guestTextContent
       )
-      console.log(`[Account Link] Thank-you email sent to: ${targetEmail}`)
+      console.log(`[Account Link] Thank-you email sent to guest: ${guestEmail}`)
     } catch (emailError) {
-      console.error('[Account Link] Failed to send thank-you email:', emailError)
-      // Don't fail the request - linking was successful
+      console.error('[Account Link] Failed to send thank-you email to guest:', emailError)
+    }
+
+    // Send to host
+    try {
+      const hostHtmlContent = generateThankYouEmail(hostEmail, guestEmail, 'host')
+      const hostTextContent = `
+Your accounts are now linked!
+
+Your host account (${hostEmail}) has been successfully linked with the guest account (${guestEmail}).
+
+You can now switch between roles seamlessly using the role switcher in the header.
+
+- ItWhip Team
+      `.trim()
+
+      await sendEmail(
+        hostEmail,
+        'ItWhip - Your Accounts Are Now Linked!',
+        hostHtmlContent,
+        hostTextContent
+      )
+      console.log(`[Account Link] Thank-you email sent to host: ${hostEmail}`)
+    } catch (emailError) {
+      console.error('[Account Link] Failed to send thank-you email to host:', emailError)
     }
 
     return NextResponse.json({
       success: true,
       message: 'Accounts successfully linked!',
-      legacyDualId: legacyDualId
+      legacyDualId: legacyDualId,
+      linkedAccount: {
+        email: guestEmail,
+        name: targetUser.name
+      }
     })
   } catch (error) {
     console.error('[Account Link] ❌ Transaction failed:', error)
@@ -192,6 +227,7 @@ You can now switch between roles seamlessly using the role switcher in the heade
 function generateThankYouEmail(userEmail: string, linkedEmail: string, userType: 'guest' | 'host'): string {
   const roleLabel = userType === 'guest' ? 'guest' : 'host'
   const linkedRoleLabel = userType === 'guest' ? 'host' : 'guest'
+  const dashboardPath = userType === 'host' ? '/host/dashboard' : '/dashboard'
 
   return `
     <!DOCTYPE html>
@@ -243,7 +279,7 @@ function generateThankYouEmail(userEmail: string, linkedEmail: string, userType:
                     </p>
 
                     <div style="text-align: center;">
-                      <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://itwhip.com'}${userType === 'host' ? '/host/dashboard' : '/dashboard'}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">Go to Dashboard</a>
+                      <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://itwhip.com'}${dashboardPath}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">Go to Dashboard</a>
                     </div>
 
                     <p style="margin: 32px 0 0; color: #6b7280; font-size: 14px; line-height: 20px; text-align: center;">

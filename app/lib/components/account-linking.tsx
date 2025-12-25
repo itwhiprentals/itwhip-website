@@ -11,6 +11,7 @@ interface AccountLinkingProps {
     id: string
     email: string
     legacyDualId?: string | null
+    linkedAccountEmail?: string | null
   }
   userType?: 'host' | 'guest'
 }
@@ -26,6 +27,8 @@ export function AccountLinking({ currentUser, userType = 'guest' }: AccountLinki
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [showAccountOptions, setShowAccountOptions] = useState(false)
+  const [showUnlinkConfirm, setShowUnlinkConfirm] = useState(false)
+  const [unlinking, setUnlinking] = useState(false)
 
   const handleRequestLink = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -129,19 +132,58 @@ export function AccountLinking({ currentUser, userType = 'guest' }: AccountLinki
     setSuccess(null)
   }
 
+  const handleUnlink = async () => {
+    setUnlinking(true)
+    setError(null)
+
+    try {
+      const response = await fetch('/api/account/link/unlink', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to unlink accounts')
+      }
+
+      setSuccess('Accounts have been unlinked. Refreshing...')
+      setShowUnlinkConfirm(false)
+      setTimeout(() => {
+        window.location.reload()
+      }, 2000)
+    } catch (err: any) {
+      setError(err.message)
+      setShowUnlinkConfirm(false)
+    } finally {
+      setUnlinking(false)
+    }
+  }
+
   return (
-    <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-4">Dual-Role Account Linking</h2>
+    <div className="max-w-2xl mx-auto p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
+      <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Dual-Role Account Linking</h2>
 
       {/* Current Status */}
-      <div className="mb-6 p-4 bg-gray-50 rounded-md">
-        <h3 className="font-semibold mb-2">Current Status</h3>
+      <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-md">
+        <h3 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">Current Status</h3>
         {currentUser.legacyDualId ? (
-          <div className="text-green-600">
-            ✓ Your account is linked to another account (Legacy ID: {currentUser.legacyDualId.substring(0, 8)}...)
+          <div className="text-green-600 dark:text-green-400">
+            <p className="font-medium flex items-center gap-2">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              Your accounts are linked
+            </p>
+            {currentUser.linkedAccountEmail && (
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 ml-7">
+                Linked to: <span className="font-mono bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded">{currentUser.linkedAccountEmail}</span>
+              </p>
+            )}
           </div>
         ) : (
-          <div className="text-gray-600">
+          <div className="text-gray-600 dark:text-gray-400">
             Your account is not currently linked to another account.
           </div>
         )}
@@ -159,24 +201,89 @@ export function AccountLinking({ currentUser, userType = 'guest' }: AccountLinki
 
       {/* Error Message */}
       {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md text-red-800">
+        <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md text-red-800 dark:text-red-400">
           {error}
         </div>
       )}
 
       {/* Success Message */}
       {success && (
-        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-md text-green-800">
+        <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md text-green-800 dark:text-green-400">
           {success}
+        </div>
+      )}
+
+      {/* Unlink Confirmation Modal */}
+      {showUnlinkConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Unlink Accounts?</h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              Are you sure you want to unlink your accounts? You will no longer be able to switch between host and guest roles. Both accounts will be notified.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowUnlinkConfirm(false)}
+                disabled={unlinking}
+                className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUnlink}
+                disabled={unlinking}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {unlinking ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Unlinking...
+                  </>
+                ) : (
+                  'Yes, Unlink'
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
       {/* Don't allow linking if already linked */}
       {currentUser.legacyDualId ? (
-        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-          <p className="text-yellow-800">
-            Your account is already linked. To link to a different account, please contact support.
-          </p>
+        <div className="space-y-4">
+          {userType === 'host' ? (
+            <>
+              <div className="p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md">
+                <p className="text-gray-700 dark:text-gray-300 mb-4">
+                  Your accounts are linked. You can switch between roles using the role switcher in the header.
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  If you need to link to a different account, you must first unlink the current connection.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowUnlinkConfirm(true)}
+                className="w-full px-4 py-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 font-medium rounded-md hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors flex items-center justify-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                </svg>
+                Unlink Accounts
+              </button>
+            </>
+          ) : (
+            <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
+              <p className="text-yellow-800 dark:text-yellow-200 mb-2">
+                Your account is already linked. To unlink or link to a different account, please switch to your host account.
+              </p>
+              <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                Use the role switcher in the header to switch to your host account, then go to Account Settings to manage the link.
+              </p>
+            </div>
+          )}
         </div>
       ) : (
         <>
