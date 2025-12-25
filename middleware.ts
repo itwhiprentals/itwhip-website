@@ -524,10 +524,11 @@ export async function middleware(request: NextRequest) {
   const guestToken = request.cookies.get('accessToken')?.value
 
   if (authRoutes.some(route => pathname.startsWith(route))) {
-    // Check if this is account linking flow - allow access even if logged in
+    // Check if this is account linking flow or switching accounts - allow access even if logged in
     const isLinking = request.nextUrl.searchParams.get('linking') === 'true'
+    const isSwitching = request.nextUrl.searchParams.get('switching') === 'true'
 
-    if (guestToken && !isLinking) {
+    if (guestToken && !isLinking && !isSwitching) {
       try {
         const { payload } = await verifyGuestToken(guestToken)
         const userRole = (payload.role as string).toUpperCase()

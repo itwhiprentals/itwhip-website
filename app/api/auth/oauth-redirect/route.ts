@@ -296,6 +296,23 @@ export async function GET(request: NextRequest) {
       console.log('[OAuth Redirect] Regenerated HOST tokens with approvalStatus:', hostProfile.approvalStatus)
     }
 
+    // For users with HOST profile, ALWAYS set host tokens regardless of roleHint
+    // This ensures "Go to Host Dashboard" works from the blocking alert
+    // when HOST user authenticates via guest flow
+    if (hostProfile && hostProfile.approvalStatus === 'APPROVED' && !isHost) {
+      const hostTokens = generateHostTokens({
+        id: hostProfile.id,
+        userId: user.id,
+        email: email,
+        name: user.name || '',
+        approvalStatus: hostProfile.approvalStatus
+      })
+      accessToken = hostTokens.accessToken
+      refreshToken = hostTokens.refreshToken
+      isHost = true
+      console.log('[OAuth Redirect] Generated HOST tokens for host user (accessed via guest flow)')
+    }
+
     // Check for phone in User, RentalHost, or ReviewerProfile
     const hasPhoneFromUser = user.phone && user.phone.length >= 10
     const hasPhoneFromHost = hostProfile?.phone && hostProfile.phone.length >= 10

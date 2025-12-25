@@ -224,7 +224,9 @@ export async function POST(request: NextRequest) {
       // Create NEW user with phone - USE TRANSACTION
       console.log(`[Complete Profile] Creating new user in transaction`)
 
-      const newUser = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      let newUser
+      try {
+        newUser = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         // 1. Create User
         const user = await tx.user.create({
           data: {
@@ -366,6 +368,16 @@ export async function POST(request: NextRequest) {
           })
           console.log(`[Complete Profile] Created RentalCar for host`)
         } else if (roleHint === 'guest') {
+          // SECURITY: Block guest profile creation for existing HOST users
+          const existingHost = await tx.rentalHost.findFirst({
+            where: { email: pendingOAuth.email }
+          })
+
+          if (existingHost) {
+            console.log(`[Complete Profile] ⚠️ BLOCKED: Existing HOST user tried to create guest profile`)
+            throw new Error('HOST_EXISTS')
+          }
+
           // Create ReviewerProfile ONLY for explicit guest signup
           // ⚠️ CRITICAL: No auto-creation - must explicitly specify roleHint='guest'
           await tx.reviewerProfile.create({
@@ -429,6 +441,18 @@ export async function POST(request: NextRequest) {
 
       // Generate tokens and return response with cookies
       return await createSuccessResponse(newUser, digitsOnly, roleHint || 'guest')
+      } catch (error: any) {
+        // Handle HOST_EXISTS error specifically
+        if (error.message === 'HOST_EXISTS') {
+          return NextResponse.json({
+            success: false,
+            error: 'You already have a Host account. Use account linking to add guest capabilities.',
+            requiresAccountLinking: true
+          }, { status: 409 })
+        }
+        // Re-throw other errors
+        throw error
+      }
     }
 
     // ========================================================================

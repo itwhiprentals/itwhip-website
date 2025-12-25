@@ -1,9 +1,9 @@
 // app/auth/complete-profile/page.tsx
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, Suspense, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useSession } from 'next-auth/react'
+import { useSession, signOut } from 'next-auth/react'
 import Header from '@/app/components/Header'
 import CarInformationForm, { type CarData } from '@/app/components/host/CarInformationForm'
 import {
@@ -54,10 +54,18 @@ function CompleteProfileContent() {
 
   // Track if existing HOST user is trying to access guest without guest profile
   const [isHostWithoutGuestProfile, setIsHostWithoutGuestProfile] = useState(false)
+  // Track if user is switching accounts (to prevent redirects during signOut)
+  // CRITICAL: Use BOTH useState and useRef - ref is synchronous and prevents race conditions
+  const [isSwitchingAccount, setIsSwitchingAccount] = useState(false)
+  const switchingAccountRef = useRef(false)
   const [checkingProfile, setCheckingProfile] = useState(roleHint === 'guest')
 
   // Redirect if not authenticated
   useEffect(() => {
+    // Don't redirect if user is actively switching accounts
+    if (switchingAccountRef.current) {
+      return
+    }
     if (status === 'unauthenticated') {
       router.push('/auth/login')
     }
@@ -67,11 +75,6 @@ function CompleteProfileContent() {
   // This scenario should be BLOCKED - they must use account linking flow
   useEffect(() => {
     async function checkGuestProfile() {
-      if (status !== 'authenticated' || isPendingUser || roleHint !== 'guest') {
-        setCheckingProfile(false)
-        return
-      }
-
       try {
         const response = await fetch('/api/guest/profile')
         if (response.status === 404) {
@@ -86,13 +89,29 @@ function CompleteProfileContent() {
       setCheckingProfile(false)
     }
 
+    // For PENDING users (new signups), skip the check - they don't have profiles yet
+    if (isPendingUser) {
+      setCheckingProfile(false)
+      return
+    }
+
+    // For EXISTING users trying to access guest, check if they have a guest profile
     if (status === 'authenticated' && !isPendingUser && roleHint === 'guest') {
       checkGuestProfile()
+    } else if (status === 'authenticated') {
+      // Not a guest roleHint, no need to check
+      setCheckingProfile(false)
     }
   }, [status, isPendingUser, roleHint])
 
   // If profile is already complete and this is an existing user, redirect
   useEffect(() => {
+    // Don't redirect if user is switching accounts
+    // CRITICAL: Check ref FIRST (synchronous) before state (async)
+    if (switchingAccountRef.current || isSwitchingAccount) {
+      console.log('[Complete Profile] Blocking redirect - user is switching accounts')
+      return
+    }
     if (status === 'authenticated' && isProfileComplete && !isPendingUser && !checkingProfile) {
       // If HOST user trying to access GUEST without profile, don't redirect - show blocking message
       if (isHostWithoutGuestProfile) {
@@ -102,7 +121,7 @@ function CompleteProfileContent() {
       // User already has complete profile, redirect to dashboard
       router.push(redirectTo)
     }
-  }, [status, isProfileComplete, isPendingUser, router, redirectTo, isHostWithoutGuestProfile, checkingProfile])
+  }, [status, isProfileComplete, isPendingUser, router, redirectTo, isHostWithoutGuestProfile, checkingProfile, isSwitchingAccount])
 
   // Format phone number as user types
   const formatPhoneNumber = (value: string) => {
@@ -277,12 +296,12 @@ function CompleteProfileContent() {
                 >
                   Link a Guest Account
                 </button>
-                <button
-                  onClick={() => router.push('/auth/login')}
-                  className="w-full py-2 text-sm text-gray-400 hover:text-white transition-colors"
+                <a
+                  href="/auth/login?switching=true"
+                  className="block w-full py-2 text-sm text-gray-400 hover:text-white transition-colors text-center"
                 >
                   Use a Different Account
-                </button>
+                </a>
               </div>
             </div>
           </div>
