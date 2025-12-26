@@ -150,7 +150,7 @@ export default function SupportPage() {
         <Header />
 
         {/* Hero */}
-        <section className="relative text-white pt-20 sm:pt-24 pb-12 sm:pb-16 overflow-hidden">
+        <section className="relative text-white pt-28 sm:pt-32 pb-12 sm:pb-16 overflow-hidden">
           {/* Background Image */}
           <div
             className="absolute inset-0 bg-cover bg-center bg-no-repeat"
