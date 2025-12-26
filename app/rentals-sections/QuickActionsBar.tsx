@@ -9,10 +9,17 @@ import {
   IoMapOutline,
   IoLocationOutline,
   IoFlashOutline,
-  IoSparklesOutline
+  IoSparklesOutline,
+  IoCarSportOutline,
+  IoHomeOutline,
+  IoPeopleOutline
 } from 'react-icons/io5'
 
-export default function QuickActionsBar() {
+interface QuickActionsBarProps {
+  variant?: 'homepage' | 'rideshare'
+}
+
+export default function QuickActionsBar({ variant = 'homepage' }: QuickActionsBarProps) {
   const [isSticky, setIsSticky] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
   const barRef = useRef<HTMLDivElement>(null)
@@ -22,10 +29,10 @@ export default function QuickActionsBar() {
     const handleScroll = () => {
       const scrollPosition = window.scrollY
       const shouldBeSticky = scrollPosition > 250
-      
+
       if (shouldBeSticky !== isSticky) {
         setIsSticky(shouldBeSticky)
-        
+
         // Delay visibility for enter animation
         if (shouldBeSticky) {
           requestAnimationFrame(() => {
@@ -39,7 +46,7 @@ export default function QuickActionsBar() {
 
     handleScroll()
     window.addEventListener('scroll', handleScroll, { passive: true })
-    
+
     return () => {
       window.removeEventListener('scroll', handleScroll)
     }
@@ -65,25 +72,48 @@ export default function QuickActionsBar() {
         <span>Cities</span>
       </Link>
 
-      {/* Instant Book */}
-      <Link
-        href="/rentals/search?instantBook=true"
-        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 transition-all font-medium text-sm"
-      >
-        <IoFlashOutline className="w-4 h-4" />
-        <span className="hidden sm:inline">Instant Book</span>
-        <span className="sm:hidden">Instant</span>
-      </Link>
+      {/* Third button - varies by variant */}
+      {variant === 'homepage' ? (
+        // Homepage: Show Rideshare link
+        <Link
+          href="/rideshare"
+          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded-lg hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-all font-medium text-sm"
+        >
+          <IoCarSportOutline className="w-4 h-4" />
+          <span>Rideshare</span>
+        </Link>
+      ) : (
+        // Rideshare page: Show Rentals link
+        <Link
+          href="/"
+          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 transition-all font-medium text-sm"
+        >
+          <IoHomeOutline className="w-4 h-4" />
+          <span>Rentals</span>
+        </Link>
+      )}
 
-      {/* List Your Car */}
-      <Link
-        href="/list-your-car"
-        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg hover:from-amber-600 hover:to-amber-700 transition-all font-medium shadow-md hover:shadow-lg text-sm"
-      >
-        <IoSparklesOutline className="w-4 h-4" />
-        <span className="hidden sm:inline">List Your Car</span>
-        <span className="sm:hidden">List</span>
-      </Link>
+      {/* Fourth button - varies by variant */}
+      {variant === 'homepage' ? (
+        // Homepage: List Your Car
+        <Link
+          href="/list-your-car"
+          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg hover:from-amber-600 hover:to-amber-700 transition-all font-medium shadow-md hover:shadow-lg text-sm"
+        >
+          <IoSparklesOutline className="w-4 h-4" />
+          <span className="hidden sm:inline">List Your Car</span>
+          <span className="sm:hidden">List</span>
+        </Link>
+      ) : (
+        // Rideshare page: Partner With Us
+        <Link
+          href="/partners/apply"
+          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all font-medium shadow-md hover:shadow-lg text-sm"
+        >
+          <IoPeopleOutline className="w-4 h-4" />
+          <span>Partner</span>
+        </Link>
+      )}
     </div>
   )
 
