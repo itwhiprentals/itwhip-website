@@ -4,10 +4,10 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { 
-  IoPersonOutline, 
-  IoShieldCheckmarkOutline, 
-  IoPeopleOutline, 
+import {
+  IoPersonOutline,
+  IoShieldCheckmarkOutline,
+  IoPeopleOutline,
   IoChatbubblesOutline,
   IoDocumentTextOutline,
   IoMegaphoneOutline,
@@ -15,7 +15,8 @@ import {
   IoCarSportOutline,
   IoCloudUploadOutline,
   IoGridOutline,
-  IoHomeOutline
+  IoHomeOutline,
+  IoBriefcaseOutline
 } from 'react-icons/io5'
 import { Car, CarStatus } from './types'
 import { StatCard, StatusBadge, EmptyState, LoadingSpinner, SectionHeader } from './components'
@@ -149,7 +150,7 @@ export default function FleetDashboard() {
         <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 uppercase tracking-wide">
           Management Hub
         </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
           {/* Messages */}
           <Link
             href={`/fleet/messages?key=${apiKey}`}
@@ -216,6 +217,15 @@ export default function FleetDashboard() {
           >
             <IoCalendarOutline className="text-2xl group-hover:scale-110 transition-transform" />
             <span className="text-sm font-medium">Bookings</span>
+          </Link>
+
+          {/* Partners */}
+          <Link
+            href={`/fleet/partners?key=${apiKey}`}
+            className="px-4 py-3 bg-gradient-to-br from-amber-500 to-amber-600 text-white rounded-lg hover:from-amber-600 hover:to-amber-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
+          >
+            <IoBriefcaseOutline className="text-2xl group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-medium">Partners</span>
           </Link>
         </div>
       </div>

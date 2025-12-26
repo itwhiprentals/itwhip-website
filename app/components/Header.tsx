@@ -379,7 +379,7 @@ export default function Header({
                 className="flex items-center mr-4 group"
               >
                 <div className="flex flex-col items-center">
-                  <div className="relative top-1 -left-1.5">
+                  <div className="relative top-1 left-0">
                     {/* Light mode logo */}
                     <Image
                       src="/logo.png"
@@ -399,8 +399,8 @@ export default function Header({
                       priority
                     />
                   </div>
-                  <span className="text-[8px] text-gray-700 dark:text-gray-300 tracking-widest uppercase font-medium mt-0.5 ml-1">
-                    {isAdmin ? 'ADMIN PORTAL' : (isHost && isHostPage) ? 'HOST PORTAL' : 'ITWHIP TECHNOLOGY'}
+                  <span className="text-[8px] text-gray-700 dark:text-gray-300 tracking-widest uppercase font-medium mt-0.5">
+                    {isAdmin ? 'ADMIN PORTAL' : (isHost && isHostPage) ? 'HOST PORTAL' : 'ITWHIP RIDES'}
                   </span>
                 </div>
               </Link>

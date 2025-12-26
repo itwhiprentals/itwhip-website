@@ -275,7 +275,7 @@ export default function MobileMenu({
                 {isAdmin ? 'ADMIN PORTAL' :
                  isHost && isHostPage ? 'HOST PORTAL' :
                  isGuest && isGuestPage ? 'GUEST PORTAL' :
-                 'ITWHIP TECHNOLOGY'}
+                 'ITWHIP RIDES'}
               </span>
             </div>
           </div>

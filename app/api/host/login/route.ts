@@ -50,6 +50,9 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    // Check if host is a Fleet Partner
+    const isFleetPartner = host?.hostType === 'FLEET_PARTNER'
+
     console.log('🔍 Host found:', !!host)
     console.log('🔍 Host ID:', host?.id)
     console.log('🔍 Host approvalStatus:', host?.approvalStatus)
@@ -118,7 +121,9 @@ export async function POST(request: NextRequest) {
         name: host.name,
         role: 'BUSINESS',
         isRentalHost: true,
-        approvalStatus: host.approvalStatus
+        approvalStatus: host.approvalStatus,
+        hostType: host.hostType,
+        isFleetPartner: isFleetPartner
       },
       JWT_SECRET,
       { expiresIn: '15m' }
@@ -168,6 +173,9 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    // Determine redirect path based on host type
+    const redirectPath = isFleetPartner ? '/partner/dashboard' : '/host/dashboard'
+
     const response = NextResponse.json({
       success: true,
       message: 'Login successful',
@@ -176,8 +184,15 @@ export async function POST(request: NextRequest) {
         name: host.name,
         email: host.email,
         approvalStatus: host.approvalStatus,
-        profilePhoto: host.profilePhoto
-      }
+        profilePhoto: host.profilePhoto,
+        hostType: host.hostType,
+        // Partner-specific fields
+        partnerCompanyName: host.partnerCompanyName,
+        partnerSlug: host.partnerSlug
+      },
+      // Partner redirect info
+      isPartner: isFleetPartner,
+      redirect: redirectPath
     })
 
     // Set HTTP-only cookies
@@ -307,7 +322,10 @@ export async function GET(request: NextRequest) {
         profilePhoto: true,
         approvalStatus: true,
         active: true,
-        userId: true
+        userId: true,
+        hostType: true,
+        partnerCompanyName: true,
+        partnerSlug: true
       }
     })
 
@@ -319,7 +337,8 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    console.log('[Host Login GET] Found host:', host.id, 'approvalStatus:', host.approvalStatus)
+    const isFleetPartner = host.hostType === 'FLEET_PARTNER'
+    console.log('[Host Login GET] Found host:', host.id, 'approvalStatus:', host.approvalStatus, 'hostType:', host.hostType)
 
     return NextResponse.json({
       authenticated: true,
@@ -329,8 +348,13 @@ export async function GET(request: NextRequest) {
         email: host.email,
         profilePhoto: host.profilePhoto,
         approvalStatus: host.approvalStatus,
-        active: host.active
-      }
+        active: host.active,
+        hostType: host.hostType,
+        partnerCompanyName: host.partnerCompanyName,
+        partnerSlug: host.partnerSlug
+      },
+      isPartner: isFleetPartner,
+      redirect: isFleetPartner ? '/partner/dashboard' : '/host/dashboard'
     })
 
   } catch (error) {
@@ -451,7 +475,8 @@ export async function PUT(request: NextRequest) {
         email: true,
         name: true,
         approvalStatus: true,
-        userId: true  // Added to get userId
+        userId: true,  // Added to get userId
+        hostType: true
       }
     })
 
@@ -462,6 +487,8 @@ export async function PUT(request: NextRequest) {
       )
     }
 
+    const isFleetPartner = host.hostType === 'FLEET_PARTNER'
+
     // Generate new access token
     const newAccessToken = sign(
       {
@@ -471,7 +498,9 @@ export async function PUT(request: NextRequest) {
         name: host.name,
         role: 'BUSINESS',
         isRentalHost: true,
-        approvalStatus: host.approvalStatus
+        approvalStatus: host.approvalStatus,
+        hostType: host.hostType,
+        isFleetPartner: isFleetPartner
       },
       JWT_SECRET,
       { expiresIn: '15m' }

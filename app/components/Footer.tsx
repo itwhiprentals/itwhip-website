@@ -21,12 +21,12 @@ export default function Footer() {
     <footer className="bg-gray-100 dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800">
       {/* Main Footer Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1 md:py-5">
-        <div className="grid grid-cols-2 md:grid-cols-7 gap-2 md:gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-8 gap-2 md:gap-4 mb-8">
           {/* Company Info */}
           <div className="col-span-2 md:col-span-1">
             {/* Logo and Branding */}
             <div className="flex flex-col items-start mb-4">
-              <div className="relative top-1 left-8">
+              <div className="relative ml-3 mt-1">
                 {/* Light mode logo */}
                 <Image
                   src="/logo.png"
@@ -44,11 +44,11 @@ export default function Footer() {
                   className="h-10 w-10 hidden dark:block"
                 />
               </div>
-              <span className="text-[8px] text-gray-700 dark:text-gray-300 tracking-widest uppercase font-medium mt-0.5 ml-3">
-                ITWHIP TECHNOLOGY
+              <span className="text-[8px] text-gray-700 dark:text-gray-300 tracking-widest uppercase font-medium mt-0.5">
+                ITWHIP RIDES
               </span>
-              <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">
-                Arizona's Peer-to-Peer Car Rentals
+              <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 -ml-0.5">
+                Rentals & Rideshare
               </p>
             </div>
             {/* Social Links */}
@@ -162,6 +162,11 @@ export default function Footer() {
                   Insurance Guide
                 </Link>
               </li>
+              <li>
+                <Link href="/host-requirements" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Host Requirements
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -267,6 +272,40 @@ export default function Footer() {
             </ul>
           </div>
 
+          {/* Partners */}
+          <div className="md:col-span-1">
+            <h4 className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white mb-2 underline underline-offset-4 decoration-gray-900 dark:decoration-white">
+              Partners
+            </h4>
+            <ul className="space-y-1.5">
+              <li>
+                <Link href="/partners/apply" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Become a Partner
+                </Link>
+              </li>
+              <li>
+                <Link href="/rideshare" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Rideshare Rentals
+                </Link>
+              </li>
+              <li>
+                <Link href="/partner/login" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Partner Portal
+                </Link>
+              </li>
+              <li>
+                <Link href="/partners/commission" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Commission Tiers
+                </Link>
+              </li>
+              <li>
+                <Link href="/partners/resources" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Partner Resources
+                </Link>
+              </li>
+            </ul>
+          </div>
+
           {/* Legal */}
           <div className="md:col-span-1">
             <h4 className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white mb-2 underline underline-offset-4 decoration-gray-900 dark:decoration-white">
@@ -355,7 +394,7 @@ export default function Footer() {
             {/* Copyright and Links */}
             <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
               <p className="text-xs text-gray-500 dark:text-gray-500">
-                © {currentYear} ItWhip Technologies, Inc. All rights reserved.
+                © {currentYear} ItWhip Rides, Inc. All rights reserved.
               </p>
               <div className="flex space-x-4 text-xs text-gray-500 dark:text-gray-500">
                 <Link href="/terms" className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors">

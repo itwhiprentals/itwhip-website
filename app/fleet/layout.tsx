@@ -3,7 +3,7 @@
 
 import { Suspense } from 'react'
 import { useEffect, useState } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ThemeProvider, ThemeToggle } from './providers/theme-provider'
 
@@ -12,40 +12,69 @@ function InternalLayoutContent({
 }: {
   children: React.ReactNode
 }) {
-  const searchParams = useSearchParams()
+  const pathname = usePathname()
   const router = useRouter()
   const [isAuthorized, setIsAuthorized] = useState(false)
   const [isChecking, setIsChecking] = useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [loggingOut, setLoggingOut] = useState(false)
+
+  // Check if we're on the login page
+  const isLoginPage = pathname === '/fleet/login'
 
   useEffect(() => {
-    // Skip authorization check entirely in development
-    if (process.env.NODE_ENV === 'development') {
-      setIsAuthorized(true)
+    // Skip auth check on login page
+    if (isLoginPage) {
       setIsChecking(false)
+      setIsAuthorized(false)
       return
     }
 
-    // Production authorization check
-    const urlKey = searchParams.get('key')
-    const cookieKey = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('fleet_access='))
-      ?.split('=')[1]
+    // Check session with API
+    const checkSession = async () => {
+      try {
+        const res = await fetch('/api/fleet/auth', {
+          method: 'GET',
+          credentials: 'include'
+        })
 
-    const validKey = process.env.NEXT_PUBLIC_FLEET_KEY || 'phoenix-fleet-2847'
-    
-    if (urlKey === validKey) {
-      document.cookie = `fleet_access=${validKey}; path=/fleet; max-age=86400`
-      setIsAuthorized(true)
-    } else if (cookieKey === validKey) {
-      setIsAuthorized(true)
-    } else {
-      setIsAuthorized(false)
+        if (res.ok) {
+          const data = await res.json()
+          setIsAuthorized(data.authenticated)
+          if (!data.authenticated) {
+            router.push('/fleet/login')
+          }
+        } else {
+          setIsAuthorized(false)
+          router.push('/fleet/login')
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error)
+        setIsAuthorized(false)
+        router.push('/fleet/login')
+      } finally {
+        setIsChecking(false)
+      }
     }
-    
-    setIsChecking(false)
-  }, [searchParams])
+
+    checkSession()
+  }, [isLoginPage, router])
+
+  const handleLogout = async () => {
+    setLoggingOut(true)
+    try {
+      await fetch('/api/fleet/auth', {
+        method: 'DELETE',
+        credentials: 'include'
+      })
+      router.push('/fleet/login')
+      router.refresh()
+    } catch (error) {
+      console.error('Logout failed:', error)
+    } finally {
+      setLoggingOut(false)
+    }
+  }
 
   if (isChecking) {
     return (
@@ -55,14 +84,16 @@ function InternalLayoutContent({
     )
   }
 
+  // If on login page, render children (the login form)
+  if (isLoginPage) {
+    return <>{children}</>
+  }
+
   if (!isAuthorized) {
-    // Return 404 page - don't reveal this system exists
+    // Redirect will happen from useEffect, show loading
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-6xl font-bold text-gray-300 dark:text-gray-700">404</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-4">Page not found</p>
-        </div>
+        <div className="text-gray-600 dark:text-gray-400">Redirecting to login...</div>
       </div>
     )
   }
@@ -106,16 +137,29 @@ function InternalLayoutContent({
                   >
                     Bulk Upload
                   </Link>
-                  <Link 
-                    href="/fleet/templates" 
+                  <Link
+                    href="/fleet/templates"
                     className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
                   >
                     Templates
                   </Link>
+                  <Link
+                    href="/fleet/partners"
+                    className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                  >
+                    Partners
+                  </Link>
                 </nav>
                 
-                <div className="border-l border-gray-300 dark:border-gray-700 pl-6">
+                <div className="border-l border-gray-300 dark:border-gray-700 pl-6 flex items-center gap-4">
                   <ThemeToggle />
+                  <button
+                    onClick={handleLogout}
+                    disabled={loggingOut}
+                    className="text-sm text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 transition-colors"
+                  >
+                    {loggingOut ? 'Logging out...' : 'Logout'}
+                  </button>
                 </div>
               </div>
 
@@ -164,13 +208,30 @@ function InternalLayoutContent({
                   >
                     Bulk Upload
                   </Link>
-                  <Link 
-                    href="/fleet/templates" 
+                  <Link
+                    href="/fleet/templates"
                     onClick={() => setMobileMenuOpen(false)}
                     className="px-3 py-2 rounded-md text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
                   >
                     Templates
                   </Link>
+                  <Link
+                    href="/fleet/partners"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-3 py-2 rounded-md text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                  >
+                    Partners
+                  </Link>
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false)
+                      handleLogout()
+                    }}
+                    disabled={loggingOut}
+                    className="px-3 py-2 rounded-md text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 text-left w-full"
+                  >
+                    {loggingOut ? 'Logging out...' : 'Logout'}
+                  </button>
                 </nav>
               </div>
             )}

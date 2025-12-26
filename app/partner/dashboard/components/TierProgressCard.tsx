@@ -1,0 +1,209 @@
+// app/partner/dashboard/components/TierProgressCard.tsx
+// Commission Tier Progress Card - B2B Feature showing tier progression
+
+'use client'
+
+import {
+  IoTrophyOutline,
+  IoChevronUpOutline,
+  IoCheckmarkCircleOutline,
+  IoLockClosedOutline
+} from 'react-icons/io5'
+
+interface TierProgressCardProps {
+  currentRate: number
+  fleetSize: number
+  tier: {
+    current: string
+    vehiclesNeeded: number
+    nextTier: string | null
+    nextTierRate: number | null
+  }
+}
+
+const tiers = [
+  { name: 'Standard', minVehicles: 0, maxVehicles: 9, rate: 0.25, color: 'gray' },
+  { name: 'Gold', minVehicles: 10, maxVehicles: 49, rate: 0.20, color: 'yellow' },
+  { name: 'Platinum', minVehicles: 50, maxVehicles: 99, rate: 0.15, color: 'blue' },
+  { name: 'Diamond', minVehicles: 100, maxVehicles: Infinity, rate: 0.10, color: 'purple' }
+]
+
+export default function TierProgressCard({
+  currentRate,
+  fleetSize,
+  tier
+}: TierProgressCardProps) {
+  const currentTierIndex = tiers.findIndex(t => t.name === tier.current)
+  const nextTier = currentTierIndex < tiers.length - 1 ? tiers[currentTierIndex + 1] : null
+
+  const getProgressToNextTier = () => {
+    if (!nextTier) return 100
+    const currentTierConfig = tiers[currentTierIndex]
+    const vehiclesInCurrentTier = fleetSize - currentTierConfig.minVehicles
+    const vehiclesNeededForNext = nextTier.minVehicles - currentTierConfig.minVehicles
+    return Math.min((vehiclesInCurrentTier / vehiclesNeededForNext) * 100, 100)
+  }
+
+  const progress = getProgressToNextTier()
+
+  const getTierColor = (tierName: string) => {
+    switch (tierName) {
+      case 'Diamond': return 'from-purple-500 to-purple-600'
+      case 'Platinum': return 'from-blue-500 to-blue-600'
+      case 'Gold': return 'from-yellow-500 to-yellow-600'
+      default: return 'from-gray-500 to-gray-600'
+    }
+  }
+
+  const getTierBgColor = (tierName: string) => {
+    switch (tierName) {
+      case 'Diamond': return 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400'
+      case 'Platinum': return 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+      case 'Gold': return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
+      default: return 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-400'
+    }
+  }
+
+  return (
+    <div className="bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 rounded-lg border border-orange-200 dark:border-orange-800 p-6">
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <IoTrophyOutline className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Commission Tier
+            </h3>
+          </div>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Grow your fleet to unlock lower commission rates
+          </p>
+        </div>
+        <div className={`px-4 py-2 rounded-full font-semibold ${getTierBgColor(tier.current)}`}>
+          {tier.current} Partner
+        </div>
+      </div>
+
+      {/* Current Rate Display */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Your Commission Rate</p>
+            <p className="text-3xl font-bold text-gray-900 dark:text-white">
+              {(currentRate * 100).toFixed(0)}%
+            </p>
+            <p className="text-sm text-green-600 dark:text-green-400">
+              You keep {((1 - currentRate) * 100).toFixed(0)}% of each booking
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-sm text-gray-500 dark:text-gray-400">Fleet Size</p>
+            <p className="text-3xl font-bold text-gray-900 dark:text-white">{fleetSize}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">vehicles</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Progress to Next Tier */}
+      {nextTier && (
+        <div className="mb-6">
+          <div className="flex items-center justify-between text-sm mb-2">
+            <span className="text-gray-600 dark:text-gray-400">
+              Progress to {nextTier.name}
+            </span>
+            <span className="font-semibold text-gray-900 dark:text-white">
+              {tier.vehiclesNeeded} more vehicles needed
+            </span>
+          </div>
+          <div className="w-full h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div
+              className={`h-full bg-gradient-to-r ${getTierColor(nextTier.name)} rounded-full transition-all duration-500`}
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <div className="flex items-center justify-between mt-2 text-xs text-gray-500 dark:text-gray-400">
+            <span>{fleetSize} vehicles</span>
+            <span>{nextTier.minVehicles} vehicles</span>
+          </div>
+        </div>
+      )}
+
+      {/* Tier Ladder */}
+      <div className="grid grid-cols-4 gap-2">
+        {tiers.map((t, index) => {
+          const isCurrentTier = t.name === tier.current
+          const isUnlocked = index <= currentTierIndex
+          const isNextTier = index === currentTierIndex + 1
+
+          return (
+            <div
+              key={t.name}
+              className={`relative p-3 rounded-lg text-center transition-all ${
+                isCurrentTier
+                  ? 'bg-white dark:bg-gray-800 border-2 border-orange-500 shadow-md'
+                  : isUnlocked
+                  ? 'bg-white/50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700'
+                  : 'bg-gray-100 dark:bg-gray-800/30 border border-gray-200 dark:border-gray-700 opacity-60'
+              }`}
+            >
+              {isCurrentTier && (
+                <div className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-orange-500 text-white text-xs font-bold rounded-full">
+                  Current
+                </div>
+              )}
+              {isNextTier && (
+                <div className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-blue-500 text-white text-xs font-bold rounded-full">
+                  Next
+                </div>
+              )}
+
+              <div className="mb-1">
+                {isUnlocked ? (
+                  <IoCheckmarkCircleOutline className={`w-5 h-5 mx-auto ${
+                    isCurrentTier ? 'text-orange-500' : 'text-green-500'
+                  }`} />
+                ) : (
+                  <IoLockClosedOutline className="w-5 h-5 mx-auto text-gray-400" />
+                )}
+              </div>
+
+              <p className={`text-xs font-semibold ${
+                isCurrentTier
+                  ? 'text-orange-600 dark:text-orange-400'
+                  : 'text-gray-700 dark:text-gray-300'
+              }`}>
+                {t.name}
+              </p>
+
+              <p className={`text-lg font-bold ${
+                isCurrentTier
+                  ? 'text-gray-900 dark:text-white'
+                  : 'text-gray-600 dark:text-gray-400'
+              }`}>
+                {(t.rate * 100).toFixed(0)}%
+              </p>
+
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {t.minVehicles}+ cars
+              </p>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Diamond Tier Benefits */}
+      {tier.current !== 'Diamond' && (
+        <div className="mt-6 p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
+          <div className="flex items-center gap-2 mb-2">
+            <IoTrophyOutline className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+            <span className="font-semibold text-purple-800 dark:text-purple-200">
+              Unlock Diamond Benefits
+            </span>
+          </div>
+          <p className="text-sm text-purple-700 dark:text-purple-300">
+            Reach 100+ vehicles to unlock 10% commission rate, priority support, and dedicated account manager.
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}

@@ -201,15 +201,17 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // 🔒 FLEET API PROTECTION - Allow phoenix-fleet-2847 key (legacy/internal)
-  if (pathname.startsWith('/api/fleet/') || pathname.startsWith('/fleet/api/')) {
+  // EXCLUDE: /api/fleet/auth - public login endpoint with its own session-based auth
+  if ((pathname.startsWith('/api/fleet/') || pathname.startsWith('/fleet/api/')) &&
+      !pathname.startsWith('/api/fleet/auth')) {
     const url = new URL(request.url)
     const urlKey = url.searchParams.get('key')
     const headerKey = request.headers.get('x-fleet-key')
-    
+
     // Valid keys
     const phoenixKey = 'phoenix-fleet-2847'
     const externalKey = FLEET_API_KEY
-    
+
     console.log(`[FLEET API] ${request.method} ${pathname}`, {
       hasUrlKey: !!urlKey,
       hasHeaderKey: !!headerKey,
@@ -228,9 +230,9 @@ export async function middleware(request: NextRequest) {
     }
 
     console.warn(`[FLEET API] 🚫 BLOCKED unauthorized access to ${pathname}`)
-    
+
     return NextResponse.json(
-      { 
+      {
         error: 'Unauthorized',
         message: 'Valid authentication required',
         timestamp: new Date().toISOString()

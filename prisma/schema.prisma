@@ -780,6 +780,39 @@ model RentalHost {
 
   // ===== END TIERED INSURANCE & EARNINGS FIELDS =====
 
+  // ===== FLEET PARTNER FIELDS (B2B SaaS) =====
+
+  // Partner Identity
+  partnerCompanyName    String?
+  partnerSlug           String?   @unique  // URL-friendly: "drive-it-pro"
+  partnerLogo           String?
+  partnerBio            String?   @db.Text
+  partnerSupportEmail   String?
+  partnerSupportPhone   String?
+
+  // Tiered Commission System (set by Fleet)
+  tier1VehicleCount     Int       @default(10)    // 10+ cars → 20%
+  tier1CommissionRate   Float     @default(0.20)
+  tier2VehicleCount     Int       @default(50)    // 50+ cars → 15%
+  tier2CommissionRate   Float     @default(0.15)
+  tier3VehicleCount     Int       @default(100)   // 100+ cars → 10%
+  tier3CommissionRate   Float     @default(0.10)
+  currentCommissionRate Float     @default(0.25)  // Calculated based on fleet size
+
+  // Partner Privileges
+  autoApproveListings   Boolean   @default(true)   // Pre-approved vehicle listings
+
+  // Partner Stats (denormalized for performance)
+  partnerFleetSize      Int       @default(0)
+  partnerTotalBookings  Int       @default(0)
+  partnerTotalRevenue   Float     @default(0)
+  partnerAvgRating      Float     @default(0)
+
+  // Partner Payout Schedule
+  partnerPayoutSchedule PartnerPayoutSchedule?
+
+  // ===== END FLEET PARTNER FIELDS =====
+
   // Relations
   user                  User?                @relation(fields: [userId], references: [id])
   cars                  RentalCar[]
@@ -794,6 +827,14 @@ model RentalHost {
   hostCharges           HostCharge[]
   claims                Claim[]
   esgProfile            HostESGProfile?      @relation("HostESGProfile")
+
+  // Fleet Partner Relations
+  partnerApplication       PartnerApplication?
+  partnerDocuments         PartnerDocument[]
+  partnerDiscounts         PartnerDiscount[]
+  partnerPayouts           PartnerPayout[]
+  partnerCommissionHistory PartnerCommissionHistory[]
+  partnerFaqs              PartnerFAQ[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -813,6 +854,208 @@ model RentalHost {
   @@index([commercialInsuranceStatus])
   @@index([usingLegacyInsurance])
   @@index([legacyDualId])
+  @@index([partnerSlug])
+}
+
+// ============================================================================
+// FLEET PARTNER APPLICATION (B2B SaaS)
+// ============================================================================
+
+model PartnerApplication {
+  id     String     @id @default(cuid())
+  hostId String     @unique
+  host   RentalHost @relation(fields: [hostId], references: [id], onDelete: Cascade)
+
+  // Company Info
+  companyName     String
+  businessType    String   // LLC, Corporation, Sole Proprietor
+  yearsInBusiness Int
+
+  // Contact
+  contactName  String
+  contactEmail String
+  contactPhone String
+
+  // Fleet Details
+  fleetSize       Int
+  vehicleTypes    String[] // SUV, Sedan, Luxury, etc.
+  operatingCities String[]
+
+  // Application Workflow
+  currentStep Int                      @default(1)
+  status      PartnerApplicationStatus @default(DRAFT)
+  submittedAt DateTime?
+  reviewedAt  DateTime?
+  reviewedBy  String?
+  reviewNotes String?                  @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([submittedAt])
+  @@map("partner_applications")
+}
+
+// ============================================================================
+// PARTNER DOCUMENT (Document Expiry Tracking - PRO Feature)
+// ============================================================================
+
+model PartnerDocument {
+  id     String     @id @default(cuid())
+  hostId String
+  host   RentalHost @relation(fields: [hostId], references: [id], onDelete: Cascade)
+
+  type PartnerDocumentType
+  url  String
+
+  // EXPIRY TRACKING (Critical for compliance)
+  uploadedAt        DateTime               @default(now())
+  expiresAt         DateTime?
+  isExpired         Boolean                @default(false)
+  gracePeriodEndsAt DateTime? // 72 hours after expiry before auto-suspend
+
+  // Review Status
+  status     PartnerDocumentStatus @default(PENDING)
+  reviewedBy String?
+  reviewedAt DateTime?
+  rejectNote String?               @db.Text
+
+  // Reminder tracking
+  reminderSentAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([hostId, type])
+  @@index([expiresAt])
+  @@index([isExpired])
+  @@index([gracePeriodEndsAt])
+  @@map("partner_documents")
+}
+
+// ============================================================================
+// PARTNER DISCOUNT (Promo codes for partner fleets)
+// ============================================================================
+
+model PartnerDiscount {
+  id     String     @id @default(cuid())
+  hostId String
+  host   RentalHost @relation(fields: [hostId], references: [id], onDelete: Cascade)
+
+  code        String  @unique
+  title       String
+  description String? @db.Text
+  percentage  Float // 0.10 = 10% off
+  maxUses     Int?
+  usedCount   Int     @default(0)
+
+  startsAt  DateTime?
+  expiresAt DateTime?
+  isActive  Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([hostId])
+  @@index([code])
+  @@index([isActive])
+  @@map("partner_discounts")
+}
+
+// ============================================================================
+// PARTNER PAYOUT (Revenue payouts to partners)
+// ============================================================================
+
+model PartnerPayout {
+  id     String     @id @default(cuid())
+  hostId String
+  host   RentalHost @relation(fields: [hostId], references: [id], onDelete: Cascade)
+
+  period       String // "2025-01" for monthly, "2025-W03" for weekly
+  bookingCount Int
+  grossRevenue Float
+  commission   Float // Platform's cut
+  netAmount    Float // What partner receives
+
+  stripePayoutId   String?
+  stripeTransferId String?
+  status           PartnerPayoutStatus @default(PENDING)
+  paidAt           DateTime?
+  failureReason    String?             @db.Text
+
+  createdAt DateTime @default(now())
+
+  @@index([hostId])
+  @@index([period])
+  @@index([status])
+  @@map("partner_payouts")
+}
+
+// ============================================================================
+// PARTNER COMMISSION HISTORY (Audit trail for commission changes)
+// ============================================================================
+
+model PartnerCommissionHistory {
+  id     String     @id @default(cuid())
+  hostId String
+  host   RentalHost @relation(fields: [hostId], references: [id], onDelete: Cascade)
+
+  oldRate   Float // 0.25 = 25%
+  newRate   Float // 0.20 = 20%
+  reason    String? @db.Text // "Volume discount tier reached"
+  changedBy String // Fleet admin ID or "SYSTEM"
+
+  createdAt DateTime @default(now())
+
+  @@index([hostId])
+  @@index([createdAt])
+  @@map("partner_commission_history")
+}
+
+// ============================================================================
+// PARTNER FAQ (Partner-specific FAQs for landing pages)
+// ============================================================================
+
+model PartnerFAQ {
+  id     String     @id @default(cuid())
+  hostId String
+  host   RentalHost @relation(fields: [hostId], references: [id], onDelete: Cascade)
+
+  question String
+  answer   String @db.Text
+  order    Int    @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([hostId])
+  @@map("partner_faqs")
+}
+
+// ============================================================================
+// ADMIN IMPERSONATION LOG (Audit trail for admin shadow login - PRO Feature)
+// ============================================================================
+
+model AdminImpersonationLog {
+  id String @id @default(cuid())
+
+  adminId   String
+  partnerId String
+
+  reason   String
+  duration Int? // Seconds of session
+
+  ipAddress String?
+  userAgent String?
+
+  createdAt DateTime  @default(now())
+  endedAt   DateTime?
+
+  @@index([adminId])
+  @@index([partnerId])
+  @@index([createdAt])
+  @@map("admin_impersonation_logs")
 }
 
 // ============================================================================
@@ -4508,4 +4751,46 @@ enum MergeStatus {
   COMPLETED        // Legacy ID assigned to both accounts
   REJECTED         // User rejected the merge
   EXPIRED          // Verification code expired
+}
+
+// ============================================================================
+// FLEET PARTNER ENUMS (B2B SaaS)
+// ============================================================================
+
+enum PartnerPayoutSchedule {
+  DAILY
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+}
+
+enum PartnerApplicationStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum PartnerDocumentType {
+  BUSINESS_LICENSE
+  INSURANCE_CERTIFICATE
+  COMMERCIAL_AUTO_POLICY
+  BACKGROUND_CHECK
+  W9_FORM
+  ARTICLES_OF_INCORPORATION
+}
+
+enum PartnerDocumentStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  EXPIRED
+}
+
+enum PartnerPayoutStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
 }
