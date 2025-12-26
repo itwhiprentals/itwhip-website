@@ -7,6 +7,7 @@ import Footer from '@/app/components/Footer'
 import {
   IoHelpCircleOutline,
   IoCarOutline,
+  IoCarSportOutline,
   IoShieldCheckmarkOutline,
   IoDocumentTextOutline,
   IoCallOutline,
@@ -51,8 +52,8 @@ const SUPPORT_CATEGORIES = [
     title: 'Booking & Rentals',
     description: 'How to book, modify, or cancel your rental',
     links: [
-      { label: 'How to book a car', href: '#booking' },
-      { label: 'Modify a reservation', href: '#modify' },
+      { label: 'How to book a car', href: '/support/booking' },
+      { label: 'Modify a reservation', href: '/support/modify-reservation' },
       { label: 'Cancellation policy', href: '/cancellation-policy' },
     ]
   },
@@ -61,9 +62,9 @@ const SUPPORT_CATEGORIES = [
     title: 'Insurance & Protection',
     description: 'Coverage options and claims process',
     links: [
-      { label: 'Insurance coverage explained', href: '#insurance' },
+      { label: 'Insurance coverage explained', href: '/support/insurance-coverage' },
       { label: 'Damage process', href: '/support/damage-process' },
-      { label: 'File a claim', href: '#claims' },
+      { label: 'File a claim', href: '/support/claims' },
     ]
   },
   {
@@ -71,8 +72,8 @@ const SUPPORT_CATEGORIES = [
     title: 'Account & Verification',
     description: 'Profile setup, verification, and payments',
     links: [
-      { label: 'Account verification', href: '#verification' },
-      { label: 'Payment methods', href: '#payments' },
+      { label: 'Account verification', href: '/support/verification' },
+      { label: 'Payment methods', href: '/support/payments' },
       { label: 'Update profile', href: '/portal/dashboard' },
     ]
   },
@@ -81,45 +82,63 @@ const SUPPORT_CATEGORIES = [
     title: 'During Your Trip',
     description: 'Help during your rental period',
     links: [
-      { label: 'Vehicle issues', href: '#vehicle-issues' },
-      { label: 'Roadside assistance', href: '#roadside' },
-      { label: 'Extend your rental', href: '#extend' },
+      { label: 'Vehicle issues', href: '/support/vehicle-issues' },
+      { label: 'Roadside assistance', href: '/support/roadside' },
+      { label: 'Extend your rental', href: '/support/extend-rental' },
+    ]
+  },
+  {
+    icon: IoCarSportOutline,
+    title: 'Rideshare Drivers',
+    description: 'Resources for Uber, Lyft & delivery drivers',
+    links: [
+      { label: 'Rideshare rentals', href: '/rideshare' },
+      { label: 'Insurance for gig work', href: '/support/insurance' },
+      { label: 'Partner program', href: '/partners/apply' },
     ]
   }
 ]
 
-const FAQS = [
+const FAQS: { question: string; answer: React.ReactNode; answerText: string }[] = [
   {
     question: 'How does ItWhip work?',
-    answer: 'ItWhip is a peer-to-peer car rental platform. Local car owners list their vehicles, and you can rent directly from them. All rentals include $1M liability insurance, and our platform handles payments, verification, and support.'
+    answerText: 'ItWhip is a peer-to-peer car rental platform. Local car owners list their vehicles, and you can rent directly from them. All rentals include $1M liability insurance, and our platform handles payments, verification, and support.',
+    answer: <>ItWhip is a peer-to-peer car rental platform. Local car owners list their vehicles, and you can rent directly from them. All rentals include <Link href="/insurance-guide" className="text-orange-500 hover:underline">$1M liability insurance</Link>, and our platform handles payments, verification, and support.</>
   },
   {
     question: 'What insurance is included?',
-    answer: 'Every ItWhip rental includes $1M liability coverage. Hosts can also offer additional comprehensive and collision protection. You can bring your own insurance for a 50% security deposit discount.'
+    answerText: 'Every ItWhip rental includes $1M liability coverage. Hosts can also offer additional comprehensive and collision protection. You can bring your own insurance for a 50% security deposit discount.',
+    answer: <>Every ItWhip rental includes $1M liability coverage. Hosts can also offer additional comprehensive and collision protection. You can bring your own insurance for a 50% security deposit discount. <Link href="/support/insurance-coverage" className="text-orange-500 hover:underline">Learn more about coverage</Link>.</>
   },
   {
     question: 'What are the requirements to rent?',
-    answer: 'You must be 21+ years old (25+ for some vehicles), have a valid driver\'s license, clean driving record, and a verified payment method. International licenses are accepted with proper documentation.'
+    answerText: 'You must be 21+ years old (25+ for some vehicles), have a valid driver\'s license, clean driving record, and a verified payment method. International licenses are accepted with proper documentation.',
+    answer: <>You must be 21+ years old (25+ for some vehicles), have a valid driver's license, clean driving record, and a verified payment method. International licenses are accepted with proper documentation. <Link href="/support/verification" className="text-orange-500 hover:underline">View verification requirements</Link>.</>
   },
   {
     question: 'How does pickup/delivery work?',
-    answer: 'Many hosts offer free delivery to airports, hotels, and homes. During booking, you\'ll coordinate the pickup location with your host. Some hosts require you to pick up at their location.'
+    answerText: 'Many hosts offer free delivery to airports, hotels, and homes. During booking, you\'ll coordinate the pickup location with your host. Some hosts require you to pick up at their location.',
+    answer: <>Many hosts offer free delivery to airports, hotels, and homes. During booking, you'll coordinate the pickup location with your host. Some hosts require you to pick up at their location. <Link href="/support/booking" className="text-orange-500 hover:underline">Learn how to book</Link>.</>
   },
   {
     question: 'What if there\'s damage to the vehicle?',
-    answer: 'Report any damage immediately through the app. Take photos before and after your trip. Our damage process protects both guests and hosts with fair resolution. See our detailed damage process page.'
+    answerText: 'Report any damage immediately through the app. Take photos before and after your trip. Our damage process protects both guests and hosts with fair resolution. See our detailed damage process page.',
+    answer: <>Report any damage immediately through the app. Take photos before and after your trip. Our damage process protects both guests and hosts with fair resolution. <Link href="/support/damage-process" className="text-orange-500 hover:underline">See our damage process</Link>.</>
   },
   {
     question: 'How do I cancel a reservation?',
-    answer: 'You can cancel through the app or website. Refund amounts depend on when you cancel - full refund up to 24 hours before, partial refund within 24 hours. See our cancellation policy for details.'
+    answerText: 'You can cancel through the app or website. Refund amounts depend on when you cancel - full refund up to 24 hours before, partial refund within 24 hours. See our cancellation policy for details.',
+    answer: <>You can cancel through the app or website. Refund amounts depend on when you cancel - full refund up to 24 hours before, partial refund within 24 hours. <Link href="/cancellation-policy" className="text-orange-500 hover:underline">See our cancellation policy</Link>.</>
   },
   {
     question: 'What payment methods are accepted?',
-    answer: 'We accept all major credit cards (Visa, Mastercard, Amex, Discover). Debit cards are accepted for verified users. We do not accept cash, prepaid cards, or PayPal at this time.'
+    answerText: 'We accept all major credit cards (Visa, Mastercard, Amex, Discover). Debit cards are accepted for verified users. We do not accept cash, prepaid cards, or PayPal at this time.',
+    answer: <>We accept all major credit cards (Visa, Mastercard, Amex, Discover). Debit cards are accepted for verified users. We do not accept cash, prepaid cards, or PayPal. <Link href="/support/payments" className="text-orange-500 hover:underline">View all payment options</Link>.</>
   },
   {
     question: 'Is there a mileage limit?',
-    answer: 'Mileage limits vary by host and are clearly shown on each listing. Most offer 150-250 miles per day. Additional miles are charged at the rate specified in the listing.'
+    answerText: 'Mileage limits vary by host and are clearly shown on each listing. Most offer 150-250 miles per day. Additional miles are charged at the rate specified in the listing.',
+    answer: <>Mileage limits vary by host and are clearly shown on each listing. Most offer 150-250 miles per day. Additional miles are charged at the rate specified in the listing.</>
   }
 ]
 
@@ -133,7 +152,7 @@ export default function SupportPage() {
       name: faq.question,
       acceptedAnswer: {
         '@type': 'Answer',
-        text: faq.answer
+        text: faq.answerText
       }
     }))
   }
@@ -150,7 +169,7 @@ export default function SupportPage() {
         <Header />
 
         {/* Hero */}
-        <section className="relative text-white pt-28 sm:pt-32 pb-12 sm:pb-16 overflow-hidden">
+        <section className="relative text-white pt-24 pb-12 sm:pb-16 mt-16 overflow-hidden">
           {/* Background Image */}
           <div
             className="absolute inset-0 bg-cover bg-center bg-no-repeat"
@@ -161,7 +180,7 @@ export default function SupportPage() {
 
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="max-w-2xl">
-              <h1 className="text-3xl sm:text-4xl font-bold mb-3">
+              <h1 className="text-3xl sm:text-4xl font-bold mb-3 text-orange-400">
                 How can we help?
               </h1>
               <p className="text-lg text-white/90 mb-6">
@@ -213,13 +232,13 @@ export default function SupportPage() {
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
               Browse by Topic
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
               {SUPPORT_CATEGORIES.map((category) => (
                 <div
                   key={category.title}
                   className="bg-white dark:bg-gray-800 rounded-lg p-5 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow"
                 >
-                  <category.icon className="w-8 h-8 text-amber-600 mb-3" />
+                  <category.icon className="w-8 h-8 text-orange-500 mb-3" />
                   <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
                     {category.title}
                   </h3>
