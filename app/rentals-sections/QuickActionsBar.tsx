@@ -105,13 +105,13 @@ export default function QuickActionsBar({ variant = 'homepage' }: QuickActionsBa
           <span className="sm:hidden">List</span>
         </Link>
       ) : (
-        // Rideshare page: Partner With Us
+        // Rideshare page: Join Now
         <Link
           href="/partners/apply"
           className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all font-medium shadow-md hover:shadow-lg text-sm"
         >
           <IoPeopleOutline className="w-4 h-4" />
-          <span>Partner</span>
+          <span>Join Now</span>
         </Link>
       )}
     </div>
