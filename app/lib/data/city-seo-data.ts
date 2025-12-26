@@ -738,6 +738,30 @@ export const CITY_SEO_DATA: Record<string, CitySeoData> = {
     coordinates: { lat: 33.5615, lng: -111.8882 },
     nearbyLocations: ['Scottsdale', 'Salt River Pima-Maricopa', 'Fountain Hills', 'Phoenix', 'Tempe'],
     searchTerms: ['talking stick car rental', 'talking stick resort car rental', 'salt river fields car rental', 'talking stick golf car rental', 'salt river tubing car rental']
+  },
+  'fountain-hills': {
+    slug: 'fountain-hills',
+    name: 'Fountain Hills',
+    type: 'city',
+    metaTitle: 'Car Rentals in Fountain Hills, AZ from $45/day | ItWhip',
+    metaDescription: 'Rent cars from local Fountain Hills owners. Free delivery near the famous fountain, Fort McDowell, or your desert home.',
+    h1: 'Car Rentals in Fountain Hills – Desert Living & Scenic Drives',
+    heroSubtitle: 'Delivered to your home or the famous fountain — free',
+    description: 'Fountain Hills is a quiet desert community known for its iconic 560-foot fountain — one of the tallest in the world. With no public transit and winding desert roads, a car is essential for exploring the McDowell Mountain Preserve or visiting Fort McDowell Casino. With ItWhip, get a car delivered to your desert home or downtown fountain area.\n\nPerfect for hiking the McDowell trails, golf at SunRidge Canyon, or day trips to Scottsdale and Salt River. Locals offer SUVs for mountain drives and sedans for town errands.\n\nDriving tip: Fountain Hills Boulevard is scenic but watch for cyclists. The fountain runs hourly during the day — best photo ops at the top of the hour.',
+    airport: 'PHX',
+    landmarks: ['Fountain Hills Fountain', 'McDowell Mountain Regional Park', 'Fort McDowell Casino', 'SunRidge Canyon Golf Club', 'Fountain Park', 'Desert Vista Trail', 'Four Peaks Wilderness'],
+    popularRoutes: ['PHX to Fountain Hills (35 min)', 'Fountain Hills to Scottsdale (20 min)', 'Fountain Hills to Salt River Tubing (15 min)', 'Fountain Hills to McDowell Mountains (10 min)'],
+    whyRent: ['No public transit in Fountain Hills', 'Free delivery to desert homes', 'Perfect for McDowell hiking trips', 'SUVs recommended for mountain roads'],
+    faqs: [
+      { question: 'Delivery to Fountain Hills?', answer: 'Yes — free delivery to homes, the fountain area, or Fort McDowell.' },
+      { question: 'Best car for McDowell hiking?', answer: 'SUVs — some trailheads have unpaved access roads.' },
+      { question: 'When does the fountain run?', answer: 'Hourly from 9 AM to 9 PM daily; 15 minutes on the hour.' },
+      { question: 'Drive time to Scottsdale?', answer: '20 minutes via Shea Boulevard — easy for dining and shopping.' },
+      { question: 'Golf course access?', answer: 'Free delivery to SunRidge, Eagle Mountain, and nearby courses.' }
+    ],
+    coordinates: { lat: 33.6117, lng: -111.7173 },
+    nearbyLocations: ['Scottsdale', 'Salt River Pima-Maricopa', 'Fort McDowell', 'Phoenix', 'Mesa'],
+    searchTerms: ['fountain hills car rental', 'fountain hills az car rental', 'mcdowell mountain car rental', 'fort mcdowell car rental', 'fountain hills rental car']
   }
 }
 
