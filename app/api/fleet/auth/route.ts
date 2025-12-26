@@ -45,10 +45,8 @@ export async function POST(request: NextRequest) {
       message: 'Logged in successfully'
     })
 
-    // Set HTTP-only cookie (24 hours)
-    // Path must be '/' to cover both /fleet/* pages and /api/fleet/auth endpoint
-    const cookieStore = await cookies()
-    cookieStore.set('fleet_session', sessionToken, {
+    // Set HTTP-only cookie on the response object (24 hours)
+    response.cookies.set('fleet_session', sessionToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -70,9 +68,13 @@ export async function POST(request: NextRequest) {
 // DELETE /api/fleet/auth - Logout
 export async function DELETE() {
   try {
-    const cookieStore = await cookies()
-    // Must specify same path used when setting the cookie
-    cookieStore.set('fleet_session', '', {
+    const response = NextResponse.json({
+      success: true,
+      message: 'Logged out successfully'
+    })
+
+    // Clear the cookie on the response object
+    response.cookies.set('fleet_session', '', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -80,10 +82,7 @@ export async function DELETE() {
       maxAge: 0 // Expire immediately
     })
 
-    return NextResponse.json({
-      success: true,
-      message: 'Logged out successfully'
-    })
+    return response
   } catch (error) {
     console.error('[Fleet Auth] Logout error:', error)
     return NextResponse.json(
