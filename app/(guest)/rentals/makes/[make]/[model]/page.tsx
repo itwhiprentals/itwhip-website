@@ -306,9 +306,11 @@ export default async function CarModelPage({ params }: PageProps) {
   const totalCars = cars.length
   const minPrice = cars.length > 0 ? Math.min(...cars.map(c => Number(c.dailyRate))) : (predefinedData?.priceRange?.min || 50)
   const maxPrice = cars.length > 0 ? Math.max(...cars.map(c => Number(c.dailyRate))) : (predefinedData?.priceRange?.max || 200)
-  const avgRating = cars.length > 0
-    ? (cars.reduce((acc, c) => acc + (c.rating || 5), 0) / cars.length).toFixed(1)
-    : '5.0'
+  // Calculate average rating only from cars that have ratings
+  const carsWithRatings = cars.filter(c => c.rating && c.rating > 0)
+  const avgRating = carsWithRatings.length > 0
+    ? (carsWithRatings.reduce((acc, c) => acc + (c.rating || 0), 0) / carsWithRatings.length).toFixed(1)
+    : null
 
   // Fetch other model cars from same make (different from current model) for "Other Models" section
   const otherModelCars = await prisma.rentalCar.findMany({

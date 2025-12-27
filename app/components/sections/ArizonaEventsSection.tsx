@@ -185,7 +185,7 @@ export default function ArizonaEventsSection() {
     <section className="py-8 bg-gray-50 dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-6">
-          <span className="text-amber-600 dark:text-amber-400 text-xs font-semibold uppercase tracking-wider">
+          <span className="text-amber-700 dark:text-amber-400 text-xs font-semibold uppercase tracking-wider">
             Dynamic Pricing
           </span>
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mt-2 mb-3">
@@ -206,7 +206,7 @@ export default function ArizonaEventsSection() {
                 className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-md border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow cursor-pointer"
               >
                 <div className="flex items-start justify-between mb-2">
-                  <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-1.5 py-0.5 rounded">
+                  <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-1.5 py-0.5 rounded">
                     {event.month}
                   </span>
                   <Icon className="w-4 h-4 text-amber-500" />
@@ -219,7 +219,7 @@ export default function ArizonaEventsSection() {
                 </p>
                 <div className="flex items-center gap-1">
                   <IoCashOutline className="w-3.5 h-3.5 text-emerald-500" />
-                  <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                  <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
                     {event.multiplier}
                   </span>
                 </div>
@@ -231,10 +231,10 @@ export default function ArizonaEventsSection() {
         {/* CTA Line */}
         <div className="text-center mt-8">
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            <span className="font-semibold text-amber-600 dark:text-amber-400">Summer:</span> 20% auto-discount applied. Premium vehicles for every event.{' '}
+            <span className="font-semibold text-amber-700 dark:text-amber-400">Summer:</span> 20% auto-discount applied. Premium vehicles for every event.{' '}
             <Link
               href="/coverage"
-              className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 font-medium hover:underline"
+              className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-400 font-medium hover:underline"
             >
               View coverage areas
               <IoArrowForwardOutline className="w-4 h-4" />

@@ -70,10 +70,10 @@ export async function GET(request: NextRequest) {
       city: car.city,
       state: car.state,
       zipCode: car.zipCode,
-      rating: typeof car.rating === 'string' 
-        ? parseFloat(car.rating) 
-        : car.rating?.toNumber ? car.rating.toNumber() 
-        : Number(car.rating || 5),
+      rating: typeof car.rating === 'string'
+        ? parseFloat(car.rating)
+        : car.rating?.toNumber ? car.rating.toNumber()
+        : Number(car.rating || 0),
       totalTrips: car.totalTrips || 0,
       instantBook: car.instantBook || false,
       photos: car.photos.map(photo => ({
@@ -85,10 +85,10 @@ export async function GET(request: NextRequest) {
         id: car.host.id,
         name: car.host.name,
         profilePhoto: car.host.profilePhoto,
-        rating: typeof car.host.rating === 'string' 
-          ? parseFloat(car.host.rating) 
-          : car.host.rating?.toNumber ? car.host.rating.toNumber() 
-          : Number(car.host.rating || 5),
+        rating: typeof car.host.rating === 'string'
+          ? parseFloat(car.host.rating)
+          : car.host.rating?.toNumber ? car.host.rating.toNumber()
+          : Number(car.host.rating || 0),
         responseTime: car.host.responseTime,
         isVerified: car.host.isVerified || false,
         totalTrips: car.host.totalTrips || 0,

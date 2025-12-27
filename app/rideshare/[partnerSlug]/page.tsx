@@ -1,24 +1,19 @@
 // app/rideshare/[partnerSlug]/page.tsx
-// Partner Landing Page with SEO metadata
+// Enhanced Partner Landing Page with all sections
 
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
 import { prisma } from '@/app/lib/database/prisma'
-import {
-  IoCarOutline,
-  IoGridOutline,
-  IoListOutline,
-  IoFlashOutline,
-  IoStarOutline,
-  IoLocationOutline,
-  IoFilterOutline,
-  IoTimeOutline
-} from 'react-icons/io5'
 import PartnerHero from '../components/PartnerHero'
 import DiscountBanner from '../components/DiscountBanner'
+import TrustBadges from '../components/TrustBadges'
+import PartnerBenefits from '../components/PartnerBenefits'
+import PartnerPolicies from '../components/PartnerPolicies'
 import FAQAccordion from '../components/FAQAccordion'
+import PartnerVehicleGrid from './PartnerVehicleGrid'
+import { IoLocationOutline } from 'react-icons/io5'
+import Footer from '@/app/components/Footer'
 
 interface PageProps {
   params: Promise<{ partnerSlug: string }>
@@ -121,7 +116,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }
   }
 
-  const companyName = partner.partnerCompanyName || partner.displayName || 'Partner'
+  const companyName = partner.partnerCompanyName || partner.name || 'Partner'
   const vehicleCount = partner.cars.length
   const prices = partner.cars.map((c: any) => c.dailyRate).filter((p: number) => p > 0)
   const minPrice = prices.length > 0 ? Math.min(...prices) : 0
@@ -136,7 +131,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title: `${companyName} - Rideshare Rentals | ItWhip`,
       description,
       type: 'website',
-      images: partner.partnerLogo ? [partner.partnerLogo] : []
+      images: partner.partnerHeroImage || partner.partnerLogo ? [partner.partnerHeroImage || partner.partnerLogo!] : []
     },
     twitter: {
       card: 'summary_large_image',
@@ -162,15 +157,18 @@ export default async function PartnerLandingPage({ params, searchParams }: PageP
   // Check if partner is not yet approved (only visible in preview mode)
   const isPendingApproval = partner.approvalStatus !== 'APPROVED' || !partner.active
 
-  const companyName = partner.partnerCompanyName || partner.displayName || 'Partner Fleet'
+  const companyName = partner.partnerCompanyName || partner.name || 'Partner Fleet'
 
   // Calculate stats
   const operatingCities = [...new Set(partner.cars.map((c: any) => c.city ? `${c.city}, ${c.state}` : null).filter(Boolean))]
   const totalTrips = partner.cars.reduce((sum: number, c: any) => sum + (c.totalTrips || 0), 0)
-  const totalReviews = partner.totalReviews || 0
-  const avgRating = partner.averageRating ||
-    (partner.cars.length > 0
-      ? partner.cars.reduce((sum: number, c: any) => sum + (c.rating || 0), 0) / partner.cars.length
+  const totalReviews = 0 // Reviews count from bookings
+
+  // Calculate avg rating - only count cars with actual trips (ignores database default of 5.0)
+  const carsWithTrips = partner.cars.filter((c: any) => c.totalTrips > 0 && c.rating > 0)
+  const avgRating = partner.partnerAvgRating ||
+    (carsWithTrips.length > 0
+      ? carsWithTrips.reduce((sum: number, c: any) => sum + c.rating, 0) / carsWithTrips.length
       : 0)
   const prices = partner.cars.map((c: any) => c.dailyRate).filter((p: number) => p > 0)
   const priceRange = {
@@ -203,13 +201,26 @@ export default async function PartnerLandingPage({ params, searchParams }: PageP
     answer: f.answer
   }))
 
+  // Parse JSON fields
+  const badges = partner.partnerBadges as { name: string; imageUrl: string }[] | null
+  const benefits = partner.partnerBenefits as { icon: string; title: string; description: string }[] | null
+  const policies = partner.partnerPolicies as {
+    refundPolicy?: string
+    cancellationPolicy?: string
+    bookingRequirements?: string
+    additionalTerms?: string
+  } | null
+
+  // Get available makes from vehicles
+  const availableMakes = [...new Set(partner.cars.map(c => c.make))]
+
   // JSON-LD Structured Data
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
     name: companyName,
     description: partner.partnerBio,
-    image: partner.partnerLogo,
+    image: partner.partnerHeroImage || partner.partnerLogo,
     email: partner.partnerSupportEmail || partner.email,
     telephone: partner.partnerSupportPhone || partner.phone,
     address: partner.location ? {
@@ -270,17 +281,26 @@ export default async function PartnerLandingPage({ params, searchParams }: PageP
           </div>
         </div>
 
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Partner Hero */}
-          <PartnerHero
+        {/* Partner Hero - FULL WIDTH, no container */}
+        <PartnerHero
             companyName={companyName}
             logo={partner.partnerLogo}
+            heroImage={partner.partnerHeroImage}
             bio={partner.partnerBio}
             location={partner.location}
             supportEmail={partner.partnerSupportEmail || partner.email}
             supportPhone={partner.partnerSupportPhone || partner.phone}
+            businessHours={partner.businessHours}
+            yearEstablished={partner.yearEstablished}
             stats={stats}
           />
+
+        {/* Main Content - WITH container */}
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Trust Badges */}
+          {badges && badges.length > 0 && (
+            <TrustBadges badges={badges} />
+          )}
 
           {/* Discount Banner */}
           {discounts.length > 0 && (
@@ -309,122 +329,25 @@ export default async function PartnerLandingPage({ params, searchParams }: PageP
             </section>
           )}
 
-          {/* Vehicles Grid */}
+          {/* Vehicles Grid with Filters - Client Component */}
           <section className="mt-12">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                Available Vehicles ({partner.cars.length})
-              </h2>
-              <div className="flex items-center gap-2">
-                <button className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700">
-                  <IoGridOutline className="w-5 h-5" />
-                </button>
-                <button className="p-2 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800">
-                  <IoListOutline className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-
-            {partner.cars.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {partner.cars.map((vehicle) => (
-                  <Link
-                    key={vehicle.id}
-                    href={`/cars/${vehicle.id}`}
-                    className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow group"
-                  >
-                    {/* Image */}
-                    <div className="relative h-44 bg-gray-200 dark:bg-gray-700">
-                      {vehicle.photos?.[0] ? (
-                        <Image
-                          src={vehicle.photos[0]}
-                          alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
-                          fill
-                          className="object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <IoCarOutline className="w-16 h-16 text-gray-400" />
-                        </div>
-                      )}
-
-                      {/* Badges Row */}
-                      <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
-                        {vehicle.instantBook && (
-                          <div className="flex items-center gap-1 px-2 py-1 bg-green-500 text-white text-xs font-medium rounded-full">
-                            <IoFlashOutline className="w-3 h-3" />
-                            Instant
-                          </div>
-                        )}
-                        {/* Vehicle Type Badge */}
-                        {vehicle.vehicleType === 'RIDESHARE' ? (
-                          <div className="flex items-center gap-1 px-2 py-1 bg-orange-500 text-white text-xs font-medium rounded-full">
-                            <IoTimeOutline className="w-3 h-3" />
-                            3 Day Min
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-1 px-2 py-1 bg-blue-500 text-white text-xs font-medium rounded-full">
-                            <IoTimeOutline className="w-3 h-3" />
-                            1 Day Min
-                          </div>
-                        )}
-                      </div>
-
-                      {vehicle.rating && vehicle.rating > 0 && (
-                        <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 bg-white/90 dark:bg-gray-800/90 text-xs font-medium rounded-full">
-                          <IoStarOutline className="w-3 h-3 text-yellow-500" />
-                          {vehicle.rating.toFixed(1)}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Info */}
-                    <div className="p-4">
-                      <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
-                        {vehicle.year} {vehicle.make} {vehicle.model}
-                      </h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-                        {vehicle.city && vehicle.state ? `${vehicle.city}, ${vehicle.state}` : ''}
-                      </p>
-
-                      <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mb-3">
-                        <span>{vehicle.transmission}</span>
-                        <span>•</span>
-                        <span>{vehicle.seats} seats</span>
-                        {vehicle.totalTrips && vehicle.totalTrips > 0 && (
-                          <>
-                            <span>•</span>
-                            <span>{vehicle.totalTrips} trips</span>
-                          </>
-                        )}
-                      </div>
-
-                      <div className="flex items-baseline justify-between">
-                        <div>
-                          <span className="text-xl font-bold text-gray-900 dark:text-white">
-                            ${vehicle.dailyRate}
-                          </span>
-                          <span className="text-sm text-gray-500">/day</span>
-                        </div>
-                        {vehicle.weeklyRate && (
-                          <span className="text-sm text-gray-500">
-                            ${vehicle.weeklyRate}/week
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
-                <IoCarOutline className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500 dark:text-gray-400">
-                  No vehicles currently available
-                </p>
-              </div>
-            )}
+            <PartnerVehicleGrid
+              vehicles={partner.cars}
+              availableMakes={availableMakes}
+            />
           </section>
+
+          {/* Why Book With Us - Benefits */}
+          <PartnerBenefits
+            benefits={benefits}
+            companyName={companyName}
+          />
+
+          {/* Policies Section */}
+          <PartnerPolicies
+            policies={policies}
+            companyName={companyName}
+          />
 
           {/* FAQs */}
           {faqs.length > 0 && (
@@ -444,6 +367,9 @@ export default async function PartnerLandingPage({ params, searchParams }: PageP
           </div>
         </main>
       </div>
+
+      {/* Footer */}
+      <Footer />
     </>
   )
 }

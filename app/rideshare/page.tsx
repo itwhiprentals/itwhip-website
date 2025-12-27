@@ -16,12 +16,14 @@ import {
   IoCashOutline,
   IoConstructOutline,
   IoCheckmarkCircleOutline,
-  IoArrowForwardOutline
+  IoArrowForwardOutline,
+  IoLeafOutline,
+  IoSpeedometerOutline
 } from 'react-icons/io5'
 import PartnerSection from './components/PartnerSection'
 import VehicleCarousel from './components/VehicleCarousel'
 import QuickActionsBar from '@/app/rentals-sections/QuickActionsBar'
-import BrowseByTypeSection from '@/app/rentals-sections/BrowseByTypeSection'
+import BrowseByMakeSection from './components/BrowseByMakeSection'
 
 export const metadata: Metadata = {
   title: 'Rideshare Vehicle Rentals - Uber & Lyft Cars | ItWhip Rides',
@@ -35,31 +37,43 @@ export const metadata: Metadata = {
   }
 }
 
-// Rideshare-specific benefits
+// Rideshare-specific benefits - Including "Why These 6 Makes" content
 const rideshareBenefits = [
   {
-    icon: IoCashOutline,
-    title: 'Low Rates',
-    description: 'Affordable daily, weekly, and monthly rates starting at $35/day',
-    stat: 'Flexible terms'
+    icon: IoLeafOutline,
+    title: 'Maximum Fuel Efficiency',
+    description: 'All vehicles achieve 32-50+ MPG. More miles = more earnings. Our hybrids save you hundreds monthly.',
+    stat: '40-50+ MPG'
   },
   {
-    icon: IoFlashOutline,
-    title: 'Instant Approval',
-    description: 'Get approved in minutes, drive today',
-    stat: 'Same-day pickup'
-  },
-  {
-    icon: IoConstructOutline,
-    title: 'Maintained Vehicles',
-    description: 'All vehicles inspected and rideshare-ready',
-    stat: 'Fleet quality'
+    icon: IoSpeedometerOutline,
+    title: 'Proven Reliability',
+    description: 'Our 6 makes have the lowest breakdown rates in rideshare. Less downtime = more earning hours.',
+    stat: '99% Uptime'
   },
   {
     icon: IoShieldCheckmarkOutline,
-    title: 'Insurance Included',
-    description: 'Commercial rideshare insurance on all rentals',
-    stat: 'Fully covered'
+    title: 'Pre-Approved for All Apps',
+    description: 'Every vehicle meets Uber, Lyft, DoorDash, Instacart & Amazon Flex requirements. No surprises.',
+    stat: '6 Trusted Brands'
+  },
+  {
+    icon: IoConstructOutline,
+    title: 'Maintenance Included',
+    description: 'All maintenance and repairs covered. Just focus on driving and earning.',
+    stat: 'Zero Hassle'
+  },
+  {
+    icon: IoCashOutline,
+    title: 'Affordable Weekly Rates',
+    description: 'Competitive pricing starting at $249/week with unlimited mileage included.',
+    stat: 'from $249/week'
+  },
+  {
+    icon: IoFlashOutline,
+    title: 'Same-Day Approval',
+    description: 'Get approved in minutes, pick up your vehicle today, and start earning immediately.',
+    stat: 'Drive Today'
   }
 ]
 
@@ -200,33 +214,41 @@ async function getPartners() {
 
     return partners
       .filter(p => p.cars.length > 0)
-      .map(partner => ({
-        id: partner.id,
-        companyName: partner.partnerCompanyName || partner.displayName || 'Partner Fleet',
-        slug: partner.partnerSlug,
-        logo: partner.partnerLogo,
-        bio: partner.partnerBio,
-        fleetSize: partner.partnerFleetSize || partner.cars.length,
-        avgRating: partner.averageRating || 0,
-        totalReviews: partner.totalReviews || 0,
-        location: partner.location,
-        vehicles: partner.cars.map((car: any) => ({
-          id: car.id,
-          make: car.make,
-          model: car.model,
-          year: car.year,
-          dailyRate: car.dailyRate,
-          weeklyRate: car.weeklyRate || undefined,
-          photo: car.photos?.[0] || null,
-          photos: car.photos || [],
-          location: car.city && car.state ? `${car.city}, ${car.state}` : '',
-          instantBook: car.instantBook || false,
-          transmission: car.transmission || 'Automatic',
-          fuelType: car.fuelType || 'Gasoline',
-          seats: car.seats || 5,
-          rating: car.rating || 0,
-          trips: car.totalTrips || 0
-        })),
+      .map(partner => {
+        // Calculate avg rating - only count cars with actual trips (ignores DB default of 5.0)
+        const carsWithTrips = partner.cars.filter((c: any) => c.totalTrips > 0 && c.rating > 0)
+        const calculatedRating = carsWithTrips.length > 0
+          ? carsWithTrips.reduce((sum: number, c: any) => sum + c.rating, 0) / carsWithTrips.length
+          : 0
+
+        return {
+          id: partner.id,
+          companyName: partner.partnerCompanyName || partner.name || 'Partner Fleet',
+          slug: partner.partnerSlug,
+          logo: partner.partnerLogo,
+          bio: partner.partnerBio,
+          fleetSize: partner.partnerFleetSize || partner.cars.length,
+          avgRating: partner.partnerAvgRating || calculatedRating,
+          totalReviews: partner.totalReviews || 0,
+          location: partner.location,
+          vehicles: partner.cars.map((car: any) => ({
+            id: car.id,
+            make: car.make,
+            model: car.model,
+            year: car.year,
+            dailyRate: car.dailyRate,
+            weeklyRate: car.weeklyRate || undefined,
+            photo: car.photos?.[0] || null,
+            photos: car.photos || [],
+            location: car.city && car.state ? `${car.city}, ${car.state}` : '',
+            instantBook: car.instantBook || false,
+            transmission: car.transmission || 'Automatic',
+            fuelType: car.fuelType || 'Gasoline',
+            seats: car.seats || 5,
+            // Only use rating if car has real trips, otherwise 0 (ignores DB default of 5.0)
+            rating: car.totalTrips > 0 ? (car.rating || 0) : 0,
+            trips: car.totalTrips || 0
+          })),
         discounts: partner.partnerDiscounts.map(d => ({
           id: d.id,
           code: d.code,
@@ -236,7 +258,8 @@ async function getPartners() {
           expiresAt: d.expiresAt?.toISOString() || null
         })),
         hasActiveDiscount: partner.partnerDiscounts.length > 0
-      }))
+        }
+      })
   } catch (error) {
     console.error('[Rideshare] Error fetching partners:', error)
     return []
@@ -303,7 +326,8 @@ async function getPlatformVehicles() {
         transmission: car.transmission || 'Automatic',
         fuelType: car.fuelType || 'Gasoline',
         seats: car.seats || 5,
-        rating: car.rating || 0,
+        // Only use rating if car has real trips, otherwise 0 (ignores DB default of 5.0)
+        rating: car.totalTrips > 0 ? (car.rating || 0) : 0,
         trips: car.totalTrips || 0
       })),
       totalCount
@@ -388,8 +412,8 @@ export default async function RidesharePage() {
         {/* Quick Actions Bar - Sticky Navigation */}
         <QuickActionsBar variant="rideshare" />
 
-        {/* Browse By Type Section */}
-        <BrowseByTypeSection />
+        {/* Browse By Make Section - 6 Dedicated Rideshare Brands */}
+        <BrowseByMakeSection />
 
         {/* ItWhip Rideshare Vehicles - Our Company Fleet (Only shown if vehicles exist) */}
         {platformData.totalCount > 0 && (
@@ -489,7 +513,7 @@ export default async function RidesharePage() {
               </h2>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {rideshareBenefits.map((benefit) => {
                 const Icon = benefit.icon
                 return (

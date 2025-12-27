@@ -276,7 +276,15 @@ export default function HostDetailPage({ params }: { params: Promise<{ id: strin
             <div className="text-xs md:text-sm text-gray-600">Total Trips</div>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3 md:p-4">
-            <div className="text-xl md:text-2xl font-bold">{host.rating?.toFixed(1) || '5.0'}</div>
+            {host.rating && host.rating > 0 ? (
+              <div className="text-xl md:text-2xl font-bold">{host.rating.toFixed(1)}</div>
+            ) : (
+              <div className="text-xl md:text-2xl font-bold">
+                <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-sm rounded-full font-medium">
+                  New
+                </span>
+              </div>
+            )}
             <div className="text-xs md:text-sm text-gray-600">Rating</div>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3 md:p-4">

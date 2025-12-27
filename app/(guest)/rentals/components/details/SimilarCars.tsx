@@ -15,6 +15,7 @@ import {
   IoStarSharp
 } from 'react-icons/io5'
 import { formatPrivateName, isCompanyName } from '@/app/lib/utils/namePrivacy'
+import { optimizeImageUrl } from '@/app/lib/utils/imageOptimization'
 
 interface SimilarCar {
   id: string
@@ -62,6 +63,9 @@ interface SimilarCarsProps {
     lat?: number
     lng?: number
   }
+  // SSR-fetched initial data for SEO (Google can see these links in page source)
+  initialSimilarCars?: SimilarCar[]
+  initialHostCars?: SimilarCar[]
 }
 
 // Calculate distance between two points
@@ -153,8 +157,9 @@ function CarCard({
   currentLocation?: { lat?: number; lng?: number }
   currentCarPrice: number
 }) {
-  const imageUrl = car.photos?.[0]?.url || car.photos?.[0] || 
-    'https://images.unsplash.com/photo-1583267746897-2cf415887172?w=800&h=600&fit=crop'
+  const rawImageUrl = car.photos?.[0]?.url || car.photos?.[0] ||
+    'https://images.unsplash.com/photo-1583267746897-2cf415887172?w=800&h=600&fit=crop&fm=webp&q=80'
+  const imageUrl = optimizeImageUrl(rawImageUrl as string, 400)
   
   // Calculate distance for this car
   let displayDistance: number | undefined
@@ -347,23 +352,27 @@ function CarCarousel({
   )
 }
 
-export default function SimilarCars({ 
-  currentCarId, 
+export default function SimilarCars({
+  currentCarId,
   hostId,
   hostName,
   hostProfilePhoto,
   isCompany,
-  carType, 
-  city, 
+  carType,
+  city,
   dailyRate,
   features = [],
   instantBook,
-  location
+  location,
+  initialSimilarCars,
+  initialHostCars
 }: SimilarCarsProps) {
-  const [hostCars, setHostCars] = useState<SimilarCar[]>([])
-  const [similarCars, setSimilarCars] = useState<SimilarCar[]>([])
-  const [loading, setLoading] = useState(true)
-  const [loadingHost, setLoadingHost] = useState(true)
+  // Initialize state with SSR data if provided (for SEO - Google sees these in page source)
+  const [hostCars, setHostCars] = useState<SimilarCar[]>(initialHostCars || [])
+  const [similarCars, setSimilarCars] = useState<SimilarCar[]>(initialSimilarCars || [])
+  // If initial data provided, start with loading=false so content renders immediately
+  const [loading, setLoading] = useState(!initialSimilarCars)
+  const [loadingHost, setLoadingHost] = useState(!initialHostCars)
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null)
 
   // Format the display name using privacy rules
@@ -390,8 +399,12 @@ export default function SimilarCars({
     }
   }, [])
 
-  // Fetch host's other cars
+  // Fetch host's other cars - skip if SSR data provided
   useEffect(() => {
+    // If we have SSR data, don't re-fetch
+    if (initialHostCars && initialHostCars.length > 0) {
+      return
+    }
     if (hostId) {
       fetchHostCars()
     } else {
@@ -399,8 +412,12 @@ export default function SimilarCars({
     }
   }, [hostId, currentCarId])
 
-  // Fetch similar cars
+  // Fetch similar cars - skip if SSR data provided
   useEffect(() => {
+    // If we have SSR data, don't re-fetch
+    if (initialSimilarCars && initialSimilarCars.length > 0) {
+      return
+    }
     fetchSimilarCars()
   }, [currentCarId, carType, city])
 

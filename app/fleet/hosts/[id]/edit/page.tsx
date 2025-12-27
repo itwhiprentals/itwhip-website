@@ -349,7 +349,7 @@ export default function EditHostPage({ params }: { params: Promise<{ id: string 
                     <input
                       type="number"
                       name="rating"
-                      value={formData.rating || 5.0}
+                      value={formData.rating || ''}
                       onChange={handleInputChange}
                       min="1"
                       max="5"

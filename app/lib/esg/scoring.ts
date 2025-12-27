@@ -134,7 +134,7 @@ export async function calculateESGScore(
     tripCancellationRate: drivingImpactScore.metrics.cancellationRate,
     lateReturnCount: drivingImpactScore.metrics.lateReturns,
     earlyReturnCount: drivingImpactScore.metrics.earlyReturns,
-    guestRatingAverage: host.rating || 5.0,
+    guestRatingAverage: host.rating || 0,
 
     // Vehicle fleet
     totalVehicles: host.cars.length,

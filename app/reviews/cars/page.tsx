@@ -638,7 +638,7 @@ export default async function CarReviewsPage({ searchParams }: PageProps) {
                               {/* Dynamic stars */}
                               <div className="flex">
                                 {[1, 2, 3, 4, 5].map((star) => (
-                                  star <= (car.reviews[0].rating || 5) ? (
+                                  star <= (car.reviews[0].rating || 0) ? (
                                     <IoStar key={star} className="w-3 h-3 text-amber-400" />
                                   ) : (
                                     <IoStarOutline key={star} className="w-3 h-3 text-gray-300" />

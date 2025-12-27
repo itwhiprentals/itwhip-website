@@ -12,7 +12,7 @@ export default function InsuranceTiersSection() {
     <section className="py-8 bg-white dark:bg-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-6">
-          <span className="text-amber-600 dark:text-amber-400 text-xs sm:text-sm font-semibold uppercase tracking-wider">
+          <span className="text-amber-700 dark:text-amber-400 text-xs sm:text-sm font-semibold uppercase tracking-wider">
             Transparent Earnings
           </span>
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mt-2 mb-4">
@@ -62,7 +62,7 @@ export default function InsuranceTiersSection() {
               STANDARD
             </div>
             <div className="mt-2">
-              <div className="text-4xl font-black text-amber-600 dark:text-amber-400 mb-3">75%</div>
+              <div className="text-4xl font-black text-amber-700 dark:text-amber-400 mb-3">75%</div>
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
                 P2P Insurance
               </h3>
@@ -130,7 +130,7 @@ export default function InsuranceTiersSection() {
             Ready to earn 40-90%?{' '}
             <Link 
               href="/host/signup" 
-              className="text-amber-600 dark:text-amber-400 font-semibold hover:underline"
+              className="text-amber-700 dark:text-amber-400 font-semibold hover:underline"
             >
               Start Earning
             </Link>
@@ -148,7 +148,7 @@ export default function InsuranceTiersSection() {
           <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 text-center">Important Notes</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="flex items-start gap-3">
-              <IoInformationCircleOutline className="w-6 h-6 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+              <IoInformationCircleOutline className="w-6 h-6 text-amber-700 dark:text-amber-400 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm text-gray-700 dark:text-gray-300">
                   <strong>Impact Scores DO NOT affect earnings.</strong> They influence booking rates and pricing power only.
@@ -156,7 +156,7 @@ export default function InsuranceTiersSection() {
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <IoInformationCircleOutline className="w-6 h-6 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+              <IoInformationCircleOutline className="w-6 h-6 text-amber-700 dark:text-amber-400 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm text-gray-700 dark:text-gray-300">
                   <strong>Declaration type affects underwriting,</strong> not your earnings percentage.
@@ -164,7 +164,7 @@ export default function InsuranceTiersSection() {
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <IoInformationCircleOutline className="w-6 h-6 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+              <IoInformationCircleOutline className="w-6 h-6 text-amber-700 dark:text-amber-400 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm text-gray-700 dark:text-gray-300">
                   <strong>Only insurance determines your tier.</strong> Simple, transparent, fair.

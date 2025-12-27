@@ -318,15 +318,18 @@ function CarPopup({
             )}
 
             <div className="flex items-center gap-2 mt-1 text-[11px] text-gray-600 dark:text-gray-400">
-              {car.rating && car.rating.average > 0 && (
+              {car.rating && car.rating.average > 0 ? (
                 <span className="flex items-center gap-0.5">
                   <IoStarOutline className="w-3 h-3 text-amber-500" />
-                  <span className="font-medium">{car.rating.average?.toFixed(1) || '5.0'}</span>
+                  <span className="font-medium">{car.rating.average.toFixed(1)}</span>
                   {tripCount > 0 && <span className="text-gray-500">({tripCount} trips)</span>}
                 </span>
-              )}
-              {tripCount > 0 && (!car.rating || car.rating.average === 0) && (
+              ) : tripCount > 0 ? (
                 <span className="text-gray-500">{tripCount} trips</span>
+              ) : (
+                <span className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[10px] rounded-full font-medium">
+                  New
+                </span>
               )}
               <span className="text-gray-400">•</span>
               <span>{car.location?.city || 'Phoenix'}</span>
@@ -469,15 +472,18 @@ function CarPopup({
           )}
 
           <div className="flex items-center gap-2 mt-1.5 text-xs text-gray-600 dark:text-gray-400">
-            {car.rating && car.rating.average > 0 && (
+            {car.rating && car.rating.average > 0 ? (
               <span className="flex items-center gap-1">
                 <IoStarOutline className="w-3.5 h-3.5 text-amber-500" />
-                <span className="font-medium">{car.rating.average?.toFixed(1) || '5.0'}</span>
+                <span className="font-medium">{car.rating.average.toFixed(1)}</span>
                 {tripCount > 0 && <span className="text-gray-500">({tripCount} trips)</span>}
               </span>
-            )}
-            {tripCount > 0 && (!car.rating || car.rating.average === 0) && (
+            ) : tripCount > 0 ? (
               <span className="text-gray-500">{tripCount} trips</span>
+            ) : (
+              <span className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[10px] rounded-full font-medium">
+                New
+              </span>
             )}
             <span className="text-gray-400">•</span>
             <span>{car.location?.city || 'Phoenix'}</span>

@@ -557,7 +557,7 @@ function transformCarData(car: any): P2PCar {
       responseTime: car.host.responseTime || '1 hour',
       memberSince: car.host.createdAt,
       totalTrips: car._count?.bookings || 0,
-      rating: car.host.rating || 5.0
+      rating: car.host.rating || 0
     },
     photos: car.photos || [],
     rating: avgRating,

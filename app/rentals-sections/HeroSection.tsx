@@ -12,7 +12,7 @@ export default function HeroSection({ userCity = 'Arizona' }: HeroSectionProps) 
       {/* Background Image with Overlay */}
       <div className="absolute inset-0 z-0">
         <img
-          src="/og-image.jpg"
+          src="/hero-bg.webp"
           alt="Peer-to-peer car rental Phoenix Arizona"
           className="w-full h-full object-cover"
         />

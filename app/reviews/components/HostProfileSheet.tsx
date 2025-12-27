@@ -181,7 +181,7 @@ export default function HostProfileSheet({ hostId, isOpen, onClose }: HostProfil
 
   const getRatingValue = (rating: number | { average?: number; count?: number }): number => {
     if (typeof rating === 'number') return rating
-    return rating?.average || 5.0
+    return rating?.average || 0
   }
 
   if (!isOpen) return null
@@ -381,10 +381,16 @@ export default function HostProfileSheet({ hostId, isOpen, onClose }: HostProfil
                             <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                               <span>${car.dailyRate}/day</span>
                               <span>•</span>
-                              <span className="flex items-center gap-0.5">
-                                <IoStar className="w-2.5 h-2.5 text-amber-400" />
-                                {car.rating?.toFixed(1) || '5.0'}
-                              </span>
+                              {car.rating && car.rating > 0 ? (
+                                <span className="flex items-center gap-0.5">
+                                  <IoStar className="w-2.5 h-2.5 text-amber-400" />
+                                  {car.rating.toFixed(1)}
+                                </span>
+                              ) : (
+                                <span className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[10px] rounded-full font-medium">
+                                  New
+                                </span>
+                              )}
                               <span>•</span>
                               <span>{car.trips || car.totalTrips || 0} trips</span>
                             </div>

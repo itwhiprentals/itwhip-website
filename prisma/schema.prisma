@@ -811,6 +811,14 @@ model RentalHost {
   // Partner Payout Schedule
   partnerPayoutSchedule PartnerPayoutSchedule?
 
+  // Partner Page Customization
+  partnerHeroImage      String?               // Cloudinary URL for hero background (1920x400)
+  partnerBadges         Json?                 // Array of badge objects: [{name, imageUrl}]
+  partnerBenefits       Json?                 // Array of benefits: [{icon, title, description}]
+  partnerPolicies       Json?                 // {refundPolicy, cancellationPolicy, bookingRequirements}
+  businessHours         String?               // e.g. "Mon-Sun 8am-8pm"
+  yearEstablished       Int?                  // Year company was founded
+
   // ===== END FLEET PARTNER FIELDS =====
 
   // Relations

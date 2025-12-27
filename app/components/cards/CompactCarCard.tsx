@@ -9,6 +9,7 @@ import {
   IoFlashOutline,
   IoStar
 } from 'react-icons/io5'
+import { optimizeImageUrl } from '@/app/lib/utils/imageOptimization'
 
 export interface CompactCarCardProps {
   car: {
@@ -38,20 +39,20 @@ export interface CompactCarCardProps {
 
 const accentColors = {
   amber: {
-    priceText: 'text-amber-600 dark:text-amber-500',
-    hoverText: 'group-hover:text-amber-600 dark:group-hover:text-amber-400'
+    priceText: 'text-amber-700 dark:text-amber-400',
+    hoverText: 'group-hover:text-amber-700 dark:group-hover:text-amber-400'
   },
   emerald: {
-    priceText: 'text-emerald-600 dark:text-emerald-500',
-    hoverText: 'group-hover:text-emerald-600 dark:group-hover:text-emerald-400'
+    priceText: 'text-emerald-700 dark:text-emerald-400',
+    hoverText: 'group-hover:text-emerald-700 dark:group-hover:text-emerald-400'
   },
   blue: {
-    priceText: 'text-blue-600 dark:text-blue-500',
-    hoverText: 'group-hover:text-blue-600 dark:group-hover:text-blue-400'
+    priceText: 'text-blue-700 dark:text-blue-400',
+    hoverText: 'group-hover:text-blue-700 dark:group-hover:text-blue-400'
   },
   purple: {
-    priceText: 'text-purple-600 dark:text-purple-500',
-    hoverText: 'group-hover:text-purple-600 dark:group-hover:text-purple-400'
+    priceText: 'text-purple-700 dark:text-purple-400',
+    hoverText: 'group-hover:text-purple-700 dark:group-hover:text-purple-400'
   }
 }
 
@@ -82,8 +83,9 @@ const getHostDisplayName = (name: string | null | undefined): string | null => {
 export default function CompactCarCard({ car, accentColor = 'amber', className = '' }: CompactCarCardProps) {
   const [hostAvatarError, setHostAvatarError] = useState(false)
 
-  const imageUrl = car.photos?.[0]?.url ||
-    'https://images.unsplash.com/photo-1583267746897-2cf415887172?w=800&h=600&fit=crop'
+  const rawImageUrl = car.photos?.[0]?.url ||
+    'https://images.unsplash.com/photo-1583267746897-2cf415887172?w=800&h=600&fit=crop&fm=webp&q=80'
+  const imageUrl = optimizeImageUrl(rawImageUrl, 800)
 
   const carUrl = generateCarUrl({
     id: car.id,

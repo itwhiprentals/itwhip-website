@@ -4,6 +4,7 @@ import { redirect, notFound } from 'next/navigation'
 import Script from 'next/script'
 import CarDetailsClient from './CarDetailsClient'
 import { extractCarId, generateCarUrl, isOldUrlFormat } from '@/app/lib/utils/urls'
+import { getRelatedCars } from '@/app/lib/server/fetchSimilarCars'
 
 // Black theme color for car detail page - makes status bar blend with photo on mobile
 export const viewport: Viewport = {
@@ -151,6 +152,7 @@ export default async function CarDetailsPage({
   // Fetch car data for schema markup and 404 check
   let schemaData = null
   let car = null
+  let relatedCars = { similarCars: [], hostCars: [] }
 
   try {
     const response = await fetch(
@@ -166,7 +168,14 @@ export default async function CarDetailsPage({
     car = await response.json()
 
     if (car) {
-      
+      // Fetch related cars (similar cars + host cars) for SSR
+      relatedCars = await getRelatedCars(
+        carId,
+        car.hostId || car.host?.id,
+        car.carType,
+        car.city
+      )
+
       // Generate SEO URL
       const seoUrl = generateCarUrl({
         id: carId,
@@ -181,7 +190,9 @@ export default async function CarDetailsPage({
         "@context": "https://schema.org",
         "@type": "Product",
         "name": `${car.year} ${car.make} ${car.model}`,
-        "image": car.photos?.map((photo: any) => photo.url || photo) || [],
+        "image": car.photos?.length > 0
+          ? car.photos.map((photo: any) => photo.url || photo)
+          : ["https://itwhip.com/placeholder-car.jpg"],
         "description": `Rent this ${car.year} ${car.make} ${car.model} ${car.carType || ''} in ${car.city}, ${car.state}. ${car.seats || 5} seats, ${car.transmission || 'automatic'} transmission.`,
         "brand": {
           "@type": "Brand",
@@ -247,8 +258,8 @@ export default async function CarDetailsPage({
             }
           }
         },
-        // Add aggregate rating if available
-        ...(car.rating && car.totalTrips > 0 ? {
+        // Add aggregate rating only if car has real trips (avoids 5.0 default)
+        ...(car.rating > 0 && car.totalTrips > 0 ? {
           "aggregateRating": {
             "@type": "AggregateRating",
             "ratingValue": car.rating,
@@ -316,7 +327,12 @@ export default async function CarDetailsPage({
       )}
       
       {/* CarDetailsClient expects params as a prop and will fetch its own data */}
-      <CarDetailsClient params={params} />
+      {/* Pass SSR-fetched related cars for SEO (Google can see these links) */}
+      <CarDetailsClient
+        params={params}
+        initialSimilarCars={relatedCars.similarCars}
+        initialHostCars={relatedCars.hostCars}
+      />
     </>
   )
 }

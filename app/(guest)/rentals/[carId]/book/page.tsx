@@ -848,18 +848,24 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
                   {car.carType} • {car.seats} seats
                 </p>
                 <div className="flex items-center mt-1 space-x-3">
-                  <div className="flex items-center">
-                    <div className="flex text-amber-400 text-xs">
-                      {'★★★★★'.split('').map((star, i) => (
-                        <span key={i} className={i < Math.floor(car.rating || 5) ? '' : 'opacity-30'}>
-                          {star}
-                        </span>
-                      ))}
+                  {car.rating && car.rating > 0 ? (
+                    <div className="flex items-center">
+                      <div className="flex text-amber-400 text-xs">
+                        {'★★★★★'.split('').map((star, i) => (
+                          <span key={i} className={i < Math.floor(car.rating!) ? '' : 'opacity-30'}>
+                            {star}
+                          </span>
+                        ))}
+                      </div>
+                      <span className="ml-1 text-xs text-gray-500">
+                        {car.rating.toFixed(1)}
+                      </span>
                     </div>
-                    <span className="ml-1 text-xs text-gray-500">
-                      {car.rating || 5.0}
+                  ) : (
+                    <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs rounded-full font-medium">
+                      New
                     </span>
-                  </div>
+                  )}
                   <span className="text-xs text-gray-500">
                     {car.totalTrips || 0} trips
                   </span>

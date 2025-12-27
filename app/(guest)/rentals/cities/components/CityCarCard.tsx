@@ -3,6 +3,7 @@
 
 import Link from 'next/link'
 import { generateCarUrl } from '@/app/lib/utils/urls'
+import { optimizeImageUrl } from '@/app/lib/utils/imageOptimization'
 import { IoFlashOutline, IoStarSharp } from 'react-icons/io5'
 
 interface CityCarCardProps {
@@ -28,9 +29,10 @@ interface CityCarCardProps {
 }
 
 export default function CityCarCard({ car }: CityCarCardProps) {
-  // Get the main photo
-  const photoUrl = car.photos?.[0]?.url || 
-    'https://images.unsplash.com/photo-1583267746897-2cf415887172?w=400&h=300&fit=crop'
+  // Get the main photo with optimization
+  const rawPhotoUrl = car.photos?.[0]?.url ||
+    'https://images.unsplash.com/photo-1583267746897-2cf415887172?w=400&h=300&fit=crop&fm=webp&q=80'
+  const photoUrl = optimizeImageUrl(rawPhotoUrl, 400)
 
   // Generate SEO-friendly URL
   const carUrl = generateCarUrl({

@@ -95,7 +95,7 @@ export default function HostCarsPage({ params }: { params: Promise<{ id: string 
     active: cars.filter(c => c.isActive).length,
     booked: cars.filter(c => c.currentBooking).length,
     totalTrips: cars.reduce((sum, c) => sum + c.totalTrips, 0),
-    avgRating: cars.reduce((sum, c) => sum + (c.rating || 5), 0) / cars.length,
+    avgRating: cars.length > 0 ? cars.reduce((sum, c) => sum + (c.rating || 0), 0) / cars.length : 0,
     totalRevenue: cars.reduce((sum, c) => sum + (c.totalTrips * c.dailyRate * 3), 0) // Rough estimate
   }
 

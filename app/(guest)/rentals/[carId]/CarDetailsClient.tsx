@@ -106,8 +106,39 @@ interface RentalCarWithDetails {
   isActive?: boolean
 }
 
+// Type for SSR-fetched similar car data
+interface SimilarCarData {
+  id: string
+  make: string
+  model: string
+  year: number
+  dailyRate: number
+  carType?: string
+  city: string
+  state: string
+  rating?: number | null
+  totalTrips?: number
+  instantBook?: boolean
+  photos?: { url: string }[]
+  seats?: number
+  transmission?: string
+  location?: {
+    lat?: number
+    lng?: number
+    address?: string
+  }
+  hostId?: string
+  host?: {
+    name?: string
+    profilePhoto?: string
+    isVerified?: boolean
+  }
+}
+
 interface PageProps {
   params: Promise<{ carId: string }>
+  initialSimilarCars?: SimilarCarData[]
+  initialHostCars?: SimilarCarData[]
 }
 
 // Helper functions for formatting vehicle specs
@@ -169,7 +200,7 @@ function formatDriveType(driveType?: string | null): string {
   }
 }
 
-export default function CarDetailsClient({ params }: PageProps) {
+export default function CarDetailsClient({ params, initialSimilarCars, initialHostCars }: PageProps) {
   const router = useRouter()
   const resolvedParams = use(params)
   const urlSlug = resolvedParams.carId
@@ -918,7 +949,7 @@ export default function CarDetailsClient({ params }: PageProps) {
           </div>
         </div>
 
-        {/* Similar Cars Section */}
+        {/* Similar Cars Section - with SSR initial data for SEO */}
         <SimilarCars
           currentCarId={car.id}
           carType={car.carType || car.type}
@@ -931,6 +962,8 @@ export default function CarDetailsClient({ params }: PageProps) {
           hostName={car.host?.name}
           hostProfilePhoto={car.host?.profilePhoto || car.host?.profileImage}
           isCompany={car.host?.isCompany}
+          initialSimilarCars={initialSimilarCars}
+          initialHostCars={initialHostCars}
         />
 
         {/* Important Information Footer */}
