@@ -170,7 +170,7 @@ export default function HomeClient({ initialEsgCars, initialCityCars }: HomeClie
             </div>
             {esgCars.length > 0 && (
               <div className="mt-6 text-center sm:hidden">
-                <Link href="/rentals/search?filter=impact" className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-lg font-medium">
+                <Link href="/rentals/search?filter=impact" className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-700 text-white rounded-lg font-medium">
                   View all Impact Leaders <IoArrowForwardOutline className="w-5 h-5" />
                 </Link>
               </div>
@@ -233,7 +233,7 @@ export default function HomeClient({ initialEsgCars, initialCityCars }: HomeClie
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                   <Link
                     href="/host/signup"
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium transition-colors"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-amber-700 hover:bg-amber-800 text-white rounded-lg font-medium transition-colors"
                   >
                     <IoCarSportOutline className="w-5 h-5" />
                     List Your Car
@@ -263,7 +263,7 @@ export default function HomeClient({ initialEsgCars, initialCityCars }: HomeClie
                 </p>
                 <Link
                   href="/rentals/search"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium transition-colors"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-amber-700 hover:bg-amber-800 text-white rounded-lg font-medium transition-colors"
                 >
                   Browse All Cars <IoArrowForwardOutline className="w-5 h-5" />
                 </Link>
@@ -288,7 +288,7 @@ export default function HomeClient({ initialEsgCars, initialCityCars }: HomeClie
                 <div className="flex justify-center mt-6 lg:hidden">
                   <Link
                     href="/rentals/cities"
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium transition-colors"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-amber-700 hover:bg-amber-800 text-white rounded-lg font-medium transition-colors"
                   >
                     Browse All <IoArrowForwardOutline className="w-5 h-5" />
                   </Link>

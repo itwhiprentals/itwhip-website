@@ -47,7 +47,7 @@ export default function Footer() {
               <span className="text-[8px] text-gray-700 dark:text-gray-300 tracking-widest uppercase font-medium mt-0.5">
                 ITWHIP RIDES
               </span>
-              <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 -ml-0.5">
+              <p className="text-[10px] text-gray-600 dark:text-gray-400 mt-1 -ml-0.5">
                 Rentals & Rideshare
               </p>
             </div>
@@ -57,7 +57,7 @@ export default function Footer() {
                 href="https://www.facebook.com/share/17C2AahAqu/?mibextid=LQQJ4d"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
                 aria-label="Facebook"
               >
                 <IoLogoFacebook className="w-5 h-5" />
@@ -66,7 +66,7 @@ export default function Footer() {
                 href="https://twitter.com/itwhiptech"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
                 aria-label="Twitter"
               >
                 <IoLogoTwitter className="w-5 h-5" />
@@ -75,7 +75,7 @@ export default function Footer() {
                 href="https://www.instagram.com/itwhiptech?igsh=NWhtdXVlNnZwYzlx"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
                 aria-label="Instagram"
               >
                 <IoLogoInstagram className="w-5 h-5" />
@@ -84,7 +84,7 @@ export default function Footer() {
                 href="https://linkedin.com/company/itwhip"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
                 aria-label="LinkedIn"
               >
                 <IoLogoLinkedin className="w-5 h-5" />
@@ -348,7 +348,7 @@ export default function Footer() {
               <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
                 Download the ItWhip App
               </h4>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Available on iOS, Android coming soon</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">Available on iOS, Android coming soon</p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
               <a
@@ -365,7 +365,7 @@ export default function Footer() {
                   </div>
                 </div>
                 <div className="absolute bottom-1 right-2">
-                  <span className="text-[9px] bg-blue-500 px-1.5 py-0.5 rounded text-white font-medium">BETA</span>
+                  <span className="text-[9px] bg-blue-600 px-1.5 py-0.5 rounded text-white font-medium">BETA</span>
                 </div>
               </a>
 
@@ -381,7 +381,7 @@ export default function Footer() {
                   </div>
                 </div>
                 <div className="absolute top-1 right-2">
-                  <span className="text-[9px] bg-orange-500 px-1.5 py-0.5 rounded text-white font-medium">SOON</span>
+                  <span className="text-[9px] bg-orange-600 px-1.5 py-0.5 rounded text-white font-medium">SOON</span>
                 </div>
               </a>
             </div>
@@ -393,10 +393,10 @@ export default function Footer() {
           <div className="flex flex-col sm:flex-row justify-between items-center space-y-3 sm:space-y-0">
             {/* Copyright and Links */}
             <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
-              <p className="text-xs text-gray-500 dark:text-gray-500">
+              <p className="text-xs text-gray-600 dark:text-gray-500">
                 © {currentYear} ItWhip Rides, Inc. All rights reserved.
               </p>
-              <div className="flex space-x-4 text-xs text-gray-500 dark:text-gray-500">
+              <div className="flex space-x-4 text-xs text-gray-600 dark:text-gray-500">
                 <Link href="/terms" className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
                   Terms
                 </Link>
@@ -414,7 +414,7 @@ export default function Footer() {
             </div>
             
             {/* Location */}
-            <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-500">
+            <div className="flex items-center space-x-2 text-xs text-gray-600 dark:text-gray-500">
               <span>Phoenix, Arizona</span>
               <span>•</span>
               <span>United States</span>

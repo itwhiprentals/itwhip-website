@@ -138,7 +138,7 @@ export default function CompactCarCard({ car, accentColor = 'amber', className =
             <div className="w-6 h-6 rounded-full border-2 border-white shadow-md overflow-hidden bg-amber-500 flex-shrink-0">
               {hasValidHostPhoto ? (
                 <img
-                  src={hostPhotoUrl!}
+                  src={optimizeImageUrl(hostPhotoUrl!, 50)}
                   alt={hostDisplayName || 'Host'}
                   className="w-full h-full object-cover"
                   onError={() => setHostAvatarError(true)}
