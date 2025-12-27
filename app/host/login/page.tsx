@@ -99,9 +99,9 @@ function HostLoginContent() {
         return
       }
 
-      // Success - redirect to dashboard
-      if (data.redirectTo) {
-        router.push(data.redirectTo)
+      // Success - redirect to dashboard (FLEET_PARTNER → /partner/dashboard)
+      if (data.redirect) {
+        router.push(data.redirect)
       } else {
         router.push('/host/dashboard')
       }

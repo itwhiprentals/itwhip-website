@@ -74,12 +74,16 @@ export async function GET(
             type: true,
             status: true,
             url: true,
+            uploadedAt: true,
             expiresAt: true,
-            isExpired: true
+            isExpired: true,
+            reviewedAt: true,
+            reviewedBy: true,
+            rejectNote: true
           },
-          orderBy: { createdAt: 'desc' }
+          orderBy: { uploadedAt: 'desc' }
         },
-        commissionHistory: {
+        partnerCommissionHistory: {
           select: {
             id: true,
             oldRate: true,
@@ -93,7 +97,7 @@ export async function GET(
         },
         _count: {
           select: {
-            vehicles: true
+            cars: true
           }
         }
       }

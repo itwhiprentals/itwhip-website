@@ -96,6 +96,7 @@ const publicRoutes = [
   '/(guest)/rentals',
   '/admin/auth',
   '/api/admin/auth',
+  '/api/auth',  // NextAuth routes (session, providers, callbacks)
   '/host/signup',
   '/host/forgot-password',
   '/host/reset-password',
@@ -108,9 +109,6 @@ const publicRoutes = [
   '/api/host/verify',
   '/api/host/forgot-password',
   '/api/host/reset-password',
-  '/api/auth/forgot-password',
-  '/api/auth/reset-password',
-  '/api/auth/verify-phone',  // Phone verification API (Firebase)
   '/api/account/link/confirm-guest',  // Account linking confirmation endpoints
   '/api/account/link/confirm-host',
   '/verify',

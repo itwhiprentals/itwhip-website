@@ -4,6 +4,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import {
   IoBusinessOutline,
@@ -65,6 +66,9 @@ interface Stats {
 }
 
 export default function FleetPartnersPage() {
+  const searchParams = useSearchParams()
+  const apiKey = searchParams.get('key') || 'phoenix-fleet-2847'
+
   const [partners, setPartners] = useState<Partner[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
@@ -89,7 +93,7 @@ export default function FleetPartnersPage() {
       params.append('filter', filter)
       if (searchTerm) params.append('search', searchTerm)
 
-      const response = await fetch(`/api/fleet/partners?${params}`)
+      const response = await fetch(`/api/fleet/partners?${params}&key=${apiKey}`)
       const data = await response.json()
 
       if (data.success) {
@@ -156,7 +160,7 @@ export default function FleetPartnersPage() {
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center gap-3 mb-4">
             <Link
-              href="/fleet"
+              href={`/fleet?key=${apiKey}`}
               className="p-2 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-lg transition-colors"
             >
               <IoArrowBackOutline className="text-xl" />
@@ -170,7 +174,7 @@ export default function FleetPartnersPage() {
               </p>
             </div>
             <Link
-              href="/fleet/partners/applications"
+              href={`/fleet/partners/applications?key=${apiKey}`}
               className="flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition-colors"
             >
               <IoDocumentTextOutline className="w-4 h-4" />
@@ -268,7 +272,7 @@ export default function FleetPartnersPage() {
               {searchTerm ? 'Try adjusting your search terms' : 'No fleet partners match this filter'}
             </p>
             <Link
-              href="/fleet/partners/applications"
+              href={`/fleet/partners/applications?key=${apiKey}`}
               className="inline-flex items-center gap-2 text-orange-600 hover:text-orange-700 font-medium"
             >
               <IoDocumentTextOutline className="w-5 h-5" />
@@ -282,7 +286,7 @@ export default function FleetPartnersPage() {
               return (
                 <Link
                   key={partner.id}
-                  href={`/fleet/partners/${partner.id}`}
+                  href={`/fleet/partners/${partner.id}?key=${apiKey}`}
                   className="block bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:border-orange-300 dark:hover:border-orange-700 transition-colors"
                 >
                   <div className="flex items-start gap-4">

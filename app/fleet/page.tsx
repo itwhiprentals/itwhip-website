@@ -29,6 +29,7 @@ export default function FleetDashboard() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [filter, setFilter] = useState<string>('all')
   const [unreadCount, setUnreadCount] = useState(0)
+  const [pendingApplications, setPendingApplications] = useState(0)
 
   // Get API key from URL
   const apiKey = searchParams.get('key') || 'phoenix-fleet-2847'
@@ -36,6 +37,7 @@ export default function FleetDashboard() {
   useEffect(() => {
     fetchCars()
     fetchUnreadMessages()
+    fetchPendingApplications()
   }, [])
 
   // Separate effect for client-side only window operations
@@ -68,6 +70,18 @@ export default function FleetDashboard() {
       }
     } catch (error) {
       console.error('Failed to fetch unread messages:', error)
+    }
+  }
+
+  const fetchPendingApplications = async () => {
+    try {
+      const response = await fetch(`/api/fleet/partners/applications?status=SUBMITTED&key=${apiKey}`)
+      const data = await response.json()
+      if (data.success && data.applications) {
+        setPendingApplications(data.applications.length)
+      }
+    } catch (error) {
+      console.error('Failed to fetch pending applications:', error)
     }
   }
 
@@ -222,10 +236,15 @@ export default function FleetDashboard() {
           {/* Partners */}
           <Link
             href={`/fleet/partners?key=${apiKey}`}
-            className="px-4 py-3 bg-gradient-to-br from-amber-500 to-amber-600 text-white rounded-lg hover:from-amber-600 hover:to-amber-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
+            className="relative px-4 py-3 bg-gradient-to-br from-amber-500 to-amber-600 text-white rounded-lg hover:from-amber-600 hover:to-amber-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
           >
             <IoBriefcaseOutline className="text-2xl group-hover:scale-110 transition-transform" />
             <span className="text-sm font-medium">Partners</span>
+            {pendingApplications > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center animate-pulse shadow-lg">
+                {pendingApplications > 99 ? '99+' : pendingApplications}
+              </span>
+            )}
           </Link>
         </div>
       </div>

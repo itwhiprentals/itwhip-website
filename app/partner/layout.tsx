@@ -65,11 +65,11 @@ export default function PartnerLayout({
   const [loading, setLoading] = useState(true)
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
 
-  // Skip auth check on login page
-  const isLoginPage = pathname === '/partner/login'
+  // Skip auth check on public partner pages
+  const isPublicPage = pathname === '/partner/login' || pathname === '/partner/reset-password'
 
   useEffect(() => {
-    if (!isLoginPage) {
+    if (!isPublicPage) {
       checkSession()
     } else {
       setLoading(false)
@@ -148,8 +148,8 @@ export default function PartnerLayout({
     )
   }
 
-  // Login page - no layout
-  if (isLoginPage) {
+  // Public pages (login, reset-password) - no layout wrapper
+  if (isPublicPage) {
     return <>{children}</>
   }
 

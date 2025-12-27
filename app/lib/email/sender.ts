@@ -27,8 +27,9 @@ const SMTP_CONFIG = {
   pass: process.env.SMTP_PASS || '',
   from: process.env.EMAIL_FROM || 'ItWhip Rentals <info@itwhip.com>',
   replyTo: process.env.EMAIL_REPLY_TO || 'info@itwhip.com',
-  insecureTls: process.env.SMTP_INSECURE_TLS === 'true',
-  requireTls: process.env.SMTP_REQUIRE_TLS === 'true'
+  insecureTls: process.env.EMAIL_REJECT_UNAUTHORIZED === 'false',
+  requireTls: process.env.EMAIL_REQUIRE_TLS === 'true',
+  secure: process.env.EMAIL_SECURE === 'true'
 }
 
 let transporter: Transporter | null = null

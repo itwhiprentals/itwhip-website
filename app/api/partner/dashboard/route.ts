@@ -37,10 +37,9 @@ export async function GET(request: NextRequest) {
             model: true,
             year: true,
             dailyRate: true,
-            active: true,
+            isActive: true,
             photos: true,
-            totalTrips: true,
-            approvalStatus: true
+            totalTrips: true
           }
         }
       }
@@ -69,9 +68,7 @@ export async function GET(request: NextRequest) {
       dailyRate: car.dailyRate,
       photo: car.photos?.[0] || null,
       totalTrips: car.totalTrips || 0,
-      status: car.active
-        ? (car.approvalStatus === 'MAINTENANCE' ? 'maintenance' : 'available')
-        : 'maintenance' as 'available' | 'booked' | 'maintenance'
+      status: car.isActive ? 'available' : 'maintenance' as 'available' | 'booked' | 'maintenance'
     }))
 
     const fleetSize = vehicles.length
@@ -80,19 +77,19 @@ export async function GET(request: NextRequest) {
     // Get bookings for this partner's vehicles
     const vehicleIds = partner.cars.map(c => c.id)
 
-    const bookings = await prisma.booking.findMany({
+    const bookings = await prisma.rentalBooking.findMany({
       where: {
-        rentalCarId: { in: vehicleIds }
+        carId: { in: vehicleIds }
       },
       include: {
-        user: {
+        renter: {
           select: {
             id: true,
-            firstName: true,
-            lastName: true
+            name: true,
+            email: true
           }
         },
-        rentalCar: {
+        car: {
           select: {
             make: true,
             model: true,
@@ -107,35 +104,33 @@ export async function GET(request: NextRequest) {
     // Transform bookings for response
     const recentBookings = bookings.map(booking => ({
       id: booking.id,
-      guestName: `${booking.user?.firstName || 'Guest'} ${booking.user?.lastName || ''}`.trim(),
-      vehicleName: booking.rentalCar
-        ? `${booking.rentalCar.year} ${booking.rentalCar.make} ${booking.rentalCar.model}`
+      guestName: booking.guestName || booking.renter?.name || 'Guest',
+      vehicleName: booking.car
+        ? `${booking.car.year} ${booking.car.make} ${booking.car.model}`
         : 'Unknown Vehicle',
       startDate: booking.startDate.toISOString(),
       endDate: booking.endDate.toISOString(),
       status: mapBookingStatus(booking.status),
-      totalAmount: booking.totalPrice
+      totalAmount: booking.totalAmount
     }))
 
     // Calculate revenue stats
-    const completedBookings = bookings.filter(b =>
-      b.status === 'COMPLETED' || b.status === 'FINISHED'
-    )
-    const totalRevenue = completedBookings.reduce((sum, b) => sum + b.totalPrice, 0)
+    const completedBookings = bookings.filter(b => b.status === 'COMPLETED')
+    const totalRevenue = completedBookings.reduce((sum, b) => sum + b.totalAmount, 0)
 
     // Calculate monthly revenue (last 6 months)
     const sixMonthsAgo = new Date()
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
 
-    const monthlyRevenueData = await prisma.booking.groupBy({
+    const monthlyRevenueData = await prisma.rentalBooking.groupBy({
       by: ['createdAt'],
       where: {
-        rentalCarId: { in: vehicleIds },
-        status: { in: ['COMPLETED', 'FINISHED'] },
+        carId: { in: vehicleIds },
+        status: 'COMPLETED',
         createdAt: { gte: sixMonthsAgo }
       },
       _sum: {
-        totalPrice: true
+        totalAmount: true
       }
     })
 
@@ -151,8 +146,8 @@ export async function GET(request: NextRequest) {
       if (!revenueByMonth[monthKey]) {
         revenueByMonth[monthKey] = { gross: 0, net: 0 }
       }
-      revenueByMonth[monthKey].gross += booking.totalPrice
-      revenueByMonth[monthKey].net += booking.totalPrice * (1 - commissionRate)
+      revenueByMonth[monthKey].gross += booking.totalAmount
+      revenueByMonth[monthKey].net += booking.totalAmount * (1 - commissionRate)
     })
 
     // Convert to array for last 6 months
@@ -176,17 +171,17 @@ export async function GET(request: NextRequest) {
     const currentMonthBookings = completedBookings.filter(b =>
       new Date(b.createdAt) >= startOfMonth
     )
-    const monthlyRevenueTotal = currentMonthBookings.reduce((sum, b) => sum + b.totalPrice, 0)
+    const monthlyRevenueTotal = currentMonthBookings.reduce((sum, b) => sum + b.totalAmount, 0)
 
     // Calculate active bookings count
     const activeBookingsCount = bookings.filter(b =>
-      b.status === 'CONFIRMED' || b.status === 'IN_PROGRESS' || b.status === 'ACTIVE'
+      b.status === 'CONFIRMED' || b.status === 'ACTIVE'
     ).length
 
     // Calculate utilization (booked / total vehicles)
     const bookedVehicles = bookings.filter(b =>
-      b.status === 'CONFIRMED' || b.status === 'IN_PROGRESS' || b.status === 'ACTIVE'
-    ).map(b => b.rentalCarId)
+      b.status === 'CONFIRMED' || b.status === 'ACTIVE'
+    ).map(b => b.carId)
     const uniqueBookedVehicles = [...new Set(bookedVehicles)].length
     const utilization = fleetSize > 0 ? Math.round((uniqueBookedVehicles / fleetSize) * 100) : 0
 
@@ -203,9 +198,12 @@ export async function GET(request: NextRequest) {
         companyName: partner.partnerCompanyName || partner.displayName,
         email: partner.email,
         commissionRate: partner.currentCommissionRate || 0.25,
-        tier: tierInfo.currentTier,
-        nextTier: tierInfo.nextTier,
-        vehiclesToNextTier: tierInfo.vehiclesToNextTier
+        tier: {
+          current: tierInfo.currentTier,
+          vehiclesNeeded: tierInfo.vehiclesToNextTier,
+          nextTier: tierInfo.nextTier,
+          nextTierRate: tierInfo.nextTierRate
+        }
       },
       stats: {
         fleetSize,
@@ -215,7 +213,21 @@ export async function GET(request: NextRequest) {
         totalRevenue,
         monthlyRevenue: monthlyRevenueTotal,
         utilization,
-        avgRating
+        avgRating,
+        currentCommissionRate: partner.currentCommissionRate || 0.25,
+        grossRevenue: totalRevenue,
+        netRevenue: totalRevenue * (1 - (partner.currentCommissionRate || 0.25)),
+        thisMonthRevenue: monthlyRevenueTotal,
+        lastMonthRevenue: 0,
+        completedThisMonth: currentMonthBookings.length,
+        totalReviews: 0,
+        utilizationRate: utilization,
+        tier: {
+          current: tierInfo.currentTier,
+          vehiclesNeeded: tierInfo.vehiclesToNextTier,
+          nextTier: tierInfo.nextTier,
+          nextTierRate: tierInfo.nextTierRate
+        }
       },
       vehicles,
       recentBookings,
@@ -236,16 +248,14 @@ function mapBookingStatus(status: string): 'confirmed' | 'pending' | 'active' | 
     case 'CONFIRMED':
       return 'confirmed'
     case 'PENDING':
-    case 'PENDING_APPROVAL':
       return 'pending'
-    case 'IN_PROGRESS':
     case 'ACTIVE':
       return 'active'
     case 'COMPLETED':
-    case 'FINISHED':
       return 'completed'
     case 'CANCELLED':
-    case 'REJECTED':
+    case 'NO_SHOW':
+    case 'DISPUTE_REVIEW':
       return 'cancelled'
     default:
       return 'pending'

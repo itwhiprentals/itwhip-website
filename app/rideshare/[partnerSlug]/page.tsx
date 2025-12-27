@@ -13,7 +13,8 @@ import {
   IoFlashOutline,
   IoStarOutline,
   IoLocationOutline,
-  IoFilterOutline
+  IoFilterOutline,
+  IoTimeOutline
 } from 'react-icons/io5'
 import PartnerHero from '../components/PartnerHero'
 import DiscountBanner from '../components/DiscountBanner'
@@ -21,17 +22,28 @@ import FAQAccordion from '../components/FAQAccordion'
 
 interface PageProps {
   params: Promise<{ partnerSlug: string }>
+  searchParams: Promise<{ preview?: string; key?: string }>
 }
 
-async function getPartner(slug: string) {
+// Fleet preview key for unapproved partners
+const FLEET_PREVIEW_KEY = 'phoenix-fleet-2847'
+
+async function getPartner(slug: string, isFleetPreview: boolean = false) {
   try {
+    // Build where clause based on preview mode
+    const whereClause: any = {
+      partnerSlug: slug,
+      hostType: { in: ['FLEET_PARTNER', 'PARTNER'] }
+    }
+
+    // Only require approved + active for public access (not fleet preview)
+    if (!isFleetPreview) {
+      whereClause.approvalStatus = 'APPROVED'
+      whereClause.active = true
+    }
+
     const partner = await prisma.rentalHost.findFirst({
-      where: {
-        partnerSlug: slug,
-        hostType: { in: ['FLEET_PARTNER', 'PARTNER'] },
-        approvalStatus: 'APPROVED',
-        active: true
-      },
+      where: whereClause,
       include: {
         cars: {
           where: {
@@ -56,7 +68,9 @@ async function getPartner(slug: string) {
             description: true,
             features: true,
             rating: true,
-            totalTrips: true
+            totalTrips: true,
+            vehicleType: true,
+            minTripDuration: true
           }
         },
         partnerDiscounts: {
@@ -132,13 +146,21 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
-export default async function PartnerLandingPage({ params }: PageProps) {
+export default async function PartnerLandingPage({ params, searchParams }: PageProps) {
   const { partnerSlug } = await params
-  const partner = await getPartner(partnerSlug)
+  const { preview, key } = await searchParams
+
+  // Check if fleet preview mode (allows viewing unapproved partners)
+  const isFleetPreview = preview === 'true' && key === FLEET_PREVIEW_KEY
+
+  const partner = await getPartner(partnerSlug, isFleetPreview)
 
   if (!partner) {
     notFound()
   }
+
+  // Check if partner is not yet approved (only visible in preview mode)
+  const isPendingApproval = partner.approvalStatus !== 'APPROVED' || !partner.active
 
   const companyName = partner.partnerCompanyName || partner.displayName || 'Partner Fleet'
 
@@ -209,6 +231,26 @@ export default async function PartnerLandingPage({ params }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+
+      {/* Fleet Preview Banner - Only shown to fleet admins previewing unapproved partners */}
+      {isFleetPreview && isPendingApproval && (
+        <div className="bg-purple-600 text-white px-4 py-3 text-center">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
+            <span className="font-medium">
+              Fleet Preview Mode - Status: {partner.approvalStatus}
+            </span>
+            <span className="text-purple-200 text-sm">
+              This page is not visible to the public until approved
+            </span>
+            <a
+              href={`/fleet/partners/${partner.id}?key=${FLEET_PREVIEW_KEY}`}
+              className="px-3 py-1 bg-white text-purple-600 rounded-lg text-sm font-medium hover:bg-purple-50"
+            >
+              Back to Partner Details
+            </a>
+          </div>
+        </div>
+      )}
 
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Breadcrumb */}
@@ -306,12 +348,27 @@ export default async function PartnerLandingPage({ params }: PageProps) {
                         </div>
                       )}
 
-                      {vehicle.instantBook && (
-                        <div className="absolute top-3 left-3 flex items-center gap-1 px-2 py-1 bg-green-500 text-white text-xs font-medium rounded-full">
-                          <IoFlashOutline className="w-3 h-3" />
-                          Instant
-                        </div>
-                      )}
+                      {/* Badges Row */}
+                      <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
+                        {vehicle.instantBook && (
+                          <div className="flex items-center gap-1 px-2 py-1 bg-green-500 text-white text-xs font-medium rounded-full">
+                            <IoFlashOutline className="w-3 h-3" />
+                            Instant
+                          </div>
+                        )}
+                        {/* Vehicle Type Badge */}
+                        {vehicle.vehicleType === 'RIDESHARE' ? (
+                          <div className="flex items-center gap-1 px-2 py-1 bg-orange-500 text-white text-xs font-medium rounded-full">
+                            <IoTimeOutline className="w-3 h-3" />
+                            3 Day Min
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 px-2 py-1 bg-blue-500 text-white text-xs font-medium rounded-full">
+                            <IoTimeOutline className="w-3 h-3" />
+                            1 Day Min
+                          </div>
+                        )}
+                      </div>
 
                       {vehicle.rating && vehicle.rating > 0 && (
                         <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 bg-white/90 dark:bg-gray-800/90 text-xs font-medium rounded-full">

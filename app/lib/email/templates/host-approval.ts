@@ -1,6 +1,7 @@
 // app/lib/email/templates/host-approval.ts
 
 import { EmailTemplate } from '../types'
+import { emailFooterHtml, emailFooterText } from './email-footer'
 
 export interface HostApprovalData {
   hostName: string
@@ -292,7 +293,7 @@ export function getHostApprovalTemplate(data: HostApprovalData): EmailTemplate {
               </p>
             </div>
             
-            <p style="font-size: 14px; color: #6b7280; text-align: center; margin-top: 32px;">
+            <p style="font-size: 14px; color: #6b7280; text-align: center; margin: 24px 0 0 0;">
               Need help getting started? Our host success team is here for you:<br>
               <a href="mailto:${data.supportEmail || 'info@itwhip.com'}" style="color: #8b5cf6;">
                 ${data.supportEmail || 'info@itwhip.com'}
@@ -301,17 +302,12 @@ export function getHostApprovalTemplate(data: HostApprovalData): EmailTemplate {
             </p>
           </div>
           
-          <div class="footer">
-            <strong>ITWHIP HOST PORTAL</strong><br>
-            Welcome to Our Host Community!<br>
-            <a href="https://itwhip.com/host/dashboard">Dashboard</a> | 
-            <a href="https://itwhip.com/host/help">Help Center</a> |
-            <a href="https://itwhip.com/host/terms">Host Terms</a><br>
-            <span style="font-size: 11px; margin-top: 8px; display: block;">
-              © 2025 ItWhip Technologies. All rights reserved.<br>
-              Thank you for choosing to host with ItWhip!
-            </span>
-          </div>
+          <!-- Email Footer -->
+            ${emailFooterHtml({
+              includeAppButtons: true,
+              includeSocialLinks: true,
+              footerType: 'full'
+            })}
         </div>
       </body>
     </html>
@@ -358,8 +354,11 @@ Response time: Usually within 2 hours during business hours
 
 Welcome to our host community!
 
-ITWHIP HOST PORTAL
-© 2025 ItWhip Technologies. All rights reserved.
+${emailFooterText({
+  includeAppButtons: true,
+  includeSocialLinks: true,
+  footerType: 'full'
+})}
   `
   
   return { subject, html, text }

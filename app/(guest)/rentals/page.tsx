@@ -96,7 +96,8 @@ export default async function RentalsPage({
 
   // Build Prisma where clause from filters
   const whereClause: any = {
-    isActive: true
+    isActive: true,
+    vehicleType: 'RENTAL'  // Only show rental vehicles (not rideshare)
   }
 
   if (params?.type && params.type !== 'all') {
@@ -170,9 +171,9 @@ export default async function RentalsPage({
       where: whereClause
     }),
 
-    // Get distinct makes for filter dropdown
+    // Get distinct makes for filter dropdown (only from RENTAL vehicles)
     prisma.rentalCar.findMany({
-      where: { isActive: true },
+      where: { isActive: true, vehicleType: 'RENTAL' },
       select: { make: true },
       distinct: ['make']
     })

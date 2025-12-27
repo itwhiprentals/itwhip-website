@@ -114,17 +114,17 @@ const ridesharePartners = [
     extraClass: 'grayscale'
   },
   {
-    name: 'Lyft',
-    logo: 'https://logos-world.net/wp-content/uploads/2020/11/Lyft-Logo.png',
-    bgColor: 'bg-white',
-    logoHeight: 'h-8',
-    extraClass: ''
-  },
-  {
     name: 'DoorDash',
     logo: 'https://logos-world.net/wp-content/uploads/2020/11/DoorDash-Logo.png',
     bgColor: 'bg-white',
     logoHeight: 'h-14',
+    extraClass: ''
+  },
+  {
+    name: 'Lyft',
+    logo: 'https://logos-world.net/wp-content/uploads/2020/11/Lyft-Logo.png',
+    bgColor: 'bg-white',
+    logoHeight: 'h-8',
     extraClass: ''
   },
   {
@@ -154,7 +154,8 @@ async function getPartners() {
       include: {
         cars: {
           where: {
-            isActive: true
+            isActive: true,
+            vehicleType: 'RIDESHARE'  // Only show rideshare vehicles
           },
           take: 10,
           orderBy: { createdAt: 'desc' },
@@ -247,6 +248,7 @@ async function getPlatformVehicles() {
     const vehicles = await prisma.rentalCar.findMany({
       where: {
         isActive: true,
+        vehicleType: 'RIDESHARE',  // Only show rideshare vehicles
         host: {
           hostType: 'MANAGED',
           active: true,
@@ -277,6 +279,7 @@ async function getPlatformVehicles() {
     const totalCount = await prisma.rentalCar.count({
       where: {
         isActive: true,
+        vehicleType: 'RIDESHARE',  // Only count rideshare vehicles
         host: {
           hostType: 'MANAGED',
           active: true,
@@ -388,71 +391,66 @@ export default async function RidesharePage() {
         {/* Browse By Type Section */}
         <BrowseByTypeSection />
 
-        {/* Section Separator */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="border-t border-gray-200 dark:border-gray-700" />
-        </div>
-
-        {/* ItWhip Rideshare Vehicles - Our Company Fleet (Always Shown First) */}
-        <section className="py-8 sm:py-12 bg-white dark:bg-gray-800">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-4">
-                {/* Company Logo */}
-                <div className="w-14 h-14 rounded-xl flex items-center justify-center shadow-lg overflow-hidden bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600">
-                  <img
-                    src="/logo.png"
-                    alt="ItWhip Logo"
-                    className="w-10 h-10 object-contain"
-                  />
-                </div>
-                <div>
-                  <span className="text-orange-600 dark:text-orange-400 text-xs font-semibold uppercase tracking-wider">
-                    Featured Fleet
-                  </span>
-                  <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-                    ItWhip Rideshare Vehicles
-                  </h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {platformData.totalCount} rideshare-ready vehicles • Managed by ItWhip
-                  </p>
-                </div>
-              </div>
-              <Link
-                href="/rideshare/itwhip"
-                className="hidden sm:flex items-center gap-1 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors"
-              >
-                View Fleet <IoArrowForwardOutline className="w-4 h-4" />
-              </Link>
+        {/* ItWhip Rideshare Vehicles - Our Company Fleet (Only shown if vehicles exist) */}
+        {platformData.totalCount > 0 && (
+          <>
+            {/* Section Separator */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="border-t border-gray-200 dark:border-gray-700" />
             </div>
 
-            {platformData.vehicles.length > 0 ? (
-              <VehicleCarousel vehicles={platformData.vehicles} />
-            ) : (
-              <div className="text-center py-12 bg-gray-50 dark:bg-gray-700 rounded-xl">
-                <IoCarOutline className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-500 dark:text-gray-400">
-                  No vehicles available at the moment. Check back soon!
-                </p>
+            <section className="py-8 sm:py-12 bg-white dark:bg-gray-800">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-4">
+                    {/* Company Logo */}
+                    <div className="w-14 h-14 rounded-xl flex items-center justify-center shadow-lg overflow-hidden bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600">
+                      <img
+                        src="/logo.png"
+                        alt="ItWhip Logo"
+                        className="w-10 h-10 object-contain"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-orange-600 dark:text-orange-400 text-xs font-semibold uppercase tracking-wider">
+                        Featured Fleet
+                      </span>
+                      <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+                        ItWhip Rideshare Vehicles
+                      </h2>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {platformData.totalCount} rideshare-ready vehicles • Managed by ItWhip
+                      </p>
+                    </div>
+                  </div>
+                  <Link
+                    href="/rideshare/itwhip"
+                    className="hidden sm:flex items-center gap-1 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors"
+                  >
+                    View Fleet <IoArrowForwardOutline className="w-4 h-4" />
+                  </Link>
+                </div>
+
+                <VehicleCarousel vehicles={platformData.vehicles} />
+
+                {/* Mobile View All Button */}
+                <div className="mt-6 text-center sm:hidden">
+                  <Link
+                    href="/rideshare/itwhip"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors"
+                  >
+                    View All ItWhip Vehicles <IoArrowForwardOutline className="w-5 h-5" />
+                  </Link>
+                </div>
               </div>
-            )}
+            </section>
 
-            {/* Mobile View All Button */}
-            <div className="mt-6 text-center sm:hidden">
-              <Link
-                href="/rideshare/itwhip"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors"
-              >
-                View All ItWhip Vehicles <IoArrowForwardOutline className="w-5 h-5" />
-              </Link>
+            {/* Section Separator */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="border-t border-gray-200 dark:border-gray-700" />
             </div>
-          </div>
-        </section>
-
-        {/* Section Separator */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="border-t border-gray-200 dark:border-gray-700" />
-        </div>
+          </>
+        )}
 
         {/* Partner Fleets Section */}
         {partners.length > 0 && (

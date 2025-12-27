@@ -5,6 +5,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { hash } from 'argon2'
 import { validatePartnerSlug } from '@/app/lib/validation/reserved-slugs'
+import { sendEmail } from '@/app/lib/email/send-email'
+import {
+  getPartnerApplicationReceivedTemplate,
+  getFleetTeamNotificationTemplate
+} from '@/app/lib/email/templates/partner-application-received'
 
 export async function POST(request: NextRequest) {
   try {
@@ -224,16 +229,74 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    // Get the application ID for email
+    const application = await prisma.partnerApplication.findFirst({
+      where: { hostId: host.id },
+      orderBy: { createdAt: 'desc' }
+    })
+
     console.log(`[Partner Apply] New application submitted:`, {
       hostId: host.id,
+      applicationId: application?.id,
       companyName,
       email: contactEmail,
       fleetSize
     })
 
-    // TODO: Send email notification to:
-    // 1. Partner - Application received confirmation
-    // 2. Fleet team - New application to review
+    // Send email notifications
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://itwhip.com'
+
+    // 1. Send confirmation email to partner
+    try {
+      const partnerEmailTemplate = getPartnerApplicationReceivedTemplate({
+        companyName,
+        contactName,
+        contactEmail,
+        fleetSize,
+        applicationId: application?.id || host.id,
+        operatingStates: operatingStates || [],
+        submittedAt: new Date(),
+        estimatedReviewTime: '24-48 hours',
+        supportEmail: 'info@itwhip.com'
+      })
+
+      await sendEmail({
+        to: contactEmail,
+        subject: partnerEmailTemplate.subject,
+        html: partnerEmailTemplate.html,
+        text: partnerEmailTemplate.text
+      })
+
+      console.log(`[Partner Apply] Confirmation email sent to ${contactEmail}`)
+    } catch (emailError) {
+      console.error('[Partner Apply] Failed to send partner confirmation email:', emailError)
+    }
+
+    // 2. Send notification to fleet team
+    try {
+      const fleetEmailTemplate = getFleetTeamNotificationTemplate({
+        companyName,
+        contactName,
+        contactEmail,
+        contactPhone,
+        fleetSize,
+        operatingStates: operatingStates || [],
+        applicationId: application?.id || host.id,
+        reviewUrl: `${baseUrl}/fleet/partners/applications?key=phoenix-fleet-2847`
+      })
+
+      // Send to fleet admin email
+      await sendEmail({
+        to: 'info@itwhip.com',
+        subject: fleetEmailTemplate.subject,
+        html: fleetEmailTemplate.html,
+        text: fleetEmailTemplate.text
+      })
+
+      console.log(`[Partner Apply] Fleet team notification sent to info@itwhip.com`)
+    } catch (emailError) {
+      console.error('[Partner Apply] Failed to send fleet team notification:', emailError)
+    }
 
     return NextResponse.json({
       success: true,

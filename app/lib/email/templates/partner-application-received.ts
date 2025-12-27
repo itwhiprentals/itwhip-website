@@ -1,6 +1,7 @@
 // app/lib/email/templates/partner-application-received.ts
 
 import { EmailTemplate } from '../types'
+import { emailFooterHtml, emailFooterText } from './email-footer'
 
 export interface PartnerApplicationReceivedData {
   companyName: string
@@ -299,7 +300,7 @@ export function getPartnerApplicationReceivedTemplate(data: PartnerApplicationRe
               </p>
             </div>
 
-            <p style="font-size: 14px; color: #6b7280; text-align: center; margin-top: 32px;">
+            <p style="font-size: 14px; color: #6b7280; text-align: center; margin: 24px 0 0 0;">
               Questions about your application?<br>
               <a href="mailto:${data.supportEmail || 'partners@itwhip.com'}" style="color: #f97316;">
                 ${data.supportEmail || 'partners@itwhip.com'}
@@ -307,15 +308,13 @@ export function getPartnerApplicationReceivedTemplate(data: PartnerApplicationRe
             </p>
           </div>
 
-          <div class="footer">
-            <strong>ITWHIP FLEET PARTNER PROGRAM</strong><br>
-            Application Reference: #${data.applicationId.slice(-8).toUpperCase()}<br>
-            <a href="https://itwhip.com/partners/apply">Partner Program</a> |
-            <a href="https://itwhip.com/contact">Contact Us</a><br>
-            <span style="font-size: 11px; margin-top: 8px; display: block;">
-              © 2025 ItWhip Technologies. All rights reserved.
-            </span>
-          </div>
+          <!-- Email Footer -->
+            ${emailFooterHtml({
+              recipientEmail: data.contactEmail,
+              includeAppButtons: true,
+              includeSocialLinks: true,
+              footerType: 'full'
+            })}
         </div>
       </body>
     </html>
@@ -355,9 +354,14 @@ TIP: While waiting, prepare your vehicle information (VINs, registration, photos
 Questions about your application?
 Contact: ${data.supportEmail || 'partners@itwhip.com'}
 
-ITWHIP FLEET PARTNER PROGRAM
 Application Reference: #${data.applicationId.slice(-8).toUpperCase()}
-© 2025 ItWhip Technologies. All rights reserved.
+
+${emailFooterText({
+  recipientEmail: data.contactEmail,
+  includeAppButtons: true,
+  includeSocialLinks: true,
+  footerType: 'full'
+})}
   `
 
   return { subject, html, text }

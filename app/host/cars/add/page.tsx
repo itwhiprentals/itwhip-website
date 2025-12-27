@@ -10,7 +10,9 @@ import {
   IoCarSportOutline,
   IoChevronDownOutline,
   IoCheckmarkCircle,
-  IoWarningOutline
+  IoWarningOutline,
+  IoCarOutline,
+  IoFlashOutline
 } from 'react-icons/io5'
 import {
   getAllMakes,
@@ -59,6 +61,7 @@ export default function AddCarPage() {
   const [checkingAccess, setCheckingAccess] = useState(true)
   const [canAccess, setCanAccess] = useState(false)
   const [accessDeniedReason, setAccessDeniedReason] = useState<'pending' | 'rejected' | null>(null)
+  const [isFleetPartner, setIsFleetPartner] = useState(false)
 
   // Form data - simplified to just basics + conditional specs
   const [formData, setFormData] = useState({
@@ -67,6 +70,7 @@ export default function AddCarPage() {
     year: '',
     color: '',
     trim: '',
+    vehicleType: 'RENTAL' as 'RENTAL' | 'RIDESHARE',
     // Conditional fields (only shown when needed)
     transmission: '' as 'automatic' | 'manual' | '',
     fuelType: '' as FuelType | ''
@@ -112,6 +116,11 @@ export default function AddCarPage() {
         // Only APPROVED hosts can add additional cars
         if (approvalStatus === 'APPROVED') {
           setCanAccess(true)
+          // Check if host is a fleet partner (can add rideshare vehicles)
+          const hostType = profile.hostType
+          if (hostType === 'FLEET_PARTNER' || hostType === 'PARTNER') {
+            setIsFleetPartner(true)
+          }
           setCheckingAccess(false)
           return
         }
@@ -249,6 +258,7 @@ export default function AddCarPage() {
           year: parseInt(formData.year),
           color: formData.color,
           trim: formData.trim || undefined,
+          vehicleType: formData.vehicleType,
           // Auto-filled specs from database
           seats: autoSpecs?.seats || 5,
           doors: autoSpecs?.doors || 4,
@@ -544,6 +554,56 @@ export default function AddCarPage() {
               </div>
               {errors.color && <p className="mt-1 text-sm text-red-500">{errors.color}</p>}
             </div>
+
+            {/* Vehicle Type (only shown for fleet partners) */}
+            {isFleetPartner && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                  Listing Type <span className="text-red-500">*</span>
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, vehicleType: 'RENTAL' })}
+                    className={`flex flex-col items-center gap-2 p-4 border-2 rounded-lg transition-all ${
+                      formData.vehicleType === 'RENTAL'
+                        ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                        : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
+                    }`}
+                  >
+                    <IoCarOutline className={`w-6 h-6 ${formData.vehicleType === 'RENTAL' ? 'text-purple-600' : 'text-gray-400'}`} />
+                    <span className={`text-sm font-medium ${formData.vehicleType === 'RENTAL' ? 'text-purple-700 dark:text-purple-300' : 'text-gray-700 dark:text-gray-300'}`}>
+                      Rental
+                    </span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                      1+ day min
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, vehicleType: 'RIDESHARE' })}
+                    className={`flex flex-col items-center gap-2 p-4 border-2 rounded-lg transition-all ${
+                      formData.vehicleType === 'RIDESHARE'
+                        ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20'
+                        : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
+                    }`}
+                  >
+                    <IoFlashOutline className={`w-6 h-6 ${formData.vehicleType === 'RIDESHARE' ? 'text-orange-600' : 'text-gray-400'}`} />
+                    <span className={`text-sm font-medium ${formData.vehicleType === 'RIDESHARE' ? 'text-orange-700 dark:text-orange-300' : 'text-gray-700 dark:text-gray-300'}`}>
+                      Rideshare
+                    </span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                      3+ day min
+                    </span>
+                  </button>
+                </div>
+                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  {formData.vehicleType === 'RIDESHARE'
+                    ? 'Rideshare vehicles appear on the rideshare page with 3-day minimum bookings.'
+                    : 'Rental vehicles appear on the main rentals page with 1-day minimum bookings.'}
+                </p>
+              </div>
+            )}
 
             {/* Conditional: Transmission (only shown when model has 'both' options) */}
             {needsTransmission && (

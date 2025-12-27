@@ -18,8 +18,10 @@ export async function GET(request: NextRequest) {
     const filter = request.nextUrl.searchParams.get('filter') || 'all'
     const search = request.nextUrl.searchParams.get('search') || ''
 
-    // Build where conditions
-    let whereConditions: any = {}
+    // Build where conditions - exclude partners from hosts list
+    let whereConditions: any = {
+      hostType: { notIn: ['FLEET_PARTNER', 'PARTNER'] }
+    }
 
     // Apply filter
     switch(filter) {
@@ -72,7 +74,8 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Get stats
+    // Get stats (excluding partners)
+    const excludePartners = { hostType: { notIn: ['FLEET_PARTNER', 'PARTNER'] } }
     const [
       totalHosts,
       pendingHosts,
@@ -81,10 +84,10 @@ export async function GET(request: NextRequest) {
       realHosts,
       managedHosts
     ] = await Promise.all([
-      prisma.rentalHost.count(),
-      prisma.rentalHost.count({ where: { approvalStatus: 'PENDING' } }),
-      prisma.rentalHost.count({ where: { approvalStatus: 'APPROVED' } }),
-      prisma.rentalHost.count({ where: { approvalStatus: 'SUSPENDED' } }),
+      prisma.rentalHost.count({ where: excludePartners }),
+      prisma.rentalHost.count({ where: { approvalStatus: 'PENDING', ...excludePartners } }),
+      prisma.rentalHost.count({ where: { approvalStatus: 'APPROVED', ...excludePartners } }),
+      prisma.rentalHost.count({ where: { approvalStatus: 'SUSPENDED', ...excludePartners } }),
       prisma.rentalHost.count({ where: { hostType: 'REAL' } }),
       prisma.rentalHost.count({ where: { hostType: 'MANAGED' } })
     ])

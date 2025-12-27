@@ -4,7 +4,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { sendEmail } from '@/app/lib/email/send-email'
-import { getHostApprovalTemplate } from '@/app/lib/email/templates/host-approval'
+import { getPartnerWelcomeTemplate } from '@/app/lib/email/templates/partner-welcome'
+import crypto from 'crypto'
 
 export async function POST(
   request: NextRequest,
@@ -85,40 +86,58 @@ export async function POST(
       }
     })
 
-    // Send approval email to partner
+    // Generate password reset token for the partner
+    const resetToken = crypto.randomBytes(32).toString('hex')
+    const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex')
+    const resetTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+
+    // Update User with hashed reset token (matches pattern in host reset-password API)
+    if (application.host?.user) {
+      await prisma.user.update({
+        where: { id: application.host.user.id },
+        data: {
+          resetToken: hashedToken,
+          resetTokenExpiry,
+          resetTokenUsed: false
+        }
+      })
+    }
+
+    // Determine tier based on commission rate
+    let tier: 'Standard' | 'Gold' | 'Platinum' | 'Diamond' = 'Standard'
+    if (rate <= 0.10) tier = 'Diamond'
+    else if (rate <= 0.15) tier = 'Platinum'
+    else if (rate <= 0.20) tier = 'Gold'
+
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://itwhip.com'
+    const resetPasswordUrl = `${baseUrl}/partner/reset-password?token=${resetToken}`
+
+    // Send welcome email to partner with password reset link
     try {
-      const emailTemplate = getHostApprovalTemplate({
-        hostName: application.contactName,
-        dashboardUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://itwhip.com'}/partner/dashboard`,
+      const emailTemplate = getPartnerWelcomeTemplate({
+        companyName: application.companyName,
+        contactName: application.contactName,
+        contactEmail: application.contactEmail,
+        resetPasswordUrl,
+        resetTokenExpiresIn: '24 hours',
         commissionRate: Math.round(rate * 100),
-        permissions: {
-          canListCars: true,
-          canSetPricing: true,
-          canMessageGuests: true,
-          canWithdrawFunds: false, // After first completed trip
-          instantBookEnabled: false // After 5 successful trips
-        },
-        nextSteps: [
-          'Complete your partner profile and upload your company logo',
-          'Connect your bank account for payouts via Stripe',
-          'Add your first vehicles to start accepting bookings',
-          'Set up your custom landing page at /rideshare/' + (application.host.partnerSlug || 'your-company'),
-          'Review our host guidelines and best practices'
-        ],
-        hostId: application.hostId,
-        supportEmail: 'partners@itwhip.com'
+        tier,
+        dashboardUrl: `${baseUrl}/partner/dashboard`,
+        fleetSize: String(application.fleetSize),
+        supportEmail: 'info@itwhip.com'
       })
 
-      await sendEmail({
-        to: application.contactEmail,
-        subject: emailTemplate.subject,
-        html: emailTemplate.html,
-        text: emailTemplate.text
-      })
+      await sendEmail(
+        application.contactEmail,
+        emailTemplate.subject,
+        emailTemplate.html,
+        emailTemplate.text,
+        { requestId: `partner-approval-${id}` }
+      )
 
-      console.log(`[Partner Approval] Approval email sent to ${application.contactEmail}`)
+      console.log(`[Partner Approval] Welcome email with password reset sent to ${application.contactEmail}`)
     } catch (emailError) {
-      console.error('[Partner Approval] Failed to send approval email:', emailError)
+      console.error('[Partner Approval] Failed to send welcome email:', emailError)
       // Don't fail the approval if email fails
     }
 

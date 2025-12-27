@@ -394,9 +394,12 @@ export async function POST(request: NextRequest) {
         isActive: body.isActive !== false,
         instantBook: body.instantBook !== false,
         advanceNotice: body.advanceNotice || 2,
-        minTripDuration: body.minTripDuration || 1,
+        minTripDuration: body.minTripDuration || (body.vehicleType === 'RIDESHARE' ? 3 : 1),
         maxTripDuration: body.maxTripDuration || 30,
         bufferTime: body.bufferTime || 2,
+
+        // Vehicle type (RENTAL or RIDESHARE)
+        vehicleType: body.vehicleType || 'RENTAL',
         
         // Mileage settings
         mileageDaily: body.mileageDaily || 200,

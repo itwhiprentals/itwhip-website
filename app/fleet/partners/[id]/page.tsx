@@ -4,6 +4,7 @@
 'use client'
 
 import { useState, useEffect, use } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import {
   IoArrowBackOutline,
@@ -87,10 +88,14 @@ interface Partner {
     type: string
     status: string
     url: string
+    uploadedAt: string
     expiresAt?: string
     isExpired: boolean
+    reviewedAt?: string
+    reviewedBy?: string
+    rejectNote?: string
   }[]
-  commissionHistory: {
+  partnerCommissionHistory: {
     id: string
     oldRate: number
     newRate: number
@@ -99,12 +104,15 @@ interface Partner {
     createdAt: string
   }[]
   _count: {
-    vehicles: number
+    cars: number
   }
 }
 
 export default function PartnerDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params)
+  const searchParams = useSearchParams()
+  const apiKey = searchParams.get('key') || 'phoenix-fleet-2847'
+
   const [partner, setPartner] = useState<Partner | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
@@ -121,7 +129,7 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ id: st
   const fetchPartner = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/fleet/partners/${resolvedParams.id}`)
+      const response = await fetch(`/api/fleet/partners/${resolvedParams.id}?key=${apiKey}`)
       const data = await response.json()
 
       if (data.success) {
@@ -140,7 +148,7 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ id: st
 
     try {
       setProcessing(true)
-      const response = await fetch(`/api/fleet/partners/${partner.id}/suspend`, {
+      const response = await fetch(`/api/fleet/partners/${partner.id}/suspend?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reason: suspendReason })
@@ -167,7 +175,7 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ id: st
 
     try {
       setProcessing(true)
-      const response = await fetch(`/api/fleet/partners/${partner.id}/reactivate`, {
+      const response = await fetch(`/api/fleet/partners/${partner.id}/reactivate?key=${apiKey}`, {
         method: 'POST'
       })
 
@@ -190,7 +198,7 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ id: st
 
     try {
       setProcessing(true)
-      const response = await fetch(`/api/fleet/partners/${partner.id}/commission`, {
+      const response = await fetch(`/api/fleet/partners/${partner.id}/commission?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -260,7 +268,7 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ id: st
           <div className="text-center py-12">
             <IoBusinessOutline className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Partner not found</h2>
-            <Link href="/fleet/partners" className="text-orange-600 hover:text-orange-700">
+            <Link href={`/fleet/partners?key=${apiKey}`} className="text-orange-600 hover:text-orange-700">
               Back to partners
             </Link>
           </div>
@@ -276,60 +284,71 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ id: st
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
-          <div className="flex items-center gap-3 mb-4">
-            <Link
-              href="/fleet/partners"
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-            >
-              <IoArrowBackOutline className="text-xl" />
-            </Link>
-            <div className="flex-1">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
-                  {partner.partnerLogo ? (
-                    <img src={partner.partnerLogo} alt="" className="w-10 h-10 rounded-lg object-cover" />
-                  ) : (
-                    <span className="text-lg font-bold text-orange-600 dark:text-orange-400">
-                      {partner.partnerCompanyName?.charAt(0) || 'P'}
-                    </span>
-                  )}
-                </div>
-                <div>
-                  <h1 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                    {partner.partnerCompanyName || partner.name}
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                      partner.active
-                        ? 'text-green-700 bg-green-100 dark:text-green-400 dark:bg-green-900/30'
-                        : 'text-red-700 bg-red-100 dark:text-red-400 dark:bg-red-900/30'
-                    }`}>
-                      {partner.active ? 'Active' : 'Suspended'}
-                    </span>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${tier.color}`}>
-                      {tier.label}
-                    </span>
-                  </h1>
-                  <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
-                    <span>{partner.email}</span>
-                    {partner.partnerSlug && (
-                      <a
-                        href={`/rideshare/${partner.partnerSlug}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-orange-600 hover:text-orange-700"
-                      >
-                        <IoLinkOutline className="w-4 h-4" />
-                        /rideshare/{partner.partnerSlug}
-                      </a>
+          {/* Mobile: Stack vertically, Desktop: Horizontal */}
+          <div className="flex flex-col gap-4 mb-4">
+            {/* Top row: Back button + Partner info */}
+            <div className="flex items-start gap-3">
+              <Link
+                href={`/fleet/partners?key=${apiKey}`}
+                className="p-3 sm:p-2 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                <IoArrowBackOutline className="text-xl" />
+              </Link>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                    {partner.partnerLogo ? (
+                      <img src={partner.partnerLogo} alt="" className="w-10 h-10 rounded-lg object-cover" />
+                    ) : (
+                      <span className="text-lg font-bold text-orange-600 dark:text-orange-400">
+                        {partner.partnerCompanyName?.charAt(0) || 'P'}
+                      </span>
                     )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    {/* Company name */}
+                    <h1 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white truncate">
+                      {partner.partnerCompanyName || partner.name}
+                    </h1>
+                    {/* Badges - wrap on mobile */}
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                        partner.active
+                          ? 'text-green-700 bg-green-100 dark:text-green-400 dark:bg-green-900/30'
+                          : 'text-red-700 bg-red-100 dark:text-red-400 dark:bg-red-900/30'
+                      }`}>
+                        {partner.active ? 'Active' : 'Suspended'}
+                      </span>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${tier.color}`}>
+                        {tier.label}
+                      </span>
+                    </div>
+                    {/* Email and link - stack on mobile */}
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      <span className="truncate">{partner.email}</span>
+                      {partner.partnerSlug && (
+                        <a
+                          href={`/rideshare/${partner.partnerSlug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-orange-600 hover:text-orange-700"
+                        >
+                          <IoLinkOutline className="w-4 h-4 flex-shrink-0" />
+                          <span className="truncate">/rideshare/{partner.partnerSlug}</span>
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-            <div className="flex gap-2">
+
+            {/* Action buttons - stack on mobile, horizontal on desktop */}
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-2 sm:ml-auto">
               {partner.active ? (
                 <button
                   onClick={() => setShowSuspendModal(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
+                  className="flex items-center justify-center gap-2 px-4 py-3 sm:py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors min-h-[44px] sm:min-h-0"
                 >
                   <IoPauseCircleOutline className="w-4 h-4" />
                   Suspend
@@ -338,29 +357,42 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ id: st
                 <button
                   onClick={handleReactivate}
                   disabled={processing}
-                  className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 px-4 py-3 sm:py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 min-h-[44px] sm:min-h-0"
                 >
                   <IoPlayCircleOutline className="w-4 h-4" />
                   Reactivate
                 </button>
               )}
+              {/* Preview public landing page */}
+              {partner.partnerSlug && (
+                <a
+                  href={`/rideshare/${partner.partnerSlug}?preview=true&key=${apiKey}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 px-4 py-3 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors min-h-[44px] sm:min-h-0"
+                >
+                  <IoLinkOutline className="w-4 h-4" />
+                  Preview Site
+                </a>
+              )}
+              {/* View partner dashboard as partner */}
               <Link
-                href={`/fleet/partners/${partner.id}/impersonate`}
-                className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors"
+                href={`/fleet/partners/${partner.id}/impersonate?key=${apiKey}`}
+                className="flex items-center justify-center gap-2 px-4 py-3 sm:py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors min-h-[44px] sm:min-h-0"
               >
                 <IoEyeOutline className="w-4 h-4" />
-                View as Partner
+                View Dashboard
               </Link>
             </div>
           </div>
 
-          {/* Tabs */}
-          <div className="flex gap-1 mt-4 border-b border-gray-200 dark:border-gray-700 -mb-px">
+          {/* Tabs - scrollable on mobile */}
+          <div className="flex gap-1 mt-4 border-b border-gray-200 dark:border-gray-700 -mb-px overflow-x-auto scrollbar-hide">
             {['overview', 'documents', 'commission', 'activity'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap min-h-[44px] sm:min-h-0 ${
                   activeTab === tab
                     ? 'border-orange-500 text-orange-600 dark:text-orange-400'
                     : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
@@ -379,7 +411,7 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ id: st
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Stats Cards */}
             <div className="lg:col-span-2">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
                 <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                   <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 mb-1">
                     <IoCarOutline className="w-4 h-4" />
@@ -593,7 +625,7 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ id: st
                   </div>
                 )}
                 <Link
-                  href={`/fleet/partners/${partner.id}/documents`}
+                  href={`/fleet/partners/${partner.id}/documents?key=${apiKey}`}
                   className="block mt-4 text-center text-sm text-orange-600 hover:text-orange-700 font-medium"
                 >
                   Manage Documents
@@ -674,11 +706,11 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ id: st
         {activeTab === 'commission' && (
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Commission History</h3>
-            {partner.commissionHistory.length === 0 ? (
+            {partner.partnerCommissionHistory.length === 0 ? (
               <p className="text-gray-500 dark:text-gray-400">No commission changes recorded.</p>
             ) : (
               <div className="space-y-4">
-                {partner.commissionHistory.map((history) => (
+                {partner.partnerCommissionHistory.map((history) => (
                   <div
                     key={history.id}
                     className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg"

@@ -2049,6 +2049,7 @@ model RentalCar {
 
   // Specifications
   carType        String
+  vehicleType    VehicleType @default(RENTAL) // RENTAL or RIDESHARE
   seats          Int
   doors          Int
   transmission   String
@@ -4712,6 +4713,12 @@ enum VehicleCategory {
   LUXURY
   EXOTIC
   SUPERCAR
+}
+
+// Vehicle listing type - determines where vehicle appears
+enum VehicleType {
+  RENTAL    // Shows on /rentals (1+ day booking)
+  RIDESHARE // Shows on /rideshare (3+ day minimum)
 }
 
 enum RiskCategory {

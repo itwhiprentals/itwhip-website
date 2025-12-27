@@ -69,6 +69,7 @@ export async function POST(request: NextRequest) {
     // Verify password
     const passwordHash = host.user?.passwordHash
     if (!passwordHash) {
+      console.log('[Partner Login] No password hash found for:', email)
       return NextResponse.json(
         { error: 'Password not set. Please reset your password.' },
         { status: 401 }
@@ -77,6 +78,7 @@ export async function POST(request: NextRequest) {
 
     const isValid = await verify(passwordHash, password)
     if (!isValid) {
+      console.log('[Partner Login] Invalid password for:', email)
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
