@@ -84,8 +84,8 @@ export default function CompactCarCard({ car, accentColor = 'amber', className =
   const [hostAvatarError, setHostAvatarError] = useState(false)
 
   const rawImageUrl = car.photos?.[0]?.url ||
-    'https://images.unsplash.com/photo-1583267746897-2cf415887172?w=400&h=300&fit=crop&fm=webp&q=80'
-  const imageUrl = optimizeImageUrl(rawImageUrl, 400)
+    'https://images.unsplash.com/photo-1583267746897-2cf415887172?w=350&h=263&fit=crop&fm=webp&q=75'
+  const imageUrl = optimizeImageUrl(rawImageUrl, 350)
 
   const carUrl = generateCarUrl({
     id: car.id,
