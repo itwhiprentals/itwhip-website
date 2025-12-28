@@ -13,19 +13,9 @@ export default async function HomePage() {
   ])
 
   return (
-    <>
-      {/* Preload hero image for LCP optimization - homepage only */}
-      <link
-        rel="preload"
-        href="/hero-bg.webp"
-        as="image"
-        type="image/webp"
-        fetchPriority="high"
-      />
-      <HomeClient
-        initialEsgCars={esgCars}
-        initialCityCars={cityCars}
-      />
-    </>
+    <HomeClient
+      initialEsgCars={esgCars}
+      initialCityCars={cityCars}
+    />
   )
 }

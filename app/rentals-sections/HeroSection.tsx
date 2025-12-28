@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import RentalSearchWidget from '@/app/(guest)/components/hero/RentalSearchWidget'
 
 interface HeroSectionProps {
@@ -11,12 +12,14 @@ export default function HeroSection({ userCity = 'Arizona' }: HeroSectionProps) 
     <section className="relative w-full min-h-[45vh] md:min-h-[40vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-black">
       {/* Background Image with Overlay */}
       <div className="absolute inset-0 z-0">
-        <img
+        <Image
           src="/hero-bg.webp"
           alt="Peer-to-peer car rental Phoenix Arizona"
-          className="w-full h-full object-cover"
-          fetchPriority="high"
-          loading="eager"
+          fill
+          priority
+          quality={50}
+          sizes="100vw"
+          className="object-cover"
         />
         <div className="absolute inset-0 bg-black/40" />
       </div>
