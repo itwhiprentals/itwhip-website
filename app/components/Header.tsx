@@ -177,16 +177,17 @@ export default function Header({
         }
       }
 
-      // Check for host auth if on host pages
+      // ========== HOST AUTH CHECK ==========
+      // On host pages, check host auth directly
       if (window.location.pathname.startsWith('/host/')) {
         const hostResponse = await fetch('/api/host/login', {
           method: 'GET',
           credentials: 'include'
         })
-        
+
         if (hostResponse.ok) {
           const data = await hostResponse.json()
-          
+
           if (data.authenticated && data.host) {
             setIsLoggedIn(true)
             setUser({
@@ -201,7 +202,75 @@ export default function Header({
           }
         }
       }
-      
+
+      // ========== DUAL-ROLE CHECK (for cross-page auth) ==========
+      // On NON-host pages, check if a host user with dual account is logged in
+      // This handles HOST navigating to homepage/car pages - they should appear as GUEST
+      if (!window.location.pathname.startsWith('/host/')) {
+        try {
+          const dualRoleResponse = await fetch('/api/auth/check-dual-role', {
+            credentials: 'include'
+          })
+
+          if (dualRoleResponse.ok) {
+            const dualRole = await dualRoleResponse.json()
+            console.log('[Header] Dual-role check:', dualRole)
+
+            // If HOST with guest profile → show as GUEST on non-host pages
+            if (dualRole.hasHostProfile && dualRole.hasGuestProfile) {
+              console.log('[Header] HOST with dual account on non-host page - showing as GUEST')
+
+              // Get host data to use as base user info
+              const hostResponse = await fetch('/api/host/login', {
+                method: 'GET',
+                credentials: 'include'
+              })
+
+              if (hostResponse.ok) {
+                const hostData = await hostResponse.json()
+                if (hostData.authenticated && hostData.host) {
+                  // Try to get guest profile photo
+                  let profilePhoto = hostData.host.profilePhoto
+                  try {
+                    const profileResponse = await fetch('/api/guest/profile', {
+                      credentials: 'include'
+                    })
+                    if (profileResponse.ok) {
+                      const profileData = await profileResponse.json()
+                      if (profileData.success && profileData.profile?.profilePhoto) {
+                        profilePhoto = profileData.profile.profilePhoto
+                      }
+                    }
+                  } catch (e) {
+                    console.log('[Header] Could not fetch guest profile photo')
+                  }
+
+                  setIsLoggedIn(true)
+                  setUser({
+                    id: hostData.host.id,
+                    name: hostData.host.name,
+                    email: hostData.host.email,
+                    role: 'GUEST', // Show as GUEST on non-host pages
+                    profilePhoto
+                  })
+                  setIsCheckingAuth(false)
+                  return
+                }
+              }
+            }
+
+            // If HOST-only (no guest profile) → show "Sign In" on non-host pages
+            if (dualRole.hasHostProfile && !dualRole.hasGuestProfile) {
+              console.log('[Header] HOST-only user on non-host page - showing Sign In')
+              setIsCheckingAuth(false)
+              return // Will show "Sign In" button
+            }
+          }
+        } catch (e) {
+          console.error('[Header] Dual-role check failed:', e)
+        }
+      }
+
       // Check guest auth - only if session cookie exists
       const hasGuestSession = document.cookie.includes('accessToken') ||
                               document.cookie.includes('guest_session')

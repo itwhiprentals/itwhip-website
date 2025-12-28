@@ -61,6 +61,39 @@ export async function POST(request: NextRequest) {
     console.log('🔍 Host userId:', host?.userId)
 
     if (!host || !host.user) {  // lowercase 'user'
+      // Check if user exists but is a GUEST (no host profile)
+      const userByEmail = await prisma.user.findUnique({
+        where: { email: email.toLowerCase() },
+        select: { id: true, email: true }
+      })
+
+      if (userByEmail) {
+        // Check if they have a guest profile
+        const guestProfile = await prisma.reviewerProfile.findFirst({
+          where: { OR: [{ userId: userByEmail.id }, { email: email.toLowerCase() }] },
+          select: { id: true }
+        })
+
+        if (guestProfile) {
+          console.log('❌ GUARD: GUEST user tried host login - blocking')
+          return NextResponse.json(
+            {
+              error: 'Guest account detected',
+              guard: {
+                type: 'guest-on-host',
+                title: 'Guest Account Detected',
+                message: 'You have a Guest account. Please use the Guest login page to access your account, or apply to become a Host.',
+                actions: {
+                  primary: { label: 'Go to Guest Login', url: '/auth/login' },
+                  secondary: { label: 'Apply to Become a Host', url: '/host/signup' }
+                }
+              }
+            },
+            { status: 403 }
+          )
+        }
+      }
+
       console.log('❌ 401: Host not found or no associated user')
       return NextResponse.json(
         { error: 'Invalid credentials' },

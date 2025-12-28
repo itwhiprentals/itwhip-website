@@ -63,12 +63,66 @@ export async function POST(request: NextRequest) {
     const verificationRequired = isP2P
     const initialStatus = isP2P ? 'PENDING' : 'CONFIRMED'
     
-    // Create booking
+    // Check if ReviewerProfile exists for this guest, or create one
+    let reviewerProfile = await prisma.reviewerProfile.findFirst({
+      where: { email: guestEmail.toLowerCase() }
+    })
+
+    const isFirstBooking = !reviewerProfile
+
+    if (!reviewerProfile) {
+      // Create new ReviewerProfile for this guest
+      reviewerProfile = await prisma.reviewerProfile.create({
+        data: {
+          email: guestEmail.toLowerCase(),
+          name: guestName || '',
+          phoneNumber: guestPhone || null,
+          memberSince: new Date(),
+          city: '',
+          state: 'AZ',
+          emailVerified: false,
+          documentsVerified: false,
+          insuranceVerified: false,
+          fullyVerified: false,
+          canInstantBook: false,
+          totalTrips: 0,
+          averageRating: 0
+        }
+      })
+      console.log(`[Guest Booking] Created ReviewerProfile for new guest: ${reviewerProfile.id}`)
+
+      // Create AdminNotification for Fleet visibility
+      await prisma.adminNotification.create({
+        data: {
+          type: 'NEW_GUEST_BOOKING',
+          title: 'New Guest Booking',
+          message: `${guestName || guestEmail} made their first booking`,
+          priority: 'HIGH',
+          status: 'UNREAD',
+          actionRequired: true,
+          actionUrl: `/fleet/guests/${reviewerProfile.id}`,
+          relatedId: reviewerProfile.id,
+          relatedType: 'REVIEWER_PROFILE',
+          metadata: {
+            guestEmail,
+            guestName: guestName || null,
+            guestPhone: guestPhone || null,
+            carId,
+            carName: `${car.year} ${car.make} ${car.model}`,
+            isFirstBooking: true
+          }
+        }
+      })
+      console.log(`[Guest Booking] AdminNotification created for new guest`)
+    }
+
+    // Create booking with link to ReviewerProfile
     const booking = await prisma.rentalBooking.create({
       data: {
         bookingCode,
         carId,
         hostId: car.hostId,
+        reviewerProfileId: reviewerProfile.id,  // Link to ReviewerProfile
         guestEmail,
         guestPhone,
         guestName,

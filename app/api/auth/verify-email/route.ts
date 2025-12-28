@@ -81,23 +81,58 @@ export async function POST(req: NextRequest) {
     })
 
     // Also sync emailVerified to ReviewerProfile
+    let reviewerProfile = null
     try {
-      await prisma.reviewerProfile.updateMany({
+      // First find the profile to get its ID for the notification
+      reviewerProfile = await prisma.reviewerProfile.findFirst({
         where: {
           OR: [
             { userId: user.id },
             { email: user.email }
           ]
         },
-        data: {
-          emailVerified: true
-        }
+        select: { id: true }
       })
+
+      if (reviewerProfile) {
+        await prisma.reviewerProfile.update({
+          where: { id: reviewerProfile.id },
+          data: { emailVerified: true }
+        })
+      }
     } catch (syncError) {
       console.error('[Verify Email] Failed to sync emailVerified to ReviewerProfile:', syncError)
     }
 
     console.log(`[Verify Email] Email verified for user: ${user.id}`)
+
+    // Create AdminNotification for Fleet/Admin visibility
+    if (reviewerProfile) {
+      try {
+        await prisma.adminNotification.create({
+          data: {
+            type: 'GUEST_EMAIL_VERIFIED',
+            title: 'Guest Email Verified',
+            message: `${user.name || user.email} verified their email`,
+            priority: 'LOW',
+            status: 'UNREAD',
+            actionRequired: false,
+            actionUrl: `/fleet/guests/${reviewerProfile.id}`,
+            relatedId: reviewerProfile.id,
+            relatedType: 'REVIEWER_PROFILE',
+            metadata: {
+              guestEmail: user.email,
+              guestName: user.name || null,
+              verifiedAt: new Date().toISOString()
+            }
+          }
+        })
+        console.log(`[Verify Email] AdminNotification created for verified guest: ${reviewerProfile.id}`)
+      } catch (notifError) {
+        console.error('[Verify Email] Failed to create AdminNotification:', notifError)
+        // Don't block verification if notification fails
+      }
+    }
 
     // Send welcome email
     try {

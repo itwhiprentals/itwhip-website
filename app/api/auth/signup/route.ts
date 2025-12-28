@@ -175,7 +175,7 @@ export async function POST(request: NextRequest) {
     // ⚠️ CRITICAL: No auto-creation - must explicitly specify roleHint='guest'
     if (roleHint === 'guest') {
       try {
-        await prisma.reviewerProfile.create({
+        const reviewerProfile = await prisma.reviewerProfile.create({
           data: {
             userId: newUser.id,
             email: newUser.email,
@@ -201,6 +201,34 @@ export async function POST(request: NextRequest) {
           }
         })
         console.log(`[Signup] ReviewerProfile created for GUEST user: ${newUser.id}`)
+
+        // Create AdminNotification for Fleet/Admin visibility
+        try {
+          await prisma.adminNotification.create({
+            data: {
+              type: 'NEW_GUEST_SIGNUP',
+              title: 'New Guest Registered',
+              message: `${name || email} just signed up as a guest`,
+              priority: 'LOW',
+              status: 'UNREAD',
+              actionRequired: false,
+              actionUrl: `/fleet/guests/${reviewerProfile.id}`,
+              relatedId: reviewerProfile.id,
+              relatedType: 'REVIEWER_PROFILE',
+              metadata: {
+                guestEmail: email,
+                guestName: name || null,
+                guestPhone: phone || null,
+                signupSource: 'email',
+                hasPhone: !!phone
+              }
+            }
+          })
+          console.log(`[Signup] AdminNotification created for new guest: ${reviewerProfile.id}`)
+        } catch (notifError) {
+          console.error('[Signup] Failed to create AdminNotification:', notifError)
+          // Don't block signup if notification fails
+        }
       } catch (profileError) {
         console.error('[Signup] Failed to create ReviewerProfile:', profileError)
         // Don't block signup if profile creation fails

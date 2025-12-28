@@ -135,10 +135,20 @@ export function useDashboard(): UseDashboardReturn {
       console.log(`[useDashboard] API call took ${(endTime - startTime).toFixed(0)}ms`)
 
       if (!response.ok) {
+        const errorData = await response.json()
+
+        // Check for guard response (user doesn't have access to this dashboard)
+        if (errorData.guard) {
+          console.log('[useDashboard] Guard triggered:', errorData.guard.type)
+          // Redirect to appropriate page based on guard type
+          window.location.href = errorData.guard.actions.primary.url
+          return
+        }
+
         if (response.status === 401) {
           throw new Error('Session expired. Please login again.')
         }
-        throw new Error(`Failed to load dashboard: ${response.status}`)
+        throw new Error(errorData.error || `Failed to load dashboard: ${response.status}`)
       }
 
       const result = await response.json()

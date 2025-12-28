@@ -102,20 +102,16 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { phone, roleHint, carData } = body
 
-    if (!phone) {
-      return NextResponse.json(
-        { error: 'Phone number is required' },
-        { status: 400 }
-      )
-    }
-
-    // Validate phone number (10 digits)
-    const digitsOnly = phone.replace(/\D/g, '')
-    if (digitsOnly.length !== 10) {
-      return NextResponse.json(
-        { error: 'Invalid phone number format' },
-        { status: 400 }
-      )
+    // Phone is optional - only validate format if provided
+    let digitsOnly = ''
+    if (phone && phone.trim() !== '') {
+      digitsOnly = phone.replace(/\D/g, '')
+      if (digitsOnly.length !== 10) {
+        return NextResponse.json(
+          { error: 'Invalid phone number format' },
+          { status: 400 }
+        )
+      }
     }
 
     // Validate car data for hosts
@@ -181,7 +177,7 @@ export async function POST(request: NextRequest) {
         const updatedUser = await prisma.user.update({
           where: { id: existingUser.id },
           data: {
-            phone: digitsOnly,
+            phone: digitsOnly || null,
             phoneVerified: false,
             image: pendingOAuth.image || existingUser.image,
             name: pendingOAuth.name || existingUser.name
@@ -233,7 +229,7 @@ export async function POST(request: NextRequest) {
             email: pendingOAuth.email,
             name: pendingOAuth.name,
             image: pendingOAuth.image,
-            phone: digitsOnly,
+            phone: digitsOnly || null,
             phoneVerified: false,
             emailVerified: true, // OAuth email is verified
             role: 'CLAIMED'
@@ -267,7 +263,7 @@ export async function POST(request: NextRequest) {
               userId: user.id,
               email: pendingOAuth.email,
               name: pendingOAuth.name || '',
-              phone: digitsOnly,
+              phone: digitsOnly || null,
               profilePhoto: pendingOAuth.image,
 
               // Location from car data
@@ -380,12 +376,12 @@ export async function POST(request: NextRequest) {
 
           // Create ReviewerProfile ONLY for explicit guest signup
           // ⚠️ CRITICAL: No auto-creation - must explicitly specify roleHint='guest'
-          await tx.reviewerProfile.create({
+          const reviewerProfile = await tx.reviewerProfile.create({
             data: {
               userId: user.id,
               email: pendingOAuth.email,
               name: pendingOAuth.name || '',
-              phoneNumber: digitsOnly,
+              phoneNumber: digitsOnly || null,
               profilePhotoUrl: pendingOAuth.image,
               memberSince: new Date(),
               city: '',
@@ -395,6 +391,29 @@ export async function POST(request: NextRequest) {
             }
           })
           console.log(`[Complete Profile] Created ReviewerProfile for GUEST`)
+
+          // Create AdminNotification for Fleet/Admin visibility (OAuth signup)
+          await tx.adminNotification.create({
+            data: {
+              type: 'NEW_GUEST_SIGNUP',
+              title: 'New Guest Registered (OAuth)',
+              message: `${pendingOAuth.name || pendingOAuth.email} signed up via ${pendingOAuth.provider}`,
+              priority: 'LOW',
+              status: 'UNREAD',
+              actionRequired: false,
+              actionUrl: `/fleet/guests/${reviewerProfile.id}`,
+              relatedId: reviewerProfile.id,
+              relatedType: 'REVIEWER_PROFILE',
+              metadata: {
+                guestEmail: pendingOAuth.email,
+                guestName: pendingOAuth.name || null,
+                guestPhone: digitsOnly || null,
+                signupSource: pendingOAuth.provider,
+                oauthVerified: true
+              }
+            }
+          })
+          console.log(`[Complete Profile] AdminNotification created for OAuth guest: ${reviewerProfile.id}`)
         } else {
           console.log(`[Complete Profile] ⚠️ No profile created - roleHint: ${roleHint || 'NOT PROVIDED'}`)
           console.log(`[Complete Profile] User must complete proper guest/host signup flow`)
@@ -463,13 +482,13 @@ export async function POST(request: NextRequest) {
     const userId = (session.user as any).id
     const email = session.user.email
 
-    console.log(`[Complete Profile] Updating phone for existing user: ${userId}, phone: ${digitsOnly}`)
+    console.log(`[Complete Profile] Updating phone for existing user: ${userId}, phone: ${digitsOnly || 'none'}`)
 
     // Update user's phone number
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: {
-        phone: digitsOnly,
+        phone: digitsOnly || null,
         phoneVerified: false
       }
     })
@@ -479,21 +498,108 @@ export async function POST(request: NextRequest) {
       phoneVerified: updatedUser.phoneVerified
     })
 
-    // Also update ReviewerProfile if exists (phone sync only - NO creation)
-    try {
-      const updatedProfile = await prisma.reviewerProfile.update({
-        where: { userId: userId },
-        data: {
-          phoneNumber: digitsOnly
+    // Check if ReviewerProfile exists
+    let existingProfile = await prisma.reviewerProfile.findFirst({
+      where: {
+        OR: [
+          { userId: userId },
+          { email: email }
+        ]
+      }
+    })
+
+    if (existingProfile) {
+      // Update existing profile
+      await prisma.reviewerProfile.update({
+        where: { id: existingProfile.id },
+        data: { phoneNumber: digitsOnly || null }
+      })
+      console.log(`[Complete Profile] ReviewerProfile.update result: ${existingProfile.id}`)
+    } else if (roleHint === 'guest') {
+      // Check if user is a HOST - they must use Account Linking, not auto-create
+      const existingHost = await prisma.rentalHost.findFirst({
+        where: {
+          OR: [
+            { userId: userId },
+            { email: email }
+          ]
         }
       })
-      console.log(`[Complete Profile] ReviewerProfile.update result:`, {
-        id: updatedProfile.id,
-        phoneNumber: updatedProfile.phoneNumber
+
+      if (existingHost) {
+        console.log(`[Complete Profile] ⚠️ BLOCKED: Existing HOST tried to create guest profile - must use Account Linking`)
+        return NextResponse.json({
+          success: false,
+          error: 'You already have a Host account. Please use Account Linking to add guest capabilities, or go to your Host Dashboard.',
+          requiresAccountLinking: true,
+          isHost: true,
+          hostDashboardUrl: '/host/dashboard'
+        }, { status: 409 })
+      }
+
+      // CREATE ReviewerProfile for existing user who wants guest access (non-hosts only)
+      console.log(`[Complete Profile] Creating ReviewerProfile for existing user with roleHint=guest`)
+
+      const newProfile = await prisma.reviewerProfile.create({
+        data: {
+          userId: userId,
+          email: email || '',
+          name: updatedUser.name || '',
+          phoneNumber: digitsOnly || null,
+          memberSince: new Date(),
+          city: '',
+          state: 'AZ',
+          emailVerified: true, // OAuth is verified
+          documentsVerified: false,
+          insuranceVerified: false,
+          fullyVerified: false,
+          canInstantBook: false,
+          totalTrips: 0,
+          averageRating: 0
+        }
       })
-    } catch (err) {
-      // ReviewerProfile might not exist, that's okay - NO auto-creation
-      console.log(`[Complete Profile] No ReviewerProfile to update (this is OK - must use account linking to create)`)
+      console.log(`[Complete Profile] Created ReviewerProfile: ${newProfile.id}`)
+
+      // Create AdminNotification for Fleet visibility
+      await prisma.adminNotification.create({
+        data: {
+          type: 'NEW_GUEST_SIGNUP',
+          title: 'Existing User Added Guest Profile',
+          message: `${updatedUser.name || email} created a guest profile`,
+          priority: 'LOW',
+          status: 'UNREAD',
+          actionRequired: false,
+          actionUrl: `/fleet/guests/${newProfile.id}`,
+          relatedId: newProfile.id,
+          relatedType: 'REVIEWER_PROFILE',
+          metadata: {
+            guestEmail: email,
+            guestName: updatedUser.name || null,
+            guestPhone: digitsOnly || null,
+            signupSource: 'oauth-existing-user',
+            wasExistingUser: true
+          }
+        }
+      })
+      console.log(`[Complete Profile] AdminNotification created for guest profile`)
+
+      // Send welcome email
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://itwhip.com'
+      try {
+        const { sendOAuthWelcomeEmail } = await import('@/app/lib/email/templates/oauth-welcome')
+        await sendOAuthWelcomeEmail(email || '', {
+          userName: updatedUser.name || 'Guest',
+          userEmail: email || '',
+          documentsUrl: `${appUrl}/profile?tab=documents`,
+          insuranceUrl: `${appUrl}/profile?tab=insurance`,
+          dashboardUrl: `${appUrl}/dashboard`
+        })
+        console.log(`[Complete Profile] Welcome email sent to: ${email}`)
+      } catch (emailError) {
+        console.error(`[Complete Profile] Failed to send welcome email:`, emailError)
+      }
+    } else {
+      console.log(`[Complete Profile] No ReviewerProfile and roleHint=${roleHint || 'none'} - not creating`)
     }
 
     // Also update RentalHost if exists (phone sync only - NO creation)
@@ -501,7 +607,7 @@ export async function POST(request: NextRequest) {
       const updatedHost = await prisma.rentalHost.updateMany({
         where: { userId: userId },
         data: {
-          phone: digitsOnly
+          phone: digitsOnly || null
         }
       })
       console.log(`[Complete Profile] RentalHost.updateMany result:`, {
@@ -512,7 +618,7 @@ export async function POST(request: NextRequest) {
       console.log(`[Complete Profile] No RentalHost to update (this is OK)`)
     }
 
-    console.log(`[Complete Profile] Phone saved successfully for existing user ${email}: ${digitsOnly}`)
+    console.log(`[Complete Profile] Profile saved successfully for existing user ${email}${digitsOnly ? `, phone: ${digitsOnly}` : ''}`)
 
     // For existing users, just return success (they already have JWT cookies)
     return NextResponse.json({
@@ -587,7 +693,7 @@ async function createSuccessResponse(user: any, phone: string, roleHint: string 
       phone: phone
     },
     isNewUser: true, // Flag for frontend to know this was a new user creation
-    requiresPhoneVerification: true, // New OAuth users always need phone verification
+    requiresPhoneVerification: false, // Phone verification removed - not part of login flow
     phone: phone // Phone number for redirect
   })
 

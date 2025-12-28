@@ -30,18 +30,20 @@ export default function VerificationProgress({
   const hasPhone = !!phone
   
   // Calculate verification percentage
-  // For email/phone: if provided, count as verified (most users provide these on signup)
+  // Email is required, phone is OPTIONAL (not part of login flow)
   const emailComplete = emailVerified || hasEmail
   const phoneComplete = phoneVerified || hasPhone
-  
-  const requiredChecks = [emailComplete, phoneComplete, documentsVerified]
+
+  // Only email and documents are required - phone is optional
+  const requiredChecks = [emailComplete, documentsVerified]
   const completedRequired = requiredChecks.filter(Boolean).length
   const totalRequired = requiredChecks.length
   const percentageRequired = Math.round((completedRequired / totalRequired) * 100)
-  
-  // Insurance is optional but adds to overall trust
-  const totalChecks = insuranceVerified ? 4 : 3
-  const completedTotal = completedRequired + (insuranceVerified ? 1 : 0)
+
+  // Phone and insurance are optional but add to overall trust
+  const optionalComplete = (phoneComplete ? 1 : 0) + (insuranceVerified ? 1 : 0)
+  const totalChecks = 4 // email, documents, phone (optional), insurance (optional)
+  const completedTotal = completedRequired + optionalComplete
   const percentageTotal = Math.round((completedTotal / totalChecks) * 100)
 
   return (
@@ -115,26 +117,26 @@ export default function VerificationProgress({
           </div>
         </button>
 
-        {/* Phone Verification */}
+        {/* Phone (Optional) */}
         <button
           onClick={() => onTabChange?.('profile')}
           className={`flex items-center gap-3 p-3 rounded-lg border text-left transition-all hover:shadow-md active:scale-[0.98] cursor-pointer ${
             phoneComplete
               ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 hover:border-green-300 dark:hover:border-green-700'
-              : 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800 hover:border-yellow-300 dark:hover:border-yellow-700'
+              : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 hover:border-blue-300 dark:hover:border-blue-700'
           }`}
         >
           {phoneComplete ? (
             <IoCheckmarkCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
           ) : (
-            <IoPhonePortraitOutline className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
+            <IoPhonePortraitOutline className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
           )}
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-900 dark:text-white">
-              Phone {phoneVerified ? 'Verified' : hasPhone ? 'Provided' : 'Required'}
+              Phone {phoneVerified ? 'Verified' : hasPhone ? 'Provided' : '(Optional)'}
             </p>
             <p className="text-xs text-gray-600 dark:text-gray-400">
-              {phoneVerified ? 'Fully verified' : hasPhone ? 'Using account phone' : 'Add phone to profile'}
+              {phoneVerified ? 'Fully verified' : hasPhone ? 'Using account phone' : 'Optional - for notifications'}
             </p>
           </div>
         </button>

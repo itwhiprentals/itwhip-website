@@ -235,6 +235,53 @@ export async function GET(request: NextRequest) {
       })
     ])
 
+    // ========== GUARD CHECK: User must have ReviewerProfile for guest dashboard ==========
+    if (!reviewerProfile) {
+      console.log('[DASHBOARD API] No ReviewerProfile found for user:', userEmail)
+
+      // Check if user has a host profile instead
+      const hostProfile = await prisma.rentalHost.findFirst({
+        where: {
+          OR: [
+            { userId },
+            { email: userEmail }
+          ]
+        },
+        select: { id: true, name: true }
+      })
+
+      if (hostProfile) {
+        // HOST trying to access GUEST dashboard → Show guard
+        console.log('[DASHBOARD API] User is HOST-only, returning guard response')
+        return NextResponse.json({
+          success: false,
+          guard: {
+            type: 'host-on-guest',
+            title: 'Host Account Detected',
+            message: 'You are logged in with your host account. Create a guest account to rent cars.',
+            actions: {
+              primary: { label: 'Go to Host Dashboard', url: '/host/dashboard' },
+              secondary: { label: 'Create Guest Account', url: '/auth/signup?roleHint=guest' }
+            }
+          }
+        }, { status: 403 })
+      } else {
+        // No profile at all → Needs to complete signup
+        console.log('[DASHBOARD API] User has no profile, returning guard response')
+        return NextResponse.json({
+          success: false,
+          guard: {
+            type: 'no-profile',
+            title: 'Profile Not Found',
+            message: 'Please complete your account setup to continue.',
+            actions: {
+              primary: { label: 'Complete Setup', url: '/auth/complete-profile?roleHint=guest' }
+            }
+          }
+        }, { status: 403 })
+      }
+    }
+
     // ========== PROCESS & CALCULATE STATS ==========
     
     // Calculate booking stats from grouped data

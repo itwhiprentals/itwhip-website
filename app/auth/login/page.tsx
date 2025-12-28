@@ -15,9 +15,22 @@ import {
   IoCarOutline,
   IoBusinessOutline,
   IoCheckmarkCircle,
-  IoArrowForwardOutline
+  IoArrowForwardOutline,
+  IoAlertCircleOutline,
+  IoPersonOutline
 } from 'react-icons/io5'
 import OAuthButtons from '@/app/components/auth/OAuthButtons'
+
+// Guard response type for cross-account type login attempts
+interface GuardResponse {
+  type: string
+  title: string
+  message: string
+  actions: {
+    primary: { label: string; url: string }
+    secondary?: { label: string; url: string }
+  }
+}
 
 function LoginContent() {
   const router = useRouter()
@@ -25,6 +38,7 @@ function LoginContent() {
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
+  const [guard, setGuard] = useState<GuardResponse | null>(null)
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -63,6 +77,12 @@ function LoginContent() {
       const data = await response.json()
 
       if (!response.ok) {
+        // Check if this is a guard response (HOST trying to access GUEST login)
+        if (data.guard) {
+          setGuard(data.guard)
+          setIsLoading(false)
+          return
+        }
         throw new Error(data.error || 'Login failed')
       }
 
@@ -121,11 +141,85 @@ function LoginContent() {
     }
   }
 
+  // ========================================================================
+  // GUARD SCREEN: HOST user trying to access GUEST login
+  // ========================================================================
+  if (guard) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex flex-col">
+        <Header />
+        <div className="flex-1 flex items-center justify-center px-4 py-16 pt-24">
+          <div className="w-full max-w-md">
+            <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-xl p-8 border border-gray-700">
+              {/* Warning Icon */}
+              <div className="flex justify-center mb-6">
+                <div className="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center">
+                  <IoAlertCircleOutline className="w-10 h-10 text-yellow-500" />
+                </div>
+              </div>
+
+              {/* Message */}
+              <div className="text-center mb-8">
+                <h1 className="text-2xl font-bold text-white mb-2">
+                  {guard.title}
+                </h1>
+                <p className="text-gray-400 mb-4">
+                  {guard.message}
+                </p>
+              </div>
+
+              {/* User Info */}
+              <div className="bg-gray-700/50 rounded-lg p-4 mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-gray-600 rounded-full flex items-center justify-center">
+                    <IoPersonOutline className="w-6 h-6 text-gray-400" />
+                  </div>
+                  <div>
+                    <p className="text-white font-medium">{formData.email}</p>
+                    <p className="text-gray-400 text-sm">Host Account</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="space-y-3">
+                <button
+                  onClick={() => router.push(guard.actions.primary.url)}
+                  className="w-full py-3 px-4 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-medium rounded-lg transition-all duration-200"
+                >
+                  {guard.actions.primary.label}
+                </button>
+                {guard.actions.secondary && (
+                  <button
+                    onClick={() => router.push(guard.actions.secondary!.url)}
+                    className="w-full py-3 px-4 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-all duration-200"
+                  >
+                    {guard.actions.secondary.label}
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    setGuard(null)
+                    setFormData({ email: '', password: '' })
+                  }}
+                  className="block w-full py-2 text-sm text-gray-400 hover:text-white transition-colors text-center"
+                >
+                  Use a Different Account
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex flex-col">
       {/* Header */}
       <Header />
-      
+
       {/* Main Content */}
       <div className="flex-1 flex pt-16">
         {/* Left side - Login Form */}

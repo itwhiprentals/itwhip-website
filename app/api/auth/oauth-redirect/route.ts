@@ -346,7 +346,14 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // No host profile - handle based on mode
+      // No host profile - check if this is a GUEST trying to access HOST area
+      // GUEST user trying to access HOST area → Show guard screen
+      if (guestProfile && !hostProfile) {
+        console.log('[OAuth Redirect] GUEST user tried host flow - redirecting to complete-profile for guard screen')
+        return createRedirectWithCookies(`/auth/complete-profile?roleHint=host&mode=${mode}&guard=guest-on-host&redirectTo=/host/dashboard`)
+      }
+
+      // No host profile and no guest profile - handle based on mode
       if (mode === 'login') {
         // LOGIN mode: User trying to login without an account
         console.log('[OAuth Redirect] No host profile for login, redirecting to login with error')
@@ -371,24 +378,23 @@ export async function GET(request: NextRequest) {
     }
 
     if (roleHint === 'guest') {
-      // ✅ SECURITY FIX: Never auto-create profiles without phone validation
-      // Always check for profile AND phone BEFORE allowing access
-
-      // If no guest profile exists, redirect to complete-profile to create it WITH phone
+      // If no guest profile exists, check if user is a HOST
       if (!guestProfile && userId) {
+        // HOST user trying to access GUEST area → Show guard screen (NOT silent redirect)
+        // The complete-profile page will display "Account Already Exists" guard screen
+        if (hostProfile) {
+          console.log('[OAuth Redirect] HOST user tried guest flow - redirecting to complete-profile for guard screen')
+          const redirectUrl = returnTo || '/dashboard'
+          return createRedirectWithCookies(`/auth/complete-profile?roleHint=guest&mode=${mode}&guard=host-on-guest&redirectTo=${encodeURIComponent(redirectUrl)}`)
+        }
+
+        // Non-host user without guest profile - redirect to complete-profile to CREATE it
         const redirectUrl = returnTo || '/dashboard'
-        console.log('[OAuth Redirect] No guest profile, redirecting to complete profile')
+        console.log('[OAuth Redirect] No guest profile, redirecting to complete profile to create one')
         return createRedirectWithCookies(`/auth/complete-profile?roleHint=guest&mode=signup&redirectTo=${encodeURIComponent(redirectUrl)}`)
       }
 
-      // If profile exists but missing phone, redirect to complete it
-      if (!hasPhoneAny) {
-        const redirectUrl = returnTo || '/dashboard'
-        console.log('[OAuth Redirect] Guest missing phone, redirecting to complete profile')
-        return createRedirectWithCookies(`/auth/complete-profile?roleHint=guest&mode=${mode}&redirectTo=${encodeURIComponent(redirectUrl)}`)
-      }
-
-      // Both profile and phone exist - allow access
+      // Phone is OPTIONAL for guests - allow access regardless of phone status
       const redirectUrl = returnTo || '/dashboard'
       console.log(`[OAuth Redirect] Redirecting to guest dashboard: ${redirectUrl}`)
       return createRedirectWithCookies(redirectUrl)
@@ -407,13 +413,7 @@ export async function GET(request: NextRequest) {
       return createRedirectWithCookies('/host/dashboard')
     }
 
-    // Default to guest dashboard - but check phone first
-    if (!hasPhoneAny) {
-      const redirectUrl = returnTo || '/dashboard'
-      console.log('[OAuth Redirect] Missing phone, redirecting to complete profile')
-      return createRedirectWithCookies(`/auth/complete-profile?roleHint=guest&mode=${mode}&redirectTo=${encodeURIComponent(redirectUrl)}`)
-    }
-
+    // Default to guest dashboard - phone is optional for guests
     const redirectUrl = returnTo || '/dashboard'
     console.log(`[OAuth Redirect] No roleHint, defaulting to: ${redirectUrl}`)
     return createRedirectWithCookies(redirectUrl)

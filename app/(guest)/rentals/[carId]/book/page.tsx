@@ -19,11 +19,18 @@ import {
   IoCloseCircle,
   IoSparklesOutline,
   IoBanOutline,
-  IoCloseCircleOutline
+  IoCloseCircleOutline,
+  IoHelpCircleOutline
 } from 'react-icons/io5'
 import { format } from 'date-fns'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
+
+// Import Arizona tax calculation
+import { getTaxRate, getCityFromAddress } from '@/app/(guest)/rentals/lib/arizona-taxes'
+
+// Import Header component
+import Header from '@/app/components/Header'
 
 // Import modal components
 import RentalAgreementModal from '@/app/(guest)/rentals/components/modals/RentalAgreementModal'
@@ -196,11 +203,29 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
   // Primary driver information states
   const [driverFirstName, setDriverFirstName] = useState('')
   const [driverLastName, setDriverLastName] = useState('')
+
+  // HOST Guard state - prevent HOST users from booking
+  const [hostGuard, setHostGuard] = useState<{
+    show: boolean
+    type: 'host-only' | 'dual-account' | null
+    linkedGuestEmail?: string
+    isSwitching?: boolean
+  }>({ show: false, type: null })
+
+  // Deposit tooltip state
+  const [showDepositTooltip, setShowDepositTooltip] = useState(false)
   const [driverAge, setDriverAge] = useState<Date | null>(null)
   const [driverLicense, setDriverLicense] = useState('')
   const [driverPhone, setDriverPhone] = useState('')
   const [driverEmail, setDriverEmail] = useState('')
-  
+
+  // Second driver states
+  const [showSecondDriver, setShowSecondDriver] = useState(false)
+  const [secondDriverFirstName, setSecondDriverFirstName] = useState('')
+  const [secondDriverLastName, setSecondDriverLastName] = useState('')
+  const [secondDriverAge, setSecondDriverAge] = useState<Date | null>(null)
+  const [secondDriverLicense, setSecondDriverLicense] = useState('')
+
   // ============================================
   // ✅ FIXED: CHECK AUTHENTICATION DIRECTLY
   // ============================================
@@ -230,7 +255,71 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
 
     checkAuth()
   }, [])
-  
+
+  // ============================================
+  // CHECK IF HOST USER - BLOCK FROM BOOKING
+  // ============================================
+
+  useEffect(() => {
+    const checkHostBookingEligibility = async () => {
+      // Only check after auth is confirmed
+      if (sessionStatus !== 'authenticated') return
+
+      try {
+        const dualRoleRes = await fetch('/api/auth/check-dual-role', {
+          credentials: 'include'
+        })
+
+        if (dualRoleRes.ok) {
+          const dualRole = await dualRoleRes.json()
+          console.log('[Booking] Dual-role check:', dualRole)
+
+          // HOST-only trying to book → Block
+          if (dualRole.hasHostProfile && !dualRole.hasGuestProfile) {
+            console.log('[Booking] HOST-only user - cannot book')
+            setHostGuard({
+              show: true,
+              type: 'host-only'
+            })
+            return
+          }
+
+          // HOST with dual account logged in as HOST → Need to switch to guest
+          if (dualRole.hasHostProfile && dualRole.hasGuestProfile && dualRole.currentRole === 'host') {
+            console.log('[Booking] HOST with dual account - must switch to guest')
+
+            // Get the linked guest email for display
+            let linkedEmail = undefined
+            if (dualRole.linkedUserId) {
+              try {
+                // The guest profile is on a linked account
+                const userRes = await fetch(`/api/auth/check-dual-role`, { credentials: 'include' })
+                if (userRes.ok) {
+                  // We already have this info - just need to get the email
+                  // For now, we'll show "your Guest account" since we have confirmation they have one
+                  linkedEmail = dualRole.guestProfileIsLinked ? 'linked' : undefined
+                }
+              } catch (e) {
+                console.log('[Booking] Could not fetch linked guest email')
+              }
+            }
+
+            setHostGuard({
+              show: true,
+              type: 'dual-account',
+              linkedGuestEmail: linkedEmail
+            })
+            return
+          }
+        }
+      } catch (e) {
+        console.error('[Booking] Failed to check booking eligibility:', e)
+      }
+    }
+
+    checkHostBookingEligibility()
+  }, [sessionStatus])
+
   // ============================================
   // FETCH USER PROFILE AND MODERATION STATUS
   // ============================================
@@ -798,16 +887,148 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
   
   const numberOfDays = savedBookingDetails.pricing.days
   const adjustedDeposit = getAdjustedDeposit()
-  const eligibility = moderationStatus 
-    ? checkBookingEligibility() 
+  const eligibility = moderationStatus
+    ? checkBookingEligibility()
     : { allowed: true }
-  
+
+  // ============================================
+  // SWITCH TO GUEST ACCOUNT HANDLER
+  // ============================================
+
+  const handleSwitchToGuest = async () => {
+    setHostGuard(prev => ({ ...prev, isSwitching: true }))
+
+    try {
+      // Call the switch-role API to switch from HOST to GUEST
+      const response = await fetch('/api/auth/switch-role', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ targetRole: 'guest' })
+      })
+
+      if (response.ok) {
+        // Successfully switched - reload the page to continue booking as guest
+        console.log('[Booking] Successfully switched to guest account')
+        window.location.reload()
+      } else {
+        // If switch-role doesn't exist or fails, redirect to login
+        console.log('[Booking] Switch failed, redirecting to login')
+        router.push('/auth/login?roleHint=guest&returnTo=' + encodeURIComponent(window.location.pathname))
+      }
+    } catch (e) {
+      console.error('[Booking] Error switching to guest:', e)
+      // Fallback to login page
+      router.push('/auth/login?roleHint=guest&returnTo=' + encodeURIComponent(window.location.pathname))
+    }
+  }
+
   // ============================================
   // RENDER
   // ============================================
-  
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Main Header */}
+      <Header />
+
+      {/* ============================================ */}
+      {/* HOST GUARD MODAL - Overlay on booking page */}
+      {/* ============================================ */}
+      {hostGuard.show && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop - semi-transparent to see page behind */}
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => router.back()}
+          />
+
+          {/* Modal Content */}
+          <div className="relative bg-gray-800 rounded-xl p-8 max-w-md w-full text-center shadow-2xl border border-gray-700 animate-in fade-in zoom-in duration-200">
+            {/* Warning Icon */}
+            <div className="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+              <IoWarningOutline className="w-10 h-10 text-yellow-500" />
+            </div>
+
+            {hostGuard.type === 'host-only' ? (
+              /* HOST-ONLY: No guest account exists */
+              <>
+                <h2 className="text-2xl font-bold text-white mb-2">
+                  Guest Account Required
+                </h2>
+                <p className="text-gray-400 mb-6">
+                  You&apos;re logged in as a Host. To book a car, you need to create a Guest account.
+                </p>
+                <div className="space-y-3">
+                  <button
+                    onClick={() => router.push('/auth/signup?roleHint=guest')}
+                    className="w-full py-3 px-4 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-medium rounded-lg transition-colors"
+                  >
+                    Create Guest Account
+                  </button>
+                  <button
+                    onClick={() => router.push('/host/dashboard')}
+                    className="w-full py-3 px-4 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors"
+                  >
+                    Back to Host Dashboard
+                  </button>
+                </div>
+              </>
+            ) : (
+              /* DUAL ACCOUNT: Guest account exists - offer smooth switch */
+              <>
+                <h2 className="text-2xl font-bold text-white mb-2">
+                  Switch to Guest Mode
+                </h2>
+                <p className="text-gray-400 mb-2">
+                  You&apos;re currently logged in as a Host.
+                </p>
+                <p className="text-gray-300 mb-6">
+                  We detected you have a <span className="text-green-400 font-medium">Guest account</span> linked to this profile.
+                </p>
+
+                <div className="space-y-3">
+                  {/* Primary Action: Switch to Guest */}
+                  <button
+                    onClick={handleSwitchToGuest}
+                    disabled={hostGuard.isSwitching}
+                    className="w-full py-3 px-4 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 disabled:from-gray-600 disabled:to-gray-600 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+                  >
+                    {hostGuard.isSwitching ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Switching...
+                      </>
+                    ) : (
+                      <>
+                        <IoCheckmarkCircle className="w-5 h-5" />
+                        Switch to Guest Account
+                      </>
+                    )}
+                  </button>
+
+                  {/* Secondary: Manual login */}
+                  <button
+                    onClick={() => router.push('/auth/login?roleHint=guest&returnTo=' + encodeURIComponent(window.location.pathname))}
+                    className="w-full py-2.5 px-4 text-gray-400 hover:text-white text-sm transition-colors"
+                  >
+                    Sign in with different Guest account
+                  </button>
+
+                  {/* Tertiary: Go back */}
+                  <button
+                    onClick={() => router.back()}
+                    className="w-full py-2.5 px-4 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors"
+                  >
+                    Go Back
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Header Bar */}
       <div className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 sticky top-0 z-40">
         <div className="max-w-4xl mx-auto px-4 py-4">
@@ -1075,16 +1296,17 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
         
         {/* Primary Driver Information Section */}
         <div className="bg-white dark:bg-gray-800 rounded-lg p-6 mb-4 shadow-sm border border-gray-300 dark:border-gray-600">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-            <IoPersonOutline className="w-5 h-5 mr-2" />
-            Primary Driver Information
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center flex-wrap gap-2">
+            <IoPersonOutline className="w-5 h-5" />
+            <span>Primary Driver Information</span>
+            <span className="text-xs font-normal text-gray-500 dark:text-gray-400">(Account Holder)</span>
             {userProfile?.documentsVerified && (
-              <span className="ml-2 text-xs text-green-600 dark:text-green-400">
-                (Auto-filled)
+              <span className="text-xs text-green-600 dark:text-green-400">
+                - Auto-filled
               </span>
             )}
           </h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -1099,7 +1321,7 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
                 required
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Last Name <span className="text-red-500">*</span>
@@ -1113,7 +1335,7 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
                 required
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Date of Birth <span className="text-red-500">*</span>
@@ -1135,10 +1357,10 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
               />
               <p className="text-xs text-gray-500 mt-1">Must be 21 or older</p>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Driver's License # <span className="text-red-500">*</span>
+                Driver&apos;s License # <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -1149,7 +1371,7 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
                 required
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Phone Number <span className="text-red-500">*</span>
@@ -1164,7 +1386,7 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
                 required
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Email Address <span className="text-red-500">*</span>
@@ -1179,6 +1401,114 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
                 required
               />
             </div>
+          </div>
+
+          {/* Add Second Driver Section */}
+          <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+            {!showSecondDriver ? (
+              <>
+                <button
+                  type="button"
+                  className="flex items-center gap-2 text-sm font-medium text-amber-600 hover:text-amber-700 dark:text-amber-500 dark:hover:text-amber-400 transition-colors"
+                  onClick={() => setShowSecondDriver(true)}
+                >
+                  <span className="w-5 h-5 rounded-full border-2 border-current flex items-center justify-center text-xs font-bold">+</span>
+                  Add Second Driver
+                </button>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Additional drivers must be 21+ with valid license. $10/day fee applies.
+                </p>
+              </>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                    <IoPersonOutline className="w-4 h-4" />
+                    Second Driver Information
+                    <span className="text-xs font-normal text-amber-600 dark:text-amber-400">+$10/day</span>
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowSecondDriver(false)
+                      setSecondDriverFirstName('')
+                      setSecondDriverLastName('')
+                      setSecondDriverAge(null)
+                      setSecondDriverLicense('')
+                    }}
+                    className="text-xs text-red-600 hover:text-red-700 dark:text-red-400"
+                  >
+                    Remove
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      First Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={secondDriverFirstName}
+                      onChange={(e) => setSecondDriverFirstName(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white dark:bg-gray-700 dark:text-white"
+                      placeholder="Jane"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Last Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={secondDriverLastName}
+                      onChange={(e) => setSecondDriverLastName(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white dark:bg-gray-700 dark:text-white"
+                      placeholder="Doe"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Date of Birth <span className="text-red-500">*</span>
+                    </label>
+                    <DatePicker
+                      selected={secondDriverAge}
+                      onChange={(date) => setSecondDriverAge(date)}
+                      showYearDropdown
+                      showMonthDropdown
+                      scrollableYearDropdown
+                      yearDropdownItemNumber={100}
+                      dateFormat="MM/dd/yyyy"
+                      placeholderText="Select date of birth"
+                      className="w-full px-2 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-amber-500 focus:border-amber-500 cursor-pointer"
+                      wrapperClassName="w-full"
+                      calendarClassName="!rounded-xl !border-0 !shadow-xl"
+                      popperClassName="!z-50"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Must be 21 or older</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Driver&apos;s License # <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={secondDriverLicense}
+                      onChange={(e) => setSecondDriverLicense(e.target.value.toUpperCase())}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white dark:bg-gray-700 dark:text-white"
+                      placeholder="D12345678"
+                    />
+                  </div>
+                </div>
+
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Second driver will need to present their license at pickup for verification.
+                </p>
+              </div>
+            )}
           </div>
         </div>
         
@@ -1492,65 +1822,133 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
           
           {/* Price Summary */}
           <div className="border-t dark:border-gray-700 pt-6">
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Rental ({numberOfDays} days)</span>
-                <span className="font-medium text-gray-900 dark:text-white">${savedBookingDetails.pricing.basePrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Insurance</span>
-                <span className="font-medium text-gray-900 dark:text-white">${savedBookingDetails.pricing.insurancePrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-              </div>
-              {savedBookingDetails.pricing.deliveryFee > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Delivery</span>
-                  <span className="font-medium text-gray-900 dark:text-white">${savedBookingDetails.pricing.deliveryFee.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                </div>
-              )}
-              {(savedBookingDetails.pricing.breakdown.refuelService +
-                savedBookingDetails.pricing.breakdown.additionalDriver +
-                savedBookingDetails.pricing.breakdown.extraMiles +
-                savedBookingDetails.pricing.breakdown.vipConcierge) > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Enhancements</span>
-                  <span className="font-medium text-gray-900 dark:text-white">
-                    ${(savedBookingDetails.pricing.breakdown.refuelService +
-                       savedBookingDetails.pricing.breakdown.additionalDriver +
-                       savedBookingDetails.pricing.breakdown.extraMiles +
-                       savedBookingDetails.pricing.breakdown.vipConcierge).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </span>
-                </div>
-              )}
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Service fee</span>
-                <span className="font-medium text-gray-900 dark:text-white">${savedBookingDetails.pricing.serviceFee.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Taxes</span>
-                <span className="font-medium text-gray-900 dark:text-white">${savedBookingDetails.pricing.taxes.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-              </div>
+            {(() => {
+              // Calculate dynamic tax rate based on car's location
+              const carCity = getCityFromAddress(car?.address || 'Phoenix, AZ')
+              const { rate: taxRate, display: taxRateDisplay } = getTaxRate(carCity)
 
-              <div className="pt-4 mt-4 border-t dark:border-gray-700">
-                <div className="flex justify-between items-baseline">
-                  <span className="text-base font-semibold text-gray-900 dark:text-white">Total</span>
-                  <div className="text-right">
-                    <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                      ${savedBookingDetails.pricing.total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              // Calculate subtotal (before tax)
+              const enhancementsTotal = savedBookingDetails.pricing.breakdown.refuelService +
+                                       savedBookingDetails.pricing.breakdown.additionalDriver +
+                                       savedBookingDetails.pricing.breakdown.extraMiles +
+                                       savedBookingDetails.pricing.breakdown.vipConcierge
+
+              const subtotal = savedBookingDetails.pricing.basePrice +
+                              savedBookingDetails.pricing.insurancePrice +
+                              savedBookingDetails.pricing.serviceFee +
+                              savedBookingDetails.pricing.deliveryFee +
+                              enhancementsTotal
+
+              // Recalculate taxes with accurate city-specific rate
+              const calculatedTaxes = Math.round(subtotal * taxRate * 100) / 100
+
+              // Recalculate trip total with new taxes
+              const calculatedTripTotal = Math.round((subtotal + calculatedTaxes) * 100) / 100
+
+              return (
+                <div className="space-y-2 text-sm">
+                  {/* Rental */}
+                  <div className="flex justify-between">
+                    <span className="font-semibold text-gray-900 dark:text-white">Rental ({numberOfDays} days)</span>
+                    <span className="font-medium text-gray-900 dark:text-white">${savedBookingDetails.pricing.basePrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  </div>
+
+                  {/* Insurance */}
+                  <div className="flex justify-between">
+                    <span className="font-semibold text-gray-900 dark:text-white">Insurance</span>
+                    <span className="font-medium text-gray-900 dark:text-white">${savedBookingDetails.pricing.insurancePrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  </div>
+
+                  {/* Delivery (conditional) */}
+                  {savedBookingDetails.pricing.deliveryFee > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Delivery</span>
+                      <span className="font-medium text-gray-900 dark:text-white">${savedBookingDetails.pricing.deliveryFee.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    </div>
+                  )}
+
+                  {/* Enhancements (conditional) */}
+                  {enhancementsTotal > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Enhancements</span>
+                      <span className="font-medium text-gray-900 dark:text-white">
+                        ${enhancementsTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Service fee */}
+                  <div className="flex justify-between">
+                    <span className="font-semibold text-gray-900 dark:text-white">Service Fee</span>
+                    <span className="font-medium text-gray-900 dark:text-white">${savedBookingDetails.pricing.serviceFee.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  </div>
+
+                  {/* Taxes with dynamic percentage */}
+                  <div className="flex justify-between">
+                    <span className="font-semibold text-gray-900 dark:text-white">Taxes ({taxRateDisplay})</span>
+                    <span className="font-medium text-gray-900 dark:text-white">${calculatedTaxes.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  </div>
+
+                  {/* Totals Section */}
+                  <div className="pt-4 mt-4 border-t dark:border-gray-700">
+                    {/* Trip Total - using recalculated amount */}
+                    <div className="flex justify-between items-baseline">
+                      <span className="font-bold text-gray-900 dark:text-white">Trip Total</span>
+                      <span className="text-lg font-bold text-gray-900 dark:text-white">
+                        ${calculatedTripTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    </div>
+
+                {/* Security Deposit - Compact Red Box, right-aligned under amount */}
+                <div className="flex justify-end mt-2 mb-3">
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg">
+                    <span className="text-sm font-medium text-red-800 dark:text-red-200">
+                      + ${adjustedDeposit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} deposit
                     </span>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Plus ${adjustedDeposit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} security deposit
-                      {userProfile?.insuranceVerified && (
-                        <span className="text-green-600 dark:text-green-400 font-medium ml-1">
-                          (50% off!)
-                        </span>
+                    {userProfile?.insuranceVerified && (
+                      <span className="text-xs text-green-600 dark:text-green-400 font-medium">
+                        50% off!
+                      </span>
+                    )}
+                    {/* (Hold) with tooltip inline */}
+                    <div className="relative inline-flex items-center gap-0.5">
+                      <span className="text-xs text-red-600 dark:text-red-400 font-medium">(Hold)</span>
+                      <button
+                        type="button"
+                        onMouseEnter={() => setShowDepositTooltip(true)}
+                        onMouseLeave={() => setShowDepositTooltip(false)}
+                        onClick={() => setShowDepositTooltip(!showDepositTooltip)}
+                        className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 -mt-0.5"
+                        aria-label="Learn about security deposit"
+                      >
+                        <IoHelpCircleOutline className="w-3.5 h-3.5" />
+                      </button>
+
+                      {showDepositTooltip && (
+                        <div className="absolute z-50 right-0 bottom-full mb-1 whitespace-nowrap px-2 py-1 bg-white dark:bg-gray-800 rounded shadow-lg border border-gray-200 dark:border-gray-600">
+                          <p className="text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed">Temporary hold, not a charge.<br/>Released 3-5 days after trip.</p>
+                          <div className="absolute right-2 top-full w-0 h-0 border-l-[4px] border-r-[4px] border-t-[4px] border-transparent border-t-gray-200 dark:border-t-gray-600"></div>
+                        </div>
                       )}
-                    </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
+
+                    {/* Grand Total (Trip + Deposit) - NO arrow for this row */}
+                    <div className="flex justify-between items-baseline pt-3 border-t dark:border-gray-700">
+                      <span className="text-base font-semibold text-gray-900 dark:text-white">Total Due Today</span>
+                      <div className="text-right">
+                        <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                          ${(calculatedTripTotal + adjustedDeposit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
           </div>
-          
+
           {/* Terms and Conditions Agreement */}
           <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
             <label className="flex items-start space-x-2 cursor-pointer">
@@ -1601,39 +1999,64 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
         </div>
       </div>
       
-      {/* Sticky Floating Checkout Bar */}
+      {/* Sticky Floating Checkout Bar - Mobile Optimized */}
       <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 shadow-2xl z-40">
-        <div className="max-w-7xl mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                  ${savedBookingDetails.pricing.total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
-                <span className="text-sm text-gray-500 dark:text-gray-400">total</span>
-              </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {numberOfDays} {numberOfDays === 1 ? 'day' : 'days'} • Taxes & fees included
-              </p>
-              {userProfile?.insuranceVerified && (
-                <p className="text-xs text-green-600 dark:text-green-400 font-medium">
-                  💚 Deposit reduced to ${adjustedDeposit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </p>
-              )}
-            </div>
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3">
+          <div className="flex items-center justify-between gap-3">
+            {/* Pricing Info - Compact on mobile */}
+            {(() => {
+              // Recalculate trip total with accurate tax for floating bar
+              const carCity = getCityFromAddress(car?.address || 'Phoenix, AZ')
+              const { rate: taxRate } = getTaxRate(carCity)
+              const enhancementsTotal = savedBookingDetails.pricing.breakdown.refuelService +
+                                       savedBookingDetails.pricing.breakdown.additionalDriver +
+                                       savedBookingDetails.pricing.breakdown.extraMiles +
+                                       savedBookingDetails.pricing.breakdown.vipConcierge
+              const subtotal = savedBookingDetails.pricing.basePrice +
+                              savedBookingDetails.pricing.insurancePrice +
+                              savedBookingDetails.pricing.serviceFee +
+                              savedBookingDetails.pricing.deliveryFee +
+                              enhancementsTotal
+              const calculatedTaxes = Math.round(subtotal * taxRate * 100) / 100
+              const tripTotal = Math.round((subtotal + calculatedTaxes) * 100) / 100
+              const grandTotal = tripTotal + adjustedDeposit
+
+              return (
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline gap-1.5 sm:gap-2">
+                    <span className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+                      ${grandTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                    <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">total</span>
+                  </div>
+                  <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
+                    <span className="hidden sm:inline">${tripTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} + </span>
+                    <span className="text-red-600 dark:text-red-400">${adjustedDeposit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} deposit</span>
+                    <span className="text-gray-400 dark:text-gray-500 ml-1">(refundable)</span>
+                  </p>
+                  {userProfile?.insuranceVerified && (
+                    <p className="text-[10px] sm:text-xs text-green-600 dark:text-green-400 font-medium">
+                      50% deposit discount applied
+                    </p>
+                  )}
+                </div>
+              )
+            })()}
+
+            {/* Book Button */}
             <button
               onClick={handleCheckoutClick}
               disabled={isProcessing || isUploading || !eligibility.allowed}
-              className={`px-6 py-2.5 font-semibold shadow-lg rounded-lg transition-all ${
+              className={`flex-shrink-0 px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base font-semibold shadow-lg rounded-lg transition-all ${
                 !isProcessing && !isUploading && eligibility.allowed
-                  ? 'bg-black text-white hover:bg-gray-800'
+                  ? 'bg-black text-white hover:bg-gray-800 active:scale-[0.98]'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}
             >
               {isProcessing ? (
                 <span className="flex items-center gap-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Processing...
+                  <span className="hidden sm:inline">Processing...</span>
                 </span>
               ) : !eligibility.allowed ? (
                 'Unavailable'

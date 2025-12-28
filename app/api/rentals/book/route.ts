@@ -537,7 +537,9 @@ export async function POST(request: NextRequest) {
           taxes: pricing.taxes,
           totalAmount: pricing.total,
           depositAmount: pricing.deposit,
-          
+          securityDeposit: pricing.deposit || 0,
+          depositHeld: 0,
+
           // Status based on verification requirements AND fraud risk
           status: (needsVerification || requiresManualReview) ? RentalBookingStatus.PENDING : RentalBookingStatus.CONFIRMED,
           paymentStatus: (needsVerification || requiresManualReview) ? 'PENDING' : 'PAID',

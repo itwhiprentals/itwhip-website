@@ -12,9 +12,21 @@ import {
   IoEyeOffOutline,
   IoAlertCircleOutline,
   IoTimeOutline,
-  IoCloseCircleOutline
+  IoCloseCircleOutline,
+  IoPersonOutline
 } from 'react-icons/io5'
 import OAuthButtons from '@/app/components/auth/OAuthButtons'
+
+// Guard response type for cross-account type login attempts
+interface GuardResponse {
+  type: string
+  title: string
+  message: string
+  actions: {
+    primary: { label: string; url: string }
+    secondary?: { label: string; url: string }
+  }
+}
 
 function HostLoginContent() {
   const router = useRouter()
@@ -24,6 +36,7 @@ function HostLoginContent() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [guard, setGuard] = useState<GuardResponse | null>(null)
   const [statusMessage, setStatusMessage] = useState<{
     type: 'pending' | 'rejected' | 'suspended' | null
     message: string
@@ -69,6 +82,13 @@ function HostLoginContent() {
       const data = await response.json()
 
       if (!response.ok) {
+        // Check if this is a guard response (GUEST trying to access HOST login)
+        if (data.guard) {
+          setGuard(data.guard)
+          setIsLoading(false)
+          return
+        }
+
         // Handle specific status messages
         if (data.status) {
           switch (data.status) {
@@ -111,6 +131,80 @@ function HostLoginContent() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  // ========================================================================
+  // GUARD SCREEN: GUEST user trying to access HOST login
+  // ========================================================================
+  if (guard) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100">
+        <Header />
+        <div className="flex items-center justify-center px-4 py-16 pt-24">
+          <div className="w-full max-w-md">
+            <div className="bg-white rounded-lg shadow-lg p-8">
+              {/* Warning Icon */}
+              <div className="flex justify-center mb-6">
+                <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center">
+                  <IoAlertCircleOutline className="w-10 h-10 text-yellow-600" />
+                </div>
+              </div>
+
+              {/* Message */}
+              <div className="text-center mb-8">
+                <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                  {guard.title}
+                </h1>
+                <p className="text-gray-600 mb-4">
+                  {guard.message}
+                </p>
+              </div>
+
+              {/* User Info */}
+              <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                    <IoPersonOutline className="w-6 h-6 text-gray-500" />
+                  </div>
+                  <div>
+                    <p className="text-gray-900 font-medium">{email}</p>
+                    <p className="text-gray-500 text-sm">Guest Account</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="space-y-3">
+                <button
+                  onClick={() => router.push(guard.actions.primary.url)}
+                  className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all duration-200"
+                >
+                  {guard.actions.primary.label}
+                </button>
+                {guard.actions.secondary && (
+                  <button
+                    onClick={() => router.push(guard.actions.secondary!.url)}
+                    className="w-full py-3 px-4 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-all duration-200"
+                  >
+                    {guard.actions.secondary.label}
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    setGuard(null)
+                    setEmail('')
+                    setPassword('')
+                  }}
+                  className="block w-full py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors text-center"
+                >
+                  Use a Different Account
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (

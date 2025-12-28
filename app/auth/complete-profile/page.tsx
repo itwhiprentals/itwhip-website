@@ -54,11 +54,13 @@ function CompleteProfileContent() {
 
   // Track if existing HOST user is trying to access guest without guest profile
   const [isHostWithoutGuestProfile, setIsHostWithoutGuestProfile] = useState(false)
+  // Track if existing GUEST user is trying to access host without host profile
+  const [isGuestWithoutHostProfile, setIsGuestWithoutHostProfile] = useState(false)
   // Track if user is switching accounts (to prevent redirects during signOut)
   // CRITICAL: Use BOTH useState and useRef - ref is synchronous and prevents race conditions
   const [isSwitchingAccount, setIsSwitchingAccount] = useState(false)
   const switchingAccountRef = useRef(false)
-  const [checkingProfile, setCheckingProfile] = useState(roleHint === 'guest')
+  const [checkingProfile, setCheckingProfile] = useState(roleHint === 'guest' || roleHint === 'host')
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -72,7 +74,8 @@ function CompleteProfileContent() {
   }, [status, router])
 
   // Check if existing HOST user is trying to login as GUEST without a guest profile
-  // This scenario should be BLOCKED - they must use account linking flow
+  // OR if existing GUEST user is trying to login as HOST without a host profile
+  // These scenarios should be BLOCKED - they must use account linking flow
   useEffect(() => {
     async function checkGuestProfile() {
       try {
@@ -89,6 +92,25 @@ function CompleteProfileContent() {
       setCheckingProfile(false)
     }
 
+    async function checkHostProfile() {
+      try {
+        const response = await fetch('/api/host/profile')
+        if (response.status === 404) {
+          // Check if user is a GUEST (has guest profile but not host)
+          const guestResponse = await fetch('/api/guest/profile')
+          if (guestResponse.ok) {
+            // GUEST user trying to access HOST without host profile
+            // BLOCK this - they must apply to become a host
+            console.log('[Complete Profile] ⚠️ GUEST user trying to access HOST - blocking (must apply to become host)')
+            setIsGuestWithoutHostProfile(true)
+          }
+        }
+      } catch (error) {
+        console.error('[Complete Profile] Error checking host profile:', error)
+      }
+      setCheckingProfile(false)
+    }
+
     // For PENDING users (new signups), skip the check - they don't have profiles yet
     if (isPendingUser) {
       setCheckingProfile(false)
@@ -98,8 +120,11 @@ function CompleteProfileContent() {
     // For EXISTING users trying to access guest, check if they have a guest profile
     if (status === 'authenticated' && !isPendingUser && roleHint === 'guest') {
       checkGuestProfile()
+    } else if (status === 'authenticated' && !isPendingUser && roleHint === 'host') {
+      // For EXISTING users trying to access host, check if they have a host profile
+      checkHostProfile()
     } else if (status === 'authenticated') {
-      // Not a guest roleHint, no need to check
+      // No roleHint, no need to check
       setCheckingProfile(false)
     }
   }, [status, isPendingUser, roleHint])
@@ -118,10 +143,15 @@ function CompleteProfileContent() {
         console.log('[Complete Profile] Showing blocking message for HOST without GUEST profile')
         return
       }
+      // If GUEST user trying to access HOST without profile, don't redirect - show blocking message
+      if (isGuestWithoutHostProfile) {
+        console.log('[Complete Profile] Showing blocking message for GUEST without HOST profile')
+        return
+      }
       // User already has complete profile, redirect to dashboard
       router.push(redirectTo)
     }
-  }, [status, isProfileComplete, isPendingUser, router, redirectTo, isHostWithoutGuestProfile, checkingProfile, isSwitchingAccount])
+  }, [status, isProfileComplete, isPendingUser, router, redirectTo, isHostWithoutGuestProfile, isGuestWithoutHostProfile, checkingProfile, isSwitchingAccount])
 
   // Format phone number as user types
   const formatPhoneNumber = (value: string) => {
@@ -142,6 +172,10 @@ function CompleteProfileContent() {
   }
 
   const validatePhone = () => {
+    // Phone is optional - only validate format if provided
+    if (!phone || phone.trim() === '') {
+      return true // No phone is valid (optional)
+    }
     const digits = phone.replace(/\D/g, '')
     if (digits.length !== 10) {
       setError('Please enter a valid 10-digit phone number')
@@ -190,6 +224,15 @@ function CompleteProfileContent() {
       const data = await response.json()
 
       if (!response.ok) {
+        // Handle HOST trying to create GUEST profile - redirect to host dashboard
+        if (data.requiresAccountLinking && data.isHost) {
+          setError('You already have a Host account. Redirecting to Host Dashboard...')
+          setIsLoading(false)
+          setTimeout(() => {
+            window.location.href = data.hostDashboardUrl || '/host/dashboard'
+          }, 2000)
+          return
+        }
         throw new Error(data.error || 'Failed to save phone number')
       }
 
@@ -198,29 +241,15 @@ function CompleteProfileContent() {
       if (data.isNewUser) {
         console.log('[Complete Profile] New user created')
 
-        // Check if phone verification is required
-        if (data.requiresPhoneVerification && data.phone) {
-          console.log('[Complete Profile] Redirecting to phone verification')
-          // Small delay to ensure cookies are set
-          setTimeout(() => {
-            const phoneParam = encodeURIComponent(data.phone)
-            if (roleHint === 'host') {
-              // For hosts, after phone verification redirect to pending status
-              window.location.href = `/auth/verify-phone?phone=${phoneParam}&returnTo=${encodeURIComponent('/host/login?status=pending')}&roleHint=host`
-            } else {
-              window.location.href = `/auth/verify-phone?phone=${phoneParam}&returnTo=${encodeURIComponent(redirectTo)}&roleHint=guest`
-            }
-          }, 100)
-        } else {
-          // No phone verification needed - redirect normally
-          setTimeout(() => {
-            if (roleHint === 'host') {
-              window.location.href = '/host/login?status=pending'
-            } else {
-              window.location.href = redirectTo
-            }
-          }, 100)
-        }
+        // Skip phone verification - phone is optional and not part of login flow
+        // Redirect directly to dashboard
+        setTimeout(() => {
+          if (roleHint === 'host') {
+            window.location.href = '/host/login?status=pending'
+          } else {
+            window.location.href = redirectTo
+          }
+        }, 100)
       } else {
         // Existing user - update session and redirect normally
         await update()
@@ -248,6 +277,82 @@ function CompleteProfileContent() {
   const userName = pendingOAuth?.name || session?.user?.name || 'there'
   const userEmail = pendingOAuth?.email || session?.user?.email
   const userImage = pendingOAuth?.image || session?.user?.image
+
+  // ========================================================================
+  // BLOCKING STATE: GUEST user trying to access HOST without profile
+  // They must apply to become a host - NO automatic profile creation
+  // ========================================================================
+  if (isGuestWithoutHostProfile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+        <Header />
+        <div className="flex items-center justify-center px-4 py-16 pt-24">
+          <div className="w-full max-w-md">
+            <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-xl p-8 border border-gray-700">
+              {/* Warning Icon */}
+              <div className="flex justify-center mb-6">
+                <div className="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center">
+                  <IoAlertCircleOutline className="w-10 h-10 text-yellow-500" />
+                </div>
+              </div>
+
+              {/* Message */}
+              <div className="text-center mb-8">
+                <h1 className="text-2xl font-bold text-white mb-2">
+                  Guest Account Detected
+                </h1>
+                <p className="text-gray-400 mb-4">
+                  You have a <span className="text-orange-400 font-semibold">Guest</span> account with this email.
+                </p>
+                <p className="text-gray-400 text-sm">
+                  To become a host, please apply through the <span className="text-white">Host Signup</span> page.
+                </p>
+              </div>
+
+              {/* User Info */}
+              <div className="bg-gray-700/50 rounded-lg p-4 mb-6">
+                <div className="flex items-center gap-3">
+                  {userImage ? (
+                    <img src={userImage} alt="Profile" className="w-12 h-12 rounded-full" />
+                  ) : (
+                    <div className="w-12 h-12 bg-gray-600 rounded-full flex items-center justify-center">
+                      <IoPersonOutline className="w-6 h-6 text-gray-400" />
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-white font-medium">{userName}</p>
+                    <p className="text-gray-400 text-sm">{userEmail}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="space-y-3">
+                <button
+                  onClick={() => router.push('/dashboard')}
+                  className="w-full py-3 px-4 bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white font-medium rounded-lg transition-all duration-200"
+                >
+                  Go to Guest Dashboard
+                </button>
+                <button
+                  onClick={() => router.push('/host/signup')}
+                  className="w-full py-3 px-4 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-all duration-200"
+                >
+                  Apply to Become a Host
+                </button>
+                <a
+                  href="/host/login?switching=true"
+                  className="block w-full py-2 text-sm text-gray-400 hover:text-white transition-colors text-center"
+                >
+                  Use a Different Account
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   // ========================================================================
   // BLOCKING STATE: HOST user trying to access GUEST without profile
@@ -436,7 +541,7 @@ function CompleteProfileContent() {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Phone Number <span className="text-red-500">*</span>
+                  Phone Number <span className="text-gray-500 text-xs">(optional)</span>
                 </label>
                 <div className="relative">
                   <IoPhonePortraitOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
@@ -446,15 +551,14 @@ function CompleteProfileContent() {
                     onChange={handlePhoneChange}
                     placeholder="(555) 123-4567"
                     className="w-full pl-10 pr-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
-                    required
                   />
                 </div>
                 <p className="mt-2 text-xs text-gray-500">
                   {isLoginModeNoAccount
                     ? roleHint === 'host'
-                      ? 'Enter your phone number to become a host'
-                      : 'Enter your phone number to create your account'
-                    : "We'll use this for booking confirmations and important updates"
+                      ? 'Add your phone for booking notifications (optional)'
+                      : 'Add your phone for booking notifications (optional)'
+                    : "We'll use this for booking confirmations (optional)"
                   }
                 </p>
               </div>
@@ -469,7 +573,7 @@ function CompleteProfileContent() {
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={isLoading || !phone}
+                disabled={isLoading}
                 className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? (

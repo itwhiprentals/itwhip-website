@@ -218,6 +218,38 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // ✅ STEP 5.5: GUARD CHECK - Detect HOST trying to access GUEST login
+    // If user is a HOST (has RentalHost profile), they should use host login
+    const hostProfile = await prisma.rentalHost.findFirst({
+      where: { OR: [{ userId: user.id }, { email: user.email.toLowerCase() }] },
+      select: { id: true, approvalStatus: true }
+    })
+
+    const guestProfile = await prisma.reviewerProfile.findFirst({
+      where: { OR: [{ userId: user.id }, { email: user.email.toLowerCase() }] },
+      select: { id: true }
+    })
+
+    // HOST without GUEST profile trying to login via guest login
+    if (hostProfile && !guestProfile) {
+      console.log(`[Login] GUARD: HOST user ${user.email} tried guest login - blocking`)
+      return NextResponse.json(
+        {
+          error: 'Host account detected',
+          guard: {
+            type: 'host-on-guest',
+            title: 'Host Account Detected',
+            message: 'You have a Host account. Please use the Host login page to access your account.',
+            actions: {
+              primary: { label: 'Go to Host Login', url: '/host/login' },
+              secondary: { label: 'Link a Guest Account', url: '/host/dashboard?tab=account-linking' }
+            }
+          }
+        },
+        { status: 403 }
+      )
+    }
+
     // ✅ STEP 6: Upgrade password hash if needed (bcrypt -> Argon2)
     if (needsRehash) {
       // Run in background - don't wait for completion
