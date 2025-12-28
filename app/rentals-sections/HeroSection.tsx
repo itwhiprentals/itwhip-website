@@ -20,6 +20,7 @@ export default function HeroSection({ userCity = 'Arizona' }: HeroSectionProps) 
           quality={50}
           sizes="100vw"
           className="object-cover"
+          fetchPriority="high"
         />
         <div className="absolute inset-0 bg-black/40" />
       </div>
