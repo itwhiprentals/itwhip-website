@@ -558,8 +558,33 @@ export default async function CityPage({
     }
   })
 
+  // Show "no cars" page instead of 404 for valid cities with no inventory
   if (allCars.length === 0) {
-    notFound()
+    return (
+      <>
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+          <Header />
+          <HeroSection cityName={cityName} cityData={cityData} minPrice={45} />
+
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-900/30 mb-4">
+                <IoCarOutline className="w-8 h-8 text-amber-600 dark:text-amber-400" />
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
+                No Cars Available in {cityName}
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto">
+                We're expanding to {cityName} soon! Browse cars in nearby cities below.
+              </p>
+            </div>
+          </div>
+
+          <RelatedCities currentCity={cityName} />
+          <Footer />
+        </div>
+      </>
+    )
   }
 
   // Get price stats

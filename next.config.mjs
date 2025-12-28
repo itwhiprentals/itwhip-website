@@ -29,6 +29,7 @@ const nextConfig = {
       // ============================================
       { source: '/help', destination: '/support', permanent: true },
       { source: '/sitemap', destination: '/sitemap.xml', permanent: true },
+      { source: '/api', destination: '/', permanent: false },
 
       // ============================================
       // REMOVED/OLD PAGES - Redirect to prevent 404/500
