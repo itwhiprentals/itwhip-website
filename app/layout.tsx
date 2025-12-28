@@ -247,12 +247,9 @@ export default function RootLayout({
         {/* Theme color is set via viewport export and can be overridden per-page */}
         {/* REMOVED: Hardcoded canonical - let each page set its own */}
 
-        {/* Preload LCP image for faster render */}
-        <link rel="preload" href="/hero-bg.webp" as="image" type="image/webp" />
-
-        {/* Preconnect to image CDNs */}
-        <link rel="preconnect" href="https://res.cloudinary.com" />
-        <link rel="preconnect" href="https://images.unsplash.com" />
+        {/* Preconnect to image CDNs - used across all pages */}
+        <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://images.unsplash.com" crossOrigin="anonymous" />
 
         {/* Schema 1: Organization */}
         <script
