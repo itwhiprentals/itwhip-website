@@ -14,7 +14,7 @@ export default function HeroSection() {
           muted 
           loop 
           playsInline
-          poster="https://images.unsplash.com/photo-1485291571150-772bcfc10da5?w=1920&h=1080&fit=crop"
+          poster="https://images.unsplash.com/photo-1485291571150-772bcfc10da5?w=1920&h=1080&fit=crop&fm=webp&q=80"
         >
           <source src="/itwhip-hero.webm" type="video/webm" />
           <source src="/itwhip-hero.mp4" type="video/mp4" />

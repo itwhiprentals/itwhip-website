@@ -202,6 +202,16 @@ export default function Header({
         }
       }
       
+      // Check guest auth - only if session cookie exists
+      const hasGuestSession = document.cookie.includes('accessToken') ||
+                              document.cookie.includes('guest_session')
+
+      if (!hasGuestSession) {
+        // No session cookie - skip API call to avoid 401 spam
+        setIsCheckingAuth(false)
+        return
+      }
+
       // Check guest auth - includes profile photo from ReviewerProfile
       const response = await fetch('/api/auth/verify', {
         method: 'GET',

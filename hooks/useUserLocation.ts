@@ -178,10 +178,22 @@ export function useUserLocation(): UseUserLocationReturn {
     }
   }, [])
 
-  // Initial detection on mount
+  // Initial check on mount - only load cached location, don't request permission
   useEffect(() => {
-    detectLocation()
-  }, [detectLocation])
+    // 1. Check cache immediately to populate state without asking permission
+    const cached = getCachedLocation()
+    if (cached) {
+      setLocation(cached)
+      // Assume if we have cached location, treat as "permission granted" for UI purposes
+      setHasPermission(true)
+    }
+
+    // 2. Stop the loading state immediately
+    setLoading(false)
+
+    // CRITICAL FIX: We successfully REMOVED the auto-call to detectLocation()
+    // This ensures navigator.geolocation.getCurrentPosition is NEVER called on mount
+  }, [])
 
   // Refresh function (skips cache)
   const refresh = useCallback(() => {
