@@ -142,9 +142,9 @@ export default function BrowseByTypeSection() {
                     />
                   </div>
                   <div className="p-2 sm:p-3 bg-white dark:bg-gray-700">
-                    <h3 className="font-semibold text-xs sm:text-sm text-gray-900 dark:text-white truncate">
+                    <span className="block font-semibold text-xs sm:text-sm text-gray-900 dark:text-white truncate">
                       {carType.label}
-                    </h3>
+                    </span>
                     <p className="text-[10px] sm:text-xs text-purple-600 dark:text-purple-400 font-medium">
                       {carType.price}
                     </p>

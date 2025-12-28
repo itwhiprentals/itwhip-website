@@ -381,7 +381,7 @@ export default function Footer() {
                   </div>
                 </div>
                 <div className="absolute top-1 right-2">
-                  <span className="text-[9px] bg-orange-700 px-1.5 py-0.5 rounded text-white font-medium">SOON</span>
+                  <span className="text-[9px] bg-orange-800 px-1.5 py-0.5 rounded text-white font-medium">SOON</span>
                 </div>
               </a>
             </div>

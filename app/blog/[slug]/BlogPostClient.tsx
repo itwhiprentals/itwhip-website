@@ -3,8 +3,11 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { type BlogPost } from '@/content/posts'
-import { 
+import Header from '@/app/components/Header'
+import Footer from '@/app/components/Footer'
+import {
   IoArrowBackOutline,
   IoArrowForwardOutline,
   IoTimeOutline,
@@ -69,13 +72,24 @@ function addHeadingIds(html: string): string {
 }
 
 export default function BlogPostClient({ post, prevPost, nextPost }: Props) {
+  const router = useRouter()
   const [readProgress, setReadProgress] = useState(0)
   const [timeRemaining, setTimeRemaining] = useState(post.readTime)
   const [copied, setCopied] = useState(false)
   const [showToc, setShowToc] = useState(false)
   const [email, setEmail] = useState('')
   const [subscribed, setSubscribed] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const articleRef = useRef<HTMLDivElement>(null)
+
+  // Header handlers
+  const handleGetAppClick = () => {
+    window.open('https://testflight.apple.com/join/ygzsQbNf', '_blank')
+  }
+
+  const handleSearchClick = () => {
+    router.push('/rentals')
+  }
 
   const config = categoryConfig[post.category]
   const headings = extractHeadings(post.content)
@@ -165,35 +179,35 @@ export default function BlogPostClient({ post, prevPost, nextPost }: Props) {
         .dark .article-body code { background: #374151; color: #e5e7eb; }
       `}} />
 
-      <div className="min-h-screen bg-white dark:bg-gray-950">
-        {/* Progress Bar */}
-        <div className="fixed top-0 left-0 right-0 h-1 bg-gray-200 dark:bg-gray-800 z-[60]">
-          <div 
-            className="h-full bg-purple-600 transition-all duration-150"
-            style={{ width: `${readProgress}%` }}
+      <div className="min-h-screen bg-white dark:bg-gray-950 flex flex-col">
+        {/* Main Site Header */}
+        <div className="fixed top-0 left-0 right-0 z-50">
+          <Header
+            isMobileMenuOpen={isMobileMenuOpen}
+            setIsMobileMenuOpen={setIsMobileMenuOpen}
+            handleGetAppClick={handleGetAppClick}
+            handleSearchClick={handleSearchClick}
           />
         </div>
 
-        {/* Header */}
-        <header className="border-b border-gray-100 dark:border-gray-800 sticky top-1 z-50 bg-white dark:bg-gray-950">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+        {/* Article Toolbar - includes progress bar */}
+        <div className="fixed top-14 md:top-16 left-0 right-0 z-40 bg-white dark:bg-gray-950">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-3 pb-2 flex items-center justify-between">
             <Link href="/blog" className="flex items-center text-gray-600 hover:text-purple-600 transition text-sm">
               <IoArrowBackOutline className="w-4 h-4 mr-1.5" />
-              <span className="font-medium">Back</span>
+              <span className="font-medium">Back to Blog</span>
             </Link>
-            
-            <Link href="/" className="text-lg font-bold text-purple-600">ItWhip</Link>
-            
+
             <div className="flex items-center space-x-1">
               {/* Time Remaining */}
               <span className="hidden sm:flex items-center text-xs text-gray-400 mr-2">
                 <IoTimeOutline className="w-3.5 h-3.5 mr-1" />
                 {timeRemaining > 0 ? `${timeRemaining} min left` : 'Done!'}
               </span>
-              
+
               {/* TOC Button */}
               {headings.length > 0 && (
-                <button 
+                <button
                   onClick={() => setShowToc(!showToc)}
                   className="p-2 text-gray-400 hover:text-gray-600 transition"
                   aria-label="Table of contents"
@@ -201,16 +215,16 @@ export default function BlogPostClient({ post, prevPost, nextPost }: Props) {
                   <IoListOutline className="w-5 h-5" />
                 </button>
               )}
-              
+
               {/* Copy Link */}
-              <button 
+              <button
                 onClick={copyLink}
                 className="p-2 text-gray-400 hover:text-gray-600 transition"
                 aria-label="Copy link"
               >
                 {copied ? <IoCheckmarkOutline className="w-5 h-5 text-green-500" /> : <IoLinkOutline className="w-5 h-5" />}
               </button>
-              
+
               {/* Social Share */}
               <a href={twitterUrl} target="_blank" rel="noopener noreferrer" className="p-2 text-gray-400 hover:text-gray-600 transition">
                 <IoLogoTwitter className="w-5 h-5" />
@@ -220,11 +234,18 @@ export default function BlogPostClient({ post, prevPost, nextPost }: Props) {
               </a>
             </div>
           </div>
-        </header>
+          {/* Progress Bar - at bottom of toolbar, more visible */}
+          <div className="h-1 bg-gray-200 dark:bg-gray-800">
+            <div
+              className="h-full bg-purple-600 transition-all duration-150"
+              style={{ width: `${readProgress}%` }}
+            />
+          </div>
+        </div>
 
         {/* Table of Contents Dropdown */}
         {showToc && headings.length > 0 && (
-          <div className="fixed top-14 right-4 w-72 bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 max-h-[60vh] overflow-y-auto">
+          <div className="fixed top-[110px] md:top-[118px] right-4 w-72 bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 max-h-[60vh] overflow-y-auto">
             <div className="flex items-center justify-between p-3 border-b border-gray-100 dark:border-gray-800">
               <span className="font-semibold text-sm text-gray-900 dark:text-white">Contents</span>
               <button onClick={() => setShowToc(false)} className="text-gray-400 hover:text-gray-600">
@@ -247,15 +268,17 @@ export default function BlogPostClient({ post, prevPost, nextPost }: Props) {
           </div>
         )}
 
-        {/* Article */}
-        <article className="py-10 sm:py-12" ref={articleRef}>
+        {/* Article - with margin for fixed header + toolbar (56/64 header + 48 toolbar = 104/112, +16 buffer) */}
+        <article className="pt-[120px] md:pt-[128px] pb-10 sm:pb-12 flex-1" ref={articleRef}>
           <div className="max-w-[680px] mx-auto px-4 sm:px-6">
             
             {/* Header */}
-            <header className="mb-8">
-              <div className={`inline-flex items-center space-x-1.5 px-3 py-1 rounded-lg text-sm font-medium ${config.bg} ${config.color} mb-4`}>
-                {config.icon}
-                <span>{post.category}</span>
+            <header className="mb-8 mt-4">
+              <div className="flex justify-center mb-5">
+                <div className={`inline-flex items-center space-x-1.5 px-3 py-1 rounded-lg text-sm font-medium ${config.bg} ${config.color}`}>
+                  {config.icon}
+                  <span>{post.category}</span>
+                </div>
               </div>
 
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white leading-tight mb-3">
@@ -394,17 +417,8 @@ export default function BlogPostClient({ post, prevPost, nextPost }: Props) {
           </div>
         </article>
 
-        {/* Footer */}
-        <footer className="border-t border-gray-100 dark:border-gray-800 py-8 bg-gray-50 dark:bg-gray-900">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500">
-            <Link href="/" className="font-bold text-purple-600">ItWhip</Link>
-            <span>© {new Date().getFullYear()} ItWhip. All rights reserved.</span>
-            <div className="flex space-x-4">
-              <Link href="/privacy" className="hover:text-gray-700">Privacy</Link>
-              <Link href="/terms" className="hover:text-gray-700">Terms</Link>
-            </div>
-          </div>
-        </footer>
+        {/* Main Site Footer */}
+        <Footer />
       </div>
     </>
   )
