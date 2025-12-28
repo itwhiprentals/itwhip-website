@@ -116,7 +116,7 @@ export default function HomeClient({ initialEsgCars, initialCityCars }: HomeClie
   const showSkeleton = isLoading && cityCars.length === 0
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <main className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header />
 
       <div className="pt-16">
@@ -307,6 +307,6 @@ export default function HomeClient({ initialEsgCars, initialCityCars }: HomeClie
       </div>
 
       <Footer />
-    </div>
+    </main>
   )
 }

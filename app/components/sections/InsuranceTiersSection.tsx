@@ -25,7 +25,7 @@ export default function InsuranceTiersSection() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="relative bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 rounded-lg p-6 border-2 border-emerald-500 hover:shadow-xl transition-shadow">
-            <div className="absolute -top-3 left-6 bg-emerald-600 text-white px-3 py-0.5 rounded-full text-xs font-bold">
+            <div className="absolute -top-3 left-6 bg-emerald-700 text-white px-3 py-0.5 rounded-full text-xs font-bold">
               PREMIUM
             </div>
             <div className="mt-2">
@@ -58,7 +58,7 @@ export default function InsuranceTiersSection() {
           </div>
 
           <div className="relative bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 rounded-lg p-6 border-2 border-amber-500 hover:shadow-xl transition-shadow">
-            <div className="absolute -top-3 left-6 bg-amber-600 text-white px-3 py-0.5 rounded-full text-xs font-bold">
+            <div className="absolute -top-3 left-6 bg-amber-700 text-white px-3 py-0.5 rounded-full text-xs font-bold">
               STANDARD
             </div>
             <div className="mt-2">

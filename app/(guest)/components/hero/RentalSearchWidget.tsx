@@ -44,13 +44,13 @@ export default function RentalSearchCard({
   const pickupTimeButtonRef = useRef<HTMLButtonElement>(null)
   const returnTimeButtonRef = useRef<HTMLButtonElement>(null)
   
-  // Calculate default dates
+  // Calculate default dates - only on client to avoid hydration mismatch
   const getDefaultDates = () => {
     const tomorrow = new Date()
     tomorrow.setDate(tomorrow.getDate() + 1)
     const returnDay = new Date(tomorrow)
     returnDay.setDate(returnDay.getDate() + 2)
-    
+
     // Format in local timezone
     const formatLocalDate = (date: Date) => {
       const year = date.getFullYear()
@@ -58,14 +58,15 @@ export default function RentalSearchCard({
       const day = date.getDate().toString().padStart(2, '0')
       return `${year}-${month}-${day}`
     }
-    
+
     return {
       pickup: formatLocalDate(tomorrow),
       return: formatLocalDate(returnDay)
     }
   }
-  
-  const defaults = getDefaultDates()
+
+  // Track if component has mounted (for hydration-safe date initialization)
+  const [hasMounted, setHasMounted] = useState(false)
   
   // Helper to extract date from ISO string (handles "2025-10-22T10:00" format)
   const extractDate = (dateString?: string) => {
@@ -85,13 +86,28 @@ export default function RentalSearchCard({
     return defaultTime
   }
   
+  // Initialize with empty dates to avoid hydration mismatch (server/client time diff)
   const [searchParams, setSearchParams] = useState({
     location: initialLocation || '',
-    pickupDate: extractDate(initialPickupDate) || defaults.pickup,
+    pickupDate: extractDate(initialPickupDate) || '',
     pickupTime: extractTime(initialPickupDate, initialPickupTime || '10:00'),
-    returnDate: extractDate(initialReturnDate) || defaults.return,
+    returnDate: extractDate(initialReturnDate) || '',
     returnTime: extractTime(initialReturnDate, initialReturnTime || '10:00')
   })
+
+  // Set default dates on client only (after hydration) to avoid mismatch
+  useEffect(() => {
+    setHasMounted(true)
+    if (!initialPickupDate && !initialReturnDate) {
+      const defaults = getDefaultDates()
+      setSearchParams(prev => ({
+        ...prev,
+        pickupDate: prev.pickupDate || defaults.pickup,
+        returnDate: prev.returnDate || defaults.return
+      }))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Update state when initial props change (for compact variant on search page)
   useEffect(() => {

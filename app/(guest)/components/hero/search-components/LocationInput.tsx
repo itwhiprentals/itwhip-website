@@ -127,7 +127,7 @@ export default function LocationInput({
   return (
     <div className="flex-1 sm:max-w-[240px]">
       <div className="relative">
-        <IoLocationOutline className="absolute left-2 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none z-10" />
+        <IoLocationOutline className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none z-10" />
         <input
           ref={inputRef}
           type="text"
@@ -135,33 +135,35 @@ export default function LocationInput({
           onChange={(e) => handleInputChange(e.target.value)}
           onFocus={() => setShowDropdown(true)}
           placeholder={placeholder}
-          className="w-full h-[38px] pl-7 pr-14 
-            bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 
+          className="w-full h-[44px] pl-8 pr-20
+            bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600
             text-gray-900 dark:text-white placeholder-gray-400
-            rounded-md focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white 
-            transition-all text-[12px] font-medium"
+            rounded-md focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white
+            transition-all text-sm font-medium"
         />
         <div className="absolute right-1 top-1/2 transform -translate-y-1/2 flex items-center gap-0.5 z-10">
           {locationQuery && (
             <button
               onClick={handleClear}
-              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
               type="button"
+              aria-label="Clear location"
             >
-              <IoCloseOutline className="w-3 h-3 text-gray-400" />
+              <IoCloseOutline className="w-4 h-4 text-gray-400" />
             </button>
           )}
           <button
             onClick={handleUseMyLocation}
             disabled={isGettingLocation}
-            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
             title="Use my location"
             type="button"
+            aria-label="Use my location"
           >
             {isGettingLocation ? (
-              <div className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
             ) : (
-              <IoNavigateOutline className="w-3 h-3 text-gray-400" />
+              <IoNavigateOutline className="w-4 h-4 text-gray-400" />
             )}
           </button>
         </div>
