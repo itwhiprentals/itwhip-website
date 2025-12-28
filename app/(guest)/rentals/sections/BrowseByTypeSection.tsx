@@ -8,37 +8,37 @@ const carTypes = [
     type: 'sedan',
     label: 'Sedan',
     price: 'from $35/day',
-    image: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=400&h=300&fit=crop&fm=webp&q=80'
+    image: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=250&h=188&fit=crop&fm=webp&q=75'
   },
   {
     type: 'suv',
     label: 'SUV',
     price: 'from $45/day',
-    image: 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=400&h=300&fit=crop&fm=webp&q=80'
+    image: 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=250&h=188&fit=crop&fm=webp&q=75'
   },
   {
     type: 'luxury',
     label: 'Luxury',
     price: 'from $100/day',
-    image: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=400&h=300&fit=crop&fm=webp&q=80'
+    image: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=250&h=188&fit=crop&fm=webp&q=75'
   },
   {
     type: 'sports',
     label: 'Sports',
     price: 'from $150/day',
-    image: 'https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=400&h=300&fit=crop&fm=webp&q=80'
+    image: 'https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=250&h=188&fit=crop&fm=webp&q=75'
   },
   {
     type: 'electric',
     label: 'Electric',
     price: 'from $80/day',
-    image: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?w=400&h=300&fit=crop&fm=webp&q=80'
+    image: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?w=250&h=188&fit=crop&fm=webp&q=75'
   },
   {
     type: 'truck',
     label: 'Truck',
     price: 'from $60/day',
-    image: 'https://images.unsplash.com/photo-1559416523-140ddc3d238c?w=400&h=300&fit=crop&fm=webp&q=80'
+    image: 'https://images.unsplash.com/photo-1559416523-140ddc3d238c?w=250&h=188&fit=crop&fm=webp&q=75'
   }
 ]
 

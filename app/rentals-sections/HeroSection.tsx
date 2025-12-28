@@ -15,6 +15,8 @@ export default function HeroSection({ userCity = 'Arizona' }: HeroSectionProps) 
           src="/hero-bg.webp"
           alt="Peer-to-peer car rental Phoenix Arizona"
           className="w-full h-full object-cover"
+          fetchPriority="high"
+          loading="eager"
         />
         <div className="absolute inset-0 bg-black/40" />
       </div>
