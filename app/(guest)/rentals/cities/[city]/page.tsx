@@ -697,6 +697,7 @@ export default async function CityPage({
           item: {
             '@type': 'Product',
             name: `${car.year} ${car.make} ${car.model}`,
+            url: `https://itwhip.com/rentals/${car.id}`,
             description: `Rent this ${car.year} ${car.make} ${car.model} in ${cityName}`,
             image: car.photos?.[0]?.url,
             offers: {

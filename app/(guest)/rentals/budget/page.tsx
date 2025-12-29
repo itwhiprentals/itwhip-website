@@ -344,6 +344,7 @@ export default async function BudgetRentalsPage() {
           item: {
             '@type': 'Product',
             name: `${car.year} ${car.make} ${car.model}`,
+            url: `https://itwhip.com/rentals/${car.id}`,
             description: `Budget ${car.year} ${car.make} ${car.model} rental in ${car.city || 'Arizona'} - $${car.dailyRate}/day`,
             image: car.photos?.[0]?.url,
             brand: {

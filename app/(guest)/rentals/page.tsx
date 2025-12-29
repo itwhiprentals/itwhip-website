@@ -262,6 +262,7 @@ export default async function RentalsPage({
       item: {
         '@type': 'Product',
         name: `${car.year} ${car.make} ${car.model}`,
+        url: `https://itwhip.com/rentals/${car.id}`,
         image: car.photos[0]?.url || 'https://itwhip.com/images/placeholder-car.jpg',
         description: `Rent a ${car.year} ${car.make} ${car.model} in ${car.city || 'Phoenix'}`,
         offers: {

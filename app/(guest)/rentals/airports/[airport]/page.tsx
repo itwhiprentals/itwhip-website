@@ -563,6 +563,7 @@ export default async function AirportPage({
           item: {
             '@type': 'Product',
             name: `${car.year} ${car.make} ${car.model}`,
+            url: `https://itwhip.com/rentals/${car.id}`,
             description: `Rent this ${car.year} ${car.make} ${car.model} at ${airportData.code}`,
             image: car.photos?.[0]?.url,
             offers: {

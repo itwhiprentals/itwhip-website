@@ -76,6 +76,7 @@ export default function UseCasePage({
           item: {
             '@type': 'Product',
             name: `${car.year} ${car.make} ${car.model}`,
+            url: `https://itwhip.com/rentals/${car.id}`,
             description: `${useCaseData.title} - ${car.year} ${car.make} ${car.model}`,
             image: car.photos?.[0]?.url,
             offers: {

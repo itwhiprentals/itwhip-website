@@ -365,6 +365,7 @@ export default async function CarModelPage({ params }: PageProps) {
       {
         '@type': 'Product',
         name: `${displayName} Rental`,
+        url: `https://itwhip.com/rentals/makes/${make}/${model}`,
         description: `Rent a ${displayName} in Phoenix, AZ from local owners.`,
         image: cars[0]?.photos?.[0]?.url || 'https://itwhip.com/images/placeholder-car.jpg',
         brand: {
