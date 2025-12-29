@@ -85,7 +85,15 @@ export default function CompactCarCard({ car, accentColor = 'amber', className =
 
   const rawImageUrl = car.photos?.[0]?.url ||
     'https://images.unsplash.com/photo-1583267746897-2cf415887172?w=350&h=263&fit=crop&fm=webp&q=75'
-  const imageUrl = optimizeImageUrl(rawImageUrl, 350)
+  // Optimize: 350x263 (4:3 aspect ratio) with good quality and auto DPR for retina
+  const imageUrl = optimizeImageUrl(rawImageUrl, {
+    width: 350,
+    height: 263,
+    quality: 'auto:good',
+    dpr: 'auto',
+    crop: 'fill',
+    gravity: 'auto'
+  })
 
   const carUrl = generateCarUrl({
     id: car.id,
@@ -118,6 +126,9 @@ export default function CompactCarCard({ car, accentColor = 'amber', className =
           src={imageUrl}
           alt={`${car.year} ${car.make} ${car.model} for rent - $${car.dailyRate}/day`}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          loading="lazy"
+          width={350}
+          height={263}
         />
         {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />

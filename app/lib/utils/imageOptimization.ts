@@ -1,29 +1,63 @@
 // app/lib/utils/imageOptimization.ts
 // Image optimization utilities for Cloudinary and Unsplash
 
+interface CloudinaryOptions {
+  width?: number
+  height?: number
+  quality?: 'auto' | 'auto:low' | 'auto:eco' | 'auto:good' | 'auto:best' | number
+  dpr?: 'auto' | number
+  crop?: 'fill' | 'fit' | 'scale' | 'thumb' | 'crop'
+  gravity?: 'auto' | 'center' | 'face' | 'faces'
+}
+
 /**
- * Optimizes Cloudinary URLs with automatic format and quality
+ * Optimizes Cloudinary URLs with automatic format, quality, and sizing
  * Transforms: https://res.cloudinary.com/xxx/image/upload/v123/photo.jpg
- * To: https://res.cloudinary.com/xxx/image/upload/f_auto,q_auto,w_800,c_fill/v123/photo.jpg
+ * To: https://res.cloudinary.com/xxx/image/upload/f_auto,q_auto:good,w_400,h_300,c_fill,dpr_auto/v123/photo.jpg
  *
  * @param url - Original Cloudinary URL
- * @param width - Target width (default 800)
+ * @param widthOrOptions - Target width (default 800) or full options object
  * @returns Optimized URL with transformations
  */
-export function optimizeCloudinaryUrl(url: string, width = 800): string {
+export function optimizeCloudinaryUrl(
+  url: string,
+  widthOrOptions: number | CloudinaryOptions = 800
+): string {
   if (!url) return url
 
   // Skip if not a Cloudinary URL
   if (!url.includes('cloudinary.com')) return url
 
-  // Skip if already has transformations
+  // Skip if already has transformations (avoid double-optimizing)
   if (url.includes('f_auto') || url.includes('q_auto')) return url
 
+  // Parse options
+  const options: CloudinaryOptions = typeof widthOrOptions === 'number'
+    ? { width: widthOrOptions }
+    : widthOrOptions
+
+  const {
+    width = 800,
+    height,
+    quality = 'auto:good',
+    dpr = 'auto',
+    crop = 'fill',
+    gravity = 'auto'
+  } = options
+
+  // Build transformation string
+  const transforms = [
+    'f_auto',                           // Auto format (WebP/AVIF for modern browsers)
+    `q_${quality}`,                     // Quality optimization
+    `w_${width}`,                       // Width
+    height ? `h_${height}` : null,      // Height (optional)
+    `c_${crop}`,                        // Crop mode
+    `g_${gravity}`,                     // Gravity/focus point
+    `dpr_${dpr}`                        // Device pixel ratio for retina
+  ].filter(Boolean).join(',')
+
   // Insert transformations after /upload/
-  return url.replace(
-    '/upload/',
-    `/upload/f_auto,q_auto,w_${width},c_fill/`
-  )
+  return url.replace('/upload/', `/upload/${transforms}/`)
 }
 
 /**
@@ -52,14 +86,17 @@ export function optimizeUnsplashUrl(url: string): string {
  * Falls back to original URL for other sources
  *
  * @param url - Any image URL
- * @param width - Target width for Cloudinary (default 800)
+ * @param widthOrOptions - Target width for Cloudinary (default 800) or full options
  * @returns Optimized URL
  */
-export function optimizeImageUrl(url: string, width = 800): string {
+export function optimizeImageUrl(
+  url: string,
+  widthOrOptions: number | CloudinaryOptions = 800
+): string {
   if (!url) return url
 
   if (url.includes('cloudinary.com')) {
-    return optimizeCloudinaryUrl(url, width)
+    return optimizeCloudinaryUrl(url, widthOrOptions)
   }
 
   if (url.includes('unsplash.com')) {
@@ -68,3 +105,6 @@ export function optimizeImageUrl(url: string, width = 800): string {
 
   return url
 }
+
+// Export types for consumers
+export type { CloudinaryOptions }

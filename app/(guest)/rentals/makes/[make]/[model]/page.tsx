@@ -24,6 +24,7 @@ import {
   IoLocationOutline,
   IoShieldCheckmarkOutline
 } from 'react-icons/io5'
+import { MERCHANT_RETURN_POLICY } from '@/app/lib/seo/return-policy'
 
 export const revalidate = 60
 
@@ -352,6 +353,11 @@ export default async function CarModelPage({ params }: PageProps) {
     take: 8
   })
 
+  // Calculate priceValidUntil (90 days from now)
+  const priceValidUntilDate = new Date()
+  priceValidUntilDate.setDate(priceValidUntilDate.getDate() + 90)
+  const priceValidUntil = priceValidUntilDate.toISOString().split('T')[0]
+
   // JSON-LD Schema
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -371,7 +377,9 @@ export default async function CarModelPage({ params }: PageProps) {
           lowPrice: minPrice,
           highPrice: maxPrice,
           offerCount: totalCars,
-          availability: totalCars > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock'
+          priceValidUntil,
+          availability: totalCars > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+          hasMerchantReturnPolicy: MERCHANT_RETURN_POLICY
         },
         ...(totalCars > 0 ? {
           aggregateRating: {

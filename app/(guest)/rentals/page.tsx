@@ -9,6 +9,7 @@ import CarGrid from './components/CarGrid'
 import Breadcrumbs from './components/Breadcrumbs'
 import Footer from '@/app/components/Footer'
 import { IoCarSportOutline } from 'react-icons/io5'
+import { MERCHANT_RETURN_POLICY } from '@/app/lib/seo/return-policy'
 
 const TYPE_LABELS: Record<string, string> = {
   suv: 'SUVs',
@@ -241,6 +242,11 @@ export default async function RentalsPage({
     return 'Browse Cars'
   }
 
+  // Calculate priceValidUntil (90 days from now)
+  const priceValidUntilDate = new Date()
+  priceValidUntilDate.setDate(priceValidUntilDate.getDate() + 90)
+  const priceValidUntil = priceValidUntilDate.toISOString().split('T')[0]
+
   // Build ItemList JSON-LD schema
   const itemListSchema = {
     '@context': 'https://schema.org',
@@ -262,8 +268,10 @@ export default async function RentalsPage({
           '@type': 'Offer',
           priceCurrency: 'USD',
           price: car.dailyRate.toString(),
+          priceValidUntil,
           availability: 'https://schema.org/InStock',
-          url: `https://itwhip.com/rentals/${car.id}`
+          url: `https://itwhip.com/rentals/${car.id}`,
+          hasMerchantReturnPolicy: MERCHANT_RETURN_POLICY
         },
         ...(car.rating && {
           aggregateRating: {

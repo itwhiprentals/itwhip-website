@@ -155,8 +155,8 @@ export default async function LuxuryNearMePage() {
                 '@type': 'MerchantReturnPolicy',
                 applicableCountry: 'US',
                 returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
-                merchantReturnDays: 1,
-                returnMethod: 'https://schema.org/ReturnByMail',
+                merchantReturnDays: 3,
+                returnMethod: 'https://schema.org/ReturnAtKiosk',
                 returnFees: 'https://schema.org/FreeReturn'
               },
               shippingDetails: {
