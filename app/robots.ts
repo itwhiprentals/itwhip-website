@@ -27,7 +27,7 @@ export default function robots(): MetadataRoute.Robots {
     ],
     sitemap: [
       'https://itwhip.com/sitemap.xml',
-      'https://itwhip.com/api/sitemap-images',
+      'https://itwhip.com/sitemap-images.xml',
     ],
   }
 }

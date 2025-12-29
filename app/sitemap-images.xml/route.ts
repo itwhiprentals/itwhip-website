@@ -1,4 +1,4 @@
-// app/api/sitemap-images/route.ts
+// app/sitemap-images.xml/route.ts
 // Image Sitemap for ItWhip - Helps search engines discover car images
 // Google Image Sitemap format: https://developers.google.com/search/docs/crawling-indexing/sitemaps/image-sitemaps
 
