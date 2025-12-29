@@ -1,44 +1,27 @@
 // app/components/RoleSwitcher.tsx
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+// Industry Best Practice: Use centralized auth context for instant role switching
+// - No page refresh needed
+// - Header updates automatically when context changes
+// - Google/Airbnb-style instant switching UX
 
-interface DualRoleStatus {
-  hasBothRoles: boolean
-  hasHostProfile: boolean
-  hasGuestProfile: boolean
-  currentRole: 'host' | 'guest' | null
-  hostApprovalStatus: string | null
-}
+import { useState, useRef, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/app/contexts/AuthContext'
 
 export default function RoleSwitcher() {
-  const [dualRoleStatus, setDualRoleStatus] = useState<DualRoleStatus | null>(null)
+  const {
+    hasBothProfiles,
+    currentRole,
+    isLoading,
+    switchRole
+  } = useAuth()
+
   const [isOpen, setIsOpen] = useState(false)
   const [isSwitching, setIsSwitching] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
-
-  // Fetch dual-role status on mount
-  useEffect(() => {
-    async function checkDualRole() {
-      try {
-        const response = await fetch('/api/auth/check-dual-role')
-
-        if (response.ok) {
-          const data = await response.json()
-          setDualRoleStatus(data)
-        }
-      } catch (error) {
-        console.error('[RoleSwitcher] Error checking dual role:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    checkDualRole()
-  }, [])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -54,27 +37,21 @@ export default function RoleSwitcher() {
     }
   }, [isOpen])
 
-  // Handle role switch
+  // Handle role switch - uses AuthContext for instant update
   const handleSwitch = async (targetRole: 'host' | 'guest') => {
     setIsSwitching(true)
     setIsOpen(false)
 
     try {
-      const response = await fetch('/api/auth/switch-role', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ targetRole })
-      })
+      // Use context's switchRole - this updates auth state automatically
+      const success = await switchRole(targetRole)
 
-      if (response.ok) {
-        const data = await response.json()
-        // Redirect to the appropriate dashboard
-        router.push(data.redirectUrl)
-        // Force page reload to update all auth state
-        router.refresh()
+      if (success) {
+        // Navigate to appropriate dashboard
+        // The Header will update instantly via context (no refresh needed!)
+        router.push(targetRole === 'host' ? '/host/dashboard' : '/dashboard')
       } else {
-        const error = await response.json()
-        console.error('[RoleSwitcher] Switch failed:', error)
+        console.error('[RoleSwitcher] Switch failed')
         alert('Failed to switch roles. Please try again.')
       }
     } catch (error) {
@@ -86,11 +63,10 @@ export default function RoleSwitcher() {
   }
 
   // Don't render if loading or user doesn't have both roles
-  if (isLoading || !dualRoleStatus?.hasBothRoles) {
+  if (isLoading || !hasBothProfiles) {
     return null
   }
 
-  const currentRole = dualRoleStatus.currentRole
   const currentRoleLabel = currentRole === 'host' ? 'Host' : 'Guest'
   const targetRole = currentRole === 'host' ? 'guest' : 'host'
   const targetRoleLabel = targetRole === 'host' ? 'Host' : 'Guest'

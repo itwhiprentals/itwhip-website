@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, usePathname } from 'next/navigation'
-import { 
+import {
   IoSunnyOutline,
   IoMoonOutline,
   IoMenuOutline,
@@ -22,6 +22,7 @@ import MobileMenu from './MobileMenu'
 import ProfileModal from '../(guest)/dashboard/modals/ProfileModal'
 import NotificationBell from './notifications/NotificationBell'
 import RoleSwitcher from './RoleSwitcher'
+import { useAuth } from '@/app/contexts/AuthContext'
 
 // Desktop Navigation Items
 const navItems = [
@@ -87,16 +88,34 @@ export default function Header({
 }: HeaderProps = {}) {
   const router = useRouter()
   const pathname = usePathname()
-  
+
+  // ========== AUTH CONTEXT (Industry Best Practice) ==========
+  // Use centralized auth state for instant role switching
+  // No more page refreshes needed - context updates trigger re-renders
+  const {
+    isLoggedIn,
+    user: authUser,
+    isLoading: isCheckingAuth,
+    hasBothProfiles,
+    currentRole,
+    logout: contextLogout,
+    refreshAuth
+  } = useAuth()
+
+  // Map auth context user to local User type
+  const user: User | null = authUser ? {
+    id: authUser.id,
+    name: authUser.name,
+    email: authUser.email,
+    role: authUser.role,
+    profilePhoto: authUser.profilePhoto
+  } : null
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [scrolled, setScrolled] = useState(false)
-  
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [user, setUser] = useState<User | null>(null)
   const [showProfileModal, setShowProfileModal] = useState(false)
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   // Check if we're on specific pages
@@ -143,250 +162,49 @@ export default function Header({
     }
   }
 
-  // Check authentication status
-  const checkAuth = async () => {
-    try {
-      setIsLoggedIn(false)
-      setUser(null)
-      
-      if (window.location.pathname.startsWith('/auth/') || 
-          window.location.pathname.startsWith('/portal/')) {
-        setIsCheckingAuth(false)
-        return
-      }
-      
-      // Check for admin auth first if on admin pages
-      if (window.location.pathname.startsWith('/admin/')) {
-        const adminResponse = await fetch('/api/admin/auth/verify', {
-          method: 'GET',
-          credentials: 'include'
-        })
-        
-        if (adminResponse.ok) {
-          const data = await adminResponse.json()
-          setIsLoggedIn(true)
-          setUser({
-            id: data.user.id,
-            name: data.user.name || 'Admin',
-            email: data.user.email,
-            role: 'ADMIN',
-            profilePhoto: data.user.profilePhoto || data.user.avatar
-          })
-          setIsCheckingAuth(false)
-          return
-        }
-      }
-
-      // ========== HOST AUTH CHECK ==========
-      // On host pages, check host auth directly
-      if (window.location.pathname.startsWith('/host/')) {
-        const hostResponse = await fetch('/api/host/login', {
-          method: 'GET',
-          credentials: 'include'
-        })
-
-        if (hostResponse.ok) {
-          const data = await hostResponse.json()
-
-          if (data.authenticated && data.host) {
-            setIsLoggedIn(true)
-            setUser({
-              id: data.host.id,
-              name: data.host.name,
-              email: data.host.email,
-              role: 'BUSINESS',
-              profilePhoto: data.host.profilePhoto
-            })
-            setIsCheckingAuth(false)
-            return
-          }
-        }
-      }
-
-      // ========== DUAL-ROLE CHECK (for cross-page auth) ==========
-      // On NON-host pages, check if a host user with dual account is logged in
-      // This handles HOST navigating to homepage/car pages - they should appear as GUEST
-      if (!window.location.pathname.startsWith('/host/')) {
-        try {
-          const dualRoleResponse = await fetch('/api/auth/check-dual-role', {
-            credentials: 'include'
-          })
-
-          if (dualRoleResponse.ok) {
-            const dualRole = await dualRoleResponse.json()
-            console.log('[Header] Dual-role check:', dualRole)
-
-            // If HOST with guest profile → show as GUEST on non-host pages
-            if (dualRole.hasHostProfile && dualRole.hasGuestProfile) {
-              console.log('[Header] HOST with dual account on non-host page - showing as GUEST')
-
-              // Get host data to use as base user info
-              const hostResponse = await fetch('/api/host/login', {
-                method: 'GET',
-                credentials: 'include'
-              })
-
-              if (hostResponse.ok) {
-                const hostData = await hostResponse.json()
-                if (hostData.authenticated && hostData.host) {
-                  // Try to get guest profile photo
-                  let profilePhoto = hostData.host.profilePhoto
-                  try {
-                    const profileResponse = await fetch('/api/guest/profile', {
-                      credentials: 'include'
-                    })
-                    if (profileResponse.ok) {
-                      const profileData = await profileResponse.json()
-                      if (profileData.success && profileData.profile?.profilePhoto) {
-                        profilePhoto = profileData.profile.profilePhoto
-                      }
-                    }
-                  } catch (e) {
-                    console.log('[Header] Could not fetch guest profile photo')
-                  }
-
-                  setIsLoggedIn(true)
-                  setUser({
-                    id: hostData.host.id,
-                    name: hostData.host.name,
-                    email: hostData.host.email,
-                    role: 'GUEST', // Show as GUEST on non-host pages
-                    profilePhoto
-                  })
-                  setIsCheckingAuth(false)
-                  return
-                }
-              }
-            }
-
-            // If HOST-only (no guest profile) → show "Sign In" on non-host pages
-            if (dualRole.hasHostProfile && !dualRole.hasGuestProfile) {
-              console.log('[Header] HOST-only user on non-host page - showing Sign In')
-              setIsCheckingAuth(false)
-              return // Will show "Sign In" button
-            }
-          }
-        } catch (e) {
-          console.error('[Header] Dual-role check failed:', e)
-        }
-      }
-
-      // Check guest auth - only if session cookie exists
-      const hasGuestSession = document.cookie.includes('accessToken') ||
-                              document.cookie.includes('guest_session')
-
-      if (!hasGuestSession) {
-        // No session cookie - skip API call to avoid 401 spam
-        setIsCheckingAuth(false)
-        return
-      }
-
-      // Check guest auth - includes profile photo from ReviewerProfile
-      const response = await fetch('/api/auth/verify', {
-        method: 'GET',
-        credentials: 'include'
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        
-        // Fetch guest profile to get photo
-        let profilePhoto = data.user.avatar || data.user.profilePhoto
-        
-        try {
-          const profileResponse = await fetch('/api/guest/profile', {
-            credentials: 'include'
-          })
-          
-          if (profileResponse.ok) {
-            const profileData = await profileResponse.json()
-            if (profileData.success && profileData.profile?.profilePhoto) {
-              profilePhoto = profileData.profile.profilePhoto
-            }
-          }
-        } catch (error) {
-          console.log('Could not fetch guest profile photo')
-        }
-        
-        setIsLoggedIn(true)
-        setUser({
-          ...data.user,
-          profilePhoto,
-          role: data.user.role || 'GUEST'
-        })
-      } else {
-        setIsLoggedIn(false)
-        setUser(null)
-      }
-    } catch (error) {
-      console.error('Auth check failed:', error)
-      setIsLoggedIn(false)
-      setUser(null)
-    } finally {
-      setIsCheckingAuth(false)
-    }
-  }
-
-  useEffect(() => {
-    checkAuth()
-  }, [pathname])
+  // ========== AUTH STATE IS NOW MANAGED BY AuthContext ==========
+  // The AuthContext handles all auth checking automatically
+  // It refreshes on mount, on window focus, and after role switches
+  // This removes the need for the old checkAuth() function
 
   const handleLogout = async () => {
     if (isLoggingOut) return
-    
+
     setIsLoggingOut(true)
     setIsMobileMenuOpen(false)
-    
+
     try {
-      let logoutUrl = '/api/auth/logout'
+      // Determine redirect URL based on user type
       let redirectUrl = '/'
-      
+
       if (isAdmin) {
-        logoutUrl = '/api/admin/auth/logout'
+        // Admin logout
+        await fetch('/api/admin/auth/logout', {
+          method: 'POST',
+          credentials: 'include'
+        })
         redirectUrl = '/admin/auth/login'
       } else if (isHost) {
-        const hostLogoutResponse = await fetch('/api/host/login', {
+        // Host logout
+        await fetch('/api/host/login', {
           method: 'DELETE',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json'
-          }
+          credentials: 'include'
         })
-        
-        if (!hostLogoutResponse.ok) {
-          document.cookie = 'host_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
-          document.cookie = 'hostAccessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
-          document.cookie = 'hostRefreshToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
-          document.cookie = 'accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
-        }
-        
-        setIsLoggedIn(false)
-        setUser(null)
-        localStorage.removeItem('user')
-        sessionStorage.clear()
-        
-        window.location.href = '/host/login'
-        return
+        redirectUrl = '/host/login'
+      } else {
+        // Guest logout - use context logout
+        await contextLogout()
       }
-      
-      const response = await fetch(logoutUrl, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      })
-      
-      setIsLoggedIn(false)
-      setUser(null)
+
+      // Clear local storage
       localStorage.removeItem('user')
       sessionStorage.clear()
-      
+
+      // Redirect
       window.location.href = redirectUrl
     } catch (error) {
       console.error('Logout error:', error)
-      setIsLoggedIn(false)
-      setUser(null)
+      // Force cleanup on error
       localStorage.removeItem('user')
       sessionStorage.clear()
       window.location.href = '/'
@@ -679,8 +497,9 @@ export default function Header({
         <ProfileModal
           isOpen={showProfileModal}
           onClose={() => setShowProfileModal(false)}
-          onUpdate={(updatedUser) => {
-            checkAuth()
+          onUpdate={() => {
+            // Refresh auth state from context after profile update
+            refreshAuth()
           }}
         />
       )}

@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { SessionProvider } from 'next-auth/react'
 import { ReactNode, useState, createContext, useContext } from 'react'
 import { useUserLocation, type UserLocation } from '@/hooks/useUserLocation'
+import { AuthProvider } from '@/app/contexts/AuthContext'
 
 // ============================================================================
 // LOCATION CONTEXT
@@ -56,11 +57,13 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <SessionProvider>
-      <QueryClientProvider client={queryClient}>
-        <LocationProvider>
-          {children}
-        </LocationProvider>
-      </QueryClientProvider>
+      <AuthProvider>
+        <QueryClientProvider client={queryClient}>
+          <LocationProvider>
+            {children}
+          </LocationProvider>
+        </QueryClientProvider>
+      </AuthProvider>
     </SessionProvider>
   )
 }
