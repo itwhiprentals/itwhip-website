@@ -48,13 +48,13 @@ export const SHIPPING_DETAILS = {
       '@type': 'QuantitativeValue',
       minValue: 0,
       maxValue: 1,
-      unitCode: 'DAY'
+      unitCode: 'd' // UN/CEFACT Common Code for "day"
     },
     transitTime: {
       '@type': 'QuantitativeValue',
       minValue: 0,
       maxValue: 0,
-      unitCode: 'DAY'
+      unitCode: 'd' // UN/CEFACT Common Code for "day"
     }
   }
 }

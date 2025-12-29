@@ -384,13 +384,13 @@ export default async function BudgetRentalsPage() {
                     '@type': 'QuantitativeValue',
                     minValue: 0,
                     maxValue: 24,
-                    unitCode: 'DAY'
+                    unitCode: 'd'
                   },
                   transitTime: {
                     '@type': 'QuantitativeValue',
                     minValue: 0,
                     maxValue: 2,
-                    unitCode: 'DAY'
+                    unitCode: 'd'
                   }
                 }
               }

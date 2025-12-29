@@ -604,13 +604,13 @@ export default async function CarMakePage({
                 '@type': 'QuantitativeValue',
                 minValue: 0,
                 maxValue: 24,
-                unitCode: 'DAY'
+                unitCode: 'd'
               },
               transitTime: {
                 '@type': 'QuantitativeValue',
                 minValue: 0,
                 maxValue: 2,
-                unitCode: 'DAY'
+                unitCode: 'd'
               }
             }
           }

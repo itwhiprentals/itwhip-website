@@ -171,13 +171,13 @@ export default async function ExoticNearMePage() {
                     '@type': 'QuantitativeValue',
                     minValue: 0,
                     maxValue: 1,
-                    unitCode: 'DAY'
+                    unitCode: 'd'
                   },
                   transitTime: {
                     '@type': 'QuantitativeValue',
                     minValue: 0,
                     maxValue: 1,
-                    unitCode: 'DAY'
+                    unitCode: 'd'
                   }
                 },
                 shippingRate: {
