@@ -38,6 +38,12 @@ const nextConfig = {
       { source: '/driver-agreement', destination: '/terms', permanent: true },
 
       // ============================================
+      // LEGACY B2B PAGES - Redirect to P2P equivalents
+      // ============================================
+      { source: '/hotel-solutions', destination: '/rentals', permanent: true },
+      { source: '/gds', destination: '/integrations', permanent: true },
+
+      // ============================================
       // RENAMED PAGES - Point to new locations
       // ============================================
       { source: '/insurance', destination: '/insurance-guide', permanent: true },

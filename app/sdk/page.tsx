@@ -104,205 +104,209 @@ export default function SDKPage() {
 
   const codeExamples = {
     javascript: {
-      install: 'npm install @itwhip/instant-ride-sdk',
-      initialize: `import { InstantRideSDK } from '@itwhip/instant-ride-sdk';
+      install: 'npm install @itwhip/rental-sdk',
+      initialize: `import { ItWhipSDK } from '@itwhip/rental-sdk';
 
-const sdk = new InstantRideSDK({
+const sdk = new ItWhipSDK({
   apiKey: process.env.ITWHIP_API_KEY,
   apiSecret: process.env.ITWHIP_API_SECRET,
-  propertyId: process.env.PROPERTY_ID,
+  hostId: process.env.HOST_ID,
   environment: 'production'
 });
 
 // Initialize connection
 await sdk.initialize();`,
-      booking: `// Create a ride booking
-const booking = await sdk.rides.create({
-  guestProfile: {
-    pmsId: 'GUEST-123456',
+      booking: `// Create a rental booking
+const booking = await sdk.rentals.create({
+  renterProfile: {
+    userId: 'RENTER-123456',
     name: 'John Smith',
-    roomNumber: '412',
-    checkIn: '2024-01-15',
-    checkOut: '2024-01-18'
+    email: 'john@example.com',
+    phone: '+1-480-555-0123',
+    driversLicense: 'DL-AZ-123456'
   },
-  ride: {
-    pickup: 'property',
-    destination: 'PHX Sky Harbor Airport',
-    scheduledTime: '2024-01-18T10:00:00Z',
-    vehicleClass: 'luxury',
-    passengers: 2,
-    luggage: 3
+  rental: {
+    vehicleId: 'VEH-789',
+    pickupLocation: 'host_address',
+    startDate: '2024-01-15T10:00:00Z',
+    endDate: '2024-01-18T10:00:00Z',
+    vehicleClass: 'standard',
+    insurance: 'basic'
   },
   billing: {
-    method: 'room_charge',
-    folioId: 'FOLIO-789',
-    corporateAccount: null
+    method: 'card',
+    paymentMethodId: 'pm_xyz789',
+    splitPayment: null
   }
 });
 
 console.log('Booking confirmed:', booking.confirmationCode);
 // Output: Booking confirmed: WHIP-2024-ABCD1234`,
-      tracking: `// Real-time ride tracking
-sdk.rides.track(booking.id, (update) => {
-  console.log('Driver location:', update.location);
-  console.log('ETA:', update.estimatedArrival);
-  console.log('Status:', update.status);
-  
-  // Update guest via SMS/Push
-  if (update.status === 'driver_arrived') {
-    notifyGuest(booking.guestPhone, 'Your driver has arrived!');
+      tracking: `// Real-time rental tracking
+sdk.rentals.track(booking.id, (update) => {
+  console.log('Vehicle location:', update.location);
+  console.log('Rental status:', update.status);
+  console.log('Mileage:', update.currentMileage);
+
+  // Notify renter of pickup reminder
+  if (update.status === 'ready_for_pickup') {
+    notifyRenter(booking.renterPhone, 'Your vehicle is ready for pickup!');
   }
 });`,
-      flightIntegration: `// Flight tracking integration
-const flightBooking = await sdk.flights.track({
-  flightNumber: 'AA1234',
-  date: '2024-01-18',
-  guestPmsId: 'GUEST-123456'
+      vehicleAvailability: `// Check vehicle availability
+const available = await sdk.vehicles.checkAvailability({
+  vehicleId: 'VEH-789',
+  startDate: '2024-01-15T10:00:00Z',
+  endDate: '2024-01-18T10:00:00Z'
 });
 
-// Auto-adjust pickup time based on flight status
-sdk.rides.on('flight_updated', async (event) => {
-  if (event.status === 'delayed') {
-    await sdk.rides.reschedule(booking.id, {
-      newPickupTime: event.newArrivalTime
-    });
-  }
-});`
+// Get pricing for the rental period
+const pricing = await sdk.vehicles.getPricing({
+  vehicleId: 'VEH-789',
+  days: 3,
+  insurance: 'premium'
+});
+
+console.log('Available:', available.isAvailable);
+console.log('Total price:', pricing.total);`
     },
     python: {
       install: 'pip install itwhip-sdk',
-      initialize: `from itwhip import InstantRideSDK
+      initialize: `from itwhip import ItWhipSDK
 import os
 
-sdk = InstantRideSDK(
+sdk = ItWhipSDK(
     api_key=os.environ['ITWHIP_API_KEY'],
     api_secret=os.environ['ITWHIP_API_SECRET'],
-    property_id=os.environ['PROPERTY_ID'],
+    host_id=os.environ['HOST_ID'],
     environment='production'
 )
 
 # Initialize connection
 await sdk.initialize()`,
-      booking: `# Create a ride booking
-booking = await sdk.rides.create({
-    'guest_profile': {
-        'pms_id': 'GUEST-123456',
+      booking: `# Create a rental booking
+booking = await sdk.rentals.create({
+    'renter_profile': {
+        'user_id': 'RENTER-123456',
         'name': 'John Smith',
-        'room_number': '412',
-        'check_in': '2024-01-15',
-        'check_out': '2024-01-18'
+        'email': 'john@example.com',
+        'phone': '+1-480-555-0123',
+        'drivers_license': 'DL-AZ-123456'
     },
-    'ride': {
-        'pickup': 'property',
-        'destination': 'PHX Sky Harbor Airport',
-        'scheduled_time': '2024-01-18T10:00:00Z',
-        'vehicle_class': 'luxury',
-        'passengers': 2,
-        'luggage': 3
+    'rental': {
+        'vehicle_id': 'VEH-789',
+        'pickup_location': 'host_address',
+        'start_date': '2024-01-15T10:00:00Z',
+        'end_date': '2024-01-18T10:00:00Z',
+        'vehicle_class': 'standard',
+        'insurance': 'basic'
     },
     'billing': {
-        'method': 'room_charge',
-        'folio_id': 'FOLIO-789',
-        'corporate_account': None
+        'method': 'card',
+        'payment_method_id': 'pm_xyz789',
+        'split_payment': None
     }
 })
 
 print(f'Booking confirmed: {booking.confirmation_code}')
 # Output: Booking confirmed: WHIP-2024-ABCD1234`,
-      tracking: `# Real-time ride tracking
+      tracking: `# Real-time rental tracking
 def handle_update(update):
-    print(f'Driver location: {update["location"]}')
-    print(f'ETA: {update["estimated_arrival"]}')
-    print(f'Status: {update["status"]}')
-    
-    # Update guest via SMS/Push
-    if update["status"] == 'driver_arrived':
-        notify_guest(booking.guest_phone, 'Your driver has arrived!')
+    print(f'Vehicle location: {update["location"]}')
+    print(f'Rental status: {update["status"]}')
+    print(f'Mileage: {update["current_mileage"]}')
 
-sdk.rides.track(booking.id, handle_update)`,
-      flightIntegration: `# Flight tracking integration
-flight_booking = await sdk.flights.track({
-    'flight_number': 'AA1234',
-    'date': '2024-01-18',
-    'guest_pms_id': 'GUEST-123456'
+    # Notify renter of pickup reminder
+    if update["status"] == 'ready_for_pickup':
+        notify_renter(booking.renter_phone, 'Your vehicle is ready for pickup!')
+
+sdk.rentals.track(booking.id, handle_update)`,
+      vehicleAvailability: `# Check vehicle availability
+available = await sdk.vehicles.check_availability({
+    'vehicle_id': 'VEH-789',
+    'start_date': '2024-01-15T10:00:00Z',
+    'end_date': '2024-01-18T10:00:00Z'
 })
 
-# Auto-adjust pickup time based on flight status
-@sdk.rides.on('flight_updated')
-async def handle_flight_update(event):
-    if event['status'] == 'delayed':
-        await sdk.rides.reschedule(booking.id, {
-            'new_pickup_time': event['new_arrival_time']
-        })`
+# Get pricing for the rental period
+pricing = await sdk.vehicles.get_pricing({
+    'vehicle_id': 'VEH-789',
+    'days': 3,
+    'insurance': 'premium'
+})
+
+print(f'Available: {available.is_available}')
+print(f'Total price: {pricing.total}')`
     },
     php: {
-      install: 'composer require itwhip/instant-ride-sdk',
+      install: 'composer require itwhip/rental-sdk',
       initialize: `<?php
 require_once 'vendor/autoload.php';
 
-use ItWhip\\InstantRideSDK;
+use ItWhip\\RentalSDK;
 
-$sdk = new InstantRideSDK([
+$sdk = new RentalSDK([
     'apiKey' => $_ENV['ITWHIP_API_KEY'],
     'apiSecret' => $_ENV['ITWHIP_API_SECRET'],
-    'propertyId' => $_ENV['PROPERTY_ID'],
+    'hostId' => $_ENV['HOST_ID'],
     'environment' => 'production'
 ]);
 
 // Initialize connection
 $sdk->initialize();`,
-      booking: `// Create a ride booking
-$booking = $sdk->rides->create([
-    'guestProfile' => [
-        'pmsId' => 'GUEST-123456',
+      booking: `// Create a rental booking
+$booking = $sdk->rentals->create([
+    'renterProfile' => [
+        'userId' => 'RENTER-123456',
         'name' => 'John Smith',
-        'roomNumber' => '412',
-        'checkIn' => '2024-01-15',
-        'checkOut' => '2024-01-18'
+        'email' => 'john@example.com',
+        'phone' => '+1-480-555-0123',
+        'driversLicense' => 'DL-AZ-123456'
     ],
-    'ride' => [
-        'pickup' => 'property',
-        'destination' => 'PHX Sky Harbor Airport',
-        'scheduledTime' => '2024-01-18T10:00:00Z',
-        'vehicleClass' => 'luxury',
-        'passengers' => 2,
-        'luggage' => 3
+    'rental' => [
+        'vehicleId' => 'VEH-789',
+        'pickupLocation' => 'host_address',
+        'startDate' => '2024-01-15T10:00:00Z',
+        'endDate' => '2024-01-18T10:00:00Z',
+        'vehicleClass' => 'standard',
+        'insurance' => 'basic'
     ],
     'billing' => [
-        'method' => 'room_charge',
-        'folioId' => 'FOLIO-789',
-        'corporateAccount' => null
+        'method' => 'card',
+        'paymentMethodId' => 'pm_xyz789',
+        'splitPayment' => null
     ]
 ]);
 
 echo "Booking confirmed: " . $booking->confirmationCode;
 // Output: Booking confirmed: WHIP-2024-ABCD1234`,
-      tracking: `// Real-time ride tracking
-$sdk->rides->track($booking->id, function($update) use ($booking) {
-    echo "Driver location: " . $update->location . PHP_EOL;
-    echo "ETA: " . $update->estimatedArrival . PHP_EOL;
-    echo "Status: " . $update->status . PHP_EOL;
-    
-    // Update guest via SMS/Push
-    if ($update->status === 'driver_arrived') {
-        notifyGuest($booking->guestPhone, 'Your driver has arrived!');
+      tracking: `// Real-time rental tracking
+$sdk->rentals->track($booking->id, function($update) use ($booking) {
+    echo "Vehicle location: " . $update->location . PHP_EOL;
+    echo "Rental status: " . $update->status . PHP_EOL;
+    echo "Mileage: " . $update->currentMileage . PHP_EOL;
+
+    // Notify renter of pickup reminder
+    if ($update->status === 'ready_for_pickup') {
+        notifyRenter($booking->renterPhone, 'Your vehicle is ready for pickup!');
     }
 });`,
-      flightIntegration: `// Flight tracking integration
-$flightBooking = $sdk->flights->track([
-    'flightNumber' => 'AA1234',
-    'date' => '2024-01-18',
-    'guestPmsId' => 'GUEST-123456'
+      vehicleAvailability: `// Check vehicle availability
+$available = $sdk->vehicles->checkAvailability([
+    'vehicleId' => 'VEH-789',
+    'startDate' => '2024-01-15T10:00:00Z',
+    'endDate' => '2024-01-18T10:00:00Z'
 ]);
 
-// Auto-adjust pickup time based on flight status
-$sdk->rides->on('flight_updated', function($event) use ($sdk, $booking) {
-    if ($event->status === 'delayed') {
-        $sdk->rides->reschedule($booking->id, [
-            'newPickupTime' => $event->newArrivalTime
-        ]);
-    }
-});`
+// Get pricing for the rental period
+$pricing = $sdk->vehicles->getPricing([
+    'vehicleId' => 'VEH-789',
+    'days' => 3,
+    'insurance' => 'premium'
+]);
+
+echo "Available: " . ($available->isAvailable ? 'Yes' : 'No') . PHP_EOL;
+echo "Total price: $" . $pricing->total . PHP_EOL;`
     }
   }
 
@@ -324,14 +328,14 @@ $sdk->rides->on('flight_updated', function($event) use ($sdk, $booking) {
               <IoCodeSlashOutline className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
               <div className="flex items-center space-x-2">
                 <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
-                  Instant Ride SDK™
+                  ItWhip Rental SDK
                 </h1>
                 <span className="text-xs px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300 rounded-full font-mono">
                   v3.14.2
                 </span>
               </div>
             </div>
-            
+
             {/* Desktop Quick Links */}
             <nav className="hidden md:flex items-center space-x-4">
               <Link href="/developers" className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
@@ -340,8 +344,8 @@ $sdk->rides->on('flight_updated', function($event) use ($sdk, $booking) {
               <Link href="/integrations" className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
                 Integrations
               </Link>
-              <Link href="/gds" className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-                GDS Specs
+              <Link href="/host-dashboard" className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                Host Dashboard
               </Link>
               <Link href="https://github.com" className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
                 <IoLogoGithub className="w-5 h-5" />

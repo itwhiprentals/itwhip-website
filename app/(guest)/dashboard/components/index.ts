@@ -10,15 +10,22 @@ export { default as SmartSidebar } from './SmartSidebar'
 export { default as TripTimeline } from './TripTimeline'
 
 // Context and hooks
-export { 
-  HotelContext, 
-  HotelProvider,
-  useHotel,
-  type HotelContextType,
-  type Reservation,
-  type HotelInfo,
-  type User
-} from './HotelContext'
+export {
+  RentalContext,
+  RentalProvider,
+  useRental,
+  type RentalBooking,
+  type RentalLocation,
+  type VehicleFeatures,
+  type RentalInventoryItem
+} from './RentalContext'
+
+// Legacy exports for backwards compatibility
+export {
+  RentalContext as HotelContext,
+  RentalProvider as HotelProvider,
+  useRental as useHotel
+} from './RentalContext'
 
 // Re-export component prop types for external use
 export type {
