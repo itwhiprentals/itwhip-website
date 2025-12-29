@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useRouter, usePathname } from 'next/navigation'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import {
   IoSunnyOutline,
   IoMoonOutline,
@@ -88,6 +88,13 @@ export default function Header({
 }: HeaderProps = {}) {
   const router = useRouter()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  // ========== GUARD SCREEN DETECTION ==========
+  // When guard screen is active, don't show logged-in header
+  // This prevents confusing UX where user sees they're logged in but can't access
+  const guardMode = searchParams?.get('guard')
+  const isGuardActive = guardMode === 'host-on-guest' || guardMode === 'guest-on-host'
 
   // ========== AUTH CONTEXT (Industry Best Practice) ==========
   // Use centralized auth state for instant role switching
@@ -123,10 +130,15 @@ export default function Header({
   const isAdminPage = pathname?.startsWith('/admin/')
   const isGuestPage = pathname?.startsWith('/dashboard') || pathname?.startsWith('/profile') || pathname?.startsWith('/messages')
 
+  // Override isLoggedIn display when guard screen is active
+  // User should appear logged out until they choose an action on the guard screen
+  const showAsLoggedIn = isLoggedIn && !isGuardActive
+
   // ✅ FIXED: Determine user type with fallback logic
+  // Use showAsLoggedIn to hide user types when guard is active
   const isAdmin = user?.role === 'ADMIN'
-  const isHost = user?.role === 'BUSINESS' || (isHostPage && isLoggedIn && !isAdmin)
-  const isGuest = isLoggedIn && !isAdmin && !isHost
+  const isHost = user?.role === 'BUSINESS' || (isHostPage && showAsLoggedIn && !isAdmin)
+  const isGuest = showAsLoggedIn && !isAdmin && !isHost
 
   // ✅ DEBUG: Log user detection (can remove later)
   useEffect(() => {
@@ -407,7 +419,8 @@ export default function Header({
               </button>
 
               {/* ✅ FIXED: Notifications - Show correct bell based on user type */}
-              {isLoggedIn && !isCheckingAuth && (
+              {/* Hide when guard screen is active (showAsLoggedIn handles this) */}
+              {showAsLoggedIn && !isCheckingAuth && (
                 <>
                   {isGuest && <NotificationBell userRole="GUEST" />}
                   {isHost && <NotificationBell userRole="HOST" />}
@@ -416,12 +429,14 @@ export default function Header({
               )}
 
               {/* Role Switcher - Only for dual-role users */}
-              {isLoggedIn && !isCheckingAuth && <RoleSwitcher />}
+              {/* Hide when guard screen is active */}
+              {showAsLoggedIn && !isCheckingAuth && <RoleSwitcher />}
 
               {/* Profile/Sign In Button */}
+              {/* Show Sign In when guard is active (showAsLoggedIn is false) */}
               {!isCheckingAuth && (
                 <div>
-                  {isLoggedIn && user ? (
+                  {showAsLoggedIn && user ? (
                     <button
                       onClick={handleProfileClick}
                       className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors"
@@ -478,13 +493,14 @@ export default function Header({
       </nav>
 
       {/* Mobile Menu */}
+      {/* Pass showAsLoggedIn to hide logged-in state when guard is active */}
       <MobileMenu
         isOpen={isMobileMenuOpen}
         onClose={() => setIsMobileMenuOpen(false)}
         handleGetAppClick={handleGetAppClick}
         handleSearchClick={handleSearchClick}
-        isLoggedIn={isLoggedIn}
-        user={user}
+        isLoggedIn={showAsLoggedIn}
+        user={showAsLoggedIn ? user : null}
         onProfileClick={handleProfileClick}
         onLogout={handleLogout}
         isHost={isHost}

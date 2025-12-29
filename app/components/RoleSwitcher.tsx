@@ -47,9 +47,16 @@ export default function RoleSwitcher() {
       const success = await switchRole(targetRole)
 
       if (success) {
-        // Navigate to appropriate dashboard
-        // The Header will update instantly via context (no refresh needed!)
-        router.push(targetRole === 'host' ? '/host/dashboard' : '/dashboard')
+        // Only navigate to dashboard for HOST switch
+        // For GUEST switch, stay on current page (user might be on booking page)
+        if (targetRole === 'host') {
+          router.push('/host/dashboard')
+        } else {
+          // For guest switch, DON'T call router.refresh() immediately
+          // The AuthContext state update is enough for Header to re-render
+          // Calling refresh() can cause race conditions with the state update
+          console.log('[RoleSwitcher] Switched to guest - no navigation needed')
+        }
       } else {
         console.error('[RoleSwitcher] Switch failed')
         alert('Failed to switch roles. Please try again.')

@@ -4,6 +4,7 @@
 
 import { useState } from 'react'
 import { formatCharge } from '@/app/lib/trip/calculations'
+import { getTaxRate, getCityFromAddress } from '@/app/(guest)/rentals/lib/arizona-taxes'
 import { 
   IoWalletOutline, 
   IoDocumentTextOutline, 
@@ -50,8 +51,10 @@ export function PaymentConfirm({
   // If there are disputes, charges should be held
   const chargeMethod = hasDisputes ? 'hold' : processingMethod
 
-  // Calculate tax (Arizona TPT 5.6%)
-  const taxRate = 0.056
+  // Calculate tax (Arizona city-specific TPT rate)
+  // Use city first, fallback to parsing address
+  const carCity = booking.car?.city || getCityFromAddress(booking.car?.address || 'Phoenix, AZ')
+  const { rate: taxRate, display: taxRateDisplay } = getTaxRate(carCity)
   const baseTripCost = booking.totalAmount / (1 + taxRate) // Back-calculate base from total
   const tripTax = booking.totalAmount - baseTripCost
 
@@ -111,7 +114,7 @@ export function PaymentConfirm({
                     <span>${baseTripCost.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Arizona TPT Tax (5.6%)</span>
+                    <span className="text-gray-600">Arizona TPT Tax ({taxRateDisplay})</span>
                     <span>${tripTax.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between font-medium pt-1 border-t">

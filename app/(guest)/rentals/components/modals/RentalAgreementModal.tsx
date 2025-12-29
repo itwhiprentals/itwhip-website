@@ -27,6 +27,7 @@ import {
   formatGuestNameForAgreement,
   isCompanyName
 } from '@/app/lib/utils/namePrivacy'
+import { getTaxRate, getCityFromAddress } from '@/app/(guest)/rentals/lib/arizona-taxes'
 
 interface RentalCarWithDetails {
   id: string
@@ -38,6 +39,7 @@ interface RentalCarWithDetails {
   dailyRate: number
   rating?: number
   totalTrips?: number
+  city?: string
   address?: string
   photos?: Array<{
     url: string
@@ -179,6 +181,11 @@ export default function RentalAgreementModal({
   const tierInfo = getVehicleTierInfo(carDetails?.carType, carDetails?.dailyRate)
   const isVerified = guestDetails?.verificationStatus === 'APPROVED'
   const isPending = guestDetails?.verificationStatus === 'PENDING'
+
+  // Get city-specific Arizona tax rate
+  // Use city first, fallback to parsing address
+  const carCity = carDetails?.city || getCityFromAddress(carDetails?.address || 'Phoenix, AZ')
+  const { display: taxRateDisplay } = getTaxRate(carCity)
 
   // Privacy-aware name formatting based on draft/confirmed state
   const hostIsCompany = carDetails?.host?.isCompany || isCompanyName(carDetails?.host?.name || '')
@@ -622,7 +629,7 @@ export default function RentalAgreementModal({
                         </div>
 
                         <div className="flex justify-between">
-                          <span className="text-gray-600 dark:text-gray-400">Arizona TPT Tax (5.6%)</span>
+                          <span className="text-gray-600 dark:text-gray-400">Arizona TPT Tax ({taxRateDisplay})</span>
                           <span className="font-medium text-gray-900 dark:text-white">${bookingDetails.pricing.taxes.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </div>
                       </div>

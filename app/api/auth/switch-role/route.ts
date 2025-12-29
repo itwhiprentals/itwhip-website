@@ -426,11 +426,24 @@ export async function POST(request: NextRequest) {
         path: '/'
       })
 
-      // Clear host cookies
-      response.cookies.delete('hostAccessToken')
-      response.cookies.delete('hostRefreshToken')
+      // Clear host cookies - use expires in the past for immediate deletion
+      response.cookies.set('hostAccessToken', '', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        expires: new Date(0), // Expire immediately (past date)
+        path: '/'
+      })
+      response.cookies.set('hostRefreshToken', '', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        expires: new Date(0), // Expire immediately (past date)
+        path: '/'
+      })
 
       console.log('[Role Switch] Switched to guest mode for user:', targetUser.id)
+      console.log('[Role Switch] Cleared hostAccessToken and hostRefreshToken cookies')
       return response
     }
 

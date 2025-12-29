@@ -210,7 +210,8 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
     type: 'host-only' | 'dual-account' | null
     linkedGuestEmail?: string
     isSwitching?: boolean
-  }>({ show: false, type: null })
+    checked?: boolean  // Track if host guard check has completed
+  }>({ show: false, type: null, checked: false })
 
   // Deposit tooltip state
   const [showDepositTooltip, setShowDepositTooltip] = useState(false)
@@ -262,8 +263,15 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
 
   useEffect(() => {
     const checkHostBookingEligibility = async () => {
-      // Only check after auth is confirmed
-      if (sessionStatus !== 'authenticated') return
+      // Only check after auth status is determined
+      if (sessionStatus === 'loading') return
+
+      // If not authenticated, allow booking (they'll need to login)
+      if (sessionStatus !== 'authenticated') {
+        console.log('[Booking] User not authenticated - allowing booking flow')
+        setHostGuard({ show: false, type: null, checked: true })
+        return
+      }
 
       try {
         const dualRoleRes = await fetch('/api/auth/check-dual-role', {
@@ -279,7 +287,8 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
             console.log('[Booking] HOST-only user - cannot book')
             setHostGuard({
               show: true,
-              type: 'host-only'
+              type: 'host-only',
+              checked: true
             })
             return
           }
@@ -307,13 +316,24 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
             setHostGuard({
               show: true,
               type: 'dual-account',
-              linkedGuestEmail: linkedEmail
+              linkedGuestEmail: linkedEmail,
+              checked: true
             })
             return
           }
+
+          // User is a GUEST or no host profile - safe to proceed
+          console.log('[Booking] User is GUEST - can book')
+          setHostGuard({ show: false, type: null, checked: true })
+        } else {
+          // No dual-role info - assume guest
+          console.log('[Booking] No dual-role info - assuming guest')
+          setHostGuard({ show: false, type: null, checked: true })
         }
       } catch (e) {
         console.error('[Booking] Failed to check booking eligibility:', e)
+        // On error, allow booking but mark as checked
+        setHostGuard({ show: false, type: null, checked: true })
       }
     }
 
@@ -323,28 +343,59 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
   // ============================================
   // FETCH USER PROFILE AND MODERATION STATUS
   // ============================================
-  
+
   useEffect(() => {
     const fetchUserData = async () => {
       console.log('🔍 fetchUserData called')
       console.log('📧 Session:', session)
       console.log('⏳ Session status:', sessionStatus)
-      
+
       // Wait for session to load
       if (sessionStatus === 'loading') {
         console.log('⏳ Session still loading...')
         return
       }
-      
+
+      // Wait for host guard check to complete
+      if (!hostGuard.checked) {
+        console.log('⏳ Host guard check not complete yet...')
+        return
+      }
+
+      // Skip if HOST guard is showing (user is a HOST)
+      if (hostGuard.show) {
+        console.log('🚫 Skipping guest profile fetch - HOST user blocked')
+        setProfileLoading(false)
+        return
+      }
+
       // Only fetch if user is logged in
       if (session?.user?.email) {
         console.log('✅ User is logged in:', session.user.email)
-        
+
+        // First check if user is a HOST (to avoid 404 errors on guest APIs)
+        try {
+          const dualRoleRes = await fetch('/api/auth/check-dual-role', {
+            credentials: 'include'
+          })
+          if (dualRoleRes.ok) {
+            const dualRole = await dualRoleRes.json()
+            // If user is HOST-only or HOST in host mode, skip guest APIs
+            if (dualRole.currentRole === 'host' || (dualRole.hasHostProfile && !dualRole.hasGuestProfile)) {
+              console.log('🚫 Skipping guest profile fetch - user is in HOST mode')
+              setProfileLoading(false)
+              return
+            }
+          }
+        } catch (e) {
+          console.log('⚠️ Could not check dual-role, proceeding with guest fetch')
+        }
+
         try {
           setProfileLoading(true)
-          
+
           console.log('📡 Fetching profile and moderation data...')
-          
+
           // Fetch profile and moderation data in parallel
           const [profileRes, moderationRes] = await Promise.all([
             fetch('/api/guest/profile', { credentials: 'include' }),
@@ -429,7 +480,7 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
     }
     
     fetchUserData()
-  }, [session, sessionStatus])
+  }, [session, sessionStatus, hostGuard.show, hostGuard.checked])
   
   // ============================================
   // DEBUG: Show loaded data after profile loads
@@ -1827,7 +1878,8 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
           <div className="border-t dark:border-gray-700 pt-6">
             {(() => {
               // Calculate dynamic tax rate based on car's location
-              const carCity = getCityFromAddress(car?.address || 'Phoenix, AZ')
+              // Use car.city first (like BookingWidget), fallback to parsing address
+              const carCity = car?.city || getCityFromAddress(car?.address || 'Phoenix, AZ')
               const { rate: taxRate, display: taxRateDisplay } = getTaxRate(carCity)
 
               // Calculate subtotal (before tax)
@@ -2009,7 +2061,8 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
             {/* Pricing Info - Compact on mobile */}
             {(() => {
               // Recalculate trip total with accurate tax for floating bar
-              const carCity = getCityFromAddress(car?.address || 'Phoenix, AZ')
+              // Use car.city first (like BookingWidget), fallback to parsing address
+              const carCity = car?.city || getCityFromAddress(car?.address || 'Phoenix, AZ')
               const { rate: taxRate } = getTaxRate(carCity)
               const enhancementsTotal = savedBookingDetails.pricing.breakdown.refuelService +
                                        savedBookingDetails.pricing.breakdown.additionalDriver +

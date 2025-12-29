@@ -179,18 +179,27 @@ function GuestProfileContent() {
     }
   }, [searchParams])
 
-  const fetchProfile = async () => {
+  const fetchProfile = async (retryCount = 0) => {
     try {
       setLoading(true)
       const response = await fetch('/api/guest/profile', {
         credentials: 'include'
       })
-      
+
       if (!response.ok) {
         if (response.status === 401) {
           router.push('/auth/login')
+          return
         }
-        throw new Error('Failed to fetch profile')
+        // Retry once on server errors (often caused by DB connection issues)
+        if (response.status >= 500 && retryCount < 1) {
+          console.log('[Profile] Server error, retrying...')
+          await new Promise(resolve => setTimeout(resolve, 1000))
+          return fetchProfile(retryCount + 1)
+        }
+        const errorText = await response.text()
+        console.error('[Profile] API error:', response.status, errorText)
+        throw new Error(`Failed to fetch profile: ${response.status}`)
       }
       
       const data = await response.json()

@@ -14,18 +14,25 @@ export async function GET(request: NextRequest) {
     const hostAccessToken = request.cookies.get('hostAccessToken')?.value
     const guestAccessToken = request.cookies.get('accessToken')?.value
 
+    // Debug: Log cookie values
+    console.log('[Dual-Role Check] Cookie debug:', {
+      hostAccessToken: hostAccessToken ? `${hostAccessToken.substring(0, 30)}... (${hostAccessToken.length} chars)` : 'EMPTY',
+      guestAccessToken: guestAccessToken ? `${guestAccessToken.substring(0, 30)}... (${guestAccessToken.length} chars)` : 'EMPTY'
+    })
+
     // Try to get userId from either token
     let userId: string | null = null
     let currentRole: 'host' | 'guest' | null = null
 
-    // Try host token first
-    if (hostAccessToken) {
+    // Try host token first - but only if it's not empty (cleared by role switch)
+    if (hostAccessToken && hostAccessToken.length > 10) {
       try {
         const decoded = verify(hostAccessToken, JWT_SECRET) as any
         userId = decoded.userId
         currentRole = 'host'
       } catch (err) {
         // Token invalid or expired, try guest token
+        console.log('[Dual-Role Check] hostAccessToken invalid, trying guest token')
       }
     }
 
@@ -37,6 +44,7 @@ export async function GET(request: NextRequest) {
         currentRole = 'guest'
       } catch (err) {
         // Token invalid or expired
+        console.log('[Dual-Role Check] accessToken also invalid')
       }
     }
 

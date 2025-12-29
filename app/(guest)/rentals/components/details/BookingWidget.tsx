@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { 
+import {
   IoCalendarOutline,
   IoLocationOutline,
   IoShieldCheckmarkOutline,
@@ -24,6 +24,9 @@ import {
   IoLockClosedOutline,
   IoInformationCircleOutline
 } from 'react-icons/io5'
+
+// Import Arizona tax calculation
+import { getTaxRate } from '@/app/(guest)/rentals/lib/arizona-taxes'
 
 interface BookingWidgetProps {
   car: any
@@ -168,9 +171,13 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
   const extraMiles = addOns.extraMiles ? 295 : 0
   const vipConcierge = addOns.vipConcierge ? 150 * days : 0
   const deliveryFee = deliveryType === 'valet' ? 195 : deliveryType === 'airport' ? 50 : deliveryType === 'hotel' ? 105 : 0
-  
+
+  // Get city-specific Arizona tax rate
+  const carCity = car?.city || car?.address || 'Phoenix'
+  const { rate: taxRate, display: taxRateDisplay } = getTaxRate(carCity)
+
   const serviceFee = Math.round(basePrice * 0.15)
-  const taxes = Math.round((basePrice + serviceFee) * 0.086)
+  const taxes = Math.round((basePrice + serviceFee) * taxRate)
   const total = basePrice + insurancePrice + refuelService + additionalDriver + extraMiles + vipConcierge + deliveryFee + serviceFee + taxes
   
   // Fetch insurance quotes when dates change
@@ -255,6 +262,8 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
         deliveryFee,
         serviceFee,
         taxes,
+        taxRate,
+        taxRateDisplay,
         total,
         deposit: actualDeposit,
         breakdown: {
@@ -752,7 +761,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
           </div>
 
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600 dark:text-gray-300">Taxes</span>
+            <span className="text-gray-600 dark:text-gray-300">Taxes ({taxRateDisplay})</span>
             <span className="text-gray-900 dark:text-white">${taxes.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
 

@@ -109,29 +109,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Check guest auth if currentRole is guest OR if host check didn't succeed
       if (dualRole.currentRole === 'guest' || dualRole.hasGuestProfile) {
+        console.log('[AuthContext] Checking guest auth...')
         const guestRes = await fetch('/api/auth/verify', {
           credentials: 'include'
         })
 
+        console.log('[AuthContext] Guest verify response:', guestRes.status)
+
         if (guestRes.ok) {
           const data = await guestRes.json()
-          if (data.authenticated && data.user) {
-            console.log('[AuthContext] Authenticated as GUEST:', data.user.email)
-            setState({
+          console.log('[AuthContext] Guest verify data:', data)
+          // Note: /api/auth/verify returns { user, tokenInfo } - no "authenticated" field
+          if (data.user) {
+            console.log('[AuthContext] ✅ Authenticated as GUEST:', data.user.email)
+            const newState = {
               isLoggedIn: true,
               user: {
                 id: data.user.id,
                 name: data.user.name,
                 email: data.user.email,
-                role: 'GUEST',
+                role: 'GUEST' as const,
                 profilePhoto: data.user.profilePhoto
               },
-              currentRole: 'guest',
+              currentRole: 'guest' as const,
               hasBothProfiles: dualRole.hasHostProfile || false,
               isLoading: false
-            })
+            }
+            console.log('[AuthContext] Setting guest state:', newState)
+            setState(newState)
             return
+          } else {
+            console.log('[AuthContext] ⚠️ Guest verify returned but no user data:', data)
           }
+        } else {
+          console.log('[AuthContext] ⚠️ Guest verify failed:', guestRes.status)
         }
       }
 
@@ -192,9 +203,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const data = await res.json()
         console.log('[AuthContext] Switch successful:', data)
 
-        // Refresh auth state immediately after switch
-        // This ensures context reflects the new role instantly
-        await refreshAuth()
+        // IMMEDIATELY update state for instant UI update
+        // Set isLoggedIn explicitly to ensure Header shows profile button
+        setState(prev => {
+          const newRole = targetRole === 'host' ? 'BUSINESS' : 'GUEST'
+          console.log('[AuthContext] Updating state:', {
+            prevUser: prev.user?.email,
+            prevRole: prev.user?.role,
+            newRole,
+            targetRole
+          })
+          return {
+            ...prev,
+            isLoggedIn: true, // Explicitly true
+            isLoading: false, // Not loading
+            currentRole: targetRole,
+            user: prev.user ? {
+              ...prev.user,
+              role: newRole as 'GUEST' | 'BUSINESS' | 'ADMIN'
+            } : prev.user
+          }
+        })
+
+        // Refresh auth after a short delay to get full user data
+        // But the immediate state update above should already show correct UI
+        setTimeout(() => {
+          console.log('[AuthContext] Running delayed refreshAuth')
+          refreshAuth()
+        }, 500)
+
         return true
       } else {
         const error = await res.json()
