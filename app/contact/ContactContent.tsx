@@ -6,7 +6,8 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Header from '@/app/components/Header'
-import { 
+import Footer from '@/app/components/Footer'
+import {
   IoMailOutline,
   IoLocationOutline,
   IoChatbubblesOutline,
@@ -18,10 +19,6 @@ import {
   IoCheckmarkCircle,
   IoWarningOutline,
   IoHeadsetOutline,
-  IoLogoTwitter,
-  IoLogoLinkedin,
-  IoLogoFacebook,
-  IoLogoInstagram,
   IoFlashOutline,
   IoGlobeOutline,
   IoShieldCheckmarkOutline
@@ -534,49 +531,9 @@ export default function ContactContent() {
           </div>
         </section>
 
-        {/* Social Media */}
-        <section className="py-8 sm:py-12 bg-white dark:bg-black">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Connect With Us
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-                Follow us for updates, news, and travel tips
-              </p>
-              <div className="flex justify-center space-x-4">
-                <a href="https://twitter.com/itwhip" className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center hover:bg-amber-100 dark:hover:bg-amber-900/20 transition">
-                  <IoLogoTwitter className="w-6 h-6 text-gray-600 dark:text-gray-400" />
-                </a>
-                <a href="https://linkedin.com/company/itwhip" className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center hover:bg-amber-100 dark:hover:bg-amber-900/20 transition">
-                  <IoLogoLinkedin className="w-6 h-6 text-gray-600 dark:text-gray-400" />
-                </a>
-                <a href="https://facebook.com/itwhip" className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center hover:bg-amber-100 dark:hover:bg-amber-900/20 transition">
-                  <IoLogoFacebook className="w-6 h-6 text-gray-600 dark:text-gray-400" />
-                </a>
-                <a href="https://instagram.com/itwhip" className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center hover:bg-amber-100 dark:hover:bg-amber-900/20 transition">
-                  <IoLogoInstagram className="w-6 h-6 text-gray-600 dark:text-gray-400" />
-                </a>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Footer */}
-        <footer className="bg-gray-50 dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800 py-6 sm:py-8">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center text-xs sm:text-sm text-gray-500">
-              <p>© 2024 ItWhip Technologies, Inc. All rights reserved.</p>
-              <div className="mt-4 space-x-3 sm:space-x-4">
-                <Link href="/terms" className="hover:text-gray-700 dark:hover:text-gray-300">Terms</Link>
-                <Link href="/privacy" className="hover:text-gray-700 dark:hover:text-gray-300">Privacy</Link>
-                <Link href="/about" className="hover:text-gray-700 dark:hover:text-gray-300">About</Link>
-                <Link href="/how-it-works" className="hover:text-gray-700 dark:hover:text-gray-300">How It Works</Link>
-              </div>
-            </div>
-          </div>
-        </footer>
       </div>
+
+      <Footer />
     </div>
   )
 }

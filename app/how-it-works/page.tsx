@@ -400,29 +400,29 @@ export default function HowItWorksPage() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto mt-[106px] md:mt-[112px] pb-20">
+      <main className="flex-1 overflow-y-auto mt-[106px] md:mt-[112px] pb-20">
         
         {/* Hero Section */}
-        <section className="bg-gradient-to-b from-purple-50 to-white dark:from-gray-950 dark:to-gray-900 py-8 sm:py-10 pb-0 sm:pb-1">
+        <section className="bg-gradient-to-b from-purple-50 to-white dark:from-gray-950 dark:to-gray-900 py-10 sm:py-14 lg:py-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-4xl mx-auto">
-              <div className="inline-flex items-center px-4 py-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg mb-4">
+              <div className="inline-flex items-center px-4 py-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg mb-6">
                 <IoPeopleOutline className="w-4 h-4 text-purple-600 mr-2" />
                 <span className="text-sm font-medium text-purple-600">Peer-to-Peer Car Sharing</span>
               </div>
-              
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-3">
+
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4">
                 Rent Cars From Local Owners
-                <span className="block text-purple-600 mt-1">In Phoenix, Arizona</span>
+                <span className="block text-purple-600 mt-2">In Phoenix, Arizona</span>
               </h1>
-              
-              <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400">
-                Skip the rental counter. Connect directly with local hosts. 
+
+              <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 mb-8">
+                Skip the rental counter. Connect directly with local hosts.
                 Fully insured, transparent pricing, hosts earn up to 90%.
               </p>
 
               {/* Tab Selector */}
-              <div className="inline-flex bg-gray-200 dark:bg-gray-800 rounded-lg p-1.5 shadow-lg border border-gray-300 dark:border-gray-700 mt-8">
+              <div className="inline-flex bg-gray-200 dark:bg-gray-800 rounded-lg p-1.5 shadow-lg border border-gray-300 dark:border-gray-700">
                 <button
                   onClick={() => setActiveTab('guest')}
                   className={`px-6 py-3 rounded-lg text-sm font-medium transition-all ${
@@ -558,18 +558,18 @@ export default function HowItWorksPage() {
                     }`}>
                       {tier.percentage}
                     </div>
-                    <div className="text-sm text-gray-500 mb-3">You Keep</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400 mb-3">You Keep</div>
                     <div className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
                       {tier.insurance}
                     </div>
                     <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
                       {tier.description}
                     </p>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-gray-600 dark:text-gray-400">
                       Deductible: {tier.deductible}
                     </div>
                     <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                      <div className="text-xs text-gray-500">Best for:</div>
+                      <div className="text-xs text-gray-600 dark:text-gray-400">Best for:</div>
                       <div className="text-xs font-medium text-gray-700 dark:text-gray-300">{tier.best}</div>
                     </div>
                   </div>
@@ -609,19 +609,19 @@ export default function HowItWorksPage() {
                       <item.icon className="w-6 h-6 text-purple-600" />
                     </div>
                     <div className="text-xs font-bold text-purple-600 mb-1">Step {item.step}</div>
-                    <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
                       {item.title}
-                    </h4>
-                    <p className="text-xs text-gray-500">{item.description}</p>
+                    </h3>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">{item.description}</p>
                   </div>
                 ))}
               </div>
 
               <div className="mt-6 bg-green-50 dark:bg-green-900/20 rounded-lg p-5 text-center shadow-lg border border-green-200 dark:border-green-800">
                 <IoShieldCheckmarkOutline className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                <h4 className="font-semibold text-green-800 dark:text-green-400 mb-1">
+                <h3 className="font-semibold text-green-800 dark:text-green-400 mb-1">
                   Add Your Insurance, Save 50%
-                </h4>
+                </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Guests who verify personal auto insurance get 50% off security deposits on all rentals.
                 </p>
@@ -688,7 +688,7 @@ export default function HowItWorksPage() {
               {platformFeatures.map((feature, idx) => (
                 <div key={idx} className="bg-white/10 backdrop-blur rounded-lg p-5 text-center border border-white/20">
                   <feature.icon className="w-10 h-10 text-purple-400 mx-auto mb-3" />
-                  <h4 className="font-semibold text-white mb-2">{feature.title}</h4>
+                  <h3 className="font-semibold text-white mb-2">{feature.title}</h3>
                   <p className="text-sm text-gray-300">{feature.description}</p>
                 </div>
               ))}
@@ -721,9 +721,9 @@ export default function HowItWorksPage() {
                     <div>
                       <span className="text-gray-700 dark:text-gray-300 text-sm">{req.text}</span>
                       {req.required ? (
-                        <span className="ml-2 text-xs text-gray-500">(Required)</span>
+                        <span className="ml-2 text-xs text-gray-600 dark:text-gray-400">(Required)</span>
                       ) : (
-                        <span className="ml-2 text-xs text-blue-500">(Optional)</span>
+                        <span className="ml-2 text-xs text-blue-600 dark:text-blue-400">(Optional)</span>
                       )}
                     </div>
                   </div>
@@ -756,7 +756,7 @@ export default function HowItWorksPage() {
                   ItWhip operates under Arizona's peer-to-peer car sharing legislation (A.R.S. § 28-9601 through 28-9613), 
                   which provides a clear regulatory framework for car sharing platforms.
                 </p>
-                <div className="flex flex-wrap gap-4 text-xs text-gray-500">
+                <div className="flex flex-wrap gap-4 text-xs text-gray-600 dark:text-gray-400">
                   <span>• Transaction Privilege Tax compliant</span>
                   <span>• State minimum exceeded ($1M vs $25K/$50K/$15K)</span>
                   <span>• Proper vehicle registration verification</span>
@@ -857,24 +857,24 @@ export default function HowItWorksPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-5 text-center">
               <div>
                 <div className="text-3xl font-bold text-purple-600 mb-1">$1M</div>
-                <div className="text-xs text-gray-500">Liability Coverage</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Liability Coverage</div>
               </div>
               <div>
                 <div className="text-3xl font-bold text-purple-600 mb-1">48hr</div>
-                <div className="text-xs text-gray-500">Host Payments</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Host Payments</div>
               </div>
               <div>
                 <div className="text-3xl font-bold text-purple-600 mb-1">50+</div>
-                <div className="text-xs text-gray-500">Hotel Partners</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Hotel Partners</div>
               </div>
               <div>
                 <div className="text-3xl font-bold text-purple-600 mb-1">90%</div>
-                <div className="text-xs text-gray-500">Max Host Earnings</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Max Host Earnings</div>
               </div>
             </div>
           </div>
         </section>
-      </div>
+      </main>
 
       <Footer />
     </div>

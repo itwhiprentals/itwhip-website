@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import JsonLd, { listYourCarFAQs, listYourCarHowTo } from '@/components/seo/JsonLd'
-import { 
+import {
   IoCarSportOutline,
   IoCashOutline,
   IoShieldCheckmarkOutline,
@@ -19,7 +19,6 @@ import {
   IoDocumentTextOutline,
   IoCameraOutline,
   IoTrophyOutline,
-  IoCloudUploadOutline,
   IoFlashOutline,
   IoReceiptOutline,
   IoPeopleOutline,
@@ -34,25 +33,9 @@ import {
 
 export default function ListYourCarPage() {
   const router = useRouter()
-  const [showInquiryForm, setShowInquiryForm] = useState(false)
   const [selectedTier, setSelectedTier] = useState<'basic' | 'standard' | 'premium'>('standard')
   const [selectedVehicle, setSelectedVehicle] = useState('standard')
   const [monthlyDays, setMonthlyDays] = useState(15)
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    vehicleMake: '',
-    vehicleModel: '',
-    vehicleYear: '',
-    location: 'Phoenix',
-    vehicleType: '',
-    hasInsurance: '',
-    insuranceType: '',
-    message: '',
-    photos: [] as File[]
-  })
-  
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const handleGetAppClick = () => {
@@ -227,12 +210,12 @@ export default function ListYourCarPage() {
               <Link href="/host-benefits" className="text-sm text-gray-600 dark:text-gray-300 hover:text-purple-600">
                 All Benefits
               </Link>
-              <button 
-                onClick={() => setShowInquiryForm(true)}
+              <Link
+                href="/host/signup"
                 className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg font-semibold hover:bg-purple-700"
               >
                 Apply Now →
-              </button>
+              </Link>
             </div>
           </div>
         </div>
@@ -266,136 +249,13 @@ export default function ListYourCarPage() {
                 Choose your insurance tier, set your price, get paid in 48 hours.
               </p>
 
-              {/* Earnings Calculator */}
-              <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 mb-6 max-w-4xl mx-auto">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  Calculate Your Earnings
-                </h3>
-                
-                {/* Insurance Tier Selector */}
-                <div className="mb-6">
-                  <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                    1. Select Your Insurance Tier:
-                  </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    {insuranceTiers.map((tier) => (
-                      <button
-                        key={tier.id}
-                        onClick={() => setSelectedTier(tier.id as 'basic' | 'standard' | 'premium')}
-                        className={`p-4 rounded-lg transition-all border-2 ${
-                          selectedTier === tier.id
-                            ? tier.color === 'emerald' ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-500'
-                            : tier.color === 'amber' ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-500'
-                            : 'bg-gray-100 dark:bg-gray-800 border-gray-400'
-                            : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-gray-300'
-                        }`}
-                      >
-                        <div className={`text-2xl font-black ${
-                          tier.color === 'emerald' ? 'text-emerald-600'
-                          : tier.color === 'amber' ? 'text-amber-600'
-                          : 'text-gray-600'
-                        }`}>
-                          {tier.percentage}%
-                        </div>
-                        <div className="text-xs font-semibold text-gray-900 dark:text-white">{tier.name}</div>
-                        <div className="text-xs text-gray-500">{tier.insurance}</div>
-                        {tier.color === 'amber' && (
-                          <span className="inline-block mt-1 text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full">POPULAR</span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                  <p className="text-xs text-gray-500 mt-2 text-center">
-                    {currentInsuranceTier.description}
-                  </p>
-                </div>
-
-                {/* Vehicle Type Selector */}
-                <div className="mb-6">
-                  <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                    2. Select Your Vehicle Type:
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                    {vehicleCategories.map((vehicle) => (
-                      <button
-                        key={vehicle.id}
-                        onClick={() => setSelectedVehicle(vehicle.id)}
-                        className={`p-3 rounded-lg transition-all ${
-                          selectedVehicle === vehicle.id
-                            ? 'bg-purple-600 text-white shadow-lg'
-                            : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200'
-                        }`}
-                      >
-                        <div className="font-semibold text-sm">{vehicle.name}</div>
-                        <div className="text-xs opacity-80">${vehicle.avgDaily}/day avg</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Rental Days Slider */}
-                <div className="mb-6">
-                  <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
-                    <span>3. Rental days per month:</span>
-                    <span className="font-bold text-purple-600">{monthlyDays} days</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="5"
-                    max="30"
-                    value={monthlyDays}
-                    onChange={(e) => setMonthlyDays(parseInt(e.target.value))}
-                    className="w-full"
-                  />
-                </div>
-
-                {/* Earnings Display */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
-                    <div className="text-2xl font-bold text-green-600">
-                      ${earnings.netMonthly.toLocaleString()}
-                    </div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400">
-                      Monthly ({currentInsuranceTier.percentage}% tier)
-                    </div>
-                  </div>
-                  <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
-                    <div className="text-2xl font-bold text-purple-600">
-                      ${earnings.annualEarnings.toLocaleString()}
-                    </div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400">
-                      Annual earnings
-                    </div>
-                  </div>
-                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
-                    <div className="text-2xl font-bold text-blue-600">
-                      ${earnings.totalBenefit.toLocaleString()}
-                    </div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400">
-                      With ~$8K tax savings
-                    </div>
-                  </div>
-                </div>
-
-                {/* Updated footnote with features */}
-                <p className="text-xs text-gray-500 mt-4 text-center">
-                  Platform fee ({earnings.platformFee}%) covers: $1M liability, Mileage Forensics™, ESG dashboard, guest verification, 24/7 support
-                </p>
-              </div>
-
-              {/* Feature line with compliance */}
-              <div className="text-xs text-gray-500 mb-6">
-                Includes Mileage Forensics™, ESG impact dashboard, and full compliance with{' '}
-                <Link href="/legal" className="text-purple-600 hover:underline">A.R.S. § 28-9601–9613</Link>
-              </div>
-
               <div className="flex flex-col sm:flex-row items-center justify-center space-y-3 sm:space-y-0 sm:space-x-4">
-                <button 
-                  onClick={() => setShowInquiryForm(true)}
-                  className="w-full sm:w-auto px-8 py-3 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 transition shadow-lg text-lg"
+                <Link
+                  href="/host/signup"
+                  className="w-full sm:w-auto px-8 py-3 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 transition shadow-lg text-lg text-center"
                 >
                   Start Application →
-                </button>
+                </Link>
                 <Link 
                   href="/insurance-guide" 
                   className="w-full sm:w-auto px-8 py-3 bg-white dark:bg-gray-800 text-purple-600 rounded-lg font-semibold hover:bg-purple-50 transition border-2 border-purple-600"
@@ -403,6 +263,148 @@ export default function ListYourCarPage() {
                   Learn About Tiers
                 </Link>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Earnings Calculator - Full Width Section */}
+        <section className="py-12 sm:py-16 bg-gray-50 dark:bg-gray-900">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
+                Calculate Your Earnings
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400">
+                See how much you could earn based on your insurance and vehicle type
+              </p>
+            </div>
+
+            {/* Insurance Tier Selector */}
+            <div className="mb-10">
+              <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4 text-center">
+                1. Select Your Insurance Tier
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                {insuranceTiers.map((tier) => (
+                  <button
+                    key={tier.id}
+                    onClick={() => setSelectedTier(tier.id as 'basic' | 'standard' | 'premium')}
+                    className={`p-6 rounded-lg transition-all border-2 shadow-md ${
+                      selectedTier === tier.id
+                        ? tier.color === 'emerald' ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-500 shadow-xl'
+                        : tier.color === 'amber' ? 'bg-amber-50 dark:bg-amber-900/30 border-amber-500 shadow-xl'
+                        : 'bg-white dark:bg-gray-800 border-gray-500 shadow-xl'
+                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-purple-300 hover:shadow-lg'
+                    }`}
+                  >
+                    <div className={`text-4xl font-black mb-2 ${
+                      tier.color === 'emerald' ? 'text-emerald-600'
+                      : tier.color === 'amber' ? 'text-amber-600'
+                      : 'text-gray-600'
+                    }`}>
+                      {tier.percentage}%
+                    </div>
+                    <div className="text-sm font-bold text-gray-900 dark:text-white mb-1">{tier.name}</div>
+                    <div className="text-sm text-gray-500 mb-2">{tier.insurance}</div>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                      {tier.description}
+                    </p>
+                    {tier.color === 'amber' && (
+                      <span className="inline-block mt-3 text-xs bg-amber-500 text-white px-3 py-1 rounded-full font-semibold">POPULAR</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Vehicle Type Selector */}
+            <div className="mb-10">
+              <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4 text-center">
+                2. Select Your Vehicle Type
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+                {vehicleCategories.map((vehicle) => (
+                  <button
+                    key={vehicle.id}
+                    onClick={() => setSelectedVehicle(vehicle.id)}
+                    className={`p-4 rounded-lg transition-all shadow-md ${
+                      selectedVehicle === vehicle.id
+                        ? 'bg-purple-600 text-white shadow-xl'
+                        : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:border-purple-300 hover:shadow-lg border border-gray-200 dark:border-gray-600'
+                    }`}
+                  >
+                    <div className="font-bold text-base">{vehicle.name}</div>
+                    <div className="text-sm opacity-80">${vehicle.avgDaily}/day</div>
+                    <div className="text-xs opacity-60 mt-1">{vehicle.examples}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Rental Days Slider */}
+            <div className="mb-10 max-w-2xl mx-auto">
+              <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-3">
+                <span className="font-medium">3. Rental days per month</span>
+                <span className="font-bold text-purple-600 text-lg">{monthlyDays} days</span>
+              </div>
+              <input
+                type="range"
+                min="5"
+                max="30"
+                value={monthlyDays}
+                onChange={(e) => setMonthlyDays(parseInt(e.target.value))}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+              />
+              <div className="flex justify-between text-xs text-gray-400 mt-1">
+                <span>5 days</span>
+                <span>30 days</span>
+              </div>
+            </div>
+
+            {/* Earnings Display */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+              <div className="bg-green-50 dark:bg-green-900/30 rounded-lg p-6 border-2 border-green-300 dark:border-green-700 shadow-md">
+                <div className="text-3xl sm:text-4xl font-black text-green-600 mb-1">
+                  ${earnings.netMonthly.toLocaleString()}
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Monthly ({currentInsuranceTier.percentage}% tier)
+                </div>
+              </div>
+              <div className="bg-purple-50 dark:bg-purple-900/30 rounded-lg p-6 border-2 border-purple-300 dark:border-purple-700 shadow-md">
+                <div className="text-3xl sm:text-4xl font-black text-purple-600 mb-1">
+                  ${earnings.annualEarnings.toLocaleString()}
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Annual earnings
+                </div>
+              </div>
+              <div className="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-6 border-2 border-blue-300 dark:border-blue-700 shadow-md">
+                <div className="text-3xl sm:text-4xl font-black text-blue-600 mb-1">
+                  ${earnings.totalBenefit.toLocaleString()}
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  With ~$8K tax savings
+                </div>
+              </div>
+            </div>
+
+            <p className="text-sm text-gray-500 text-center">
+              Platform fee ({earnings.platformFee}%) covers: $1M liability, Mileage Forensics™, ESG dashboard, guest verification, 24/7 support
+            </p>
+            <p className="text-xs text-gray-400 text-center mt-2">
+              Includes full compliance with{' '}
+              <Link href="/legal" className="text-purple-600 hover:underline">A.R.S. § 28-9601–9613</Link>
+            </p>
+
+            <div className="text-center mt-6">
+              <Link
+                href="/insurance-guide"
+                className="inline-flex items-center text-purple-600 hover:text-purple-700 font-medium"
+              >
+                Full insurance guide with detailed coverage breakdown
+                <IoArrowForwardOutline className="w-4 h-4 ml-1" />
+              </Link>
             </div>
           </div>
         </section>
@@ -452,79 +454,6 @@ export default function ListYourCarPage() {
                   <IoArrowForwardOutline className="w-4 h-4" />
                 </Link>
               </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Insurance Tiers Explanation */}
-        <section className="py-12 sm:py-16 bg-white dark:bg-black">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-10">
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
-                Choose Your Earnings Tier
-              </h2>
-              <p className="text-gray-600 dark:text-gray-400">
-                Your earnings are determined by the insurance you bring. It's that simple.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              {insuranceTiers.map((tier) => (
-                <div 
-                  key={tier.id}
-                  className={`relative rounded-lg p-6 border-2 ${
-                    tier.color === 'emerald' 
-                      ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-500'
-                      : tier.color === 'amber'
-                      ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-500'
-                      : 'bg-gray-50 dark:bg-gray-800 border-gray-400'
-                  }`}
-                >
-                  {tier.color === 'amber' && (
-                    <div className="absolute -top-3 right-4 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                      MOST POPULAR
-                    </div>
-                  )}
-                  <div className={`text-sm font-bold mb-2 ${
-                    tier.color === 'emerald' ? 'text-emerald-600'
-                    : tier.color === 'amber' ? 'text-amber-600'
-                    : 'text-gray-600'
-                  }`}>
-                    {tier.name}
-                  </div>
-                  <div className={`text-5xl font-black mb-2 ${
-                    tier.color === 'emerald' ? 'text-emerald-600'
-                    : tier.color === 'amber' ? 'text-amber-600'
-                    : 'text-gray-600'
-                  }`}>
-                    {tier.percentage}%
-                  </div>
-                  <div className="text-sm text-gray-500 mb-3">You Keep</div>
-                  <div className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                    {tier.insurance}
-                  </div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
-                    {tier.description}
-                  </p>
-                  <div className="text-xs text-gray-500 mb-3">
-                    Deductible: {tier.deductible}
-                  </div>
-                  <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
-                    <div className="text-xs text-gray-500">Best for:</div>
-                    <div className="text-xs font-medium text-gray-700 dark:text-gray-300">{tier.best}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="text-center">
-              <Link 
-                href="/insurance-guide"
-                className="inline-flex items-center text-purple-600 hover:text-purple-700 font-medium"
-              >
-                Full insurance guide with detailed coverage breakdown
-                <IoArrowForwardOutline className="w-4 h-4 ml-1" />
-              </Link>
             </div>
           </div>
         </section>
@@ -912,12 +841,12 @@ export default function ListYourCarPage() {
               Choose your tier. Set your price. Get paid in 48 hours.
             </p>
             
-            <button 
-              onClick={() => setShowInquiryForm(true)}
-              className="px-10 py-4 bg-white text-purple-600 rounded-lg font-bold hover:bg-purple-50 transition shadow-lg text-lg"
+            <Link
+              href="/host/signup"
+              className="inline-block px-10 py-4 bg-white text-purple-600 rounded-lg font-bold hover:bg-purple-50 transition shadow-lg text-lg"
             >
               Start Free Application →
-            </button>
+            </Link>
             
             <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-sm text-purple-100">
               <div className="flex items-center">
@@ -938,178 +867,6 @@ export default function ListYourCarPage() {
       </div>
 
       <Footer />
-
-      {/* Application Form Modal */}
-      {showInquiryForm && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 shadow-2xl">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                Host Application
-              </h2>
-              <button
-                onClick={() => setShowInquiryForm(false)}
-                className="text-gray-400 hover:text-gray-600 text-2xl"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 mb-6">
-              <p className="text-sm text-purple-800 dark:text-purple-300">
-                ✓ All vehicles welcome (2015+) • ✓ Choose your earnings tier (40-90%) • ✓ $1M coverage included
-              </p>
-            </div>
-            
-            <form onSubmit={handleFormSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <input
-                  type="text"
-                  placeholder="Your Name *"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                />
-                <input
-                  type="email"
-                  placeholder="Email Address *"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <input
-                  type="tel"
-                  placeholder="Phone Number *"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  required
-                />
-                <select 
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  required
-                >
-                  <option value="Phoenix">Phoenix</option>
-                  <option value="Scottsdale">Scottsdale</option>
-                  <option value="Tempe">Tempe</option>
-                  <option value="Mesa">Mesa</option>
-                  <option value="Chandler">Chandler</option>
-                  <option value="Gilbert">Gilbert</option>
-                  <option value="Glendale">Glendale</option>
-                </select>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <input
-                  type="text"
-                  placeholder="Make (Toyota) *"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                  value={formData.vehicleMake}
-                  onChange={(e) => setFormData({ ...formData, vehicleMake: e.target.value })}
-                  required
-                />
-                <input
-                  type="text"
-                  placeholder="Model (Camry) *"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                  value={formData.vehicleModel}
-                  onChange={(e) => setFormData({ ...formData, vehicleModel: e.target.value })}
-                  required
-                />
-                <input
-                  type="number"
-                  placeholder="Year *"
-                  min="2015"
-                  max="2026"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                  value={formData.vehicleYear}
-                  onChange={(e) => setFormData({ ...formData, vehicleYear: e.target.value })}
-                  required
-                />
-              </div>
-
-              <select 
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                value={formData.vehicleType}
-                onChange={(e) => setFormData({ ...formData, vehicleType: e.target.value })}
-                required
-              >
-                <option value="">Select Vehicle Type *</option>
-                <option value="economy">Economy (Civic, Corolla, Sentra)</option>
-                <option value="standard">Standard (Camry, Accord, CRV)</option>
-                <option value="luxury">Luxury (BMW, Mercedes, Audi)</option>
-                <option value="premium">Premium (Tesla S/X, BMW 7)</option>
-                <option value="exotic">Exotic (Porsche, Ferrari, Lamborghini)</option>
-              </select>
-
-              <select 
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                value={formData.hasInsurance}
-                onChange={(e) => setFormData({ ...formData, hasInsurance: e.target.value })}
-                required
-              >
-                <option value="">Do you have P2P or commercial insurance? *</option>
-                <option value="none">No - I'll use platform coverage (40% tier)</option>
-                <option value="p2p">Yes - I have P2P insurance (75% tier)</option>
-                <option value="commercial">Yes - I have commercial insurance (90% tier)</option>
-                <option value="unsure">Not sure - help me decide</option>
-              </select>
-
-              <textarea
-                placeholder="Anything else? Mileage, special features, multiple vehicles... (optional)"
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                value={formData.message}
-                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-              />
-
-              <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-4">
-                <label className="flex flex-col items-center cursor-pointer">
-                  <IoCloudUploadOutline className="w-8 h-8 text-gray-400 mb-2" />
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
-                    Upload Photos (Optional)
-                  </span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handlePhotoUpload}
-                    className="hidden"
-                  />
-                </label>
-                {formData.photos.length > 0 && (
-                  <p className="text-xs text-green-600 mt-2 text-center">
-                    {formData.photos.length} photo(s) selected
-                  </p>
-                )}
-              </div>
-              
-              <div className="flex items-center justify-between pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowInquiryForm(false)}
-                  className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-3 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 transition text-lg"
-                >
-                  Submit Application →
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

@@ -6,6 +6,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Header from '../components/Header'
+import Footer from '../components/Footer'
 import {
   IoLocationOutline,
   IoAirplaneOutline,
@@ -564,20 +565,9 @@ export default function CoverageContent() {
           </div>
         </section>
 
-        {/* Footer */}
-        <footer className="bg-white dark:bg-black border-t border-gray-200 dark:border-gray-800 py-6 sm:py-8">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center text-xs sm:text-sm text-gray-500">
-              <p>© 2024 ItWhip Technologies, Inc. Service areas subject to availability.</p>
-              <div className="mt-4 space-x-3 sm:space-x-4">
-                <Link href="/about" className="hover:text-gray-700 dark:hover:text-gray-300">About</Link>
-                <Link href="/contact" className="hover:text-gray-700 dark:hover:text-gray-300">Contact</Link>
-                <Link href="/host/signup" className="hover:text-gray-700 dark:hover:text-gray-300">List Your Car</Link>
-              </div>
-            </div>
-          </div>
-        </footer>
       </div>
+
+      <Footer />
     </div>
   )
 }
