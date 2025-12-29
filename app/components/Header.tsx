@@ -1,7 +1,7 @@
 // app/components/Header.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
@@ -82,7 +82,7 @@ interface HeaderProps {
   handleSearchClick?: () => void
 }
 
-export default function Header({
+function HeaderInner({
   handleGetAppClick = () => {},
   handleSearchClick = () => {}
 }: HeaderProps = {}) {
@@ -520,5 +520,25 @@ export default function Header({
         />
       )}
     </>
+  )
+}
+
+// Wrap Header with Suspense to handle useSearchParams() during static generation
+// This is required by Next.js 15 for components using useSearchParams
+export default function Header(props: HeaderProps = {}) {
+  return (
+    <Suspense fallback={
+      <nav className="fixed top-0 w-full z-50 bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800">
+        <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center ml-4 sm:ml-0">
+              <div className="h-10 w-10 bg-gray-200 dark:bg-gray-800 rounded animate-pulse" />
+            </div>
+          </div>
+        </div>
+      </nav>
+    }>
+      <HeaderInner {...props} />
+    </Suspense>
   )
 }
