@@ -1029,8 +1029,11 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
         </div>
       )}
 
-      {/* Header Bar */}
-      <div className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 sticky top-0 z-40">
+      {/* Spacer for fixed header */}
+      <div className="h-16" />
+
+      {/* Header Bar - sticky below main header */}
+      <div className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 sticky top-16 z-40">
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <button
