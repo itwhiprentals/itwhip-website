@@ -24,7 +24,7 @@ import {
   IoLocationOutline,
   IoShieldCheckmarkOutline
 } from 'react-icons/io5'
-import { MERCHANT_RETURN_POLICY } from '@/app/lib/seo/return-policy'
+import { MERCHANT_RETURN_POLICY, SHIPPING_DETAILS } from '@/app/lib/seo/return-policy'
 
 export const revalidate = 60
 
@@ -379,6 +379,7 @@ export default async function CarModelPage({ params }: PageProps) {
           offerCount: totalCars,
           priceValidUntil,
           availability: totalCars > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+          shippingDetails: SHIPPING_DETAILS,
           hasMerchantReturnPolicy: MERCHANT_RETURN_POLICY
         },
         ...(totalCars > 0 ? {

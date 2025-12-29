@@ -1,6 +1,6 @@
 // app/lib/seo/return-policy.ts
-// Merchant Return Policy for Google Search Console compliance
-// Aligned with ItWhip's 72-hour cancellation policy
+// Schema.org structured data constants for Google Search Console compliance
+// Aligned with ItWhip's policies and Arizona operations
 
 /**
  * Standard Merchant Return Policy for all Product schema.org structured data
@@ -19,4 +19,42 @@ export const MERCHANT_RETURN_POLICY = {
   returnMethod: 'https://schema.org/ReturnAtKiosk', // Car returned to host location
   returnFees: 'https://schema.org/FreeReturn', // No penalty within cancellation window
   refundType: 'https://schema.org/FullRefund' // 100% refund at 72+ hours
+}
+
+/**
+ * Shipping Details for Product schema.org structured data
+ * For car rentals, "shipping" = pickup/delivery options
+ *
+ * - Free pickup at host location (default)
+ * - Available in Arizona (AZ)
+ * - 0-1 day handling (car preparation)
+ * - 0 day transit (immediate pickup at location)
+ */
+export const SHIPPING_DETAILS = {
+  '@type': 'OfferShippingDetails',
+  shippingRate: {
+    '@type': 'MonetaryAmount',
+    value: '0',
+    currency: 'USD'
+  },
+  shippingDestination: {
+    '@type': 'DefinedRegion',
+    addressCountry: 'US',
+    addressRegion: 'AZ'
+  },
+  deliveryTime: {
+    '@type': 'ShippingDeliveryTime',
+    handlingTime: {
+      '@type': 'QuantitativeValue',
+      minValue: 0,
+      maxValue: 1,
+      unitCode: 'DAY'
+    },
+    transitTime: {
+      '@type': 'QuantitativeValue',
+      minValue: 0,
+      maxValue: 0,
+      unitCode: 'DAY'
+    }
+  }
 }

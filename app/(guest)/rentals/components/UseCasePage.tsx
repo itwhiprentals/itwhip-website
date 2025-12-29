@@ -21,6 +21,7 @@ import {
   IoCalendarOutline,
   IoTrendingUpOutline
 } from 'react-icons/io5'
+import { MERCHANT_RETURN_POLICY, SHIPPING_DETAILS } from '@/app/lib/seo/return-policy'
 
 interface UseCasePageProps {
   useCaseData: UseCaseData
@@ -82,7 +83,9 @@ export default function UseCasePage({
               price: car.dailyRate,
               priceCurrency: 'USD',
               availability: 'https://schema.org/InStock',
-              priceValidUntil
+              priceValidUntil,
+              shippingDetails: SHIPPING_DETAILS,
+              hasMerchantReturnPolicy: MERCHANT_RETURN_POLICY
             }
           }
         }))

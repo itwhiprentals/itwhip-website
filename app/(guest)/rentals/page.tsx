@@ -9,7 +9,7 @@ import CarGrid from './components/CarGrid'
 import Breadcrumbs from './components/Breadcrumbs'
 import Footer from '@/app/components/Footer'
 import { IoCarSportOutline } from 'react-icons/io5'
-import { MERCHANT_RETURN_POLICY } from '@/app/lib/seo/return-policy'
+import { MERCHANT_RETURN_POLICY, SHIPPING_DETAILS } from '@/app/lib/seo/return-policy'
 
 const TYPE_LABELS: Record<string, string> = {
   suv: 'SUVs',
@@ -271,6 +271,7 @@ export default async function RentalsPage({
           priceValidUntil,
           availability: 'https://schema.org/InStock',
           url: `https://itwhip.com/rentals/${car.id}`,
+          shippingDetails: SHIPPING_DETAILS,
           hasMerchantReturnPolicy: MERCHANT_RETURN_POLICY
         },
         ...(car.rating && {
