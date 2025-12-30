@@ -12,14 +12,18 @@ import {
   IoCardOutline,
   IoChevronForwardOutline,
   IoCarSportOutline,
-  IoInformationCircleOutline
+  IoInformationCircleOutline,
+  IoPersonOutline,
+  IoLockClosedOutline,
+  IoSparkles,
+  IoRocketOutline
 } from 'react-icons/io5'
 
 interface VerificationStep {
   id: string
   title: string
   description: string
-  status: 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED' | 'PENDING_REVIEW'
+  status: 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED' | 'PENDING_REVIEW' | 'LOCKED'
   icon: any
   actionUrl?: string
   actionLabel?: string
@@ -45,7 +49,6 @@ interface VerificationProgressProps {
   documentStatuses?: any
   backgroundCheckStatus?: string
   pendingActions?: string[]
-  // These can still be passed but we'll also fetch directly
   hasIncompleteCar?: boolean
   incompleteCarId?: string
   onActionClick?: (stepId: string) => void
@@ -57,8 +60,144 @@ function isCarComplete(car: CarData): boolean {
   const hasVin = car.vin && car.vin.length >= 17
   const hasLicensePlate = car.licensePlate && car.licensePlate.length >= 2
   const hasPricing = car.dailyRate && car.dailyRate > 0
-  
+
   return hasPhotos && hasVin && hasLicensePlate && hasPricing
+}
+
+// Get step-specific icon
+function getStepIcon(stepId: string) {
+  switch (stepId) {
+    case 'profile':
+      return IoPersonOutline
+    case 'documents':
+      return IoDocumentTextOutline
+    case 'vehicle':
+      return IoCarSportOutline
+    case 'bank_account':
+      return IoCardOutline
+    case 'insurance_tier':
+      return IoShieldCheckmarkOutline
+    default:
+      return IoDocumentTextOutline
+  }
+}
+
+// Get status-specific card styles
+function getCardStyles(status: VerificationStep['status']) {
+  switch (status) {
+    case 'COMPLETED':
+      return {
+        container: 'border-l-4 border-l-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40',
+        iconBg: 'bg-emerald-100 dark:bg-emerald-900/50',
+        iconColor: 'text-emerald-600 dark:text-emerald-400',
+        textMuted: true
+      }
+    case 'FAILED':
+      return {
+        container: 'border-l-4 border-l-red-500 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40',
+        iconBg: 'bg-red-100 dark:bg-red-900/50',
+        iconColor: 'text-red-600 dark:text-red-400',
+        textMuted: false
+      }
+    case 'PENDING_REVIEW':
+      return {
+        container: 'border-l-4 border-l-amber-500 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40',
+        iconBg: 'bg-amber-100 dark:bg-amber-900/50',
+        iconColor: 'text-amber-600 dark:text-amber-400',
+        textMuted: false
+      }
+    case 'IN_PROGRESS':
+      return {
+        container: 'border-l-4 border-l-blue-500 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40',
+        iconBg: 'bg-blue-100 dark:bg-blue-900/50',
+        iconColor: 'text-blue-600 dark:text-blue-400',
+        textMuted: false
+      }
+    case 'LOCKED':
+      return {
+        container: 'border-l-4 border-l-gray-300 dark:border-l-gray-600 bg-gray-100 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 opacity-60',
+        iconBg: 'bg-gray-200 dark:bg-gray-700',
+        iconColor: 'text-gray-400 dark:text-gray-500',
+        textMuted: true
+      }
+    default: // NOT_STARTED
+      return {
+        container: 'border-l-4 border-l-gray-300 dark:border-l-gray-600 bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700',
+        iconBg: 'bg-gray-100 dark:bg-gray-700',
+        iconColor: 'text-gray-500 dark:text-gray-400',
+        textMuted: false
+      }
+  }
+}
+
+// Get status badge component
+function StatusBadge({ status }: { status: VerificationStep['status'] }) {
+  switch (status) {
+    case 'COMPLETED':
+      return (
+        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 rounded-full text-xs font-medium">
+          <IoCheckmarkCircle className="w-3.5 h-3.5" />
+          <span>Done</span>
+        </div>
+      )
+    case 'FAILED':
+      return (
+        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 rounded-full text-xs font-medium animate-pulse">
+          <IoCloseCircle className="w-3.5 h-3.5" />
+          <span>Fix Required</span>
+        </div>
+      )
+    case 'PENDING_REVIEW':
+      return (
+        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 rounded-full text-xs font-medium">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-500 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+          </span>
+          <span>Under Review</span>
+        </div>
+      )
+    case 'IN_PROGRESS':
+      return (
+        <div className="flex items-center gap-1 px-2.5 py-1 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-full text-xs font-medium">
+          <span>Continue</span>
+          <IoChevronForwardOutline className="w-3 h-3" />
+        </div>
+      )
+    case 'LOCKED':
+      return (
+        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-full text-xs font-medium">
+          <IoLockClosedOutline className="w-3 h-3" />
+          <span>Locked</span>
+        </div>
+      )
+    default: // NOT_STARTED
+      return (
+        <div className="flex items-center gap-1 px-2.5 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full text-xs font-medium group-hover:bg-purple-100 dark:group-hover:bg-purple-900/50 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">
+          <span>Start</span>
+          <IoChevronForwardOutline className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
+        </div>
+      )
+  }
+}
+
+// Progress bar gradient based on progress
+function getProgressGradient(progress: number) {
+  if (progress >= 80) return 'from-emerald-500 via-emerald-400 to-green-400'
+  if (progress >= 60) return 'from-green-500 via-amber-400 to-amber-500'
+  if (progress >= 40) return 'from-amber-500 via-amber-400 to-yellow-400'
+  if (progress >= 20) return 'from-blue-500 via-blue-400 to-cyan-400'
+  return 'from-gray-400 via-gray-300 to-blue-400'
+}
+
+// Motivational message based on progress
+function getMotivationalMessage(progress: number, completedSteps: number, totalSteps: number) {
+  if (progress === 100) return { icon: IoCheckmarkCircle, iconColor: 'text-emerald-500', text: "You're all set! Ready to start earning." }
+  if (progress >= 80) return { icon: IoRocketOutline, iconColor: 'text-purple-500', text: "Almost there! Just a few more steps." }
+  if (progress >= 60) return { icon: IoSparkles, iconColor: 'text-amber-500', text: "Great momentum! Keep going." }
+  if (progress >= 40) return { icon: IoCheckmarkCircle, iconColor: 'text-blue-500', text: "Nice progress! You're halfway there." }
+  if (progress >= 20) return { icon: IoRocketOutline, iconColor: 'text-blue-500', text: "Good start! Let's keep moving." }
+  return { icon: IoPersonOutline, iconColor: 'text-gray-500', text: "Welcome! Let's get your account set up." }
 }
 
 export default function VerificationProgress({
@@ -75,42 +214,38 @@ export default function VerificationProgress({
   const [progress, setProgress] = useState(0)
   const [steps, setSteps] = useState<VerificationStep[]>([])
   const [loading, setLoading] = useState(true)
-  
-  // Local state for car completion - fetched directly
+
   const [hasIncompleteCar, setHasIncompleteCar] = useState(false)
   const [incompleteCarId, setIncompleteCarId] = useState<string | null>(null)
   const [carsFetched, setCarsFetched] = useState(false)
   const [cars, setCars] = useState<any[]>([])
-  
-  // Local state for profile data - fetched to check completion
+
   const [profileData, setProfileData] = useState<{
     name?: string
     phone?: string
     bio?: string
     profilePhoto?: string
+    photoIdUrls?: { front?: string; back?: string; info?: string; lastPage?: string } | null
+    photoIdVerified?: boolean
+    photoIdSubmittedAt?: string | null
+    photoIdRejected?: boolean
   } | null>(null)
   const [profileFetched, setProfileFetched] = useState(false)
 
-  // Fetch cars directly to check completion status
+  // Fetch cars
   useEffect(() => {
     const fetchCars = async () => {
-      console.log('[VerificationProgress] Fetching cars for hostId:', hostId)
       try {
         const response = await fetch(`/api/host/cars?hostId=${hostId}`, {
           credentials: 'include'
         })
 
-        console.log('[VerificationProgress] /api/host/cars response status:', response.status)
-
         if (response.ok) {
           const data = await response.json()
-          console.log('[VerificationProgress] /api/host/cars raw response:', JSON.stringify(data, null, 2))
           const carsData = data.cars || data.data || []
-          console.log('[VerificationProgress] Extracted carsData:', carsData.length, 'cars')
           setCars(carsData)
-          
+
           if (carsData.length > 0) {
-            // Check each car for completion
             const incompleteCar = carsData.find((car: any) => {
               const photoCount = car.photoCount || car._count?.photos || (car.photos?.length || 0)
               const carData: CarData = {
@@ -122,7 +257,7 @@ export default function VerificationProgress({
               }
               return !isCarComplete(carData)
             })
-            
+
             if (incompleteCar) {
               setHasIncompleteCar(true)
               setIncompleteCarId(incompleteCar.id)
@@ -131,34 +266,32 @@ export default function VerificationProgress({
               setIncompleteCarId(null)
             }
           } else {
-            // No cars at all - host needs to add a car
             setHasIncompleteCar(true)
             setIncompleteCarId(null)
           }
         }
       } catch (error) {
-        console.error('Error fetching cars for verification:', error)
-        // On error, assume incomplete (safer default)
+        console.error('Error fetching cars:', error)
         setHasIncompleteCar(true)
         setIncompleteCarId(incompleteCarIdProp || null)
       } finally {
         setCarsFetched(true)
       }
     }
-    
+
     if (hostId) {
       fetchCars()
     }
   }, [hostId, hasIncompleteCarProp, incompleteCarIdProp])
 
-  // Fetch profile data to check completion
+  // Fetch profile
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const response = await fetch('/api/host/profile', {
           credentials: 'include'
         })
-        
+
         if (response.ok) {
           const data = await response.json()
           const profile = data.profile || data
@@ -166,41 +299,40 @@ export default function VerificationProgress({
             name: profile.name,
             phone: profile.phone,
             bio: profile.bio,
-            profilePhoto: profile.profilePhoto || profile.image
+            profilePhoto: profile.profilePhoto || profile.image,
+            photoIdUrls: profile.photoIdUrls,
+            photoIdVerified: profile.photoIdVerified,
+            photoIdSubmittedAt: profile.photoIdSubmittedAt,
+            photoIdRejected: profile.photoIdRejected
           })
         } else {
           setProfileData(null)
         }
       } catch (error) {
-        console.error('Error fetching profile for verification:', error)
+        console.error('Error fetching profile:', error)
         setProfileData(null)
       } finally {
         setProfileFetched(true)
       }
     }
-    
+
     fetchProfile()
   }, [])
 
-  // Build steps after cars AND profile are fetched
+  // Build steps
   useEffect(() => {
     if (!carsFetched || !profileFetched) return
-
     buildVerificationSteps()
   }, [carsFetched, profileFetched, hasIncompleteCar, incompleteCarId, cars, approvalStatus, backgroundCheckStatus, documentStatuses, profileData])
 
-  // Helper function to check if host has selected insurance tier
   const checkInsuranceTierSelected = async (): Promise<{ selected: boolean; tier: 'BASIC' | 'STANDARD' | 'PREMIUM' | null; percentage: number }> => {
     try {
-      const response = await fetch(`/api/host/profile`, {
-        credentials: 'include'
-      })
+      const response = await fetch(`/api/host/profile`, { credentials: 'include' })
 
       if (response.ok) {
         const data = await response.json()
         const profile = data.profile
 
-        // Check tier priority: PREMIUM > STANDARD > BASIC
         if (profile.earningsTier === 'PREMIUM' || profile.commercialInsuranceActive === true) {
           return { selected: true, tier: 'PREMIUM', percentage: 90 }
         } else if (profile.earningsTier === 'STANDARD' || profile.p2pInsuranceActive === true) {
@@ -219,49 +351,78 @@ export default function VerificationProgress({
     }
   }
 
+  const determinePhotoIdStatus = (): VerificationStep['status'] => {
+    const photoIdUrls = profileData?.photoIdUrls
+    const photoIdVerified = profileData?.photoIdVerified
+    const photoIdSubmittedAt = profileData?.photoIdSubmittedAt
+    const photoIdRejected = profileData?.photoIdRejected
+
+    if (photoIdVerified) return 'COMPLETED'
+    if (photoIdRejected) return 'FAILED'
+    if (!photoIdUrls || (typeof photoIdUrls === 'object' && Object.keys(photoIdUrls).length === 0)) {
+      return 'NOT_STARTED'
+    }
+
+    const hasFront = !!(photoIdUrls.front)
+    const hasBack = !!(photoIdUrls.back)
+
+    if (hasFront && hasBack) {
+      if (photoIdSubmittedAt) return 'PENDING_REVIEW'
+      return 'IN_PROGRESS'
+    }
+
+    if (hasFront || hasBack) return 'IN_PROGRESS'
+    return 'NOT_STARTED'
+  }
+
   const buildVerificationSteps = async () => {
     try {
       setLoading(true)
-
       const verificationSteps: VerificationStep[] = []
 
-      // Step 1: Profile Completion - Dynamic check based on actual fields
-      // Check for truthy values AND non-empty strings
+      const photoIdUrls = profileData?.photoIdUrls
+      const hasPhotoIdUploaded = !!(photoIdUrls && photoIdUrls.front && photoIdUrls.back)
+
       const isProfileComplete = !!(
         profileData?.name &&
         profileData?.bio && profileData.bio.length > 0 &&
-        profileData?.profilePhoto
+        profileData?.profilePhoto &&
+        hasPhotoIdUploaded
       )
-      
+
       verificationSteps.push({
         id: 'profile',
         title: 'Complete Your Profile',
-        description: 'Add your bio, profile photo, and basic information',
+        description: hasPhotoIdUploaded
+          ? 'Add your bio, profile photo, and basic information'
+          : 'Add your bio, profile photo, and upload Photo ID',
         status: isProfileComplete ? 'COMPLETED' : 'IN_PROGRESS',
-        icon: IoDocumentTextOutline,
+        icon: IoPersonOutline,
         actionUrl: !isProfileComplete ? '/host/profile?tab=profile' : undefined,
         actionLabel: 'Complete Profile',
         priority: 'HIGH'
       })
 
-      // Step 2: Document Upload
-      const docsStatus = determineDocumentStatus(documentStatuses)
+      const docsStatus = determinePhotoIdStatus()
       verificationSteps.push({
         id: 'documents',
         title: 'Upload Required Documents',
-        description: 'Government ID, Driver\'s License, and Insurance Certificate',
+        description: docsStatus === 'COMPLETED'
+          ? 'Photo ID verified'
+          : docsStatus === 'FAILED'
+          ? 'Photo ID rejected - please re-upload'
+          : docsStatus === 'PENDING_REVIEW'
+          ? 'Photo ID under review'
+          : 'Upload front and back of your Photo ID',
         status: docsStatus,
         icon: IoDocumentTextOutline,
-        actionUrl: docsStatus !== 'COMPLETED' ? '/host/profile' : undefined,
+        actionUrl: docsStatus !== 'COMPLETED' ? '/host/profile?tab=documents' : undefined,
         actionLabel: docsStatus === 'FAILED' ? 'Re-upload Documents' : 'Upload Documents',
-        estimatedTime: '5 minutes',
+        estimatedTime: '5 min',
         priority: 'HIGH'
       })
 
-      // Step 3: Vehicle Listing Completion - ALWAYS show this step
       const vehicleStatus = hasIncompleteCar ? 'IN_PROGRESS' : 'COMPLETED'
-
-      // Route to edit page if car exists, otherwise leave undefined (handleStepClick will route to /add)
       const vehicleEditUrl = incompleteCarId
         ? `/host/cars/${incompleteCarId}/edit`
         : cars.length > 0
@@ -273,43 +434,42 @@ export default function VerificationProgress({
         title: 'Complete Your Vehicle Listing',
         description: hasIncompleteCar
           ? 'Add photos, VIN, pricing to finish your listing'
-          : 'Your vehicle listing is complete and ready for review',
+          : 'Your vehicle listing is complete',
         status: vehicleStatus,
         icon: IoCarSportOutline,
         actionUrl: vehicleEditUrl,
         actionLabel: 'Complete Listing',
-        estimatedTime: '10 minutes',
+        estimatedTime: '10 min',
         priority: 'HIGH'
       })
 
-      // Step 4: Bank Account Setup
+      const isHostApproved = approvalStatus === 'APPROVED'
       verificationSteps.push({
         id: 'bank_account',
         title: 'Connect Bank Account',
-        description: 'Add your payout method to receive earnings',
-        status: approvalStatus === 'APPROVED' ? 'COMPLETED' : 'NOT_STARTED',
+        description: isHostApproved
+          ? 'Add your payout method to receive earnings'
+          : 'Available after account approval',
+        status: isHostApproved ? 'NOT_STARTED' : 'LOCKED',
         icon: IoCardOutline,
-        actionUrl: '/host/earnings',
-        actionLabel: 'Add Bank Account',
-        estimatedTime: '3 minutes',
+        actionUrl: isHostApproved ? '/host/profile?tab=banking' : undefined,
+        actionLabel: isHostApproved ? 'Add Bank Account' : undefined,
+        estimatedTime: isHostApproved ? '3 min' : undefined,
         priority: 'MEDIUM'
       })
 
-      // Step 5: Insurance Tier Selection
-      // Host must select earnings tier to complete verification
-      // BASIC (40%) - No insurance, STANDARD (75%) - P2P, PREMIUM (90%) - Commercial
       const tierStatus = await checkInsuranceTierSelected()
       verificationSteps.push({
         id: 'insurance_tier',
         title: 'Select Insurance Tier',
         description: tierStatus.selected
           ? 'Your earnings tier is configured'
-          : 'Choose your earnings tier: BASIC (40%), STANDARD (75%), or PREMIUM (90%)',
+          : 'Choose your coverage level',
         status: tierStatus.selected ? 'COMPLETED' : 'NOT_STARTED',
         icon: IoShieldCheckmarkOutline,
         actionUrl: '/host/profile?tab=insurance',
         actionLabel: 'Select Tier',
-        estimatedTime: '5 minutes',
+        estimatedTime: '5 min',
         priority: 'HIGH',
         tierInfo: tierStatus.selected ? {
           tier: tierStatus.tier,
@@ -319,9 +479,8 @@ export default function VerificationProgress({
 
       setSteps(verificationSteps)
 
-      // Calculate progress percentage
       const completedSteps = verificationSteps.filter(s => s.status === 'COMPLETED').length
-      const totalSteps = verificationSteps.length
+      const totalSteps = verificationSteps.filter(s => s.status !== 'LOCKED').length
       const progressPercentage = Math.round((completedSteps / totalSteps) * 100)
       setProgress(progressPercentage)
 
@@ -332,8 +491,9 @@ export default function VerificationProgress({
     }
   }
 
-  // Handle navigation when a step is clicked
   const handleStepClick = (step: VerificationStep) => {
+    if (step.status === 'LOCKED') return
+
     let route = ''
 
     switch (step.id) {
@@ -344,19 +504,10 @@ export default function VerificationProgress({
         route = '/host/profile?tab=documents'
         break
       case 'vehicle':
-        // Try multiple sources for the car ID - prioritize what we have
         const carId = incompleteCarId || incompleteCarIdProp || cars[0]?.id
-        console.log('[VerificationProgress] Vehicle click - carId sources:', {
-          incompleteCarId,
-          incompleteCarIdProp,
-          firstCarId: cars[0]?.id,
-          selectedCarId: carId,
-          carsLength: cars.length
-        })
         if (carId) {
           route = `/host/cars/${carId}/edit`
         } else {
-          // No car exists - go to add page
           route = '/host/cars/add'
         }
         break
@@ -367,98 +518,37 @@ export default function VerificationProgress({
         route = '/host/profile?tab=insurance'
         break
       default:
-        // If step has actionUrl, use it
         if (step.actionUrl) {
           route = step.actionUrl
         }
         break
     }
 
-    console.log('[VerificationProgress] handleStepClick navigation:', {
-      stepId: step.id,
-      route,
-      hasOnActionClick: !!onActionClick
-    })
-
-    // Navigate if we have a route
     if (route) {
-      // Call parent callback for analytics/tracking only - NOT for navigation
       if (onActionClick) {
         onActionClick(step.id)
       }
-      console.log('[VerificationProgress] Calling router.push with route:', route)
       router.push(route)
     } else if (onActionClick) {
-      // Fallback: let parent handle navigation if no internal route
-      console.log('[VerificationProgress] No route, calling onActionClick')
       onActionClick(step.id)
-    }
-  }
-
-  const determineDocumentStatus = (statuses: any): VerificationStep['status'] => {
-    if (!statuses || Object.keys(statuses).length === 0) {
-      return 'NOT_STARTED'
-    }
-
-    const statusValues = Object.values(statuses)
-
-    if (statusValues.every(s => s === 'APPROVED')) {
-      return 'COMPLETED'
-    }
-
-    if (statusValues.some(s => s === 'REJECTED')) {
-      return 'FAILED'
-    }
-
-    if (statusValues.some(s => s === 'PENDING')) {
-      return 'PENDING_REVIEW'
-    }
-
-    if (statusValues.some(s => s === 'UPLOADED' || s === 'SUBMITTED')) {
-      return 'PENDING_REVIEW'
-    }
-
-    return 'IN_PROGRESS'
-  }
-
-  const getStatusColor = (status: VerificationStep['status']) => {
-    switch (status) {
-      case 'COMPLETED':
-        return 'text-green-600 dark:text-green-400'
-      case 'FAILED':
-        return 'text-red-600 dark:text-red-400'
-      case 'IN_PROGRESS':
-      case 'PENDING_REVIEW':
-        return 'text-blue-600 dark:text-blue-400'
-      default:
-        return 'text-gray-500 dark:text-gray-400'
-    }
-  }
-
-  const getStatusLabel = (status: VerificationStep['status']) => {
-    switch (status) {
-      case 'COMPLETED':
-        return 'Completed'
-      case 'FAILED':
-        return 'Action Required'
-      case 'IN_PROGRESS':
-        return 'In Progress'
-      case 'PENDING_REVIEW':
-        return 'Under Review'
-      default:
-        return 'Not Started'
     }
   }
 
   if (loading || !carsFetched || !profileFetched) {
     return (
-      <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
-          <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded"></div>
-          <div className="space-y-3">
-            {[1, 2, 3, 4].map(i => (
-              <div key={i} className="h-16 bg-gray-100 dark:bg-gray-800 rounded-lg"></div>
+      <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-6">
+        <div className="animate-pulse space-y-6">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+            <div className="space-y-2 flex-1">
+              <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
+              <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+            </div>
+          </div>
+          <div className="h-2.5 bg-gray-200 dark:bg-gray-700 rounded"></div>
+          <div className="space-y-2.5">
+            {[1, 2, 3, 4, 5].map(i => (
+              <div key={i} className="h-20 bg-gray-100 dark:bg-gray-800 rounded-lg"></div>
             ))}
           </div>
         </div>
@@ -466,194 +556,171 @@ export default function VerificationProgress({
     )
   }
 
+  const completedSteps = steps.filter(s => s.status === 'COMPLETED').length
+  const totalSteps = steps.filter(s => s.status !== 'LOCKED').length
+  const motivational = getMotivationalMessage(progress, completedSteps, totalSteps)
+
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">
+    <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
       {/* Header */}
-      <div className="mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-          Verification Progress
-        </h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          Complete all steps to start accepting bookings
-        </p>
-      </div>
-
-      {/* Progress Bar */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            {progress}% Complete
-          </span>
-          <span className="text-xs text-gray-500 dark:text-gray-400">
-            {steps.filter(s => s.status === 'COMPLETED').length} of {steps.length} steps
-          </span>
+      <div className="px-5 py-5 sm:px-6 sm:py-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-lg bg-purple-600 flex items-center justify-center">
+            <IoRocketOutline className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+              Get Started
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+              <motivational.icon className={`w-4 h-4 ${motivational.iconColor}`} />
+              <span>{motivational.text}</span>
+            </p>
+          </div>
         </div>
-        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
-          <div 
-            className="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full transition-all duration-500 ease-out"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      </div>
 
-      {/* Steps */}
-      <div className="space-y-4">
-        {steps.map((step, index) => {
-          const isLastStep = index === steps.length - 1
-          
-          return (
-            <div key={step.id} className="relative">
-              {/* Connecting Line */}
-              {!isLastStep && (
-                <div className="absolute left-3 top-12 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-700 -mb-4" />
-              )}
-              
-              {/* Step Card - Fully Clickable */}
-              <button
-                onClick={() => handleStepClick(step)}
-                className={`group relative rounded-lg p-4 border shadow-md hover:shadow-lg transition-all w-full text-left cursor-pointer
-                  hover:border-purple-400 dark:hover:border-purple-600
-                  ${
-                    step.status === 'FAILED'
-                      ? 'border-red-300 bg-red-50 dark:bg-red-900 dark:border-red-700'
-                      : step.status === 'COMPLETED'
-                      ? 'border-green-300 bg-green-50 dark:bg-green-900 dark:border-green-700'
-                      : step.status === 'IN_PROGRESS' || step.status === 'PENDING_REVIEW'
-                      ? 'border-blue-300 bg-blue-50 dark:bg-blue-900 dark:border-blue-700'
-                      : 'border-gray-200 bg-gray-50 dark:bg-gray-800 dark:border-gray-600'
-                  }`}
-              >
-                <div className="flex items-start gap-4">
-                  {/* Status Icon / Step Number */}
-                  <div className="flex-shrink-0 relative z-10">
-                    {step.status === 'COMPLETED' ? (
-                      <IoCheckmarkCircle className="w-6 h-6 text-green-500" />
-                    ) : step.status === 'FAILED' ? (
-                      <IoCloseCircle className="w-6 h-6 text-red-500" />
-                    ) : step.status === 'IN_PROGRESS' || step.status === 'PENDING_REVIEW' ? (
-                      <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-sm font-semibold text-white">
-                        {index + 1}
-                      </div>
-                    ) : (
-                      <div className="w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center text-sm font-semibold text-white">
-                        {index + 1}
-                      </div>
-                    )}
-                  </div>
+        {/* Progress Bar */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <span className="font-semibold text-gray-900 dark:text-white">
+              {progress}% Complete
+            </span>
+            <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1">
+              <IoCheckmarkCircle className="w-4 h-4 text-emerald-500" />
+              {completedSteps} of {totalSteps} steps
+            </span>
+          </div>
 
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2 mb-1">
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900 dark:text-white">
-                          {step.title}
-                        </h4>
-
-                        {/* Tier Display for Insurance Step */}
-                        {step.id === 'insurance_tier' && step.tierInfo && (
-                          <div className="mt-1">
-                            <span className={`text-sm font-semibold ${
-                              step.tierInfo.tier === 'BASIC'
-                                ? 'text-green-600 dark:text-green-400'
-                                : step.tierInfo.tier === 'STANDARD'
-                                ? 'text-purple-600 dark:text-purple-400'
-                                : 'text-yellow-600 dark:text-yellow-400'
-                            }`}>
-                              {step.tierInfo.tier} ({step.tierInfo.percentage}%)
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Not Selected Display */}
-                        {step.id === 'insurance_tier' && !step.tierInfo && step.status !== 'COMPLETED' && (
-                          <div className="mt-1">
-                            <span className="text-sm text-gray-500 dark:text-gray-400">
-                              Not selected
-                            </span>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <span className={`text-xs font-medium whitespace-nowrap ${getStatusColor(step.status)}`}>
-                          {getStatusLabel(step.status)}
-                        </span>
-
-                        {/* Arrow Icon - Indicates clickable */}
-                        <IoChevronForwardOutline
-                          className="w-4 h-4 text-gray-400 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors"
-                        />
-                      </div>
-                    </div>
-                    
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                      {step.description}
-                    </p>
-
-                    {/* Estimated Time */}
-                    {step.estimatedTime && step.status !== 'COMPLETED' && (
-                      <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-                        <IoTimeOutline className="w-3.5 h-3.5" />
-                        <span>Est. {step.estimatedTime}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </button>
+          <div className="relative">
+            {/* Background track */}
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded h-2.5 overflow-hidden">
+              {/* Progress fill */}
+              <div
+                className={`bg-gradient-to-r ${getProgressGradient(progress)} h-2.5 rounded transition-all duration-500 ease-out`}
+                style={{ width: `${progress}%` }}
+              />
             </div>
+
+            {/* Milestone markers */}
+            <div className="absolute top-0 left-0 right-0 h-2.5 flex items-center pointer-events-none">
+              {[25, 50, 75].map((milestone) => (
+                <div
+                  key={milestone}
+                  className="absolute h-2.5 w-px bg-white/40 dark:bg-gray-600/60"
+                  style={{ left: `${milestone}%` }}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Steps List */}
+      <div className="p-4 sm:p-5 space-y-2.5">
+        {steps.map((step, index) => {
+          const styles = getCardStyles(step.status)
+          const StepIcon = getStepIcon(step.id)
+          const isLocked = step.status === 'LOCKED'
+
+          return (
+            <button
+              key={step.id}
+              onClick={() => handleStepClick(step)}
+              disabled={isLocked}
+              className={`group relative w-full text-left rounded-lg p-4 transition-all duration-150
+                ${styles.container}
+                ${!isLocked ? 'hover:shadow-md cursor-pointer' : 'cursor-not-allowed'}
+              `}
+            >
+              <div className="flex items-start gap-3.5">
+                {/* Icon Box */}
+                <div className={`flex-shrink-0 w-10 h-10 rounded-lg ${styles.iconBg} flex items-center justify-center`}>
+                  {step.status === 'COMPLETED' ? (
+                    <IoCheckmarkCircle className="w-5 h-5 text-emerald-500" />
+                  ) : step.status === 'FAILED' ? (
+                    <IoCloseCircle className="w-5 h-5 text-red-500" />
+                  ) : isLocked ? (
+                    <IoLockClosedOutline className={`w-5 h-5 ${styles.iconColor}`} />
+                  ) : (
+                    <StepIcon className={`w-5 h-5 ${styles.iconColor}`} />
+                  )}
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <h4 className={`font-semibold text-gray-900 dark:text-white ${styles.textMuted ? 'opacity-70' : ''}`}>
+                        {step.title}
+                      </h4>
+
+                      {/* Tier Badge for Insurance */}
+                      {step.id === 'insurance_tier' && step.tierInfo && (
+                        <span className={`inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md text-xs font-medium ${
+                          step.tierInfo.tier === 'PREMIUM'
+                            ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300'
+                            : step.tierInfo.tier === 'STANDARD'
+                            ? 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300'
+                            : 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300'
+                        }`}>
+                          {step.tierInfo.tier} Tier - {step.tierInfo.percentage}%
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Status Badge */}
+                    <StatusBadge status={step.status} />
+                  </div>
+
+                  <p className={`text-sm mt-1 ${styles.textMuted ? 'text-gray-400 dark:text-gray-500' : 'text-gray-600 dark:text-gray-400'}`}>
+                    {step.description}
+                  </p>
+
+                  {/* Estimated Time */}
+                  {step.estimatedTime && step.status !== 'COMPLETED' && step.status !== 'LOCKED' && (
+                    <div className="flex items-center gap-1 mt-2 text-xs text-gray-400 dark:text-gray-500">
+                      <IoTimeOutline className="w-3.5 h-3.5" />
+                      <span>Est. {step.estimatedTime}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Arrow for non-completed, non-locked steps */}
+                {step.status !== 'COMPLETED' && !isLocked && (
+                  <IoChevronForwardOutline className="w-5 h-5 text-gray-300 dark:text-gray-600 flex-shrink-0 transition-transform duration-200 group-hover:translate-x-1 group-hover:text-purple-500 dark:group-hover:text-purple-400" />
+                )}
+              </div>
+            </button>
           )
         })}
       </div>
 
-      {/* Approval Status Message */}
-      {approvalStatus === 'APPROVED' && progress === 100 && (
-        <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-          <div className="flex items-start gap-3">
-            <IoCheckmarkCircle className="w-6 h-6 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+      {/* Footer Message */}
+      {progress === 100 ? (
+        <div className="mx-4 mb-4 sm:mx-5 sm:mb-5 p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40 rounded-lg">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
+              <IoCheckmarkCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            </div>
             <div>
-              <h4 className="font-semibold text-green-900 dark:text-green-100 mb-1">
-                You're All Set!
+              <h4 className="font-semibold text-emerald-900 dark:text-emerald-100">
+                Verification Complete
               </h4>
-              <p className="text-sm text-green-700 dark:text-green-300">
-                Your host account is fully verified. You can now list your vehicles and start earning!
+              <p className="text-sm text-emerald-700 dark:text-emerald-300">
+                Your account is ready. Start listing your vehicles and earn.
               </p>
             </div>
           </div>
         </div>
-      )}
-
-      {/* Review Message - Show when not all steps complete */}
-      {progress < 100 && (
-        <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
-          <div className="flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-            <IoInformationCircleOutline className="w-5 h-5 flex-shrink-0" />
-            <span>Your account will be reviewed once all steps are completed</span>
+      ) : (
+        <div className="mx-4 mb-4 sm:mx-5 sm:mb-5 p-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg">
+          <div className="flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+            <IoInformationCircleOutline className="w-4 h-4 flex-shrink-0" />
+            <span>Complete all steps to activate your host account</span>
           </div>
         </div>
       )}
 
-
-      {/* Pending Actions Alert */}
-      {pendingActions && pendingActions.length > 0 && !hasIncompleteCar && (
-        <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-          <div className="flex items-start gap-3">
-            <IoTimeOutline className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
-            <div>
-              <h4 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-1">
-                Action Required
-              </h4>
-              <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-2">
-                Please complete the following actions to continue your verification:
-              </p>
-              <ul className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1">
-                {pendingActions.map((action, index) => (
-                  <li key={index}>• {action.replace(/_/g, ' ').toLowerCase()}</li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

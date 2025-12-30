@@ -41,7 +41,7 @@ export default function BankingTab({
         </h3>
         
         <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto px-4">
-          Complete your account verification to access banking features and receive payouts.
+          You will be able to add your payments information once approved.
         </p>
         
         <button

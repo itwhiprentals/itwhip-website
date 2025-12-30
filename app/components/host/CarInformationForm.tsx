@@ -1,20 +1,24 @@
 // app/components/host/CarInformationForm.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   IoCarSportOutline,
   IoChevronDownOutline,
   IoLocationOutline,
   IoColorPaletteOutline,
   IoPeopleOutline,
-  IoEnterOutline
+  IoEnterOutline,
+  IoCheckmarkCircle,
+  IoSearchOutline
 } from 'react-icons/io5'
 import { getAllMakes, getModelsByMake, getYears, getPopularMakes, getTrimsByModel } from '@/app/lib/data/vehicles'
 import { getCarColorHex } from '@/app/lib/constants/carColors'
 import { getVehicleSpecData, VehicleSpecData } from '@/app/lib/utils/vehicleSpec'
 import { getVehicleClass, formatFuelTypeBadge } from '@/app/lib/utils/vehicleClassification'
 import VehicleBadge from '@/app/components/VehicleBadge'
+import { decodeVIN, isValidVIN } from '@/app/lib/utils/vin-decoder'
+import AddressAutocomplete, { AddressResult } from '@/app/components/shared/AddressAutocomplete'
 
 // US States - Arizona first, then alphabetical
 const US_STATES = [
@@ -95,6 +99,7 @@ const CAR_COLORS = [
 ]
 
 export interface CarData {
+  vin: string
   make: string
   model: string
   year: string
@@ -128,17 +133,125 @@ export default function CarInformationForm({
     carType: null,
     fuelType: null
   })
+
+  // VIN decode state
+  const [vinDecoding, setVinDecoding] = useState(false)
+  const [vinDecoded, setVinDecoded] = useState(false)
+  const [vinError, setVinError] = useState('')
+
+  // Ref to track vinDecoded immediately (avoid race conditions with state)
+  const vinDecodedRef = useRef(false)
+
   const allMakes = getAllMakes()
   const popularMakes = getPopularMakes()
   const years = getYears()
 
+  // Helper function to convert text to Title Case
+  const toTitleCase = (str: string): string => {
+    return str
+      .toLowerCase()
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
+  }
+
+  // Helper function to find best matching make from our database
+  const findMatchingMake = (decodedMake: string): string => {
+    const normalizedDecoded = decodedMake.toUpperCase()
+    // Check exact match first (case-insensitive)
+    const exactMatch = allMakes.find(make => make.toUpperCase() === normalizedDecoded)
+    if (exactMatch) return exactMatch
+    // If no match, return title-cased version
+    return toTitleCase(decodedMake)
+  }
+
+  // Helper function to find best matching model from our database
+  const findMatchingModel = (make: string, decodedModel: string): string => {
+    const models = getModelsByMake(make)
+    const normalizedDecoded = decodedModel.toUpperCase()
+    // Check exact match first (case-insensitive)
+    const exactMatch = models.find(model => model.toUpperCase() === normalizedDecoded)
+    if (exactMatch) return exactMatch
+    // If no match, return title-cased version
+    return toTitleCase(decodedModel)
+  }
+
+  // Handle VIN decode
+  const handleVinDecode = async () => {
+    const vin = carData.vin?.trim()
+    if (!vin || vin.length !== 17) {
+      setVinError('VIN must be 17 characters')
+      return
+    }
+
+    if (!isValidVIN(vin)) {
+      setVinError('Invalid VIN format (no I, O, or Q)')
+      return
+    }
+
+    setVinDecoding(true)
+    setVinError('')
+
+    try {
+      const result = await decodeVIN(vin)
+
+      if (result && result.make) {
+        // IMPORTANT: Set ref FIRST (immediate) to prevent useEffect from resetting values
+        vinDecodedRef.current = true
+        setVinDecoded(true)
+
+        // Normalize make/model to match our dropdown values (NHTSA returns UPPERCASE)
+        const normalizedMake = findMatchingMake(result.make)
+        const normalizedModel = result.model ? findMatchingModel(normalizedMake, result.model) : ''
+        const normalizedTrim = result.trim ? toTitleCase(result.trim) : ''
+
+        // Update available models dropdown with the normalized make
+        const models = getModelsByMake(normalizedMake)
+        setAvailableModels(models)
+
+        // Update available trims
+        if (normalizedMake && normalizedModel && result.year) {
+          const trims = getTrimsByModel(normalizedMake, normalizedModel, result.year)
+          setAvailableTrims(trims)
+        }
+
+        // Debug: Log what we're about to update
+        console.log('VIN decoded result (raw):', result)
+        console.log('Normalized values:', {
+          make: normalizedMake,
+          model: normalizedModel,
+          year: result.year || '',
+          trim: normalizedTrim
+        })
+
+        // Update form data with normalized decoded fields
+        onCarDataChange({
+          make: normalizedMake,
+          model: normalizedModel,
+          year: result.year || '',
+          trim: normalizedTrim
+        })
+
+        console.log('onCarDataChange called successfully')
+      } else {
+        setVinError('Could not decode VIN. Please enter details manually.')
+      }
+    } catch (error) {
+      setVinError('VIN decode failed. Please enter details manually.')
+    } finally {
+      setVinDecoding(false)
+    }
+  }
+
   // Update available models when make changes
+  // NOTE: Don't reset model/trim if VIN was just decoded (vinDecodedRef prevents cascade)
   useEffect(() => {
     if (carData.make) {
       const models = getModelsByMake(carData.make)
       setAvailableModels(models)
-      // Reset model if current model not in new make's models
-      if (!models.includes(carData.model)) {
+      // Only reset model if NOT from VIN decode and model not in list
+      // Use ref for immediate check (state might be batched)
+      if (!vinDecodedRef.current && carData.model && !models.includes(carData.model)) {
         onCarDataChange({ model: '', trim: '' })
       }
     } else {
@@ -147,17 +260,20 @@ export default function CarInformationForm({
   }, [carData.make])
 
   // Update available trims when make/model/year changes
+  // NOTE: Don't reset trim if VIN was just decoded
   useEffect(() => {
     if (carData.make && carData.model && carData.year) {
       const trims = getTrimsByModel(carData.make, carData.model, carData.year)
       setAvailableTrims(trims)
-      // Reset trim if current trim not in new model's trims for this year
-      if (!trims.includes(carData.trim)) {
+      // Only reset trim if NOT from VIN decode and trim not in list
+      // Use ref for immediate check (state might be batched)
+      if (!vinDecodedRef.current && carData.trim && !trims.includes(carData.trim)) {
         onCarDataChange({ trim: '' })
       }
     } else {
       setAvailableTrims([])
-      if (carData.trim) {
+      // Only reset trim if NOT from VIN decode
+      if (!vinDecodedRef.current && carData.trim) {
         onCarDataChange({ trim: '' })
       }
     }
@@ -208,18 +324,84 @@ export default function CarInformationForm({
           Vehicle Details
         </h3>
 
+        {/* VIN Input - Quick Auto-Fill */}
+        <div className="p-4 bg-purple-900/30 border border-purple-700/50 rounded-lg">
+          <label className="block text-sm font-medium text-white mb-1">
+            VIN <span className="text-gray-300 font-normal">(Recommended for instant auto-fill)</span>
+          </label>
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <IoSearchOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                value={carData.vin || ''}
+                onChange={(e) => {
+                  onCarDataChange({ vin: e.target.value.toUpperCase() })
+                  vinDecodedRef.current = false // Reset ref for manual entry
+                  setVinDecoded(false)
+                  setVinError('')
+                }}
+                maxLength={17}
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white font-mono uppercase"
+                placeholder="Enter 17-character VIN"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={handleVinDecode}
+              disabled={vinDecoding || !carData.vin || carData.vin.length !== 17}
+              className={`px-4 py-2.5 rounded-lg font-medium transition-colors whitespace-nowrap ${
+                vinDecoded
+                  ? 'bg-emerald-600 text-white'
+                  : vinDecoding
+                    ? 'bg-purple-400 text-white cursor-wait'
+                    : carData.vin?.length === 17
+                      ? 'bg-purple-600 text-white hover:bg-purple-700'
+                      : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+              }`}
+            >
+              {vinDecoding ? 'Decoding...' : vinDecoded ? (
+                <span className="flex items-center gap-1">
+                  <IoCheckmarkCircle className="w-4 h-4" />
+                  Decoded
+                </span>
+              ) : 'Decode VIN'}
+            </button>
+          </div>
+          {vinError && <p className="text-xs text-red-400 mt-1">{vinError}</p>}
+          {vinDecoded && (
+            <p className="text-xs text-emerald-400 mt-1 flex items-center gap-1">
+              <IoCheckmarkCircle className="w-3 h-3" />
+              Vehicle details auto-filled from NHTSA database
+            </p>
+          )}
+          {!vinDecoded && !vinError && (
+            <p className="text-xs text-gray-400 mt-1">
+              Enter your VIN to instantly fill in your vehicle details, or enter manually below
+            </p>
+          )}
+        </div>
+
         {/* Year and Make - Side by side */}
         <div className="grid grid-cols-2 gap-4">
           {/* Year */}
           <div>
             <label className="block text-sm font-medium text-white mb-1">
               Year <span className="text-red-500">*</span>
+              {vinDecoded && (
+                <span className="ml-1 text-emerald-400">
+                  <IoCheckmarkCircle className="inline w-3 h-3" />
+                </span>
+              )}
             </label>
             <div className="relative">
               <select
                 value={carData.year}
                 onChange={(e) => handleChange('year', e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white appearance-none cursor-pointer"
+                disabled={vinDecoded}
+                className={`w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white appearance-none cursor-pointer ${
+                  vinDecoded ? 'opacity-60 cursor-not-allowed' : ''
+                }`}
                 required
               >
                 <option value="">Year</option>
@@ -237,15 +419,29 @@ export default function CarInformationForm({
           <div>
             <label className="block text-sm font-medium text-white mb-1">
               Make <span className="text-red-500">*</span>
+              {vinDecoded && (
+                <span className="ml-1 text-emerald-400">
+                  <IoCheckmarkCircle className="inline w-3 h-3" />
+                </span>
+              )}
             </label>
             <div className="relative">
               <select
                 value={carData.make}
                 onChange={(e) => handleChange('make', e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white appearance-none cursor-pointer"
+                disabled={vinDecoded}
+                className={`w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white appearance-none cursor-pointer ${
+                  vinDecoded ? 'opacity-60 cursor-not-allowed' : ''
+                }`}
                 required
               >
                 <option value="">Make</option>
+                {/* Include VIN-decoded make if not in our database */}
+                {vinDecoded && carData.make && !allMakes.includes(carData.make) && (
+                  <option key={carData.make} value={carData.make}>
+                    {carData.make}
+                  </option>
+                )}
                 <optgroup label="Popular Brands">
                   {popularMakes.map((make) => (
                     <option key={make} value={make}>
@@ -274,18 +470,31 @@ export default function CarInformationForm({
           <div>
             <label className="block text-sm font-medium text-white mb-1">
               Model <span className="text-red-500">*</span>
+              {vinDecoded && carData.model && (
+                <span className="ml-1 text-emerald-400">
+                  <IoCheckmarkCircle className="inline w-3 h-3" />
+                </span>
+              )}
             </label>
             <div className="relative">
               <select
                 value={carData.model}
                 onChange={(e) => handleChange('model', e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white appearance-none cursor-pointer disabled:bg-gray-100 disabled:cursor-not-allowed dark:disabled:bg-gray-800"
+                className={`w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white appearance-none cursor-pointer ${
+                  vinDecoded || !carData.make ? 'opacity-60 cursor-not-allowed' : ''
+                }`}
                 required
-                disabled={!carData.make}
+                disabled={vinDecoded || !carData.make}
               >
                 <option value="">
                   {carData.make ? 'Model' : 'Select Make First'}
                 </option>
+                {/* Include VIN-decoded model if not in our database */}
+                {vinDecoded && carData.model && !availableModels.includes(carData.model) && (
+                  <option key={carData.model} value={carData.model}>
+                    {carData.model}
+                  </option>
+                )}
                 {availableModels.map((model) => (
                   <option key={model} value={model}>
                     {model}
@@ -324,21 +533,34 @@ export default function CarInformationForm({
         <div>
           <label className="block text-sm font-medium text-white mb-1">
             Trim <span className="text-gray-300 font-normal">(Optional)</span>
+            {vinDecoded && carData.trim && (
+              <span className="ml-1 text-emerald-400">
+                <IoCheckmarkCircle className="inline w-3 h-3" />
+              </span>
+            )}
           </label>
           <div className="relative">
             <select
               value={carData.trim}
               onChange={(e) => handleChange('trim', e.target.value)}
-              className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white appearance-none cursor-pointer disabled:bg-gray-100 disabled:cursor-not-allowed dark:disabled:bg-gray-800"
-              disabled={!carData.make || !carData.model || !carData.year}
+              className={`w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white appearance-none cursor-pointer ${
+                (vinDecoded && carData.trim) || !carData.make || !carData.model || !carData.year ? 'opacity-60 cursor-not-allowed' : ''
+              }`}
+              disabled={(vinDecoded && !!carData.trim) || !carData.make || !carData.model || !carData.year}
             >
               <option value="">
                 {!carData.make || !carData.model || !carData.year
                   ? 'Select Make, Model & Year First'
-                  : availableTrims.length > 0
+                  : availableTrims.length > 0 || (vinDecoded && carData.trim)
                     ? 'Select Trim (Optional)'
                     : 'No Trims Available'}
               </option>
+              {/* Include VIN-decoded trim if not in our database */}
+              {vinDecoded && carData.trim && !availableTrims.includes(carData.trim) && (
+                <option key={carData.trim} value={carData.trim}>
+                  {carData.trim}
+                </option>
+              )}
               {availableTrims.map((trim) => (
                 <option key={trim} value={trim}>
                   {trim}
@@ -350,12 +572,20 @@ export default function CarInformationForm({
         </div>
       </div>
 
-      {/* Vehicle Preview */}
-      {carData.make && carData.model && carData.year && carData.color && (
-        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+      {/* Vehicle Preview - shows when make, model, year are filled */}
+      {carData.make && carData.model && carData.year && (
+        <div className={`border rounded-lg p-4 ${
+          carData.color
+            ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+            : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
+        }`}>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-800/50 flex items-center justify-center flex-shrink-0">
-              <IoCarSportOutline className="w-6 h-6 text-green-600" />
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+              carData.color
+                ? 'bg-green-100 dark:bg-green-800/50'
+                : 'bg-amber-100 dark:bg-amber-800/50'
+            }`}>
+              <IoCarSportOutline className={`w-6 h-6 ${carData.color ? 'text-green-600' : 'text-amber-600'}`} />
             </div>
             <div className="flex-1">
               {/* Line 1: Year, Make, and Badges */}
@@ -375,14 +605,18 @@ export default function CarInformationForm({
               {/* Line 3: Color • Seats • Doors */}
               <div className="flex items-center gap-2 flex-wrap text-sm text-gray-600 dark:text-gray-300 mt-1">
                 {/* Color circle and name */}
-                <div className="flex items-center gap-1.5">
-                  <div
-                    className="w-3 h-3 rounded-full border border-gray-300 dark:border-gray-500"
-                    style={{ backgroundColor: getCarColorHex(carData.color) }}
-                    aria-label={`Color: ${carData.color}`}
-                  />
-                  <span>{carData.color}</span>
-                </div>
+                {carData.color ? (
+                  <div className="flex items-center gap-1.5">
+                    <div
+                      className="w-3 h-3 rounded-full border border-gray-300 dark:border-gray-500"
+                      style={{ backgroundColor: getCarColorHex(carData.color) }}
+                      aria-label={`Color: ${carData.color}`}
+                    />
+                    <span>{carData.color}</span>
+                  </div>
+                ) : (
+                  <span className="text-amber-600 dark:text-amber-400 text-xs">Select color above</span>
+                )}
 
                 {/* Seats (if available) */}
                 {vehicleSpec.seats !== null && (
@@ -407,9 +641,9 @@ export default function CarInformationForm({
                 )}
               </div>
 
-              {/* Line 4: Ready to list message */}
-              <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                Ready to list on ItWhip
+              {/* Line 4: Status message */}
+              <div className={`text-sm mt-1 ${carData.color ? 'text-gray-600 dark:text-gray-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                {carData.color ? 'Ready to list on ItWhip' : 'Select a color to complete vehicle info'}
               </div>
             </div>
           </div>
@@ -428,26 +662,46 @@ export default function CarInformationForm({
               Vehicle Location
             </h3>
 
-            {/* City */}
+            {/* Address Autocomplete */}
             <div>
               <label className="block text-sm font-medium text-white mb-1">
-                City <span className="text-red-500">*</span>
+                Search Address <span className="text-gray-300 font-normal">(auto-fills city, state, zip)</span>
               </label>
-              <div className="relative">
-                <IoLocationOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <AddressAutocomplete
+                value=""
+                city={carData.city}
+                state={carData.state}
+                zipCode={carData.zipCode}
+                placeholder="Start typing an address in Arizona..."
+                onAddressSelect={(address: AddressResult) => {
+                  // Auto-populate city, state, zipCode from selected address
+                  onCarDataChange({
+                    city: address.city || carData.city,
+                    state: address.state || carData.state,
+                    zipCode: address.zipCode || carData.zipCode
+                  })
+                }}
+              />
+            </div>
+
+            {/* City, State, Zip - Shown below for manual override or verification */}
+            <div className="grid grid-cols-3 gap-3">
+              {/* City */}
+              <div>
+                <label className="block text-sm font-medium text-white mb-1">
+                  City <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
                   value={carData.city}
                   onChange={(e) => handleChange('city', e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+                  className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white text-sm"
                   placeholder="Phoenix"
                   required
                 />
               </div>
-            </div>
 
-            {/* State and Zip */}
-            <div className="grid grid-cols-2 gap-4">
+              {/* State */}
               <div>
                 <label className="block text-sm font-medium text-white mb-1">
                   State <span className="text-red-500">*</span>
@@ -456,22 +710,24 @@ export default function CarInformationForm({
                   <select
                     value={carData.state}
                     onChange={(e) => handleChange('state', e.target.value)}
-                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white appearance-none cursor-pointer"
+                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white appearance-none cursor-pointer text-sm"
                     required
                   >
-                    <option value="">Select State</option>
+                    <option value="">State</option>
                     {US_STATES.map((state) => (
                       <option key={state.value} value={state.value}>
-                        {state.label}
+                        {state.value}
                       </option>
                     ))}
                   </select>
-                  <IoChevronDownOutline className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                  <IoChevronDownOutline className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                 </div>
               </div>
+
+              {/* Zip Code */}
               <div>
                 <label className="block text-sm font-medium text-white mb-1">
-                  Zip Code <span className="text-red-500">*</span>
+                  Zip <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -482,13 +738,24 @@ export default function CarInformationForm({
                       e.target.value.replace(/\D/g, '').slice(0, 5)
                     )
                   }
-                  className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+                  className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white text-sm"
                   placeholder="85001"
                   required
                   maxLength={5}
                   pattern="[0-9]{5}"
                 />
               </div>
+            </div>
+
+            {/* Arizona Location Notice */}
+            <div className="p-3 bg-amber-900/30 border border-amber-700/50 rounded-lg">
+              <p className="text-xs text-amber-200">
+                <strong>Note:</strong> Non-Arizona listings may not be displayed or approved.
+                Vehicle must be located in Arizona at the time of signup and approval.{' '}
+                <a href="/terms" className="underline font-medium hover:text-amber-100">
+                  Terms & Conditions
+                </a>{' '}apply.
+              </p>
             </div>
           </div>
         </>

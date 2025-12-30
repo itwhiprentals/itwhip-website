@@ -10,13 +10,27 @@ import Footer from '@/app/components/Footer'
 import ServiceHistoryList from '@/app/components/host/ServiceHistoryList'
 import ServiceDueAlerts from '@/app/components/host/ServiceDueAlerts'
 import AddServiceRecordModal from '@/app/components/host/AddServiceRecordModal'
-import { 
+import {
+  getAllMakes,
+  getModelsByMake,
+  getTrimsByModel,
+  getYears,
+  getPopularMakes
+} from '@/app/lib/data/vehicles'
+import { decodeVIN, isValidVIN } from '@/app/lib/utils/vin-decoder'
+import { getVehicleFeatures, mapBodyClassToCarType, groupFeaturesByCategory } from '@/app/lib/data/vehicle-features'
+import VehicleBadge from '@/app/components/VehicleBadge'
+import { getVehicleClass, formatFuelTypeBadge } from '@/app/lib/utils/vehicleClassification'
+import AddressAutocomplete from './components/AddressAutocomplete'
+import HostAvailabilityCalendar from './components/HostAvailabilityCalendar'
+import {
   IoArrowBackOutline,
   IoCarOutline,
   IoLocationOutline,
   IoCashOutline,
   IoImageOutline,
   IoCheckmarkCircleOutline,
+  IoCheckmarkCircle,
   IoCloseCircleOutline,
   IoTrashOutline,
   IoAddOutline,
@@ -29,7 +43,8 @@ import {
   IoLockClosedOutline,
   IoDocumentTextOutline,
   IoInformationCircleOutline,
-  IoCalendarOutline
+  IoCalendarOutline,
+  IoSparklesOutline
 } from 'react-icons/io5'
 
 interface CarPhoto {
@@ -207,6 +222,14 @@ const rules = [
   'No commercial use'
 ]
 
+// Color options for dropdown
+const CAR_COLORS = [
+  'Black', 'White', 'Silver', 'Gray', 'Red', 'Blue',
+  'Navy Blue', 'Brown', 'Beige', 'Green', 'Gold',
+  'Orange', 'Yellow', 'Purple', 'Burgundy', 'Champagne',
+  'Pearl White', 'Midnight Blue', 'Other'
+]
+
 export default function EditCarPage() {
   const router = useRouter()
   const params = useParams()
@@ -220,7 +243,20 @@ export default function EditCarPage() {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [successMessage, setSuccessMessage] = useState('')
   const [showAddServiceModal, setShowAddServiceModal] = useState(false)
-  
+
+  // Dropdown state for vehicle selection
+  const [availableModels, setAvailableModels] = useState<string[]>([])
+  const [availableTrims, setAvailableTrims] = useState<string[]>([])
+  const years = getYears()
+
+  // VIN decoder state
+  const [vinDecoding, setVinDecoding] = useState(false)
+  const [vinError, setVinError] = useState('')
+  const [vinDecoded, setVinDecoded] = useState(false)
+
+  // Validation errors state
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+
   // Form state
   const [formData, setFormData] = useState({
     // Basic details
@@ -258,7 +294,9 @@ export default function EditCarPage() {
     city: 'Phoenix',
     state: 'AZ',
     zipCode: '',
-    
+    latitude: 0,
+    longitude: 0,
+
     // Delivery
     airportPickup: false,
     hotelDelivery: true,
@@ -309,6 +347,185 @@ export default function EditCarPage() {
     fetchCarDetails()
   }, [carId])
 
+  // Initialize dropdowns when car data is loaded
+  useEffect(() => {
+    if (car) {
+      // Initialize available models based on existing make
+      if (car.make) {
+        setAvailableModels(getModelsByMake(car.make))
+      }
+      // Initialize available trims
+      if (car.make && car.model && car.year) {
+        setAvailableTrims(getTrimsByModel(car.make, car.model, String(car.year)))
+      }
+    }
+  }, [car])
+
+  // Cascading dropdown handlers
+  const handleMakeChange = (make: string) => {
+    setFormData(prev => ({ ...prev, make, model: '', trim: '' }))
+    setAvailableModels(make ? getModelsByMake(make) : [])
+    setAvailableTrims([])
+    // Clear any make/model validation errors
+    setValidationErrors(prev => {
+      const { make: _, model: __, ...rest } = prev
+      return rest
+    })
+  }
+
+  const handleModelChange = (model: string) => {
+    setFormData(prev => ({ ...prev, model, trim: '' }))
+    if (formData.make && formData.year) {
+      setAvailableTrims(getTrimsByModel(formData.make, model, String(formData.year)))
+    }
+    // Clear model validation error
+    setValidationErrors(prev => {
+      const { model: _, ...rest } = prev
+      return rest
+    })
+  }
+
+  const handleYearChange = (year: number) => {
+    setFormData(prev => ({ ...prev, year }))
+    if (formData.make && formData.model) {
+      setAvailableTrims(getTrimsByModel(formData.make, formData.model, String(year)))
+    }
+    // Clear year validation error
+    setValidationErrors(prev => {
+      const { year: _, ...rest } = prev
+      return rest
+    })
+  }
+
+  // Track which fields were populated by VIN decode
+  const [vinDecodedFields, setVinDecodedFields] = useState<string[]>([])
+
+  // Helper function to convert text to Title Case
+  const toTitleCase = (str: string): string => {
+    return str
+      .toLowerCase()
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
+  }
+
+  // Helper function to find best matching make from our database (NHTSA returns UPPERCASE)
+  const findMatchingMake = (decodedMake: string): string => {
+    const allMakes = getAllMakes()
+    const normalizedDecoded = decodedMake.toUpperCase()
+    const exactMatch = allMakes.find(make => make.toUpperCase() === normalizedDecoded)
+    if (exactMatch) return exactMatch
+    return toTitleCase(decodedMake)
+  }
+
+  // Helper function to find best matching model from our database
+  const findMatchingModel = (make: string, decodedModel: string): string => {
+    const models = getModelsByMake(make)
+    const normalizedDecoded = decodedModel.toUpperCase()
+    const exactMatch = models.find(model => model.toUpperCase() === normalizedDecoded)
+    if (exactMatch) return exactMatch
+    return toTitleCase(decodedModel)
+  }
+
+  // VIN decoder handler
+  const handleVinDecode = async () => {
+    const vin = formData.vin?.trim()
+    if (!vin || vin.length !== 17) {
+      setVinError('VIN must be 17 characters')
+      return
+    }
+
+    if (!isValidVIN(vin)) {
+      setVinError('Invalid VIN format (no I, O, or Q)')
+      return
+    }
+
+    setVinDecoding(true)
+    setVinError('')
+
+    try {
+      const result = await decodeVIN(vin)
+
+      if (result && result.make) {
+        // Normalize make/model to match our dropdown values (NHTSA returns UPPERCASE)
+        const normalizedMake = findMatchingMake(result.make)
+        const normalizedModel = result.model ? findMatchingModel(normalizedMake, result.model) : ''
+        const normalizedTrim = result.trim ? toTitleCase(result.trim) : ''
+
+        // Update dropdowns with normalized make
+        const models = getModelsByMake(normalizedMake)
+        setAvailableModels(models)
+
+        // Track which fields were decoded
+        const decodedFields: string[] = ['make', 'model', 'year']
+
+        // Build updated form data with all available VIN-decoded fields
+        const updates: Partial<typeof formData> = {
+          make: normalizedMake,
+          model: normalizedModel || formData.model,
+          year: parseInt(result.year) || formData.year,
+        }
+
+        // Add trim if available
+        if (result.trim) {
+          updates.trim = normalizedTrim
+          decodedFields.push('trim')
+        }
+
+        // Add doors if available
+        if (result.doors) {
+          updates.doors = parseInt(result.doors) || formData.doors
+          decodedFields.push('doors')
+        }
+
+        // Add transmission if available
+        if (result.transmission) {
+          updates.transmission = result.transmission.toLowerCase().includes('automatic') ? 'automatic' : 'manual'
+          decodedFields.push('transmission')
+        }
+
+        // Add fuel type if available
+        if (result.fuelType) {
+          const fuelLower = result.fuelType.toLowerCase()
+          if (fuelLower.includes('electric')) updates.fuelType = 'electric'
+          else if (fuelLower.includes('hybrid')) updates.fuelType = 'hybrid'
+          else if (fuelLower.includes('diesel')) updates.fuelType = 'diesel'
+          else updates.fuelType = 'gas'
+          decodedFields.push('fuelType')
+        }
+
+        // Map body class to car type
+        if (result.bodyClass) {
+          const mappedType = mapBodyClassToCarType(result.bodyClass, normalizedMake, normalizedModel)
+          if (mappedType) {
+            updates.carType = mappedType.toLowerCase()
+            decodedFields.push('carType')
+          }
+        }
+
+        // Update form data
+        setFormData(prev => ({
+          ...prev,
+          ...updates
+        }))
+
+        // Update trims if all fields available
+        if (normalizedMake && normalizedModel && result.year) {
+          setAvailableTrims(getTrimsByModel(normalizedMake, normalizedModel, result.year))
+        }
+
+        setVinDecodedFields(decodedFields)
+        setVinDecoded(true)
+      } else {
+        setVinError('Could not decode VIN')
+      }
+    } catch (error) {
+      setVinError('VIN decode failed')
+    } finally {
+      setVinDecoding(false)
+    }
+  }
+
   const fetchCarDetails = async () => {
     try {
       setLoading(true)
@@ -352,6 +569,8 @@ export default function EditCarPage() {
         city: carData.city,
         state: carData.state,
         zipCode: carData.zipCode,
+        latitude: carData.latitude || 0,
+        longitude: carData.longitude || 0,
         airportPickup: carData.airportPickup,
         hotelDelivery: carData.hotelDelivery,
         homeDelivery: carData.homeDelivery,
@@ -388,6 +607,13 @@ export default function EditCarPage() {
         annualMileage: carData.annualMileage || 12000,
         primaryUse: carData.primaryUse || 'Rental'
       })
+
+        // If car already has a valid VIN, assume core fields were VIN-decoded
+        // and should be locked (VIN as source of truth)
+        if (carData.vin && carData.vin.length === 17) {
+          setVinDecodedFields(['make', 'model', 'year', 'trim', 'doors', 'transmission', 'fuelType', 'carType'])
+          setVinDecoded(true)
+        }
       } else if (response.status === 404) {
         router.push('/host/cars')
       } else if (response.status === 403) {
@@ -411,21 +637,41 @@ export default function EditCarPage() {
       return
     }
 
-    // Validate required fields
-    const newErrors: Record<string, string> = {}
-    
-    if (!formData.make) newErrors.make = 'Make is required'
-    if (!formData.model) newErrors.model = 'Model is required'
-    if (!formData.color) newErrors.color = 'Color is required'
-    if (formData.dailyRate <= 0) newErrors.dailyRate = 'Daily rate must be greater than 0'
-    if (!formData.address) newErrors.address = 'Address is required'
-    if (!formData.zipCode) newErrors.zipCode = 'ZIP code is required'
-    
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors)
+    // Comprehensive validation
+    const errors: Record<string, string> = {}
+
+    // Required fields
+    if (!formData.make) errors.make = 'Make is required'
+    if (!formData.model) errors.model = 'Model is required'
+    if (!formData.year) errors.year = 'Year is required'
+    if (!formData.color) errors.color = 'Color is required'
+    if (!formData.dailyRate || formData.dailyRate <= 0) errors.dailyRate = 'Daily rate is required'
+    if (!formData.address?.trim()) errors.address = 'Street address is required'
+    if (!formData.zipCode?.trim()) errors.zipCode = 'ZIP code is required'
+
+    // Vehicle description minimum 50 characters
+    if (!formData.description || formData.description.length < 50) {
+      errors.description = 'Description must be at least 50 characters'
+    }
+
+    // VIN validation (if provided)
+    if (formData.vin && formData.vin.length !== 17) {
+      errors.vin = 'VIN must be exactly 17 characters'
+    }
+
+    // Minimum 3 photos required
+    if (photos.length < 3) {
+      errors.photos = 'At least 3 photos are required for your listing'
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors)
+      // Scroll to top to show error summary
+      window.scrollTo({ top: 0, behavior: 'smooth' })
       return
     }
-    
+
+    setValidationErrors({})
     setSaving(true)
     setErrors({})
     
@@ -621,6 +867,23 @@ export default function EditCarPage() {
   }
 
   const isLocked = car.hasActiveClaim || false
+  const isApproved = (car as any).status === 'APPROVED' || (car as any).isApproved === true
+
+  // Fields that should be locked after approval
+  const isFieldLocked = (fieldName: string) => {
+    const lockedAfterApproval = ['make', 'model', 'year', 'color', 'vin', 'licensePlate', 'registrationState']
+
+    // Lock if: active claim OR approved field OR VIN-decoded field
+    // Note: VIN itself is NOT locked after decode (only after approval) so host can re-enter if mistake
+    return isLocked ||
+           (isApproved && lockedAfterApproval.includes(fieldName)) ||
+           (vinDecodedFields.includes(fieldName) && fieldName !== 'vin')
+  }
+
+  // Check if a field was VIN-decoded (for showing badge)
+  const isVinVerified = (fieldName: string) => {
+    return vinDecodedFields.includes(fieldName)
+  }
 
   return (
     <>
@@ -629,26 +892,16 @@ export default function EditCarPage() {
         <div className="p-4 sm:p-6 max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-6">
-            <Link 
-              href="/host/cars" 
-              className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 mb-4"
-            >
-              <IoArrowBackOutline className="w-5 h-5" />
-              Back to My Cars
-            </Link>
-            
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                  {isLocked && <IoLockClosedOutline className="inline w-6 h-6 mr-2 text-red-500" />}
-                  Edit {formData.year} {formData.make} {formData.model}
-                </h1>
-                <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
-                  <span>{car.totalTrips} trips completed</span>
-                  <span>⭐ {car.rating.toFixed(1)} rating</span>
-                </div>
-              </div>
-              
+            {/* Top row: Back button + Save button */}
+            <div className="flex items-center justify-between mb-4">
+              <Link
+                href="/host/cars"
+                className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+              >
+                <IoArrowBackOutline className="w-5 h-5" />
+                Back to My Cars
+              </Link>
+
               <button
                 onClick={handleSave}
                 disabled={saving || isLocked}
@@ -670,6 +923,32 @@ export default function EditCarPage() {
                   </>
                 )}
               </button>
+            </div>
+
+            {/* Car name and stats */}
+            <div>
+              <div className="flex items-center gap-2 flex-wrap mb-1">
+                {isLocked && <IoLockClosedOutline className="w-6 h-6 text-red-500" />}
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+                  {formData.year} {formData.make}
+                </h1>
+                {getVehicleClass(formData.make, formData.model, formData.carType as any) && (
+                  <VehicleBadge label={getVehicleClass(formData.make, formData.model, formData.carType as any)!} />
+                )}
+                {formatFuelTypeBadge(formData.fuelType) && (
+                  <VehicleBadge label={formatFuelTypeBadge(formData.fuelType)!} />
+                )}
+              </div>
+              <p className="text-lg text-gray-600 dark:text-gray-400 mb-2">
+                {formData.model}{formData.trim ? ` ${formData.trim}` : ''}
+              </p>
+              <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                <span>{car.totalTrips} trips completed</span>
+                <span className="flex items-center gap-1">
+                  <IoStar className="w-4 h-4 text-yellow-500" />
+                  {car.rating.toFixed(1)} rating
+                </span>
+              </div>
             </div>
           </div>
 
@@ -744,21 +1023,50 @@ export default function EditCarPage() {
             </div>
           )}
 
+          {/* Validation Errors Summary */}
+          {Object.keys(validationErrors).length > 0 && (
+            <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              <div className="flex items-center gap-2 text-red-700 dark:text-red-400 mb-2">
+                <IoCloseCircleOutline className="w-5 h-5" />
+                <span className="font-medium">Please fix the following errors before saving:</span>
+              </div>
+              <ul className="text-sm text-red-600 dark:text-red-300 list-disc list-inside space-y-1">
+                {Object.entries(validationErrors).map(([field, error]) => (
+                  <li key={field}>{error}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Approved Vehicle Warning */}
+          {isApproved && !isLocked && (
+            <div className="mb-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+              <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 text-sm">
+                <IoLockClosedOutline className="w-4 h-4" />
+                <span>Some fields (Make, Model, Year, Color, VIN, License Plate, Registration State) are locked because this vehicle has been approved.</span>
+              </div>
+            </div>
+          )}
+
           {/* Tabs */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-6 overflow-hidden">
-            <div className="flex overflow-x-auto">
-              {['details', 'registration', 'pricing', 'photos', 'features', 'availability', 'service'].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`flex-1 px-4 py-3 text-sm font-medium capitalize transition-colors whitespace-nowrap ${
-                    activeTab === tab
-                      ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 border-b-2 border-purple-600'
-                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
-                  }`}
-                >
-                  {tab === 'registration' ? 'Registration' : tab === 'service' ? 'Service & Maintenance' : tab}
-                </button>
+            <div className="flex items-center overflow-x-auto">
+              {['details', 'registration', 'pricing', 'photos', 'features', 'availability', 'service'].map((tab, index, arr) => (
+                <div key={tab} className="flex items-center">
+                  <button
+                    onClick={() => setActiveTab(tab)}
+                    className={`px-4 py-3 text-sm font-medium capitalize transition-colors whitespace-nowrap ${
+                      activeTab === tab
+                        ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 border-b-2 border-purple-600'
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    {tab === 'registration' ? 'Registration' : tab === 'service' ? 'Service & Maintenance' : tab}
+                  </button>
+                  {index < arr.length - 1 && (
+                    <span className="text-gray-300 dark:text-gray-600 px-1">|</span>
+                  )}
+                </div>
               ))}
             </div>
           </div>
@@ -768,69 +1076,261 @@ export default function EditCarPage() {
             {activeTab === 'details' && (
               <div className="space-y-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Vehicle Details</h3>
-                
+
+                {/* VIN and License Plate - Vehicle Identification */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      VIN (Vehicle Identification Number) <span className="text-red-500">*</span>
+                      {isFieldLocked('vin') && (
+                        <span className="ml-2 text-xs text-amber-600 dark:text-amber-400">
+                          <IoLockClosedOutline className="inline w-3 h-3 mr-0.5" />
+                          Locked
+                        </span>
+                      )}
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={formData.vin}
+                        onChange={(e) => {
+                          setFormData({ ...formData, vin: e.target.value.toUpperCase() })
+                          setVinDecoded(false)
+                          setVinError('')
+                        }}
+                        disabled={isFieldLocked('vin')}
+                        maxLength={17}
+                        className={`w-full px-3 py-2 pr-28 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white font-mono uppercase ${
+                          validationErrors.vin || vinError ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                        } ${isFieldLocked('vin') ? 'opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-900' : ''}`}
+                        placeholder="17-character VIN"
+                      />
+                      {!isFieldLocked('vin') && formData.vin?.length === 17 && (
+                        <button
+                          type="button"
+                          onClick={handleVinDecode}
+                          disabled={vinDecoding}
+                          className={`absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 text-white text-xs rounded font-medium transition-colors ${
+                            vinDecoded
+                              ? 'bg-emerald-500'
+                              : vinDecoding
+                                ? 'bg-purple-400'
+                                : 'bg-purple-600 hover:bg-purple-700'
+                          }`}
+                        >
+                          {vinDecoding ? 'Decoding...' : vinDecoded ? 'Decoded!' : 'Decode VIN'}
+                        </button>
+                      )}
+                    </div>
+                    {vinError && <p className="text-xs text-red-500 mt-1">{vinError}</p>}
+                    {validationErrors.vin && <p className="text-xs text-red-500 mt-1">{validationErrors.vin}</p>}
+                    <p className="text-xs text-gray-500 mt-1">Enter VIN and click "Decode" to auto-fill vehicle details</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      License Plate Number <span className="text-red-500">*</span>
+                      {isFieldLocked('licensePlate') && (
+                        <span className="ml-2 text-xs text-amber-600 dark:text-amber-400">
+                          <IoLockClosedOutline className="inline w-3 h-3 mr-0.5" />
+                          Locked
+                        </span>
+                      )}
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.licensePlate}
+                      onChange={(e) => setFormData({ ...formData, licensePlate: e.target.value.toUpperCase() })}
+                      disabled={isFieldLocked('licensePlate')}
+                      className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white uppercase ${isFieldLocked('licensePlate') ? 'opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-900' : ''}`}
+                      placeholder="ABC1234"
+                    />
+                  </div>
+                </div>
+
+                {/* Vehicle Information Policy Note - shown when VIN is decoded */}
+                {vinDecoded && vinDecodedFields.length > 0 && (
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
+                    <div className="flex items-start gap-2">
+                      <IoInformationCircleOutline className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm text-blue-800 dark:text-blue-300">
+                          <strong>Vehicle Information Policy:</strong> Your vehicle details have been verified through VIN
+                          decoding to ensure accuracy for insurance and guest safety. If your vehicle has custom
+                          modifications (different color, aftermarket parts, etc.), please{' '}
+                          <a
+                            href="mailto:support@itwhip.com?subject=Vehicle Information Update Request"
+                            className="underline font-medium hover:text-blue-900 dark:hover:text-blue-200"
+                          >
+                            contact support
+                          </a>{' '}
+                          to request changes.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Make *
+                      {isVinVerified('make') && !isApproved && (
+                        <span className="ml-2 text-xs text-emerald-600 dark:text-emerald-400">
+                          <IoCheckmarkCircle className="inline w-3 h-3 mr-0.5" />
+                          VIN Verified
+                        </span>
+                      )}
+                      {isFieldLocked('make') && (
+                        <span className="ml-2 text-xs text-amber-600 dark:text-amber-400">
+                          <IoLockClosedOutline className="inline w-3 h-3 mr-0.5" />
+                          Locked
+                        </span>
+                      )}
                     </label>
-                    <input
-                      type="text"
+                    <select
                       value={formData.make}
-                      onChange={(e) => setFormData({ ...formData, make: e.target.value })}
-                      disabled={isLocked}
+                      onChange={(e) => handleMakeChange(e.target.value)}
+                      disabled={isFieldLocked('make')}
                       className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                        errors.make ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                      } ${isLocked ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-900' : ''}`}
-                    />
-                    {errors.make && <p className="text-red-500 text-xs mt-1">{errors.make}</p>}
+                        validationErrors.make ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                      } ${isFieldLocked('make') ? 'opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-900' : ''}`}
+                    >
+                      <option value="">Select Make</option>
+                      <optgroup label="Popular Brands">
+                        {getPopularMakes().map(make => (
+                          <option key={make} value={make}>{make}</option>
+                        ))}
+                      </optgroup>
+                      <optgroup label="All Brands">
+                        {getAllMakes().filter(m => !getPopularMakes().includes(m)).map(make => (
+                          <option key={make} value={make}>{make}</option>
+                        ))}
+                      </optgroup>
+                    </select>
+                    {validationErrors.make && <p className="text-red-500 text-xs mt-1">{validationErrors.make}</p>}
                   </div>
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Model *
+                      {isVinVerified('model') && !isApproved && (
+                        <span className="ml-2 text-xs text-emerald-600 dark:text-emerald-400">
+                          <IoCheckmarkCircle className="inline w-3 h-3 mr-0.5" />
+                          VIN Verified
+                        </span>
+                      )}
+                      {isFieldLocked('model') && (
+                        <span className="ml-2 text-xs text-amber-600 dark:text-amber-400">
+                          <IoLockClosedOutline className="inline w-3 h-3 mr-0.5" />
+                          Locked
+                        </span>
+                      )}
                     </label>
-                    <input
-                      type="text"
+                    <select
                       value={formData.model}
-                      onChange={(e) => setFormData({ ...formData, model: e.target.value })}
-                      disabled={isLocked}
+                      onChange={(e) => handleModelChange(e.target.value)}
+                      disabled={!formData.make || isFieldLocked('model')}
                       className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                        errors.model ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                      } ${isLocked ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-900' : ''}`}
-                    />
-                    {errors.model && <p className="text-red-500 text-xs mt-1">{errors.model}</p>}
+                        validationErrors.model ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                      } ${(!formData.make || isFieldLocked('model')) ? 'opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-900' : ''}`}
+                    >
+                      <option value="">{formData.make ? 'Select Model' : 'Select Make First'}</option>
+                      {availableModels.map(model => (
+                        <option key={model} value={model}>{model}</option>
+                      ))}
+                    </select>
+                    {validationErrors.model && <p className="text-red-500 text-xs mt-1">{validationErrors.model}</p>}
                   </div>
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Year *
+                      {isVinVerified('year') && !isApproved && (
+                        <span className="ml-2 text-xs text-emerald-600 dark:text-emerald-400">
+                          <IoCheckmarkCircle className="inline w-3 h-3 mr-0.5" />
+                          VIN Verified
+                        </span>
+                      )}
+                      {isFieldLocked('year') && (
+                        <span className="ml-2 text-xs text-amber-600 dark:text-amber-400">
+                          <IoLockClosedOutline className="inline w-3 h-3 mr-0.5" />
+                          Locked
+                        </span>
+                      )}
                     </label>
-                    <input
-                      type="number"
+                    <select
                       value={formData.year}
-                      onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) })}
-                      min="1990"
-                      max={new Date().getFullYear() + 1}
-                      disabled={isLocked}
-                      className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${isLocked ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-900' : ''}`}
-                    />
+                      onChange={(e) => handleYearChange(parseInt(e.target.value))}
+                      disabled={isFieldLocked('year')}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${
+                        validationErrors.year ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                      } ${isFieldLocked('year') ? 'opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-900' : ''}`}
+                    >
+                      <option value="">Select Year</option>
+                      {years.map(year => (
+                        <option key={year} value={year}>{year}</option>
+                      ))}
+                    </select>
+                    {validationErrors.year && <p className="text-red-500 text-xs mt-1">{validationErrors.year}</p>}
                   </div>
-                  
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Trim
+                      {isVinVerified('trim') && !isApproved && (
+                        <span className="ml-2 text-xs text-emerald-600 dark:text-emerald-400">
+                          <IoCheckmarkCircle className="inline w-3 h-3 mr-0.5" />
+                          VIN Verified
+                        </span>
+                      )}
+                      {isFieldLocked('trim') && (
+                        <span className="ml-2 text-xs text-amber-600 dark:text-amber-400">
+                          <IoLockClosedOutline className="inline w-3 h-3 mr-0.5" />
+                          Locked
+                        </span>
+                      )}
+                    </label>
+                    <select
+                      value={formData.trim}
+                      onChange={(e) => setFormData({ ...formData, trim: e.target.value })}
+                      disabled={!formData.model || isFieldLocked('trim')}
+                      className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${
+                        (!formData.model || isFieldLocked('trim')) ? 'opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-900' : ''
+                      }`}
+                    >
+                      <option value="">{formData.model ? 'Select Trim (Optional)' : 'Select Model First'}</option>
+                      {availableTrims.map(trim => (
+                        <option key={trim} value={trim}>{trim}</option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">Auto-filled from VIN or select manually</p>
+                  </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Color *
+                      {isFieldLocked('color') && (
+                        <span className="ml-2 text-xs text-amber-600 dark:text-amber-400">
+                          <IoLockClosedOutline className="inline w-3 h-3 mr-0.5" />
+                          Locked
+                        </span>
+                      )}
                     </label>
-                    <input
-                      type="text"
+                    <select
                       value={formData.color}
                       onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                      disabled={isLocked}
+                      disabled={isFieldLocked('color')}
                       className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                        errors.color ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                      } ${isLocked ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-900' : ''}`}
-                    />
-                    {errors.color && <p className="text-red-500 text-xs mt-1">{errors.color}</p>}
+                        validationErrors.color ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                      } ${isFieldLocked('color') ? 'opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-900' : ''}`}
+                    >
+                      <option value="">Select Color</option>
+                      {CAR_COLORS.map(color => (
+                        <option key={color} value={color}>{color}</option>
+                      ))}
+                    </select>
+                    {validationErrors.color && <p className="text-red-500 text-xs mt-1">{validationErrors.color}</p>}
                   </div>
                   
                   <div>
@@ -868,43 +1368,85 @@ export default function EditCarPage() {
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                   <h4 className="font-medium text-gray-900 dark:text-white mb-4">Vehicle Description</h4>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Description
+                    <label className="flex justify-between text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      <span>Description *</span>
+                      <span className={`text-xs ${
+                        (formData.description?.length || 0) < 50
+                          ? 'text-red-500'
+                          : 'text-gray-500'
+                      }`}>
+                        {formData.description?.length || 0}/50 min
+                      </span>
                     </label>
                     <textarea
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       disabled={isLocked}
                       rows={4}
+                      minLength={50}
                       maxLength={2000}
-                      placeholder="Describe your vehicle to potential renters. Highlight special features, recent upgrades, or what makes it a great choice..."
-                      className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none ${isLocked ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-900' : ''}`}
+                      placeholder="Describe your vehicle to potential renters. Highlight special features, recent upgrades, or what makes it a great choice... (minimum 50 characters)"
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none ${
+                        validationErrors.description ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                      } ${isLocked ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-900' : ''}`}
                     />
+                    {validationErrors.description && (
+                      <p className="text-xs text-red-500 mt-1">{validationErrors.description}</p>
+                    )}
+                    {(formData.description?.length || 0) < 50 && !validationErrors.description && (
+                      <p className="text-xs text-amber-500 mt-1">
+                        {50 - (formData.description?.length || 0)} more characters needed
+                      </p>
+                    )}
                     <p className="text-xs text-gray-500 mt-1">
-                      {formData.description.length}/2000 characters
+                      {formData.description?.length || 0}/2000 characters
                     </p>
                   </div>
                 </div>
 
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                  <h4 className="font-medium text-gray-900 dark:text-white mb-4">Location</h4>
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-4">Pickup Location</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    This is where guests will pick up your vehicle. Search for an address to auto-populate all location fields.
+                  </p>
+
+                  {/* Arizona Location Notice */}
+                  <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg mb-4">
+                    <p className="text-xs text-amber-800 dark:text-amber-300">
+                      <strong>Note:</strong> Non-Arizona listings may not be displayed or approved.
+                      Vehicle must be located in Arizona at the time of approval.{' '}
+                      <a href="/terms" className="underline font-medium hover:text-amber-900 dark:hover:text-amber-200">
+                        Terms & Conditions
+                      </a>{' '}apply.
+                    </p>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Street Address *
                       </label>
-                      <input
-                        type="text"
+                      <AddressAutocomplete
                         value={formData.address}
-                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                        city={formData.city}
+                        state={formData.state}
+                        zipCode={formData.zipCode}
+                        onAddressSelect={(address) => {
+                          setFormData(prev => ({
+                            ...prev,
+                            address: address.streetAddress,
+                            city: address.city,
+                            state: address.state,
+                            zipCode: address.zipCode,
+                            latitude: address.latitude,
+                            longitude: address.longitude
+                          }))
+                        }}
                         disabled={isLocked}
-                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                          errors.address ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                        } ${isLocked ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-900' : ''}`}
+                        placeholder="Start typing to search for an address..."
                       />
-                      {errors.address && <p className="text-red-500 text-xs mt-1">{errors.address}</p>}
+                      {validationErrors.address && <p className="text-red-500 text-xs mt-1">{validationErrors.address}</p>}
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         City
@@ -912,12 +1454,14 @@ export default function EditCarPage() {
                       <input
                         type="text"
                         value={formData.city}
-                        onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                        readOnly
                         disabled={isLocked}
-                        className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${isLocked ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-900' : ''}`}
+                        className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 dark:text-white cursor-not-allowed ${isLocked ? 'opacity-60' : ''}`}
+                        placeholder="Auto-filled from address"
                       />
+                      <p className="text-xs text-gray-500 mt-1">Auto-filled from address selection</p>
                     </div>
-                    
+
                     <div className="flex gap-2">
                       <div className="flex-1">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -926,12 +1470,13 @@ export default function EditCarPage() {
                         <input
                           type="text"
                           value={formData.state}
-                          onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                          readOnly
                           disabled={isLocked}
-                          className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${isLocked ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-900' : ''}`}
+                          className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 dark:text-white cursor-not-allowed ${isLocked ? 'opacity-60' : ''}`}
+                          placeholder="Auto-filled"
                         />
                       </div>
-                      
+
                       <div className="flex-1">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                           ZIP Code *
@@ -939,15 +1484,26 @@ export default function EditCarPage() {
                         <input
                           type="text"
                           value={formData.zipCode}
-                          onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
+                          readOnly
                           disabled={isLocked}
-                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                            errors.zipCode ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                          } ${isLocked ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-900' : ''}`}
+                          className={`w-full px-3 py-2 border rounded-lg bg-gray-50 dark:bg-gray-900 dark:text-white cursor-not-allowed ${
+                            validationErrors.zipCode ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                          } ${isLocked ? 'opacity-60' : ''}`}
+                          placeholder="Auto-filled"
                         />
-                        {errors.zipCode && <p className="text-red-500 text-xs mt-1">{errors.zipCode}</p>}
+                        {validationErrors.zipCode && <p className="text-red-500 text-xs mt-1">{validationErrors.zipCode}</p>}
                       </div>
                     </div>
+
+                    {/* Coordinates display */}
+                    {formData.latitude && formData.longitude && (
+                      <div className="md:col-span-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                        <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400">
+                          <IoCheckmarkCircle className="w-4 h-4" />
+                          <span>Location verified: {formData.latitude.toFixed(4)}, {formData.longitude.toFixed(4)}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -975,48 +1531,24 @@ export default function EditCarPage() {
                   </div>
                 )}
                 
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Vehicle Identification & Ownership</h3>
-                
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Registration & Ownership</h3>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      VIN (Vehicle Identification Number) <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.vin}
-                      onChange={(e) => setFormData({ ...formData, vin: e.target.value.toUpperCase() })}
-                      disabled={isLocked}
-                      maxLength={17}
-                      className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white font-mono uppercase ${isLocked ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-900' : ''}`}
-                      placeholder="17-character VIN"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Found on vehicle dashboard or door jamb</p>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      License Plate Number <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.licensePlate}
-                      onChange={(e) => setFormData({ ...formData, licensePlate: e.target.value.toUpperCase() })}
-                      disabled={isLocked}
-                      className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white uppercase ${isLocked ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-900' : ''}`}
-                      placeholder="ABC1234"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      State of Registration <span className="text-red-500">*</span>
+                    <label className="flex items-center justify-between text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      <span>State of Registration <span className="text-red-500">*</span></span>
+                      {isFieldLocked('registrationState') && isApproved && (
+                        <span className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 font-normal">
+                          <IoLockClosedOutline className="w-3 h-3" />
+                          Locked
+                        </span>
+                      )}
                     </label>
                     <select
                       value={formData.registrationState}
                       onChange={(e) => setFormData({ ...formData, registrationState: e.target.value })}
-                      disabled={isLocked}
-                      className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${isLocked ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-900' : ''}`}
+                      disabled={isFieldLocked('registrationState')}
+                      className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${isFieldLocked('registrationState') ? 'opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-900' : ''}`}
                     >
                       {usStates.map(state => (
                         <option key={state} value={state}>{state}</option>
@@ -1109,22 +1641,31 @@ export default function EditCarPage() {
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
                   <h4 className="font-medium text-gray-900 dark:text-white mb-4">Garage/Storage Location</h4>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Where the vehicle is normally parked overnight (Required for insurance)</p>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Garage Address <span className="text-red-500">*</span>
                       </label>
-                      <input
-                        type="text"
-                        value={formData.garageAddress}
-                        onChange={(e) => setFormData({ ...formData, garageAddress: e.target.value })}
+                      <AddressAutocomplete
+                        value={formData.garageAddress || ''}
+                        city={formData.garageCity}
+                        state={formData.garageState}
+                        zipCode={formData.garageZip}
+                        onAddressSelect={(address) => {
+                          setFormData(prev => ({
+                            ...prev,
+                            garageAddress: address.streetAddress,
+                            garageCity: address.city,
+                            garageState: address.state,
+                            garageZip: address.zipCode
+                          }))
+                        }}
                         disabled={isLocked}
-                        className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${isLocked ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-900' : ''}`}
-                        placeholder="Where vehicle is parked overnight"
+                        placeholder="Search for garage/storage address..."
                       />
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         City <span className="text-red-500">*</span>
@@ -1132,29 +1673,28 @@ export default function EditCarPage() {
                       <input
                         type="text"
                         value={formData.garageCity}
-                        onChange={(e) => setFormData({ ...formData, garageCity: e.target.value })}
+                        readOnly
                         disabled={isLocked}
-                        className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${isLocked ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-900' : ''}`}
+                        className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 dark:text-white cursor-not-allowed ${isLocked ? 'opacity-60' : ''}`}
+                        placeholder="Auto-filled"
                       />
                     </div>
-                    
+
                     <div className="flex gap-2">
                       <div className="flex-1">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                           State <span className="text-red-500">*</span>
                         </label>
-                        <select
+                        <input
+                          type="text"
                           value={formData.garageState}
-                          onChange={(e) => setFormData({ ...formData, garageState: e.target.value })}
+                          readOnly
                           disabled={isLocked}
-                          className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${isLocked ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-900' : ''}`}
-                        >
-                          {usStates.map(state => (
-                            <option key={state} value={state}>{state}</option>
-                          ))}
-                        </select>
+                          className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 dark:text-white cursor-not-allowed ${isLocked ? 'opacity-60' : ''}`}
+                          placeholder="Auto-filled"
+                        />
                       </div>
-                      
+
                       <div className="flex-1">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                           ZIP <span className="text-red-500">*</span>
@@ -1162,10 +1702,11 @@ export default function EditCarPage() {
                         <input
                           type="text"
                           value={formData.garageZip}
-                          onChange={(e) => setFormData({ ...formData, garageZip: e.target.value })}
+                          readOnly
                           disabled={isLocked}
                           maxLength={10}
-                          className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${isLocked ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-900' : ''}`}
+                          className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 dark:text-white cursor-not-allowed ${isLocked ? 'opacity-60' : ''}`}
+                          placeholder="Auto-filled"
                         />
                       </div>
                     </div>
@@ -1484,7 +2025,43 @@ export default function EditCarPage() {
                     </p>
                   </div>
                 )}
-                
+
+                {/* Photo count indicator */}
+                <div className={`flex items-center justify-between mb-4 p-3 rounded-lg ${
+                  photos.length >= 3
+                    ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800'
+                    : 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800'
+                }`}>
+                  <div className="flex items-center gap-2">
+                    {photos.length >= 3 ? (
+                      <IoCheckmarkCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                    ) : (
+                      <IoWarningOutline className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                    )}
+                    <span className={`text-sm font-medium ${
+                      photos.length >= 3
+                        ? 'text-emerald-800 dark:text-emerald-300'
+                        : 'text-amber-800 dark:text-amber-300'
+                    }`}>
+                      {photos.length} of 3 minimum photos uploaded
+                    </span>
+                  </div>
+                  {photos.length < 3 && (
+                    <span className="text-xs text-amber-600 dark:text-amber-400">
+                      {3 - photos.length} more required
+                    </span>
+                  )}
+                </div>
+
+                {validationErrors.photos && (
+                  <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                    <p className="text-sm text-red-700 dark:text-red-300 flex items-center gap-2">
+                      <IoWarningOutline className="w-4 h-4" />
+                      {validationErrors.photos}
+                    </p>
+                  </div>
+                )}
+
                 {photos.length === 0 ? (
                   <div className="text-center py-12 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
                     <IoImageOutline className="w-12 h-12 text-gray-400 mx-auto mb-3" />
@@ -1538,36 +2115,121 @@ export default function EditCarPage() {
 
             {activeTab === 'features' && (
               <div className="space-y-6">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Features & Amenities</h3>
-                
-                {isLocked && (
-                  <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 mb-4">
-                    <p className="text-sm text-yellow-800 dark:text-yellow-300">
-                      Features cannot be modified while vehicle has an active claim
-                    </p>
+                {/* Auto-populated Features Section */}
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <IoSparklesOutline className="w-5 h-5 text-purple-600" />
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                        Vehicle Features
+                      </h3>
+                    </div>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full">
+                      Auto-detected
+                    </span>
                   </div>
-                )}
-                
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {features.map((feature) => (
-                    <label key={feature} className={`flex items-center gap-2 ${isLocked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
-                      <input
-                        type="checkbox"
-                        checked={formData.features.includes(feature)}
-                        onChange={() => toggleFeature(feature)}
-                        disabled={isLocked}
-                        className="w-4 h-4 text-purple-600 rounded focus:ring-purple-600"
-                      />
-                      <span className="text-gray-700 dark:text-gray-300">{feature}</span>
-                    </label>
-                  ))}
+
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    Features are automatically determined based on your {formData.year} {formData.make} {formData.model}'s type and year.
+                    Uncheck any features that are not working or unavailable on your vehicle.
+                  </p>
+
+                  {/* Display auto-populated features by category with toggles */}
+                  {(() => {
+                    const autoFeatures = getVehicleFeatures(
+                      formData.carType || 'SEDAN',
+                      formData.year,
+                      formData.fuelType,
+                      formData.make,
+                      formData.model
+                    )
+                    const groupedFeatures = groupFeaturesByCategory(autoFeatures)
+
+                    // Track disabled features in formData.features (inverted - features array contains ACTIVE features)
+                    const activeFeatures = formData.features.length > 0 ? formData.features : autoFeatures
+
+                    return (
+                      <div className="space-y-4">
+                        {Object.entries(groupedFeatures).map(([category, categoryFeatures]) => (
+                          <div key={category}>
+                            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                              {category === 'safety' && <IoShieldOutline className="w-4 h-4 text-blue-600" />}
+                              {category === 'comfort' && <IoCarOutline className="w-4 h-4 text-purple-600" />}
+                              {category === 'technology' && <IoInformationCircleOutline className="w-4 h-4 text-green-600" />}
+                              {category === 'utility' && <IoReorderThreeOutline className="w-4 h-4 text-orange-600" />}
+                              <span className="capitalize">{category === 'safety' ? 'Safety' : category === 'comfort' ? 'Comfort & Interior' : category === 'technology' ? 'Technology' : 'Utility'}</span>
+                            </h4>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                              {categoryFeatures.map(feature => {
+                                const isActive = activeFeatures.includes(feature)
+                                return (
+                                  <label
+                                    key={feature}
+                                    className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${
+                                      isActive
+                                        ? 'bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30'
+                                        : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 opacity-60'
+                                    } ${isLocked ? 'cursor-not-allowed' : ''}`}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={isActive}
+                                      onChange={() => {
+                                        if (isLocked) return
+                                        const newFeatures = isActive
+                                          ? activeFeatures.filter(f => f !== feature)
+                                          : [...activeFeatures, feature]
+                                        setFormData(prev => ({ ...prev, features: newFeatures }))
+                                      }}
+                                      disabled={isLocked}
+                                      className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
+                                    />
+                                    <span className={`text-sm ${isActive ? 'text-gray-700 dark:text-gray-300' : 'text-gray-500 dark:text-gray-400 line-through'}`}>
+                                      {feature}
+                                    </span>
+                                  </label>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        ))}
+
+                        <div className="text-center text-sm text-gray-500 dark:text-gray-400 pt-2">
+                          {activeFeatures.length} of {autoFeatures.length} features active
+                        </div>
+                      </div>
+                    )
+                  })()}
+
+                  {/* Missing features button */}
+                  <div className="mt-4 flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                    <p className="text-sm text-blue-700 dark:text-blue-400">
+                      Missing a feature your vehicle has?
+                    </p>
+                    <a
+                      href="mailto:support@itwhip.com?subject=Feature Request for My Vehicle"
+                      className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                    >
+                      Contact Support
+                    </a>
+                  </div>
                 </div>
 
-                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                {/* Rental Rules Section */}
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
                   <h4 className="font-medium text-gray-900 dark:text-white mb-4">Rental Rules</h4>
+
+                  {isLocked && (
+                    <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 mb-4">
+                      <p className="text-sm text-yellow-800 dark:text-yellow-300">
+                        Rules cannot be modified while vehicle has an active claim
+                      </p>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {rules.map((rule) => (
-                      <label key={rule} className={`flex items-center gap-2 ${isLocked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
+                      <label key={rule} className={`flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 ${isLocked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
                         <input
                           type="checkbox"
                           checked={formData.rules.includes(rule)}
@@ -1585,93 +2247,102 @@ export default function EditCarPage() {
 
             {activeTab === 'availability' && (
               <div className="space-y-6">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Availability Settings</h3>
-                
-                {isLocked && (
-                  <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 mb-4">
-                    <p className="text-sm text-yellow-800 dark:text-yellow-300">
-                      Availability settings cannot be modified while vehicle has an active claim
-                    </p>
+                {/* Availability Settings Card */}
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Availability Settings</h3>
+
+                  {isLocked && (
+                    <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 mb-4">
+                      <p className="text-sm text-yellow-800 dark:text-yellow-300">
+                        Availability settings cannot be modified while vehicle has an active claim
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="space-y-4">
+                    <label className={`flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 ${isLocked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
+                      <input
+                        type="checkbox"
+                        checked={formData.isActive}
+                        onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                        disabled={isLocked}
+                        className="w-5 h-5 text-purple-600 rounded focus:ring-purple-600"
+                      />
+                      <div>
+                        <span className="text-gray-700 dark:text-gray-300 font-medium">Car is Active</span>
+                        <p className="text-sm text-gray-500">Make this car available for booking</p>
+                      </div>
+                    </label>
+
+                    <label className={`flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 ${isLocked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
+                      <input
+                        type="checkbox"
+                        checked={formData.instantBook}
+                        onChange={(e) => setFormData({ ...formData, instantBook: e.target.checked })}
+                        disabled={isLocked}
+                        className="w-5 h-5 text-purple-600 rounded focus:ring-purple-600"
+                      />
+                      <div>
+                        <span className="text-gray-700 dark:text-gray-300 font-medium">Instant Book</span>
+                        <p className="text-sm text-gray-500">Allow guests to book without your approval</p>
+                      </div>
+                    </label>
                   </div>
-                )}
-                
-                <div className="space-y-4">
-                  <label className={`flex items-center gap-3 ${isLocked ? 'opacity-60 cursor-not-allowed' : ''}`}>
-                    <input
-                      type="checkbox"
-                      checked={formData.isActive}
-                      onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                      disabled={isLocked}
-                      className="w-4 h-4 text-purple-600 rounded focus:ring-purple-600"
-                    />
+
+                  <div className="grid md:grid-cols-3 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700 mt-4">
                     <div>
-                      <span className="text-gray-700 dark:text-gray-300 font-medium">Car is Active</span>
-                      <p className="text-sm text-gray-500">Make this car available for booking</p>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Advance Notice (hours)
+                      </label>
+                      <input
+                        type="number"
+                        value={formData.advanceNotice}
+                        onChange={(e) => setFormData({ ...formData, advanceNotice: parseInt(e.target.value) })}
+                        min="0"
+                        max="72"
+                        disabled={isLocked}
+                        className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${isLocked ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-900' : ''}`}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">How far in advance can guests book</p>
                     </div>
-                  </label>
-                  
-                  <label className={`flex items-center gap-3 ${isLocked ? 'opacity-60 cursor-not-allowed' : ''}`}>
-                    <input
-                      type="checkbox"
-                      checked={formData.instantBook}
-                      onChange={(e) => setFormData({ ...formData, instantBook: e.target.checked })}
-                      disabled={isLocked}
-                      className="w-4 h-4 text-purple-600 rounded focus:ring-purple-600"
-                    />
+
                     <div>
-                      <span className="text-gray-700 dark:text-gray-300 font-medium">Instant Book</span>
-                      <p className="text-sm text-gray-500">Allow guests to book without your approval</p>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Minimum Trip (days)
+                      </label>
+                      <input
+                        type="number"
+                        value={formData.minTripDuration}
+                        onChange={(e) => setFormData({ ...formData, minTripDuration: parseInt(e.target.value) })}
+                        min="1"
+                        max="30"
+                        disabled={isLocked}
+                        className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${isLocked ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-900' : ''}`}
+                      />
                     </div>
-                  </label>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Maximum Trip (days)
+                      </label>
+                      <input
+                        type="number"
+                        value={formData.maxTripDuration}
+                        onChange={(e) => setFormData({ ...formData, maxTripDuration: parseInt(e.target.value) })}
+                        min="1"
+                        max="365"
+                        disabled={isLocked}
+                        className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${isLocked ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-900' : ''}`}
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-4 pt-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Advance Notice (hours)
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.advanceNotice}
-                      onChange={(e) => setFormData({ ...formData, advanceNotice: parseInt(e.target.value) })}
-                      min="0"
-                      max="72"
-                      disabled={isLocked}
-                      className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${isLocked ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-900' : ''}`}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">How far in advance can guests book</p>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Minimum Trip Duration (days)
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.minTripDuration}
-                      onChange={(e) => setFormData({ ...formData, minTripDuration: parseInt(e.target.value) })}
-                      min="1"
-                      max="30"
-                      disabled={isLocked}
-                      className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${isLocked ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-900' : ''}`}
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Maximum Trip Duration (days)
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.maxTripDuration}
-                      onChange={(e) => setFormData({ ...formData, maxTripDuration: parseInt(e.target.value) })}
-                      min="1"
-                      max="365"
-                      disabled={isLocked}
-                      className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${isLocked ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-900' : ''}`}
-                    />
-                  </div>
-                </div>
+                {/* Full Availability Calendar */}
+                <HostAvailabilityCalendar
+                  carId={car?.id || ''}
+                  isLocked={isLocked}
+                />
               </div>
             )}
 

@@ -319,6 +319,28 @@ export async function PUT(
       )
     }
 
+    // Server-side validation: Reject changes to locked fields for approved vehicles
+    const isCarApproved = existingCar.status === 'APPROVED'
+    if (isCarApproved) {
+      const lockedFields = ['make', 'model', 'year', 'color', 'vin', 'licensePlate', 'registrationState']
+      const attemptedLockedChanges: string[] = []
+
+      for (const field of lockedFields) {
+        if (body[field] !== undefined && body[field] !== (existingCar as any)[field]) {
+          attemptedLockedChanges.push(field)
+        }
+      }
+
+      if (attemptedLockedChanges.length > 0) {
+        return NextResponse.json({
+          error: 'Cannot modify locked fields after vehicle approval',
+          reason: 'FIELDS_LOCKED',
+          lockedFields: attemptedLockedChanges,
+          message: `The following fields cannot be changed after vehicle approval: ${attemptedLockedChanges.join(', ')}. Contact support if you need to make changes.`
+        }, { status: 403 })
+      }
+    }
+
     let activationNote: string | null = null
     if (host.approvalStatus !== 'APPROVED') {
       if (body.isActive === true) {

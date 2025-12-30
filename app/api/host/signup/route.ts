@@ -19,6 +19,7 @@ export async function POST(request: NextRequest) {
       zipCode,
       // Vehicle info (basic)
       hasVehicle,
+      vehicleVin,
       vehicleMake,
       vehicleModel,
       vehicleYear,
@@ -231,8 +232,8 @@ export async function POST(request: NextRequest) {
             features: '[]',
             rules: '[]',
             
-            // VIN and license plate - MUST be added before going live
-            vin: null,
+            // VIN and license plate - VIN may be provided at signup
+            vin: vehicleVin || null,
             licensePlate: null,
             
             // Description - MUST be added before going live
@@ -277,13 +278,16 @@ export async function POST(request: NextRequest) {
             severity: 'INFO',
             metadata: {
               description: `Vehicle created during signup: ${vehicleYear} ${vehicleMake} ${vehicleModel}`,
+              vehicleVin: vehicleVin || null,
               vehicleMake,
               vehicleModel,
               vehicleYear,
               vehicleTrim: vehicleTrim || null,
               vehicleColor: vehicleColor || null,
-              status: 'INCOMPLETE',
-              note: 'Vehicle created during signup - needs photos, VIN, pricing to complete listing'
+              status: vehicleVin ? 'VIN_PROVIDED' : 'INCOMPLETE',
+              note: vehicleVin
+                ? 'Vehicle created during signup with VIN - needs photos, pricing to complete listing'
+                : 'Vehicle created during signup - needs photos, VIN, pricing to complete listing'
             }
           }
         })
@@ -299,6 +303,7 @@ export async function POST(request: NextRequest) {
             entityType: 'HOST',
             entityId: newHost.id,
             metadata: {
+              vehicleVin: vehicleVin || null,
               vehicleMake,
               vehicleModel,
               vehicleYear,
@@ -357,7 +362,7 @@ export async function POST(request: NextRequest) {
           hostEmail: email,
           location: { city, state, zipCode },
           hasVehicle: hasVehicle || false,
-          vehicleInfo: hasVehicle ? { make: vehicleMake, model: vehicleModel, year: vehicleYear, trim: vehicleTrim, color: vehicleColor } : null,
+          vehicleInfo: hasVehicle ? { vin: vehicleVin || null, make: vehicleMake, model: vehicleModel, year: vehicleYear, trim: vehicleTrim, color: vehicleColor } : null,
           carCreated: !!createdCarId,
           carId: createdCarId
         },

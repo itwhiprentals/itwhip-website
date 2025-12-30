@@ -1,8 +1,8 @@
 // app/host/dashboard/page.tsx
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { 
@@ -348,12 +348,23 @@ function ActiveCarCard({ car, isApproved }: { car: CarData; isApproved: boolean 
   )
 }
 
-export default function HostDashboardPage() {
+function HostDashboardContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [hostData, setHostData] = useState<HostData | null>(null)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [showWelcome, setShowWelcome] = useState(false)
+
+  // Check for welcome param (new signup)
+  useEffect(() => {
+    if (searchParams.get('welcome') === 'true') {
+      setShowWelcome(true)
+      // Remove query param from URL without refresh
+      window.history.replaceState({}, '', '/host/dashboard')
+    }
+  }, [searchParams])
 
   useEffect(() => {
     checkSession()
@@ -602,6 +613,36 @@ export default function HostDashboardPage() {
 
             {/* Suspension Banner - Highest Priority */}
             <SuspensionBanner />
+
+            {/* Welcome Banner for New Signups */}
+            {showWelcome && (
+              <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 border border-green-200 dark:border-green-700 rounded-xl">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-800/50 flex items-center justify-center flex-shrink-0">
+                    <IoCheckmarkCircleOutline className="w-7 h-7 text-green-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-green-800 dark:text-green-200">
+                      Welcome to ItWhip! 🎉
+                    </h3>
+                    <p className="text-green-700 dark:text-green-300 mt-1">
+                      Thank you for signing up as a host. Your application is being reviewed and you&apos;ll be notified within 24-48 hours once approved.
+                    </p>
+                    <p className="text-sm text-green-600 dark:text-green-400 mt-2">
+                      While you wait, you can complete your vehicle listing by adding photos, VIN, and pricing.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowWelcome(false)}
+                    className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200 flex-shrink-0"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Priority Banner System */}
             {(() => {
@@ -873,5 +914,18 @@ export default function HostDashboardPage() {
         </main>
       </div>
     </div>
+  )
+}
+
+// Wrapper component with Suspense boundary for useSearchParams
+export default function HostDashboardPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      </div>
+    }>
+      <HostDashboardContent />
+    </Suspense>
   )
 }

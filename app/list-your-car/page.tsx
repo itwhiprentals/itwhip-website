@@ -171,11 +171,113 @@ export default function ListYourCarPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col">
       {/* JSON-LD Structured Data */}
       <JsonLd type="faq" faqs={listYourCarFAQs} />
-      <JsonLd 
-        type="howto" 
+      <JsonLd
+        type="howto"
         howToName="How to List Your Car and Start Earning on ItWhip"
         howToDescription="Step-by-step guide to listing your car on Arizona's highest-paying P2P car sharing platform."
-        howToSteps={listYourCarHowTo} 
+        howToSteps={listYourCarHowTo}
+      />
+
+      {/* Vehicle Category Product Schemas with AggregateOffer */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Product",
+            "name": "Electric Vehicle Rentals",
+            "description": "List your Tesla, Rivian, or other electric vehicle on ItWhip and earn up to 90% of rental income in Phoenix, Arizona.",
+            "brand": {
+              "@type": "Brand",
+              "name": "ItWhip"
+            },
+            "category": "Electric Vehicles",
+            "image": "https://itwhip.com/Electric-Car.png",
+            "offers": {
+              "@type": "AggregateOffer",
+              "lowPrice": "75",
+              "highPrice": "250",
+              "priceCurrency": "USD",
+              "availability": "https://schema.org/InStock",
+              "offerCount": "50+"
+            }
+          })
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Product",
+            "name": "Luxury & Exotic Car Rentals",
+            "description": "List your BMW, Mercedes, Porsche, Ferrari or other luxury vehicle on ItWhip and earn up to 90% of rental income in Phoenix, Arizona.",
+            "brand": {
+              "@type": "Brand",
+              "name": "ItWhip"
+            },
+            "category": "Luxury & Exotic Cars",
+            "image": "https://itwhip.com/Luxury-car.png",
+            "offers": {
+              "@type": "AggregateOffer",
+              "lowPrice": "150",
+              "highPrice": "500",
+              "priceCurrency": "USD",
+              "availability": "https://schema.org/InStock",
+              "offerCount": "30+"
+            }
+          })
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Product",
+            "name": "SUV & Truck Rentals",
+            "description": "List your SUV, pickup truck, or crossover on ItWhip and earn up to 90% of rental income in Phoenix, Arizona.",
+            "brand": {
+              "@type": "Brand",
+              "name": "ItWhip"
+            },
+            "category": "SUVs & Trucks",
+            "image": "https://itwhip.com/Suv-Car.png",
+            "offers": {
+              "@type": "AggregateOffer",
+              "lowPrice": "60",
+              "highPrice": "200",
+              "priceCurrency": "USD",
+              "availability": "https://schema.org/InStock",
+              "offerCount": "80+"
+            }
+          })
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Product",
+            "name": "Economy Car Rentals",
+            "description": "List your Honda, Toyota, Nissan or other economy car on ItWhip and earn up to 90% of rental income in Phoenix, Arizona.",
+            "brand": {
+              "@type": "Brand",
+              "name": "ItWhip"
+            },
+            "category": "Economy Cars",
+            "image": "https://itwhip.com/images/economy-car.jpg",
+            "offers": {
+              "@type": "AggregateOffer",
+              "lowPrice": "35",
+              "highPrice": "100",
+              "priceCurrency": "USD",
+              "availability": "https://schema.org/InStock",
+              "offerCount": "100+"
+            }
+          })
+        }}
       />
 
       <div className="fixed top-0 left-0 right-0 z-50">

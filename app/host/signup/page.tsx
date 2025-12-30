@@ -61,6 +61,7 @@ function HostSignupContent() {
 
   // Vehicle + Location info
   const [vehicleData, setVehicleData] = useState<CarData>({
+    vin: '',
     make: '',
     model: '',
     year: '',
@@ -133,6 +134,7 @@ function HostSignupContent() {
         zipCode: vehicleData.zipCode,
         // Vehicle info
         hasVehicle: true,
+        vehicleVin: vehicleData.vin || null,
         vehicleMake: vehicleData.make,
         vehicleModel: vehicleData.model,
         vehicleYear: vehicleData.year,
@@ -175,9 +177,10 @@ function HostSignupContent() {
         localStorage.setItem('pendingCarId', data.data.carId)
       }
 
-      // For OAuth users, email is already verified - go straight to pending review
+      // For OAuth users, email is already verified and they're already authenticated
+      // Redirect to dashboard with welcome message (dashboard shows pending status banner)
       if (isOAuthUser) {
-        router.push('/host/login?status=pending')
+        router.push('/host/dashboard?welcome=true')
         return
       }
 
@@ -415,7 +418,7 @@ function HostSignupContent() {
                   {/* Vehicle Information Form Component */}
                   <CarInformationForm
                     carData={vehicleData}
-                    onCarDataChange={(data) => setVehicleData({ ...vehicleData, ...data })}
+                    onCarDataChange={(data) => setVehicleData(prev => ({ ...prev, ...data }))}
                     onValidationChange={setIsVehicleValid}
                     showLocationFields={true}
                   />
