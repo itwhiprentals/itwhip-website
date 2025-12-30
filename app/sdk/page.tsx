@@ -493,7 +493,7 @@ echo "Total price: $" . $pricing->total . PHP_EOL;`
             </div>
             <div className="bg-white dark:bg-gray-900 rounded-lg p-3 md:p-4 border border-gray-200 dark:border-gray-800">
               <div className="text-xl md:text-2xl font-mono font-bold text-gray-900 dark:text-white">487</div>
-              <div className="text-xs text-gray-600 dark:text-gray-400">Active Hotels</div>
+              <div className="text-xs text-gray-600 dark:text-gray-400">Active Hosts</div>
             </div>
           </div>
         </div>
@@ -720,7 +720,7 @@ echo "Total price: $" . $pricing->total . PHP_EOL;`
                 <div className="bg-white dark:bg-gray-900 rounded-lg p-4 md:p-6 border border-gray-200 dark:border-gray-800">
                   <h2 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white mb-4">Certified Integrations</h2>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
-                    {['Amadeus', 'Sabre', 'Travelport', 'Oracle Hospitality', 'Infor HMS', 'ALICE', 'Mews', 'StayNTouch', 'Cloudbeds', 'RoomRaccoon', 'Clock PMS', 'Hotelogix'].map((partner) => (
+                    {['Stripe', 'Plaid', 'Veriff', 'Checkr', 'Twilio', 'SendGrid', 'Cloudinary', 'Mapbox', 'CalTrack GPS', 'Bouncie', 'Zubie', 'Samsara'].map((partner) => (
                       <div key={partner} className="bg-gray-50 dark:bg-gray-800 rounded-lg p-2 md:p-3 text-center">
                         <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{partner}</span>
                       </div>
@@ -1002,7 +1002,7 @@ grant_type=client_credentials
 GET /api/v3/rides
 Host: api.itwhip.com
 Authorization: Bearer sk_live_abcdef123456789
-X-Property-ID: PHX-HOTEL-001`}</code>
+X-Host-ID: HOST-PHX-001`}</code>
                         </pre>
                       </div>
                     </div>
@@ -1380,7 +1380,7 @@ function verifyWebhookSignature(payload, signature, secret) {
                         <pre className="text-xs text-gray-300">
                           <code>{`// Configure webhook endpoint
 await sdk.webhooks.configure({
-  endpoint: 'https://your-hotel.com/webhooks',
+  endpoint: 'https://your-app.com/webhooks',
   events: ['ride.*', 'billing.*', 'flight.updated'],
   secret: 'whsec_abcdef123456',
   retries: {

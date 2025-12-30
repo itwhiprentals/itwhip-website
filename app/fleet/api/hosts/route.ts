@@ -101,18 +101,19 @@ export async function GET(request: NextRequest) {
       city: host.city,
       state: host.state,
       profilePhoto: host.profilePhoto,
-      
+
       hostType: host.hostType,
       approvalStatus: host.approvalStatus,
       active: host.active,
-      
+      documentsVerified: host.documentsVerified,
+
       totalTrips: host.totalTrips,
       rating: host.rating,
       commissionRate: host.commissionRate,
-      
+
       carCount: host._count.cars,
       activeCarCount: host.cars.filter(car => car.isActive).length,
-      
+
       joinedAt: host.joinedAt.toISOString(),
       approvedAt: host.approvedAt?.toISOString()
     }))

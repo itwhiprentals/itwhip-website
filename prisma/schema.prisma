@@ -600,6 +600,12 @@ model RentalHost {
   insuranceDocUrl   String?
   documentsVerified Boolean @default(false)
 
+  // Multi-page Photo ID uploads (NEW)
+  photoIdType        String?   // 'GOVERNMENT_ID' | 'DRIVERS_LICENSE' | 'PASSPORT'
+  photoIdUrls        Json?     // { front: url, back: url, info?: url, lastPage?: url }
+  photoIdVerified    Boolean   @default(false)
+  photoIdSubmittedAt DateTime? // When user clicked "Submit" - null means not yet submitted
+
   // Additional host settings
   autoApproveBookings Boolean @default(true)
   requireDeposit      Boolean @default(true)
@@ -1254,6 +1260,9 @@ model HostNotification {
 
   // Expiry
   expiresAt DateTime?
+
+  // Metadata
+  metadata  Json?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

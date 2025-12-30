@@ -183,6 +183,10 @@ export async function PUT(
         ...(body.approvalStatus !== undefined && { approvalStatus: body.approvalStatus }),
         ...(body.active !== undefined && { active: body.active }),
         ...(body.hostType !== undefined && { hostType: body.hostType }),
+
+        // Document verification
+        ...(body.documentsVerified !== undefined && { documentsVerified: body.documentsVerified }),
+        ...(body.photoIdVerified !== undefined && { photoIdVerified: body.photoIdVerified }),
         
         // Permissions
         ...(body.dashboardAccess !== undefined && { dashboardAccess: body.dashboardAccess }),

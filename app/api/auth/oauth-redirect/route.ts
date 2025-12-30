@@ -335,8 +335,8 @@ export async function GET(request: NextRequest) {
           console.log('[OAuth Redirect] Redirecting to host dashboard')
           return createRedirectWithCookies('/host/dashboard')
         } else if (hostProfile.approvalStatus === 'PENDING') {
-          console.log('[OAuth Redirect] Host pending, redirecting to login with message')
-          return createRedirectWithCookies('/host/login?status=pending')
+          console.log('[OAuth Redirect] Host pending, redirecting to dashboard')
+          return createRedirectWithCookies('/host/dashboard')
         } else if (hostProfile.approvalStatus === 'REJECTED') {
           console.log('[OAuth Redirect] Host rejected, redirecting to login with message')
           return createRedirectWithCookies('/host/login?status=rejected')

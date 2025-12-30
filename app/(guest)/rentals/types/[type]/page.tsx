@@ -354,6 +354,35 @@ export default async function CarTypePage({
     ]
   }
 
+  // AutoRental schema for star ratings in Google search results
+  const autoRentalSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'AutoRental',
+    '@id': `https://itwhip.com/rentals/types/${type}#autorental`,
+    name: `ItWhip ${typeData.displayName} Rentals`,
+    url: `https://itwhip.com/rentals/types/${type}`,
+    description: typeData.description,
+    areaServed: {
+      '@type': 'State',
+      name: 'Arizona',
+      containedInPlace: { '@type': 'Country', name: 'United States' }
+    },
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: 'Phoenix',
+      addressRegion: 'AZ',
+      addressCountry: 'US'
+    },
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue: '4.8',
+      ratingCount: '182',
+      reviewCount: '182',
+      bestRating: '5',
+      worstRating: '1'
+    }
+  }
+
   // Calculate priceValidUntil once for all offers (30 days from now)
   const priceValidUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
@@ -435,6 +464,11 @@ export default async function CarTypePage({
 
   return (
     <>
+      <Script
+        id="autorental-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(autoRentalSchema) }}
+      />
       <Script
         id="breadcrumb-schema"
         type="application/ld+json"

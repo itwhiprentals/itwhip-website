@@ -67,8 +67,8 @@ export default function JsonLd({
     const howToSchema = {
       '@context': 'https://schema.org',
       '@type': 'HowTo',
-      name: howToName || 'How to List Your Car on ITWhip',
-      description: howToDescription || 'Step-by-step guide to listing your car and earning money on ITWhip.',
+      name: howToName || 'How to List Your Car on ItWhip',
+      description: howToDescription || 'Step-by-step guide to listing your car and earning money on ItWhip.',
       step: howToSteps.map((step, idx) => ({
         '@type': 'HowToStep',
         position: idx + 1,
@@ -123,7 +123,7 @@ export const listYourCarFAQs: FAQItem[] = [
   },
   {
     question: 'How fast do I get paid?',
-    answer: 'ITWhip pays hosts within 48 hours of trip completion via direct deposit. This is the fastest payment speed in the industry.'
+    answer: 'ItWhip pays hosts within 48 hours of trip completion via direct deposit. This is the fastest payment speed in the industry.'
   },
   {
     question: 'What is Mileage Forensics™?',
@@ -164,12 +164,12 @@ export const hostBenefitsList: BenefitItem[] = [
 // Renter-focused FAQs for rental search and booking pages
 export const renterFAQs: FAQItem[] = [
   {
-    question: 'How do I rent a car on ITWhip?',
+    question: 'How do I rent a car on ItWhip?',
     answer: 'Browse available cars in your area, select your dates, and book instantly. You can pick up from the host location or request delivery. Payment is processed securely through the platform.'
   },
   {
     question: 'What insurance coverage do I have as a renter?',
-    answer: 'Every ITWhip rental includes $1M liability coverage. You can add comprehensive and collision coverage at checkout for full protection during your trip.'
+    answer: 'Every ItWhip rental includes $1M liability coverage. You can add comprehensive and collision coverage at checkout for full protection during your trip.'
   },
   {
     question: 'Can I cancel my reservation?',
@@ -177,7 +177,7 @@ export const renterFAQs: FAQItem[] = [
   },
   {
     question: 'What happens if the car breaks down?',
-    answer: 'ITWhip provides 24/7 roadside assistance for all rentals. Contact our support team and we will arrange towing, a replacement vehicle, or other assistance.'
+    answer: 'ItWhip provides 24/7 roadside assistance for all rentals. Contact our support team and we will arrange towing, a replacement vehicle, or other assistance.'
   },
   {
     question: 'Are there mileage limits?',
@@ -192,7 +192,7 @@ export const renterFAQs: FAQItem[] = [
 // Insurance-related FAQs
 export const insuranceFAQs: FAQItem[] = [
   {
-    question: 'What insurance is included with ITWhip rentals?',
+    question: 'What insurance is included with ItWhip rentals?',
     answer: 'Every rental includes $1M liability coverage at no extra cost. This protects you from third-party claims for bodily injury and property damage during your trip.'
   },
   {
@@ -205,19 +205,19 @@ export const insuranceFAQs: FAQItem[] = [
   },
   {
     question: 'How do I file a claim?',
-    answer: 'Document any damage with photos in the app immediately. Contact ITWhip support within 24 hours to file a claim. Our team will guide you through the process and coordinate with insurance.'
+    answer: 'Document any damage with photos in the app immediately. Contact ItWhip support within 24 hours to file a claim. Our team will guide you through the process and coordinate with insurance.'
   }
 ]
 
 // Arizona-specific FAQs
 export const arizonaRentalFAQs: FAQItem[] = [
   {
-    question: 'Where can I rent a car with ITWhip in Arizona?',
-    answer: 'ITWhip serves the entire Phoenix metropolitan area including Phoenix, Scottsdale, Tempe, Mesa, Chandler, Gilbert, Glendale, and Peoria. We also serve Tucson and Flagstaff.'
+    question: 'Where can I rent a car with ItWhip in Arizona?',
+    answer: 'ItWhip serves the entire Phoenix metropolitan area including Phoenix, Scottsdale, Tempe, Mesa, Chandler, Gilbert, Glendale, and Peoria. We also serve Tucson and Flagstaff.'
   },
   {
     question: 'Can I pick up a car at Phoenix Sky Harbor Airport?',
-    answer: 'Yes, many ITWhip hosts offer airport pickup and drop-off at Phoenix Sky Harbor (PHX). Filter by airport delivery to find hosts who provide this service.'
+    answer: 'Yes, many ItWhip hosts offer airport pickup and drop-off at Phoenix Sky Harbor (PHX). Filter by airport delivery to find hosts who provide this service.'
   },
   {
     question: 'Are there special requirements for renting in Arizona?',
@@ -225,7 +225,7 @@ export const arizonaRentalFAQs: FAQItem[] = [
   },
   {
     question: 'What about Arizona vehicle registration and taxes?',
-    answer: 'All ITWhip vehicles are properly registered in Arizona. Rental taxes and fees are included in your quoted price - no hidden charges at pickup.'
+    answer: 'All ItWhip vehicles are properly registered in Arizona. Rental taxes and fees are included in your quoted price - no hidden charges at pickup.'
   }
 ]
 
@@ -233,7 +233,7 @@ export const arizonaRentalFAQs: FAQItem[] = [
 export const pricingFAQs: FAQItem[] = [
   {
     question: 'How is the rental price determined?',
-    answer: 'Hosts set their own daily rates based on vehicle type, age, and demand. Prices include the base rate plus ITWhip service fee. Insurance and delivery are optional add-ons.'
+    answer: 'Hosts set their own daily rates based on vehicle type, age, and demand. Prices include the base rate plus ItWhip service fee. Insurance and delivery are optional add-ons.'
   },
   {
     question: 'When am I charged for the rental?',

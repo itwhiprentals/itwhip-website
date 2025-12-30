@@ -214,7 +214,7 @@ export default function HostInsurancePage() {
               Insurance Made Simple
             </h1>
             <p className="text-lg text-gray-600 dark:text-gray-400 mb-6">
-              Everything you need to know about protection on ITWhip, explained in plain English.
+              Everything you need to know about protection on ItWhip, explained in plain English.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
@@ -268,7 +268,7 @@ export default function HostInsurancePage() {
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-10">
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-4">
-                How Insurance Works on ITWhip
+                How Insurance Works on ItWhip
               </h2>
               <p className="text-gray-600 dark:text-gray-400">
                 We've built a transparent insurance system that puts you in control.
@@ -281,7 +281,7 @@ export default function HostInsurancePage() {
               </h3>
               <div className="space-y-4 text-gray-600 dark:text-gray-400">
                 <p>
-                  When you list your car on ITWhip, you choose an <strong className="text-gray-900 dark:text-white">insurance tier</strong> based on what coverage you bring to the table. The more insurance you provide, the more you earn from each rental.
+                  When you list your car on ItWhip, you choose an <strong className="text-gray-900 dark:text-white">insurance tier</strong> based on what coverage you bring to the table. The more insurance you provide, the more you earn from each rental.
                 </p>
                 <p>
                   Think of it like this: If we're handling all the insurance risk, we need a bigger cut to cover potential claims. But if you already have commercial insurance that covers rentals, we're sharing less risk—so you keep more money.
@@ -1060,7 +1060,7 @@ export default function HostInsurancePage() {
                 <strong>FNOL (First Notice of Loss)</strong> is the insurance industry term for the initial report you make when an incident occurs. It's the official start of the claims process.
               </p>
               <p className="text-gray-600 dark:text-gray-400">
-                On ITWhip, we've built an FNOL-ready system that captures all the information insurance carriers need right from the start. This means faster claims processing and fewer back-and-forth requests.
+                On ItWhip, we've built an FNOL-ready system that captures all the information insurance carriers need right from the start. This means faster claims processing and fewer back-and-forth requests.
               </p>
             </div>
 
@@ -1255,7 +1255,7 @@ export default function HostInsurancePage() {
                 <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
                   <li>• Set calendar reminders for renewal dates</li>
                   <li>• Enable auto-pay with your insurance carrier</li>
-                  <li>• Update your ITWhip profile when you renew</li>
+                  <li>• Update your ItWhip profile when you renew</li>
                   <li>• Keep digital copies of your documents ready</li>
                   <li>• Notify us 30 days before expiration</li>
                 </ul>
@@ -1304,7 +1304,7 @@ export default function HostInsurancePage() {
                 For Guests: You're Already Covered
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-6">
-                Every rental on ITWhip includes $1M liability coverage. As a guest, you don't need to bring your own insurance to rent—but you can add it for extra benefits.
+                Every rental on ItWhip includes $1M liability coverage. As a guest, you don't need to bring your own insurance to rent—but you can add it for extra benefits.
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1386,11 +1386,11 @@ export default function HostInsurancePage() {
 
             <div className="space-y-4">
               <FAQItem 
-                question="Do I need my own car insurance to host on ITWhip?"
+                question="Do I need my own car insurance to host on ItWhip?"
                 answer="No. With the BASIC tier (40%), we provide all the insurance coverage. You don't need any of your own. However, if you want to earn more (75% or 90%), you'll need to bring P2P or commercial insurance that covers car sharing."
               />
               <FAQItem 
-                question="Will my personal auto insurance cover me while renting on ITWhip?"
+                question="Will my personal auto insurance cover me while renting on ItWhip?"
                 answer="Almost certainly not. Most personal auto policies explicitly exclude coverage when you're renting your car for money. Using your personal policy for car sharing could actually void your coverage entirely. We strongly recommend either staying in the BASIC tier or getting proper P2P/commercial coverage."
               />
               <FAQItem 

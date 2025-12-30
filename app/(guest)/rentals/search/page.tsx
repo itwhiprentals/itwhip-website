@@ -19,15 +19,15 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   const cityName = location.split(',')[0].trim()
 
   return {
-    title: `Car Rentals in ${cityName} from Local Owners | ITWhip Rentals`,
+    title: `Car Rentals in ${cityName} from Local Owners | ItWhip Rentals`,
     description: `Rent cars directly from local owners in ${cityName}. Browse ${cityName} car rentals from $59/day with airport delivery, instant booking, and full insurance. Better prices than traditional rental companies.`,
     keywords: `${cityName} car rental, rent a car ${cityName}, peer to peer car rental, local car rental ${cityName}, cheap car rental Arizona, airport car rental ${cityName}`,
     openGraph: {
-      title: `Car Rentals in ${cityName} from Local Owners | ITWhip`,
+      title: `Car Rentals in ${cityName} from Local Owners | ItWhip`,
       description: `Browse available cars from local owners in ${cityName}. Airport delivery, instant booking, and competitive prices.`,
       type: 'website',
       locale: 'en_US',
-      siteName: 'ITWhip Rentals',
+      siteName: 'ItWhip Rentals',
     },
     alternates: {
       canonical: `https://itwhip.com/rentals/search?location=${encodeURIComponent(location)}`
@@ -315,7 +315,7 @@ function FAQSchema() {
         name: 'Is insurance included with peer-to-peer car rentals?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'All rentals through ITWhip include liability insurance. Comprehensive coverage is available as an add-on for $15-25/day, covering collision damage and theft protection.'
+          text: 'All rentals through ItWhip include liability insurance. Comprehensive coverage is available as an add-on for $15-25/day, covering collision damage and theft protection.'
         }
       },
       {
@@ -349,7 +349,7 @@ function LocalBusinessSchema({ location }: { location: string }) {
   const businessSchema = {
     '@context': 'https://schema.org',
     '@type': 'AutoRental',
-    name: 'ITWhip Car Rentals',
+    name: 'ItWhip Car Rentals',
     description: `Peer-to-peer car rental marketplace in ${location}. Rent cars directly from local owners at competitive prices.`,
     url: 'https://itwhip.com',
     telephone: '+1-480-555-0123',

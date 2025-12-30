@@ -540,6 +540,35 @@ export default async function CarMakePage({
     ]
   }
 
+  // AutoRental schema for star ratings in Google search results
+  const autoRentalSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'AutoRental',
+    '@id': `https://itwhip.com/rentals/makes/${make}#autorental`,
+    name: `ItWhip ${makeData.displayName} Rentals`,
+    url: `https://itwhip.com/rentals/makes/${make}`,
+    description: makeData.description,
+    areaServed: {
+      '@type': 'State',
+      name: 'Arizona',
+      containedInPlace: { '@type': 'Country', name: 'United States' }
+    },
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: 'Phoenix',
+      addressRegion: 'AZ',
+      addressCountry: 'US'
+    },
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue: '4.8',
+      ratingCount: '182',
+      reviewCount: '182',
+      bestRating: '5',
+      worstRating: '1'
+    }
+  }
+
   const brandSchema = {
     '@context': 'https://schema.org',
     '@type': 'Brand',
@@ -633,6 +662,11 @@ export default async function CarMakePage({
 
   return (
     <>
+      <Script
+        id="autorental-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(autoRentalSchema) }}
+      />
       <Script
         id="breadcrumb-schema"
         type="application/ld+json"

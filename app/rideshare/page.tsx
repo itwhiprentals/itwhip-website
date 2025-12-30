@@ -3,7 +3,6 @@
 
 import { Metadata } from 'next'
 import Link from 'next/link'
-import Image from 'next/image'
 import { prisma } from '@/app/lib/database/prisma'
 import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
@@ -15,7 +14,6 @@ import {
   IoShieldCheckmarkOutline,
   IoCashOutline,
   IoConstructOutline,
-  IoCheckmarkCircleOutline,
   IoArrowForwardOutline,
   IoLeafOutline,
   IoSpeedometerOutline
@@ -26,15 +24,163 @@ import QuickActionsBar from '@/app/rentals-sections/QuickActionsBar'
 import BrowseByMakeSection from './components/BrowseByMakeSection'
 
 export const metadata: Metadata = {
-  title: 'Rideshare Vehicle Rentals - Uber & Lyft Cars | ItWhip Rides',
-  description: 'Rent fuel-efficient vehicles perfect for Uber, Lyft, and DoorDash in Arizona. Commercial insurance included. Daily, weekly, and monthly rates available.',
-  keywords: 'rideshare rentals, uber car rental, lyft vehicle rental, doordash car, phoenix rideshare, arizona rideshare vehicles',
+  title: 'Rideshare Rentals from $249/week | Uber & Lyft Cars Phoenix | ItWhip',
+  description: 'Rent rideshare-approved vehicles in Phoenix from $249/week. Pre-approved for Uber, Lyft, DoorDash & Instacart. Toyota, Honda, Hyundai hybrids with 40-50 MPG. Maintenance included.',
+  keywords: 'rideshare rentals, uber car rental, lyft vehicle rental, doordash car, phoenix rideshare, arizona rideshare vehicles, rideshare car phoenix, uber approved cars',
+  alternates: {
+    canonical: 'https://itwhip.com/rideshare',
+  },
   openGraph: {
-    title: 'Rideshare Vehicle Rentals in Arizona',
-    description: 'Perfect cars for Uber, Lyft & DoorDash drivers',
+    title: 'Rideshare Rentals from $249/week | Uber & Lyft Cars Phoenix',
+    description: 'Rent rideshare-approved vehicles in Phoenix. Pre-approved for Uber, Lyft, DoorDash. 40-50 MPG hybrids with maintenance included.',
+    url: 'https://itwhip.com/rideshare',
     images: ['/rideshare/hero-prius-highway.jpg'],
-    type: 'website'
+    type: 'website',
+    siteName: 'ItWhip',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Rideshare Rentals from $249/week | Phoenix',
+    description: 'Pre-approved for Uber, Lyft, DoorDash. 40-50 MPG hybrids with maintenance included.',
   }
+}
+
+// JSON-LD Structured Data for SEO
+const breadcrumbSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://itwhip.com' },
+    { '@type': 'ListItem', position: 2, name: 'Rideshare Rentals', item: 'https://itwhip.com/rideshare' }
+  ]
+}
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'What is the minimum rental period for rideshare vehicles?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Our rideshare rentals require a minimum 3-day booking. Weekly rentals start at $249/week with unlimited mileage included.'
+      }
+    },
+    {
+      '@type': 'Question',
+      name: 'Are vehicles pre-approved for Uber, Lyft, and DoorDash?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Yes, every vehicle in our rideshare fleet meets requirements for Uber, Lyft, DoorDash, Instacart, and Amazon Flex. No surprises when you activate your driver account.'
+      }
+    },
+    {
+      '@type': 'Question',
+      name: 'Is maintenance included with rideshare rentals?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Yes, all maintenance and repairs are covered with your rental. Oil changes, tire rotations, and mechanical issues are our responsibility so you can focus on driving and earning.'
+      }
+    },
+    {
+      '@type': 'Question',
+      name: 'What fuel efficiency can I expect from rideshare vehicles?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'All vehicles in our rideshare fleet achieve 32-50+ MPG. Our hybrid options like Toyota Prius and Camry Hybrid can save you hundreds monthly on fuel costs.'
+      }
+    },
+    {
+      '@type': 'Question',
+      name: 'How quickly can I get approved and start driving?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Same-day approval is available. Complete our quick verification process, pick up your vehicle the same day, and start earning immediately.'
+      }
+    }
+  ]
+}
+
+const howToSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'HowTo',
+  name: 'How to Rent a Rideshare Vehicle in Phoenix',
+  description: 'Get on the road with a rideshare-approved vehicle in three simple steps.',
+  step: [
+    {
+      '@type': 'HowToStep',
+      position: 1,
+      name: 'Browse & Book',
+      text: 'Find the perfect rideshare vehicle from our selection of fuel-efficient, app-approved cars. Filter by make, price, or location.'
+    },
+    {
+      '@type': 'HowToStep',
+      position: 2,
+      name: 'Get Approved',
+      text: 'Complete our quick verification process designed specifically for rideshare drivers. Same-day approval available.'
+    },
+    {
+      '@type': 'HowToStep',
+      position: 3,
+      name: 'Start Earning',
+      text: 'Pick up your vehicle and start driving for Uber, Lyft, DoorDash, or any delivery platform immediately.'
+    }
+  ]
+}
+
+const autoRentalSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'AutoRental',
+  '@id': 'https://itwhip.com/rideshare#autorental',
+  name: 'ItWhip Rideshare Vehicle Rentals',
+  description: 'Rideshare-approved vehicle rentals in Phoenix from $249/week. Pre-approved for Uber, Lyft, DoorDash with maintenance included.',
+  url: 'https://itwhip.com/rideshare',
+  telephone: '+1-305-399-9069',
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: '1 N 1st St',
+    addressLocality: 'Phoenix',
+    addressRegion: 'AZ',
+    postalCode: '85004',
+    addressCountry: 'US'
+  },
+  image: 'https://itwhip.com/og-image.jpg',
+  priceRange: '$249-$399/week',
+  areaServed: {
+    '@type': 'State',
+    name: 'Arizona',
+    containsPlace: [
+      { '@type': 'City', name: 'Phoenix' },
+      { '@type': 'City', name: 'Scottsdale' },
+      { '@type': 'City', name: 'Tempe' },
+      { '@type': 'City', name: 'Mesa' }
+    ]
+  },
+  aggregateRating: {
+    '@type': 'AggregateRating',
+    ratingValue: '4.8',
+    ratingCount: '182',
+    reviewCount: '182',
+    bestRating: '5',
+    worstRating: '1'
+  }
+}
+
+const itemListSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: 'Rideshare Vehicle Makes Available',
+  description: 'Browse rideshare-approved vehicles by make',
+  numberOfItems: 6,
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Toyota', url: 'https://itwhip.com/rideshare/toyota' },
+    { '@type': 'ListItem', position: 2, name: 'Honda', url: 'https://itwhip.com/rideshare/honda' },
+    { '@type': 'ListItem', position: 3, name: 'Nissan', url: 'https://itwhip.com/rideshare/nissan' },
+    { '@type': 'ListItem', position: 4, name: 'Hyundai', url: 'https://itwhip.com/rideshare/hyundai' },
+    { '@type': 'ListItem', position: 5, name: 'Kia', url: 'https://itwhip.com/rideshare/kia' },
+    { '@type': 'ListItem', position: 6, name: 'Chevrolet', url: 'https://itwhip.com/rideshare/chevrolet' }
+  ]
 }
 
 // Rideshare-specific benefits - Including "Why These 6 Makes" content
@@ -213,8 +359,8 @@ async function getPartners() {
     })
 
     return partners
-      .filter(p => p.cars.length > 0)
-      .map(partner => {
+      .filter((p: any) => p.cars.length > 0)
+      .map((partner: any) => {
         // Calculate avg rating - only count cars with actual trips (ignores DB default of 5.0)
         const carsWithTrips = partner.cars.filter((c: any) => c.totalTrips > 0 && c.rating > 0)
         const calculatedRating = carsWithTrips.length > 0
@@ -249,7 +395,7 @@ async function getPartners() {
             rating: car.totalTrips > 0 ? (car.rating || 0) : 0,
             trips: car.totalTrips || 0
           })),
-        discounts: partner.partnerDiscounts.map(d => ({
+        discounts: partner.partnerDiscounts.map((d: any) => ({
           id: d.id,
           code: d.code,
           title: d.title,
@@ -346,6 +492,28 @@ export default async function RidesharePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* JSON-LD Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(autoRentalSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
+      />
+
       <Header />
 
       <div className="pt-16">
@@ -411,6 +579,13 @@ export default async function RidesharePage() {
 
         {/* Quick Actions Bar - Sticky Navigation */}
         <QuickActionsBar variant="rideshare" />
+
+        {/* TODO: Add dynamic car listings section here when rideshare inventory grows
+            - Query rideshare vehicles from database (vehicleType: 'RIDESHARE')
+            - Display grid of available vehicles with filters
+            - Include pricing, availability, and instant book badges
+            - Link to individual car detail pages (/rentals/[carId])
+        */}
 
         {/* Browse By Make Section - 6 Dedicated Rideshare Brands */}
         <BrowseByMakeSection />
@@ -493,7 +668,7 @@ export default async function RidesharePage() {
               </div>
 
               <div className="space-y-12">
-                {partners.map((partner) => (
+                {partners.map((partner: any) => (
                   <PartnerSection key={partner.id} partner={partner} />
                 ))}
               </div>

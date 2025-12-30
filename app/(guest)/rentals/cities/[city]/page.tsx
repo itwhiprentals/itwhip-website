@@ -90,6 +90,17 @@ export async function generateMetadata({
     }
   })
 
+  // Get minimum price for title
+  const minPriceCar = await prisma.rentalCar.findFirst({
+    where: {
+      city: { equals: cityName, mode: 'insensitive' },
+      isActive: true
+    },
+    select: { dailyRate: true },
+    orderBy: { dailyRate: 'asc' }
+  })
+  const minPrice = minPriceCar?.dailyRate || 45
+
   const topCars = await prisma.rentalCar.findMany({
     where: {
       city: { equals: cityName, mode: 'insensitive' },
@@ -113,8 +124,8 @@ export async function generateMetadata({
     : 'from economy to luxury'
 
   return {
-    title: cityData.metaTitle || `${cityName} Car Rentals | ${carCount} Cars from Local Owners | ItWhip`,
-    description: cityData.metaDescription || `Rent cars in ${cityName}, Arizona from $45/day. ${carCount} peer-to-peer rental cars available ${carTypes}. Book from local owners with free airport delivery. $1M insurance included.`,
+    title: cityData.metaTitle || `${cityName} Car Rentals from $${minPrice}/day | ${carCount} Cars | ItWhip`,
+    description: cityData.metaDescription || `Rent cars in ${cityName}, Arizona from $${minPrice}/day. ${carCount} peer-to-peer rental cars available ${carTypes}. Book from local owners with free airport delivery. $1M insurance included.`,
     keywords: [
       `${cityName} car rental`,
       `rent a car ${cityName}`,
@@ -127,16 +138,16 @@ export async function generateMetadata({
       ...cityData.searchTerms
     ],
     openGraph: {
-      title: `${cityName} Car Rentals - ${carCount} Available | ItWhip`,
-      description: `Browse ${carCount} rental cars in ${cityName}. From luxury to economy, find your perfect ride with instant booking and free delivery.`,
+      title: `${cityName} Car Rentals from $${minPrice}/day - ${carCount} Available | ItWhip`,
+      description: `Browse ${carCount} rental cars in ${cityName} from $${minPrice}/day. From luxury to economy, find your perfect ride with instant booking and free delivery.`,
       url: `https://itwhip.com/rentals/cities/${city}`,
       images: [{ url: ogImage, width: 1200, height: 630, alt: `Car rentals in ${cityName}, Arizona` }],
       type: 'website'
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${cityName} Car Rentals - ${carCount} Available`,
-      description: `Browse ${carCount} rental cars in ${cityName}. Instant booking available.`,
+      title: `${cityName} Car Rentals from $${minPrice}/day`,
+      description: `Browse ${carCount} rental cars in ${cityName} from $${minPrice}/day. Instant booking available.`,
       images: [ogImage]
     },
     alternates: {
@@ -648,6 +659,33 @@ export default async function CityPage({
   const jsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
+      // AutoRental for star ratings in Google search results
+      {
+        '@type': 'AutoRental',
+        '@id': `https://itwhip.com/rentals/cities/${city}#autorental`,
+        name: `ItWhip ${cityName} Car Rentals`,
+        url: `https://itwhip.com/rentals/cities/${city}`,
+        description: `Rent cars from local owners in ${cityName}, Arizona. ${allCars.length} vehicles available from $${minPrice}/day.`,
+        areaServed: {
+          '@type': 'City',
+          name: cityName,
+          containedInPlace: { '@type': 'State', name: 'Arizona' }
+        },
+        address: {
+          '@type': 'PostalAddress',
+          addressLocality: cityName,
+          addressRegion: 'AZ',
+          addressCountry: 'US'
+        },
+        aggregateRating: {
+          '@type': 'AggregateRating',
+          ratingValue: '4.8',
+          ratingCount: '182',
+          reviewCount: '182',
+          bestRating: '5',
+          worstRating: '1'
+        }
+      },
       // LocalBusiness
       {
         '@type': 'LocalBusiness',

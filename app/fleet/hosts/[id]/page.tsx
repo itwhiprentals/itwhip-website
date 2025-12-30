@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import ViewPolicyModal from '@/app/fleet/components/ViewPolicyModal'
-import { 
+import {
   IoArrowBackOutline,
   IoPersonOutline,
   IoCarOutline,
@@ -24,7 +24,12 @@ import {
   IoWarningOutline,
   IoCloseCircleOutline,
   IoTimeOutline,
-  IoCalendarOutline
+  IoCalendarOutline,
+  IoIdCardOutline,
+  IoImageOutline,
+  IoEyeOutline,
+  IoDownloadOutline,
+  IoClose
 } from 'react-icons/io5'
 
 export default function HostDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -38,6 +43,16 @@ export default function HostDetailPage({ params }: { params: Promise<{ id: strin
   // Insurance modal states
   const [showPolicyModal, setShowPolicyModal] = useState(false)
   const [processingAction, setProcessingAction] = useState(false)
+
+  // Document viewer state
+  const [showDocumentViewer, setShowDocumentViewer] = useState(false)
+  const [selectedDocument, setSelectedDocument] = useState<{
+    type: string
+    label: string
+    urls: string[]
+    pages: string[]
+  } | null>(null)
+  const [verifyingDocuments, setVerifyingDocuments] = useState(false)
 
   useEffect(() => {
     const loadHost = async () => {
@@ -234,16 +249,24 @@ export default function HostDetailPage({ params }: { params: Promise<{ id: strin
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
-          <Link 
+          <Link
             href="/fleet/hosts?key=phoenix-fleet-2847"
             className="p-2 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-lg"
           >
             <IoArrowBackOutline className="text-xl" />
           </Link>
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white truncate">
-              {host.name}
-            </h1>
+            <div className="flex items-center gap-2 mb-0.5">
+              <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white truncate">
+                {host.name}
+              </h1>
+              {host.documentsVerified && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium text-emerald-700 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/30 rounded-full">
+                  <IoShieldCheckmarkOutline className="text-sm" />
+                  Verified
+                </span>
+              )}
+            </div>
             <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 truncate">
               {host.email} • {host.phone}
             </p>
@@ -443,35 +466,247 @@ export default function HostDetailPage({ params }: { params: Promise<{ id: strin
           )}
 
           {activeTab === 'documents' && (
-            <div className="space-y-4">
-              <h3 className="font-semibold mb-4">Uploaded Documents</h3>
-              {[
-                { key: 'governmentIdUrl', label: 'Government ID' },
-                { key: 'driversLicenseUrl', label: 'Driver\'s License' },
-                { key: 'insuranceDocUrl', label: 'Insurance' },
-              ].map((doc) => (
-                <div key={doc.key} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded">
-                  <span className="text-sm md:text-base">{doc.label}</span>
-                  {host[doc.key] ? (
-                    <a
-                      href={host[doc.key]}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-purple-600 hover:text-purple-700 text-sm"
+            <div className="space-y-6">
+              {/* Document Verification Status */}
+              <div className={`p-4 rounded-lg border ${
+                host.documentsVerified
+                  ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800'
+                  : 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+              }`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {host.documentsVerified ? (
+                      <IoShieldCheckmarkOutline className="text-xl text-emerald-600 dark:text-emerald-400" />
+                    ) : (
+                      <IoTimeOutline className="text-xl text-yellow-600 dark:text-yellow-400" />
+                    )}
+                    <span className="font-medium text-gray-900 dark:text-white">
+                      {host.documentsVerified ? 'Documents Verified' : 'Documents Pending Review'}
+                    </span>
+                  </div>
+                  {!host.documentsVerified && (
+                    <button
+                      onClick={async () => {
+                        if (!confirm(`Verify all documents for ${host.name}? This will mark the host as document-verified.`)) return
+                        setVerifyingDocuments(true)
+                        try {
+                          const response = await fetch(`/fleet/api/hosts/${host.id}?key=phoenix-fleet-2847`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ documentsVerified: true })
+                          })
+                          if (response.ok) {
+                            await refreshHostData()
+                            alert('Documents verified successfully')
+                          }
+                        } catch (error) {
+                          console.error('Failed to verify documents:', error)
+                          alert('Failed to verify documents')
+                        } finally {
+                          setVerifyingDocuments(false)
+                        }
+                      }}
+                      disabled={verifyingDocuments}
+                      className="px-4 py-2 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700 disabled:opacity-50"
                     >
-                      View →
-                    </a>
-                  ) : (
-                    <span className="text-gray-500 text-sm">Not uploaded</span>
+                      {verifyingDocuments ? 'Verifying...' : 'Verify All'}
+                    </button>
                   )}
                 </div>
-              ))}
-              <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm md:text-base">Documents Verified</span>
-                  <span className={`text-sm ${host.documentsVerified ? 'text-green-600' : 'text-red-600'}`}>
-                    {host.documentsVerified ? 'Verified' : 'Not Verified'}
-                  </span>
+              </div>
+
+              {/* Photo ID Section */}
+              <div>
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  <IoIdCardOutline className="text-purple-600" />
+                  Photo ID
+                </h3>
+
+                {host.photoIdType ? (
+                  <div className="space-y-4">
+                    {/* ID Type Label */}
+                    <div className="flex items-center gap-2">
+                      <span className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-sm rounded-full font-medium">
+                        {host.photoIdType === 'GOVERNMENT_ID' ? 'Government ID' :
+                         host.photoIdType === 'DRIVERS_LICENSE' ? "Driver's License" :
+                         host.photoIdType === 'PASSPORT' ? 'Passport' : host.photoIdType}
+                      </span>
+                      {host.photoIdVerified ? (
+                        <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-xs rounded-full">
+                          Verified
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 text-xs rounded-full">
+                          Pending Review
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Photo ID Pages Grid */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {(() => {
+                        const photoIdUrls = host.photoIdUrls || {}
+                        const pages = host.photoIdType === 'PASSPORT'
+                          ? [{ key: 'photo', label: 'Photo Page' }, { key: 'info', label: 'Info Page' }, { key: 'lastPage', label: 'Last Page' }]
+                          : [{ key: 'front', label: 'Front' }, { key: 'back', label: 'Back' }]
+
+                        return pages.map(({ key, label }) => (
+                          <div key={key} className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                            {photoIdUrls[key] ? (
+                              <div className="relative group">
+                                <img
+                                  src={photoIdUrls[key]}
+                                  alt={label}
+                                  className="w-full h-32 object-cover bg-gray-100 dark:bg-gray-800"
+                                />
+                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                  <button
+                                    onClick={() => {
+                                      setSelectedDocument({
+                                        type: 'photoId',
+                                        label: `${host.photoIdType === 'GOVERNMENT_ID' ? 'Government ID' : host.photoIdType === 'DRIVERS_LICENSE' ? "Driver's License" : 'Passport'} - ${label}`,
+                                        urls: [photoIdUrls[key]],
+                                        pages: [label]
+                                      })
+                                      setShowDocumentViewer(true)
+                                    }}
+                                    className="p-2 bg-white/90 rounded-full hover:bg-white"
+                                  >
+                                    <IoEyeOutline className="text-gray-900" />
+                                  </button>
+                                  <a
+                                    href={photoIdUrls[key]}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-2 bg-white/90 rounded-full hover:bg-white"
+                                  >
+                                    <IoDownloadOutline className="text-gray-900" />
+                                  </a>
+                                </div>
+                                <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs py-1 px-2 text-center">
+                                  {label}
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="h-32 flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-800 text-gray-400">
+                                <IoImageOutline className="text-2xl mb-1" />
+                                <span className="text-xs">{label} - Not uploaded</span>
+                              </div>
+                            )}
+                          </div>
+                        ))
+                      })()}
+                    </div>
+
+                    {/* View All Button */}
+                    {host.photoIdUrls && Object.values(host.photoIdUrls).some(url => url) && (
+                      <button
+                        onClick={() => {
+                          const photoIdUrls = host.photoIdUrls || {}
+                          const pages = host.photoIdType === 'PASSPORT'
+                            ? ['photo', 'info', 'lastPage']
+                            : ['front', 'back']
+                          const pageLabels = host.photoIdType === 'PASSPORT'
+                            ? ['Photo Page', 'Info Page', 'Last Page']
+                            : ['Front', 'Back']
+                          setSelectedDocument({
+                            type: 'photoId',
+                            label: host.photoIdType === 'GOVERNMENT_ID' ? 'Government ID' : host.photoIdType === 'DRIVERS_LICENSE' ? "Driver's License" : 'Passport',
+                            urls: pages.map(p => photoIdUrls[p]).filter(Boolean),
+                            pages: pageLabels.filter((_, i) => photoIdUrls[pages[i]])
+                          })
+                          setShowDocumentViewer(true)
+                        }}
+                        className="w-full py-2 text-purple-600 border border-purple-600 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/20 text-sm font-medium"
+                      >
+                        View All Pages
+                      </button>
+                    )}
+
+                    {/* Photo ID Verify Button */}
+                    {!host.photoIdVerified && host.photoIdUrls && Object.keys(host.photoIdUrls).length > 0 && (
+                      <button
+                        onClick={async () => {
+                          if (!confirm(`Verify Photo ID for ${host.name}?`)) return
+                          setVerifyingDocuments(true)
+                          try {
+                            const response = await fetch(`/fleet/api/hosts/${host.id}?key=phoenix-fleet-2847`, {
+                              method: 'PUT',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ photoIdVerified: true })
+                            })
+                            if (response.ok) {
+                              await refreshHostData()
+                              alert('Photo ID verified')
+                            }
+                          } catch (error) {
+                            console.error('Failed to verify:', error)
+                          } finally {
+                            setVerifyingDocuments(false)
+                          }
+                        }}
+                        disabled={verifyingDocuments}
+                        className="w-full py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 text-sm font-medium"
+                      >
+                        {verifyingDocuments ? 'Verifying...' : 'Verify Photo ID'}
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg text-center">
+                    <IoIdCardOutline className="text-4xl text-gray-400 mx-auto mb-2" />
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">No Photo ID uploaded</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Legacy Documents Section */}
+              <div>
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  <IoDocumentTextOutline className="text-purple-600" />
+                  Other Documents
+                </h3>
+                <div className="space-y-3">
+                  {[
+                    { key: 'insuranceDocUrl', label: 'Insurance Document', icon: IoShieldCheckmarkOutline },
+                    { key: 'governmentIdUrl', label: 'Government ID (Legacy)', icon: IoIdCardOutline },
+                    { key: 'driversLicenseUrl', label: "Driver's License (Legacy)", icon: IoCarOutline },
+                  ].map((doc) => (
+                    <div key={doc.key} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center gap-3">
+                        <doc.icon className="text-xl text-gray-500" />
+                        <span className="text-sm md:text-base text-gray-900 dark:text-white">{doc.label}</span>
+                      </div>
+                      {host[doc.key] ? (
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              setSelectedDocument({
+                                type: doc.key,
+                                label: doc.label,
+                                urls: [host[doc.key]],
+                                pages: ['Document']
+                              })
+                              setShowDocumentViewer(true)
+                            }}
+                            className="p-2 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg"
+                          >
+                            <IoEyeOutline className="text-lg" />
+                          </button>
+                          <a
+                            href={host[doc.key]}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg"
+                          >
+                            <IoDownloadOutline className="text-lg" />
+                          </a>
+                        </div>
+                      ) : (
+                        <span className="text-gray-500 text-sm">Not uploaded</span>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -1274,6 +1509,101 @@ export default function HostDetailPage({ params }: { params: Promise<{ id: strin
           provider={host.insuranceProvider}
         />
       )}
+
+      {/* Document Viewer Bottom Sheet */}
+      {showDocumentViewer && selectedDocument && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/60"
+            onClick={() => setShowDocumentViewer(false)}
+          />
+
+          {/* Bottom Sheet */}
+          <div className="relative w-full max-w-4xl bg-white dark:bg-gray-800 rounded-t-2xl max-h-[90vh] overflow-hidden animate-slide-up">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-white">
+                  {selectedDocument.label}
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {selectedDocument.pages.length} page{selectedDocument.pages.length !== 1 ? 's' : ''}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowDocumentViewer(false)}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
+              >
+                <IoClose className="text-xl" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-4 overflow-y-auto max-h-[calc(90vh-140px)]">
+              {selectedDocument.urls.length === 1 ? (
+                // Single image view
+                <div className="flex justify-center">
+                  <img
+                    src={selectedDocument.urls[0]}
+                    alt={selectedDocument.label}
+                    className="max-w-full max-h-[60vh] object-contain rounded-lg"
+                  />
+                </div>
+              ) : (
+                // Multiple images grid
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {selectedDocument.urls.map((url, index) => (
+                    <div key={index} className="space-y-2">
+                      <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {selectedDocument.pages[index]}
+                      </div>
+                      <img
+                        src={url}
+                        alt={selectedDocument.pages[index]}
+                        className="w-full max-h-[40vh] object-contain bg-gray-100 dark:bg-gray-900 rounded-lg"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Footer Actions */}
+            <div className="flex gap-3 p-4 border-t border-gray-200 dark:border-gray-700">
+              <a
+                href={selectedDocument.urls[0]}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 py-2 text-center text-purple-600 border border-purple-600 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/20 text-sm font-medium"
+              >
+                Open in New Tab
+              </a>
+              <button
+                onClick={() => setShowDocumentViewer(false)}
+                className="flex-1 py-2 text-center bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 text-sm font-medium"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Slide up animation */}
+      <style jsx>{`
+        @keyframes slide-up {
+          from {
+            transform: translateY(100%);
+          }
+          to {
+            transform: translateY(0);
+          }
+        }
+        .animate-slide-up {
+          animation: slide-up 0.3s ease-out;
+        }
+      `}</style>
     </div>
   )
 }

@@ -81,7 +81,7 @@ export default function HowItWorksPage() {
       title: 'Pick Up & Drive',
       description: 'Meet your host or use contactless pickup. $1M liability coverage included on every trip.',
       details: [
-        'Hotel lobby pickup at 50+ Arizona hotels',
+        'Convenient pickup across 10+ Arizona cities',
         'Phoenix Sky Harbor Airport location',
         'Optional delivery to your address',
         '$1M liability coverage included',
@@ -154,8 +154,8 @@ export default function HowItWorksPage() {
     {
       icon: IoLocationOutline,
       title: 'Convenient Pickup',
-      description: 'Pick up at 50+ Arizona hotels, Sky Harbor Airport, or get it delivered.',
-      highlight: 'Free hotel delivery'
+      description: 'Pick up at Sky Harbor Airport, meet your host locally, or get it delivered.',
+      highlight: 'Free delivery options'
     },
     {
       icon: IoLeafOutline,
@@ -313,7 +313,7 @@ export default function HowItWorksPage() {
   const faqs = [
     {
       question: 'How is ItWhip different from Turo?',
-      answer: 'ItWhip is a peer-to-peer car sharing platform focused on Arizona. We offer transparent insurance tiers where YOU choose your earnings (40-90%), $1M liability coverage on all trips, advanced Mileage Forensics™ fraud prevention, and ESG impact tracking. We also partner directly with 50+ Arizona hotels for convenient guest pickup.',
+      answer: 'ItWhip is a peer-to-peer car sharing platform focused on Arizona. We offer transparent insurance tiers where YOU choose your earnings (40-90%), $1M liability coverage on all trips, advanced Mileage Forensics™ fraud prevention, and ESG impact tracking. We serve 10+ cities across the Phoenix metro and Tucson areas.',
       category: 'general'
     },
     {
@@ -328,7 +328,7 @@ export default function HowItWorksPage() {
     },
     {
       question: 'What are the pickup options?',
-      answer: 'Multiple convenient options: meet your host at one of 50+ partner hotel lobbies, pick up at our Phoenix Sky Harbor Airport location, or request delivery to your address (fees may apply). You\'ll receive detailed instructions after booking.',
+      answer: 'Multiple convenient options: meet your host at a local spot, pick up at Phoenix Sky Harbor Airport, or request delivery to your address (fees may apply). You\'ll receive detailed instructions after booking.',
       category: 'guest'
     },
     {
@@ -864,8 +864,8 @@ export default function HowItWorksPage() {
                 <div className="text-xs text-gray-600 dark:text-gray-400">Host Payments</div>
               </div>
               <div>
-                <div className="text-3xl font-bold text-purple-600 mb-1">50+</div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">Hotel Partners</div>
+                <div className="text-3xl font-bold text-purple-600 mb-1">161+</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Cars Available</div>
               </div>
               <div>
                 <div className="text-3xl font-bold text-purple-600 mb-1">90%</div>

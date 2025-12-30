@@ -17,6 +17,8 @@ import {
 import { SectionHeader, Alert } from '../components'
 import { LocationPicker } from '../edit/components/LocationPicker'
 import { geocodeAddress, getCityFallbackCoordinates } from '@/app/lib/geocoding/mapbox'
+import { decodeVIN, isValidVIN } from '@/app/lib/utils/vin-decoder'
+import { getAllMakes, getModelsByMake, getYears, getTrimsByModel } from '@/app/lib/data/vehicles'
 
 export default function AddCarPage() {
   const router = useRouter()
@@ -27,6 +29,18 @@ export default function AddCarPage() {
   const [uploadingPhotos, setUploadingPhotos] = useState(false)
   const [hosts, setHosts] = useState<any[]>([])
   const [isGeocoding, setIsGeocoding] = useState(false)
+
+  // VIN Decoder state
+  const [vin, setVin] = useState('')
+  const [vinDecoding, setVinDecoding] = useState(false)
+  const [vinDecoded, setVinDecoded] = useState(false)
+  const [vinError, setVinError] = useState('')
+
+  // Vehicle dropdown data
+  const availableMakes = getAllMakes()
+  const availableYears = getYears()
+  const [availableModels, setAvailableModels] = useState<string[]>([])
+  const [availableTrims, setAvailableTrims] = useState<string[]>([])
   
   const [formData, setFormData] = useState<Partial<CarFormData>>({
     seats: 4,
@@ -221,6 +235,65 @@ export default function AddCarPage() {
     setFormData({ ...formData, [field]: value })
   }
 
+  // VIN Decoder handler
+  const handleVinDecode = async () => {
+    if (!isValidVIN(vin)) {
+      setVinError('Invalid VIN. Must be 17 characters (no I, O, or Q)')
+      return
+    }
+
+    setVinDecoding(true)
+    setVinError('')
+
+    const result = await decodeVIN(vin)
+
+    if (result && result.make) {
+      // Update form with decoded values
+      const models = getModelsByMake(result.make)
+      setAvailableModels(models)
+
+      setFormData(prev => ({
+        ...prev,
+        make: result.make,
+        model: result.model,
+        year: parseInt(result.year) || prev.year,
+      }))
+
+      // Update trims if we have make/model/year
+      if (result.make && result.model && result.year) {
+        setAvailableTrims(getTrimsByModel(result.make, result.model, result.year))
+      }
+
+      setVinDecoded(true)
+      setVinError('')
+    } else {
+      setVinError('Could not decode VIN. Please enter vehicle info manually.')
+    }
+
+    setVinDecoding(false)
+  }
+
+  // Dropdown change handlers
+  const handleMakeChange = (make: string) => {
+    setFormData(prev => ({ ...prev, make, model: '' }))
+    setAvailableModels(make ? getModelsByMake(make) : [])
+    setAvailableTrims([])
+  }
+
+  const handleModelChange = (model: string) => {
+    setFormData(prev => ({ ...prev, model }))
+    if (formData.make && formData.year) {
+      setAvailableTrims(getTrimsByModel(formData.make, model, String(formData.year)))
+    }
+  }
+
+  const handleYearChange = (year: number) => {
+    setFormData(prev => ({ ...prev, year }))
+    if (formData.make && formData.model) {
+      setAvailableTrims(getTrimsByModel(formData.make, formData.model, String(year)))
+    }
+  }
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       <SectionHeader 
@@ -253,34 +326,85 @@ export default function AddCarPage() {
           )}
         </div>
 
+        {/* VIN Decoder */}
+        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 sm:p-6 border border-blue-200 dark:border-blue-800">
+          <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">VIN Decoder</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Enter VIN to auto-fill vehicle info, or select manually below</p>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={vin}
+              onChange={(e) => {
+                setVin(e.target.value.toUpperCase())
+                setVinDecoded(false)
+                setVinError('')
+              }}
+              placeholder="Enter 17-character VIN"
+              maxLength={17}
+              className="flex-1 px-3 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase font-mono"
+            />
+            <button
+              type="button"
+              onClick={handleVinDecode}
+              disabled={vin.length !== 17 || vinDecoding}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
+            >
+              {vinDecoding ? 'Decoding...' : 'Decode'}
+            </button>
+          </div>
+          {vinDecoded && (
+            <p className="text-green-600 dark:text-green-400 text-sm mt-2">✓ VIN decoded successfully</p>
+          )}
+          {vinError && (
+            <p className="text-red-600 dark:text-red-400 text-sm mt-2">{vinError}</p>
+          )}
+        </div>
+
         {/* Basic Info */}
         <div className="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
           <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Vehicle Information</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <input
-              type="text"
-              placeholder="Make"
-              value={formData.make || ''}
-              onChange={(e) => updateForm('make', e.target.value)}
-              className="px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              required
-            />
-            <input
-              type="text"
-              placeholder="Model"
-              value={formData.model || ''}
-              onChange={(e) => updateForm('model', e.target.value)}
-              className="px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              required
-            />
-            <input
-              type="number"
-              placeholder="Year"
+            {/* Year Dropdown */}
+            <select
               value={formData.year || ''}
-              onChange={(e) => updateForm('year', parseInt(e.target.value))}
-              className="px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              onChange={(e) => handleYearChange(parseInt(e.target.value))}
+              className="px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
-            />
+            >
+              <option value="">Select Year</option>
+              {availableYears.map(year => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
+
+            {/* Make Dropdown */}
+            <select
+              value={formData.make || ''}
+              onChange={(e) => handleMakeChange(e.target.value)}
+              className="px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              required
+            >
+              <option value="">Select Make</option>
+              {availableMakes.map(make => (
+                <option key={make} value={make}>{make}</option>
+              ))}
+            </select>
+
+            {/* Model Dropdown */}
+            <select
+              value={formData.model || ''}
+              onChange={(e) => handleModelChange(e.target.value)}
+              disabled={!formData.make}
+              className="px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              required
+            >
+              <option value="">{formData.make ? 'Select Model' : 'Select Make First'}</option>
+              {availableModels.map(model => (
+                <option key={model} value={model}>{model}</option>
+              ))}
+            </select>
+
+            {/* Color */}
             <input
               type="text"
               placeholder="Color"
@@ -288,6 +412,8 @@ export default function AddCarPage() {
               onChange={(e) => updateForm('color', e.target.value)}
               className="px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
+
+            {/* Category */}
             <select
               value={formData.category}
               onChange={(e) => updateForm('category', e.target.value)}
@@ -297,6 +423,8 @@ export default function AddCarPage() {
                 <option key={cat.value} value={cat.value}>{cat.label}</option>
               ))}
             </select>
+
+            {/* Transmission */}
             <select
               value={formData.transmission}
               onChange={(e) => updateForm('transmission', e.target.value)}
@@ -306,6 +434,8 @@ export default function AddCarPage() {
                 <option key={type.value} value={type.value}>{type.label}</option>
               ))}
             </select>
+
+            {/* Fuel Type */}
             <select
               value={formData.fuelType}
               onChange={(e) => updateForm('fuelType', e.target.value)}
@@ -315,6 +445,8 @@ export default function AddCarPage() {
                 <option key={type.value} value={type.value}>{type.label}</option>
               ))}
             </select>
+
+            {/* Seats */}
             <input
               type="number"
               placeholder="Seats"

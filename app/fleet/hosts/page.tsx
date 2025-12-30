@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { 
+import {
   IoPersonOutline,
   IoCarOutline,
   IoCheckmarkCircleOutline,
@@ -16,7 +16,8 @@ import {
   IoSearchOutline,
   IoFilterOutline,
   IoArrowBackOutline,
-  IoEllipsisVertical
+  IoEllipsisVertical,
+  IoShieldCheckmarkOutline
 } from 'react-icons/io5'
 
 interface Host {
@@ -27,18 +28,19 @@ interface Host {
   city: string
   state: string
   profilePhoto?: string
-  
+
   hostType: string
   approvalStatus: string
   active: boolean
-  
+  documentsVerified: boolean
+
   totalTrips: number
   rating: number
   commissionRate: number
-  
+
   carCount: number
   activeCarCount: number
-  
+
   joinedAt: string
   approvedAt?: string
 }
@@ -301,9 +303,17 @@ export default function FleetHostsPage() {
                   <div className="flex-1 min-w-0">
                     {/* Name and Status - Stack on Mobile */}
                     <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
-                      <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white truncate">
-                        {host.name}
-                      </h3>
+                      <div className="flex items-center gap-1.5">
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white truncate">
+                          {host.name}
+                        </h3>
+                        {host.documentsVerified && (
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-xs font-medium text-emerald-700 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/30 rounded-full">
+                            <IoShieldCheckmarkOutline className="text-sm" />
+                            <span className="hidden sm:inline">Verified</span>
+                          </span>
+                        )}
+                      </div>
                       <div className="flex gap-1.5">
                         <span className={`px-1.5 py-0.5 text-xs rounded-full ${getStatusColor(host.approvalStatus)}`}>
                           {host.approvalStatus}

@@ -22,6 +22,10 @@ export default function robots(): MetadataRoute.Robots {
           '/sys-2847/',
           '/_next/',
           '/static/',
+          // B2B hotel features (keep logic, hide from Google)
+          '/hotel-portal/',
+          '/hotels/',
+          '/corporate/',
         ],
       },
     ],

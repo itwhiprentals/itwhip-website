@@ -120,7 +120,7 @@ const faqData = {
       {
         id: 'pickup-options',
         question: 'What are the pickup options?',
-        answer: 'ItWhip offers flexible pickup options: (1) Hotel delivery—free delivery to 50+ partner hotels across Arizona, (2) Airport pickup—convenient locations near Phoenix Sky Harbor (PHX), (3) Home delivery—have the car delivered to your address (fees may apply), or (4) Host meetup—meet the host at a mutually agreed location. You\'ll receive detailed pickup instructions after booking.',
+        answer: 'ItWhip offers flexible pickup options: (1) Hotel delivery—free delivery to your accommodation, (2) Airport pickup—convenient locations near Phoenix Sky Harbor (PHX), (3) Home delivery—have the car delivered to your address (fees may apply), or (4) Host meetup—meet the host at a mutually agreed location. You\'ll receive detailed pickup instructions after booking.',
         link: { text: 'Browse available cars →', href: '/rentals/search' }
       },
       {
