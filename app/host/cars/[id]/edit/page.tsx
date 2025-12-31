@@ -965,9 +965,9 @@ export default function EditCarPage() {
                 </h1>
               </div>
 
-              {/* Model + Trim */}
+              {/* Model + Trim + Drivetrain */}
               <p className="text-lg text-gray-600 dark:text-gray-400 mb-2">
-                {formData.model}{formData.trim ? ` ${formData.trim}` : ''}
+                {formData.model}{formData.trim ? ` ${formData.trim}` : ''}{formData.driveType ? ` ${formData.driveType.toUpperCase()}` : ''}
               </p>
 
               {/* Badges Row - using effectiveSpecs for accurate data */}
