@@ -1667,10 +1667,13 @@ export default function EditCarPage() {
                       value={formData.registrationExpiryDate}
                       onChange={(e) => setFormData({ ...formData, registrationExpiryDate: e.target.value })}
                       disabled={isLocked}
+                      placeholder="Select expiration date"
                       style={{ textAlign: 'left', WebkitAppearance: 'none' }}
-                      className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white text-left [&::-webkit-datetime-edit]:text-left [&::-webkit-datetime-edit-fields-wrapper]:text-left [&::-webkit-date-and-time-value]:text-left ${isLocked ? 'opacity-60 cursor-not-allowed !bg-gray-50 dark:!bg-gray-900' : ''}`}
+                      className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white text-left [&::-webkit-datetime-edit]:text-left [&::-webkit-datetime-edit-fields-wrapper]:text-left [&::-webkit-date-and-time-value]:text-left ${!formData.registrationExpiryDate ? 'text-gray-400' : ''} ${isLocked ? 'opacity-60 cursor-not-allowed !bg-gray-50 dark:!bg-gray-900' : ''}`}
                     />
-                    <p className="text-xs text-gray-500 mt-1">Date shown on registration card</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {formData.registrationExpiryDate ? 'Date shown on registration card' : 'Select the expiration date from your registration card'}
+                    </p>
                   </div>
                   
                   <div>
