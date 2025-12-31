@@ -851,23 +851,23 @@ export default function EditCarPage() {
 
   const toggleFeature = (feature: string) => {
     if (car?.hasActiveClaim) return
-    
+    const currentFeatures = formData.features || []
     setFormData({
       ...formData,
-      features: formData.features.includes(feature)
-        ? formData.features.filter(f => f !== feature)
-        : [...formData.features, feature]
+      features: currentFeatures.includes(feature)
+        ? currentFeatures.filter(f => f !== feature)
+        : [...currentFeatures, feature]
     })
   }
 
   const toggleRule = (rule: string) => {
     if (car?.hasActiveClaim) return
-    
+    const currentRules = formData.rules || []
     setFormData({
       ...formData,
-      rules: formData.rules.includes(rule)
-        ? formData.rules.filter(r => r !== rule)
-        : [...formData.rules, rule]
+      rules: currentRules.includes(rule)
+        ? currentRules.filter(r => r !== rule)
+        : [...currentRules, rule]
     })
   }
 
@@ -1667,7 +1667,8 @@ export default function EditCarPage() {
                       value={formData.registrationExpiryDate}
                       onChange={(e) => setFormData({ ...formData, registrationExpiryDate: e.target.value })}
                       disabled={isLocked}
-                      className={`w-full max-w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white text-left ${isLocked ? 'opacity-60 cursor-not-allowed !bg-gray-50 dark:!bg-gray-900' : ''}`}
+                      style={{ textAlign: 'left', WebkitAppearance: 'none' }}
+                      className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white text-left [&::-webkit-datetime-edit]:text-left [&::-webkit-datetime-edit-fields-wrapper]:text-left [&::-webkit-date-and-time-value]:text-left ${isLocked ? 'opacity-60 cursor-not-allowed !bg-gray-50 dark:!bg-gray-900' : ''}`}
                     />
                     <p className="text-xs text-gray-500 mt-1">Date shown on registration card</p>
                   </div>
@@ -2247,7 +2248,8 @@ export default function EditCarPage() {
                     const groupedFeatures = groupFeaturesByCategory(autoFeatures)
 
                     // Track disabled features in formData.features (inverted - features array contains ACTIVE features)
-                    const activeFeatures = formData.features.length > 0 ? formData.features : autoFeatures
+                    const currentFeatures = formData.features || []
+                    const activeFeatures = currentFeatures.length > 0 ? currentFeatures : autoFeatures
 
                     return (
                       <div className="space-y-4">
@@ -2333,7 +2335,7 @@ export default function EditCarPage() {
                       <label key={rule} className={`flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 ${isLocked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
                         <input
                           type="checkbox"
-                          checked={formData.rules.includes(rule)}
+                          checked={(formData.rules || []).includes(rule)}
                           onChange={() => toggleRule(rule)}
                           disabled={isLocked}
                           className="w-4 h-4 text-purple-600 rounded focus:ring-purple-600"
