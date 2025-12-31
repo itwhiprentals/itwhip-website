@@ -425,9 +425,10 @@ export default function EditCarPage() {
       doors: lookupSpecs.doors ?? formData.doors,
       carType: lookupSpecs.carType ?? formData.carType,
       fuelType: lookupSpecs.fuelType ?? formData.fuelType,
-      transmission: formData.transmission
+      transmission: formData.transmission,
+      driveType: formData.driveType
     }
-  }, [formData.make, formData.model, formData.year, formData.seats, formData.doors, formData.carType, formData.fuelType, formData.transmission])
+  }, [formData.make, formData.model, formData.year, formData.seats, formData.doors, formData.carType, formData.fuelType, formData.transmission, formData.driveType])
 
   // Helper function to convert text to Title Case
   const toTitleCase = (str: string): string => {
@@ -530,6 +531,17 @@ export default function EditCarPage() {
             updates.carType = mappedType.toLowerCase()
             decodedFields.push('carType')
           }
+        }
+
+        // Add drive type if available (AWD, FWD, RWD, 4WD)
+        if (result.driveType) {
+          const driveLower = result.driveType.toLowerCase()
+          if (driveLower.includes('all') || driveLower.includes('awd')) updates.driveType = 'AWD'
+          else if (driveLower.includes('front') || driveLower.includes('fwd')) updates.driveType = 'FWD'
+          else if (driveLower.includes('rear') || driveLower.includes('rwd')) updates.driveType = 'RWD'
+          else if (driveLower.includes('4x4') || driveLower.includes('4wd') || driveLower.includes('four')) updates.driveType = '4WD'
+          else updates.driveType = result.driveType.toUpperCase()
+          decodedFields.push('driveType')
         }
 
         // Update form data
@@ -967,7 +979,7 @@ export default function EditCarPage() {
 
               {/* Model + Trim + Drivetrain */}
               <p className="text-lg text-gray-600 dark:text-gray-400 mb-2">
-                {formData.model}{formData.trim ? ` ${formData.trim}` : ''}{formData.driveType ? ` ${formData.driveType.toUpperCase()}` : ''}
+                {formData.model}{formData.trim ? ` ${formData.trim}` : ''}{effectiveSpecs.driveType ? ` ${effectiveSpecs.driveType.toUpperCase()}` : ''}
               </p>
 
               {/* Badges Row - using effectiveSpecs for accurate data */}
@@ -1000,13 +1012,13 @@ export default function EditCarPage() {
                     {effectiveSpecs.transmission}
                   </span>
                 )}
-                {effectiveSpecs.transmission && formData.driveType && (
+                {effectiveSpecs.transmission && effectiveSpecs.driveType && (
                   <span className="text-gray-300 dark:text-gray-600">•</span>
                 )}
-                {formData.driveType && (
-                  <span className="uppercase">{formData.driveType}</span>
+                {effectiveSpecs.driveType && (
+                  <span className="uppercase">{effectiveSpecs.driveType}</span>
                 )}
-                {(formData.driveType || effectiveSpecs.transmission) && effectiveSpecs.seats && (
+                {(effectiveSpecs.driveType || effectiveSpecs.transmission) && effectiveSpecs.seats && (
                   <span className="text-gray-300 dark:text-gray-600">•</span>
                 )}
                 {effectiveSpecs.seats && (
@@ -1054,7 +1066,7 @@ export default function EditCarPage() {
                           {car.activeClaim.bookingCode}
                         </span>
                       </div>
-                      {car.activeClaimCount && car.activeClaimCount > 1 && (
+                      {car.activeClaimCount > 1 && (
                         <div className="sm:col-span-2">
                           <span className="text-gray-600 dark:text-gray-400">Total Active Claims:</span>
                           <span className="ml-2 font-medium text-gray-900 dark:text-white">
@@ -1583,8 +1595,9 @@ export default function EditCarPage() {
                       </div>
                     </div>
 
-                    {/* Coordinates display */}
-                    {formData.latitude && formData.longitude && (
+                    {/* Coordinates display - only show if coordinates are valid (not 0,0) */}
+                    {formData.latitude != null && formData.longitude != null &&
+                     (formData.latitude !== 0 || formData.longitude !== 0) && (
                       <div className="md:col-span-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
                         <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400">
                           <IoCheckmarkCircle className="w-4 h-4" />
@@ -1645,7 +1658,7 @@ export default function EditCarPage() {
                     <p className="text-xs text-gray-500 mt-1">State where vehicle is registered</p>
                   </div>
                   
-                  <div>
+                  <div className="min-w-0">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Registration Expiration Date <span className="text-red-500">*</span>
                     </label>
@@ -1654,7 +1667,7 @@ export default function EditCarPage() {
                       value={formData.registrationExpiryDate}
                       onChange={(e) => setFormData({ ...formData, registrationExpiryDate: e.target.value })}
                       disabled={isLocked}
-                      className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white ${isLocked ? 'opacity-60 cursor-not-allowed !bg-gray-50 dark:!bg-gray-900' : ''}`}
+                      className={`w-full max-w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white ${isLocked ? 'opacity-60 cursor-not-allowed !bg-gray-50 dark:!bg-gray-900' : ''}`}
                     />
                     <p className="text-xs text-gray-500 mt-1">Date shown on registration card</p>
                   </div>
