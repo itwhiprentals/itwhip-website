@@ -1,7 +1,7 @@
 // app/host/cars/[id]/edit/page.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -21,6 +21,7 @@ import { decodeVIN, isValidVIN } from '@/app/lib/utils/vin-decoder'
 import { getVehicleFeatures, mapBodyClassToCarType, groupFeaturesByCategory } from '@/app/lib/data/vehicle-features'
 import VehicleBadge from '@/app/components/VehicleBadge'
 import { getVehicleClass, formatFuelTypeBadge } from '@/app/lib/utils/vehicleClassification'
+import { getVehicleSpecData } from '@/app/lib/utils/vehicleSpec'
 import AddressAutocomplete from './components/AddressAutocomplete'
 import HostAvailabilityCalendar from './components/HostAvailabilityCalendar'
 import {
@@ -405,6 +406,28 @@ export default function EditCarPage() {
 
   // Track which fields were populated by VIN decode
   const [vinDecodedFields, setVinDecodedFields] = useState<string[]>([])
+
+  // Compute effective vehicle specs from database lookup (make/model/year)
+  // PRIORITY: Vehicle database lookup > VIN-decoded values
+  // Reason: VIN decoder counts hatch as door (5 doors), we want passenger doors (4)
+  // Our vehicle database has customer-friendly specs that match what Carvana shows
+  const effectiveSpecs = useMemo(() => {
+    if (!formData.make || !formData.model || !formData.year) {
+      return { seats: null, doors: null, carType: null, fuelType: null, transmission: null }
+    }
+
+    const lookupSpecs = getVehicleSpecData(formData.make, formData.model, String(formData.year))
+
+    return {
+      // ALWAYS prefer vehicle database lookup if available
+      // Falls back to formData (database) only if lookup returns null
+      seats: lookupSpecs.seats ?? formData.seats,
+      doors: lookupSpecs.doors ?? formData.doors,
+      carType: lookupSpecs.carType ?? formData.carType,
+      fuelType: lookupSpecs.fuelType ?? formData.fuelType,
+      transmission: formData.transmission
+    }
+  }, [formData.make, formData.model, formData.year, formData.seats, formData.doors, formData.carType, formData.fuelType, formData.transmission])
 
   // Helper function to convert text to Title Case
   const toTitleCase = (str: string): string => {
@@ -932,62 +955,70 @@ export default function EditCarPage() {
               </button>
             </div>
 
-            {/* Car name and stats */}
-            <div>
-              <div className="flex items-center gap-2 flex-wrap mb-1">
+            {/* Car name and stats - Mobile: centered stacked layout, Desktop: left-aligned inline */}
+            <div className="text-center sm:text-left">
+              {/* Year + Make */}
+              <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap mb-1">
                 {isLocked && <IoLockClosedOutline className="w-6 h-6 text-red-500" />}
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
                   {formData.year} {formData.make}
                 </h1>
-                {getVehicleClass(formData.make, formData.model, formData.carType as any) && (
-                  <VehicleBadge label={getVehicleClass(formData.make, formData.model, formData.carType as any)!} />
-                )}
-                {formatFuelTypeBadge(formData.fuelType) && (
-                  <VehicleBadge label={formatFuelTypeBadge(formData.fuelType)!} />
-                )}
-                {formData.carType && (
-                  <VehicleBadge label={formData.carType.charAt(0).toUpperCase() + formData.carType.slice(1)} />
-                )}
               </div>
-              {/* Model/Trim + Specs Row */}
-              <div className="flex items-center gap-3 text-lg text-gray-600 dark:text-gray-400 mb-2 flex-wrap">
-                <span>{formData.model}{formData.trim ? ` ${formData.trim}` : ''}</span>
-                {formData.doors && (
-                  <>
-                    <span className="text-gray-300 dark:text-gray-600">•</span>
-                    <span className="flex items-center gap-1 text-sm">
-                      <IoEnterOutline className="w-4 h-4" />
-                      {formData.doors} Doors
-                    </span>
-                  </>
+
+              {/* Model + Trim */}
+              <p className="text-lg text-gray-600 dark:text-gray-400 mb-2">
+                {formData.model}{formData.trim ? ` ${formData.trim}` : ''}
+              </p>
+
+              {/* Badges Row - using effectiveSpecs for accurate data */}
+              <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap mb-2">
+                {getVehicleClass(formData.make, formData.model, effectiveSpecs.carType as any) && (
+                  <VehicleBadge label={getVehicleClass(formData.make, formData.model, effectiveSpecs.carType as any)!} />
                 )}
-                {formData.transmission && (
-                  <>
-                    <span className="text-gray-300 dark:text-gray-600">•</span>
-                    <span className="flex items-center gap-1 capitalize text-sm">
-                      <IoCogOutline className="w-4 h-4" />
-                      {formData.transmission}
-                    </span>
-                  </>
+                {formatFuelTypeBadge(effectiveSpecs.fuelType) && (
+                  <VehicleBadge label={formatFuelTypeBadge(effectiveSpecs.fuelType)!} />
                 )}
-                {formData.driveType && (
-                  <>
-                    <span className="text-gray-300 dark:text-gray-600">•</span>
-                    <span className="uppercase text-sm">{formData.driveType}</span>
-                  </>
-                )}
-                {formData.seats && (
-                  <>
-                    <span className="text-gray-300 dark:text-gray-600">•</span>
-                    <span className="flex items-center gap-1 text-sm">
-                      <IoPeopleOutline className="w-4 h-4" />
-                      {formData.seats} Seats
-                    </span>
-                  </>
+                {effectiveSpecs.carType && (
+                  <VehicleBadge label={String(effectiveSpecs.carType).charAt(0).toUpperCase() + String(effectiveSpecs.carType).slice(1)} />
                 )}
               </div>
 
-              <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+              {/* Specs Row: Doors • Transmission • DriveType • Seats - using effectiveSpecs */}
+              <div className="flex items-center justify-center sm:justify-start gap-3 text-sm text-gray-600 dark:text-gray-400 mb-2 flex-wrap">
+                {effectiveSpecs.doors && (
+                  <span className="flex items-center gap-1">
+                    <IoEnterOutline className="w-4 h-4" />
+                    {effectiveSpecs.doors} Doors
+                  </span>
+                )}
+                {effectiveSpecs.doors && effectiveSpecs.transmission && (
+                  <span className="text-gray-300 dark:text-gray-600">•</span>
+                )}
+                {effectiveSpecs.transmission && (
+                  <span className="flex items-center gap-1 capitalize">
+                    <IoCogOutline className="w-4 h-4" />
+                    {effectiveSpecs.transmission}
+                  </span>
+                )}
+                {effectiveSpecs.transmission && formData.driveType && (
+                  <span className="text-gray-300 dark:text-gray-600">•</span>
+                )}
+                {formData.driveType && (
+                  <span className="uppercase">{formData.driveType}</span>
+                )}
+                {(formData.driveType || effectiveSpecs.transmission) && effectiveSpecs.seats && (
+                  <span className="text-gray-300 dark:text-gray-600">•</span>
+                )}
+                {effectiveSpecs.seats && (
+                  <span className="flex items-center gap-1">
+                    <IoPeopleOutline className="w-4 h-4" />
+                    {effectiveSpecs.seats} Seats
+                  </span>
+                )}
+              </div>
+
+              {/* Trip stats */}
+              <div className="flex items-center justify-center sm:justify-start gap-4 text-sm text-gray-600 dark:text-gray-400">
                 <span>{car.totalTrips} trips completed</span>
                 <span className="flex items-center gap-1">
                   <IoStar className="w-4 h-4 text-yellow-500" />
