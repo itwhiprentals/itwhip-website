@@ -67,6 +67,12 @@ function HostSignupContent() {
     year: '',
     color: '',
     trim: '',
+    fuelType: '',
+    doors: '',
+    bodyClass: '',
+    transmission: '',
+    driveType: '',
+    address: '',
     city: '',
     state: '',
     zipCode: ''
@@ -129,6 +135,7 @@ function HostSignupContent() {
         email: formData.email,
         phone: formData.phone,
         // Location info
+        address: vehicleData.address || null,
         city: vehicleData.city,
         state: vehicleData.state,
         zipCode: vehicleData.zipCode,
@@ -140,6 +147,12 @@ function HostSignupContent() {
         vehicleYear: vehicleData.year,
         vehicleColor: vehicleData.color,
         vehicleTrim: vehicleData.trim || null,
+        // VIN-decoded specs
+        vehicleFuelType: vehicleData.fuelType || null,
+        vehicleDoors: vehicleData.doors || null,
+        vehicleBodyClass: vehicleData.bodyClass || null,
+        vehicleTransmission: vehicleData.transmission || null,
+        vehicleDriveType: vehicleData.driveType || null,
         agreeToTerms: formData.agreeToTerms
       }
 

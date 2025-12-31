@@ -13,6 +13,31 @@ import { nanoid } from 'nanoid'
 import { sendOAuthWelcomeEmail } from '@/app/lib/email/oauth-welcome-sender'
 import { sendHostOAuthWelcomeEmail } from '@/app/lib/email/host-oauth-welcome-sender'
 
+// Helper to map NHTSA bodyClass to our carType
+function mapBodyClassToCarType(bodyClass: string | null): string | null {
+  if (!bodyClass) return null
+  const bc = bodyClass.toLowerCase()
+  if (bc.includes('sedan')) return 'sedan'
+  if (bc.includes('coupe')) return 'coupe'
+  if (bc.includes('convertible')) return 'convertible'
+  if (bc.includes('hatchback')) return 'hatchback'
+  if (bc.includes('wagon') || bc.includes('sport utility')) return 'suv'
+  if (bc.includes('pickup') || bc.includes('truck')) return 'truck'
+  if (bc.includes('van') || bc.includes('minivan')) return 'minivan'
+  if (bc.includes('crossover')) return 'crossover'
+  return null
+}
+
+// Helper to normalize NHTSA transmission values
+function normalizeTransmission(transmission: string | null): string | null {
+  if (!transmission) return null
+  const t = transmission.toLowerCase()
+  if (t.includes('automatic') || t.includes('auto')) return 'automatic'
+  if (t.includes('manual')) return 'manual'
+  if (t.includes('cvt')) return 'cvt'
+  return 'automatic'  // Default to automatic if unclear
+}
+
 // JWT secrets (same as oauth-redirect)
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key'
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'fallback-refresh-secret'
@@ -307,17 +332,18 @@ export async function POST(request: NextRequest) {
               city: carData!.city,
               state: carData!.state,
               zipCode: carData!.zipCode,
-              address: '',
+              address: carData!.address || '',
 
               // Status - NOT ACTIVE until fully completed
               isActive: false,
 
-              // Defaults
-              carType: 'midsize',
-              seats: 5,
-              doors: 4,
-              transmission: 'automatic',
-              fuelType: 'gas',
+              // VIN-decoded specs (with sensible defaults)
+              carType: mapBodyClassToCarType(carData!.bodyClass) || 'midsize',
+              seats: 5,  // NHTSA doesn't provide seats - will be updated from our database
+              doors: carData!.doors ? parseInt(carData!.doors) : 4,
+              transmission: normalizeTransmission(carData!.transmission) || 'automatic',
+              fuelType: carData!.fuelType || 'gas',
+              driveType: carData!.driveType || null,
 
               // Pricing - must be set before activation
               dailyRate: 0,
@@ -350,8 +376,8 @@ export async function POST(request: NextRequest) {
               features: '[]',
               rules: '[]',
 
-              // Required fields (null until completed)
-              vin: null,
+              // Required fields (VIN and address may be provided at signup)
+              vin: carData!.vin || null,
               licensePlate: null,
               description: null,
               currentMileage: null,

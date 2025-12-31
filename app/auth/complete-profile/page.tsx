@@ -31,11 +31,18 @@ function CompleteProfileContent() {
   const totalSteps = roleHint === 'host' ? 2 : 1
   const [currentStep, setCurrentStep] = useState(1)
   const [carData, setCarData] = useState<CarData>({
+    vin: '',
     make: '',
     model: '',
     year: '',
     color: '',
     trim: '',
+    fuelType: '',
+    doors: '',
+    bodyClass: '',
+    transmission: '',
+    driveType: '',
+    address: '',
     city: '',
     state: '',
     zipCode: ''
@@ -208,11 +215,20 @@ function CompleteProfileContent() {
           roleHint: roleHint,
           ...(roleHint === 'host' && {
             carData: {
+              vin: carData.vin || null,
               make: carData.make,
               model: carData.model,
               year: carData.year,
               color: carData.color,
               trim: carData.trim || null,
+              // VIN-decoded specs
+              fuelType: carData.fuelType || null,
+              doors: carData.doors || null,
+              bodyClass: carData.bodyClass || null,
+              transmission: carData.transmission || null,
+              driveType: carData.driveType || null,
+              // Location
+              address: carData.address || '',
               city: carData.city,
               state: carData.state,
               zipCode: carData.zipCode

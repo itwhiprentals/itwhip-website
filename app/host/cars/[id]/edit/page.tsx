@@ -26,6 +26,7 @@ import HostAvailabilityCalendar from './components/HostAvailabilityCalendar'
 import {
   IoArrowBackOutline,
   IoCarOutline,
+  IoCarSportOutline,
   IoLocationOutline,
   IoCashOutline,
   IoImageOutline,
@@ -44,7 +45,10 @@ import {
   IoDocumentTextOutline,
   IoInformationCircleOutline,
   IoCalendarOutline,
-  IoSparklesOutline
+  IoSparklesOutline,
+  IoEnterOutline,
+  IoCogOutline,
+  IoPeopleOutline
 } from 'react-icons/io5'
 
 interface CarPhoto {
@@ -70,6 +74,7 @@ interface CarDetails {
   doors: number
   transmission: string
   fuelType: string
+  driveType?: string  // AWD, FWD, RWD, 4WD
   mpgCity?: number
   mpgHighway?: number
   currentMileage?: number
@@ -274,6 +279,7 @@ export default function EditCarPage() {
     doors: 4,
     transmission: 'automatic',
     fuelType: 'gas',
+    driveType: '',
     mpgCity: 0,
     mpgHighway: 0,
     currentMileage: 0,
@@ -555,6 +561,7 @@ export default function EditCarPage() {
         doors: carData.doors,
         transmission: carData.transmission,
         fuelType: carData.fuelType,
+        driveType: carData.driveType || '',
         mpgCity: carData.mpgCity || 0,
         mpgHighway: carData.mpgHighway || 0,
         currentMileage: carData.currentMileage || 0,
@@ -938,10 +945,48 @@ export default function EditCarPage() {
                 {formatFuelTypeBadge(formData.fuelType) && (
                   <VehicleBadge label={formatFuelTypeBadge(formData.fuelType)!} />
                 )}
+                {formData.carType && (
+                  <VehicleBadge label={formData.carType.charAt(0).toUpperCase() + formData.carType.slice(1)} />
+                )}
               </div>
-              <p className="text-lg text-gray-600 dark:text-gray-400 mb-2">
-                {formData.model}{formData.trim ? ` ${formData.trim}` : ''}
-              </p>
+              {/* Model/Trim + Specs Row */}
+              <div className="flex items-center gap-3 text-lg text-gray-600 dark:text-gray-400 mb-2 flex-wrap">
+                <span>{formData.model}{formData.trim ? ` ${formData.trim}` : ''}</span>
+                {formData.doors && (
+                  <>
+                    <span className="text-gray-300 dark:text-gray-600">•</span>
+                    <span className="flex items-center gap-1 text-sm">
+                      <IoEnterOutline className="w-4 h-4" />
+                      {formData.doors} Doors
+                    </span>
+                  </>
+                )}
+                {formData.transmission && (
+                  <>
+                    <span className="text-gray-300 dark:text-gray-600">•</span>
+                    <span className="flex items-center gap-1 capitalize text-sm">
+                      <IoCogOutline className="w-4 h-4" />
+                      {formData.transmission}
+                    </span>
+                  </>
+                )}
+                {formData.driveType && (
+                  <>
+                    <span className="text-gray-300 dark:text-gray-600">•</span>
+                    <span className="uppercase text-sm">{formData.driveType}</span>
+                  </>
+                )}
+                {formData.seats && (
+                  <>
+                    <span className="text-gray-300 dark:text-gray-600">•</span>
+                    <span className="flex items-center gap-1 text-sm">
+                      <IoPeopleOutline className="w-4 h-4" />
+                      {formData.seats} Seats
+                    </span>
+                  </>
+                )}
+              </div>
+
               <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
                 <span>{car.totalTrips} trips completed</span>
                 <span className="flex items-center gap-1">
@@ -1236,6 +1281,12 @@ export default function EditCarPage() {
                       } ${(!formData.make || isFieldLocked('model')) ? 'opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-900' : ''}`}
                     >
                       <option value="">{formData.make ? 'Select Model' : 'Select Make First'}</option>
+                      {/* Include car's existing model if not in our database (e.g., discontinued models like Ford Fusion) */}
+                      {formData.model && !availableModels.includes(formData.model) && (
+                        <option key={formData.model} value={formData.model}>
+                          {formData.model}
+                        </option>
+                      )}
                       {availableModels.map(model => (
                         <option key={model} value={model}>{model}</option>
                       ))}
@@ -1300,6 +1351,12 @@ export default function EditCarPage() {
                       }`}
                     >
                       <option value="">{formData.model ? 'Select Trim (Optional)' : 'Select Model First'}</option>
+                      {/* Include car's existing trim if not in our database (e.g., VIN-decoded trims) */}
+                      {formData.trim && !availableTrims.includes(formData.trim) && (
+                        <option key={formData.trim} value={formData.trim}>
+                          {formData.trim}
+                        </option>
+                      )}
                       {availableTrims.map(trim => (
                         <option key={trim} value={trim}>{trim}</option>
                       ))}

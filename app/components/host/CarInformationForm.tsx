@@ -105,6 +105,14 @@ export interface CarData {
   year: string
   color: string
   trim: string
+  // VIN-decoded vehicle specs (auto-filled, prevents manual errors)
+  fuelType: string      // electric, gas, hybrid, diesel
+  doors: string         // number of doors
+  bodyClass: string     // Sedan, SUV, Pickup, etc. (maps to carType)
+  transmission: string  // automatic, manual, CVT
+  driveType: string     // AWD, FWD, RWD, 4WD
+  // Location
+  address: string
   city: string
   state: string
   zipCode: string
@@ -221,15 +229,26 @@ export default function CarInformationForm({
           make: normalizedMake,
           model: normalizedModel,
           year: result.year || '',
-          trim: normalizedTrim
+          trim: normalizedTrim,
+          fuelType: result.fuelType || '',
+          doors: result.doors || '',
+          bodyClass: result.bodyClass || '',
+          transmission: result.transmission || '',
+          driveType: result.driveType || ''
         })
 
-        // Update form data with normalized decoded fields
+        // Update form data with ALL VIN-decoded fields
+        // This ensures hosts don't accidentally enter wrong specs
         onCarDataChange({
           make: normalizedMake,
           model: normalizedModel,
           year: result.year || '',
-          trim: normalizedTrim
+          trim: normalizedTrim,
+          fuelType: result.fuelType || '',       // electric, gas, hybrid, diesel
+          doors: result.doors || '',              // number of doors
+          bodyClass: result.bodyClass || '',      // Sedan, SUV, Pickup (maps to carType)
+          transmission: result.transmission || '', // automatic, manual, CVT
+          driveType: result.driveType || ''       // AWD, FWD, RWD, 4WD
         })
 
         console.log('onCarDataChange called successfully')
@@ -311,9 +330,32 @@ export default function CarInformationForm({
     onCarDataChange({ [field]: value })
   }
 
+  // Helper to map NHTSA bodyClass to our carType
+  const mapBodyClassToCarType = (bodyClass: string): string | null => {
+    if (!bodyClass) return null
+    const bc = bodyClass.toLowerCase()
+    if (bc.includes('sedan')) return 'sedan'
+    if (bc.includes('coupe')) return 'coupe'
+    if (bc.includes('convertible')) return 'convertible'
+    if (bc.includes('hatchback')) return 'hatchback'
+    if (bc.includes('wagon') || bc.includes('sport utility')) return 'suv'
+    if (bc.includes('pickup') || bc.includes('truck')) return 'truck'
+    if (bc.includes('van') || bc.includes('minivan')) return 'minivan'
+    if (bc.includes('crossover')) return 'crossover'
+    return null
+  }
+
   // Compute vehicle classification badges
-  const vehicleClass = getVehicleClass(carData.make, carData.model, vehicleSpec.carType)
-  const fuelTypeBadge = formatFuelTypeBadge(vehicleSpec.fuelType)
+  // Prefer VIN-decoded values over database lookup
+  const vinDecodedCarType = mapBodyClassToCarType(carData.bodyClass)
+  const vehicleClass = getVehicleClass(carData.make, carData.model, vinDecodedCarType || vehicleSpec.carType)
+
+  // Use VIN-decoded fuelType if available, otherwise fall back to database
+  const effectiveFuelType = carData.fuelType || vehicleSpec.fuelType
+  const fuelTypeBadge = formatFuelTypeBadge(effectiveFuelType)
+
+  // Use VIN-decoded doors if available, otherwise fall back to database
+  const effectiveDoors = carData.doors ? parseInt(carData.doors) : vehicleSpec.doors
 
   return (
     <div className={`space-y-4 ${className}`}>
@@ -629,13 +671,13 @@ export default function CarInformationForm({
                   </>
                 )}
 
-                {/* Doors (if available) */}
-                {vehicleSpec.doors !== null && (
+                {/* Doors (prefer VIN-decoded, fall back to database) */}
+                {effectiveDoors !== null && (
                   <>
                     <span className="text-gray-400">•</span>
                     <div className="flex items-center gap-1">
                       <IoEnterOutline className="w-4 h-4" />
-                      <span>{vehicleSpec.doors} Doors</span>
+                      <span>{effectiveDoors} Doors</span>
                     </div>
                   </>
                 )}
@@ -674,14 +716,30 @@ export default function CarInformationForm({
                 zipCode={carData.zipCode}
                 placeholder="Start typing an address in Arizona..."
                 onAddressSelect={(address: AddressResult) => {
-                  // Auto-populate city, state, zipCode from selected address
+                  // Auto-populate street address, city, state, zipCode from selected address
                   onCarDataChange({
+                    address: address.streetAddress || carData.address,
                     city: address.city || carData.city,
                     state: address.state || carData.state,
                     zipCode: address.zipCode || carData.zipCode
                   })
                 }}
               />
+            </div>
+
+            {/* Street Address - For manual entry or auto-filled from address search */}
+            <div>
+              <label className="block text-sm font-medium text-white mb-1">
+                Street Address <span className="text-gray-300 font-normal">(Optional)</span>
+              </label>
+              <input
+                type="text"
+                value={carData.address || ''}
+                onChange={(e) => handleChange('address', e.target.value)}
+                className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white text-sm"
+                placeholder="123 Main Street"
+              />
+              <p className="text-xs text-gray-400 mt-1">Auto-filled from search above, or enter manually</p>
             </div>
 
             {/* City, State, Zip - Shown below for manual override or verification */}

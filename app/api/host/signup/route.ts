@@ -4,6 +4,31 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { hash } from 'argon2'
 
+// Helper to map NHTSA bodyClass to our carType
+function mapBodyClassToCarType(bodyClass: string | null): string | null {
+  if (!bodyClass) return null
+  const bc = bodyClass.toLowerCase()
+  if (bc.includes('sedan')) return 'sedan'
+  if (bc.includes('coupe')) return 'coupe'
+  if (bc.includes('convertible')) return 'convertible'
+  if (bc.includes('hatchback')) return 'hatchback'
+  if (bc.includes('wagon') || bc.includes('sport utility')) return 'suv'
+  if (bc.includes('pickup') || bc.includes('truck')) return 'truck'
+  if (bc.includes('van') || bc.includes('minivan')) return 'minivan'
+  if (bc.includes('crossover')) return 'crossover'
+  return null
+}
+
+// Helper to normalize NHTSA transmission values
+function normalizeTransmission(transmission: string | null): string | null {
+  if (!transmission) return null
+  const t = transmission.toLowerCase()
+  if (t.includes('automatic') || t.includes('auto')) return 'automatic'
+  if (t.includes('manual')) return 'manual'
+  if (t.includes('cvt')) return 'cvt'
+  return 'automatic'  // Default to automatic if unclear
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -14,6 +39,7 @@ export async function POST(request: NextRequest) {
       password,
       phone,
       // Location info
+      address,
       city,
       state,
       zipCode,
@@ -25,6 +51,12 @@ export async function POST(request: NextRequest) {
       vehicleYear,
       vehicleTrim,
       vehicleColor,
+      // VIN-decoded specs
+      vehicleFuelType,
+      vehicleDoors,
+      vehicleBodyClass,
+      vehicleTransmission,
+      vehicleDriveType,
       // Terms
       agreeToTerms
     } = body
@@ -188,13 +220,14 @@ export async function POST(request: NextRequest) {
             // Mark as INACTIVE - not ready for booking
             isActive: false,
             
-            // Default values - host will complete these later
-            carType: 'midsize',
-            seats: 5,
-            doors: 4,
-            transmission: 'automatic',
-            fuelType: 'gas',
-            
+            // VIN-decoded specs (with sensible defaults)
+            carType: mapBodyClassToCarType(vehicleBodyClass) || 'midsize',
+            seats: 5,  // NHTSA doesn't provide seats - will be updated from our database
+            doors: vehicleDoors ? parseInt(vehicleDoors) : 4,
+            transmission: normalizeTransmission(vehicleTransmission) || 'automatic',
+            fuelType: vehicleFuelType || 'gas',
+            driveType: vehicleDriveType || null,
+
             // Pricing defaults to 0 - MUST be set before going live
             dailyRate: 0,
             weeklyRate: 0,
@@ -203,8 +236,8 @@ export async function POST(request: NextRequest) {
             monthlyDiscount: 30,
             deliveryFee: 35,
             
-            // Location - use host's signup location as default
-            address: '',
+            // Location - use host's signup location
+            address: address || '',
             city: city,
             state: state,
             zipCode: zipCode,

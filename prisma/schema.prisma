@@ -2071,6 +2071,7 @@ model RentalCar {
   doors          Int
   transmission   String
   fuelType       String
+  driveType      String?  // AWD, FWD, RWD, 4WD - from VIN decode
   mpgCity        Int?
   mpgHighway     Int?
   currentMileage Int?
