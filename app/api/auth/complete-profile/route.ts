@@ -624,6 +624,214 @@ export async function POST(request: NextRequest) {
       } catch (emailError) {
         console.error(`[Complete Profile] Failed to send welcome email:`, emailError)
       }
+    } else if (roleHint === 'host' && carData) {
+      // ========================================================================
+      // EXISTING GUEST USER → HOST UPGRADE
+      // Create RentalHost for existing user who wants to become a host
+      // ========================================================================
+      console.log(`[Complete Profile] Guest-to-Host upgrade for existing user: ${userId}`)
+
+      // Check if user already has host profile
+      const existingHost = await prisma.rentalHost.findFirst({
+        where: {
+          OR: [
+            { userId: userId },
+            { email: email }
+          ]
+        }
+      })
+
+      if (existingHost) {
+        // Already a host, just return success with host tokens
+        console.log(`[Complete Profile] User already has host profile - returning success`)
+        return await createSuccessResponse(updatedUser, digitsOnly, 'host')
+      }
+
+      // Create RentalHost for existing user
+      const host = await prisma.rentalHost.create({
+        data: {
+          userId: userId,
+          email: email || '',
+          name: updatedUser.name || '',
+          phone: digitsOnly || null,
+          profilePhoto: updatedUser.image,
+
+          // Location from car data
+          city: carData.city,
+          state: carData.state,
+          zipCode: carData.zipCode,
+
+          // Status
+          approvalStatus: 'PENDING',
+          isVerified: true, // OAuth email is verified
+          active: false,
+          dashboardAccess: false,
+
+          // Permissions (all false initially)
+          canViewBookings: false,
+          canEditCalendar: false,
+          canSetPricing: false,
+          canMessageGuests: false,
+          canWithdrawFunds: false,
+
+          // Default commission
+          commissionRate: 0.20,
+          hostType: 'REAL'
+        }
+      })
+      console.log(`[Complete Profile] Created RentalHost for guest upgrade: ${host.id}`)
+
+      // Create RentalCar
+      await prisma.rentalCar.create({
+        data: {
+          hostId: host.id,
+
+          // Vehicle info from form
+          make: carData.make,
+          model: carData.model,
+          year: parseInt(carData.year),
+          trim: carData.trim || null,
+          color: carData.color,
+
+          // Location (matches host)
+          city: carData.city,
+          state: carData.state,
+          zipCode: carData.zipCode,
+          address: carData.address || '',
+
+          // Status - NOT ACTIVE until fully completed
+          isActive: false,
+
+          // VIN-decoded specs (with sensible defaults)
+          carType: mapBodyClassToCarType(carData.bodyClass) || 'midsize',
+          seats: 5,
+          doors: carData.doors ? parseInt(carData.doors) : 4,
+          transmission: normalizeTransmission(carData.transmission) || 'automatic',
+          fuelType: carData.fuelType || 'gas',
+          driveType: carData.driveType || null,
+
+          // Pricing - must be set before activation
+          dailyRate: 0,
+          weeklyRate: 0,
+          monthlyRate: 0,
+          weeklyDiscount: 15,
+          monthlyDiscount: 30,
+          deliveryFee: 35,
+
+          // Delivery options
+          airportPickup: true,
+          hotelDelivery: true,
+          homeDelivery: false,
+
+          // Availability
+          instantBook: false,
+          advanceNotice: 24,
+          minTripDuration: 1,
+          maxTripDuration: 30,
+
+          // Insurance
+          insuranceIncluded: false,
+          insuranceDaily: 25,
+
+          // Stats
+          totalTrips: 0,
+          rating: 0,
+
+          // JSON fields
+          features: '[]',
+          rules: '[]',
+
+          // Required fields
+          vin: carData.vin || null,
+          licensePlate: null,
+          description: null,
+          currentMileage: null,
+          registeredOwner: null,
+          registrationState: carData.state,
+          registrationExpiryDate: null,
+          titleStatus: 'Clean',
+          garageAddress: null
+        }
+      })
+      console.log(`[Complete Profile] Created RentalCar for guest upgrade`)
+
+      // Create AdminNotification for Fleet visibility
+      await prisma.adminNotification.create({
+        data: {
+          type: 'NEW_HOST_SIGNUP',
+          title: 'Guest Upgraded to Host (OAuth)',
+          message: `${updatedUser.name || email} upgraded from guest to host`,
+          priority: 'MEDIUM',
+          status: 'UNREAD',
+          actionRequired: true,
+          actionUrl: `/fleet/hosts/${host.id}`,
+          relatedId: host.id,
+          relatedType: 'RENTAL_HOST',
+          metadata: {
+            hostEmail: email,
+            hostName: updatedUser.name || null,
+            hostPhone: digitsOnly || null,
+            signupSource: 'oauth-guest-upgrade',
+            wasGuestFirst: true
+          }
+        }
+      })
+      console.log(`[Complete Profile] AdminNotification created for guest-to-host upgrade`)
+
+      // Send host welcome email
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://itwhip.com'
+      try {
+        await sendHostOAuthWelcomeEmail(email || '', {
+          userName: updatedUser.name || 'Host',
+          userEmail: email || '',
+          profileUrl: `${appUrl}/host/profile?tab=profile`,
+          documentsUrl: `${appUrl}/host/profile?tab=documents`,
+          carsUrl: `${appUrl}/host/cars`,
+          earningsUrl: `${appUrl}/host/earnings`,
+          insuranceUrl: `${appUrl}/host/profile?tab=insurance`,
+          dashboardUrl: `${appUrl}/host/dashboard`
+        })
+        console.log(`[Complete Profile] Sent host OAuth welcome email to: ${email}`)
+      } catch (emailError) {
+        console.error(`[Complete Profile] Failed to send welcome email:`, emailError)
+      }
+
+      // Generate host tokens and return response with cookies
+      const tokens = generateHostTokens({
+        id: host.id,
+        userId: userId,
+        email: email || '',
+        name: updatedUser.name || '',
+        approvalStatus: host.approvalStatus
+      })
+
+      const response = NextResponse.json({
+        success: true,
+        message: 'Host profile created successfully',
+        isNewHost: true,
+        approvalStatus: host.approvalStatus
+      })
+
+      // Set host cookies
+      response.cookies.set('hostAccessToken', tokens.accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 15 * 60,
+        path: '/'
+      })
+
+      response.cookies.set('hostRefreshToken', tokens.refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60,
+        path: '/'
+      })
+
+      console.log(`[Complete Profile] Guest-to-Host upgrade complete - host tokens set`)
+      return response
+
     } else {
       console.log(`[Complete Profile] No ReviewerProfile and roleHint=${roleHint || 'none'} - not creating`)
     }
