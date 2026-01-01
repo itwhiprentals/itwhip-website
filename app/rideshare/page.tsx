@@ -324,6 +324,7 @@ async function getPartners() {
             make: true,
             model: true,
             year: true,
+            trim: true,
             dailyRate: true,
             weeklyRate: true,
             photos: true,
@@ -377,24 +378,31 @@ async function getPartners() {
           avgRating: partner.partnerAvgRating || calculatedRating,
           totalReviews: partner.totalReviews || 0,
           location: partner.location,
-          vehicles: partner.cars.map((car: any) => ({
-            id: car.id,
-            make: car.make,
-            model: car.model,
-            year: car.year,
-            dailyRate: car.dailyRate,
-            weeklyRate: car.weeklyRate || undefined,
-            photo: car.photos?.[0] || null,
-            photos: car.photos || [],
-            location: car.city && car.state ? `${car.city}, ${car.state}` : '',
-            instantBook: car.instantBook || false,
-            transmission: car.transmission || 'Automatic',
-            fuelType: car.fuelType || 'Gasoline',
-            seats: car.seats || 5,
-            // Only use rating if car has real trips, otherwise 0 (ignores DB default of 5.0)
-            rating: car.totalTrips > 0 ? (car.rating || 0) : 0,
-            trips: car.totalTrips || 0
-          })),
+          vehicles: partner.cars.map((car: any) => {
+            // Extract photo URL from photo objects (photos are [{url, id, ...}])
+            const firstPhoto = car.photos?.[0]
+            const photoUrl = typeof firstPhoto === 'string' ? firstPhoto : firstPhoto?.url || null
+
+            return {
+              id: car.id,
+              make: car.make,
+              model: car.model,
+              year: car.year,
+              trim: car.trim || null,
+              dailyRate: car.dailyRate,
+              weeklyRate: car.weeklyRate || undefined,
+              photo: photoUrl,
+              photos: car.photos?.map((p: any) => typeof p === 'string' ? p : p?.url).filter(Boolean) || [],
+              location: car.city && car.state ? `${car.city}, ${car.state}` : '',
+              instantBook: car.instantBook || false,
+              transmission: car.transmission || 'Automatic',
+              fuelType: car.fuelType || 'Gasoline',
+              seats: car.seats || 5,
+              // Only use rating if car has real trips, otherwise 0 (ignores DB default of 5.0)
+              rating: car.totalTrips > 0 ? (car.rating || 0) : 0,
+              trips: car.totalTrips || 0
+            }
+          }),
         discounts: partner.partnerDiscounts.map((d: any) => ({
           id: d.id,
           code: d.code,
@@ -431,6 +439,7 @@ async function getPlatformVehicles() {
         make: true,
         model: true,
         year: true,
+        trim: true,
         dailyRate: true,
         weeklyRate: true,
         photos: true,
@@ -458,24 +467,31 @@ async function getPlatformVehicles() {
     })
 
     return {
-      vehicles: vehicles.map((car: any) => ({
-        id: car.id,
-        make: car.make,
-        model: car.model,
-        year: car.year,
-        dailyRate: car.dailyRate,
-        weeklyRate: car.weeklyRate || undefined,
-        photo: car.photos?.[0] || null,
-        photos: car.photos || [],
-        location: car.city && car.state ? `${car.city}, ${car.state}` : '',
-        instantBook: car.instantBook || false,
-        transmission: car.transmission || 'Automatic',
-        fuelType: car.fuelType || 'Gasoline',
-        seats: car.seats || 5,
-        // Only use rating if car has real trips, otherwise 0 (ignores DB default of 5.0)
-        rating: car.totalTrips > 0 ? (car.rating || 0) : 0,
-        trips: car.totalTrips || 0
-      })),
+      vehicles: vehicles.map((car: any) => {
+        // Extract photo URL from photo objects (photos are [{url, id, ...}])
+        const firstPhoto = car.photos?.[0]
+        const photoUrl = typeof firstPhoto === 'string' ? firstPhoto : firstPhoto?.url || null
+
+        return {
+          id: car.id,
+          make: car.make,
+          model: car.model,
+          year: car.year,
+          trim: car.trim || null,
+          dailyRate: car.dailyRate,
+          weeklyRate: car.weeklyRate || undefined,
+          photo: photoUrl,
+          photos: car.photos?.map((p: any) => typeof p === 'string' ? p : p?.url).filter(Boolean) || [],
+          location: car.city && car.state ? `${car.city}, ${car.state}` : '',
+          instantBook: car.instantBook || false,
+          transmission: car.transmission || 'Automatic',
+          fuelType: car.fuelType || 'Gasoline',
+          seats: car.seats || 5,
+          // Only use rating if car has real trips, otherwise 0 (ignores DB default of 5.0)
+          rating: car.totalTrips > 0 ? (car.rating || 0) : 0,
+          trips: car.totalTrips || 0
+        }
+      }),
       totalCount
     }
   } catch (error) {
@@ -590,17 +606,17 @@ export default async function RidesharePage() {
         {/* Browse By Make Section - 6 Dedicated Rideshare Brands */}
         <BrowseByMakeSection />
 
+        {/* Section Separator after Browse By Make */}
+        <div className="flex justify-center py-2">
+          <div className="w-16 h-1 bg-orange-400 rounded-full" />
+        </div>
+
         {/* ItWhip Rideshare Vehicles - Our Company Fleet (Only shown if vehicles exist) */}
         {platformData.totalCount > 0 && (
           <>
-            {/* Section Separator */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="border-t border-gray-200 dark:border-gray-700" />
-            </div>
-
-            <section className="py-8 sm:py-12 bg-white dark:bg-gray-800">
+            <section className="py-5 bg-white dark:bg-gray-800">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center justify-between mb-5">
                   <div className="flex items-center gap-4">
                     {/* Company Logo */}
                     <div className="w-14 h-14 rounded-xl flex items-center justify-center shadow-lg overflow-hidden bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600">
@@ -633,7 +649,7 @@ export default async function RidesharePage() {
                 <VehicleCarousel vehicles={platformData.vehicles} />
 
                 {/* Mobile View All Button */}
-                <div className="mt-6 text-center sm:hidden">
+                <div className="mt-4 text-center sm:hidden">
                   <Link
                     href="/rideshare/itwhip"
                     className="inline-flex items-center gap-2 px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors"
@@ -645,29 +661,29 @@ export default async function RidesharePage() {
             </section>
 
             {/* Section Separator */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="border-t border-gray-200 dark:border-gray-700" />
+            <div className="flex justify-center py-2">
+              <div className="w-16 h-1 bg-orange-400 rounded-full" />
             </div>
           </>
         )}
 
         {/* Partner Fleets Section */}
         {partners.length > 0 && (
-          <section className="py-8 sm:py-12 bg-gray-50 dark:bg-gray-900">
+          <section className="py-5 bg-gray-50 dark:bg-gray-900">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="text-center mb-8">
+              <div className="text-center mb-5">
                 <span className="text-orange-600 dark:text-orange-400 text-xs sm:text-sm font-semibold uppercase tracking-wider">
                   Verified Partners
                 </span>
-                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mt-1">
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mt-2">
                   Partner Fleet Rentals
                 </h2>
-                <p className="text-gray-600 dark:text-gray-400 mt-2">
+                <p className="text-gray-600 dark:text-gray-400 mt-1 text-sm">
                   Approved fleet partners with rideshare-ready vehicles
                 </p>
               </div>
 
-              <div className="space-y-12">
+              <div className="space-y-6">
                 {partners.map((partner: any) => (
                   <PartnerSection key={partner.id} partner={partner} />
                 ))}
@@ -677,13 +693,13 @@ export default async function RidesharePage() {
         )}
 
         {/* Benefits Section - 4 Cards */}
-        <section className="py-8 sm:py-12 bg-white dark:bg-gray-800">
+        <section className="py-5 bg-white dark:bg-gray-800">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-8">
+            <div className="text-center mb-5">
               <span className="text-orange-600 dark:text-orange-400 text-xs sm:text-sm font-semibold uppercase tracking-wider">
                 Why Choose ItWhip
               </span>
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mt-2">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mt-2">
                 Why Rideshare with ItWhip?
               </h2>
             </div>
@@ -722,12 +738,12 @@ export default async function RidesharePage() {
         </section>
 
         {/* Section Separator */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="border-t border-gray-200 dark:border-gray-700" />
+        <div className="flex justify-center py-2">
+          <div className="w-16 h-1 bg-orange-400 rounded-full" />
         </div>
 
         {/* Lifestyle Images Section */}
-        <section className="py-8 sm:py-12 bg-gray-50 dark:bg-gray-900">
+        <section className="py-5 bg-gray-50 dark:bg-gray-900">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
               {lifestyleImages.map((image) => (
@@ -756,14 +772,14 @@ export default async function RidesharePage() {
         </section>
 
         {/* Section Separator */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="border-t border-gray-200 dark:border-gray-700" />
+        <div className="flex justify-center py-2">
+          <div className="w-16 h-1 bg-orange-400 rounded-full" />
         </div>
 
         {/* How It Works Section */}
-        <section className="py-8 sm:py-12 bg-white dark:bg-gray-800">
+        <section className="py-5 bg-white dark:bg-gray-800">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-8">
+            <div className="text-center mb-5">
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
                 How It Works
               </h2>
@@ -798,17 +814,17 @@ export default async function RidesharePage() {
         </section>
 
         {/* Section Separator */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="border-t border-gray-200 dark:border-gray-700" />
+        <div className="flex justify-center py-2">
+          <div className="w-16 h-1 bg-orange-400 rounded-full" />
         </div>
 
         {/* Rideshare Partners Section */}
-        <section className="py-8 sm:py-12 bg-gray-50 dark:bg-gray-900">
+        <section className="py-5 bg-gray-50 dark:bg-gray-900">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-2">
               All our vehicles are approved for:
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-8">
+            <p className="text-gray-600 dark:text-gray-400 mb-5">
               Drive for any major rideshare or delivery platform
             </p>
 
@@ -830,17 +846,17 @@ export default async function RidesharePage() {
         </section>
 
         {/* Section Separator */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="border-t border-gray-200 dark:border-gray-700" />
+        <div className="flex justify-center py-2">
+          <div className="w-16 h-1 bg-orange-400 rounded-full" />
         </div>
 
         {/* Ready to Start Driving CTA Section */}
-        <section className="py-12 sm:py-16 bg-gradient-to-r from-orange-500 to-orange-600">
+        <section className="py-6 bg-gradient-to-r from-orange-500 to-orange-600">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-3">
               Ready to Start Driving?
             </h2>
-            <p className="text-lg text-orange-100 mb-8 max-w-2xl mx-auto">
+            <p className="text-lg text-orange-100 mb-5 max-w-2xl mx-auto">
               Join hundreds of rideshare drivers earning with ItWhip Rides.
               Find your perfect vehicle today.
             </p>

@@ -116,8 +116,11 @@ export async function GET(
         // Stats
         totalTrips: true,
         rating: true,
-        
-        // Host - SECURED WITH ONLY PUBLIC FIELDS + APPROVAL STATUS
+
+        // Vehicle type (for rideshare detection)
+        vehicleType: true,
+
+        // Host - SECURED WITH ONLY PUBLIC FIELDS + APPROVAL STATUS + PARTNER FIELDS
         host: {
           select: {
             id: true,
@@ -136,6 +139,19 @@ export async function GET(
             isVerified: true,
             verificationLevel: true,
             active: true,
+            // Partner-specific fields for rideshare fleet vehicles
+            hostType: true,
+            partnerCompanyName: true,
+            partnerSlug: true,
+            partnerLogo: true,
+            partnerBio: true,
+            partnerFleetSize: true,
+            partnerAvgRating: true,
+            partnerTotalBookings: true,
+            partnerSupportEmail: true,
+            partnerSupportPhone: true,
+            partnerBadges: true,
+            yearEstablished: true,
           }
         },
         

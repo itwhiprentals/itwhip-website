@@ -214,6 +214,53 @@ export default async function PartnerLandingPage({ params, searchParams }: PageP
   // Get available makes from vehicles
   const availableMakes = [...new Set(partner.cars.map(c => c.make))]
 
+  // Transform vehicles data for CompactCarCard compatibility
+  const transformedVehicles = partner.cars.map(car => {
+    // Extract photos as objects for CompactCarCard
+    const photos = (car.photos as any[])?.filter(p => p?.url).map(p => ({ url: p.url })) || []
+
+    // Parse features if stored as JSON string
+    let features: string[] = []
+    if (typeof car.features === 'string') {
+      try {
+        features = JSON.parse(car.features)
+      } catch {
+        features = []
+      }
+    } else if (Array.isArray(car.features)) {
+      features = car.features
+    }
+
+    return {
+      id: car.id,
+      make: car.make,
+      model: car.model,
+      year: car.year,
+      dailyRate: car.dailyRate,
+      weeklyRate: car.weeklyRate,
+      monthlyRate: car.monthlyRate,
+      photos, // Now as { url: string }[] for CompactCarCard
+      city: car.city,
+      state: car.state,
+      instantBook: car.instantBook,
+      transmission: car.transmission,
+      fuelType: car.fuelType,
+      seats: car.seats,
+      carType: null, // Will use type from vehicle
+      description: car.description,
+      features,
+      rating: car.rating,
+      totalTrips: car.totalTrips,
+      vehicleType: car.vehicleType,
+      minTripDuration: car.minTripDuration,
+      // Partner info as "host" for CompactCarCard display
+      host: {
+        name: companyName,
+        profilePhoto: partner.partnerLogo || null
+      }
+    }
+  })
+
   // JSON-LD Structured Data
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -332,7 +379,7 @@ export default async function PartnerLandingPage({ params, searchParams }: PageP
           {/* Vehicles Grid with Filters - Client Component */}
           <section className="mt-12">
             <PartnerVehicleGrid
-              vehicles={partner.cars}
+              vehicles={transformedVehicles}
               availableMakes={availableMakes}
             />
           </section>

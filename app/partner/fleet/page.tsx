@@ -5,11 +5,11 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import {
   IoCarOutline,
   IoAddCircleOutline,
   IoSearchOutline,
-  IoFilterOutline,
   IoCheckmarkCircleOutline,
   IoTimeOutline,
   IoConstructOutline,
@@ -18,8 +18,6 @@ import {
   IoEyeOutline,
   IoPauseCircleOutline,
   IoPlayCircleOutline,
-  IoTrashOutline,
-  IoChevronDownOutline,
   IoRefreshOutline
 } from 'react-icons/io5'
 
@@ -32,23 +30,21 @@ interface Vehicle {
   vin: string
   dailyRate: number
   status: 'available' | 'booked' | 'maintenance' | 'inactive'
-  approvalStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | 'MAINTENANCE'
   photo?: string
   totalTrips: number
   totalRevenue: number
   rating: number
-  lastBooked?: string
-  active: boolean
+  isActive: boolean
 }
 
 type FilterStatus = 'all' | 'available' | 'booked' | 'maintenance' | 'inactive'
 
 export default function PartnerFleetPage() {
+  const router = useRouter()
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('all')
-  const [showFilters, setShowFilters] = useState(false)
   const [activeMenu, setActiveMenu] = useState<string | null>(null)
 
   useEffect(() => {
@@ -70,7 +66,7 @@ export default function PartnerFleetPage() {
   }
 
   const getStatusConfig = (vehicle: Vehicle) => {
-    if (!vehicle.active) {
+    if (!vehicle.isActive) {
       return {
         label: 'Inactive',
         color: 'text-gray-600 bg-gray-100 dark:text-gray-400 dark:bg-gray-700',
@@ -112,18 +108,18 @@ export default function PartnerFleetPage() {
 
     const matchesStatus =
       statusFilter === 'all' ||
-      (statusFilter === 'inactive' && !vehicle.active) ||
-      (statusFilter !== 'inactive' && vehicle.active && vehicle.status === statusFilter)
+      (statusFilter === 'inactive' && !vehicle.isActive) ||
+      (statusFilter !== 'inactive' && vehicle.isActive && vehicle.status === statusFilter)
 
     return matchesSearch && matchesStatus
   })
 
   const stats = {
     total: vehicles.length,
-    available: vehicles.filter(v => v.active && v.status === 'available').length,
-    booked: vehicles.filter(v => v.active && v.status === 'booked').length,
-    maintenance: vehicles.filter(v => v.active && v.status === 'maintenance').length,
-    inactive: vehicles.filter(v => !v.active).length
+    available: vehicles.filter(v => v.isActive && v.status === 'available').length,
+    booked: vehicles.filter(v => v.isActive && v.status === 'booked').length,
+    maintenance: vehicles.filter(v => v.isActive && v.status === 'maintenance').length,
+    inactive: vehicles.filter(v => !v.isActive).length
   }
 
   const handleAction = async (vehicleId: string, action: string) => {
@@ -319,7 +315,11 @@ export default function PartnerFleetPage() {
                   const StatusIcon = statusConfig.icon
 
                   return (
-                    <tr key={vehicle.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                    <tr
+                      key={vehicle.id}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
+                      onClick={() => router.push(`/partner/fleet/${vehicle.id}`)}
+                    >
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-3">
                           <div className="w-12 h-12 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center overflow-hidden">
@@ -370,7 +370,7 @@ export default function PartnerFleetPage() {
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <td className="px-6 py-4 whitespace-nowrap text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="relative">
                           <button
                             onClick={() => setActiveMenu(activeMenu === vehicle.id ? null : vehicle.id)}
@@ -396,10 +396,10 @@ export default function PartnerFleetPage() {
                                 Edit Vehicle
                               </Link>
                               <button
-                                onClick={() => handleAction(vehicle.id, vehicle.active ? 'deactivate' : 'activate')}
+                                onClick={() => handleAction(vehicle.id, vehicle.isActive ? 'deactivate' : 'activate')}
                                 className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                               >
-                                {vehicle.active ? (
+                                {vehicle.isActive ? (
                                   <>
                                     <IoPauseCircleOutline className="w-4 h-4" />
                                     Deactivate
@@ -411,7 +411,7 @@ export default function PartnerFleetPage() {
                                   </>
                                 )}
                               </button>
-                              {vehicle.active && vehicle.status !== 'maintenance' && (
+                              {vehicle.isActive && vehicle.status !== 'maintenance' && (
                                 <button
                                   onClick={() => handleAction(vehicle.id, 'maintenance')}
                                   className="flex items-center gap-2 w-full px-4 py-2 text-sm text-orange-600 dark:text-orange-400 hover:bg-gray-100 dark:hover:bg-gray-700"

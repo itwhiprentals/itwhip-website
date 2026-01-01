@@ -19,6 +19,7 @@ interface Vehicle {
   make: string
   model: string
   year: number
+  trim?: string | null
   dailyRate: number
   weeklyRate?: number
   photo: string | null
@@ -62,22 +63,22 @@ interface PartnerSectionProps {
 
 export default function PartnerSection({ partner }: PartnerSectionProps) {
   return (
-    <section className="py-8">
+    <div>
       {/* Partner Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div className="flex items-center gap-4">
-          {/* Logo */}
-          <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center overflow-hidden border border-gray-200 dark:border-gray-700">
+          {/* Logo - Circular */}
+          <div className="w-14 h-14 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center overflow-hidden border-2 border-gray-200 dark:border-gray-700">
             {partner.logo ? (
               <Image
                 src={partner.logo}
                 alt={partner.companyName}
-                width={64}
-                height={64}
-                className="object-contain"
+                width={56}
+                height={56}
+                className="object-cover w-full h-full"
               />
             ) : (
-              <span className="text-2xl font-bold text-gray-400">
+              <span className="text-xl font-bold text-gray-400">
                 {partner.companyName.charAt(0)}
               </span>
             )}
@@ -126,15 +127,8 @@ export default function PartnerSection({ partner }: PartnerSectionProps) {
         )}
       </div>
 
-      {/* Bio (truncated) */}
-      {partner.bio && (
-        <p className="text-gray-600 dark:text-gray-400 mb-6 line-clamp-2">
-          {partner.bio}
-        </p>
-      )}
-
       {/* Vehicle Carousel */}
       <VehicleCarousel vehicles={partner.vehicles} partnerSlug={partner.slug || undefined} />
-    </section>
+    </div>
   )
 }

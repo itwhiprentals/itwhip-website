@@ -52,14 +52,14 @@ const rideshareFleetMakes = [
 
 export default function BrowseByMakeSection() {
   return (
-    <section className="py-4 sm:py-8 bg-gray-50 dark:bg-gray-900">
+    <section className="py-5 bg-gray-50 dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
-        <div className="flex items-center justify-center mb-6 sm:mb-8">
+        {/* Section Header - Centered between nav and cards */}
+        <div className="flex items-center justify-center mb-5">
           <div className="inline-flex items-center gap-2 bg-gray-100 dark:bg-gray-700 rounded-full px-5 py-2.5 shadow-md border border-gray-200 dark:border-gray-600">
             <IoCarSportOutline className="w-5 h-5 text-orange-500" />
-            <span className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white">
-              Our Dedicated Rideshare Fleet — 6 Trusted Makes
+            <span className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white uppercase tracking-wide">
+              Our Dedicated Rideshare Fleet
             </span>
           </div>
         </div>

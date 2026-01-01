@@ -98,7 +98,12 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
   const [showFloatingPrice, setShowFloatingPrice] = useState(false)
+  const [dateError, setDateError] = useState<string | null>(null)
   const widgetRef = useRef<HTMLDivElement>(null)
+
+  // Rideshare detection and minimum trip duration
+  const isRideshare = car?.vehicleType === 'RIDESHARE'
+  const minDays = car?.minTripDuration || (isRideshare ? 3 : 1)
   
   // Read search params from URL
   const pickupDateParam = searchParams.get('pickupDate') || ''
@@ -108,14 +113,24 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
   const { date: pickupDateFromUrl, time: pickupTimeFromUrl } = extractDateAndTime(pickupDateParam)
   const { date: returnDateFromUrl, time: returnTimeFromUrl } = extractDateAndTime(returnDateParam)
   
-  // Use defaults if no URL params
+  // Use defaults if no URL params (respect minimum trip duration)
   const today = getArizonaDateString(0)
   const tomorrow = getArizonaDateString(1)
-  const defaultEndDate = getArizonaDateString(3)
-  
+  const defaultEndDate = getArizonaDateString(minDays + 1) // +1 because start is tomorrow
+
   // Initialize with URL params or defaults
   const [startDate, setStartDate] = useState(pickupDateFromUrl || tomorrow)
   const [endDate, setEndDate] = useState(returnDateFromUrl || defaultEndDate)
+
+  // Validate minimum trip duration
+  useEffect(() => {
+    const tripDays = Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24))
+    if (tripDays < minDays) {
+      setDateError(`Minimum rental is ${minDays} days for this vehicle`)
+    } else {
+      setDateError(null)
+    }
+  }, [startDate, endDate, minDays])
   const [startTime, setStartTime] = useState(pickupTimeFromUrl || '10:00')
   const [endTime, setEndTime] = useState(returnTimeFromUrl || '10:00')
   
@@ -389,7 +404,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
               </div>
             </div>
             <div className="text-right">
-              <p className="text-xs text-gray-500 dark:text-gray-300">Min 1 day</p>
+              <p className="text-xs text-gray-500 dark:text-gray-300">Min {minDays} day{minDays > 1 ? 's' : ''}</p>
               <p className="text-xs text-gray-500 dark:text-gray-300">200 mi/day included</p>
             </div>
           </div>
@@ -475,6 +490,87 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
               <span className="text-xs font-medium text-amber-800 dark:text-amber-300">
                 {days} day{days > 1 ? 's' : ''} · {new Date(startDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – {new Date(endDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </span>
+            </div>
+          )}
+
+          {/* Date Error */}
+          {dateError && (
+            <div className="flex items-center gap-1.5 py-2 px-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+              <IoWarningOutline className="w-3.5 h-3.5 text-red-600 flex-shrink-0" />
+              <span className="text-xs font-medium text-red-700 dark:text-red-300">{dateError}</span>
+            </div>
+          )}
+
+          {/* Duration Presets - Show for rideshare or when weekly/monthly rates available */}
+          {(isRideshare || car?.weeklyRate || car?.monthlyRate) && (
+            <div className="pt-2">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Quick Select:</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    const newEnd = getArizonaDateString(8) // 1 week from tomorrow
+                    setEndDate(newEnd)
+                  }}
+                  className={`flex-1 py-2 px-3 text-xs font-medium rounded-lg border transition-all ${
+                    days === 7
+                      ? 'bg-amber-100 border-amber-500 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'
+                      : 'bg-gray-50 border-gray-200 text-gray-700 hover:border-amber-500 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  1 Week
+                  {car?.weeklyRate && (
+                    <span className="block text-green-600 dark:text-green-400 mt-0.5">
+                      Save ${Math.round((car.dailyRate * 7) - car.weeklyRate)}
+                    </span>
+                  )}
+                </button>
+                <button
+                  onClick={() => {
+                    const newEnd = getArizonaDateString(15) // 2 weeks from tomorrow
+                    setEndDate(newEnd)
+                  }}
+                  className={`flex-1 py-2 px-3 text-xs font-medium rounded-lg border transition-all ${
+                    days === 14
+                      ? 'bg-amber-100 border-amber-500 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'
+                      : 'bg-gray-50 border-gray-200 text-gray-700 hover:border-amber-500 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  2 Weeks
+                </button>
+                <button
+                  onClick={() => {
+                    const newEnd = getArizonaDateString(31) // 1 month from tomorrow
+                    setEndDate(newEnd)
+                  }}
+                  className={`flex-1 py-2 px-3 text-xs font-medium rounded-lg border transition-all ${
+                    days >= 28 && days <= 31
+                      ? 'bg-amber-100 border-amber-500 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'
+                      : 'bg-gray-50 border-gray-200 text-gray-700 hover:border-amber-500 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  1 Month
+                  {car?.monthlyRate && (
+                    <span className="block text-green-600 dark:text-green-400 mt-0.5">
+                      Save ${Math.round((car.dailyRate * 30) - car.monthlyRate)}
+                    </span>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Rideshare Notice */}
+          {isRideshare && (
+            <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+              <div className="flex items-start gap-2">
+                <IoCarSportOutline className="w-4 h-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <span className="text-xs font-semibold text-orange-800 dark:text-orange-300">Rideshare Ready</span>
+                  <p className="text-xs text-orange-700 dark:text-orange-400 mt-0.5">
+                    {minDays}+ day minimum · Perfect for Uber, Lyft & DoorDash drivers
+                  </p>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -783,7 +879,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
         {/* Book Button */}
         <button
           onClick={handleBooking}
-          disabled={isLoading}
+          disabled={isLoading || !!dateError}
           className="w-full py-3 px-4 bg-black hover:bg-gray-900 text-white font-semibold rounded-lg transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? (
@@ -791,6 +887,8 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
               Processing...
             </span>
+          ) : dateError ? (
+            `Select at least ${minDays} days`
           ) : (
             'Continue to Checkout'
           )}

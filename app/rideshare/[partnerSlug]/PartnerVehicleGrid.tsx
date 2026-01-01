@@ -1,5 +1,5 @@
 // app/rideshare/[partnerSlug]/PartnerVehicleGrid.tsx
-// Client component for vehicle grid with filters
+// Client component for vehicle grid with filters - uses CompactCarCard for consistency
 
 'use client'
 
@@ -15,6 +15,8 @@ import {
   IoListOutline
 } from 'react-icons/io5'
 import VehicleFilters, { FilterState } from '../components/VehicleFilters'
+import CompactCarCard from '@/app/components/cards/CompactCarCard'
+import { generateCarUrl } from '@/app/lib/utils/urls'
 
 interface Vehicle {
   id: string
@@ -24,19 +26,24 @@ interface Vehicle {
   dailyRate: number
   weeklyRate: number | null
   monthlyRate: number | null
-  photos: string[]
+  photos: { url: string }[]
   city: string | null
   state: string | null
   instantBook: boolean
   transmission: string | null
   fuelType: string | null
   seats: number | null
+  carType: string | null
   description: string | null
   features: string[]
   rating: number | null
   totalTrips: number | null
   vehicleType: string | null
   minTripDuration: number | null
+  host: {
+    name: string | null
+    profilePhoto: string | null
+  } | null
 }
 
 interface PartnerVehicleGridProps {
@@ -131,12 +138,30 @@ export default function PartnerVehicleGrid({ vehicles, availableMakes }: Partner
       {filteredVehicles.length > 0 ? (
         <div className={
           viewMode === 'grid'
-            ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
+            ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4'
             : 'space-y-4'
         }>
           {filteredVehicles.map((vehicle) => (
             viewMode === 'grid' ? (
-              <VehicleCard key={vehicle.id} vehicle={vehicle} />
+              <CompactCarCard
+                key={vehicle.id}
+                car={{
+                  id: vehicle.id,
+                  make: vehicle.make,
+                  model: vehicle.model,
+                  year: vehicle.year,
+                  dailyRate: vehicle.dailyRate,
+                  carType: vehicle.carType,
+                  seats: vehicle.seats,
+                  city: vehicle.city,
+                  rating: vehicle.rating,
+                  totalTrips: vehicle.totalTrips,
+                  instantBook: vehicle.instantBook,
+                  photos: vehicle.photos,
+                  host: vehicle.host
+                }}
+                accentColor="amber"
+              />
             ) : (
               <VehicleListItem key={vehicle.id} vehicle={vehicle} />
             )
@@ -157,110 +182,26 @@ export default function PartnerVehicleGrid({ vehicles, availableMakes }: Partner
   )
 }
 
-// Grid View Card
-function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
-  return (
-    <Link
-      href={`/cars/${vehicle.id}`}
-      className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow group"
-    >
-      {/* Image */}
-      <div className="relative h-44 bg-gray-200 dark:bg-gray-700">
-        {vehicle.photos?.[0] ? (
-          <Image
-            src={vehicle.photos[0]}
-            alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
-            fill
-            className="object-cover group-hover:scale-105 transition-transform duration-300"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <IoCarOutline className="w-16 h-16 text-gray-400" />
-          </div>
-        )}
-
-        {/* Badges Row */}
-        <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
-          {vehicle.instantBook && (
-            <div className="flex items-center gap-1 px-2 py-1 bg-green-500 text-white text-xs font-medium rounded-full">
-              <IoFlashOutline className="w-3 h-3" />
-              Instant
-            </div>
-          )}
-          {/* Vehicle Type Badge */}
-          {vehicle.vehicleType === 'RIDESHARE' ? (
-            <div className="flex items-center gap-1 px-2 py-1 bg-orange-500 text-white text-xs font-medium rounded-full">
-              <IoTimeOutline className="w-3 h-3" />
-              3 Day Min
-            </div>
-          ) : (
-            <div className="flex items-center gap-1 px-2 py-1 bg-blue-500 text-white text-xs font-medium rounded-full">
-              <IoTimeOutline className="w-3 h-3" />
-              1 Day Min
-            </div>
-          )}
-        </div>
-
-        {/* Only show rating if car has real trips (ignores DB default of 5.0) */}
-        {vehicle.rating && vehicle.rating > 0 && vehicle.totalTrips && vehicle.totalTrips > 0 && (
-          <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 bg-white/90 dark:bg-gray-800/90 text-xs font-medium rounded-full">
-            <IoStarOutline className="w-3 h-3 text-yellow-500" />
-            {vehicle.rating.toFixed(1)}
-          </div>
-        )}
-      </div>
-
-      {/* Info */}
-      <div className="p-4">
-        <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
-          {vehicle.year} {vehicle.make} {vehicle.model}
-        </h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-          {vehicle.city && vehicle.state ? `${vehicle.city}, ${vehicle.state}` : ''}
-        </p>
-
-        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mb-3">
-          <span>{vehicle.transmission}</span>
-          <span>•</span>
-          <span>{vehicle.seats} seats</span>
-          {vehicle.totalTrips && vehicle.totalTrips > 0 && (
-            <>
-              <span>•</span>
-              <span>{vehicle.totalTrips} trips</span>
-            </>
-          )}
-        </div>
-
-        <div className="flex items-baseline justify-between">
-          <div>
-            <span className="text-xl font-bold text-gray-900 dark:text-white">
-              ${vehicle.dailyRate}
-            </span>
-            <span className="text-sm text-gray-500">/day</span>
-          </div>
-          {vehicle.weeklyRate && (
-            <span className="text-sm text-gray-500">
-              ${vehicle.weeklyRate}/week
-            </span>
-          )}
-        </div>
-      </div>
-    </Link>
-  )
-}
-
-// List View Item
+// List View Item - updated to use generateCarUrl for proper routing
 function VehicleListItem({ vehicle }: { vehicle: Vehicle }) {
+  const carUrl = generateCarUrl({
+    id: vehicle.id,
+    make: vehicle.make,
+    model: vehicle.model,
+    year: vehicle.year,
+    city: vehicle.city || 'Phoenix'
+  })
+
   return (
     <Link
-      href={`/cars/${vehicle.id}`}
+      href={carUrl}
       className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow flex flex-col sm:flex-row"
     >
       {/* Image */}
       <div className="relative w-full sm:w-64 h-48 sm:h-auto flex-shrink-0 bg-gray-200 dark:bg-gray-700">
-        {vehicle.photos?.[0] ? (
+        {vehicle.photos?.[0]?.url ? (
           <Image
-            src={vehicle.photos[0]}
+            src={vehicle.photos[0].url}
             alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
             fill
             className="object-cover"
@@ -277,6 +218,13 @@ function VehicleListItem({ vehicle }: { vehicle: Vehicle }) {
             <div className="flex items-center gap-1 px-2 py-1 bg-green-500 text-white text-xs font-medium rounded-full">
               <IoFlashOutline className="w-3 h-3" />
               Instant
+            </div>
+          )}
+          {/* Rideshare Badge */}
+          {vehicle.vehicleType === 'RIDESHARE' && (
+            <div className="flex items-center gap-1 px-2 py-1 bg-orange-500 text-white text-xs font-medium rounded-full">
+              <IoTimeOutline className="w-3 h-3" />
+              3 Day Min
             </div>
           )}
         </div>

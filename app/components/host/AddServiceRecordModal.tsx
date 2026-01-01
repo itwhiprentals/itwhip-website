@@ -2,8 +2,9 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
-import { 
+import { Fragment, useState, useEffect } from 'react'
+import { Dialog, Transition } from '@headlessui/react'
+import {
   IoCloseOutline,
   IoCheckmarkCircleOutline,
   IoWarningOutline,
@@ -14,11 +15,13 @@ import {
 } from 'react-icons/io5'
 import { calculateNextServiceDue, getServiceIntervalDescription } from '@/app/lib/service/calculate-next-service-due'
 import { ServiceType } from '@prisma/client'
+import DateInput from '@/app/components/ui/DateInput'
 
 interface AddServiceRecordModalProps {
   carId: string
   onClose: () => void
   onSuccess: () => void
+  isOpen?: boolean
 }
 
 const SERVICE_TYPES = [
@@ -53,10 +56,12 @@ const COMMON_ITEMS = [
   'Wheel Alignment'
 ]
 
-export default function AddServiceRecordModal({ carId, onClose, onSuccess }: AddServiceRecordModalProps) {
+export default function AddServiceRecordModal({ carId, onClose, onSuccess, isOpen = true }: AddServiceRecordModalProps) {
+  const today = new Date().toISOString().split('T')[0]
+
   const [formData, setFormData] = useState({
     serviceType: 'OIL_CHANGE',
-    serviceDate: new Date().toISOString().split('T')[0],
+    serviceDate: today,
     mileageAtService: '',
     shopName: '',
     shopAddress: '',
@@ -69,11 +74,9 @@ export default function AddServiceRecordModal({ carId, onClose, onSuccess }: Add
     itemsServiced: [] as string[]
   })
 
-  const [receiptFile, setReceiptFile] = useState<File | null>(null)
   const [receiptUrl, setReceiptUrl] = useState<string>('')
-  const [inspectionFile, setInspectionFile] = useState<File | null>(null)
   const [inspectionUrl, setInspectionUrl] = useState<string>('')
-  
+
   const [uploading, setUploading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -91,7 +94,7 @@ export default function AddServiceRecordModal({ carId, onClose, onSuccess }: Add
       if (calculated.nextServiceDue) {
         setFormData(prev => ({
           ...prev,
-          nextServiceDue: calculated.nextServiceDue 
+          nextServiceDue: calculated.nextServiceDue
             ? new Date(calculated.nextServiceDue).toISOString().split('T')[0]
             : ''
         }))
@@ -127,7 +130,7 @@ export default function AddServiceRecordModal({ carId, onClose, onSuccess }: Add
       }
 
       const data = await response.json()
-      
+
       if (type === 'receipt') {
         setReceiptUrl(data.secure_url)
       } else {
@@ -150,7 +153,6 @@ export default function AddServiceRecordModal({ carId, onClose, onSuccess }: Add
   const handleReceiptChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      // Validate file
       if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
         setErrors(prev => ({ ...prev, receipt: 'Please upload an image or PDF file' }))
         return
@@ -159,8 +161,6 @@ export default function AddServiceRecordModal({ carId, onClose, onSuccess }: Add
         setErrors(prev => ({ ...prev, receipt: 'File size must be less than 10MB' }))
         return
       }
-      
-      setReceiptFile(file)
       await handleFileUpload(file, 'receipt')
     }
   }
@@ -168,7 +168,6 @@ export default function AddServiceRecordModal({ carId, onClose, onSuccess }: Add
   const handleInspectionChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      // Validate file
       if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
         setErrors(prev => ({ ...prev, inspection: 'Please upload an image or PDF file' }))
         return
@@ -177,8 +176,6 @@ export default function AddServiceRecordModal({ carId, onClose, onSuccess }: Add
         setErrors(prev => ({ ...prev, inspection: 'File size must be less than 10MB' }))
         return
       }
-      
-      setInspectionFile(file)
       await handleFileUpload(file, 'inspection')
     }
   }
@@ -274,395 +271,433 @@ export default function AddServiceRecordModal({ carId, onClose, onSuccess }: Add
     }
   }
 
+  const handleClose = () => {
+    if (!submitting) {
+      onClose()
+    }
+  }
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between z-10">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-            Add Service Record
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-          >
-            <IoCloseOutline className="w-6 h-6 text-gray-600 dark:text-gray-400" />
-          </button>
-        </div>
+    <Transition appear show={isOpen} as={Fragment}>
+      <Dialog as="div" className="relative z-50" onClose={handleClose}>
+        {/* Backdrop */}
+        <Transition.Child
+          as={Fragment}
+          enter="ease-out duration-300"
+          enterFrom="opacity-0"
+          enterTo="opacity-100"
+          leave="ease-in duration-200"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+        >
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
+        </Transition.Child>
 
-        {/* Success Message */}
-        {successMessage && (
-          <div className="m-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-            <div className="flex items-center gap-2">
-              <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
-              <p className="text-sm text-green-800 dark:text-green-300">{successMessage}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Error Message */}
-        {errors.general && (
-          <div className="m-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-            <div className="flex items-center gap-2">
-              <IoWarningOutline className="w-5 h-5 text-red-600 dark:text-red-400" />
-              <p className="text-sm text-red-800 dark:text-red-300">{errors.general}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Service Type */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Service Type <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={formData.serviceType}
-              onChange={(e) => setFormData({ ...formData, serviceType: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white"
+        <div className="fixed inset-0 overflow-y-auto">
+          {/* Mobile: bottom sheet, Desktop: centered modal */}
+          <div className="flex min-h-full items-end sm:items-center justify-center sm:p-4">
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0 translate-y-full sm:translate-y-0 sm:scale-95"
+              enterTo="opacity-100 translate-y-0 sm:scale-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100 translate-y-0 sm:scale-100"
+              leaveTo="opacity-0 translate-y-full sm:translate-y-0 sm:scale-95"
             >
-              {SERVICE_TYPES.map(type => (
-                <option key={type.value} value={type.value}>{type.label}</option>
-              ))}
-            </select>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1">
-              <IoInformationCircleOutline className="w-3 h-3" />
-              Typical interval: {getServiceIntervalDescription(formData.serviceType as ServiceType)}
-            </p>
-          </div>
+              <Dialog.Panel className="w-full sm:max-w-3xl transform overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white dark:bg-gray-800 shadow-xl transition-all max-h-[90vh] flex flex-col">
+                {/* Drag handle for mobile */}
+                <div className="flex justify-center pt-3 sm:hidden flex-shrink-0">
+                  <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full" />
+                </div>
 
-          {/* Service Date and Mileage */}
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Service Date <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="date"
-                value={formData.serviceDate}
-                onChange={(e) => setFormData({ ...formData, serviceDate: e.target.value })}
-                max={new Date().toISOString().split('T')[0]}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                  errors.serviceDate ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                }`}
-              />
-              {errors.serviceDate && (
-                <p className="text-xs text-red-500 mt-1">{errors.serviceDate}</p>
-              )}
-            </div>
+                {/* Header */}
+                <div className="flex items-center justify-between px-5 sm:px-6 pt-4 pb-3 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+                  <Dialog.Title className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+                    Add Service Record
+                  </Dialog.Title>
+                  <button
+                    onClick={handleClose}
+                    disabled={submitting}
+                    className="p-2 -mr-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    <IoCloseOutline className="w-6 h-6" />
+                  </button>
+                </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Mileage at Service <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                value={formData.mileageAtService}
-                onChange={(e) => setFormData({ ...formData, mileageAtService: e.target.value })}
-                min="0"
-                placeholder="50000"
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                  errors.mileageAtService ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                }`}
-              />
-              {errors.mileageAtService && (
-                <p className="text-xs text-red-500 mt-1">{errors.mileageAtService}</p>
-              )}
-            </div>
-          </div>
+                {/* Scrollable Content */}
+                <div className="flex-1 overflow-y-auto">
+                  {/* Success Message */}
+                  {successMessage && (
+                    <div className="m-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
+                        <p className="text-sm text-green-800 dark:text-green-300">{successMessage}</p>
+                      </div>
+                    </div>
+                  )}
 
-          {/* Shop Information */}
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Shop Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={formData.shopName}
-                onChange={(e) => setFormData({ ...formData, shopName: e.target.value })}
-                placeholder="Quick Lube Auto Service"
-                maxLength={200}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                  errors.shopName ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                }`}
-              />
-              {errors.shopName && (
-                <p className="text-xs text-red-500 mt-1">{errors.shopName}</p>
-              )}
-            </div>
+                  {/* Error Message */}
+                  {errors.general && (
+                    <div className="m-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <IoWarningOutline className="w-5 h-5 text-red-600 dark:text-red-400" />
+                        <p className="text-sm text-red-800 dark:text-red-300">{errors.general}</p>
+                      </div>
+                    </div>
+                  )}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Shop Address <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={formData.shopAddress}
-                onChange={(e) => setFormData({ ...formData, shopAddress: e.target.value })}
-                placeholder="123 Main St, Phoenix, AZ 85001"
-                maxLength={500}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                  errors.shopAddress ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                }`}
-              />
-              {errors.shopAddress && (
-                <p className="text-xs text-red-500 mt-1">{errors.shopAddress}</p>
-              )}
-            </div>
+                  {/* Form */}
+                  <form id="service-record-form" onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-5">
+                    {/* Service Type */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Service Type <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={formData.serviceType}
+                        onChange={(e) => setFormData({ ...formData, serviceType: e.target.value })}
+                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                      >
+                        {SERVICE_TYPES.map(type => (
+                          <option key={type.value} value={type.value}>{type.label}</option>
+                        ))}
+                      </select>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5 flex items-center gap-1">
+                        <IoInformationCircleOutline className="w-3.5 h-3.5" />
+                        Typical interval: {getServiceIntervalDescription(formData.serviceType as ServiceType)}
+                      </p>
+                    </div>
 
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Technician Name (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={formData.technicianName}
-                  onChange={(e) => setFormData({ ...formData, technicianName: e.target.value })}
-                  placeholder="Mike Johnson"
-                  maxLength={200}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                />
-              </div>
+                    {/* Service Date and Mileage */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <DateInput
+                        label="Service Date"
+                        value={formData.serviceDate}
+                        onChange={(value) => setFormData({ ...formData, serviceDate: value })}
+                        max={today}
+                        required
+                        defaultToToday
+                        error={errors.serviceDate}
+                        helperText="When was the service performed?"
+                      />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Invoice Number (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={formData.invoiceNumber}
-                  onChange={(e) => setFormData({ ...formData, invoiceNumber: e.target.value })}
-                  placeholder="INV-12345"
-                  maxLength={100}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                />
-              </div>
-            </div>
-          </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Mileage at Service <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="number"
+                          value={formData.mileageAtService}
+                          onChange={(e) => setFormData({ ...formData, mileageAtService: e.target.value })}
+                          min="0"
+                          placeholder="50000"
+                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${
+                            errors.mileageAtService ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                          }`}
+                        />
+                        {errors.mileageAtService && (
+                          <p className="text-xs text-red-500 mt-1">{errors.mileageAtService}</p>
+                        )}
+                      </div>
+                    </div>
 
-          {/* Cost */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Total Cost <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <span className="absolute left-3 top-2 text-gray-500">$</span>
-              <input
-                type="number"
-                value={formData.costTotal}
-                onChange={(e) => setFormData({ ...formData, costTotal: e.target.value })}
-                min="0"
-                max="50000"
-                step="0.01"
-                placeholder="75.99"
-                className={`w-full pl-8 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                  errors.costTotal ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                }`}
-              />
-            </div>
-            {errors.costTotal && (
-              <p className="text-xs text-red-500 mt-1">{errors.costTotal}</p>
-            )}
-          </div>
+                    {/* Shop Information */}
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Shop Name <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.shopName}
+                          onChange={(e) => setFormData({ ...formData, shopName: e.target.value })}
+                          placeholder="Quick Lube Auto Service"
+                          maxLength={200}
+                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${
+                            errors.shopName ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                          }`}
+                        />
+                        {errors.shopName && (
+                          <p className="text-xs text-red-500 mt-1">{errors.shopName}</p>
+                        )}
+                      </div>
 
-          {/* Receipt Upload */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Receipt Upload <span className="text-red-500">*</span>
-            </label>
-            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4">
-              {receiptUrl ? (
-                <div className="flex items-center gap-3">
-                  <IoCheckmarkCircleOutline className="w-6 h-6 text-green-600" />
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-900 dark:text-white font-medium">Receipt uploaded</p>
-                    <a 
-                      href={receiptUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-xs text-purple-600 dark:text-purple-400 hover:underline"
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Shop Address <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.shopAddress}
+                          onChange={(e) => setFormData({ ...formData, shopAddress: e.target.value })}
+                          placeholder="123 Main St, Phoenix, AZ 85001"
+                          maxLength={500}
+                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${
+                            errors.shopAddress ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                          }`}
+                        />
+                        {errors.shopAddress && (
+                          <p className="text-xs text-red-500 mt-1">{errors.shopAddress}</p>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Technician Name <span className="text-gray-400 text-xs">(Optional)</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.technicianName}
+                            onChange={(e) => setFormData({ ...formData, technicianName: e.target.value })}
+                            placeholder="Mike Johnson"
+                            maxLength={200}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Invoice Number <span className="text-gray-400 text-xs">(Optional)</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.invoiceNumber}
+                            onChange={(e) => setFormData({ ...formData, invoiceNumber: e.target.value })}
+                            placeholder="INV-12345"
+                            maxLength={100}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Cost */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Total Cost <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-2.5 text-gray-500">$</span>
+                        <input
+                          type="number"
+                          value={formData.costTotal}
+                          onChange={(e) => setFormData({ ...formData, costTotal: e.target.value })}
+                          min="0"
+                          max="50000"
+                          step="0.01"
+                          placeholder="75.99"
+                          className={`w-full pl-8 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${
+                            errors.costTotal ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                          }`}
+                        />
+                      </div>
+                      {errors.costTotal && (
+                        <p className="text-xs text-red-500 mt-1">{errors.costTotal}</p>
+                      )}
+                    </div>
+
+                    {/* Receipt Upload */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Receipt Upload <span className="text-red-500">*</span>
+                      </label>
+                      <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4">
+                        {receiptUrl ? (
+                          <div className="flex items-center gap-3">
+                            <IoCheckmarkCircleOutline className="w-6 h-6 text-green-600" />
+                            <div className="flex-1">
+                              <p className="text-sm text-gray-900 dark:text-white font-medium">Receipt uploaded</p>
+                              <a
+                                href={receiptUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-purple-600 dark:text-purple-400 hover:underline"
+                              >
+                                View receipt
+                              </a>
+                            </div>
+                          </div>
+                        ) : (
+                          <label className="flex flex-col items-center cursor-pointer py-2">
+                            <IoCloudUploadOutline className="w-8 h-8 text-gray-400 mb-2" />
+                            <span className="text-sm text-gray-600 dark:text-gray-400">
+                              {uploading ? 'Uploading...' : 'Tap to upload receipt'}
+                            </span>
+                            <span className="text-xs text-gray-500 mt-1">PNG, JPG, PDF (max 10MB)</span>
+                            <input
+                              type="file"
+                              accept="image/*,.pdf"
+                              onChange={handleReceiptChange}
+                              className="hidden"
+                              disabled={uploading}
+                            />
+                          </label>
+                        )}
+                      </div>
+                      {errors.receipt && (
+                        <p className="text-xs text-red-500 mt-1">{errors.receipt}</p>
+                      )}
+                    </div>
+
+                    {/* Inspection Report Upload (for inspections only) */}
+                    {formData.serviceType === 'STATE_INSPECTION' && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Inspection Report <span className="text-red-500">*</span>
+                        </label>
+                        <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4">
+                          {inspectionUrl ? (
+                            <div className="flex items-center gap-3">
+                              <IoCheckmarkCircleOutline className="w-6 h-6 text-green-600" />
+                              <div className="flex-1">
+                                <p className="text-sm text-gray-900 dark:text-white font-medium">Inspection report uploaded</p>
+                                <a
+                                  href={inspectionUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-xs text-purple-600 dark:text-purple-400 hover:underline"
+                                >
+                                  View report
+                                </a>
+                              </div>
+                            </div>
+                          ) : (
+                            <label className="flex flex-col items-center cursor-pointer py-2">
+                              <IoDocumentTextOutline className="w-8 h-8 text-gray-400 mb-2" />
+                              <span className="text-sm text-gray-600 dark:text-gray-400">
+                                {uploading ? 'Uploading...' : 'Tap to upload inspection report'}
+                              </span>
+                              <span className="text-xs text-gray-500 mt-1">PNG, JPG, PDF (max 10MB)</span>
+                              <input
+                                type="file"
+                                accept="image/*,.pdf"
+                                onChange={handleInspectionChange}
+                                className="hidden"
+                                disabled={uploading}
+                              />
+                            </label>
+                          )}
+                        </div>
+                        {errors.inspection && (
+                          <p className="text-xs text-red-500 mt-1">{errors.inspection}</p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Items Serviced */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Items Serviced
+                      </label>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-40 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+                        {COMMON_ITEMS.map(item => (
+                          <label key={item} className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={formData.itemsServiced.includes(item)}
+                              onChange={() => toggleItem(item)}
+                              className="w-4 h-4 text-purple-600 rounded focus:ring-purple-600"
+                            />
+                            <span className="text-sm text-gray-700 dark:text-gray-300">{item}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Next Service Due */}
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                      <div className="flex items-start gap-2 mb-3">
+                        <IoCalendarOutline className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <h3 className="text-sm font-medium text-blue-900 dark:text-blue-200 mb-1">
+                            Next Service Due (Auto-calculated)
+                          </h3>
+                          <p className="text-xs text-blue-800 dark:text-blue-300">
+                            You can override these values if needed
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <DateInput
+                          label="Next Service Date"
+                          value={formData.nextServiceDue}
+                          onChange={(value) => setFormData({ ...formData, nextServiceDue: value })}
+                          helperText="Auto-calculated based on service type"
+                        />
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Next Service Mileage
+                          </label>
+                          <input
+                            type="number"
+                            value={formData.nextServiceMileage}
+                            onChange={(e) => setFormData({ ...formData, nextServiceMileage: e.target.value })}
+                            min="0"
+                            placeholder="55000"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white text-sm"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">Auto-calculated based on service type</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Notes */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Notes <span className="text-gray-400 text-xs">(Optional)</span>
+                      </label>
+                      <textarea
+                        value={formData.notes}
+                        onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                        rows={3}
+                        maxLength={2000}
+                        placeholder="Any additional notes about this service..."
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                      />
+                      <p className="text-xs text-gray-500 dark:text-gray-400 text-right mt-1">
+                        {formData.notes.length}/2000
+                      </p>
+                    </div>
+                  </form>
+                </div>
+
+                {/* Sticky Footer */}
+                <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4 bg-gray-50 dark:bg-gray-800/50">
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={handleClose}
+                      disabled={submitting}
+                      className="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 font-medium"
                     >
-                      View receipt
-                    </a>
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      form="service-record-form"
+                      disabled={submitting || uploading || !receiptUrl}
+                      className="flex-1 px-4 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 font-medium"
+                    >
+                      {submitting ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          Saving...
+                        </>
+                      ) : (
+                        'Add Service Record'
+                      )}
+                    </button>
                   </div>
                 </div>
-              ) : (
-                <label className="flex flex-col items-center cursor-pointer">
-                  <IoCloudUploadOutline className="w-8 h-8 text-gray-400 mb-2" />
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
-                    {uploading ? 'Uploading...' : 'Click to upload receipt'}
-                  </span>
-                  <span className="text-xs text-gray-500 mt-1">PNG, JPG, PDF (max 10MB)</span>
-                  <input
-                    type="file"
-                    accept="image/*,.pdf"
-                    onChange={handleReceiptChange}
-                    className="hidden"
-                    disabled={uploading}
-                  />
-                </label>
-              )}
-            </div>
-            {errors.receipt && (
-              <p className="text-xs text-red-500 mt-1">{errors.receipt}</p>
-            )}
+              </Dialog.Panel>
+            </Transition.Child>
           </div>
-
-          {/* Inspection Report Upload (for inspections only) */}
-          {formData.serviceType === 'STATE_INSPECTION' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Inspection Report <span className="text-red-500">*</span>
-              </label>
-              <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4">
-                {inspectionUrl ? (
-                  <div className="flex items-center gap-3">
-                    <IoCheckmarkCircleOutline className="w-6 h-6 text-green-600" />
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-900 dark:text-white font-medium">Inspection report uploaded</p>
-                      <a 
-                        href={inspectionUrl} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-xs text-purple-600 dark:text-purple-400 hover:underline"
-                      >
-                        View report
-                      </a>
-                    </div>
-                  </div>
-                ) : (
-                  <label className="flex flex-col items-center cursor-pointer">
-                    <IoDocumentTextOutline className="w-8 h-8 text-gray-400 mb-2" />
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                      {uploading ? 'Uploading...' : 'Click to upload inspection report'}
-                    </span>
-                    <span className="text-xs text-gray-500 mt-1">PNG, JPG, PDF (max 10MB)</span>
-                    <input
-                      type="file"
-                      accept="image/*,.pdf"
-                      onChange={handleInspectionChange}
-                      className="hidden"
-                      disabled={uploading}
-                    />
-                  </label>
-                )}
-              </div>
-              {errors.inspection && (
-                <p className="text-xs text-red-500 mt-1">{errors.inspection}</p>
-              )}
-            </div>
-          )}
-
-          {/* Items Serviced */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Items Serviced
-            </label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-40 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-3">
-              {COMMON_ITEMS.map(item => (
-                <label key={item} className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.itemsServiced.includes(item)}
-                    onChange={() => toggleItem(item)}
-                    className="w-4 h-4 text-purple-600 rounded focus:ring-purple-600"
-                  />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">{item}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* Next Service Due */}
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-            <div className="flex items-start gap-2 mb-3">
-              <IoCalendarOutline className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <h3 className="text-sm font-medium text-blue-900 dark:text-blue-200 mb-1">
-                  Next Service Due (Auto-calculated)
-                </h3>
-                <p className="text-xs text-blue-800 dark:text-blue-300">
-                  You can override these values if needed
-                </p>
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Next Service Date
-                </label>
-                <input
-                  type="date"
-                  value={formData.nextServiceDue}
-                  onChange={(e) => setFormData({ ...formData, nextServiceDue: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Next Service Mileage
-                </label>
-                <input
-                  type="number"
-                  value={formData.nextServiceMileage}
-                  onChange={(e) => setFormData({ ...formData, nextServiceMileage: e.target.value })}
-                  min="0"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white text-sm"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Notes */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Notes
-            </label>
-            <textarea
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              rows={3}
-              maxLength={2000}
-              placeholder="Any additional notes about this service..."
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white"
-            />
-            <p className="text-xs text-gray-500 dark:text-gray-400 text-right mt-1">
-              {formData.notes.length}/2000
-            </p>
-          </div>
-
-          {/* Form Actions */}
-          <div className="flex items-center gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={submitting}
-              className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={submitting || uploading || !receiptUrl}
-              className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {submitting ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Saving...
-                </>
-              ) : (
-                'Add Service Record'
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        </div>
+      </Dialog>
+    </Transition>
   )
 }

@@ -33,6 +33,7 @@ import {
 import PhotoGallery from '../components/details/PhotoGallery'
 import BookingWidget from '../components/details/BookingWidget'
 import HostProfile from '../components/details/HostProfile'
+import PartnerProfile from '../components/details/PartnerProfile'
 import ReviewSection from '../components/details/ReviewSection'
 import SimilarCars from '../components/details/SimilarCars'
 import { formatCurrency } from '@/app/(guest)/rentals/lib/rental-utils'
@@ -92,6 +93,20 @@ interface RentalCarWithDetails {
     isVerified?: boolean
     isCompany?: boolean
     approvalStatus?: string
+    // Partner-specific fields
+    hostType?: 'INDIVIDUAL' | 'FLEET_PARTNER' | 'PARTNER' | string
+    partnerCompanyName?: string
+    partnerSlug?: string
+    partnerLogo?: string
+    partnerBio?: string
+    partnerFleetSize?: number
+    partnerAvgRating?: number
+    partnerTotalBookings?: number
+    partnerSupportEmail?: string
+    partnerSupportPhone?: string
+    partnerBadges?: any
+    yearEstablished?: number
+    location?: string
   }
   reviews?: any[]
   currentMileage?: number
@@ -104,6 +119,8 @@ interface RentalCarWithDetails {
   hostStatus?: string
   suspensionMessage?: string | null
   isActive?: boolean
+  // RIDESHARE FIELDS
+  vehicleType?: 'RENTAL' | 'RIDESHARE' | string
 }
 
 // Type for SSR-fetched similar car data
@@ -478,6 +495,10 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
   const vehicleClass = getVehicleClass(car.make, car.model, car.carType || car.type || undefined)
   const fuelTypeBadge = formatFuelTypeBadge(car.fuelType)
 
+  // Rideshare detection
+  const isRideshare = car.vehicleType === 'RIDESHARE'
+  const isPartner = car.host?.hostType === 'FLEET_PARTNER' || car.host?.hostType === 'PARTNER'
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
@@ -650,7 +671,12 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
                   <span className="text-gray-500">New listing</span>
                 )}
 
-                {car.instantBook && car.isBookable !== false && (
+                {isRideshare ? (
+                  <div className="flex items-center gap-1.5 text-orange-600 dark:text-orange-400">
+                    <IoCarSportOutline className="w-4 h-4" />
+                    <span className="font-medium">Rideshare</span>
+                  </div>
+                ) : car.instantBook && car.isBookable !== false && (
                   <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
                     <IoFlashOutline className="w-4 h-4" />
                     <span className="font-medium">Instant Book</span>
@@ -932,8 +958,14 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
               )}
             </div>
 
-            {/* Host Profile */}
-            {car.host && <HostProfile host={car.host} />}
+            {/* Host/Partner Profile - Show partner branding for rideshare fleet vehicles */}
+            {car.host && (
+              car.host.hostType === 'FLEET_PARTNER' || car.host.hostType === 'PARTNER' ? (
+                <PartnerProfile partner={car.host} />
+              ) : (
+                <HostProfile host={car.host} />
+              )
+            )}
 
             {/* Reviews */}
             <ReviewSection carId={car.id} reviews={car.reviews || []} />

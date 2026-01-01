@@ -59,22 +59,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Calculate fleet stats
-    const vehicles = partner.cars.map(car => ({
-      id: car.id,
-      make: car.make,
-      model: car.model,
-      year: car.year,
-      dailyRate: car.dailyRate,
-      photo: car.photos?.[0] || null,
-      totalTrips: car.totalTrips || 0,
-      status: car.isActive ? 'available' : 'maintenance' as 'available' | 'booked' | 'maintenance'
-    }))
-
-    const fleetSize = vehicles.length
-    const activeVehicles = vehicles.filter(v => v.status === 'available').length
-
-    // Get bookings for this partner's vehicles
+    // Get bookings for this partner's vehicles first (needed for status)
     const vehicleIds = partner.cars.map(c => c.id)
 
     const bookings = await prisma.rentalBooking.findMany({
@@ -100,6 +85,41 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
       take: 20
     })
+
+    // Get car IDs with active bookings
+    const bookedCarIds = new Set(
+      bookings
+        .filter(b => b.status === 'CONFIRMED' || b.status === 'ACTIVE')
+        .map(b => b.carId)
+    )
+
+    // Calculate fleet stats with proper status
+    const vehicles = partner.cars.map(car => {
+      let status: 'available' | 'booked' | 'maintenance' = 'available'
+
+      if (!car.isActive) {
+        status = 'maintenance' // Inactive vehicles show as maintenance
+      } else if (bookedCarIds.has(car.id)) {
+        status = 'booked'
+      }
+
+      // Get first photo URL properly
+      const firstPhoto = car.photos?.[0] as { url?: string } | undefined
+
+      return {
+        id: car.id,
+        make: car.make,
+        model: car.model,
+        year: car.year,
+        dailyRate: car.dailyRate,
+        photo: firstPhoto?.url || null,
+        totalTrips: car.totalTrips || 0,
+        status
+      }
+    })
+
+    const fleetSize = vehicles.length
+    const activeVehicles = partner.cars.filter(c => c.isActive).length
 
     // Transform bookings for response
     const recentBookings = bookings.map(booking => ({

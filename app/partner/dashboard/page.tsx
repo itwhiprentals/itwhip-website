@@ -109,7 +109,7 @@ export default function PartnerDashboardPage() {
       if (data.success) {
         setStats(data.stats)
         setRecentBookings(data.recentBookings || [])
-        setVehicleStatus(data.vehicleStatus || [])
+        setVehicleStatus(data.vehicles || [])
       }
     } catch (err) {
       console.error('Dashboard fetch error:', err)
