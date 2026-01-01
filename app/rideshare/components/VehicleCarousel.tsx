@@ -122,9 +122,9 @@ export default function VehicleCarousel({ vehicles, partnerSlug, maxVisible = 4 
                 </div>
               </div>
 
-              {/* Model + Trim */}
+              {/* Model only - trim often contains multiple options */}
               <p className="text-xs text-gray-600 dark:text-gray-300">
-                {vehicle.model}{vehicle.trim ? ` ${vehicle.trim}` : ''}
+                {vehicle.model}
               </p>
 
               {/* Location with Weekly Price */}
