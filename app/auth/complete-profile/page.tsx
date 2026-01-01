@@ -26,6 +26,11 @@ function CompleteProfileContent() {
   const redirectTo = searchParams.get('redirectTo') || '/dashboard'
   const roleHint = searchParams.get('roleHint') || 'guest'
   const mode = searchParams.get('mode') || 'signup'
+  // Guard param is set by oauth-redirect to indicate cross-role scenarios
+  // Use this SYNCHRONOUSLY to prevent race conditions with async state
+  const guard = searchParams.get('guard')
+  const isGuestToHostUpgrade = guard === 'guest-on-host'
+  const isHostToGuestBlocked = guard === 'host-on-guest'
 
   // Multi-step wizard state (for hosts)
   const totalSteps = roleHint === 'host' ? 2 : 1
@@ -144,6 +149,18 @@ function CompleteProfileContent() {
       console.log('[Complete Profile] Blocking redirect - user is switching accounts')
       return
     }
+
+    // CRITICAL FIX: Check guard params FIRST (synchronous) before async state
+    // This prevents the race condition where redirect fires before async checks complete
+    if (isGuestToHostUpgrade) {
+      console.log('[Complete Profile] Guard=guest-on-host detected - blocking redirect for upgrade flow')
+      return
+    }
+    if (isHostToGuestBlocked) {
+      console.log('[Complete Profile] Guard=host-on-guest detected - blocking redirect for guard screen')
+      return
+    }
+
     if (status === 'authenticated' && isProfileComplete && !isPendingUser && !checkingProfile) {
       // If HOST user trying to access GUEST without profile, don't redirect - show blocking message
       if (isHostWithoutGuestProfile) {
@@ -158,7 +175,7 @@ function CompleteProfileContent() {
       // User already has complete profile, redirect to dashboard
       router.push(redirectTo)
     }
-  }, [status, isProfileComplete, isPendingUser, router, redirectTo, isHostWithoutGuestProfile, isGuestWithoutHostProfile, checkingProfile, isSwitchingAccount])
+  }, [status, isProfileComplete, isPendingUser, router, redirectTo, isHostWithoutGuestProfile, isGuestWithoutHostProfile, checkingProfile, isSwitchingAccount, isGuestToHostUpgrade, isHostToGuestBlocked])
 
   // Format phone number as user types
   const formatPhoneNumber = (value: string) => {
@@ -288,7 +305,9 @@ function CompleteProfileContent() {
     }
   }
 
-  if (status === 'loading' || checkingProfile) {
+  // Show loading state UNLESS we have a guard param that tells us what to render immediately
+  // This prevents the flash of loading spinner when we already know the intent
+  if (status === 'loading' || (checkingProfile && !isGuestToHostUpgrade && !isHostToGuestBlocked)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
@@ -304,8 +323,10 @@ function CompleteProfileContent() {
   // ========================================================================
   // UPGRADE STATE: GUEST user trying to become a HOST
   // Show the host signup form to let them upgrade their account
+  // CRITICAL: Check BOTH the synchronous guard param AND the async state
+  // The guard param is checked first to prevent race conditions
   // ========================================================================
-  if (isGuestWithoutHostProfile) {
+  if (isGuestToHostUpgrade || isGuestWithoutHostProfile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
         <Header />
@@ -496,8 +517,9 @@ function CompleteProfileContent() {
   // ========================================================================
   // BLOCKING STATE: HOST user trying to access GUEST without profile
   // They must use account linking flow - NO automatic profile creation
+  // CRITICAL: Check BOTH the synchronous guard param AND the async state
   // ========================================================================
-  if (isHostWithoutGuestProfile) {
+  if (isHostToGuestBlocked || isHostWithoutGuestProfile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
         <Header />
