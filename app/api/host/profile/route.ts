@@ -26,7 +26,9 @@ async function getHostFromHeaders() {
           id: true,
           email: true,
           name: true,
-          role: true
+          role: true,
+          status: true,
+          deletionScheduledFor: true
         }
       },
       insuranceProvider: {
@@ -203,9 +205,12 @@ export async function GET(request: NextRequest) {
       canEditCalendar: host.canEditCalendar,
       canSetPricing: host.canSetPricing,
       canMessageGuests: host.canMessageGuests,
-      canWithdrawFunds: host.canWithdrawFunds
+      canWithdrawFunds: host.canWithdrawFunds,
+      // GDPR fields
+      userStatus: host.user?.status || 'ACTIVE',
+      deletionScheduledFor: host.user?.deletionScheduledFor || null
     }
-    
+
     return NextResponse.json({ profile })
     
   } catch (error) {

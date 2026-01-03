@@ -107,13 +107,13 @@ function CompleteProfileContent() {
     async function checkHostProfile() {
       try {
         const response = await fetch('/api/host/profile')
-        if (response.status === 404) {
+        // Handle both 404 (no profile) and 401 (no auth token = no host profile)
+        if (response.status === 404 || response.status === 401) {
           // Check if user is a GUEST (has guest profile but not host)
           const guestResponse = await fetch('/api/guest/profile')
           if (guestResponse.ok) {
-            // GUEST user trying to access HOST without host profile
-            // BLOCK this - they must apply to become a host
-            console.log('[Complete Profile] ⚠️ GUEST user trying to access HOST - blocking (must apply to become host)')
+            // GUEST user trying to become a HOST - show upgrade form
+            console.log('[Complete Profile] GUEST user wants to become HOST - showing upgrade form')
             setIsGuestWithoutHostProfile(true)
           }
         }
@@ -288,7 +288,8 @@ function CompleteProfileContent() {
         // Force a hard redirect to get fresh session state
         console.log('[Complete Profile] Guest upgraded to Host')
         setTimeout(() => {
-          window.location.href = '/host/login?status=pending'
+          // Redirect to dashboard - it will show pending approval status if needed
+          window.location.href = '/host/dashboard'
         }, 100)
       } else {
         // Existing user - update session and redirect normally

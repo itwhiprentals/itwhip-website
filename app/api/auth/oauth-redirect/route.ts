@@ -346,17 +346,17 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // No host profile - check if this is a GUEST trying to access HOST area
-      // GUEST user trying to access HOST area → Show guard screen
+      // GUEST user wants to become HOST → Allow upgrade flow
+      // Redirect to complete-profile where they can add vehicle info
       if (guestProfile && !hostProfile) {
-        console.log('[OAuth Redirect] GUEST user tried host flow - redirecting to complete-profile for guard screen')
-        return createRedirectWithCookies(`/auth/complete-profile?roleHint=host&mode=${mode}&guard=guest-on-host&redirectTo=/host/dashboard`)
+        console.log('[OAuth Redirect] GUEST user wants to become HOST - redirecting to complete-profile for upgrade')
+        return createRedirectWithCookies(`/auth/complete-profile?roleHint=host&mode=signup&redirectTo=/host/dashboard`)
       }
 
       // No host profile and no guest profile - handle based on mode
       if (mode === 'login') {
         // LOGIN mode: User trying to login without an account
-        console.log('[OAuth Redirect] No host profile for login, redirecting to login with error')
+        console.log('[OAuth Redirect] NO HOST PROFILE FOR LOGIN')
         return createRedirectWithCookies('/host/login?error=no-account')
       }
 

@@ -47,26 +47,27 @@ export default function RoleSwitcher() {
       const success = await switchRole(targetRole)
 
       if (success) {
-        // Only navigate to dashboard for HOST switch
-        // For GUEST switch, stay on current page (user might be on booking page)
+        // CRITICAL: Use window.location.href for HARD redirect
+        // router.push() is a soft navigation that doesn't reload cookies properly
+        // This ensures middleware and server components get fresh auth state
         if (targetRole === 'host') {
-          router.push('/host/dashboard')
+          console.log('[RoleSwitcher] Switching to host - hard redirect to /host/dashboard')
+          window.location.href = '/host/dashboard'
         } else {
-          // For guest switch, DON'T call router.refresh() immediately
-          // The AuthContext state update is enough for Header to re-render
-          // Calling refresh() can cause race conditions with the state update
-          console.log('[RoleSwitcher] Switched to guest - no navigation needed')
+          console.log('[RoleSwitcher] Switching to guest - hard redirect to /dashboard')
+          window.location.href = '/dashboard'
         }
       } else {
         console.error('[RoleSwitcher] Switch failed')
         alert('Failed to switch roles. Please try again.')
+        setIsSwitching(false)
       }
     } catch (error) {
       console.error('[RoleSwitcher] Error switching roles:', error)
       alert('An error occurred while switching roles.')
-    } finally {
       setIsSwitching(false)
     }
+    // Note: Don't setIsSwitching(false) on success - page will reload anyway
   }
 
   // Don't render if loading or user doesn't have both roles

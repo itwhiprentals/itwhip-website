@@ -524,112 +524,12 @@ export async function POST(request: NextRequest) {
       phoneVerified: updatedUser.phoneVerified
     })
 
-    // Check if ReviewerProfile exists
-    let existingProfile = await prisma.reviewerProfile.findFirst({
-      where: {
-        OR: [
-          { userId: userId },
-          { email: email }
-        ]
-      }
-    })
-
-    if (existingProfile) {
-      // Update existing profile
-      await prisma.reviewerProfile.update({
-        where: { id: existingProfile.id },
-        data: { phoneNumber: digitsOnly || null }
-      })
-      console.log(`[Complete Profile] ReviewerProfile.update result: ${existingProfile.id}`)
-    } else if (roleHint === 'guest') {
-      // Check if user is a HOST - they must use Account Linking, not auto-create
-      const existingHost = await prisma.rentalHost.findFirst({
-        where: {
-          OR: [
-            { userId: userId },
-            { email: email }
-          ]
-        }
-      })
-
-      if (existingHost) {
-        console.log(`[Complete Profile] ⚠️ BLOCKED: Existing HOST tried to create guest profile - must use Account Linking`)
-        return NextResponse.json({
-          success: false,
-          error: 'You already have a Host account. Please use Account Linking to add guest capabilities, or go to your Host Dashboard.',
-          requiresAccountLinking: true,
-          isHost: true,
-          hostDashboardUrl: '/host/dashboard'
-        }, { status: 409 })
-      }
-
-      // CREATE ReviewerProfile for existing user who wants guest access (non-hosts only)
-      console.log(`[Complete Profile] Creating ReviewerProfile for existing user with roleHint=guest`)
-
-      const newProfile = await prisma.reviewerProfile.create({
-        data: {
-          userId: userId,
-          email: email || '',
-          name: updatedUser.name || '',
-          phoneNumber: digitsOnly || null,
-          memberSince: new Date(),
-          city: '',
-          state: 'AZ',
-          emailVerified: true, // OAuth is verified
-          documentsVerified: false,
-          insuranceVerified: false,
-          fullyVerified: false,
-          canInstantBook: false,
-          totalTrips: 0,
-          averageRating: 0
-        }
-      })
-      console.log(`[Complete Profile] Created ReviewerProfile: ${newProfile.id}`)
-
-      // Create AdminNotification for Fleet visibility
-      await prisma.adminNotification.create({
-        data: {
-          type: 'NEW_GUEST_SIGNUP',
-          title: 'Existing User Added Guest Profile',
-          message: `${updatedUser.name || email} created a guest profile`,
-          priority: 'LOW',
-          status: 'UNREAD',
-          actionRequired: false,
-          actionUrl: `/fleet/guests/${newProfile.id}`,
-          relatedId: newProfile.id,
-          relatedType: 'REVIEWER_PROFILE',
-          metadata: {
-            guestEmail: email,
-            guestName: updatedUser.name || null,
-            guestPhone: digitsOnly || null,
-            signupSource: 'oauth-existing-user',
-            wasExistingUser: true
-          }
-        }
-      })
-      console.log(`[Complete Profile] AdminNotification created for guest profile`)
-
-      // Send welcome email
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://itwhip.com'
-      try {
-        const { sendOAuthWelcomeEmail } = await import('@/app/lib/email/templates/oauth-welcome')
-        await sendOAuthWelcomeEmail(email || '', {
-          userName: updatedUser.name || 'Guest',
-          userEmail: email || '',
-          documentsUrl: `${appUrl}/profile?tab=documents`,
-          insuranceUrl: `${appUrl}/profile?tab=insurance`,
-          dashboardUrl: `${appUrl}/dashboard`
-        })
-        console.log(`[Complete Profile] Welcome email sent to: ${email}`)
-      } catch (emailError) {
-        console.error(`[Complete Profile] Failed to send welcome email:`, emailError)
-      }
-    } else if (roleHint === 'host' && carData) {
-      // ========================================================================
-      // EXISTING GUEST USER → HOST UPGRADE
-      // Create RentalHost for existing user who wants to become a host
-      // ========================================================================
-      console.log(`[Complete Profile] Guest-to-Host upgrade for existing user: ${userId}`)
+    // ========================================================================
+    // HOST UPGRADE CHECK - Must come FIRST before generic profile handling
+    // This allows existing guests (with ReviewerProfile) to also become hosts
+    // ========================================================================
+    if (roleHint === 'host' && carData) {
+      console.log(`[Complete Profile] Host upgrade check for existing user: ${userId}`)
 
       // Check if user already has host profile
       const existingHost = await prisma.rentalHost.findFirst({
@@ -647,7 +547,9 @@ export async function POST(request: NextRequest) {
         return await createSuccessResponse(updatedUser, digitsOnly, 'host')
       }
 
-      // Create RentalHost for existing user
+      // Create RentalHost for existing user (guest-to-host upgrade)
+      console.log(`[Complete Profile] Guest-to-Host upgrade for existing user: ${userId}`)
+
       const host = await prisma.rentalHost.create({
         data: {
           userId: userId,
@@ -829,9 +731,131 @@ export async function POST(request: NextRequest) {
         path: '/'
       })
 
+      // Also set standard tokens for dual-role access
+      response.cookies.set('accessToken', tokens.accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 15 * 60,
+        path: '/'
+      })
+
+      response.cookies.set('refreshToken', tokens.refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60,
+        path: '/'
+      })
+
       console.log(`[Complete Profile] Guest-to-Host upgrade complete - host tokens set`)
       return response
+    }
 
+    // ========================================================================
+    // GUEST PROFILE HANDLING (after host upgrade check)
+    // ========================================================================
+
+    // Check if ReviewerProfile exists
+    let existingProfile = await prisma.reviewerProfile.findFirst({
+      where: {
+        OR: [
+          { userId: userId },
+          { email: email }
+        ]
+      }
+    })
+
+    if (existingProfile) {
+      // Update existing profile
+      await prisma.reviewerProfile.update({
+        where: { id: existingProfile.id },
+        data: { phoneNumber: digitsOnly || null }
+      })
+      console.log(`[Complete Profile] ReviewerProfile.update result: ${existingProfile.id}`)
+    } else if (roleHint === 'guest') {
+      // Check if user is a HOST - they must use Account Linking, not auto-create
+      const existingHost = await prisma.rentalHost.findFirst({
+        where: {
+          OR: [
+            { userId: userId },
+            { email: email }
+          ]
+        }
+      })
+
+      if (existingHost) {
+        console.log(`[Complete Profile] ⚠️ BLOCKED: Existing HOST tried to create guest profile - must use Account Linking`)
+        return NextResponse.json({
+          success: false,
+          error: 'You already have a Host account. Please use Account Linking to add guest capabilities, or go to your Host Dashboard.',
+          requiresAccountLinking: true,
+          isHost: true,
+          hostDashboardUrl: '/host/dashboard'
+        }, { status: 409 })
+      }
+
+      // CREATE ReviewerProfile for existing user who wants guest access (non-hosts only)
+      console.log(`[Complete Profile] Creating ReviewerProfile for existing user with roleHint=guest`)
+
+      const newProfile = await prisma.reviewerProfile.create({
+        data: {
+          userId: userId,
+          email: email || '',
+          name: updatedUser.name || '',
+          phoneNumber: digitsOnly || null,
+          memberSince: new Date(),
+          city: '',
+          state: 'AZ',
+          emailVerified: true, // OAuth is verified
+          documentsVerified: false,
+          insuranceVerified: false,
+          fullyVerified: false,
+          canInstantBook: false,
+          totalTrips: 0,
+          averageRating: 0
+        }
+      })
+      console.log(`[Complete Profile] Created ReviewerProfile: ${newProfile.id}`)
+
+      // Create AdminNotification for Fleet visibility
+      await prisma.adminNotification.create({
+        data: {
+          type: 'NEW_GUEST_SIGNUP',
+          title: 'Existing User Added Guest Profile',
+          message: `${updatedUser.name || email} created a guest profile`,
+          priority: 'LOW',
+          status: 'UNREAD',
+          actionRequired: false,
+          actionUrl: `/fleet/guests/${newProfile.id}`,
+          relatedId: newProfile.id,
+          relatedType: 'REVIEWER_PROFILE',
+          metadata: {
+            guestEmail: email,
+            guestName: updatedUser.name || null,
+            guestPhone: digitsOnly || null,
+            signupSource: 'oauth-existing-user',
+            wasExistingUser: true
+          }
+        }
+      })
+      console.log(`[Complete Profile] AdminNotification created for guest profile`)
+
+      // Send welcome email
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://itwhip.com'
+      try {
+        const { sendOAuthWelcomeEmail } = await import('@/app/lib/email/templates/oauth-welcome')
+        await sendOAuthWelcomeEmail(email || '', {
+          userName: updatedUser.name || 'Guest',
+          userEmail: email || '',
+          documentsUrl: `${appUrl}/profile?tab=documents`,
+          insuranceUrl: `${appUrl}/profile?tab=insurance`,
+          dashboardUrl: `${appUrl}/dashboard`
+        })
+        console.log(`[Complete Profile] Welcome email sent to: ${email}`)
+      } catch (emailError) {
+        console.error(`[Complete Profile] Failed to send welcome email:`, emailError)
+      }
     } else {
       console.log(`[Complete Profile] No ReviewerProfile and roleHint=${roleHint || 'none'} - not creating`)
     }

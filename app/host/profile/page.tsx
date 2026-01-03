@@ -103,6 +103,9 @@ interface HostProfile {
   rejectedReason?: string
   active: boolean
   joinedAt: string
+  // GDPR fields
+  userStatus?: 'ACTIVE' | 'PENDING_DELETION' | 'DELETED' | 'SUSPENDED'
+  deletionScheduledFor?: string | null
 }
 
 interface InsuranceData {
@@ -586,6 +589,10 @@ function HostProfileContent() {
                 isSuspended={isSuspended}
                 onFormChange={(data) => setFormData({ ...formData, ...data })}
                 onSave={handleSaveSettings}
+                onTabChange={setActiveTab}
+                userEmail={profile.email}
+                userStatus={profile.userStatus || 'ACTIVE'}
+                deletionScheduledFor={profile.deletionScheduledFor}
               />
             )}
           </div>

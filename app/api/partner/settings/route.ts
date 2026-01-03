@@ -48,7 +48,10 @@ export async function GET(request: NextRequest) {
         emailNotifications: true,
         smsNotifications: false,
         bookingAlerts: true,
-        marketingEmails: false
+        marketingEmails: false,
+        // GDPR fields
+        userStatus: partner.user?.status || 'ACTIVE',
+        deletionScheduledFor: partner.user?.deletionScheduledFor || null
       }
     })
   } catch (error) {

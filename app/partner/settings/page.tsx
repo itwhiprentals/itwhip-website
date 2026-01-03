@@ -15,7 +15,14 @@ import {
   IoEyeOffOutline,
   IoCheckmarkCircleOutline,
   IoAlertCircleOutline,
-  IoLinkOutline
+  IoLinkOutline,
+  IoDownloadOutline,
+  IoTrashOutline,
+  IoWarningOutline,
+  IoCloseOutline,
+  IoCarOutline,
+  IoDocumentTextOutline,
+  IoTimeOutline
 } from 'react-icons/io5'
 
 interface PartnerSettings {
@@ -44,6 +51,10 @@ interface PartnerSettings {
   bookingAlerts: boolean
   payoutAlerts: boolean
   marketingEmails: boolean
+
+  // GDPR
+  userStatus?: 'ACTIVE' | 'PENDING_DELETION' | 'DELETED' | 'SUSPENDED'
+  deletionScheduledFor?: string | null
 }
 
 export default function PartnerSettingsPage() {
@@ -65,12 +76,28 @@ export default function PartnerSettingsPage() {
     emailNotifications: true,
     bookingAlerts: true,
     payoutAlerts: true,
-    marketingEmails: false
+    marketingEmails: false,
+    userStatus: 'ACTIVE',
+    deletionScheduledFor: null
   })
   const [isLoading, setIsLoading] = useState(true)
+
+  // GDPR state
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
+  const [exportError, setExportError] = useState('')
+  const [isCancellingDeletion, setIsCancellingDeletion] = useState(false)
+  const [deleteStep, setDeleteStep] = useState<'confirm' | 'password' | 'success'>('confirm')
+  const [deletePassword, setDeletePassword] = useState('')
+  const [showDeletePassword, setShowDeletePassword] = useState(false)
+  const [deleteReason, setDeleteReason] = useState('')
+  const [deleteOtherReason, setDeleteOtherReason] = useState('')
+  const [deleteError, setDeleteError] = useState('')
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deletionDate, setDeletionDate] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
-  const [activeSection, setActiveSection] = useState<'account' | 'company' | 'banking' | 'security' | 'notifications'>('account')
+  const [activeSection, setActiveSection] = useState<'account' | 'company' | 'banking' | 'security' | 'notifications' | 'privacy'>('account')
   const [showCurrentPassword, setShowCurrentPassword] = useState(false)
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [passwordData, setPasswordData] = useState({
@@ -177,6 +204,114 @@ export default function PartnerSettingsPage() {
     }
   }
 
+  // GDPR: Handle data export
+  const handleExportData = async () => {
+    setIsExporting(true)
+    setExportError('')
+
+    try {
+      const response = await fetch('/api/partner/export-data')
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to export data')
+      }
+
+      // Get the blob and create download as PDF
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `ItWhip-Partner-Data-${new Date().toISOString().split('T')[0]}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (error: any) {
+      setExportError(error.message)
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
+  // GDPR: Handle cancel deletion
+  const handleCancelDeletion = async () => {
+    setIsCancellingDeletion(true)
+
+    try {
+      const response = await fetch('/api/partner/cancel-deletion', {
+        method: 'POST'
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to cancel deletion')
+      }
+
+      // Reload the page to reflect the change
+      window.location.reload()
+    } catch (error: any) {
+      alert(error.message)
+    } finally {
+      setIsCancellingDeletion(false)
+    }
+  }
+
+  // GDPR: Handle delete account
+  const handleDeleteAccount = async () => {
+    if (!deletePassword) {
+      setDeleteError('Please enter your password')
+      return
+    }
+
+    setDeleteError('')
+    setIsDeleting(true)
+
+    try {
+      const response = await fetch('/api/partner/delete-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          password: deletePassword,
+          reason: deleteReason === 'other' ? deleteOtherReason : deleteReason
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete account')
+      }
+
+      setDeletionDate(data.deletionScheduledFor)
+      setDeleteStep('success')
+    } catch (err: any) {
+      setDeleteError(err.message)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const resetDeleteModal = () => {
+    setShowDeleteModal(false)
+    setDeleteStep('confirm')
+    setDeletePassword('')
+    setShowDeletePassword(false)
+    setDeleteReason('')
+    setDeleteOtherReason('')
+    setDeleteError('')
+    setDeletionDate(null)
+  }
+
+  const DELETION_REASONS = [
+    { value: 'no_longer_need', label: 'No longer need the service' },
+    { value: 'privacy_concerns', label: 'Privacy concerns' },
+    { value: 'found_alternative', label: 'Found a better alternative' },
+    { value: 'too_expensive', label: 'Service is too expensive' },
+    { value: 'poor_experience', label: 'Had a poor experience' },
+    { value: 'other', label: 'Other reason' }
+  ]
+
   const getStripeStatusBadge = () => {
     switch (settings.stripeConnectStatus) {
       case 'connected':
@@ -214,7 +349,8 @@ export default function PartnerSettingsPage() {
     { id: 'company', label: 'Company', icon: IoBusinessOutline },
     { id: 'banking', label: 'Banking & Payouts', icon: IoCardOutline },
     { id: 'security', label: 'Security', icon: IoShieldCheckmarkOutline },
-    { id: 'notifications', label: 'Notifications', icon: IoNotificationsOutline }
+    { id: 'notifications', label: 'Notifications', icon: IoNotificationsOutline },
+    { id: 'privacy', label: 'Data & Privacy', icon: IoShieldCheckmarkOutline }
   ]
 
   if (isLoading) {
@@ -671,9 +807,391 @@ export default function PartnerSettingsPage() {
                 </div>
               </div>
             )}
+
+            {/* Data & Privacy Section */}
+            {activeSection === 'privacy' && (
+              <div className="space-y-6">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Data & Privacy</h2>
+
+                {/* Download My Data */}
+                <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                        <IoDownloadOutline className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900 dark:text-white">Download My Data</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                          Get a copy of your partner profile, fleet data, bookings, and earnings
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleExportData}
+                      disabled={isExporting}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition-colors flex items-center gap-2"
+                    >
+                      {isExporting ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                          <span>Exporting...</span>
+                        </>
+                      ) : (
+                        <>
+                          <IoDownloadOutline className="w-4 h-4" />
+                          <span>Download</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  {exportError && (
+                    <p className="text-sm text-red-600 dark:text-red-400 mt-3">{exportError}</p>
+                  )}
+                </div>
+
+                {/* Pending Deletion Warning */}
+                {settings.userStatus === 'PENDING_DELETION' && (
+                  <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <IoWarningOutline className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <h4 className="text-sm font-semibold text-amber-800 dark:text-amber-300 mb-1">
+                          Account Scheduled for Deletion
+                        </h4>
+                        <p className="text-sm text-amber-700 dark:text-amber-400 mb-3">
+                          Your account will be permanently deleted on{' '}
+                          <strong>
+                            {settings.deletionScheduledFor
+                              ? new Date(settings.deletionScheduledFor).toLocaleDateString('en-US', {
+                                  weekday: 'long',
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric'
+                                })
+                              : '30 days from request'}
+                          </strong>
+                        </p>
+                        <button
+                          onClick={handleCancelDeletion}
+                          disabled={isCancellingDeletion}
+                          className="px-4 py-2 text-sm bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+                        >
+                          {isCancellingDeletion ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                              <span>Cancelling...</span>
+                            </>
+                          ) : (
+                            <span>Cancel Deletion</span>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Danger Zone */}
+                {settings.userStatus !== 'PENDING_DELETION' && (
+                  <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-1.5 mb-3">
+                      <IoWarningOutline className="w-4 h-4 text-red-500" />
+                      <h3 className="text-sm font-semibold text-red-600 dark:text-red-400">
+                        Danger Zone
+                      </h3>
+                    </div>
+                    <div className="p-4 border border-red-200 dark:border-red-900/50 rounded-lg bg-red-50/50 dark:bg-red-900/10">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-1">
+                            Delete Account
+                          </h4>
+                          <p className="text-xs text-gray-600 dark:text-gray-400">
+                            Permanently delete your partner account, fleet listings, and all associated data. This action cannot be undone after the 30-day grace period.
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setShowDeleteModal(true)}
+                          className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex-shrink-0 flex items-center gap-2"
+                        >
+                          <IoTrashOutline className="w-4 h-4" />
+                          <span>Delete</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Delete Account Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-lg w-full border border-gray-200 dark:border-gray-700 max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                  <IoTrashOutline className="w-5 h-5 text-red-600 dark:text-red-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Delete Account
+                </h3>
+              </div>
+              <button
+                onClick={resetDeleteModal}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                <IoCloseOutline className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6">
+              {deleteStep === 'confirm' && (
+                <div className="space-y-4">
+                  {/* Warning Banner */}
+                  <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <IoWarningOutline className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <h4 className="text-sm font-semibold text-amber-800 dark:text-amber-300 mb-1">
+                          30-Day Grace Period
+                        </h4>
+                        <p className="text-sm text-amber-700 dark:text-amber-400">
+                          Your account will be scheduled for deletion in 30 days. You can cancel this request at any time during the grace period by logging back in.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* What Will Be Deleted */}
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+                      What will be deleted:
+                    </h4>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-3 p-2.5 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                        <IoPersonOutline className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">Your partner profile and company information</span>
+                      </div>
+                      <div className="flex items-center gap-3 p-2.5 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                        <IoCarOutline className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">Your fleet listings and vehicle data</span>
+                      </div>
+                      <div className="flex items-center gap-3 p-2.5 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                        <IoCardOutline className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">Payout history and banking information</span>
+                      </div>
+                      <div className="flex items-center gap-3 p-2.5 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                        <IoDocumentTextOutline className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">Booking history and analytics</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Reason Selection */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                      Why are you leaving? *
+                    </label>
+                    <select
+                      value={deleteReason}
+                      onChange={(e) => {
+                        setDeleteReason(e.target.value)
+                        setDeleteError('')
+                      }}
+                      className="w-full px-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500"
+                    >
+                      <option value="">Select a reason...</option>
+                      {DELETION_REASONS.map((r) => (
+                        <option key={r.value} value={r.value}>
+                          {r.label}
+                        </option>
+                      ))}
+                    </select>
+                    {deleteReason === 'other' && (
+                      <textarea
+                        value={deleteOtherReason}
+                        onChange={(e) => setDeleteOtherReason(e.target.value)}
+                        placeholder="Please tell us more..."
+                        className="w-full mt-2 px-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 resize-none"
+                        rows={3}
+                      />
+                    )}
+                  </div>
+
+                  {/* Error Message */}
+                  {deleteError && (
+                    <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                      <div className="flex items-start gap-2">
+                        <IoAlertCircleOutline className="w-4 h-4 text-red-600 dark:text-red-400 mt-0.5" />
+                        <p className="text-sm text-red-700 dark:text-red-400">{deleteError}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {deleteStep === 'password' && (
+                <div className="space-y-4">
+                  <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <IoWarningOutline className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <h4 className="text-sm font-semibold text-red-800 dark:text-red-300 mb-1">
+                          Confirm Account Deletion
+                        </h4>
+                        <p className="text-sm text-red-700 dark:text-red-400">
+                          Enter your password to confirm. A confirmation email will be sent to <span className="font-medium">{settings.email}</span>.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Enter your password to confirm *
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showDeletePassword ? 'text' : 'password'}
+                        value={deletePassword}
+                        onChange={(e) => {
+                          setDeletePassword(e.target.value)
+                          setDeleteError('')
+                        }}
+                        className="w-full px-3 py-2.5 pr-10 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500"
+                        placeholder="Enter your password"
+                        autoComplete="current-password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowDeletePassword(!showDeletePassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                      >
+                        {showDeletePassword ? (
+                          <IoEyeOffOutline className="w-5 h-5" />
+                        ) : (
+                          <IoEyeOutline className="w-5 h-5" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Error Message */}
+                  {deleteError && (
+                    <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                      <div className="flex items-start gap-2">
+                        <IoAlertCircleOutline className="w-4 h-4 text-red-600 dark:text-red-400 mt-0.5" />
+                        <p className="text-sm text-red-700 dark:text-red-400">{deleteError}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {deleteStep === 'success' && (
+                <div className="text-center py-6">
+                  <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <IoTimeOutline className="w-8 h-8 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                    Deletion Scheduled
+                  </h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    Your account is scheduled for deletion on:
+                  </p>
+                  <p className="text-lg font-semibold text-amber-600 dark:text-amber-400 mb-4">
+                    {deletionDate ? new Date(deletionDate).toLocaleDateString('en-US', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    }) : '30 days from now'}
+                  </p>
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg text-left">
+                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                      <strong>Changed your mind?</strong> Simply log in anytime before the deletion date to cancel this request. A confirmation email has been sent to your email address.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center gap-3 p-6 border-t border-gray-200 dark:border-gray-700 sticky bottom-0 bg-white dark:bg-gray-800">
+              {deleteStep === 'confirm' && (
+                <>
+                  <button
+                    onClick={resetDeleteModal}
+                    className="flex-1 px-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (!deleteReason) {
+                        setDeleteError('Please select a reason for leaving')
+                        return
+                      }
+                      setDeleteError('')
+                      setDeleteStep('password')
+                    }}
+                    className="flex-1 px-4 py-2.5 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium"
+                  >
+                    Continue
+                  </button>
+                </>
+              )}
+
+              {deleteStep === 'password' && (
+                <>
+                  <button
+                    onClick={() => {
+                      setDeleteStep('confirm')
+                      setDeletePassword('')
+                      setDeleteError('')
+                    }}
+                    className="flex-1 px-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
+                  >
+                    Back
+                  </button>
+                  <button
+                    onClick={handleDeleteAccount}
+                    disabled={isDeleting}
+                    className="flex-1 px-4 py-2.5 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-medium"
+                  >
+                    {isDeleting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                        <span>Processing...</span>
+                      </>
+                    ) : (
+                      <>
+                        <IoTrashOutline className="w-4 h-4" />
+                        <span>Delete My Account</span>
+                      </>
+                    )}
+                  </button>
+                </>
+              )}
+
+              {deleteStep === 'success' && (
+                <button
+                  onClick={resetDeleteModal}
+                  className="w-full px-4 py-2.5 text-sm bg-gray-900 dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-100 text-white dark:text-gray-900 rounded-lg transition-colors font-medium"
+                >
+                  Close
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
