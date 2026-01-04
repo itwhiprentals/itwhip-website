@@ -36,6 +36,7 @@ interface AddressAutocompleteProps {
   disabled?: boolean
   placeholder?: string
   className?: string
+  hasError?: boolean
 }
 
 export function AddressAutocomplete({
@@ -46,7 +47,8 @@ export function AddressAutocomplete({
   onAddressSelect,
   disabled = false,
   placeholder = 'Enter street address...',
-  className = ''
+  className = '',
+  hasError = false
 }: AddressAutocompleteProps) {
   const [query, setQuery] = useState(value || '')
   const [suggestions, setSuggestions] = useState<MapboxFeature[]>([])
@@ -227,9 +229,10 @@ export function AddressAutocomplete({
           disabled={disabled}
           placeholder={placeholder}
           className={`
-            w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+            w-full pl-10 pr-10 py-2 border rounded-lg
             focus:ring-2 focus:ring-purple-600 focus:border-transparent
             dark:bg-gray-700 dark:text-white
+            ${hasError ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}
             ${disabled ? 'opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-900' : ''}
           `}
           autoComplete="off"

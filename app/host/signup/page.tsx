@@ -21,8 +21,12 @@ import {
   IoWarningOutline,
   IoCarOutline,
   IoPeopleOutline,
-  IoLayersOutline
+  IoLayersOutline,
+  IoCloudUploadOutline,
+  IoImageOutline,
+  IoTrashOutline
 } from 'react-icons/io5'
+import Image from 'next/image'
 
 function HostSignupContent() {
   const router = useRouter()
@@ -84,6 +88,11 @@ function HostSignupContent() {
   })
   const [isVehicleValid, setIsVehicleValid] = useState(false)
 
+  // Photo upload state
+  const [vehiclePhotos, setVehiclePhotos] = useState<{ url: string; file?: File }[]>([])
+  const [uploadingPhotos, setUploadingPhotos] = useState(false)
+  const MIN_PHOTOS_REQUIRED = 4
+
   const isStep1Valid = () => {
     // OAuth users skip password requirements
     if (isOAuthUser) {
@@ -105,12 +114,19 @@ function HostSignupContent() {
   }
 
   const isStep2Valid = () => {
-    return isVehicleValid && formData.agreeToTerms && formData.hostRole !== ''
+    return isVehicleValid && formData.hostRole !== ''
+  }
+
+  const isStep3Valid = () => {
+    return vehiclePhotos.length >= MIN_PHOTOS_REQUIRED && formData.agreeToTerms
   }
 
   const handleNextStep = () => {
     if (currentStep === 1 && isStep1Valid()) {
       setCurrentStep(2)
+      setError('')
+    } else if (currentStep === 2 && isStep2Valid()) {
+      setCurrentStep(3)
       setError('')
     }
   }
@@ -119,15 +135,76 @@ function HostSignupContent() {
     if (currentStep === 2) {
       setCurrentStep(1)
       setError('')
+    } else if (currentStep === 3) {
+      setCurrentStep(2)
+      setError('')
     }
+  }
+
+  // Photo upload handler
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    setUploadingPhotos(true)
+    setError('')
+
+    try {
+      const newPhotos: { url: string; file?: File }[] = []
+
+      for (const file of Array.from(files)) {
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+          setError('Only image files are allowed')
+          continue
+        }
+
+        // Validate file size (10MB max)
+        if (file.size > 10 * 1024 * 1024) {
+          setError('Each photo must be under 10MB')
+          continue
+        }
+
+        // Upload to Cloudinary via API
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('type', 'hostSignupPhoto')
+
+        const response = await fetch('/api/rentals/upload', {
+          method: 'POST',
+          body: formData
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          newPhotos.push({ url: data.url, file })
+        } else {
+          console.error('Failed to upload photo')
+        }
+      }
+
+      setVehiclePhotos(prev => [...prev, ...newPhotos])
+    } catch (err) {
+      console.error('Upload error:', err)
+      setError('Failed to upload photos. Please try again.')
+    } finally {
+      setUploadingPhotos(false)
+      // Reset input
+      e.target.value = ''
+    }
+  }
+
+  // Remove photo
+  const handleRemovePhoto = (index: number) => {
+    setVehiclePhotos(prev => prev.filter((_, i) => i !== index))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
 
-    if (!isStep2Valid()) {
-      setError('Please complete all required fields')
+    if (!isStep3Valid()) {
+      setError('Please complete all required fields and upload at least 4 photos')
       return
     }
 
@@ -167,7 +244,9 @@ function HostSignupContent() {
         // Host role flags
         managesOwnCars,
         isHostManager,
-        managesOthersCars
+        managesOthersCars,
+        // Vehicle photos
+        vehiclePhotoUrls: vehiclePhotos.map(p => p.url)
       }
 
       // Only include password for non-OAuth users
@@ -257,11 +336,17 @@ function HostSignupContent() {
               }`}>
                 {currentStep > 1 ? <IoCheckmarkCircle className="w-6 h-6" /> : '1'}
               </div>
-              <div className={`w-16 h-1 ${currentStep >= 2 ? 'bg-green-600' : 'bg-gray-200'}`} />
+              <div className={`w-12 h-1 ${currentStep >= 2 ? 'bg-green-600' : 'bg-gray-200'}`} />
               <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
                 currentStep >= 2 ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-500'
               }`}>
-                2
+                {currentStep > 2 ? <IoCheckmarkCircle className="w-6 h-6" /> : '2'}
+              </div>
+              <div className={`w-12 h-1 ${currentStep >= 3 ? 'bg-green-600' : 'bg-gray-200'}`} />
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
+                currentStep >= 3 ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-500'
+              }`}>
+                3
               </div>
             </div>
           </div>
@@ -269,7 +354,7 @@ function HostSignupContent() {
           {/* Signup Form */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
             <form onSubmit={handleSubmit}>
-              
+
               {/* Step 1: Personal Info */}
               {currentStep === 1 && (
                 <div className="space-y-4">
@@ -549,6 +634,139 @@ function HostSignupContent() {
                     showLocationFields={true}
                   />
 
+                  {/* Buttons */}
+                  <div className="flex gap-3 mt-6">
+                    {/* Only show back button for non-OAuth users */}
+                    {!isOAuthUser && (
+                      <button
+                        type="button"
+                        onClick={handlePrevStep}
+                        className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-3 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium"
+                      >
+                        Back
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleNextStep}
+                      disabled={!isStep2Valid()}
+                      className={`${isOAuthUser ? 'w-full' : 'flex-1'} bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium`}
+                    >
+                      Continue to Photos
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 3: Vehicle Photos */}
+              {currentStep === 3 && (
+                <div className="space-y-4">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                    Vehicle Photos
+                  </h2>
+
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    Upload at least {MIN_PHOTOS_REQUIRED} photos of your vehicle to help renters see what they're booking.
+                  </p>
+
+                  {/* Photo Count Indicator */}
+                  <div className={`flex items-center justify-between p-3 rounded-lg ${
+                    vehiclePhotos.length >= MIN_PHOTOS_REQUIRED
+                      ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800'
+                      : 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800'
+                  }`}>
+                    <div className="flex items-center gap-2">
+                      {vehiclePhotos.length >= MIN_PHOTOS_REQUIRED ? (
+                        <IoCheckmarkCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                      ) : (
+                        <IoWarningOutline className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                      )}
+                      <span className={`text-sm font-medium ${
+                        vehiclePhotos.length >= MIN_PHOTOS_REQUIRED
+                          ? 'text-emerald-800 dark:text-emerald-300'
+                          : 'text-amber-800 dark:text-amber-300'
+                      }`}>
+                        {vehiclePhotos.length} of {MIN_PHOTOS_REQUIRED} minimum photos uploaded
+                      </span>
+                    </div>
+                    {vehiclePhotos.length < MIN_PHOTOS_REQUIRED && (
+                      <span className="text-xs text-amber-600 dark:text-amber-400">
+                        {MIN_PHOTOS_REQUIRED - vehiclePhotos.length} more required
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Upload Area */}
+                  <label className={`block w-full border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+                    uploadingPhotos
+                      ? 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50'
+                      : 'border-green-300 dark:border-green-700 hover:border-green-400 dark:hover:border-green-600 hover:bg-green-50 dark:hover:bg-green-900/20'
+                  }`}>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handlePhotoUpload}
+                      className="hidden"
+                      disabled={uploadingPhotos}
+                    />
+                    {uploadingPhotos ? (
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                        <span className="text-sm text-gray-600 dark:text-gray-400">Uploading photos...</span>
+                      </div>
+                    ) : (
+                      <>
+                        <IoCloudUploadOutline className="w-10 h-10 text-green-500 mx-auto mb-2" />
+                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Click to upload photos
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          JPG, PNG up to 10MB each
+                        </p>
+                      </>
+                    )}
+                  </label>
+
+                  {/* Photo Grid */}
+                  {vehiclePhotos.length > 0 && (
+                    <div className="grid grid-cols-2 gap-3 mt-4">
+                      {vehiclePhotos.map((photo, index) => (
+                        <div key={index} className="relative group aspect-video rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700">
+                          <Image
+                            src={photo.url}
+                            alt={`Vehicle photo ${index + 1}`}
+                            fill
+                            className="object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleRemovePhoto(index)}
+                            className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                          >
+                            <IoTrashOutline className="w-4 h-4" />
+                          </button>
+                          {index === 0 && (
+                            <div className="absolute bottom-2 left-2 px-2 py-1 bg-green-600 text-white text-xs rounded">
+                              Main Photo
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Empty State */}
+                  {vehiclePhotos.length === 0 && (
+                    <div className="text-center py-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                      <IoImageOutline className="w-10 h-10 text-gray-400 mx-auto mb-2" />
+                      <p className="text-sm text-gray-500 dark:text-gray-400">No photos uploaded yet</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                        Add photos of exterior, interior, and key features
+                      </p>
+                    </div>
+                  )}
+
                   {/* Terms Agreement */}
                   <div className="flex items-start gap-3 mt-6 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                     <input
@@ -572,13 +790,6 @@ function HostSignupContent() {
                     </label>
                   </div>
 
-                  {/* Validation hint */}
-                  {!formData.agreeToTerms && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 ml-1">
-                      Please check the box above to continue
-                    </p>
-                  )}
-
                   {/* Error Message */}
                   {error && (
                     <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg text-sm flex items-center gap-2">
@@ -589,22 +800,19 @@ function HostSignupContent() {
 
                   {/* Buttons */}
                   <div className="flex gap-3 mt-6">
-                    {/* Only show back button for non-OAuth users */}
-                    {!isOAuthUser && (
-                      <button
-                        type="button"
-                        onClick={handlePrevStep}
-                        className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-3 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium"
-                      >
-                        Back
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={handlePrevStep}
+                      className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-3 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium"
+                    >
+                      Back
+                    </button>
                     <button
                       type="submit"
-                      disabled={isLoading || !isStep2Valid()}
-                      className={`${isOAuthUser ? 'w-full' : 'flex-1'} bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium`}
+                      disabled={isLoading || !isStep3Valid()}
+                      className="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
                     >
-                      {isLoading ? 'Creating Host Profile...' : isOAuthUser ? 'Complete Host Registration' : 'Create Account'}
+                      {isLoading ? 'Creating Host Profile...' : 'Create Account'}
                     </button>
                   </div>
                 </div>

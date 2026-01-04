@@ -65,3 +65,4 @@ export function ServiceTab({ carId, isLocked, onAddServiceRecord }: ServiceTabPr
 }
 
 export default ServiceTab
+

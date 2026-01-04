@@ -167,6 +167,11 @@ export default function Footer() {
                   Host Requirements
                 </Link>
               </li>
+              <li>
+                <Link href="/host/login" className="text-xs md:text-sm text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 font-medium transition-colors">
+                  Host Portal →
+                </Link>
+              </li>
             </ul>
           </div>
 

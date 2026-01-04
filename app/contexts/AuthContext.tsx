@@ -331,3 +331,4 @@ export function useAuth() {
 export function useAuthOptional() {
   return useContext(AuthContext)
 }
+

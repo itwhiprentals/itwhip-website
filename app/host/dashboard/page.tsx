@@ -25,9 +25,9 @@ import {
   IoPricetagOutline,
   IoDocumentOutline,
   IoChevronForwardOutline,
-  IoLocationOutline,
-  IoPeopleOutline,
-  IoSettingsOutline
+  IoChevronDownOutline,
+  IoChevronUpOutline,
+  IoLocationOutline
 } from 'react-icons/io5'
 import VerificationProgress from '../components/VerificationProgress'
 import PendingBanner from '../components/PendingBanner'
@@ -185,22 +185,27 @@ function getCarCompletionStatus(car: CarData): {
 // Incomplete Car Card Component
 function IncompleteCarCard({ car, onComplete }: { car: CarData; onComplete: () => void }) {
   const status = getCarCompletionStatus(car)
-  
+  const [showAllItems, setShowAllItems] = useState(false)
+
   return (
     <div className="bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border-2 border-yellow-300 dark:border-yellow-700 rounded-lg p-4 sm:p-5">
-      {/* Header */}
+      {/* Header - Year/Make on top, Model/Trim below */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-800/50 rounded-lg flex items-center justify-center">
             <IoCarSportOutline className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
           </div>
           <div>
+            {/* Year and Make - Top Line */}
             <h3 className="font-semibold text-gray-900 dark:text-white">
-              {car.year} {car.make} {car.model}
-              {car.trim && <span className="text-gray-500 font-normal"> {car.trim}</span>}
+              {car.year} {car.make}
             </h3>
+            {/* Model and Trim - Second Line */}
+            <p className="text-sm text-gray-600 dark:text-gray-300">
+              {car.model}{car.trim ? ` ${car.trim}` : ''}
+            </p>
             {car.color && (
-              <p className="text-sm text-gray-500 dark:text-gray-400">{car.color}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{car.color}</p>
             )}
           </div>
         </div>
@@ -216,7 +221,7 @@ function IncompleteCarCard({ car, onComplete }: { car: CarData; onComplete: () =
           <span className="font-semibold text-gray-900 dark:text-white">{status.completionPercent}%</span>
         </div>
         <div className="w-full h-2.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-          <div 
+          <div
             className="h-full bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full transition-all duration-500"
             style={{ width: `${status.completionPercent}%` }}
           />
@@ -230,15 +235,40 @@ function IncompleteCarCard({ car, onComplete }: { car: CarData; onComplete: () =
       <div className="mb-4">
         <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Still needed:</p>
         <ul className="space-y-1.5">
+          {/* Show first 3 items always */}
           {status.missingItems.slice(0, 3).map((item, idx) => (
             <li key={idx} className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
               <IoWarningOutline className="w-4 h-4 text-yellow-500 flex-shrink-0" />
               {item}
             </li>
           ))}
+          {/* Show remaining items when expanded */}
+          {showAllItems && status.missingItems.slice(3).map((item, idx) => (
+            <li key={`more-${idx}`} className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+              <IoWarningOutline className="w-4 h-4 text-yellow-500 flex-shrink-0" />
+              {item}
+            </li>
+          ))}
+          {/* Expandable "+X more items" button */}
           {status.missingItems.length > 3 && (
-            <li className="text-sm text-gray-500 dark:text-gray-400 ml-6">
-              +{status.missingItems.length - 3} more item{status.missingItems.length - 3 > 1 ? 's' : ''}
+            <li>
+              <button
+                type="button"
+                onClick={() => setShowAllItems(!showAllItems)}
+                className="flex items-center gap-1 text-sm text-yellow-700 dark:text-yellow-400 hover:text-yellow-800 dark:hover:text-yellow-300 ml-6 font-medium transition-colors"
+              >
+                {showAllItems ? (
+                  <>
+                    <IoChevronUpOutline className="w-4 h-4" />
+                    Show less
+                  </>
+                ) : (
+                  <>
+                    <IoChevronDownOutline className="w-4 h-4" />
+                    +{status.missingItems.length - 3} more item{status.missingItems.length - 3 > 1 ? 's' : ''}
+                  </>
+                )}
+              </button>
             </li>
           )}
         </ul>
@@ -358,9 +388,6 @@ function HostDashboardContent() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [showWelcome, setShowWelcome] = useState(false)
-  // Fleet manager role state
-  const [isHostManager, setIsHostManager] = useState(false)
-  const [managedVehicleCount, setManagedVehicleCount] = useState(0)
 
   // Check for welcome param (new signup)
   useEffect(() => {
@@ -373,23 +400,7 @@ function HostDashboardContent() {
 
   useEffect(() => {
     checkSession()
-    checkAccountType()
   }, [])
-
-  const checkAccountType = async () => {
-    try {
-      const response = await fetch('/api/host/account-type', {
-        credentials: 'include'
-      })
-      if (response.ok) {
-        const data = await response.json()
-        setIsHostManager(data.isHostManager || data.managedVehicleCount > 0)
-        setManagedVehicleCount(data.managedVehicleCount || 0)
-      }
-    } catch (error) {
-      console.error('Failed to check account type:', error)
-    }
-  }
 
   const checkSession = async () => {
     try {
@@ -545,29 +556,15 @@ function HostDashboardContent() {
   // Check if host has any incomplete cars (for verification progress)
   const hasIncompleteCar = incompleteCars.length > 0
 
-  // Base navigation items
-  const baseNavigationItems = [
+  const navigationItems = [
     { name: 'Dashboard', href: '/host/dashboard', icon: IoHomeOutline, current: true },
     { name: 'My Cars', href: '/host/cars', icon: IoCarOutline, current: false },
     { name: 'Bookings', href: '/host/bookings', icon: IoCalendarOutline, current: false },
     { name: 'Claims', href: '/host/claims', icon: IoShieldCheckmarkOutline, current: false },
     { name: 'Messages', href: '/host/messages', icon: IoChatbubbleOutline, current: false },
     { name: 'Earnings', href: '/host/earnings', icon: IoWalletOutline, current: false },
-  ]
-
-  // Fleet manager specific items
-  const fleetManagerItems = isHostManager ? [
-    { name: 'Fleet Settings', href: '/host/settings/fleet-manager', icon: IoSettingsOutline, current: false },
-    { name: 'Invite Owner', href: '/host/fleet/invite-owner', icon: IoPeopleOutline, current: false },
-  ] : []
-
-  // Profile always at end
-  const profileItem = [
     { name: 'Profile', href: '/host/profile', icon: IoPersonOutline, current: false },
   ]
-
-  // Combine navigation items
-  const navigationItems = [...baseNavigationItems, ...fleetManagerItems, ...profileItem]
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -605,11 +602,6 @@ function HostDashboardContent() {
                     {item.name === 'My Cars' && incompleteCars.length > 0 && (
                       <span className="ml-auto bg-yellow-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
                         !
-                      </span>
-                    )}
-                    {item.name === 'My Cars' && managedVehicleCount > 0 && incompleteCars.length === 0 && (
-                      <span className="ml-auto bg-purple-500 text-white text-xs font-bold px-2 py-0.5 rounded-full" title="Managed vehicles">
-                        +{managedVehicleCount}
                       </span>
                     )}
                   </Link>

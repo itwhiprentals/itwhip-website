@@ -302,32 +302,37 @@ function NewClaimPageInner() {
 
         {/* Progress Steps */}
         <div className="mb-8">
-          <div className="flex items-center justify-between">
-            {[1, 2, 3].map((s) => (
-              <div key={s} className="flex-1 flex items-center">
+          <div className="flex items-start">
+            {[
+              { num: 1, label: 'Select Booking' },
+              { num: 2, label: 'Claim Type' },
+              { num: 3, label: 'Details' }
+            ].map((s, idx) => (
+              <div key={s.num} className="flex-1 flex flex-col items-center relative">
+                {/* Circle */}
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                    step >= s
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium z-10 ${
+                    step >= s.num
                       ? 'bg-green-600 text-white'
                       : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
                   }`}
                 >
-                  {step > s ? <CheckCircle className="w-5 h-5" /> : s}
+                  {step > s.num ? <CheckCircle className="w-5 h-5" /> : s.num}
                 </div>
-                {s < 3 && (
+                {/* Label */}
+                <span className="text-xs text-gray-600 dark:text-gray-400 mt-2 text-center">
+                  {s.label}
+                </span>
+                {/* Connecting line */}
+                {idx < 2 && (
                   <div
-                    className={`flex-1 h-1 mx-2 ${
-                      step > s ? 'bg-green-600' : 'bg-gray-200 dark:bg-gray-700'
+                    className={`absolute top-4 left-[calc(50%+16px)] right-[calc(-50%+16px)] h-0.5 ${
+                      step > s.num ? 'bg-green-600' : 'bg-gray-200 dark:bg-gray-700'
                     }`}
                   />
                 )}
               </div>
             ))}
-          </div>
-          <div className="flex justify-between mt-2">
-            <span className="text-xs text-gray-600 dark:text-gray-400">Select Booking</span>
-            <span className="text-xs text-gray-600 dark:text-gray-400">Claim Type</span>
-            <span className="text-xs text-gray-600 dark:text-gray-400">Details</span>
           </div>
         </div>
 

@@ -13,7 +13,9 @@ import {
   IoAlertCircleOutline,
   IoTimeOutline,
   IoCloseCircleOutline,
-  IoPersonOutline
+  IoPersonOutline,
+  IoArrowForwardOutline,
+  IoSearchOutline
 } from 'react-icons/io5'
 import OAuthButtons from '@/app/components/auth/OAuthButtons'
 
@@ -398,17 +400,25 @@ function HostLoginContent() {
               </p>
             </div>
 
-            {/* Renter Login Link */}
+            {/* Role Selection Card */}
             <div className="mt-6 pt-6 border-t border-gray-200">
-              <div className="text-center">
-                <p className="text-gray-500 text-sm mb-2">Looking to rent a car?</p>
-                <Link
-                  href="/auth/login"
-                  className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium transition-colors"
-                >
-                  Guest / Renter Login
-                </Link>
-              </div>
+              <Link
+                href="/auth/login"
+                className="block p-4 bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-lg hover:border-blue-400 hover:bg-blue-100 transition-all group"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-200 rounded-lg flex items-center justify-center">
+                      <IoSearchOutline className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-900 text-sm">Looking to Rent a Car?</p>
+                      <p className="text-blue-600/80 text-xs">Guest / Renter Login</p>
+                    </div>
+                  </div>
+                  <IoArrowForwardOutline className="w-5 h-5 text-blue-600 transform group-hover:translate-x-1 transition-transform" />
+                </div>
+              </Link>
             </div>
           </div>
 

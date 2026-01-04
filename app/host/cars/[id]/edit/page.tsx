@@ -26,6 +26,7 @@ import AddressAutocomplete from './components/AddressAutocomplete'
 import HostAvailabilityCalendar from './components/HostAvailabilityCalendar'
 import {
   IoArrowBackOutline,
+  IoArrowForwardOutline,
   IoCarOutline,
   IoCarSportOutline,
   IoLocationOutline,
@@ -159,6 +160,12 @@ interface CarDetails {
     createdAt: string
     bookingCode: string
   }
+
+  // Host approval status (for locking availability until approved)
+  hostApprovalStatus?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED'
+
+  // Inspection status (for validation)
+  hasStateInspection?: boolean
 }
 
 const carTypes = [
@@ -236,6 +243,38 @@ const CAR_COLORS = [
   'Pearl White', 'Midnight Blue', 'Other'
 ]
 
+// Error field mapping for clickable navigation
+// Maps error keys to their tab and field ID for scrolling
+const ERROR_FIELD_MAP: Record<string, { tab: string; fieldId: string }> = {
+  // Details tab
+  vin: { tab: 'details', fieldId: 'field-vin' },
+  licensePlate: { tab: 'details', fieldId: 'field-licensePlate' },
+  make: { tab: 'details', fieldId: 'field-make' },
+  model: { tab: 'details', fieldId: 'field-model' },
+  year: { tab: 'details', fieldId: 'field-year' },
+  color: { tab: 'details', fieldId: 'field-color' },
+  description: { tab: 'details', fieldId: 'field-description' },
+  address: { tab: 'details', fieldId: 'field-address' },
+  zipCode: { tab: 'details', fieldId: 'field-zipCode' },
+  // Registration tab
+  registrationState: { tab: 'registration', fieldId: 'field-registrationState' },
+  registrationExpiryDate: { tab: 'registration', fieldId: 'field-registrationExpiryDate' },
+  registeredOwner: { tab: 'registration', fieldId: 'field-registeredOwner' },
+  titleStatus: { tab: 'registration', fieldId: 'field-titleStatus' },
+  estimatedValue: { tab: 'registration', fieldId: 'field-estimatedValue' },
+  garageAddress: { tab: 'registration', fieldId: 'field-garageAddress' },
+  garageCity: { tab: 'registration', fieldId: 'field-garageCity' },
+  garageState: { tab: 'registration', fieldId: 'field-garageState' },
+  garageZip: { tab: 'registration', fieldId: 'field-garageZip' },
+  lienholderName: { tab: 'registration', fieldId: 'field-lienholderName' },
+  // Pricing tab
+  dailyRate: { tab: 'pricing', fieldId: 'field-dailyRate' },
+  // Photos tab
+  photos: { tab: 'photos', fieldId: 'field-photos' },
+  // Service/Maintenance tab
+  inspection: { tab: 'service', fieldId: 'field-inspection' }
+}
+
 export default function EditCarPage() {
   const router = useRouter()
   const params = useParams()
@@ -262,6 +301,23 @@ export default function EditCarPage() {
 
   // Validation errors state
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+
+  // Navigate to a specific error field
+  const navigateToField = (errorKey: string) => {
+    const fieldInfo = ERROR_FIELD_MAP[errorKey]
+    if (!fieldInfo) return
+
+    // Switch to the correct tab
+    setActiveTab(fieldInfo.tab)
+
+    // Wait for tab to render, then scroll to field
+    setTimeout(() => {
+      const element = document.getElementById(fieldInfo.fieldId)
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+    }, 100)
+  }
 
   // Form state
   const [formData, setFormData] = useState({
@@ -679,31 +735,67 @@ export default function EditCarPage() {
       return
     }
 
-    // Comprehensive validation
+    // Comprehensive validation - ALL fields with (*) must be filled
     const errors: Record<string, string> = {}
 
-    // Required fields
+    // === VEHICLE DETAILS TAB ===
+    // VIN is required
+    if (!formData.vin?.trim()) {
+      errors.vin = 'VIN is required'
+    } else if (formData.vin.length !== 17) {
+      errors.vin = 'VIN must be exactly 17 characters'
+    }
+
+    // License plate is required
+    if (!formData.licensePlate?.trim()) errors.licensePlate = 'License plate is required'
+
+    // Basic vehicle info
     if (!formData.make) errors.make = 'Make is required'
     if (!formData.model) errors.model = 'Model is required'
     if (!formData.year) errors.year = 'Year is required'
     if (!formData.color) errors.color = 'Color is required'
-    if (!formData.dailyRate || formData.dailyRate <= 0) errors.dailyRate = 'Daily rate is required'
-    if (!formData.address?.trim()) errors.address = 'Street address is required'
-    if (!formData.zipCode?.trim()) errors.zipCode = 'ZIP code is required'
 
     // Vehicle description minimum 50 characters
     if (!formData.description || formData.description.length < 50) {
       errors.description = 'Description must be at least 50 characters'
     }
 
-    // VIN validation (if provided)
-    if (formData.vin && formData.vin.length !== 17) {
-      errors.vin = 'VIN must be exactly 17 characters'
+    // Location
+    if (!formData.address?.trim()) errors.address = 'Street address is required'
+    if (!formData.zipCode?.trim()) errors.zipCode = 'ZIP code is required'
+
+    // === DOCUMENTATION TAB ===
+    // Registration info
+    if (!formData.registrationState?.trim()) errors.registrationState = 'State of registration is required'
+    if (!formData.registrationExpiryDate?.trim()) errors.registrationExpiryDate = 'Registration expiration date is required'
+    if (!formData.registeredOwner?.trim()) errors.registeredOwner = 'Registered owner name is required'
+    if (!formData.titleStatus?.trim()) errors.titleStatus = 'Title status is required'
+    if (!formData.estimatedValue || formData.estimatedValue <= 0) errors.estimatedValue = 'Estimated vehicle value is required'
+
+    // Garage address (required)
+    if (!formData.garageAddress?.trim()) errors.garageAddress = 'Garage address is required'
+    if (!formData.garageCity?.trim()) errors.garageCity = 'Garage city is required'
+    if (!formData.garageState?.trim()) errors.garageState = 'Garage state is required'
+    if (!formData.garageZip?.trim()) errors.garageZip = 'Garage ZIP is required'
+
+    // Lienholder info (only if hasLien is true)
+    if (formData.hasLien && !formData.lienholderName?.trim()) {
+      errors.lienholderName = 'Lienholder name is required when vehicle has a lien'
     }
 
+    // === PRICING TAB ===
+    if (!formData.dailyRate || formData.dailyRate <= 0) errors.dailyRate = 'Daily rate is required'
+
+    // === PHOTOS TAB ===
     // Minimum 3 photos required
     if (photos.length < 3) {
       errors.photos = 'At least 3 photos are required for your listing'
+    }
+
+    // === SERVICE/MAINTENANCE TAB ===
+    // First inspection is required
+    if (!car?.hasStateInspection) {
+      errors.inspection = 'No inspection record found - first inspection required'
     }
 
     if (Object.keys(errors).length > 0) {
@@ -910,6 +1002,10 @@ export default function EditCarPage() {
 
   const isLocked = car.hasActiveClaim || false
   const isApproved = (car as any).status === 'APPROVED' || (car as any).isApproved === true
+
+  // Lock availability options if host is not approved yet (PENDING, REJECTED, SUSPENDED)
+  const isHostNotApproved = car.hostApprovalStatus && car.hostApprovalStatus !== 'APPROVED'
+  const isAvailabilityLocked = isLocked || isHostNotApproved
 
   // Fields that should be locked after approval
   const isFieldLocked = (fieldName: string) => {
@@ -1118,11 +1214,18 @@ export default function EditCarPage() {
                 <IoCloseCircleOutline className="w-5 h-5" />
                 <span className="font-medium">Please fix the following errors before saving:</span>
               </div>
-              <ul className="text-sm text-red-600 dark:text-red-300 list-disc list-inside space-y-1">
+              <div className="space-y-2">
                 {Object.entries(validationErrors).map(([field, error]) => (
-                  <li key={field}>{error}</li>
+                  <button
+                    key={field}
+                    onClick={() => navigateToField(field)}
+                    className="w-full flex items-center justify-between gap-2 px-3 py-2 text-sm text-left text-red-700 dark:text-red-300 bg-white dark:bg-gray-800 rounded-lg border border-red-200 dark:border-red-700 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors group"
+                  >
+                    <span>{error}</span>
+                    <IoArrowForwardOutline className="w-4 h-4 flex-shrink-0 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                  </button>
                 ))}
-              </ul>
+              </div>
             </div>
           )}
 
@@ -1167,7 +1270,7 @@ export default function EditCarPage() {
 
                 {/* VIN and License Plate - Vehicle Identification */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4 border-b border-gray-200 dark:border-gray-700">
-                  <div>
+                  <div id="field-vin">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       VIN (Vehicle Identification Number) <span className="text-red-500">*</span>
                       {isFieldLocked('vin') && (
@@ -1215,7 +1318,7 @@ export default function EditCarPage() {
                     <p className="text-xs text-gray-500 mt-1">Enter VIN and click "Decode" to auto-fill vehicle details</p>
                   </div>
 
-                  <div>
+                  <div id="field-licensePlate">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       License Plate Number <span className="text-red-500">*</span>
                       {isFieldLocked('licensePlate') && (
@@ -1260,9 +1363,9 @@ export default function EditCarPage() {
                 )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
+                  <div id="field-make">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Make *
+                      Make <span className="text-red-500">*</span>
                       {isVinVerified('make') && !isApproved && (
                         <span className="ml-2 text-xs text-emerald-600 dark:text-emerald-400">
                           <IoCheckmarkCircle className="inline w-3 h-3 mr-0.5" />
@@ -1298,10 +1401,10 @@ export default function EditCarPage() {
                     </select>
                     {validationErrors.make && <p className="text-red-500 text-xs mt-1">{validationErrors.make}</p>}
                   </div>
-                  
-                  <div>
+
+                  <div id="field-model">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Model *
+                      Model <span className="text-red-500">*</span>
                       {isVinVerified('model') && !isApproved && (
                         <span className="ml-2 text-xs text-emerald-600 dark:text-emerald-400">
                           <IoCheckmarkCircle className="inline w-3 h-3 mr-0.5" />
@@ -1336,10 +1439,10 @@ export default function EditCarPage() {
                     </select>
                     {validationErrors.model && <p className="text-red-500 text-xs mt-1">{validationErrors.model}</p>}
                   </div>
-                  
-                  <div>
+
+                  <div id="field-year">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Year *
+                      Year <span className="text-red-500">*</span>
                       {isVinVerified('year') && !isApproved && (
                         <span className="ml-2 text-xs text-emerald-600 dark:text-emerald-400">
                           <IoCheckmarkCircle className="inline w-3 h-3 mr-0.5" />
@@ -1369,7 +1472,7 @@ export default function EditCarPage() {
                     {validationErrors.year && <p className="text-red-500 text-xs mt-1">{validationErrors.year}</p>}
                   </div>
 
-                  <div>
+                  <div id="field-trim">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Trim
                       {isVinVerified('trim') && !isApproved && (
@@ -1407,9 +1510,9 @@ export default function EditCarPage() {
                     <p className="text-xs text-gray-500 mt-1">Auto-filled from VIN or select manually</p>
                   </div>
 
-                  <div>
+                  <div id="field-color">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Color *
+                      Color <span className="text-red-500">*</span>
                       {isFieldLocked('color') && (
                         <span className="ml-2 text-xs text-amber-600 dark:text-amber-400">
                           <IoLockClosedOutline className="inline w-3 h-3 mr-0.5" />
@@ -1467,9 +1570,9 @@ export default function EditCarPage() {
 
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                   <h4 className="font-medium text-gray-900 dark:text-white mb-4">Vehicle Description</h4>
-                  <div>
+                  <div id="field-description">
                     <label className="flex justify-between text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      <span>Description *</span>
+                      <span>Description <span className="text-red-500">*</span></span>
                       <span className={`text-xs ${
                         (formData.description?.length || 0) < 50
                           ? 'text-red-500'
@@ -1521,9 +1624,9 @@ export default function EditCarPage() {
                     </p>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="md:col-span-2">
+                    <div id="field-address" className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Street Address *
+                        Street Address <span className="text-red-500">*</span>
                       </label>
                       <AddressAutocomplete
                         value={formData.address}
@@ -1543,6 +1646,7 @@ export default function EditCarPage() {
                         }}
                         disabled={isLocked}
                         placeholder="Start typing to search for an address..."
+                        hasError={!!validationErrors.address}
                       />
                       {validationErrors.address && <p className="text-red-500 text-xs mt-1">{validationErrors.address}</p>}
                     </div>
@@ -1577,9 +1681,9 @@ export default function EditCarPage() {
                         />
                       </div>
 
-                      <div className="flex-1">
+                      <div id="field-zipCode" className="flex-1">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          ZIP Code *
+                          ZIP Code <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="text"
@@ -1635,7 +1739,7 @@ export default function EditCarPage() {
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Registration & Ownership</h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
+                  <div id="field-registrationState">
                     <label className="flex items-center justify-between text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       <span>State of Registration <span className="text-red-500">*</span></span>
                       {isFieldLocked('registrationState') && isApproved && (
@@ -1657,8 +1761,8 @@ export default function EditCarPage() {
                     </select>
                     <p className="text-xs text-gray-500 mt-1">State where vehicle is registered</p>
                   </div>
-                  
-                  <div className="min-w-0">
+
+                  <div id="field-registrationExpiryDate" className="min-w-0">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Registration Expiration Date <span className="text-red-500">*</span>
                     </label>
@@ -1675,8 +1779,8 @@ export default function EditCarPage() {
                       {formData.registrationExpiryDate ? 'Date shown on registration card' : 'Select the expiration date from your registration card'}
                     </p>
                   </div>
-                  
-                  <div>
+
+                  <div id="field-registeredOwner">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Registered Owner Name <span className="text-red-500">*</span>
                     </label>
@@ -1691,7 +1795,7 @@ export default function EditCarPage() {
                     <p className="text-xs text-gray-500 mt-1">Must match vehicle title</p>
                   </div>
                   
-                  <div>
+                  <div id="field-titleStatus">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Title Status <span className="text-red-500">*</span>
                     </label>
@@ -1707,7 +1811,7 @@ export default function EditCarPage() {
                     </select>
                   </div>
                   
-                  <div>
+                  <div id="field-estimatedValue">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Estimated Vehicle Value <span className="text-red-500">*</span>
                     </label>
@@ -1748,7 +1852,7 @@ export default function EditCarPage() {
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Where the vehicle is normally parked overnight (Required for insurance)</p>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="md:col-span-2">
+                    <div id="field-garageAddress" className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Garage Address <span className="text-red-500">*</span>
                       </label>
@@ -1768,10 +1872,11 @@ export default function EditCarPage() {
                         }}
                         disabled={isLocked}
                         placeholder="Search for garage/storage address..."
+                        hasError={!!validationErrors.garageAddress}
                       />
                     </div>
 
-                    <div>
+                    <div id="field-garageCity">
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         City <span className="text-red-500">*</span>
                       </label>
@@ -1786,7 +1891,7 @@ export default function EditCarPage() {
                     </div>
 
                     <div className="flex gap-2">
-                      <div className="flex-1">
+                      <div id="field-garageState" className="flex-1">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                           State <span className="text-red-500">*</span>
                         </label>
@@ -1800,7 +1905,7 @@ export default function EditCarPage() {
                         />
                       </div>
 
-                      <div className="flex-1">
+                      <div id="field-garageZip" className="flex-1">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                           ZIP <span className="text-red-500">*</span>
                         </label>
@@ -1836,7 +1941,7 @@ export default function EditCarPage() {
                     
                     {formData.hasLien && (
                       <div className="ml-7 grid md:grid-cols-2 gap-4 mt-4">
-                        <div>
+                        <div id="field-lienholderName">
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                             Lienholder Name <span className="text-red-500">*</span>
                           </label>
@@ -1979,9 +2084,9 @@ export default function EditCarPage() {
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Pricing & Fees</h3>
                 
                 <div className="grid md:grid-cols-3 gap-4">
-                  <div>
+                  <div id="field-dailyRate">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Daily Rate *
+                      Daily Rate <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
                       <span className="absolute left-3 top-2 text-gray-500">$</span>
@@ -1993,11 +2098,11 @@ export default function EditCarPage() {
                         step="10"
                         disabled={isLocked}
                         className={`w-full pl-8 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                          errors.dailyRate ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                          validationErrors.dailyRate ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                         } ${isLocked ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-900' : ''}`}
                       />
                     </div>
-                    {errors.dailyRate && <p className="text-red-500 text-xs mt-1">{errors.dailyRate}</p>}
+                    {validationErrors.dailyRate && <p className="text-red-500 text-xs mt-1">{validationErrors.dailyRate}</p>}
                   </div>
                   
                   <div>
@@ -2102,7 +2207,7 @@ export default function EditCarPage() {
             )}
 
             {activeTab === 'photos' && (
-              <div className="space-y-6">
+              <div id="field-photos" className="space-y-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Vehicle Photos</h3>
                   <label className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
@@ -2357,39 +2462,48 @@ export default function EditCarPage() {
                 <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Availability Settings</h3>
 
-                  {isLocked && (
+                  {isAvailabilityLocked && (
                     <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 mb-4">
                       <p className="text-sm text-yellow-800 dark:text-yellow-300">
-                        Availability settings cannot be modified while vehicle has an active claim
+                        {isLocked
+                          ? 'Availability settings cannot be modified while vehicle has an active claim'
+                          : 'Car Active and Instant Book options are locked until your host account is approved. Other availability settings can still be configured.'
+                        }
                       </p>
                     </div>
                   )}
 
                   <div className="space-y-4">
-                    <label className={`flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 ${isLocked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
+                    <label className={`flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 ${isAvailabilityLocked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
                       <input
                         type="checkbox"
                         checked={formData.isActive}
                         onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                        disabled={isLocked}
+                        disabled={isAvailabilityLocked}
                         className="w-5 h-5 text-purple-600 rounded focus:ring-purple-600"
                       />
                       <div>
-                        <span className="text-gray-700 dark:text-gray-300 font-medium">Car is Active</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-700 dark:text-gray-300 font-medium">Car is Active</span>
+                          {isHostNotApproved && <IoLockClosedOutline className="w-4 h-4 text-yellow-600" />}
+                        </div>
                         <p className="text-sm text-gray-500">Make this car available for booking</p>
                       </div>
                     </label>
 
-                    <label className={`flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 ${isLocked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
+                    <label className={`flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 ${isAvailabilityLocked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
                       <input
                         type="checkbox"
                         checked={formData.instantBook}
                         onChange={(e) => setFormData({ ...formData, instantBook: e.target.checked })}
-                        disabled={isLocked}
+                        disabled={isAvailabilityLocked}
                         className="w-5 h-5 text-purple-600 rounded focus:ring-purple-600"
                       />
                       <div>
-                        <span className="text-gray-700 dark:text-gray-300 font-medium">Instant Book</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-700 dark:text-gray-300 font-medium">Instant Book</span>
+                          {isHostNotApproved && <IoLockClosedOutline className="w-4 h-4 text-yellow-600" />}
+                        </div>
                         <p className="text-sm text-gray-500">Allow guests to book without your approval</p>
                       </div>
                     </label>
@@ -2453,7 +2567,7 @@ export default function EditCarPage() {
             )}
 
             {activeTab === 'service' && (
-              <div className="space-y-6">
+              <div id="field-inspection" className="space-y-6">
                 {/* Header with Add Button */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>

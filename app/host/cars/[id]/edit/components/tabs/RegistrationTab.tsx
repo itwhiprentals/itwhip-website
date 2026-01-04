@@ -387,3 +387,4 @@ export function RegistrationTab({
 }
 
 export default RegistrationTab
+

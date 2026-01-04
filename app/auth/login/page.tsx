@@ -11,7 +11,6 @@ import {
   IoLockClosedOutline,
   IoEyeOutline,
   IoEyeOffOutline,
-  IoShieldCheckmarkOutline,
   IoCarOutline,
   IoBusinessOutline,
   IoCheckmarkCircle,
@@ -358,24 +357,25 @@ function LoginContent() {
               </p>
             </form>
 
-            {/* Host Portal Link */}
-            <div className="mt-8 pt-6 border-t border-gray-700">
-              <div className="text-center">
-                <p className="text-gray-500 text-sm mb-2">Are you a car owner?</p>
-                <Link
-                  href="/host/login"
-                  className="inline-flex items-center space-x-2 text-green-400 hover:text-green-300 font-medium transition-colors group"
-                >
-                  <span>Host / Car Owner Login</span>
-                  <IoArrowForwardOutline className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
-                </Link>
-              </div>
-            </div>
-
-            {/* Security Badge */}
-            <div className="mt-8 flex items-center justify-center text-xs text-gray-500">
-              <IoShieldCheckmarkOutline className="w-4 h-4 mr-1" />
-              <span>Secured by 13-layer JWT authentication</span>
+            {/* Role Selection Card */}
+            <div className="mt-6 pt-6 border-t border-gray-700">
+              <Link
+                href="/host/login"
+                className="block p-4 bg-gradient-to-r from-green-900/40 to-green-800/30 border border-green-700/50 rounded-lg hover:border-green-500 hover:bg-green-800/40 transition-all group"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-green-600/30 rounded-lg flex items-center justify-center">
+                      <IoCarOutline className="w-5 h-5 text-green-400" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-white text-sm">Are You a Car Owner?</p>
+                      <p className="text-green-400/80 text-xs">Host Portal Login</p>
+                    </div>
+                  </div>
+                  <IoArrowForwardOutline className="w-5 h-5 text-green-400 transform group-hover:translate-x-1 transition-transform" />
+                </div>
+              </Link>
             </div>
           </div>
         </div>
