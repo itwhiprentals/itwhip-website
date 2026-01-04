@@ -395,7 +395,57 @@ export function HostAvailabilityCalendar({
             </div>
           </div>
 
-          {/* Action buttons */}
+          {/* Quick Actions Dropdown */}
+          {!isLocked && (
+            <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Quick Actions</h4>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex-1">
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Set Status For Selected Dates:</label>
+                  <select
+                    value=""
+                    onChange={(e) => {
+                      if (e.target.value === 'block' && selectedDates.length > 0) {
+                        setShowBlockModal(true)
+                      } else if (e.target.value === 'unblock' && selectedDates.length > 0) {
+                        // Unblock all selected blocked dates
+                        const blockedSelected = selectedDates.filter(d => isDateBlocked(d))
+                        blockedSelected.forEach(date => {
+                          handleUnblockDate(date.toISOString().split('T')[0])
+                        })
+                        setSelectedDates([])
+                      }
+                      e.target.value = ''
+                    }}
+                    disabled={selectedDates.length === 0}
+                    className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <option value="">
+                      {selectedDates.length === 0
+                        ? 'Select dates first...'
+                        : `${selectedDates.length} date${selectedDates.length > 1 ? 's' : ''} selected`}
+                    </option>
+                    <option value="block">🚫 Block Selected Dates</option>
+                    <option value="unblock">✅ Make Available (Unblock)</option>
+                  </select>
+                </div>
+                {selectedDates.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedDates([])}
+                    className="px-4 py-2 text-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors self-end"
+                  >
+                    Clear Selection
+                  </button>
+                )}
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                Tip: Click dates on the calendar to select them, then use the dropdown to change their status.
+              </p>
+            </div>
+          )}
+
+          {/* Action buttons (legacy - kept for quick access) */}
           {!isLocked && selectedDates.length > 0 && (
             <div className="flex gap-2">
               <button

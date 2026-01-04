@@ -267,6 +267,8 @@ const ERROR_FIELD_MAP: Record<string, { tab: string; fieldId: string }> = {
   garageState: { tab: 'registration', fieldId: 'field-garageState' },
   garageZip: { tab: 'registration', fieldId: 'field-garageZip' },
   lienholderName: { tab: 'registration', fieldId: 'field-lienholderName' },
+  currentMileage: { tab: 'registration', fieldId: 'field-currentMileage' },
+  primaryUse: { tab: 'registration', fieldId: 'field-primaryUse' },
   // Pricing tab
   dailyRate: { tab: 'pricing', fieldId: 'field-dailyRate' },
   // Photos tab
@@ -783,6 +785,16 @@ export default function EditCarPage() {
       errors.lienholderName = 'Lienholder name is required when vehicle has a lien'
     }
 
+    // Current odometer reading (required)
+    if (!formData.currentMileage || formData.currentMileage <= 0) {
+      errors.currentMileage = 'Current odometer reading is required'
+    }
+
+    // Primary use/declaration (required)
+    if (!formData.primaryUse?.trim()) {
+      errors.primaryUse = 'Primary use declaration is required'
+    }
+
     // === PRICING TAB ===
     if (!formData.dailyRate || formData.dailyRate <= 0) errors.dailyRate = 'Daily rate is required'
 
@@ -1147,6 +1159,20 @@ export default function EditCarPage() {
                       fill
                       className="object-cover"
                     />
+                    {/* Declaration Badge - Top Right Corner */}
+                    {formData.primaryUse && (
+                      <div className={`absolute top-2 right-2 px-2 py-1 rounded text-xs font-semibold shadow-md ${
+                        formData.primaryUse === 'Rental'
+                          ? 'bg-green-500 text-white'
+                          : formData.primaryUse === 'Personal'
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-purple-500 text-white'
+                      }`}>
+                        {formData.primaryUse === 'Rental' ? 'Rental Only' :
+                         formData.primaryUse === 'Personal' ? 'Personal & Rental' :
+                         formData.primaryUse === 'Business' ? 'Business Use' : formData.primaryUse}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -1350,9 +1376,12 @@ export default function EditCarPage() {
                       value={formData.licensePlate}
                       onChange={(e) => setFormData({ ...formData, licensePlate: e.target.value.toUpperCase() })}
                       disabled={isFieldLocked('licensePlate')}
-                      className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white uppercase ${isFieldLocked('licensePlate') ? 'opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-900' : ''}`}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white uppercase ${validationErrors.licensePlate ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} ${isFieldLocked('licensePlate') ? 'opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-900' : ''}`}
                       placeholder="ABC1234"
                     />
+                    {validationErrors.licensePlate && (
+                      <p className="text-xs text-red-500 mt-1">{validationErrors.licensePlate}</p>
+                    )}
                   </div>
                 </div>
 
@@ -1755,6 +1784,33 @@ export default function EditCarPage() {
                 
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Registration & Ownership</h3>
 
+                {/* Primary Use Declaration - Required for insurance rating */}
+                <div id="field-primaryUse" className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Primary Vehicle Use <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={formData.primaryUse}
+                    onChange={(e) => setFormData({ ...formData, primaryUse: e.target.value })}
+                    disabled={isLocked}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${validationErrors.primaryUse ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} ${isLocked ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-900' : ''}`}
+                  >
+                    <option value="">Select primary use...</option>
+                    <option value="Rental">Rental Only</option>
+                    <option value="Personal">Personal & Rental</option>
+                    <option value="Business">Business Use</option>
+                  </select>
+                  {validationErrors.primaryUse ? (
+                    <p className="text-xs text-red-500 mt-1">{validationErrors.primaryUse}</p>
+                  ) : (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                      <strong>Rental Only:</strong> Vehicle exclusively for platform rentals •
+                      <strong> Personal & Rental:</strong> Mixed personal and rental use •
+                      <strong> Business Use:</strong> Commercial/fleet operations
+                    </p>
+                  )}
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div id="field-registrationState">
                     <label className="flex items-center justify-between text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -1788,13 +1844,17 @@ export default function EditCarPage() {
                       value={formData.registrationExpiryDate}
                       onChange={(e) => setFormData({ ...formData, registrationExpiryDate: e.target.value })}
                       disabled={isLocked}
-                      placeholder="Select expiration date"
+                      placeholder="MM/DD/YYYY"
                       style={{ textAlign: 'left', WebkitAppearance: 'none' }}
-                      className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white text-left [&::-webkit-datetime-edit]:text-left [&::-webkit-datetime-edit-fields-wrapper]:text-left [&::-webkit-date-and-time-value]:text-left ${!formData.registrationExpiryDate ? 'text-gray-400' : ''} ${isLocked ? 'opacity-60 cursor-not-allowed !bg-gray-50 dark:!bg-gray-900' : ''}`}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white text-left [&::-webkit-datetime-edit]:text-left [&::-webkit-datetime-edit-fields-wrapper]:text-left [&::-webkit-date-and-time-value]:text-left ${validationErrors.registrationExpiryDate ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} ${!formData.registrationExpiryDate ? 'text-gray-400' : ''} ${isLocked ? 'opacity-60 cursor-not-allowed !bg-gray-50 dark:!bg-gray-900' : ''}`}
                     />
-                    <p className="text-xs text-gray-500 mt-1">
-                      {formData.registrationExpiryDate ? 'Date shown on registration card' : 'Select the expiration date from your registration card'}
-                    </p>
+                    {validationErrors.registrationExpiryDate ? (
+                      <p className="text-xs text-red-500 mt-1">{validationErrors.registrationExpiryDate}</p>
+                    ) : (
+                      <p className="text-xs text-gray-500 mt-1">
+                        {formData.registrationExpiryDate ? 'Date shown on registration card' : 'Select the expiration date from your registration card'}
+                      </p>
+                    )}
                   </div>
 
                   <div id="field-registeredOwner">
@@ -1806,10 +1866,14 @@ export default function EditCarPage() {
                       value={formData.registeredOwner}
                       onChange={(e) => setFormData({ ...formData, registeredOwner: e.target.value })}
                       disabled={isLocked}
-                      className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${isLocked ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-900' : ''}`}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${validationErrors.registeredOwner ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} ${isLocked ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-900' : ''}`}
                       placeholder="Name exactly as shown on title"
                     />
-                    <p className="text-xs text-gray-500 mt-1">Must match vehicle title</p>
+                    {validationErrors.registeredOwner ? (
+                      <p className="text-xs text-red-500 mt-1">{validationErrors.registeredOwner}</p>
+                    ) : (
+                      <p className="text-xs text-gray-500 mt-1">Must match vehicle title</p>
+                    )}
                   </div>
                   
                   <div id="field-titleStatus">
@@ -1841,16 +1905,20 @@ export default function EditCarPage() {
                         disabled={isLocked}
                         min="0"
                         step="1000"
-                        className={`w-full pl-8 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${isLocked ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-900' : ''}`}
+                        className={`w-full pl-8 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${validationErrors.estimatedValue ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} ${isLocked ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-900' : ''}`}
                         placeholder="Current market value"
                       />
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">Current fair market value</p>
+                    {validationErrors.estimatedValue ? (
+                      <p className="text-xs text-red-500 mt-1">{validationErrors.estimatedValue}</p>
+                    ) : (
+                      <p className="text-xs text-gray-500 mt-1">Current fair market value</p>
+                    )}
                   </div>
                   
-                  <div>
+                  <div id="field-currentMileage">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Current Odometer Reading
+                      Current Odometer Reading <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="number"
@@ -1858,9 +1926,12 @@ export default function EditCarPage() {
                       onChange={(e) => setFormData({ ...formData, currentMileage: parseInt(e.target.value) })}
                       disabled={isLocked}
                       min="0"
-                      className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${isLocked ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-900' : ''}`}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${validationErrors.currentMileage ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} ${isLocked ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-900' : ''}`}
                       placeholder="Miles"
                     />
+                    {validationErrors.currentMileage && (
+                      <p className="text-xs text-red-500 mt-1">{validationErrors.currentMileage}</p>
+                    )}
                   </div>
                 </div>
                 
@@ -1902,9 +1973,12 @@ export default function EditCarPage() {
                         value={formData.garageCity}
                         readOnly
                         disabled={isLocked}
-                        className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 dark:text-white cursor-not-allowed ${isLocked ? 'opacity-60' : ''}`}
+                        className={`w-full px-3 py-2 border rounded-lg bg-gray-50 dark:bg-gray-900 dark:text-white cursor-not-allowed ${validationErrors.garageCity ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} ${isLocked ? 'opacity-60' : ''}`}
                         placeholder="Auto-filled"
                       />
+                      {validationErrors.garageCity && (
+                        <p className="text-xs text-red-500 mt-1">{validationErrors.garageCity}</p>
+                      )}
                     </div>
 
                     <div className="flex gap-2">
@@ -1917,9 +1991,12 @@ export default function EditCarPage() {
                           value={formData.garageState}
                           readOnly
                           disabled={isLocked}
-                          className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 dark:text-white cursor-not-allowed ${isLocked ? 'opacity-60' : ''}`}
+                          className={`w-full px-3 py-2 border rounded-lg bg-gray-50 dark:bg-gray-900 dark:text-white cursor-not-allowed ${validationErrors.garageState ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} ${isLocked ? 'opacity-60' : ''}`}
                           placeholder="Auto-filled"
                         />
+                        {validationErrors.garageState && (
+                          <p className="text-xs text-red-500 mt-1">{validationErrors.garageState}</p>
+                        )}
                       </div>
 
                       <div id="field-garageZip" className="flex-1">
@@ -1932,9 +2009,12 @@ export default function EditCarPage() {
                           readOnly
                           disabled={isLocked}
                           maxLength={10}
-                          className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 dark:text-white cursor-not-allowed ${isLocked ? 'opacity-60' : ''}`}
+                          className={`w-full px-3 py-2 border rounded-lg bg-gray-50 dark:bg-gray-900 dark:text-white cursor-not-allowed ${validationErrors.garageZip ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} ${isLocked ? 'opacity-60' : ''}`}
                           placeholder="Auto-filled"
                         />
+                        {validationErrors.garageZip && (
+                          <p className="text-xs text-red-500 mt-1">{validationErrors.garageZip}</p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1967,9 +2047,12 @@ export default function EditCarPage() {
                             value={formData.lienholderName}
                             onChange={(e) => setFormData({ ...formData, lienholderName: e.target.value })}
                             disabled={isLocked}
-                            className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${isLocked ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-900' : ''}`}
+                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${validationErrors.lienholderName ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} ${isLocked ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-900' : ''}`}
                             placeholder="e.g., Chase Auto Finance"
                           />
+                          {validationErrors.lienholderName && (
+                            <p className="text-xs text-red-500 mt-1">{validationErrors.lienholderName}</p>
+                          )}
                         </div>
                         
                         <div>
@@ -2031,25 +2114,9 @@ export default function EditCarPage() {
                 </div>
                 
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-                  <h4 className="font-medium text-gray-900 dark:text-white mb-4">Vehicle Modifications & Usage</h4>
-                  
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-4">Vehicle Modifications</h4>
+
                   <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Primary Use
-                      </label>
-                      <select
-                        value={formData.primaryUse}
-                        onChange={(e) => setFormData({ ...formData, primaryUse: e.target.value })}
-                        disabled={isLocked}
-                        className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${isLocked ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-900' : ''}`}
-                      >
-                        <option value="Rental">Rental Only</option>
-                        <option value="Personal">Personal & Rental</option>
-                        <option value="Business">Business Use</option>
-                      </select>
-                    </div>
-                    
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Annual Mileage Estimate
@@ -2480,13 +2547,21 @@ export default function EditCarPage() {
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Availability Settings</h3>
 
                   {isAvailabilityLocked && (
-                    <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 mb-4">
-                      <p className="text-sm text-yellow-800 dark:text-yellow-300">
-                        {isLocked
-                          ? 'Availability settings cannot be modified while vehicle has an active claim'
-                          : 'Car Active and Instant Book options are locked until your host account is approved. Other availability settings can still be configured.'
-                        }
-                      </p>
+                    <div className="bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-400 dark:border-yellow-600 rounded-lg p-4 mb-4">
+                      <div className="flex items-start gap-3">
+                        <IoLockClosedOutline className="w-6 h-6 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <h4 className="font-semibold text-yellow-800 dark:text-yellow-300 mb-1">
+                            {isLocked ? 'Locked - Active Claim' : 'Pending Car Approval'}
+                          </h4>
+                          <p className="text-sm text-yellow-700 dark:text-yellow-400">
+                            {isLocked
+                              ? 'Availability settings cannot be modified while vehicle has an active claim.'
+                              : 'Your car cannot go live until your car is approved. You can still configure all settings - they will take effect once approved.'
+                            }
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   )}
 

@@ -135,7 +135,10 @@ export async function GET(request: NextRequest) {
       // For BOTH login and signup mode, redirect to complete-profile
       // If mode is 'login', complete-profile will show "No Account Found" message
       // but still allow user to create account by entering phone
-      const redirectUrl = returnTo || '/dashboard'
+      // For HOST signups, redirect to full host signup flow after phone entry
+      const redirectUrl = roleHint === 'host'
+        ? '/host/signup?oauth=true'
+        : (returnTo || '/dashboard')
       const completeProfileUrl = `/auth/complete-profile?roleHint=${roleHint}&mode=${mode}&redirectTo=${encodeURIComponent(redirectUrl)}`
       console.log(`[OAuth Redirect] Redirecting pending user to complete profile: ${completeProfileUrl}`)
 
@@ -347,10 +350,10 @@ export async function GET(request: NextRequest) {
       }
 
       // GUEST user wants to become HOST → Allow upgrade flow
-      // Redirect to complete-profile where they can add vehicle info
+      // Redirect to full host signup for complete 3-step flow (hostRole, vehicle, photos)
       if (guestProfile && !hostProfile) {
-        console.log('[OAuth Redirect] GUEST user wants to become HOST - redirecting to complete-profile for upgrade')
-        return createRedirectWithCookies(`/auth/complete-profile?roleHint=host&mode=signup&redirectTo=/host/dashboard`)
+        console.log('[OAuth Redirect] GUEST user wants to become HOST - redirecting to FULL host signup for upgrade')
+        return createRedirectWithCookies(`/host/signup?oauth=true`)
       }
 
       // No host profile and no guest profile - handle based on mode
@@ -360,11 +363,11 @@ export async function GET(request: NextRequest) {
         return createRedirectWithCookies('/host/login?error=no-account')
       }
 
-      // ✅ SECURITY FIX: Never auto-create profiles without phone validation
-      // Always redirect to complete-profile if no host profile exists
+      // ✅ New host signup - redirect to full host signup flow with hostRole and photos
+      // complete-profile only has 2 steps, but host signup needs 3 (hostRole, vehicle, photos)
       if (!hostProfile && userId) {
-        console.log('[OAuth Redirect] No host profile, redirecting to complete profile')
-        return createRedirectWithCookies(`/auth/complete-profile?roleHint=host&mode=signup&redirectTo=/host/dashboard`)
+        console.log('[OAuth Redirect] No host profile, redirecting to FULL host signup flow')
+        return createRedirectWithCookies(`/host/signup?oauth=true`)
       }
 
       // If profile exists but missing phone, redirect to complete it

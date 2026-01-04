@@ -244,7 +244,9 @@ export async function GET(
           status: claimInfo.mostRecentClaim.status,
           createdAt: claimInfo.mostRecentClaim.createdAt.toISOString(),
           bookingCode: claimInfo.mostRecentClaim.booking.bookingCode
-        } : null
+        } : null,
+        // Host approval status for locking availability options
+        hostApprovalStatus: host.approvalStatus
       }))
     })
 

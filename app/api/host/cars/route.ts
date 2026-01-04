@@ -251,7 +251,9 @@ export async function GET(request: NextRequest) {
       inactive: formattedCars.filter(c => !c.isActive).length,
       insured: formattedCars.filter(c => c.insuranceEligible).length,
       uninsured: formattedCars.filter(c => !c.insuranceEligible).length,
-      withActiveClaims: formattedCars.filter(c => c.hasActiveClaim).length
+      withActiveClaims: formattedCars.filter(c => c.hasActiveClaim).length,
+      // Host approval status for locking availability options on pending hosts
+      hostApprovalStatus: host.approvalStatus
     })
     
   } catch (error) {
