@@ -329,6 +329,98 @@ export async function POST(
           }
         })
 
+        // ========================================================================
+        // TRIP ISSUE CREATION - AUTO-CREATE WHEN DAMAGE REPORTED
+        // ========================================================================
+        if (damageReported) {
+          const escalationDeadline = new Date()
+          escalationDeadline.setHours(escalationDeadline.getHours() + 48) // 48 hours from now
+
+          // Get inspection photo references
+          const startPhotos = await tx.inspectionPhoto.findMany({
+            where: { bookingId, type: 'start' },
+            select: { id: true, url: true, category: true }
+          })
+
+          // Determine severity based on damage description and charges
+          let severity = 'MINOR'
+          const damageCharge = charges.damage?.charge || 0
+          if (damageCharge > 500 || (damageDescription && damageDescription.toLowerCase().includes('major'))) {
+            severity = 'MAJOR'
+          } else if (damageCharge > 100 || (damageDescription && damageDescription.toLowerCase().includes('moderate'))) {
+            severity = 'MODERATE'
+          }
+
+          // Determine issue type from damage description or default to DAMAGE
+          let issueType = 'DAMAGE'
+          if (damageDescription) {
+            const lowerDesc = damageDescription.toLowerCase()
+            if (lowerDesc.includes('mileage')) issueType = 'MILEAGE'
+            else if (lowerDesc.includes('fuel')) issueType = 'FUEL'
+            else if (lowerDesc.includes('clean')) issueType = 'CLEANING'
+            else if (lowerDesc.includes('mechanical') || lowerDesc.includes('engine')) issueType = 'MECHANICAL'
+          }
+
+          await tx.tripIssue.create({
+            data: {
+              bookingId,
+
+              // Guest report (they reported the damage at trip end)
+              guestReportedAt: new Date(),
+              guestDescription: damageDescription || 'Damage reported at trip end',
+              guestPhotos: damagePhotos || null,
+
+              // Combined analysis
+              issueType,
+              severity,
+
+              // Trip capture evidence
+              tripStartMileage: booking.startMileage,
+              tripEndMileage: endMileage,
+              tripStartFuel: booking.fuelLevelStart,
+              tripEndFuel: fuelLevelEnd,
+              startPhotosRef: startPhotos.length > 0 ? startPhotos : null,
+              endPhotosRef: inspectionPhotos,
+
+              // Resolution workflow
+              status: 'OPEN',
+
+              // Auto-escalation tracking
+              escalationDeadline,
+
+              // Notifications
+              guestNotifiedAt: new Date()
+            }
+          })
+
+          console.log(`[Trip End] TripIssue created for booking ${booking.bookingCode}: ${issueType} - ${severity}`)
+
+          // Create admin notification for trip issue
+          await tx.adminNotification.create({
+            data: {
+              type: 'TRIP_ISSUE_CREATED',
+              title: `Trip Issue Reported - ${booking.bookingCode}`,
+              message: `Guest reported ${severity.toLowerCase()} ${issueType.toLowerCase()} issue at trip end. ${damageDescription ? `Description: ${damageDescription}` : ''}`,
+              priority: severity === 'MAJOR' ? 'HIGH' : severity === 'MODERATE' ? 'MEDIUM' : 'LOW',
+              status: 'UNREAD',
+              relatedId: bookingId,
+              relatedType: 'TripIssue',
+              actionRequired: true,
+              actionUrl: `/admin/rentals/verifications/${bookingId}`,
+              metadata: {
+                issueType,
+                severity,
+                damageDescription,
+                escalationDeadline: escalationDeadline.toISOString(),
+                hasPhotos: !!damagePhotos
+              }
+            }
+          })
+        }
+        // ========================================================================
+        // END TRIP ISSUE CREATION
+        // ========================================================================
+
         // Only create admin notification if charges need review
         if (chargeStatus !== ChargeStatus.CHARGED) {
           const priority = chargeStatus === ChargeStatus.FAILED || chargeStatus === ChargeStatus.DISPUTED ? 'HIGH' : 

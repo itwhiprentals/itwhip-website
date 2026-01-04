@@ -18,7 +18,10 @@ import {
   IoCarSportOutline,
   IoEyeOutline,
   IoEyeOffOutline,
-  IoWarningOutline
+  IoWarningOutline,
+  IoCarOutline,
+  IoPeopleOutline,
+  IoLayersOutline
 } from 'react-icons/io5'
 
 function HostSignupContent() {
@@ -41,7 +44,9 @@ function HostSignupContent() {
     phone: '',
     password: '',
     confirmPassword: '',
-    agreeToTerms: false
+    agreeToTerms: false,
+    // Host role selection
+    hostRole: '' as 'own' | 'manage' | 'both' | ''
   })
 
   // Pre-fill form data from OAuth session
@@ -100,7 +105,7 @@ function HostSignupContent() {
   }
 
   const isStep2Valid = () => {
-    return isVehicleValid && formData.agreeToTerms
+    return isVehicleValid && formData.agreeToTerms && formData.hostRole !== ''
   }
 
   const handleNextStep = () => {
@@ -129,6 +134,11 @@ function HostSignupContent() {
     setIsLoading(true)
 
     try {
+      // Determine host role flags
+      const managesOwnCars = formData.hostRole === 'own' || formData.hostRole === 'both'
+      const isHostManager = formData.hostRole === 'manage' || formData.hostRole === 'both'
+      const managesOthersCars = formData.hostRole === 'manage' || formData.hostRole === 'both'
+
       // Build request body - OAuth users don't need password
       const requestBody: any = {
         name: `${formData.firstName} ${formData.lastName}`,
@@ -153,7 +163,11 @@ function HostSignupContent() {
         vehicleBodyClass: vehicleData.bodyClass || null,
         vehicleTransmission: vehicleData.transmission || null,
         vehicleDriveType: vehicleData.driveType || null,
-        agreeToTerms: formData.agreeToTerms
+        agreeToTerms: formData.agreeToTerms,
+        // Host role flags
+        managesOwnCars,
+        isHostManager,
+        managesOthersCars
       }
 
       // Only include password for non-OAuth users
@@ -419,6 +433,105 @@ function HostSignupContent() {
                       </div>
                     </div>
                   )}
+
+                  {/* Host Role Selection */}
+                  <div className="mb-6">
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                      What will you be doing on ITWhip?
+                    </h2>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      Choose how you plan to use the platform
+                    </p>
+
+                    <div className="space-y-3">
+                      {/* Option: Rent out my own cars */}
+                      <label
+                        className={`flex items-start gap-4 p-4 rounded-lg cursor-pointer transition border-2 ${
+                          formData.hostRole === 'own'
+                            ? 'bg-green-50 dark:bg-green-900/20 border-green-500'
+                            : 'bg-gray-50 dark:bg-gray-700/50 border-transparent hover:border-gray-300 dark:hover:border-gray-600'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="hostRole"
+                          value="own"
+                          checked={formData.hostRole === 'own'}
+                          onChange={(e) => setFormData({...formData, hostRole: 'own'})}
+                          className="mt-1 w-4 h-4 text-green-600 focus:ring-green-500"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <IoCarOutline className="w-5 h-5 text-green-600" />
+                            <span className="font-medium text-gray-900 dark:text-white">
+                              Rent out my own car(s)
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            I'll manage my vehicles and handle bookings myself
+                          </p>
+                        </div>
+                      </label>
+
+                      {/* Option: Manage other people's cars */}
+                      <label
+                        className={`flex items-start gap-4 p-4 rounded-lg cursor-pointer transition border-2 ${
+                          formData.hostRole === 'manage'
+                            ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-500'
+                            : 'bg-gray-50 dark:bg-gray-700/50 border-transparent hover:border-gray-300 dark:hover:border-gray-600'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="hostRole"
+                          value="manage"
+                          checked={formData.hostRole === 'manage'}
+                          onChange={(e) => setFormData({...formData, hostRole: 'manage'})}
+                          className="mt-1 w-4 h-4 text-purple-600 focus:ring-purple-500"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <IoPeopleOutline className="w-5 h-5 text-purple-600" />
+                            <span className="font-medium text-gray-900 dark:text-white">
+                              Manage other people's cars
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            I'm a fleet manager - I'll manage vehicles for other owners and earn commission
+                          </p>
+                        </div>
+                      </label>
+
+                      {/* Option: Both */}
+                      <label
+                        className={`flex items-start gap-4 p-4 rounded-lg cursor-pointer transition border-2 ${
+                          formData.hostRole === 'both'
+                            ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-500'
+                            : 'bg-gray-50 dark:bg-gray-700/50 border-transparent hover:border-gray-300 dark:hover:border-gray-600'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="hostRole"
+                          value="both"
+                          checked={formData.hostRole === 'both'}
+                          onChange={(e) => setFormData({...formData, hostRole: 'both'})}
+                          className="mt-1 w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <IoLayersOutline className="w-5 h-5 text-indigo-600" />
+                            <span className="font-medium text-gray-900 dark:text-white">
+                              Both - I want to do it all
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            I'll rent my own vehicles AND manage vehicles for other owners
+                          </p>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
 
                   <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                     Vehicle & Location

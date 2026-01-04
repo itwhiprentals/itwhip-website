@@ -111,16 +111,20 @@ function LoginContent() {
         }
       }
 
-      // Redirect to appropriate dashboard based on role
+      // ========== CRITICAL: Use window.location.href for HARD redirect ==========
+      // router.push() is a soft navigation that doesn't reload the page
+      // This means AuthContext doesn't refresh and Header shows "Sign In"
+      // Hard redirect ensures Header/MobileMenu/Dashboard are all synced
+      let redirectUrl = '/dashboard'
       switch(data.user.role) {
         case 'ADMIN':
-          router.push('/admin/dashboard')
+          redirectUrl = '/admin/dashboard'
           break
         case 'DRIVER':
-          router.push('/driver/dashboard')
+          redirectUrl = '/driver/dashboard'
           break
         case 'HOTEL':
-          router.push('/hotel/dashboard')
+          redirectUrl = '/hotel/dashboard'
           break
         case 'CLAIMED':     // Users who claimed guest bookings
         case 'STARTER':     // Basic tier users
@@ -128,11 +132,13 @@ function LoginContent() {
         case 'ENTERPRISE':  // Enterprise tier users
         case 'GUEST':       // Legacy guest role if any
         case 'ANONYMOUS':   // Anonymous users who registered
-          router.push('/dashboard')
+          redirectUrl = '/dashboard'
           break
         default:
-          router.push('/dashboard') // Guest dashboard as fallback
+          redirectUrl = '/dashboard' // Guest dashboard as fallback
       }
+      console.log('[Login] Hard redirect to:', redirectUrl)
+      window.location.href = redirectUrl
     } catch (err) {
       console.error('Login error:', err)
       setError(err instanceof Error ? err.message : 'An error occurred')

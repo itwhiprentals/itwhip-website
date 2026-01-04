@@ -1,6 +1,7 @@
 // app/api/auth/verify/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
+import { prisma } from '@/app/lib/database/prisma'
 
 // Get both guest and platform JWT secrets
 const GUEST_JWT_SECRET = new TextEncoder().encode(
@@ -77,14 +78,55 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Return user data
+    // ========== FETCH PROFILE PHOTO FROM DATABASE ==========
+    // JWT tokens don't store profile photos, so we need to fetch from DB
+    // Check multiple sources:
+    // 1. ReviewerProfile.profilePhotoUrl (guest profile photo)
+    // 2. User.avatar (manual upload on user profile)
+    // 3. User.image (OAuth profile photo from Google/Apple)
+    // 4. RentalHost.profilePhoto (for dual-role users who have host profile)
+    let profilePhoto: string | null = null
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: payload.userId as string },
+        select: {
+          avatar: true,
+          image: true,
+          reviewerProfile: {
+            select: { profilePhotoUrl: true }
+          },
+          rentalHost: {
+            select: { profilePhoto: true }
+          }
+        }
+      })
+      // Priority: guest profile > avatar > OAuth image > host profile
+      profilePhoto = user?.reviewerProfile?.profilePhotoUrl ||
+                     user?.avatar ||
+                     user?.image ||
+                     user?.rentalHost?.profilePhoto ||
+                     null
+      console.log('[Auth Verify] Profile photo sources:', {
+        reviewerProfile: user?.reviewerProfile?.profilePhotoUrl || 'none',
+        avatar: user?.avatar || 'none',
+        image: user?.image || 'none',
+        hostProfile: user?.rentalHost?.profilePhoto || 'none',
+        selected: profilePhoto || 'none'
+      })
+    } catch (dbError) {
+      console.warn('Failed to fetch profile photo from DB:', dbError)
+      // Continue without profile photo
+    }
+
+    // Return user data with profile photo
     return NextResponse.json({
       user: {
         id: payload.userId,
         email: payload.email,
         name: payload.name,
         role: payload.role || 'CLAIMED',
-        userType: payload.userType || 'guest' // Include user type for client
+        userType: payload.userType || 'guest',
+        profilePhoto // Include profile photo from database
       },
       tokenInfo: {
         secretType,

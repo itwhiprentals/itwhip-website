@@ -103,11 +103,15 @@ function HeaderInner({
     isLoggedIn,
     user: authUser,
     isLoading: isCheckingAuth,
+    isSwitchingRole,
     hasBothProfiles,
     currentRole,
     logout: contextLogout,
     refreshAuth
   } = useAuth()
+
+  // Combined loading state - show loading UI during auth check OR role switch
+  const isTransitioning = isCheckingAuth || isSwitchingRole
 
   // Map auth context user to local User type
   const user: User | null = authUser ? {
@@ -185,44 +189,47 @@ function HeaderInner({
     setIsLoggingOut(true)
     setIsMobileMenuOpen(false)
 
-    try {
-      // Determine redirect URL based on user type
-      let redirectUrl = '/'
+    // Clear local storage immediately for UI responsiveness
+    localStorage.removeItem('user')
+    sessionStorage.clear()
 
+    // Determine redirect URL based on user type
+    let redirectUrl = '/'
+    if (isAdmin) {
+      redirectUrl = '/admin/auth/login'
+    } else if (isHost) {
+      redirectUrl = '/host/login'
+    }
+
+    // ========== MUST WAIT FOR LOGOUT API ==========
+    // httpOnly cookies can ONLY be cleared by the Set-Cookie headers in the API response
+    // If we redirect before the response is received, cookies remain and user stays logged in
+    // The UI already shows "Signing Out..." via isLoggingOut state
+    try {
       if (isAdmin) {
-        // Admin logout
         await fetch('/api/admin/auth/logout', {
           method: 'POST',
           credentials: 'include'
         })
-        redirectUrl = '/admin/auth/login'
       } else if (isHost) {
-        // Host logout
         await fetch('/api/host/login', {
           method: 'DELETE',
           credentials: 'include'
         })
-        redirectUrl = '/host/login'
       } else {
-        // Guest logout - use context logout
-        await contextLogout()
+        // Guest logout
+        await fetch('/api/auth/logout', {
+          method: 'POST',
+          credentials: 'include'
+        })
       }
-
-      // Clear local storage
-      localStorage.removeItem('user')
-      sessionStorage.clear()
-
-      // Redirect
-      window.location.href = redirectUrl
     } catch (error) {
-      console.error('Logout error:', error)
-      // Force cleanup on error
-      localStorage.removeItem('user')
-      sessionStorage.clear()
-      window.location.href = '/'
-    } finally {
-      setIsLoggingOut(false)
+      // Even if API fails, proceed with redirect
+      console.error('Logout API error:', error)
     }
+
+    // Now redirect after cookies are cleared by the API response
+    window.location.href = redirectUrl
   }
 
   const handleProfileClick = () => {
@@ -419,8 +426,8 @@ function HeaderInner({
               </button>
 
               {/* ✅ FIXED: Notifications - Show correct bell based on user type */}
-              {/* Hide when guard screen is active (showAsLoggedIn handles this) */}
-              {showAsLoggedIn && !isCheckingAuth && (
+              {/* Hide when transitioning (auth check or role switch) or guard is active */}
+              {showAsLoggedIn && !isTransitioning && (
                 <>
                   {isGuest && <NotificationBell userRole="GUEST" />}
                   {isHost && <NotificationBell userRole="HOST" />}
@@ -429,12 +436,27 @@ function HeaderInner({
               )}
 
               {/* Role Switcher - Only for dual-role users */}
-              {/* Hide when guard screen is active */}
-              {showAsLoggedIn && !isCheckingAuth && <RoleSwitcher />}
+              {/* Hide when transitioning or guard screen is active */}
+              {showAsLoggedIn && !isTransitioning && <RoleSwitcher />}
+
+              {/* Show loading spinner during role switch */}
+              {isSwitchingRole && (
+                <div className="flex items-center space-x-2 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
+                  <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-sm font-medium text-blue-600 dark:text-blue-400">Switching...</span>
+                </div>
+              )}
 
               {/* Profile/Sign In Button */}
               {/* Show Sign In when guard is active (showAsLoggedIn is false) */}
-              {!isCheckingAuth && (
+              {/* Hide during role switch to prevent confusion */}
+              {/* Show logout loading indicator when logging out */}
+              {isLoggingOut ? (
+                <div className="flex items-center space-x-2 px-3 py-1.5 bg-red-100 dark:bg-red-900/20 rounded-lg">
+                  <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-sm font-medium text-red-600 dark:text-red-400">Signing out...</span>
+                </div>
+              ) : !isTransitioning && (
                 <div>
                   {showAsLoggedIn && user ? (
                     <button
@@ -444,14 +466,14 @@ function HeaderInner({
                     >
                       <div className="relative">
                         {profilePhotoUrl ? (
-                          <img 
-                            src={profilePhotoUrl} 
-                            alt={user.name || 'Profile'} 
+                          <img
+                            src={profilePhotoUrl}
+                            alt={user.name || 'Profile'}
                             className="w-7 h-7 rounded-full object-cover border-2 border-green-500 shadow-sm"
                           />
                         ) : (
                           <div className={`w-7 h-7 ${
-                            isAdmin ? 'bg-gradient-to-br from-red-500 to-red-600' : 
+                            isAdmin ? 'bg-gradient-to-br from-red-500 to-red-600' :
                             isHost ? 'bg-gradient-to-br from-purple-500 to-purple-600' :
                             'bg-gradient-to-br from-green-500 to-blue-600'
                           } rounded-full flex items-center justify-center text-white font-bold text-xs border-2 border-green-500 shadow-sm`}>
@@ -461,9 +483,9 @@ function HeaderInner({
                       </div>
                     </button>
                   ) : (
-                    <Link 
+                    <Link
                       href={
-                        isAdminPage ? '/admin/auth/login' : 
+                        isAdminPage ? '/admin/auth/login' :
                         isHostPage ? '/host/login' :
                         '/auth/login'
                       }
@@ -494,18 +516,21 @@ function HeaderInner({
 
       {/* Mobile Menu */}
       {/* Pass showAsLoggedIn to hide logged-in state when guard is active */}
+      {/* Pass isSwitchingRole to sync loading state with header */}
       <MobileMenu
         isOpen={isMobileMenuOpen}
         onClose={() => setIsMobileMenuOpen(false)}
         handleGetAppClick={handleGetAppClick}
         handleSearchClick={handleSearchClick}
-        isLoggedIn={showAsLoggedIn}
-        user={showAsLoggedIn ? user : null}
+        isLoggedIn={showAsLoggedIn && !isSwitchingRole}
+        user={showAsLoggedIn && !isSwitchingRole ? user : null}
         onProfileClick={handleProfileClick}
         onLogout={handleLogout}
-        isHost={isHost}
+        isHost={isHost && !isSwitchingRole}
         isHostPage={isHostPage}
         hostNavItems={hostNavItems}
+        isSwitchingRole={isSwitchingRole}
+        isLoggingOut={isLoggingOut}
       />
 
       {/* Profile Modal - Deprecated for guests, they go to /profile now */}

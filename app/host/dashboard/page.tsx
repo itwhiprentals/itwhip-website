@@ -5,10 +5,10 @@ import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { 
-  IoCarOutline, 
-  IoStatsChartOutline, 
-  IoCalendarOutline, 
+import {
+  IoCarOutline,
+  IoStatsChartOutline,
+  IoCalendarOutline,
   IoWalletOutline,
   IoAddCircleOutline,
   IoDocumentTextOutline,
@@ -25,7 +25,9 @@ import {
   IoPricetagOutline,
   IoDocumentOutline,
   IoChevronForwardOutline,
-  IoLocationOutline
+  IoLocationOutline,
+  IoPeopleOutline,
+  IoSettingsOutline
 } from 'react-icons/io5'
 import VerificationProgress from '../components/VerificationProgress'
 import PendingBanner from '../components/PendingBanner'
@@ -356,6 +358,9 @@ function HostDashboardContent() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [showWelcome, setShowWelcome] = useState(false)
+  // Fleet manager role state
+  const [isHostManager, setIsHostManager] = useState(false)
+  const [managedVehicleCount, setManagedVehicleCount] = useState(0)
 
   // Check for welcome param (new signup)
   useEffect(() => {
@@ -368,7 +373,23 @@ function HostDashboardContent() {
 
   useEffect(() => {
     checkSession()
+    checkAccountType()
   }, [])
+
+  const checkAccountType = async () => {
+    try {
+      const response = await fetch('/api/host/account-type', {
+        credentials: 'include'
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setIsHostManager(data.isHostManager || data.managedVehicleCount > 0)
+        setManagedVehicleCount(data.managedVehicleCount || 0)
+      }
+    } catch (error) {
+      console.error('Failed to check account type:', error)
+    }
+  }
 
   const checkSession = async () => {
     try {
@@ -524,15 +545,29 @@ function HostDashboardContent() {
   // Check if host has any incomplete cars (for verification progress)
   const hasIncompleteCar = incompleteCars.length > 0
 
-  const navigationItems = [
+  // Base navigation items
+  const baseNavigationItems = [
     { name: 'Dashboard', href: '/host/dashboard', icon: IoHomeOutline, current: true },
     { name: 'My Cars', href: '/host/cars', icon: IoCarOutline, current: false },
     { name: 'Bookings', href: '/host/bookings', icon: IoCalendarOutline, current: false },
     { name: 'Claims', href: '/host/claims', icon: IoShieldCheckmarkOutline, current: false },
     { name: 'Messages', href: '/host/messages', icon: IoChatbubbleOutline, current: false },
     { name: 'Earnings', href: '/host/earnings', icon: IoWalletOutline, current: false },
+  ]
+
+  // Fleet manager specific items
+  const fleetManagerItems = isHostManager ? [
+    { name: 'Fleet Settings', href: '/host/settings/fleet-manager', icon: IoSettingsOutline, current: false },
+    { name: 'Invite Owner', href: '/host/fleet/invite-owner', icon: IoPeopleOutline, current: false },
+  ] : []
+
+  // Profile always at end
+  const profileItem = [
     { name: 'Profile', href: '/host/profile', icon: IoPersonOutline, current: false },
   ]
+
+  // Combine navigation items
+  const navigationItems = [...baseNavigationItems, ...fleetManagerItems, ...profileItem]
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -570,6 +605,11 @@ function HostDashboardContent() {
                     {item.name === 'My Cars' && incompleteCars.length > 0 && (
                       <span className="ml-auto bg-yellow-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
                         !
+                      </span>
+                    )}
+                    {item.name === 'My Cars' && managedVehicleCount > 0 && incompleteCars.length === 0 && (
+                      <span className="ml-auto bg-purple-500 text-white text-xs font-bold px-2 py-0.5 rounded-full" title="Managed vehicles">
+                        +{managedVehicleCount}
                       </span>
                     )}
                   </Link>

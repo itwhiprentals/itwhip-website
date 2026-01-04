@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyRequest } from '@/app/lib/auth/verify-request'
 import { prisma } from '@/app/lib/database/prisma'
+import { checkAccountHold } from '@/app/lib/claims/account-hold'
 
 /**
  * Unified Dashboard API
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest) {
     console.log('[DASHBOARD API] Fetching data for user:', userEmail)
 
     // ========== PARALLEL DATA FETCHING ==========
-    // All 7 queries run AT THE SAME TIME (not sequential!)
+    // All queries run AT THE SAME TIME (not sequential!)
     const [
       userProfile,
       reviewerProfile,
@@ -35,7 +36,9 @@ export async function GET(request: NextRequest) {
       bookingStats,
       appealNotifications,
       notificationDismissals,
-      paymentMethods
+      paymentMethods,
+      claimsData,
+      accountHoldStatus
     ] = await Promise.all([
       
       // Query 1: User Profile (Basic info)
@@ -232,7 +235,30 @@ export async function GET(request: NextRequest) {
         },
         orderBy: { isDefault: 'desc' },
         take: 3
-      })
+      }),
+
+      // Query 8: Claims Data (All claims involving this guest)
+      prisma.claim.findMany({
+        where: {
+          booking: {
+            guestEmail: userEmail
+          }
+        },
+        select: {
+          id: true,
+          status: true,
+          type: true,
+          estimatedCost: true,
+          guestResponseDeadline: true,
+          guestResponseText: true,
+          filedByRole: true,
+          createdAt: true
+        },
+        orderBy: { createdAt: 'desc' }
+      }),
+
+      // Query 9: Account Hold Status
+      checkAccountHold(userEmail, userId)
     ])
 
     // ========== GUARD CHECK: User must have ReviewerProfile for guest dashboard ==========
@@ -305,9 +331,26 @@ export async function GET(request: NextRequest) {
     ).length
 
     // Calculate total unread messages
-    const totalUnreadMessages = (bookingsRaw as any[]).reduce((sum, b) => 
+    const totalUnreadMessages = (bookingsRaw as any[]).reduce((sum, b) =>
       sum + (b.unreadMessages || 0), 0
     )
+
+    // Calculate claims stats
+    const claimsPendingResponse = (claimsData as any[]).filter(c =>
+      !c.guestResponseText &&
+      c.guestResponseDeadline &&
+      new Date(c.guestResponseDeadline) > new Date() &&
+      !['APPROVED', 'DENIED', 'CLOSED', 'RESOLVED'].includes(c.status)
+    ).length
+
+    // Legacy claims (null filedByRole) are treated as filed by host
+    const claimsAgainstMe = (claimsData as any[]).filter(c =>
+      c.filedByRole === null || c.filedByRole === 'HOST' || c.filedByRole === 'FLEET' || c.filedByRole === 'PARTNER'
+    ).length
+    const claimsFiledByMe = (claimsData as any[]).filter(c => c.filedByRole === 'GUEST').length
+    const totalActiveClaims = (claimsData as any[]).filter(c =>
+      !['APPROVED', 'DENIED', 'CLOSED', 'RESOLVED'].includes(c.status)
+    ).length
 
     // ========================================================================
     // ✅ CRITICAL FIX: Check verification status based on documentsVerified flag
@@ -451,13 +494,25 @@ export async function GET(request: NextRequest) {
         isVerified: pm.isVerified
       })),
 
+      // Claims data
+      claims: {
+        total: (claimsData as any[]).length,
+        active: totalActiveClaims,
+        pendingResponse: claimsPendingResponse,
+        againstMe: claimsAgainstMe,
+        filedByMe: claimsFiledByMe,
+        accountHold: accountHoldStatus
+      },
+
       // ✅ FIXED: Flags for UI (now uses corrected verification logic)
       flags: {
         needsVerification: !isFullyVerified,  // Now correctly checks documentsVerified flag
         hasUnreadMessages: totalUnreadMessages > 0,
         hasUpcomingTrips: upcomingCount > 0,
         hasActiveWarning,  // Now correctly checks activeWarningCount
-        needsPaymentMethod: paymentMethods.length === 0
+        needsPaymentMethod: paymentMethods.length === 0,
+        hasAccountHold: accountHoldStatus.hasHold,
+        hasPendingClaimResponse: claimsPendingResponse > 0
       }
     }
 

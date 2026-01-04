@@ -26,8 +26,11 @@ export default function FleetLoginPage() {
       const data = await res.json()
 
       if (res.ok && data.success) {
-        router.push('/fleet')
-        router.refresh()
+        // ========== CRITICAL: Use window.location.href for HARD redirect ==========
+        // router.push() + router.refresh() is a soft navigation
+        // Hard redirect ensures proper auth state sync across all components
+        window.location.href = '/fleet'
+        return
       } else {
         setError(data.error || 'Invalid credentials')
       }

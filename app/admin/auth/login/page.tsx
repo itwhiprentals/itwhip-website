@@ -38,9 +38,13 @@ export default function AdminLoginPage() {
       if (response.ok) {
         // Successful login
         console.log('Admin login successful:', data.user.email)
-        
-        // Redirect to admin dashboard
-        router.push('/admin/dashboard')
+
+        // ========== CRITICAL: Use window.location.href for HARD redirect ==========
+        // router.push() is a soft navigation that doesn't reload the page
+        // This means AuthContext doesn't refresh and Header shows "Sign In"
+        // Hard redirect ensures Header/MobileMenu/Dashboard are all synced
+        window.location.href = '/admin/dashboard'
+        return
       } else {
         // Login failed
         setError(data.error || 'Invalid credentials')

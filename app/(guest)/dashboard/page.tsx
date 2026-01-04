@@ -138,6 +138,22 @@ interface DocumentVerificationState {
   selfieUrl: string | null
 }
 
+// Claims state for dashboard
+interface ClaimsState {
+  total: number
+  active: number
+  pendingResponse: number
+  againstMe: number
+  filedByMe: number
+  accountHold: {
+    hasHold: boolean
+    holdReason: string | null
+    claimId: string | null
+    message: string | null
+    canBook: boolean
+  }
+}
+
 // ========== ERROR BOUNDARY ==========
 interface ErrorBoundaryProps {
   children: ReactNode
@@ -229,6 +245,7 @@ interface DashboardStats {
   loyaltyPoints: number
   unreadMessages: number
   pendingDocuments: number
+  activeClaims: number
   memberTier?: string
   pointsToNextTier?: number
   averageRating?: number
@@ -291,6 +308,7 @@ interface DashboardState {
   }
   notificationsLoaded: boolean
   documentVerification: DocumentVerificationState | null
+  claims: ClaimsState | null
 }
 
 type DashboardAction =
@@ -315,6 +333,7 @@ type DashboardAction =
   | { type: 'SET_NOTIFICATIONS_LOADED'; payload: boolean }
   | { type: 'REMOVE_APPEAL_NOTIFICATION'; payload: string }
   | { type: 'SET_DOCUMENT_VERIFICATION'; payload: DocumentVerificationState | null }
+  | { type: 'SET_CLAIMS'; payload: ClaimsState | null }
 
 // ========== CONSTANTS ==========
 const CORE_SERVICES: ServiceConfig[] = [
@@ -407,12 +426,12 @@ const STATS_CONFIG = [
     clickable: true
   },
   {
-    label: 'Documents',
-    key: 'pendingDocuments' as keyof DashboardStats,
-    icon: FileTextDocument,
-    iconColor: 'text-indigo-500',
+    label: 'Active Claims',
+    key: 'activeClaims' as keyof DashboardStats,
+    icon: AlertCircle,
+    iconColor: 'text-red-500',
     textColor: 'text-gray-900 dark:text-white',
-    path: '/profile?tab=documents',
+    path: '/claims',
     clickable: true
   }
 ]
@@ -439,6 +458,7 @@ const initialState: DashboardState = {
     loyaltyPoints: 0,
     unreadMessages: 0,
     pendingDocuments: 0,
+    activeClaims: 0,
     memberTier: 'Bronze',
     pointsToNextTier: 500,
     averageRating: 0
@@ -453,7 +473,8 @@ const initialState: DashboardState = {
     denied: []
   },
   notificationsLoaded: false,
-  documentVerification: null
+  documentVerification: null,
+  claims: null
 }
 
 function dashboardReducer(state: DashboardState, action: DashboardAction): DashboardState {
@@ -506,6 +527,8 @@ function dashboardReducer(state: DashboardState, action: DashboardAction): Dashb
       }
     case 'SET_DOCUMENT_VERIFICATION':
       return { ...state, documentVerification: action.payload }
+    case 'SET_CLAIMS':
+      return { ...state, claims: action.payload }
     default:
       return state
   }
@@ -625,8 +648,8 @@ export default function GuestDashboard() {
       }
       
       // Set stats
-      dispatch({ 
-        type: 'SET_STATS', 
+      dispatch({
+        type: 'SET_STATS',
         payload: {
           totalSaved: 0,
           activeRentals: dashboardData.stats.activeRentals,
@@ -634,11 +657,27 @@ export default function GuestDashboard() {
           loyaltyPoints: dashboardData.stats.loyaltyPoints,
           unreadMessages: dashboardData.stats.unreadMessages,
           pendingDocuments: dashboardData.flags.needsVerification ? 1 : 0,
+          activeClaims: dashboardData.claims?.active || 0,
           memberTier: dashboardData.stats.memberTier,
           pointsToNextTier: 500,
           averageRating: 0
         }
       })
+
+      // Set claims data
+      if (dashboardData.claims) {
+        dispatch({
+          type: 'SET_CLAIMS',
+          payload: {
+            total: dashboardData.claims.total,
+            active: dashboardData.claims.active,
+            pendingResponse: dashboardData.claims.pendingResponse,
+            againstMe: dashboardData.claims.againstMe,
+            filedByMe: dashboardData.claims.filedByMe,
+            accountHold: dashboardData.claims.accountHold
+          }
+        })
+      }
       
       // Set bookings
       dispatch({ 
@@ -1089,7 +1128,8 @@ export default function GuestDashboard() {
         <SuspensionBanner />
 
         {/* ========================================================================
-            ✅ UPDATED PRIORITY BANNER SYSTEM - 4 LEVELS
+            ✅ UPDATED PRIORITY BANNER SYSTEM - 5 LEVELS
+            Priority 0: Account Hold (blocks booking due to claim)
             Priority 1: Approved Appeal
             Priority 2: Denied Appeal
             Priority 3: Warning/Suspension
@@ -1098,7 +1138,75 @@ export default function GuestDashboard() {
         {(() => {
           const firstApproved = state.appealNotifications.approved[0]
           const firstDenied = state.appealNotifications.denied[0]
-          
+
+          // Priority 0: Show account hold banner (claim-related)
+          if (state.claims?.accountHold?.hasHold && state.claims.accountHold.claimId) {
+            return (
+              <div className="mt-4 bg-red-50 dark:bg-red-900/20 border-2 border-red-500 rounded-lg p-4">
+                <div className="flex items-start space-x-3">
+                  <div className="flex-shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center">
+                      <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-red-800 dark:text-red-200">
+                      Account On Hold
+                    </h3>
+                    <p className="text-sm text-red-700 dark:text-red-300 mt-1">
+                      {state.claims.accountHold.message || 'Your account is on hold due to an unresolved claim. Please respond to restore full account access.'}
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button
+                        onClick={() => router.push(`/claims/${state.claims?.accountHold?.claimId}`)}
+                        className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-lg transition-colors"
+                      >
+                        Respond to Claim
+                      </button>
+                      <button
+                        onClick={() => router.push('/claims')}
+                        className="px-4 py-2 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 text-sm font-medium rounded-lg hover:bg-red-200 dark:hover:bg-red-900/60 transition-colors"
+                      >
+                        View All Claims
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )
+          }
+
+          // Priority 0.5: Show pending claim response warning
+          if (state.claims && state.claims.pendingResponse > 0 && !state.claims.accountHold?.hasHold) {
+            return (
+              <div className="mt-4 bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-500 rounded-lg p-4">
+                <div className="flex items-start space-x-3">
+                  <div className="flex-shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
+                      <AlertCircle className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-amber-800 dark:text-amber-200">
+                      {state.claims.pendingResponse === 1 ? 'Claim Requires Response' : `${state.claims.pendingResponse} Claims Require Response`}
+                    </h3>
+                    <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                      You have {state.claims.pendingResponse === 1 ? 'a claim' : 'claims'} awaiting your response. Please respond within 48 hours to avoid account restrictions.
+                    </p>
+                    <div className="mt-3">
+                      <button
+                        onClick={() => router.push('/claims?filter=pending_response')}
+                        className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-lg transition-colors"
+                      >
+                        View Pending Claims
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )
+          }
+
           // Priority 1: Show approved appeal banner
           if (firstApproved) {
             return (
@@ -1111,7 +1219,7 @@ export default function GuestDashboard() {
               />
             )
           }
-          
+
           // Priority 2: Show denied appeal banner
           if (firstDenied) {
             return (
@@ -1128,20 +1236,20 @@ export default function GuestDashboard() {
               />
             )
           }
-          
+
           // Priority 3: Show warning/suspension banner
-          if (state.suspensionInfo && 
+          if (state.suspensionInfo &&
               (state.suspensionInfo.activeWarningCount > 0 || state.suspensionInfo.suspensionLevel)) {
             return (
-              <WarningBanner 
-                suspensionInfo={state.suspensionInfo} 
+              <WarningBanner
+                suspensionInfo={state.suspensionInfo}
                 moderationHistory={state.moderationHistory}
                 guestId={state.userProfile?.id || ''}
                 onAppealSuccess={handleAppealSuccess}
               />
             )
           }
-          
+
           // Priority 4: Show document verification alert (2 documents only)
           if (state.documentVerification) {
             return (
@@ -1151,7 +1259,7 @@ export default function GuestDashboard() {
               />
             )
           }
-          
+
           return null
         })()}
 

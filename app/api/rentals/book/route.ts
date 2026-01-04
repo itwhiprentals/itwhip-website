@@ -23,6 +23,10 @@ import {
 import { trackActivity } from '@/lib/helpers/guestProfileStatus'
 // ========== END IMPORT ==========
 
+// ========== ACCOUNT HOLD CHECK IMPORT ==========
+import { checkAccountHold } from '@/app/lib/claims/account-hold'
+// ========== END ACCOUNT HOLD IMPORT ==========
+
 // ========== STRIPE TEST INTEGRATION ==========
 import Stripe from 'stripe'
 
@@ -115,6 +119,24 @@ export async function POST(request: NextRequest) {
     }
 
     const bookingData = validationResult.data
+
+    // ========== ACCOUNT HOLD CHECK ==========
+    // Check if guest has an active account hold (e.g., from unresolved claim)
+    const accountHoldStatus = await checkAccountHold(bookingData.guestEmail)
+
+    if (!accountHoldStatus.canBook) {
+      return NextResponse.json({
+        error: 'Account on hold',
+        message: accountHoldStatus.message || 'Your account is currently on hold. Please resolve any outstanding claims before booking.',
+        code: 'ACCOUNT_HOLD',
+        claimId: accountHoldStatus.claimId,
+        holdReason: accountHoldStatus.holdReason,
+        resolveUrl: accountHoldStatus.claimId
+          ? `/claims/${accountHoldStatus.claimId}`
+          : '/claims'
+      }, { status: 403 })
+    }
+    // ========== END ACCOUNT HOLD CHECK ==========
 
     // SECURE QUERY - Get car details WITHOUT source field
     const car = await prisma.rentalCar.findUnique({

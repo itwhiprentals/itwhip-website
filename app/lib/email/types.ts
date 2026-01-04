@@ -287,6 +287,64 @@ export interface ClaimReminderGuestData {
   consequences: string
 }
 
+// Claim filed by guest - notification to host
+export interface ClaimFiledByGuestData {
+  hostName: string
+  guestName: string
+  claimId: string
+  bookingCode: string
+  carDetails: string
+  incidentDate: string
+  estimatedCost: number
+  claimType: string
+  claimDescription: string
+  claimUrl: string
+  responseDeadline: string
+}
+
+// Claim response confirmation - sent to guest after responding
+export interface ClaimResponseConfirmationData {
+  guestName: string
+  claimId: string
+  bookingCode: string
+  carDetails: string
+  claimType: string
+  hostName: string
+  responseSubmittedAt: string
+  evidencePhotosCount: number
+  claimUrl: string
+}
+
+// Claim guest response received - notification to Fleet
+export interface ClaimGuestResponseReceivedData {
+  claimId: string
+  bookingCode: string
+  guestName: string
+  guestEmail: string
+  hostName: string
+  carDetails: string
+  claimType: string
+  estimatedCost: number
+  responseText: string
+  evidencePhotosCount: number
+  respondedAt: string
+  reviewUrl: string
+}
+
+// Claim account hold applied - notification to guest
+export interface ClaimAccountHoldAppliedData {
+  guestName: string
+  claimId: string
+  bookingCode: string
+  carDetails: string
+  claimType: string
+  estimatedCost: number
+  hostName: string
+  holdReason: string
+  responseUrl: string
+  supportEmail: string
+}
+
 // ============================================================================
 // DECLARATION SYSTEM EMAIL INTERFACES - PHASE 2D
 // ============================================================================
@@ -316,6 +374,99 @@ export interface OAuthWelcomeData {
   documentsUrl: string  // /profile?tab=documents
   insuranceUrl: string  // /profile?tab=insurance
   dashboardUrl: string  // /dashboard
+}
+
+// ============================================================================
+// FLEET MANAGEMENT INVITATION EMAIL INTERFACES - PHASE 4
+// ============================================================================
+
+// Base vehicle info for invitation emails
+export interface InvitationVehicleInfo {
+  make: string
+  model: string
+  year: number
+  photo?: string
+}
+
+// Management invitation - initial invite from owner or manager
+export interface ManagementInvitationData {
+  recipientName: string
+  recipientEmail: string
+  senderName: string
+  senderEmail: string
+  senderPhoto?: string
+  invitationType: 'OWNER_INVITES_MANAGER' | 'MANAGER_INVITES_OWNER'
+  vehicles?: InvitationVehicleInfo[]
+  proposedOwnerPercent: number
+  proposedManagerPercent: number
+  effectiveOwnerPercent: number   // After platform 10% cut
+  effectiveManagerPercent: number // After platform 10% cut
+  permissions: {
+    canEditListing: boolean
+    canAdjustPricing: boolean
+    canCommunicateGuests: boolean
+    canApproveBookings: boolean
+    canHandleIssues: boolean
+  }
+  inviteUrl: string
+  expiresAt: string
+  message?: string
+}
+
+// Counter-offer notification
+export interface CounterOfferData {
+  recipientName: string
+  recipientEmail: string
+  counterPartyName: string
+  counterPartyEmail: string
+  invitationType: 'OWNER_INVITES_MANAGER' | 'MANAGER_INVITES_OWNER'
+  vehicles?: InvitationVehicleInfo[]
+  originalOwnerPercent: number
+  originalManagerPercent: number
+  newOwnerPercent: number
+  newManagerPercent: number
+  effectiveOwnerPercent: number
+  effectiveManagerPercent: number
+  negotiationRound: number
+  maxRounds: number
+  counterOfferMessage?: string
+  respondUrl: string
+  expiresAt: string
+}
+
+// Invitation accepted - confirmation to both parties
+export interface InvitationAcceptedData {
+  recipientName: string
+  recipientEmail: string
+  otherPartyName: string
+  otherPartyEmail: string
+  role: 'owner' | 'manager'
+  vehicles: InvitationVehicleInfo[]
+  finalOwnerPercent: number
+  finalManagerPercent: number
+  effectiveOwnerPercent: number
+  effectiveManagerPercent: number
+  permissions: {
+    canEditListing: boolean
+    canAdjustPricing: boolean
+    canCommunicateGuests: boolean
+    canApproveBookings: boolean
+    canHandleIssues: boolean
+  }
+  dashboardUrl: string
+  agreementDate: string
+}
+
+// Invitation declined
+export interface InvitationDeclinedData {
+  recipientName: string
+  recipientEmail: string
+  declinerName: string
+  declinerEmail: string
+  invitationType: 'OWNER_INVITES_MANAGER' | 'MANAGER_INVITES_OWNER'
+  vehicles?: InvitationVehicleInfo[]
+  declineReason?: string
+  wasCounterOffer: boolean
 }
 
 // Host OAuth welcome - sent after host completes profile with phone and car info

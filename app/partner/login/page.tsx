@@ -61,7 +61,11 @@ export default function PartnerLoginPage() {
       const data = await response.json()
 
       if (data.success) {
-        router.push('/partner/dashboard')
+        // ========== CRITICAL: Use window.location.href for HARD redirect ==========
+        // router.push() is a soft navigation that doesn't reload the page
+        // Hard redirect ensures Header/MobileMenu/Dashboard are all synced
+        window.location.href = '/partner/dashboard'
+        return
       } else {
         setError(data.error || 'Invalid email or password')
       }

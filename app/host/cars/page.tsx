@@ -44,49 +44,49 @@ interface Car {
   trim?: string
   color: string
   licensePlate?: string
-  
+
   // Specs
   carType: string
   seats: number
   transmission: string
   fuelType: string
-  
+
   // Pricing
   dailyRate: number
   weeklyRate?: number
   monthlyRate?: number
-  
+
   // Delivery
   airportPickup: boolean
   hotelDelivery: boolean
   homeDelivery: boolean
-  
+
   // Location
   address: string
   city: string
   state: string
-  
+
   // Availability
   isActive: boolean
   instantBook: boolean
   minTripDuration: number
-  
+
   // Stats
   totalTrips: number
   rating: number
-  
+
   // Photos
   photos: Array<{
     id: string
     url: string
     isHero: boolean
   }>
-  
+
   // Calculated
   heroPhoto?: string
   activeBookings?: number
   upcomingBookings?: number
-  
+
   // ✅ NEW: Claim information
   hasActiveClaim?: boolean
   activeClaimCount?: number
@@ -96,6 +96,26 @@ interface Car {
     status: string
     createdAt: string
     bookingCode: string
+  }
+}
+
+// Managed vehicle interface (includes owner info and commission)
+interface ManagedVehicle extends Car {
+  owner: {
+    id: string
+    name: string
+    email: string
+    profilePhoto?: string
+  }
+  ownerCommissionPercent: number
+  managerCommissionPercent: number
+  managementStatus: 'PENDING' | 'ACTIVE' | 'PAUSED' | 'TERMINATED'
+  permissions: {
+    canEditListing: boolean
+    canAdjustPricing: boolean
+    canCommunicateGuests: boolean
+    canApproveBookings: boolean
+    canHandleIssues: boolean
   }
 }
 
@@ -116,9 +136,13 @@ interface HostStatus {
 export default function HostCarsPage() {
   const router = useRouter()
   const [cars, setCars] = useState<Car[]>([])
+  const [managedVehicles, setManagedVehicles] = useState<ManagedVehicle[]>([])
   const [hostStatus, setHostStatus] = useState<HostStatus | null>(null)
   const [loading, setLoading] = useState(true)
+  const [managedLoading, setManagedLoading] = useState(false)
   const [statusLoading, setStatusLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState<'my' | 'managed'>('my')
+  const [isHostManager, setIsHostManager] = useState(false)
   const [filters, setFilters] = useState<FilterOptions>({
     status: 'all',
     search: '',
@@ -128,14 +152,51 @@ export default function HostCarsPage() {
 
   useEffect(() => {
     checkHostStatus()
+    checkAccountType()
   }, [])
 
   useEffect(() => {
     // Fetch cars regardless of status (approved hosts see real data, pending see drafts)
     if (hostStatus) {
       fetchCars()
+      if (isHostManager) {
+        fetchManagedVehicles()
+      }
     }
-  }, [hostStatus])
+  }, [hostStatus, isHostManager])
+
+  const checkAccountType = async () => {
+    try {
+      const response = await fetch('/api/host/account-type', {
+        credentials: 'include'
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setIsHostManager(data.isHostManager || data.managedVehicleCount > 0)
+      }
+    } catch (error) {
+      console.error('Failed to check account type:', error)
+    }
+  }
+
+  const fetchManagedVehicles = async () => {
+    try {
+      setManagedLoading(true)
+      const response = await fetch('/api/host/managed-vehicles', {
+        credentials: 'include'
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setManagedVehicles(data.vehicles || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch managed vehicles:', error)
+      setManagedVehicles([])
+    } finally {
+      setManagedLoading(false)
+    }
+  }
 
   const checkHostStatus = async () => {
     try {
@@ -459,6 +520,48 @@ export default function HostCarsPage() {
             </div>
           </div>
 
+          {/* Tabs - Only show if user manages other vehicles */}
+          {(isHostManager || managedVehicles.length > 0) && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-1 mb-6">
+              <div className="flex gap-1">
+                <button
+                  onClick={() => setActiveTab('my')}
+                  className={`flex-1 px-4 py-3 rounded-lg font-medium text-sm transition-colors ${
+                    activeTab === 'my'
+                      ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-400'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    <IoCarOutline className="w-5 h-5" />
+                    <span>My Vehicles</span>
+                    <span className="px-2 py-0.5 rounded-full text-xs bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+                      {cars.length}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Insurance tier earnings</p>
+                </button>
+                <button
+                  onClick={() => setActiveTab('managed')}
+                  className={`flex-1 px-4 py-3 rounded-lg font-medium text-sm transition-colors ${
+                    activeTab === 'managed'
+                      ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-400'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    <IoPeopleOutline className="w-5 h-5" />
+                    <span>Managed Vehicles</span>
+                    <span className="px-2 py-0.5 rounded-full text-xs bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+                      {managedVehicles.length}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Commission-based earnings</p>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Search and Filters */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
             <div className="flex flex-col sm:flex-row gap-4">
@@ -472,7 +575,7 @@ export default function HostCarsPage() {
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
                 />
               </div>
-              
+
               <div className="flex gap-2">
                 <select
                   value={filters.status}
@@ -483,7 +586,7 @@ export default function HostCarsPage() {
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
                 </select>
-                
+
                 <select
                   value={filters.sortBy}
                   onChange={(e) => setFilters({ ...filters, sortBy: e.target.value as any })}
@@ -499,8 +602,8 @@ export default function HostCarsPage() {
             </div>
           </div>
 
-          {/* Cars Grid */}
-          {filteredCars.length === 0 ? (
+          {/* My Vehicles Grid */}
+          {activeTab === 'my' && (filteredCars.length === 0 ? (
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
               <IoCarOutline className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
@@ -796,7 +899,246 @@ export default function HostCarsPage() {
                 </div>
               ))}
             </div>
-          )}
+          ))}
+
+          {/* Managed Vehicles Grid */}
+          {activeTab === 'managed' && (managedLoading ? (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+              <p className="text-gray-600 dark:text-gray-400">Loading managed vehicles...</p>
+            </div>
+          ) : managedVehicles.length === 0 ? (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
+              <IoPeopleOutline className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                No managed vehicles yet
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                When vehicle owners invite you to manage their cars, they'll appear here.
+              </p>
+              <Link
+                href="/host/fleet/invite-owner"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                <IoAddCircleOutline className="w-5 h-5" />
+                Invite a Vehicle Owner
+              </Link>
+            </div>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {managedVehicles.map((vehicle) => (
+                <div
+                  key={vehicle.id}
+                  className="group bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-all cursor-pointer"
+                  onClick={() => router.push(`/host/cars/${vehicle.id}`)}
+                >
+                  {/* Vehicle Image */}
+                  <div className="relative h-48 bg-gray-200 dark:bg-gray-700">
+                    {vehicle.heroPhoto ? (
+                      <Image
+                        src={vehicle.heroPhoto}
+                        alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <IoCarOutline className="w-16 h-16 text-gray-400" />
+                      </div>
+                    )}
+
+                    {/* Status Badge */}
+                    <div className="absolute top-2 right-2 flex flex-col gap-2">
+                      <span className={`px-2 py-1 rounded-lg text-xs font-medium ${
+                        vehicle.managementStatus === 'ACTIVE'
+                          ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400'
+                          : vehicle.managementStatus === 'PENDING'
+                          ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-400'
+                          : vehicle.managementStatus === 'PAUSED'
+                          ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-400'
+                          : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400'
+                      }`}>
+                        {vehicle.managementStatus === 'ACTIVE' ? 'Active' :
+                         vehicle.managementStatus === 'PENDING' ? 'Pending' :
+                         vehicle.managementStatus === 'PAUSED' ? 'Paused' : 'Terminated'}
+                      </span>
+                    </div>
+
+                    {/* Managed Badge */}
+                    <div className="absolute top-2 left-2">
+                      <span className="px-2 py-1 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-400 rounded-lg text-xs font-medium flex items-center gap-1">
+                        <IoPeopleOutline className="w-3 h-3" />
+                        Managed
+                      </span>
+                    </div>
+
+                    {/* Hover Overlay */}
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-opacity flex items-center justify-center">
+                      <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-gray-800 px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-white">
+                        <IoEyeOutline className="w-4 h-4" />
+                        View Details
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Owner Info Banner */}
+                  <div className="bg-indigo-50 dark:bg-indigo-900/20 border-b border-indigo-200 dark:border-indigo-800 p-3">
+                    <div className="flex items-center gap-3">
+                      {vehicle.owner.profilePhoto ? (
+                        <Image
+                          src={vehicle.owner.profilePhoto}
+                          alt={vehicle.owner.name}
+                          width={32}
+                          height={32}
+                          className="rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 bg-indigo-200 dark:bg-indigo-800 rounded-full flex items-center justify-center">
+                          <span className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
+                            {vehicle.owner.name?.charAt(0) || 'O'}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-indigo-600 dark:text-indigo-400">Owner</p>
+                        <p className="text-sm font-medium text-indigo-900 dark:text-indigo-200 truncate">
+                          {vehicle.owner.name}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-indigo-600 dark:text-indigo-400">Your cut</p>
+                        <p className="text-sm font-bold text-indigo-700 dark:text-indigo-300">
+                          {(vehicle.managerCommissionPercent * 0.9).toFixed(0)}%
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Vehicle Info */}
+                  <div className="p-4">
+                    <div className="mb-3">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                        {vehicle.year} {vehicle.make} {vehicle.model}
+                      </h3>
+                      {vehicle.trim && (
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{vehicle.trim}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center text-gray-600 dark:text-gray-400">
+                        <IoLocationOutline className="w-4 h-4 mr-1.5" />
+                        {vehicle.city}, {vehicle.state}
+                      </div>
+
+                      <div className="flex items-center text-gray-600 dark:text-gray-400">
+                        <IoCashOutline className="w-4 h-4 mr-1.5" />
+                        ${vehicle.dailyRate}/day
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center text-gray-600 dark:text-gray-400">
+                          <IoPeopleOutline className="w-4 h-4 mr-1.5" />
+                          {vehicle.seats} seats • {vehicle.transmission}
+                        </div>
+
+                        <div className="flex items-center text-gray-600 dark:text-gray-400">
+                          <IoStarOutline className="w-4 h-4 mr-1 text-yellow-500" />
+                          {vehicle.rating.toFixed(1)} ({vehicle.totalTrips} trips)
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Commission Split Info */}
+                    <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Revenue Split (after 10% platform fee)</p>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-indigo-200 dark:bg-indigo-800 rounded-full h-2 overflow-hidden">
+                          <div
+                            className="h-full bg-purple-600 dark:bg-purple-500"
+                            style={{ width: `${vehicle.managerCommissionPercent}%` }}
+                          />
+                        </div>
+                        <div className="text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                          <span className="text-purple-600 dark:text-purple-400 font-medium">You {vehicle.managerCommissionPercent}%</span>
+                          {' / '}
+                          <span className="text-indigo-600 dark:text-indigo-400">Owner {vehicle.ownerCommissionPercent}%</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Permissions Tags */}
+                    <div className="flex gap-1 mt-3 flex-wrap">
+                      {vehicle.permissions.canEditListing && (
+                        <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 rounded">
+                          Edit
+                        </span>
+                      )}
+                      {vehicle.permissions.canAdjustPricing && (
+                        <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 rounded">
+                          Pricing
+                        </span>
+                      )}
+                      {vehicle.permissions.canApproveBookings && (
+                        <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 rounded">
+                          Bookings
+                        </span>
+                      )}
+                      {vehicle.permissions.canCommunicateGuests && (
+                        <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 rounded">
+                          Messages
+                        </span>
+                      )}
+                      {vehicle.permissions.canHandleIssues && (
+                        <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 rounded">
+                          Issues
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center gap-2">
+                        {vehicle.managementStatus === 'ACTIVE' && (
+                          <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                            <IoCheckmarkCircleOutline className="w-4 h-4" />
+                            Actively Managing
+                          </span>
+                        )}
+                        {vehicle.managementStatus === 'PENDING' && (
+                          <span className="text-xs text-yellow-600 dark:text-yellow-400 flex items-center gap-1">
+                            <IoTimeOutline className="w-4 h-4" />
+                            Awaiting Approval
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-purple-600 dark:text-purple-400 font-medium flex items-center gap-1">
+                          View Details
+                          <IoChevronForwardOutline className="w-3 h-3" />
+                        </span>
+
+                        {/* Edit button - only if permission granted */}
+                        {vehicle.permissions.canEditListing && vehicle.managementStatus === 'ACTIVE' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              router.push(`/host/cars/${vehicle.id}/edit`)
+                            }}
+                            className="flex items-center justify-center w-9 h-9 rounded-lg transition-colors text-gray-600 hover:text-purple-600 hover:bg-purple-50 dark:text-gray-400 dark:hover:text-purple-400 dark:hover:bg-purple-900/20"
+                            title="Edit vehicle"
+                          >
+                            <IoPencilOutline className="w-5 h-5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
         </div>
       </div>
       <Footer />

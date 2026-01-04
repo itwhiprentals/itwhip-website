@@ -119,12 +119,13 @@ function HostLoginContent() {
         return
       }
 
-      // Success - redirect to dashboard (FLEET_PARTNER → /partner/dashboard)
-      if (data.redirect) {
-        router.push(data.redirect)
-      } else {
-        router.push('/host/dashboard')
-      }
+      // ========== CRITICAL: Use window.location.href for HARD redirect ==========
+      // router.push() is a soft navigation that doesn't reload the page
+      // This means AuthContext doesn't refresh and Header shows "Sign In"
+      // Hard redirect ensures Header/MobileMenu/Dashboard are all synced
+      const redirectUrl = data.redirect || '/host/dashboard'
+      console.log('[Host Login] Hard redirect to:', redirectUrl)
+      window.location.href = redirectUrl
     } catch (err) {
       console.error('Login error:', err)
       setError('Something went wrong. Please try again.')

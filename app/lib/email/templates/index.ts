@@ -34,11 +34,23 @@ export { getClaimApprovedHostTemplate } from './claim-approved-host'
 export { getClaimDecisionGuestTemplate } from './claim-decision-guest'
 export { getClaimReminderGuestTemplate } from './claim-reminder-guest'
 
+// GUEST CLAIMS EMAIL TEMPLATES - PHASE 3
+export { getClaimFiledByGuestTemplate } from './claim-filed-by-guest'
+export { getClaimResponseConfirmationTemplate } from './claim-response-confirmation'
+export { getClaimGuestResponseReceivedTemplate } from './claim-guest-response-received'
+export { getClaimAccountHoldAppliedTemplate } from './claim-account-hold-applied'
+
 // ✅ NEW: DECLARATION SYSTEM TEMPLATE - PHASE 2D
 export { declarationUpdatedTemplate } from './declaration-updated'
 
 // OAuth Welcome Email - New User Signup
 export { getOAuthWelcomeTemplate } from './oauth-welcome'
+
+// FLEET MANAGEMENT INVITATION TEMPLATES - PHASE 4
+export { getManagementInvitationTemplate } from './management-invitation'
+export { getCounterOfferTemplate } from './counter-offer'
+export { getInvitationAcceptedTemplate } from './invitation-accepted'
+export { getInvitationDeclinedTemplate } from './invitation-declined'
 
 // Re-export all types for convenience
 export type {
@@ -78,6 +90,19 @@ export type {
   ClaimDecisionGuestData,
   ClaimReminderGuestData,
 
+  // Guest Claims types - Phase 3
+  ClaimFiledByGuestData,
+  ClaimResponseConfirmationData,
+  ClaimGuestResponseReceivedData,
+  ClaimAccountHoldAppliedData,
+
   // OAuth Welcome type
-  OAuthWelcomeData
+  OAuthWelcomeData,
+
+  // Fleet Management Invitation types - Phase 4
+  InvitationVehicleInfo,
+  ManagementInvitationData,
+  CounterOfferData,
+  InvitationAcceptedData,
+  InvitationDeclinedData
 } from '../types'

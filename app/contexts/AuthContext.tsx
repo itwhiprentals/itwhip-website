@@ -24,6 +24,7 @@ interface AuthState {
   currentRole: 'host' | 'guest' | null
   hasBothProfiles: boolean
   isLoading: boolean
+  isSwitchingRole: boolean // TRUE during role switch - use to show loading states in Header/MobileMenu/Dashboard
 }
 
 interface AuthContextType extends AuthState {
@@ -49,7 +50,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user: null,
     currentRole: null,
     hasBothProfiles: false,
-    isLoading: true
+    isLoading: true,
+    isSwitchingRole: false
   })
 
   // Refresh auth state from server
@@ -69,7 +71,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           user: null,
           currentRole: null,
           hasBothProfiles: false,
-          isLoading: false
+          isLoading: false,
+          isSwitchingRole: false
         })
         return
       }
@@ -100,7 +103,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               },
               currentRole: 'host',
               hasBothProfiles: dualRole.hasGuestProfile || false,
-              isLoading: false
+              isLoading: false,
+              isSwitchingRole: false
             })
             return
           }
@@ -133,7 +137,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               },
               currentRole: 'guest' as const,
               hasBothProfiles: dualRole.hasHostProfile || false,
-              isLoading: false
+              isLoading: false,
+              isSwitchingRole: false
             }
             console.log('[AuthContext] Setting guest state:', newState)
             setState(newState)
@@ -166,7 +171,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             },
             currentRole: null, // Admin doesn't have host/guest roles
             hasBothProfiles: false,
-            isLoading: false
+            isLoading: false,
+            isSwitchingRole: false
           })
           return
         }
@@ -179,17 +185,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user: null,
         currentRole: null,
         hasBothProfiles: false,
-        isLoading: false
+        isLoading: false,
+        isSwitchingRole: false
       })
     } catch (e) {
       console.error('[AuthContext] Error checking auth:', e)
-      setState(prev => ({ ...prev, isLoading: false }))
+      setState(prev => ({ ...prev, isLoading: false, isSwitchingRole: false }))
     }
   }, [])
 
   // Switch between host and guest roles
   const switchRole = useCallback(async (targetRole: 'host' | 'guest'): Promise<boolean> => {
     console.log('[AuthContext] Switching to role:', targetRole)
+
+    // Set isSwitchingRole to true immediately - this signals Header/MobileMenu/Dashboard to show loading
+    setState(prev => ({ ...prev, isSwitchingRole: true }))
 
     try {
       const res = await fetch('/api/auth/switch-role', {
@@ -236,10 +246,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         const error = await res.json()
         console.error('[AuthContext] Switch failed:', error)
+        // Reset isSwitchingRole on failure
+        setState(prev => ({ ...prev, isSwitchingRole: false }))
         return false
       }
     } catch (e) {
       console.error('[AuthContext] Switch role error:', e)
+      // Reset isSwitchingRole on error
+      setState(prev => ({ ...prev, isSwitchingRole: false }))
       return false
     }
   }, [refreshAuth])
@@ -263,7 +277,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user: null,
       currentRole: null,
       hasBothProfiles: false,
-      isLoading: false
+      isLoading: false,
+      isSwitchingRole: false
     })
   }, [])
 

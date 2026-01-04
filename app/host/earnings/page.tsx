@@ -7,7 +7,7 @@ import Link from 'next/link'
 import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
 import PendingBanner from '@/app/host/components/PendingBanner'
-import { 
+import {
   IoWalletOutline,
   IoCashOutline,
   IoTrendingUpOutline,
@@ -24,7 +24,9 @@ import {
   IoBanOutline,
   IoAlertCircleOutline,
   IoBarChartOutline,
-  IoShieldCheckmarkOutline
+  IoShieldCheckmarkOutline,
+  IoPeopleOutline,
+  IoKeyOutline
 } from 'react-icons/io5'
 
 interface EarningsData {
@@ -73,6 +75,22 @@ interface EarningsData {
     bookings: number
     averagePerBooking: number
   }
+  // NEW: Earnings breakdown by source
+  earningsBreakdown?: {
+    ownVehicles: {
+      totalEarnings: number
+      pendingEarnings: number
+      vehicleCount: number
+      bookingCount: number
+    }
+    managedVehicles: {
+      totalEarnings: number
+      pendingEarnings: number
+      vehicleCount: number
+      bookingCount: number
+      averageCommission: number
+    }
+  }
 }
 
 interface PayoutMethod {
@@ -120,10 +138,27 @@ export default function HostEarningsPage() {
   const [vehicleType, setVehicleType] = useState<'economy' | 'standard' | 'luxury'>('standard')
   const [daysPerMonth, setDaysPerMonth] = useState(15)
   const [calculatorTier, setCalculatorTier] = useState<'BASIC' | 'STANDARD' | 'PREMIUM'>('STANDARD')
+  const [isHostManager, setIsHostManager] = useState(false)
+  const [showBreakdown, setShowBreakdown] = useState(false)
 
   useEffect(() => {
     fetchHostStatus()
+    checkAccountType()
   }, [])
+
+  const checkAccountType = async () => {
+    try {
+      const response = await fetch('/api/host/account-type', {
+        credentials: 'include'
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setIsHostManager(data.isHostManager || data.managedVehicleCount > 0)
+      }
+    } catch (error) {
+      console.error('Failed to check account type:', error)
+    }
+  }
 
   useEffect(() => {
     if (hostStatus?.approvalStatus === 'APPROVED' || hostStatus?.approvalStatus === 'SUSPENDED') {
@@ -1035,6 +1070,141 @@ export default function HostEarningsPage() {
             </div>
           )}
 
+          {/* Earnings Breakdown by Source - Only show if host manages other vehicles */}
+          {isHostManager && earnings?.earningsBreakdown && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                  <IoBarChartOutline className="w-5 h-5 text-purple-600" />
+                  Earnings Breakdown
+                </h3>
+                <button
+                  onClick={() => setShowBreakdown(!showBreakdown)}
+                  className="text-sm text-purple-600 dark:text-purple-400 hover:underline"
+                >
+                  {showBreakdown ? 'Hide Details' : 'Show Details'}
+                </button>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                {/* Own Vehicles Earnings */}
+                <div className="p-4 rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 bg-blue-100 dark:bg-blue-900/40 rounded-lg">
+                      <IoKeyOutline className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900 dark:text-white">My Vehicles</h4>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Insurance tier earnings</p>
+                    </div>
+                  </div>
+                  <div className="flex items-baseline justify-between">
+                    <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                      {formatCurrency(earnings.earningsBreakdown.ownVehicles.totalEarnings)}
+                    </p>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      {earnings.earningsBreakdown.ownVehicles.vehicleCount} vehicle{earnings.earningsBreakdown.ownVehicles.vehicleCount !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  {showBreakdown && (
+                    <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-700 space-y-2 text-sm">
+                      <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                        <span>Pending earnings</span>
+                        <span className="font-medium">{formatCurrency(earnings.earningsBreakdown.ownVehicles.pendingEarnings)}</span>
+                      </div>
+                      <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                        <span>Total bookings</span>
+                        <span className="font-medium">{earnings.earningsBreakdown.ownVehicles.bookingCount}</span>
+                      </div>
+                      <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                        <span>Your earnings tier</span>
+                        <span className={`font-medium ${getTierBadgeColor(earnings.earningsTier)} px-2 py-0.5 rounded text-xs`}>
+                          {earnings.earningsLabel}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Managed Vehicles Earnings */}
+                <div className="p-4 rounded-lg bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border border-purple-200 dark:border-purple-800">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 bg-purple-100 dark:bg-purple-900/40 rounded-lg">
+                      <IoPeopleOutline className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900 dark:text-white">Managed Vehicles</h4>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Commission-based earnings</p>
+                    </div>
+                  </div>
+                  <div className="flex items-baseline justify-between">
+                    <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                      {formatCurrency(earnings.earningsBreakdown.managedVehicles.totalEarnings)}
+                    </p>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      {earnings.earningsBreakdown.managedVehicles.vehicleCount} vehicle{earnings.earningsBreakdown.managedVehicles.vehicleCount !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  {showBreakdown && (
+                    <div className="mt-3 pt-3 border-t border-purple-200 dark:border-purple-700 space-y-2 text-sm">
+                      <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                        <span>Pending earnings</span>
+                        <span className="font-medium">{formatCurrency(earnings.earningsBreakdown.managedVehicles.pendingEarnings)}</span>
+                      </div>
+                      <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                        <span>Total bookings</span>
+                        <span className="font-medium">{earnings.earningsBreakdown.managedVehicles.bookingCount}</span>
+                      </div>
+                      <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                        <span>Avg. commission</span>
+                        <span className="font-medium text-purple-600 dark:text-purple-400">
+                          {earnings.earningsBreakdown.managedVehicles.averageCommission.toFixed(0)}%
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Summary Bar */}
+              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Earnings by source:</span>
+                </div>
+                <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden flex">
+                  {earnings.earningsBreakdown.ownVehicles.totalEarnings > 0 && (
+                    <div
+                      className="h-full bg-gradient-to-r from-blue-500 to-indigo-500"
+                      style={{
+                        width: `${(earnings.earningsBreakdown.ownVehicles.totalEarnings / (earnings.earningsBreakdown.ownVehicles.totalEarnings + earnings.earningsBreakdown.managedVehicles.totalEarnings)) * 100}%`
+                      }}
+                      title={`My Vehicles: ${formatCurrency(earnings.earningsBreakdown.ownVehicles.totalEarnings)}`}
+                    />
+                  )}
+                  {earnings.earningsBreakdown.managedVehicles.totalEarnings > 0 && (
+                    <div
+                      className="h-full bg-gradient-to-r from-purple-500 to-pink-500"
+                      style={{
+                        width: `${(earnings.earningsBreakdown.managedVehicles.totalEarnings / (earnings.earningsBreakdown.ownVehicles.totalEarnings + earnings.earningsBreakdown.managedVehicles.totalEarnings)) * 100}%`
+                      }}
+                      title={`Managed Vehicles: ${formatCurrency(earnings.earningsBreakdown.managedVehicles.totalEarnings)}`}
+                    />
+                  )}
+                </div>
+                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                    My Vehicles ({((earnings.earningsBreakdown.ownVehicles.totalEarnings / (earnings.earningsBreakdown.ownVehicles.totalEarnings + earnings.earningsBreakdown.managedVehicles.totalEarnings)) * 100).toFixed(0)}%)
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+                    Managed ({((earnings.earningsBreakdown.managedVehicles.totalEarnings / (earnings.earningsBreakdown.ownVehicles.totalEarnings + earnings.earningsBreakdown.managedVehicles.totalEarnings)) * 100).toFixed(0)}%)
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="grid md:grid-cols-3 gap-4 mb-6">
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
               <div className="flex items-center justify-between mb-4">
@@ -1059,8 +1229,8 @@ export default function HostEarningsPage() {
                 <div className="p-2 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg">
                   <IoTimeOutline className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
                 </div>
-                <IoInformationCircleOutline 
-                  className="w-4 h-4 text-gray-400 cursor-help" 
+                <IoInformationCircleOutline
+                  className="w-4 h-4 text-gray-400 cursor-help"
                   title="Funds from recent bookings that are being processed"
                 />
               </div>

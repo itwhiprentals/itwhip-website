@@ -827,6 +827,19 @@ model RentalHost {
 
   // ===== END FLEET PARTNER FIELDS =====
 
+  // ===== FLEET MANAGER & VEHICLE OWNER FIELDS =====
+
+  isHostManager         Boolean   @default(false)    // Can manage other owners' vehicles
+  isVehicleOwner        Boolean   @default(false)    // Has vehicles managed by others
+  hostManagerSlug       String?   @unique            // Public URL: /fleet/[slug]
+  hostManagerName       String?                       // Display name for fleet manager profile
+  hostManagerBio        String?   @db.Text           // Bio for public profile
+  hostManagerLogo       String?                       // Logo URL
+  managesOwnCars        Boolean   @default(true)     // Managing their own vehicles
+  managesOthersCars     Boolean   @default(false)    // Managing other owners' vehicles
+
+  // ===== END FLEET MANAGER FIELDS =====
+
   // Relations
   user                  User?                @relation(fields: [userId], references: [id])
   cars                  RentalCar[]
@@ -850,6 +863,12 @@ model RentalHost {
   partnerCommissionHistory PartnerCommissionHistory[]
   partnerFaqs              PartnerFAQ[]
 
+  // Fleet Manager Relations
+  managedVehicles          VehicleManagement[] @relation("ManagerVehicles")
+  ownedManagedVehicles     VehicleManagement[] @relation("OwnerVehicles")
+  sentInvitations          ManagementInvitation[] @relation("InvitationSender")
+  receivedInvitations      ManagementInvitation[] @relation("InvitationRecipient")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -869,6 +888,9 @@ model RentalHost {
   @@index([usingLegacyInsurance])
   @@index([legacyDualId])
   @@index([partnerSlug])
+  @@index([hostManagerSlug])
+  @@index([isHostManager])
+  @@index([isVehicleOwner])
 }
 
 // ============================================================================
@@ -1045,6 +1067,107 @@ model PartnerFAQ {
 
   @@index([hostId])
   @@map("partner_faqs")
+}
+
+// ============================================================================
+// FLEET MANAGER & VEHICLE OWNER MODELS
+// ============================================================================
+
+model VehicleManagement {
+  id                    String   @id @default(cuid())
+
+  // Core relationships
+  vehicleId             String   @unique
+  vehicle               RentalCar @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  ownerId               String
+  owner                 RentalHost @relation("OwnerVehicles", fields: [ownerId], references: [id])
+
+  managerId             String
+  manager               RentalHost @relation("ManagerVehicles", fields: [managerId], references: [id])
+
+  // Commission split (percentages of the 90% after platform cut)
+  ownerCommissionPercent   Decimal  @default(70) @db.Decimal(5,2)
+  managerCommissionPercent Decimal  @default(30) @db.Decimal(5,2)
+
+  // Management permissions
+  canEditListing        Boolean  @default(true)
+  canAdjustPricing      Boolean  @default(true)
+  canCommunicateGuests  Boolean  @default(true)
+  canApproveBookings    Boolean  @default(true)
+  canHandleIssues       Boolean  @default(true)
+
+  // Status
+  status                VehicleManagementStatus @default(ACTIVE)
+
+  // Agreement details
+  agreementNotes        String?  @db.Text
+  agreementSignedAt     DateTime?
+
+  // Audit
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([ownerId])
+  @@index([managerId])
+  @@index([status])
+  @@map("vehicle_management")
+}
+
+model ManagementInvitation {
+  id                    String   @id @default(cuid())
+
+  // Invitation token (for email link)
+  token                 String   @unique @default(cuid())
+
+  // Type of invitation
+  type                  ManagementInvitationType
+
+  // Who sent the invitation
+  senderId              String
+  sender                RentalHost @relation("InvitationSender", fields: [senderId], references: [id])
+
+  // Who receives the invitation (optional - may not have account yet)
+  recipientId           String?
+  recipient             RentalHost? @relation("InvitationRecipient", fields: [recipientId], references: [id])
+  recipientEmail        String
+
+  // For OWNER_INVITES_MANAGER: which vehicle(s) to manage
+  vehicleIds            String[]
+
+  // Proposed commission split
+  proposedOwnerPercent  Decimal  @default(70) @db.Decimal(5,2)
+  proposedManagerPercent Decimal @default(30) @db.Decimal(5,2)
+
+  // Negotiation
+  counterOfferOwnerPercent   Decimal? @db.Decimal(5,2)
+  counterOfferManagerPercent Decimal? @db.Decimal(5,2)
+  negotiationRounds     Int      @default(0)
+  negotiationNotes      String?  @db.Text
+  negotiationHistory    Json?    @default("[]")
+
+  // Proposed permissions
+  proposedCanEditListing       Boolean @default(true)
+  proposedCanAdjustPricing     Boolean @default(true)
+  proposedCanCommunicateGuests Boolean @default(true)
+  proposedCanApproveBookings   Boolean @default(true)
+  proposedCanHandleIssues      Boolean @default(true)
+
+  // Status tracking
+  status                ManagementInvitationStatus @default(PENDING)
+
+  // Timestamps
+  expiresAt             DateTime
+  respondedAt           DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([token])
+  @@index([senderId])
+  @@index([recipientId])
+  @@index([recipientEmail])
+  @@index([status])
+  @@map("management_invitations")
 }
 
 // ============================================================================
@@ -1732,6 +1855,10 @@ model Claim {
   guestResponsePhotos   Json?
   accountHoldApplied    Boolean   @default(false)
 
+  // ===== GUEST-FILED CLAIMS =====
+  filedByGuestId String? // If claim was filed BY the guest (against host)
+  filedByRole    String? // 'HOST' | 'GUEST' | 'PARTNER' | 'FLEET'
+
   // ===== VEHICLE DEACTIVATION TRACKING =====
   vehicleDeactivated   Boolean   @default(false)
   vehicleReactivatedAt DateTime?
@@ -1787,6 +1914,79 @@ model Claim {
   @@index([vehicleDrivable])
   @@index([fnolStatus])
   @@index([fnolNumber])
+  @@index([filedByGuestId])
+  @@index([filedByRole])
+
+  // Relation to TripIssue (if escalated from a trip issue)
+  tripIssue TripIssue?
+}
+
+// ============================================================================
+// TRIP ISSUE MODEL - PRE-CLAIM DAMAGE/ISSUE TRACKING
+// ============================================================================
+// Captures issues detected at trip end before formal claim escalation
+// Only ONE TripIssue per booking - combines host and guest reports
+
+model TripIssue {
+  id        String        @id @default(cuid())
+  bookingId String        @unique // Only ONE issue per booking
+  booking   RentalBooking @relation(fields: [bookingId], references: [id])
+
+  // Host report
+  hostReportedAt    DateTime?
+  hostDescription   String?   @db.Text
+  hostPhotos        Json? // Photo URLs from host
+  hostEstimatedCost Float?
+
+  // Guest report
+  guestReportedAt  DateTime?
+  guestDescription String?   @db.Text
+  guestPhotos      Json? // Photo URLs from guest
+
+  // Combined analysis
+  issueType String // 'DAMAGE' | 'MILEAGE' | 'FUEL' | 'CLEANING' | 'MECHANICAL' | 'OTHER'
+  severity  String // 'MINOR' | 'MODERATE' | 'MAJOR'
+
+  // Trip capture evidence (auto-linked from booking)
+  tripStartMileage Int?
+  tripEndMileage   Int?
+  tripStartFuel    String?
+  tripEndFuel      String?
+  startPhotosRef   Json? // References to InspectionPhoto IDs or URLs
+  endPhotosRef     Json?
+
+  // Resolution workflow
+  // Statuses: OPEN → PENDING_GUEST_ACK → PENDING_HOST_REVIEW → RESOLVED | ESCALATED_TO_CLAIM
+  status String @default("OPEN")
+
+  guestAcknowledgedAt DateTime?
+  guestAckNotes       String?   @db.Text
+  hostReviewedAt      DateTime?
+  hostReviewNotes     String?   @db.Text
+
+  resolvedAt DateTime?
+  resolvedBy String? // 'HOST' | 'GUEST' | 'ADMIN' | 'SYSTEM'
+  resolution String? @db.Text
+
+  // Link to claim if escalated
+  claimId String? @unique
+  claim   Claim?  @relation(fields: [claimId], references: [id])
+
+  // Auto-escalation tracking
+  escalationDeadline DateTime? // 48 hours after creation
+  autoEscalated      Boolean   @default(false)
+
+  // Notifications
+  hostNotifiedAt  DateTime?
+  guestNotifiedAt DateTime?
+  reminderSentAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([issueType])
+  @@index([escalationDeadline])
 }
 
 // ============================================================================
@@ -2167,6 +2367,7 @@ model RentalCar {
   coverageOverrides  VehicleCoverageOverride[]
   serviceRecords     VehicleServiceRecord[]
   mileageAnomalies   MileageAnomaly[]
+  vehicleManagement  VehicleManagement?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2537,6 +2738,15 @@ model RentalBooking {
   adminCompletedById   String?
   adminCompletionNotes String? @db.Text
 
+  // ===== TRIP END REQUEST (Host-initiated when guest doesn't end trip) =====
+  tripEndRequestedAt   DateTime?
+  tripEndRequestedBy   String? // 'HOST' | 'GUEST' | 'SYSTEM'
+  tripEndRequestReason String?   @db.Text
+  tripEndRequestStatus String? // 'PENDING' | 'APPROVED' | 'DENIED'
+  tripEndApprovedBy    String?
+  tripEndApprovedAt    DateTime?
+  tripEndDeniedReason  String?
+
   // Check-in/out
   actualStartTime DateTime?
   actualEndTime   DateTime?
@@ -2574,6 +2784,7 @@ model RentalBooking {
   insurancePolicy      InsurancePolicy?
   claims               Claim[]
   tripInspectionPhotos TripInspectionPhoto[]
+  tripIssue            TripIssue? // Pre-claim issue tracking
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2595,6 +2806,7 @@ model RentalBooking {
   @@index([reviewerProfileId])
   @@index([tripCompletedBy])
   @@index([adminCompletedById])
+  @@index([tripEndRequestStatus])
 }
 
 // ============================================================================
@@ -4818,4 +5030,29 @@ enum PartnerPayoutStatus {
   PROCESSING
   COMPLETED
   FAILED
+}
+
+// ============================================================================
+// FLEET MANAGER & VEHICLE OWNER ENUMS
+// ============================================================================
+
+enum VehicleManagementStatus {
+  PENDING
+  ACTIVE
+  PAUSED
+  TERMINATED
+}
+
+enum ManagementInvitationType {
+  OWNER_INVITES_MANAGER
+  MANAGER_INVITES_OWNER
+}
+
+enum ManagementInvitationStatus {
+  PENDING
+  COUNTER_OFFERED
+  ACCEPTED
+  DECLINED
+  EXPIRED
+  CANCELLED
 }

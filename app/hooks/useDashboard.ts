@@ -93,6 +93,26 @@ interface DashboardFlags {
   hasUpcomingTrips: boolean
   hasActiveWarning: boolean
   needsPaymentMethod: boolean
+  hasAccountHold: boolean
+  hasPendingClaimResponse: boolean
+}
+
+interface AccountHoldStatus {
+  hasHold: boolean
+  holdReason: string | null
+  claimId: string | null
+  appliedAt: string | null
+  canBook: boolean
+  message: string | null
+}
+
+interface DashboardClaims {
+  total: number
+  active: number
+  pendingResponse: number
+  againstMe: number
+  filedByMe: number
+  accountHold: AccountHoldStatus
 }
 
 export interface DashboardData {
@@ -102,6 +122,7 @@ export interface DashboardData {
   stats: DashboardStats
   notifications: DashboardNotifications
   paymentMethods: any[]
+  claims: DashboardClaims
   flags: DashboardFlags
 }
 
@@ -188,5 +209,7 @@ export type {
   DashboardBooking,
   DashboardStats,
   DashboardNotifications,
+  DashboardClaims,
+  AccountHoldStatus,
   DashboardFlags
 }
