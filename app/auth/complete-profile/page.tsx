@@ -11,8 +11,17 @@ import {
   IoCheckmarkCircle,
   IoPersonOutline,
   IoAlertCircleOutline,
-  IoArrowBackOutline
+  IoArrowBackOutline,
+  IoCloudUploadOutline,
+  IoImageOutline,
+  IoTrashOutline,
+  IoWarningOutline,
+  IoCarOutline,
+  IoPeopleOutline,
+  IoLayersOutline
 } from 'react-icons/io5'
+import Image from 'next/image'
+import Link from 'next/link'
 
 function CompleteProfileContent() {
   const router = useRouter()
@@ -32,8 +41,8 @@ function CompleteProfileContent() {
   const isGuestToHostUpgrade = guard === 'guest-on-host'
   const isHostToGuestBlocked = guard === 'host-on-guest'
 
-  // Multi-step wizard state (for hosts)
-  const totalSteps = roleHint === 'host' ? 2 : 1
+  // Multi-step wizard state (for hosts) - 3 steps: Phone → Vehicle+hostRole → Photos
+  const totalSteps = roleHint === 'host' ? 3 : 1
   const [currentStep, setCurrentStep] = useState(1)
   const [carData, setCarData] = useState<CarData>({
     vin: '',
@@ -53,6 +62,24 @@ function CompleteProfileContent() {
     zipCode: ''
   })
   const [isCarValid, setIsCarValid] = useState(false)
+
+  // Host role selection
+  const [hostRole, setHostRole] = useState<'own' | 'manage' | 'both' | ''>('')
+
+  // Photo upload state
+  const [vehiclePhotos, setVehiclePhotos] = useState<{ url: string; file?: File }[]>([])
+  const [uploadingPhotos, setUploadingPhotos] = useState(false)
+  const [agreeToTerms, setAgreeToTerms] = useState(false)
+  const MIN_PHOTOS_REQUIRED = 4
+
+  // Step validation functions
+  const isStep2Valid = () => {
+    return isCarValid && hostRole !== ''
+  }
+
+  const isStep3Valid = () => {
+    return vehiclePhotos.length >= MIN_PHOTOS_REQUIRED && agreeToTerms
+  }
 
   // Get pending OAuth data from session
   const pendingOAuth = (session?.user as any)?.pendingOAuth
@@ -195,6 +222,64 @@ function CompleteProfileContent() {
     setError('')
   }
 
+  // Photo upload handler
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    setUploadingPhotos(true)
+    setError('')
+
+    try {
+      const newPhotos: { url: string; file?: File }[] = []
+
+      for (const file of Array.from(files)) {
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+          setError('Only image files are allowed')
+          continue
+        }
+
+        // Validate file size (10MB max)
+        if (file.size > 10 * 1024 * 1024) {
+          setError('Each photo must be under 10MB')
+          continue
+        }
+
+        // Upload to Cloudinary via API
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('type', 'hostSignupPhoto')
+
+        const response = await fetch('/api/rentals/upload', {
+          method: 'POST',
+          body: formData
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          newPhotos.push({ url: data.url, file })
+        } else {
+          console.error('Failed to upload photo')
+        }
+      }
+
+      setVehiclePhotos(prev => [...prev, ...newPhotos])
+    } catch (err) {
+      console.error('Upload error:', err)
+      setError('Failed to upload photos. Please try again.')
+    } finally {
+      setUploadingPhotos(false)
+      // Reset input
+      e.target.value = ''
+    }
+  }
+
+  // Remove photo
+  const handleRemovePhoto = (index: number) => {
+    setVehiclePhotos(prev => prev.filter((_, i) => i !== index))
+  }
+
   const validatePhone = () => {
     // Phone is optional - only validate format if provided
     if (!phone || phone.trim() === '') {
@@ -219,7 +304,15 @@ function CompleteProfileContent() {
       return
     }
 
-    // For hosts at step 2 or guests at step 1, submit to API
+    // For hosts at step 2, validate and proceed to step 3
+    if (roleHint === 'host' && currentStep === 2) {
+      if (isStep2Valid()) {
+        setCurrentStep(3)
+      }
+      return
+    }
+
+    // For hosts at step 3 or guests at step 1, submit to API
     setIsLoading(true)
     setError('')
 
@@ -231,6 +324,9 @@ function CompleteProfileContent() {
           phone: phone.replace(/\D/g, ''),
           roleHint: roleHint,
           ...(roleHint === 'host' && {
+            hostRole: hostRole,
+            vehiclePhotoUrls: vehiclePhotos.map(p => p.url),
+            agreeToTerms: agreeToTerms,
             carData: {
               vin: carData.vin || null,
               make: carData.make,
@@ -368,7 +464,7 @@ function CompleteProfileContent() {
                 </div>
               </div>
 
-              {/* Progress Indicator */}
+              {/* Progress Indicator - 3 Steps */}
               <div className="flex items-center justify-center mb-8">
                 {/* Step 1 Circle */}
                 <div className="flex flex-col items-center">
@@ -382,8 +478,8 @@ function CompleteProfileContent() {
                   <span className="text-xs text-gray-400 mt-2">Phone</span>
                 </div>
 
-                {/* Connector */}
-                <div className={`w-16 h-1 mx-2 transition-all ${
+                {/* Connector 1-2 */}
+                <div className={`w-12 h-1 mx-2 transition-all ${
                   currentStep >= 2 ? 'bg-blue-600' : 'bg-gray-700'
                 }`}></div>
 
@@ -394,9 +490,26 @@ function CompleteProfileContent() {
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-700 text-gray-400'
                   }`}>
-                    2
+                    {currentStep > 2 ? '✓' : '2'}
                   </div>
                   <span className="text-xs text-gray-400 mt-2">Vehicle</span>
+                </div>
+
+                {/* Connector 2-3 */}
+                <div className={`w-12 h-1 mx-2 transition-all ${
+                  currentStep >= 3 ? 'bg-blue-600' : 'bg-gray-700'
+                }`}></div>
+
+                {/* Step 3 Circle */}
+                <div className="flex flex-col items-center">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all ${
+                    currentStep >= 3
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-700 text-gray-400'
+                  }`}>
+                    3
+                  </div>
+                  <span className="text-xs text-gray-400 mt-2">Photos</span>
                 </div>
               </div>
 
@@ -449,11 +562,100 @@ function CompleteProfileContent() {
                 </form>
               )}
 
-              {/* Step 2: Car Information */}
+              {/* Step 2: Vehicle + Host Role */}
               {currentStep === 2 && (
                 <div className="space-y-6">
-                  <div className="text-center mb-6">
-                    <h2 className="text-xl font-bold text-white mb-2">Vehicle Information</h2>
+                  {/* Host Role Selection */}
+                  <div className="mb-6">
+                    <h2 className="text-xl font-bold text-white mb-2">What will you be doing on ItWhip?</h2>
+                    <p className="text-gray-400 text-sm mb-4">Choose how you plan to use the platform</p>
+
+                    <div className="space-y-3">
+                      {/* Option: Rent out my own cars */}
+                      <label
+                        className={`flex items-start gap-4 p-4 rounded-lg cursor-pointer transition border-2 ${
+                          hostRole === 'own'
+                            ? 'bg-green-900/30 border-green-500'
+                            : 'bg-gray-700/50 border-transparent hover:border-gray-600'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="hostRole"
+                          value="own"
+                          checked={hostRole === 'own'}
+                          onChange={() => setHostRole('own')}
+                          className="mt-1 w-4 h-4 text-green-600 focus:ring-green-500"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <IoCarOutline className="w-5 h-5 text-green-500" />
+                            <span className="font-medium text-white">Rent out my own car(s)</span>
+                          </div>
+                          <p className="text-sm text-gray-400 mt-1">
+                            I'll manage my vehicles and handle bookings myself
+                          </p>
+                        </div>
+                      </label>
+
+                      {/* Option: Manage other people's cars */}
+                      <label
+                        className={`flex items-start gap-4 p-4 rounded-lg cursor-pointer transition border-2 ${
+                          hostRole === 'manage'
+                            ? 'bg-purple-900/30 border-purple-500'
+                            : 'bg-gray-700/50 border-transparent hover:border-gray-600'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="hostRole"
+                          value="manage"
+                          checked={hostRole === 'manage'}
+                          onChange={() => setHostRole('manage')}
+                          className="mt-1 w-4 h-4 text-purple-600 focus:ring-purple-500"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <IoPeopleOutline className="w-5 h-5 text-purple-500" />
+                            <span className="font-medium text-white">Manage other people's cars</span>
+                          </div>
+                          <p className="text-sm text-gray-400 mt-1">
+                            I'm a fleet manager - I'll manage vehicles for other owners and earn commission
+                          </p>
+                        </div>
+                      </label>
+
+                      {/* Option: Both */}
+                      <label
+                        className={`flex items-start gap-4 p-4 rounded-lg cursor-pointer transition border-2 ${
+                          hostRole === 'both'
+                            ? 'bg-indigo-900/30 border-indigo-500'
+                            : 'bg-gray-700/50 border-transparent hover:border-gray-600'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="hostRole"
+                          value="both"
+                          checked={hostRole === 'both'}
+                          onChange={() => setHostRole('both')}
+                          className="mt-1 w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <IoLayersOutline className="w-5 h-5 text-indigo-500" />
+                            <span className="font-medium text-white">Both - I want to do it all</span>
+                          </div>
+                          <p className="text-sm text-gray-400 mt-1">
+                            I'll rent my own vehicles AND manage vehicles for other owners
+                          </p>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="text-center mb-4">
+                    <h2 className="text-lg font-bold text-white mb-2">Vehicle Information</h2>
                     <p className="text-gray-400 text-sm">Add your first vehicle to start earning on ItWhip</p>
                   </div>
 
@@ -484,8 +686,159 @@ function CompleteProfileContent() {
                     </button>
                     <button
                       type="button"
+                      onClick={() => setCurrentStep(3)}
+                      disabled={!isStep2Valid()}
+                      className="flex-1 py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Continue to Photos
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 3: Vehicle Photos */}
+              {currentStep === 3 && (
+                <div className="space-y-6">
+                  <div className="text-center mb-4">
+                    <h2 className="text-xl font-bold text-white mb-2">Vehicle Photos</h2>
+                    <p className="text-gray-400 text-sm">Upload at least {MIN_PHOTOS_REQUIRED} photos of your vehicle</p>
+                  </div>
+
+                  {/* Photo Count Indicator */}
+                  <div className={`flex items-center justify-between p-3 rounded-lg ${
+                    vehiclePhotos.length >= MIN_PHOTOS_REQUIRED
+                      ? 'bg-emerald-900/30 border border-emerald-700'
+                      : 'bg-amber-900/30 border border-amber-700'
+                  }`}>
+                    <div className="flex items-center gap-2">
+                      {vehiclePhotos.length >= MIN_PHOTOS_REQUIRED ? (
+                        <IoCheckmarkCircle className="w-5 h-5 text-emerald-400" />
+                      ) : (
+                        <IoWarningOutline className="w-5 h-5 text-amber-400" />
+                      )}
+                      <span className={`text-sm font-medium ${
+                        vehiclePhotos.length >= MIN_PHOTOS_REQUIRED
+                          ? 'text-emerald-300'
+                          : 'text-amber-300'
+                      }`}>
+                        {vehiclePhotos.length} of {MIN_PHOTOS_REQUIRED} minimum photos uploaded
+                      </span>
+                    </div>
+                    {vehiclePhotos.length < MIN_PHOTOS_REQUIRED && (
+                      <span className="text-xs text-amber-400">
+                        {MIN_PHOTOS_REQUIRED - vehiclePhotos.length} more required
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Upload Area */}
+                  <label className={`block w-full border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+                    uploadingPhotos
+                      ? 'border-gray-600 bg-gray-700/50'
+                      : 'border-blue-600 hover:border-blue-500 hover:bg-blue-900/20'
+                  }`}>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handlePhotoUpload}
+                      className="hidden"
+                      disabled={uploadingPhotos}
+                    />
+                    {uploadingPhotos ? (
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                        <span className="text-sm text-gray-400">Uploading photos...</span>
+                      </div>
+                    ) : (
+                      <>
+                        <IoCloudUploadOutline className="w-10 h-10 text-blue-500 mx-auto mb-2" />
+                        <p className="text-sm font-medium text-gray-300">Click to upload photos</p>
+                        <p className="text-xs text-gray-500 mt-1">JPG, PNG up to 10MB each</p>
+                      </>
+                    )}
+                  </label>
+
+                  {/* Photo Grid */}
+                  {vehiclePhotos.length > 0 && (
+                    <div className="grid grid-cols-2 gap-3 mt-4">
+                      {vehiclePhotos.map((photo, index) => (
+                        <div key={index} className="relative group aspect-video rounded-lg overflow-hidden bg-gray-700">
+                          <Image
+                            src={photo.url}
+                            alt={`Vehicle photo ${index + 1}`}
+                            fill
+                            className="object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleRemovePhoto(index)}
+                            className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                          >
+                            <IoTrashOutline className="w-4 h-4" />
+                          </button>
+                          {index === 0 && (
+                            <div className="absolute bottom-2 left-2 px-2 py-1 bg-blue-600 text-white text-xs rounded">
+                              Main Photo
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Empty State */}
+                  {vehiclePhotos.length === 0 && (
+                    <div className="text-center py-6 border border-gray-700 rounded-lg bg-gray-800/50">
+                      <IoImageOutline className="w-10 h-10 text-gray-500 mx-auto mb-2" />
+                      <p className="text-sm text-gray-400">No photos uploaded yet</p>
+                      <p className="text-xs text-gray-500 mt-1">Add photos of exterior, interior, and key features</p>
+                    </div>
+                  )}
+
+                  {/* Terms Agreement */}
+                  <div className="flex items-start gap-3 mt-6 p-4 bg-gray-700/50 rounded-lg">
+                    <input
+                      type="checkbox"
+                      id="terms"
+                      checked={agreeToTerms}
+                      onChange={(e) => setAgreeToTerms(e.target.checked)}
+                      className="mt-0.5 h-5 w-5 text-blue-600 focus:ring-blue-500 border-2 border-gray-500 rounded cursor-pointer bg-gray-800"
+                    />
+                    <label htmlFor="terms" className="text-sm text-gray-400 cursor-pointer select-none">
+                      I agree to the{' '}
+                      <Link href="/terms" className="text-blue-400 hover:text-blue-300 underline font-medium">
+                        Terms of Service
+                      </Link>{' '}
+                      and{' '}
+                      <Link href="/privacy" className="text-blue-400 hover:text-blue-300 underline font-medium">
+                        Privacy Policy
+                      </Link>
+                      {' '}<span className="text-red-500">*</span>
+                    </label>
+                  </div>
+
+                  {/* Error Message */}
+                  {error && (
+                    <div className="p-3 bg-red-500/10 border border-red-500/50 rounded-lg">
+                      <p className="text-red-400 text-sm">{error}</p>
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setCurrentStep(2)}
+                      className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-all duration-200"
+                    >
+                      <IoArrowBackOutline className="w-5 h-5" />
+                      Back
+                    </button>
+                    <button
+                      type="button"
                       onClick={handleSubmit}
-                      disabled={isLoading || !isCarValid}
+                      disabled={isLoading || !isStep3Valid()}
                       className="flex-1 py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isLoading ? (
@@ -494,10 +847,10 @@ function CompleteProfileContent() {
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                           </svg>
-                          Upgrading to Host...
+                          Creating Host Profile...
                         </span>
                       ) : (
-                        'Complete Upgrade'
+                        'Complete Signup'
                       )}
                     </button>
                   </div>
@@ -643,7 +996,7 @@ function CompleteProfileContent() {
               )}
             </div>
 
-            {/* Progress Indicator (hosts only) */}
+            {/* Progress Indicator (hosts only) - 3 Steps */}
             {roleHint === 'host' && (
               <div className="flex items-center justify-center mb-8">
                 {/* Step 1 Circle */}
@@ -658,8 +1011,8 @@ function CompleteProfileContent() {
                   <span className="text-xs text-gray-400 mt-2">Phone</span>
                 </div>
 
-                {/* Connector */}
-                <div className={`w-16 h-1 mx-2 transition-all ${
+                {/* Connector 1-2 */}
+                <div className={`w-12 h-1 mx-2 transition-all ${
                   currentStep >= 2 ? 'bg-blue-600' : 'bg-gray-700'
                 }`}></div>
 
@@ -670,9 +1023,26 @@ function CompleteProfileContent() {
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-700 text-gray-400'
                   }`}>
-                    2
+                    {currentStep > 2 ? '✓' : '2'}
                   </div>
                   <span className="text-xs text-gray-400 mt-2">Vehicle</span>
+                </div>
+
+                {/* Connector 2-3 */}
+                <div className={`w-12 h-1 mx-2 transition-all ${
+                  currentStep >= 3 ? 'bg-blue-600' : 'bg-gray-700'
+                }`}></div>
+
+                {/* Step 3 Circle */}
+                <div className="flex flex-col items-center">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all ${
+                    currentStep >= 3
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-700 text-gray-400'
+                  }`}>
+                    3
+                  </div>
+                  <span className="text-xs text-gray-400 mt-2">Photos</span>
                 </div>
               </div>
             )}
@@ -763,11 +1133,100 @@ function CompleteProfileContent() {
             </form>
             )}
 
-            {/* Step 2: Car Information (hosts only) */}
+            {/* Step 2: Vehicle + Host Role (hosts only) */}
             {currentStep === 2 && roleHint === 'host' && (
               <div className="space-y-6">
-                <div className="text-center mb-6">
-                  <h2 className="text-xl font-bold text-white mb-2">Vehicle Information</h2>
+                {/* Host Role Selection */}
+                <div className="mb-6">
+                  <h2 className="text-xl font-bold text-white mb-2">What will you be doing on ItWhip?</h2>
+                  <p className="text-gray-400 text-sm mb-4">Choose how you plan to use the platform</p>
+
+                  <div className="space-y-3">
+                    {/* Option: Rent out my own cars */}
+                    <label
+                      className={`flex items-start gap-4 p-4 rounded-lg cursor-pointer transition border-2 ${
+                        hostRole === 'own'
+                          ? 'bg-green-900/30 border-green-500'
+                          : 'bg-gray-700/50 border-transparent hover:border-gray-600'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="hostRole2"
+                        value="own"
+                        checked={hostRole === 'own'}
+                        onChange={() => setHostRole('own')}
+                        className="mt-1 w-4 h-4 text-green-600 focus:ring-green-500"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <IoCarOutline className="w-5 h-5 text-green-500" />
+                          <span className="font-medium text-white">Rent out my own car(s)</span>
+                        </div>
+                        <p className="text-sm text-gray-400 mt-1">
+                          I'll manage my vehicles and handle bookings myself
+                        </p>
+                      </div>
+                    </label>
+
+                    {/* Option: Manage other people's cars */}
+                    <label
+                      className={`flex items-start gap-4 p-4 rounded-lg cursor-pointer transition border-2 ${
+                        hostRole === 'manage'
+                          ? 'bg-purple-900/30 border-purple-500'
+                          : 'bg-gray-700/50 border-transparent hover:border-gray-600'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="hostRole2"
+                        value="manage"
+                        checked={hostRole === 'manage'}
+                        onChange={() => setHostRole('manage')}
+                        className="mt-1 w-4 h-4 text-purple-600 focus:ring-purple-500"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <IoPeopleOutline className="w-5 h-5 text-purple-500" />
+                          <span className="font-medium text-white">Manage other people's cars</span>
+                        </div>
+                        <p className="text-sm text-gray-400 mt-1">
+                          I'm a fleet manager - I'll manage vehicles for other owners and earn commission
+                        </p>
+                      </div>
+                    </label>
+
+                    {/* Option: Both */}
+                    <label
+                      className={`flex items-start gap-4 p-4 rounded-lg cursor-pointer transition border-2 ${
+                        hostRole === 'both'
+                          ? 'bg-indigo-900/30 border-indigo-500'
+                          : 'bg-gray-700/50 border-transparent hover:border-gray-600'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="hostRole2"
+                        value="both"
+                        checked={hostRole === 'both'}
+                        onChange={() => setHostRole('both')}
+                        className="mt-1 w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <IoLayersOutline className="w-5 h-5 text-indigo-500" />
+                          <span className="font-medium text-white">Both - I want to do it all</span>
+                        </div>
+                        <p className="text-sm text-gray-400 mt-1">
+                          I'll rent my own vehicles AND manage vehicles for other owners
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="text-center mb-4">
+                  <h2 className="text-lg font-bold text-white mb-2">Vehicle Information</h2>
                   <p className="text-gray-400 text-sm">Add your first vehicle to start earning on ItWhip</p>
                 </div>
 
@@ -798,8 +1257,159 @@ function CompleteProfileContent() {
                   </button>
                   <button
                     type="button"
+                    onClick={() => setCurrentStep(3)}
+                    disabled={!isStep2Valid()}
+                    className="flex-1 py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Continue to Photos
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Vehicle Photos (hosts only) */}
+            {currentStep === 3 && roleHint === 'host' && (
+              <div className="space-y-6">
+                <div className="text-center mb-4">
+                  <h2 className="text-xl font-bold text-white mb-2">Vehicle Photos</h2>
+                  <p className="text-gray-400 text-sm">Upload at least {MIN_PHOTOS_REQUIRED} photos of your vehicle</p>
+                </div>
+
+                {/* Photo Count Indicator */}
+                <div className={`flex items-center justify-between p-3 rounded-lg ${
+                  vehiclePhotos.length >= MIN_PHOTOS_REQUIRED
+                    ? 'bg-emerald-900/30 border border-emerald-700'
+                    : 'bg-amber-900/30 border border-amber-700'
+                }`}>
+                  <div className="flex items-center gap-2">
+                    {vehiclePhotos.length >= MIN_PHOTOS_REQUIRED ? (
+                      <IoCheckmarkCircle className="w-5 h-5 text-emerald-400" />
+                    ) : (
+                      <IoWarningOutline className="w-5 h-5 text-amber-400" />
+                    )}
+                    <span className={`text-sm font-medium ${
+                      vehiclePhotos.length >= MIN_PHOTOS_REQUIRED
+                        ? 'text-emerald-300'
+                        : 'text-amber-300'
+                    }`}>
+                      {vehiclePhotos.length} of {MIN_PHOTOS_REQUIRED} minimum photos uploaded
+                    </span>
+                  </div>
+                  {vehiclePhotos.length < MIN_PHOTOS_REQUIRED && (
+                    <span className="text-xs text-amber-400">
+                      {MIN_PHOTOS_REQUIRED - vehiclePhotos.length} more required
+                    </span>
+                  )}
+                </div>
+
+                {/* Upload Area */}
+                <label className={`block w-full border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+                  uploadingPhotos
+                    ? 'border-gray-600 bg-gray-700/50'
+                    : 'border-blue-600 hover:border-blue-500 hover:bg-blue-900/20'
+                }`}>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handlePhotoUpload}
+                    className="hidden"
+                    disabled={uploadingPhotos}
+                  />
+                  {uploadingPhotos ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                      <span className="text-sm text-gray-400">Uploading photos...</span>
+                    </div>
+                  ) : (
+                    <>
+                      <IoCloudUploadOutline className="w-10 h-10 text-blue-500 mx-auto mb-2" />
+                      <p className="text-sm font-medium text-gray-300">Click to upload photos</p>
+                      <p className="text-xs text-gray-500 mt-1">JPG, PNG up to 10MB each</p>
+                    </>
+                  )}
+                </label>
+
+                {/* Photo Grid */}
+                {vehiclePhotos.length > 0 && (
+                  <div className="grid grid-cols-2 gap-3 mt-4">
+                    {vehiclePhotos.map((photo, index) => (
+                      <div key={index} className="relative group aspect-video rounded-lg overflow-hidden bg-gray-700">
+                        <Image
+                          src={photo.url}
+                          alt={`Vehicle photo ${index + 1}`}
+                          fill
+                          className="object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemovePhoto(index)}
+                          className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                        >
+                          <IoTrashOutline className="w-4 h-4" />
+                        </button>
+                        {index === 0 && (
+                          <div className="absolute bottom-2 left-2 px-2 py-1 bg-blue-600 text-white text-xs rounded">
+                            Main Photo
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Empty State */}
+                {vehiclePhotos.length === 0 && (
+                  <div className="text-center py-6 border border-gray-700 rounded-lg bg-gray-800/50">
+                    <IoImageOutline className="w-10 h-10 text-gray-500 mx-auto mb-2" />
+                    <p className="text-sm text-gray-400">No photos uploaded yet</p>
+                    <p className="text-xs text-gray-500 mt-1">Add photos of exterior, interior, and key features</p>
+                  </div>
+                )}
+
+                {/* Terms Agreement */}
+                <div className="flex items-start gap-3 mt-6 p-4 bg-gray-700/50 rounded-lg">
+                  <input
+                    type="checkbox"
+                    id="terms2"
+                    checked={agreeToTerms}
+                    onChange={(e) => setAgreeToTerms(e.target.checked)}
+                    className="mt-0.5 h-5 w-5 text-blue-600 focus:ring-blue-500 border-2 border-gray-500 rounded cursor-pointer bg-gray-800"
+                  />
+                  <label htmlFor="terms2" className="text-sm text-gray-400 cursor-pointer select-none">
+                    I agree to the{' '}
+                    <Link href="/terms" className="text-blue-400 hover:text-blue-300 underline font-medium">
+                      Terms of Service
+                    </Link>{' '}
+                    and{' '}
+                    <Link href="/privacy" className="text-blue-400 hover:text-blue-300 underline font-medium">
+                      Privacy Policy
+                    </Link>
+                    {' '}<span className="text-red-500">*</span>
+                  </label>
+                </div>
+
+                {/* Error Message */}
+                {error && (
+                  <div className="p-3 bg-red-500/10 border border-red-500/50 rounded-lg">
+                    <p className="text-red-400 text-sm">{error}</p>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep(2)}
+                    className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-all duration-200"
+                  >
+                    <IoArrowBackOutline className="w-5 h-5" />
+                    Back
+                  </button>
+                  <button
+                    type="button"
                     onClick={handleSubmit}
-                    disabled={isLoading || !isCarValid}
+                    disabled={isLoading || !isStep3Valid()}
                     className="flex-1 py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isLoading ? (

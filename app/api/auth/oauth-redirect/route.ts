@@ -130,17 +130,23 @@ export async function GET(request: NextRequest) {
     // PENDING OAUTH USER (New user - not yet in database)
     // ========================================================================
     if (pendingOAuth && !isProfileComplete) {
-      console.log(`[OAuth Redirect] Pending OAuth user - needs to complete profile first (mode: ${mode})`)
+      console.log(`[OAuth Redirect] Pending OAuth user - roleHint: ${roleHint}, mode: ${mode}`)
 
-      // For BOTH login and signup mode, redirect to complete-profile
-      // If mode is 'login', complete-profile will show "No Account Found" message
-      // but still allow user to create account by entering phone
-      // For HOST signups, redirect to full host signup flow after phone entry
-      const redirectUrl = roleHint === 'host'
-        ? '/host/signup?oauth=true'
-        : (returnTo || '/dashboard')
+      // For HOST signups, skip complete-profile and go directly to host signup
+      // Host signup page has its own 3-step flow that collects all required info
+      if (roleHint === 'host') {
+        console.log('[OAuth Redirect] New HOST signup - skipping complete-profile, going to host signup directly')
+        const response = NextResponse.redirect(new URL('/host/signup?oauth=true', request.url))
+        response.cookies.delete('oauth_role_hint')
+        response.cookies.delete('oauth_mode')
+        response.cookies.delete('oauth_return_to')
+        return response
+      }
+
+      // For GUEST signups, redirect to complete-profile to collect phone
+      const redirectUrl = returnTo || '/dashboard'
       const completeProfileUrl = `/auth/complete-profile?roleHint=${roleHint}&mode=${mode}&redirectTo=${encodeURIComponent(redirectUrl)}`
-      console.log(`[OAuth Redirect] Redirecting pending user to complete profile: ${completeProfileUrl}`)
+      console.log(`[OAuth Redirect] Guest signup - redirecting to complete profile: ${completeProfileUrl}`)
 
       const response = NextResponse.redirect(new URL(completeProfileUrl, request.url))
       // Clear OAuth cookies after reading

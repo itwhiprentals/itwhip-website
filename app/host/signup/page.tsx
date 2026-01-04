@@ -53,9 +53,12 @@ function HostSignupContent() {
     hostRole: '' as 'own' | 'manage' | 'both' | ''
   })
 
-  // Pre-fill form data from OAuth session
+  // Track if we've already initialized OAuth user (to prevent resetting step on session changes)
+  const [oauthInitialized, setOauthInitialized] = useState(false)
+
+  // Pre-fill form data from OAuth session (only once)
   useEffect(() => {
-    if (isOAuthUser && session?.user) {
+    if (isOAuthUser && session?.user && !oauthInitialized) {
       const nameParts = (session.user.name || '').split(' ')
       setFormData(prev => ({
         ...prev,
@@ -63,10 +66,11 @@ function HostSignupContent() {
         lastName: nameParts.slice(1).join(' ') || '',
         email: session.user?.email || ''
       }))
-      // OAuth users start at step 2
+      // OAuth users start at step 2 (only set once, don't reset if already advanced to step 3)
       setCurrentStep(2)
+      setOauthInitialized(true)
     }
-  }, [isOAuthUser, session])
+  }, [isOAuthUser, session, oauthInitialized])
 
   // Vehicle + Location info
   const [vehicleData, setVehicleData] = useState<CarData>({
@@ -522,7 +526,7 @@ function HostSignupContent() {
                   {/* Host Role Selection */}
                   <div className="mb-6">
                     <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                      What will you be doing on ITWhip?
+                      What will you be doing on ItWhip?
                     </h2>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                       Choose how you plan to use the platform
