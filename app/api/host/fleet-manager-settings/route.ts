@@ -7,8 +7,8 @@ import { verifyRequest } from '@/app/lib/auth/verify-request'
 
 export async function GET(request: NextRequest) {
   try {
-    const { user, error } = await verifyRequest(request)
-    if (error || !user) {
+    const user = await verifyRequest(request)
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
         hostManagerLogo: true,
         _count: {
           select: {
-            vehicles: true,
+            cars: true,
             managedVehicles: {
               where: { status: 'ACTIVE' }
             }
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
         hostManagerName: host.hostManagerName,
         hostManagerBio: host.hostManagerBio,
         hostManagerLogo: host.hostManagerLogo,
-        ownedVehicleCount: host._count.vehicles,
+        ownedVehicleCount: host._count.cars,
         managedVehicleCount: host._count.managedVehicles
       }
     })
@@ -64,8 +64,8 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const { user, error } = await verifyRequest(request)
-    if (error || !user) {
+    const user = await verifyRequest(request)
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

@@ -7,8 +7,8 @@ import { verifyRequest } from '@/app/lib/auth/verify-request'
 
 export async function GET(request: NextRequest) {
   try {
-    const { user, error } = await verifyRequest(request)
-    if (error || !user) {
+    const user = await verifyRequest(request)
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

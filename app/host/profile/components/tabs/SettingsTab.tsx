@@ -3,7 +3,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { IoSaveOutline, IoTimeOutline, IoBanOutline, IoTrendingUpOutline, IoShieldCheckmarkOutline, IoLinkOutline, IoChevronForwardOutline, IoDownloadOutline, IoTrashOutline, IoWarningOutline } from 'react-icons/io5'
+import { IoSaveOutline, IoTimeOutline, IoBanOutline, IoTrendingUpOutline, IoShieldCheckmarkOutline, IoLinkOutline, IoChevronForwardOutline, IoDownloadOutline, IoTrashOutline, IoWarningOutline, IoPeopleOutline } from 'react-icons/io5'
 import { EARNINGS_TIERS, determineHostTier, getTierConfig } from '@/app/fleet/financial-constants'
 import DeleteAccountModal from '../DeleteAccountModal'
 
@@ -372,6 +372,27 @@ export default function SettingsTab({
               </h3>
               <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
                 Connect your guest and host accounts for seamless role switching
+              </p>
+            </div>
+          </div>
+          <IoChevronForwardOutline className="w-5 h-5 text-gray-400 flex-shrink-0" />
+        </Link>
+
+        {/* Fleet Manager Settings */}
+        <Link
+          href="/host/settings/fleet-manager"
+          className="flex items-center justify-between p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50/50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors mt-3"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
+              <IoPeopleOutline className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm sm:text-base">
+                Fleet Manager Settings
+              </h3>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Manage vehicles for other owners and earn commission
               </p>
             </div>
           </div>

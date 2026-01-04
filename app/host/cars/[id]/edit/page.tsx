@@ -1063,76 +1063,93 @@ export default function EditCarPage() {
               </button>
             </div>
 
-            {/* Car name and stats - Mobile: centered stacked layout, Desktop: left-aligned inline */}
-            <div className="text-center sm:text-left">
-              {/* Year + Make */}
-              <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap mb-1">
-                {isLocked && <IoLockClosedOutline className="w-6 h-6 text-red-500" />}
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-                  {formData.year} {formData.make}
-                </h1>
-              </div>
+            {/* Car info (left) + Hero image (right) */}
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+              {/* Left: Car details */}
+              <div className="flex-1 text-center sm:text-left order-2 sm:order-1">
+                {/* Year + Make */}
+                <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap mb-1">
+                  {isLocked && <IoLockClosedOutline className="w-6 h-6 text-red-500" />}
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+                    {formData.year} {formData.make}
+                  </h1>
+                </div>
 
-              {/* Model + Trim + Drivetrain */}
-              <p className="text-lg text-gray-600 dark:text-gray-400 mb-2">
-                {formData.model}{formData.trim ? ` ${formData.trim}` : ''}{effectiveSpecs.driveType ? ` ${effectiveSpecs.driveType.toUpperCase()}` : ''}
-              </p>
+                {/* Model + Trim + Drivetrain */}
+                <p className="text-lg text-gray-600 dark:text-gray-400 mb-2">
+                  {formData.model}{formData.trim ? ` ${formData.trim}` : ''}{effectiveSpecs.driveType ? ` ${effectiveSpecs.driveType.toUpperCase()}` : ''}
+                </p>
 
-              {/* Badges Row - using effectiveSpecs for accurate data */}
-              <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap mb-2">
-                {getVehicleClass(formData.make, formData.model, effectiveSpecs.carType as any) && (
-                  <VehicleBadge label={getVehicleClass(formData.make, formData.model, effectiveSpecs.carType as any)!} />
-                )}
-                {formatFuelTypeBadge(effectiveSpecs.fuelType) && (
-                  <VehicleBadge label={formatFuelTypeBadge(effectiveSpecs.fuelType)!} />
-                )}
-                {effectiveSpecs.carType && (
-                  <VehicleBadge label={String(effectiveSpecs.carType).charAt(0).toUpperCase() + String(effectiveSpecs.carType).slice(1)} />
-                )}
-              </div>
+                {/* Badges Row - using effectiveSpecs for accurate data */}
+                <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap mb-2">
+                  {getVehicleClass(formData.make, formData.model, effectiveSpecs.carType as any) && (
+                    <VehicleBadge label={getVehicleClass(formData.make, formData.model, effectiveSpecs.carType as any)!} />
+                  )}
+                  {formatFuelTypeBadge(effectiveSpecs.fuelType) && (
+                    <VehicleBadge label={formatFuelTypeBadge(effectiveSpecs.fuelType)!} />
+                  )}
+                  {effectiveSpecs.carType && (
+                    <VehicleBadge label={String(effectiveSpecs.carType).charAt(0).toUpperCase() + String(effectiveSpecs.carType).slice(1)} />
+                  )}
+                </div>
 
-              {/* Specs Row: Doors • Transmission • DriveType • Seats - using effectiveSpecs */}
-              <div className="flex items-center justify-center sm:justify-start gap-3 text-sm text-gray-600 dark:text-gray-400 mb-2 flex-wrap">
-                {effectiveSpecs.doors && (
+                {/* Specs Row: Doors • Transmission • DriveType • Seats - using effectiveSpecs */}
+                <div className="flex items-center justify-center sm:justify-start gap-3 text-sm text-gray-600 dark:text-gray-400 mb-2 flex-wrap">
+                  {effectiveSpecs.doors && (
+                    <span className="flex items-center gap-1">
+                      <IoEnterOutline className="w-4 h-4" />
+                      {effectiveSpecs.doors} Doors
+                    </span>
+                  )}
+                  {effectiveSpecs.doors && effectiveSpecs.transmission && (
+                    <span className="text-gray-300 dark:text-gray-600">•</span>
+                  )}
+                  {effectiveSpecs.transmission && (
+                    <span className="flex items-center gap-1 capitalize">
+                      <IoCogOutline className="w-4 h-4" />
+                      {effectiveSpecs.transmission}
+                    </span>
+                  )}
+                  {effectiveSpecs.transmission && effectiveSpecs.driveType && (
+                    <span className="text-gray-300 dark:text-gray-600">•</span>
+                  )}
+                  {effectiveSpecs.driveType && (
+                    <span className="uppercase">{effectiveSpecs.driveType}</span>
+                  )}
+                  {(effectiveSpecs.driveType || effectiveSpecs.transmission) && effectiveSpecs.seats && (
+                    <span className="text-gray-300 dark:text-gray-600">•</span>
+                  )}
+                  {effectiveSpecs.seats && (
+                    <span className="flex items-center gap-1">
+                      <IoPeopleOutline className="w-4 h-4" />
+                      {effectiveSpecs.seats} Seats
+                    </span>
+                  )}
+                </div>
+
+                {/* Trip stats */}
+                <div className="flex items-center justify-center sm:justify-start gap-4 text-sm text-gray-600 dark:text-gray-400">
+                  <span>{car.totalTrips} trips completed</span>
                   <span className="flex items-center gap-1">
-                    <IoEnterOutline className="w-4 h-4" />
-                    {effectiveSpecs.doors} Doors
+                    <IoStar className="w-4 h-4 text-yellow-500" />
+                    {car.rating.toFixed(1)} rating
                   </span>
-                )}
-                {effectiveSpecs.doors && effectiveSpecs.transmission && (
-                  <span className="text-gray-300 dark:text-gray-600">•</span>
-                )}
-                {effectiveSpecs.transmission && (
-                  <span className="flex items-center gap-1 capitalize">
-                    <IoCogOutline className="w-4 h-4" />
-                    {effectiveSpecs.transmission}
-                  </span>
-                )}
-                {effectiveSpecs.transmission && effectiveSpecs.driveType && (
-                  <span className="text-gray-300 dark:text-gray-600">•</span>
-                )}
-                {effectiveSpecs.driveType && (
-                  <span className="uppercase">{effectiveSpecs.driveType}</span>
-                )}
-                {(effectiveSpecs.driveType || effectiveSpecs.transmission) && effectiveSpecs.seats && (
-                  <span className="text-gray-300 dark:text-gray-600">•</span>
-                )}
-                {effectiveSpecs.seats && (
-                  <span className="flex items-center gap-1">
-                    <IoPeopleOutline className="w-4 h-4" />
-                    {effectiveSpecs.seats} Seats
-                  </span>
-                )}
+                </div>
               </div>
 
-              {/* Trip stats */}
-              <div className="flex items-center justify-center sm:justify-start gap-4 text-sm text-gray-600 dark:text-gray-400">
-                <span>{car.totalTrips} trips completed</span>
-                <span className="flex items-center gap-1">
-                  <IoStar className="w-4 h-4 text-yellow-500" />
-                  {car.rating.toFixed(1)} rating
-                </span>
-              </div>
+              {/* Right: Hero image */}
+              {photos.length > 0 && (
+                <div className="w-full sm:w-48 md:w-56 lg:w-64 flex-shrink-0 order-1 sm:order-2">
+                  <div className="relative aspect-[4/3] rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700 shadow-md">
+                    <Image
+                      src={photos.find(p => p.isHero)?.url || photos[0]?.url}
+                      alt={`${formData.year} ${formData.make} ${formData.model}`}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

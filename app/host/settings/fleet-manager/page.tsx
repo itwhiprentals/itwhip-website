@@ -241,11 +241,11 @@ export default function FleetManagerSettingsPage() {
       <main className="max-w-3xl mx-auto px-4 py-8 pt-24">
         {/* Back Button */}
         <button
-          onClick={() => router.push('/host/dashboard')}
+          onClick={() => router.push('/host/profile?tab=settings')}
           className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 mb-6"
         >
           <IoArrowBackOutline className="w-5 h-5" />
-          Back to Dashboard
+          Back to Profile
         </button>
 
         {/* Header */}
@@ -547,7 +547,7 @@ export default function FleetManagerSettingsPage() {
           {/* Save Button */}
           <div className="flex justify-end gap-4">
             <button
-              onClick={() => router.push('/host/dashboard')}
+              onClick={() => router.push('/host/profile?tab=settings')}
               className="px-6 py-3 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
             >
               Cancel
