@@ -694,7 +694,7 @@ export default function CarInformationForm({
           <div className="border-t border-gray-200 dark:border-gray-700 my-6"></div>
 
           <div className="space-y-4">
-            <h3 className="text-sm font-medium text-white flex items-center gap-2">
+            <h3 className="text-sm font-medium text-white flex items-center justify-center gap-2">
               <IoLocationOutline className="w-4 h-4" />
               Vehicle Location
             </h3>

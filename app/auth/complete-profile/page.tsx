@@ -73,9 +73,9 @@ function CompleteProfileContent() {
 
   // Step validation functions
   const isStep2Valid = () => {
-    // Fleet managers (manage-only) don't need vehicle info - they just need to select their role
+    // Fleet managers (manage-only) don't need vehicle info - they just need to select role AND agree to terms
     if (hostRole === 'manage') {
-      return true
+      return agreeToTerms
     }
     // For 'own' or 'both', they need valid car info AND role selected
     return isCarValid && hostRole !== ''
@@ -722,15 +722,15 @@ function CompleteProfileContent() {
                       {hostRole === 'manage' && (
                         <div className="flex flex-col">
                           {/* Header spacing to align with left column */}
-                          <h2 className="text-lg font-bold text-white mb-1 text-center">Fleet Manager</h2>
-                          <p className="text-gray-400 text-sm mb-4 text-center">Your fleet management profile</p>
+                          <h2 className="text-xl font-bold text-white mb-1 text-center">Fleet Manager</h2>
+                          <p className="text-gray-400 text-sm mb-3 text-center">Your fleet management profile</p>
 
                           <div className="p-4 lg:p-5 bg-purple-900/30 border border-purple-700 rounded-lg">
                             <div className="flex items-start gap-3">
-                              <IoPeopleOutline className="w-6 h-6 text-purple-400 flex-shrink-0 mt-0.5" />
+                              <IoPeopleOutline className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
                               <div>
-                                <h3 className="font-medium text-white mb-2">Fleet Manager Account</h3>
-                                <p className="text-sm text-gray-400">
+                                <h3 className="font-medium text-white mb-1 text-center text-sm">Fleet Manager Account</h3>
+                                <p className="text-xs text-gray-400">
                                   After approval, you&apos;ll get your own profile page to showcase your fleet management services.
                                   You can invite car owners to have you manage their vehicles, or they can invite you to manage their listings.{' '}
                                   <Link href="/how-it-works" className="text-purple-400 hover:text-purple-300">
@@ -739,6 +739,27 @@ function CompleteProfileContent() {
                                 </p>
                               </div>
                             </div>
+                          </div>
+
+                          {/* Terms Agreement for manage-only */}
+                          <div className="flex items-start gap-3 mt-6 p-4 bg-gray-700/50 rounded-lg">
+                            <input
+                              type="checkbox"
+                              id="termsManage"
+                              checked={agreeToTerms}
+                              onChange={(e) => setAgreeToTerms(e.target.checked)}
+                              className="mt-0.5 h-5 w-5 text-blue-600 focus:ring-blue-500 border-2 border-gray-500 rounded cursor-pointer bg-gray-800 flex-shrink-0"
+                            />
+                            <label htmlFor="termsManage" className="text-xs lg:text-sm text-gray-400 cursor-pointer select-none">
+                              I agree to the{' '}
+                              <Link href="/terms" className="text-blue-400 hover:text-blue-300 underline font-medium">
+                                Terms and Conditions
+                              </Link>{' '}
+                              and{' '}
+                              <Link href="/privacy" className="text-blue-400 hover:text-blue-300 underline font-medium">
+                                Privacy Policy
+                              </Link>
+                            </label>
                           </div>
                         </div>
                       )}
@@ -1360,15 +1381,15 @@ function CompleteProfileContent() {
                     {hostRole === 'manage' && (
                       <div className="flex flex-col">
                         {/* Header spacing to align with left column */}
-                        <h2 className="text-lg font-bold text-white mb-1 text-center">Fleet Manager</h2>
-                        <p className="text-gray-400 text-sm mb-4 text-center">Your fleet management profile</p>
+                        <h2 className="text-xl font-bold text-white mb-1 text-center">Fleet Manager</h2>
+                        <p className="text-gray-400 text-sm mb-3 text-center">Your fleet management profile</p>
 
                         <div className="p-4 lg:p-5 bg-purple-900/30 border border-purple-700 rounded-lg">
                           <div className="flex items-start gap-3">
-                            <IoPeopleOutline className="w-6 h-6 text-purple-400 flex-shrink-0 mt-0.5" />
+                            <IoPeopleOutline className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
                             <div>
-                              <h3 className="font-medium text-white mb-2">Fleet Manager Account</h3>
-                              <p className="text-sm text-gray-400">
+                              <h3 className="font-medium text-white mb-1 text-center text-sm">Fleet Manager Account</h3>
+                              <p className="text-xs text-gray-400">
                                 After approval, you&apos;ll get your own profile page to showcase your fleet management services.
                                 You can invite car owners to have you manage their vehicles, or they can invite you to manage their listings.{' '}
                                 <Link href="/how-it-works" className="text-purple-400 hover:text-purple-300">
@@ -1377,6 +1398,27 @@ function CompleteProfileContent() {
                               </p>
                             </div>
                           </div>
+                        </div>
+
+                        {/* Terms Agreement for manage-only */}
+                        <div className="flex items-start gap-3 mt-6 p-4 bg-gray-700/50 rounded-lg">
+                          <input
+                            type="checkbox"
+                            id="termsManage2"
+                            checked={agreeToTerms}
+                            onChange={(e) => setAgreeToTerms(e.target.checked)}
+                            className="mt-0.5 h-5 w-5 text-blue-600 focus:ring-blue-500 border-2 border-gray-500 rounded cursor-pointer bg-gray-800 flex-shrink-0"
+                          />
+                          <label htmlFor="termsManage2" className="text-xs lg:text-sm text-gray-400 cursor-pointer select-none">
+                            I agree to the{' '}
+                            <Link href="/terms" className="text-blue-400 hover:text-blue-300 underline font-medium">
+                              Terms and Conditions
+                            </Link>{' '}
+                            and{' '}
+                            <Link href="/privacy" className="text-blue-400 hover:text-blue-300 underline font-medium">
+                              Privacy Policy
+                            </Link>
+                          </label>
                         </div>
                       </div>
                     )}
@@ -1592,6 +1634,28 @@ function CompleteProfileContent() {
                 >
                   Back to Login
                 </button>
+              </div>
+            )}
+
+            {/* Login/Signup Links (always shown) */}
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-400">
+                Already have an account?{' '}
+                <Link href={roleHint === 'host' ? '/host/login' : '/auth/login'} className="text-blue-400 hover:text-blue-300 font-medium">
+                  Sign In
+                </Link>
+              </p>
+            </div>
+
+            {/* Renter Signup Link (for host signups) */}
+            {roleHint === 'host' && (
+              <div className="mt-4 pt-4 border-t border-gray-700 text-center">
+                <p className="text-sm text-gray-500 mb-1">
+                  Looking to rent a car instead?
+                </p>
+                <Link href="/auth/signup" className="text-blue-400 hover:text-blue-300 font-medium text-sm">
+                  Create Renter Account
+                </Link>
               </div>
             )}
           </div>

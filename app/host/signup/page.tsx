@@ -118,6 +118,11 @@ function HostSignupContent() {
   }
 
   const isStep2Valid = () => {
+    // Fleet managers (manage-only) don't need vehicle info - they just need to select their role
+    if (formData.hostRole === 'manage') {
+      return true
+    }
+    // For 'own' or 'both', they need valid car info AND role selected
     return isVehicleValid && formData.hostRole !== ''
   }
 
@@ -130,8 +135,11 @@ function HostSignupContent() {
       setCurrentStep(2)
       setError('')
     } else if (currentStep === 2 && isStep2Valid()) {
-      setCurrentStep(3)
-      setError('')
+      // Fleet managers (manage-only) skip photos step - handled separately via submit
+      if (formData.hostRole !== 'manage') {
+        setCurrentStep(3)
+        setError('')
+      }
     }
   }
 
@@ -207,8 +215,17 @@ function HostSignupContent() {
     e.preventDefault()
     setError('')
 
-    if (!isStep3Valid()) {
+    const isManageOnly = formData.hostRole === 'manage'
+
+    // For manage-only, skip step 3 validation (no photos required)
+    if (!isManageOnly && !isStep3Valid()) {
       setError('Please complete all required fields and upload at least 4 photos')
+      return
+    }
+
+    // For manage-only, just need to agree to terms
+    if (isManageOnly && !formData.agreeToTerms) {
+      setError('Please agree to the Terms of Service')
       return
     }
 
@@ -225,32 +242,40 @@ function HostSignupContent() {
         name: `${formData.firstName} ${formData.lastName}`,
         email: formData.email,
         phone: formData.phone,
-        // Location info
-        address: vehicleData.address || null,
-        city: vehicleData.city,
-        state: vehicleData.state,
-        zipCode: vehicleData.zipCode,
-        // Vehicle info
-        hasVehicle: true,
-        vehicleVin: vehicleData.vin || null,
-        vehicleMake: vehicleData.make,
-        vehicleModel: vehicleData.model,
-        vehicleYear: vehicleData.year,
-        vehicleColor: vehicleData.color,
-        vehicleTrim: vehicleData.trim || null,
-        // VIN-decoded specs
-        vehicleFuelType: vehicleData.fuelType || null,
-        vehicleDoors: vehicleData.doors || null,
-        vehicleBodyClass: vehicleData.bodyClass || null,
-        vehicleTransmission: vehicleData.transmission || null,
-        vehicleDriveType: vehicleData.driveType || null,
         agreeToTerms: formData.agreeToTerms,
         // Host role flags
         managesOwnCars,
         isHostManager,
         managesOthersCars,
+        // Is manage-only fleet manager
+        isManageOnly
+      }
+
+      // Only include vehicle data for hosts who own cars
+      if (!isManageOnly) {
+        // Location info
+        requestBody.address = vehicleData.address || null
+        requestBody.city = vehicleData.city
+        requestBody.state = vehicleData.state
+        requestBody.zipCode = vehicleData.zipCode
+        // Vehicle info
+        requestBody.hasVehicle = true
+        requestBody.vehicleVin = vehicleData.vin || null
+        requestBody.vehicleMake = vehicleData.make
+        requestBody.vehicleModel = vehicleData.model
+        requestBody.vehicleYear = vehicleData.year
+        requestBody.vehicleColor = vehicleData.color
+        requestBody.vehicleTrim = vehicleData.trim || null
+        // VIN-decoded specs
+        requestBody.vehicleFuelType = vehicleData.fuelType || null
+        requestBody.vehicleDoors = vehicleData.doors || null
+        requestBody.vehicleBodyClass = vehicleData.bodyClass || null
+        requestBody.vehicleTransmission = vehicleData.transmission || null
+        requestBody.vehicleDriveType = vehicleData.driveType || null
         // Vehicle photos
-        vehiclePhotoUrls: vehiclePhotos.map(p => p.url)
+        requestBody.vehiclePhotoUrls = vehiclePhotos.map(p => p.url)
+      } else {
+        requestBody.hasVehicle = false
       }
 
       // Only include password for non-OAuth users
@@ -317,54 +342,81 @@ function HostSignupContent() {
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-20 pb-12">
-        <div className="max-w-md mx-auto px-4">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black pt-20 pb-12">
+        <div className="max-w-md lg:max-w-4xl mx-auto px-4">
           {/* Header */}
           <div className="text-center mb-6">
-            <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-              <IoCarSportOutline className="w-8 h-8 text-green-600" />
+            <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <IoCarSportOutline className="w-8 h-8 text-green-500" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-2xl font-bold text-white">
               Become a Host
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">
+            <p className="text-gray-400 mt-2">
               Start earning by sharing your vehicle
             </p>
           </div>
 
-          {/* Progress Steps */}
+          {/* Progress Steps - 2 or 3 Steps depending on hostRole */}
           <div className="flex items-center justify-center mb-8">
             <div className="flex items-center">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
-                currentStep >= 1 ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-500'
-              }`}>
-                {currentStep > 1 ? <IoCheckmarkCircle className="w-6 h-6" /> : '1'}
+              {/* Step 1 Circle */}
+              <div className="flex flex-col items-center">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all ${
+                  currentStep >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-400'
+                }`}>
+                  {currentStep > 1 ? '✓' : '1'}
+                </div>
+                <span className="text-xs text-gray-400 mt-2">Info</span>
               </div>
-              <div className={`w-12 h-1 ${currentStep >= 2 ? 'bg-green-600' : 'bg-gray-200'}`} />
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
-                currentStep >= 2 ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-500'
-              }`}>
-                {currentStep > 2 ? <IoCheckmarkCircle className="w-6 h-6" /> : '2'}
+
+              {/* Connector 1-2 */}
+              <div className={`w-12 h-1 mx-2 transition-all ${
+                currentStep >= 2 ? 'bg-blue-600' : 'bg-gray-700'
+              }`}></div>
+
+              {/* Step 2 Circle */}
+              <div className="flex flex-col items-center">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all ${
+                  currentStep >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-400'
+                }`}>
+                  {(formData.hostRole === 'manage' && currentStep === 2) ? '✓' : (currentStep > 2 ? '✓' : '2')}
+                </div>
+                <span className="text-xs text-gray-400 mt-2">{formData.hostRole === 'manage' ? 'Role' : 'Vehicle'}</span>
               </div>
-              <div className={`w-12 h-1 ${currentStep >= 3 ? 'bg-green-600' : 'bg-gray-200'}`} />
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
-                currentStep >= 3 ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-500'
-              }`}>
-                3
-              </div>
+
+              {/* Connector 2-3 and Step 3 - only show if not manage-only */}
+              {formData.hostRole !== 'manage' && (
+                <>
+                  <div className={`w-12 h-1 mx-2 transition-all ${
+                    currentStep >= 3 ? 'bg-blue-600' : 'bg-gray-700'
+                  }`}></div>
+
+                  {/* Step 3 Circle */}
+                  <div className="flex flex-col items-center">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all ${
+                      currentStep >= 3 ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-400'
+                    }`}>
+                      3
+                    </div>
+                    <span className="text-xs text-gray-400 mt-2">Photos</span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
           {/* Signup Form */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+          <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-xl p-6 lg:p-8 border border-gray-700">
             <form onSubmit={handleSubmit}>
 
               {/* Step 1: Personal Info */}
               {currentStep === 1 && (
                 <div className="space-y-4">
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                  <h2 className="text-lg font-semibold text-white mb-1 text-center">
                     Personal Information
                   </h2>
+                  <p className="text-gray-400 text-sm mb-4 text-center">Create your host account</p>
 
                   {/* OAuth Buttons */}
                   <OAuthButtons
@@ -378,30 +430,30 @@ function HostSignupContent() {
                   {/* Name Fields */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      <label className="block text-sm font-medium text-gray-300 mb-1">
                         First Name <span className="text-red-500">*</span>
                       </label>
                       <div className="relative">
-                        <IoPersonOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <IoPersonOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                         <input
                           type="text"
                           value={formData.firstName}
                           onChange={(e) => setFormData({...formData, firstName: e.target.value})}
-                          className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+                          className="w-full pl-10 pr-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
                           placeholder="John"
                           required
                         />
                       </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      <label className="block text-sm font-medium text-gray-300 mb-1">
                         Last Name <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
                         value={formData.lastName}
                         onChange={(e) => setFormData({...formData, lastName: e.target.value})}
-                        className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+                        className="w-full px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
                         placeholder="Doe"
                         required
                       />
@@ -410,16 +462,16 @@ function HostSignupContent() {
 
                   {/* Email */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
                       Email Address <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
-                      <IoMailOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <IoMailOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                       <input
                         type="email"
                         value={formData.email}
                         onChange={(e) => setFormData({...formData, email: e.target.value})}
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+                        className="w-full pl-10 pr-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
                         placeholder="john@example.com"
                         required
                       />
@@ -428,16 +480,16 @@ function HostSignupContent() {
 
                   {/* Phone */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
                       Phone Number <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
-                      <IoPhonePortraitOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <IoPhonePortraitOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                       <input
                         type="tel"
                         value={formData.phone}
                         onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+                        className="w-full pl-10 pr-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
                         placeholder="(555) 123-4567"
                         required
                       />
@@ -446,16 +498,16 @@ function HostSignupContent() {
 
                   {/* Password */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
                       Password <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
-                      <IoLockClosedOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <IoLockClosedOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                       <input
                         type={showPassword ? 'text' : 'password'}
                         value={formData.password}
                         onChange={(e) => setFormData({...formData, password: e.target.value})}
-                        className="w-full pl-10 pr-12 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+                        className="w-full pl-10 pr-12 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
                         placeholder="Min. 8 characters"
                         required
                         minLength={8}
@@ -463,7 +515,7 @@ function HostSignupContent() {
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300"
                       >
                         {showPassword ? <IoEyeOffOutline className="w-5 h-5" /> : <IoEyeOutline className="w-5 h-5" />}
                       </button>
@@ -472,22 +524,22 @@ function HostSignupContent() {
 
                   {/* Confirm Password */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
                       Confirm Password <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
-                      <IoLockClosedOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <IoLockClosedOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                       <input
                         type={showPassword ? 'text' : 'password'}
                         value={formData.confirmPassword}
                         onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+                        className="w-full pl-10 pr-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
                         placeholder="Confirm your password"
                         required
                       />
                     </div>
                     {formData.confirmPassword && formData.password !== formData.confirmPassword && (
-                      <p className="text-red-500 text-sm mt-1">Passwords do not match</p>
+                      <p className="text-red-400 text-sm mt-1">Passwords do not match</p>
                     )}
                   </div>
 
@@ -496,7 +548,7 @@ function HostSignupContent() {
                     type="button"
                     onClick={handleNextStep}
                     disabled={!isStep1Valid()}
-                    className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium mt-6"
+                    className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mt-6"
                   >
                     Continue to Vehicle Info
                   </button>
@@ -505,158 +557,225 @@ function HostSignupContent() {
 
               {/* Step 2: Vehicle + Location Info */}
               {currentStep === 2 && (
-                <div className="space-y-4">
+                <div className="space-y-4 lg:space-y-6">
                   {/* OAuth User Welcome Message */}
                   {isOAuthUser && (
-                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-4">
+                    <div className="bg-green-900/30 border border-green-700 rounded-lg p-4 mb-4">
                       <div className="flex items-center gap-3">
-                        <IoCheckmarkCircle className="w-6 h-6 text-green-600 flex-shrink-0" />
+                        <IoCheckmarkCircle className="w-6 h-6 text-green-500 flex-shrink-0" />
                         <div>
-                          <p className="font-medium text-green-900 dark:text-green-100">
+                          <p className="font-medium text-green-100">
                             Welcome, {session?.user?.name || 'Host'}!
                           </p>
-                          <p className="text-sm text-green-700 dark:text-green-300">
-                            Complete your host profile by adding your vehicle details.
+                          <p className="text-sm text-green-300">
+                            Complete your host profile by selecting your role.
                           </p>
                         </div>
                       </div>
                     </div>
                   )}
 
-                  {/* Host Role Selection */}
-                  <div className="mb-6">
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                      What will you be doing on ItWhip?
-                    </h2>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                      Choose how you plan to use the platform
-                    </p>
+                  {/* Desktop: Two-column layout for role selection and vehicle info */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Left Column: Host Role Selection */}
+                    <div>
+                      <h2 className="text-xl font-bold text-white mb-1 text-center">What will you be doing on ItWhip?</h2>
+                      <p className="text-gray-400 text-sm mb-4 text-center">Choose how you plan to use the platform</p>
 
-                    <div className="space-y-3">
-                      {/* Option: Rent out my own cars */}
-                      <label
-                        className={`flex items-start gap-4 p-4 rounded-lg cursor-pointer transition border-2 ${
-                          formData.hostRole === 'own'
-                            ? 'bg-green-50 dark:bg-green-900/20 border-green-500'
-                            : 'bg-gray-50 dark:bg-gray-700/50 border-transparent hover:border-gray-300 dark:hover:border-gray-600'
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="hostRole"
-                          value="own"
-                          checked={formData.hostRole === 'own'}
-                          onChange={(e) => setFormData({...formData, hostRole: 'own'})}
-                          className="mt-1 w-4 h-4 text-green-600 focus:ring-green-500"
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <IoCarOutline className="w-5 h-5 text-green-600" />
-                            <span className="font-medium text-gray-900 dark:text-white">
-                              Rent out my own car(s)
-                            </span>
+                      <div className="space-y-3">
+                        {/* Option: Rent out my own cars */}
+                        <label
+                          className={`flex items-start gap-3 p-3 lg:p-4 rounded-lg cursor-pointer transition border-2 ${
+                            formData.hostRole === 'own'
+                              ? 'bg-green-900/30 border-green-500'
+                              : 'bg-gray-700/50 border-transparent hover:border-gray-600'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="hostRole"
+                            value="own"
+                            checked={formData.hostRole === 'own'}
+                            onChange={() => setFormData({...formData, hostRole: 'own'})}
+                            className="mt-1 w-4 h-4 text-green-600 focus:ring-green-500"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <IoCarOutline className="w-5 h-5 text-green-500" />
+                              <span className="font-medium text-white text-sm lg:text-base">Rent out my own car(s)</span>
+                            </div>
+                            <p className="text-xs lg:text-sm text-gray-400 mt-1">
+                              I&apos;ll manage my vehicles and handle bookings myself
+                            </p>
                           </div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                            I'll manage my vehicles and handle bookings myself
+                        </label>
+
+                        {/* Option: Manage other people's cars */}
+                        <label
+                          className={`flex items-start gap-3 p-3 lg:p-4 rounded-lg cursor-pointer transition border-2 ${
+                            formData.hostRole === 'manage'
+                              ? 'bg-purple-900/30 border-purple-500'
+                              : 'bg-gray-700/50 border-transparent hover:border-gray-600'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="hostRole"
+                            value="manage"
+                            checked={formData.hostRole === 'manage'}
+                            onChange={() => setFormData({...formData, hostRole: 'manage'})}
+                            className="mt-1 w-4 h-4 text-purple-600 focus:ring-purple-500"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <IoPeopleOutline className="w-5 h-5 text-purple-500" />
+                              <span className="font-medium text-white text-sm lg:text-base">Manage other people&apos;s cars</span>
+                            </div>
+                            <p className="text-xs lg:text-sm text-gray-400 mt-1">
+                              I&apos;m a fleet manager - I&apos;ll manage vehicles for other owners
+                            </p>
+                          </div>
+                        </label>
+
+                        {/* Option: Both */}
+                        <label
+                          className={`flex items-start gap-3 p-3 lg:p-4 rounded-lg cursor-pointer transition border-2 ${
+                            formData.hostRole === 'both'
+                              ? 'bg-indigo-900/30 border-indigo-500'
+                              : 'bg-gray-700/50 border-transparent hover:border-gray-600'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="hostRole"
+                            value="both"
+                            checked={formData.hostRole === 'both'}
+                            onChange={() => setFormData({...formData, hostRole: 'both'})}
+                            className="mt-1 w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <IoLayersOutline className="w-5 h-5 text-indigo-500" />
+                              <span className="font-medium text-white text-sm lg:text-base">Both - I want to do it all</span>
+                            </div>
+                            <p className="text-xs lg:text-sm text-gray-400 mt-1">
+                              I&apos;ll rent my own vehicles AND manage for other owners
+                            </p>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Right Column: Vehicle Details OR Fleet Manager Info */}
+                    <div>
+                      {/* Vehicle Details - only shown for hosts who own cars */}
+                      {formData.hostRole !== 'manage' && formData.hostRole !== '' && (
+                        <>
+                          <h2 className="text-lg font-bold text-white mb-1 text-center">Vehicle Details</h2>
+                          <p className="text-gray-400 text-sm mb-4 text-center">Add your first vehicle to start earning</p>
+
+                          <CarInformationForm
+                            carData={vehicleData}
+                            onCarDataChange={(data) => setVehicleData(prev => ({ ...prev, ...data }))}
+                            onValidationChange={setIsVehicleValid}
+                            showLocationFields={true}
+                            className=""
+                          />
+                        </>
+                      )}
+
+                      {/* Placeholder when no role selected */}
+                      {formData.hostRole === '' && (
+                        <div className="h-full flex items-center justify-center border-2 border-dashed border-gray-700 rounded-lg p-8">
+                          <p className="text-gray-500 text-center">
+                            Select how you plan to use ItWhip to continue
                           </p>
                         </div>
-                      </label>
+                      )}
 
-                      {/* Option: Manage other people's cars */}
-                      <label
-                        className={`flex items-start gap-4 p-4 rounded-lg cursor-pointer transition border-2 ${
-                          formData.hostRole === 'manage'
-                            ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-500'
-                            : 'bg-gray-50 dark:bg-gray-700/50 border-transparent hover:border-gray-300 dark:hover:border-gray-600'
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="hostRole"
-                          value="manage"
-                          checked={formData.hostRole === 'manage'}
-                          onChange={(e) => setFormData({...formData, hostRole: 'manage'})}
-                          className="mt-1 w-4 h-4 text-purple-600 focus:ring-purple-500"
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <IoPeopleOutline className="w-5 h-5 text-purple-600" />
-                            <span className="font-medium text-gray-900 dark:text-white">
-                              Manage other people's cars
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                            I'm a fleet manager - I'll manage vehicles for other owners and earn commission
-                          </p>
-                        </div>
-                      </label>
+                      {/* Fleet Manager Info - shown in right column when manage is selected */}
+                      {formData.hostRole === 'manage' && (
+                        <div className="flex flex-col">
+                          {/* Header spacing to align with left column */}
+                          <h2 className="text-xl font-bold text-white mb-1 text-center">Fleet Manager</h2>
+                          <p className="text-gray-400 text-sm mb-3 text-center">Your fleet management profile</p>
 
-                      {/* Option: Both */}
-                      <label
-                        className={`flex items-start gap-4 p-4 rounded-lg cursor-pointer transition border-2 ${
-                          formData.hostRole === 'both'
-                            ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-500'
-                            : 'bg-gray-50 dark:bg-gray-700/50 border-transparent hover:border-gray-300 dark:hover:border-gray-600'
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="hostRole"
-                          value="both"
-                          checked={formData.hostRole === 'both'}
-                          onChange={(e) => setFormData({...formData, hostRole: 'both'})}
-                          className="mt-1 w-4 h-4 text-indigo-600 focus:ring-indigo-500"
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <IoLayersOutline className="w-5 h-5 text-indigo-600" />
-                            <span className="font-medium text-gray-900 dark:text-white">
-                              Both - I want to do it all
-                            </span>
+                          <div className="p-4 lg:p-5 bg-purple-900/30 border border-purple-700 rounded-lg">
+                            <div className="flex items-start gap-3">
+                              <IoPeopleOutline className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
+                              <div>
+                                <h3 className="font-medium text-white mb-1 text-center text-sm">Fleet Manager Account</h3>
+                                <p className="text-xs text-gray-400">
+                                  After approval, you&apos;ll get your own profile page to showcase your fleet management services.
+                                  You can invite car owners to have you manage their vehicles, or they can invite you to manage their listings.{' '}
+                                  <Link href="/how-it-works" className="text-purple-400 hover:text-purple-300">
+                                    Learn more →
+                                  </Link>
+                                </p>
+                              </div>
+                            </div>
                           </div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                            I'll rent my own vehicles AND manage vehicles for other owners
-                          </p>
+
+                          {/* Terms Agreement for manage-only */}
+                          <div className="flex items-start gap-3 mt-6 p-4 bg-gray-700/50 rounded-lg">
+                            <input
+                              type="checkbox"
+                              id="termsManage"
+                              checked={formData.agreeToTerms}
+                              onChange={(e) => setFormData({...formData, agreeToTerms: e.target.checked})}
+                              className="mt-0.5 h-5 w-5 text-blue-600 focus:ring-blue-500 border-2 border-gray-500 rounded cursor-pointer bg-gray-800 flex-shrink-0"
+                            />
+                            <label htmlFor="termsManage" className="text-xs lg:text-sm text-gray-400 cursor-pointer select-none">
+                              I agree to the{' '}
+                              <Link href="/terms" className="text-blue-400 hover:text-blue-300 underline font-medium">
+                                Terms and Conditions
+                              </Link>{' '}
+                              and{' '}
+                              <Link href="/privacy" className="text-blue-400 hover:text-blue-300 underline font-medium">
+                                Privacy Policy
+                              </Link>
+                            </label>
+                          </div>
                         </div>
-                      </label>
+                      )}
                     </div>
                   </div>
 
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                    Vehicle & Location
-                  </h2>
+                  {/* Error Message */}
+                  {error && (
+                    <div className="p-3 bg-red-500/10 border border-red-500/50 rounded-lg">
+                      <p className="text-red-400 text-sm">{error}</p>
+                    </div>
+                  )}
 
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                    Tell us about your vehicle and where it's located.
-                  </p>
-
-                  {/* Vehicle Information Form Component */}
-                  <CarInformationForm
-                    carData={vehicleData}
-                    onCarDataChange={(data) => setVehicleData(prev => ({ ...prev, ...data }))}
-                    onValidationChange={setIsVehicleValid}
-                    showLocationFields={true}
-                  />
-
-                  {/* Buttons */}
-                  <div className="flex gap-3 mt-6">
-                    {/* Only show back button for non-OAuth users */}
+                  {/* Action Buttons */}
+                  <div className="flex gap-3">
                     {!isOAuthUser && (
                       <button
                         type="button"
                         onClick={handlePrevStep}
-                        className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-3 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium"
+                        className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-all duration-200"
                       >
                         Back
                       </button>
                     )}
                     <button
-                      type="button"
-                      onClick={handleNextStep}
-                      disabled={!isStep2Valid()}
-                      className={`${isOAuthUser ? 'w-full' : 'flex-1'} bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium`}
+                      type={formData.hostRole === 'manage' ? 'submit' : 'button'}
+                      onClick={formData.hostRole === 'manage' ? undefined : handleNextStep}
+                      disabled={!isStep2Valid() || (formData.hostRole === 'manage' && isLoading)}
+                      className={`${isOAuthUser && formData.hostRole !== 'manage' ? 'w-full' : 'flex-1'} py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
-                      Continue to Photos
+                      {formData.hostRole === 'manage' ? (
+                        isLoading ? (
+                          <span className="flex items-center justify-center">
+                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Creating Fleet Manager Account...
+                          </span>
+                        ) : 'Complete Signup'
+                      ) : 'Continue to Photos'}
                     </button>
                   </div>
                 </div>
@@ -665,36 +784,35 @@ function HostSignupContent() {
               {/* Step 3: Vehicle Photos */}
               {currentStep === 3 && (
                 <div className="space-y-4">
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                  <h2 className="text-xl font-bold text-white mb-1 text-center">
                     Vehicle Photos
                   </h2>
-
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                    Upload at least {MIN_PHOTOS_REQUIRED} photos of your vehicle to help renters see what they're booking.
+                  <p className="text-gray-400 text-sm mb-4 text-center">
+                    Upload at least {MIN_PHOTOS_REQUIRED} photos of your vehicle to help renters see what they&apos;re booking.
                   </p>
 
                   {/* Photo Count Indicator */}
                   <div className={`flex items-center justify-between p-3 rounded-lg ${
                     vehiclePhotos.length >= MIN_PHOTOS_REQUIRED
-                      ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800'
-                      : 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800'
+                      ? 'bg-emerald-900/30 border border-emerald-700'
+                      : 'bg-amber-900/30 border border-amber-700'
                   }`}>
                     <div className="flex items-center gap-2">
                       {vehiclePhotos.length >= MIN_PHOTOS_REQUIRED ? (
-                        <IoCheckmarkCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                        <IoCheckmarkCircle className="w-5 h-5 text-emerald-400" />
                       ) : (
-                        <IoWarningOutline className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                        <IoWarningOutline className="w-5 h-5 text-amber-400" />
                       )}
                       <span className={`text-sm font-medium ${
                         vehiclePhotos.length >= MIN_PHOTOS_REQUIRED
-                          ? 'text-emerald-800 dark:text-emerald-300'
-                          : 'text-amber-800 dark:text-amber-300'
+                          ? 'text-emerald-300'
+                          : 'text-amber-300'
                       }`}>
                         {vehiclePhotos.length} of {MIN_PHOTOS_REQUIRED} minimum photos uploaded
                       </span>
                     </div>
                     {vehiclePhotos.length < MIN_PHOTOS_REQUIRED && (
-                      <span className="text-xs text-amber-600 dark:text-amber-400">
+                      <span className="text-xs text-amber-400">
                         {MIN_PHOTOS_REQUIRED - vehiclePhotos.length} more required
                       </span>
                     )}
@@ -703,8 +821,8 @@ function HostSignupContent() {
                   {/* Upload Area */}
                   <label className={`block w-full border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
                     uploadingPhotos
-                      ? 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50'
-                      : 'border-green-300 dark:border-green-700 hover:border-green-400 dark:hover:border-green-600 hover:bg-green-50 dark:hover:bg-green-900/20'
+                      ? 'border-gray-600 bg-gray-700/50'
+                      : 'border-blue-600 hover:border-blue-500 hover:bg-blue-900/20'
                   }`}>
                     <input
                       type="file"
@@ -716,16 +834,16 @@ function HostSignupContent() {
                     />
                     {uploadingPhotos ? (
                       <div className="flex flex-col items-center gap-2">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
-                        <span className="text-sm text-gray-600 dark:text-gray-400">Uploading photos...</span>
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                        <span className="text-sm text-gray-400">Uploading photos...</span>
                       </div>
                     ) : (
                       <>
-                        <IoCloudUploadOutline className="w-10 h-10 text-green-500 mx-auto mb-2" />
-                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <IoCloudUploadOutline className="w-10 h-10 text-blue-500 mx-auto mb-2" />
+                        <p className="text-sm font-medium text-gray-300">
                           Click to upload photos
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        <p className="text-xs text-gray-500 mt-1">
                           JPG, PNG up to 10MB each
                         </p>
                       </>
@@ -736,7 +854,7 @@ function HostSignupContent() {
                   {vehiclePhotos.length > 0 && (
                     <div className="grid grid-cols-2 gap-3 mt-4">
                       {vehiclePhotos.map((photo, index) => (
-                        <div key={index} className="relative group aspect-video rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700">
+                        <div key={index} className="relative group aspect-video rounded-lg overflow-hidden bg-gray-700">
                           <Image
                             src={photo.url}
                             alt={`Vehicle photo ${index + 1}`}
@@ -751,7 +869,7 @@ function HostSignupContent() {
                             <IoTrashOutline className="w-4 h-4" />
                           </button>
                           {index === 0 && (
-                            <div className="absolute bottom-2 left-2 px-2 py-1 bg-green-600 text-white text-xs rounded">
+                            <div className="absolute bottom-2 left-2 px-2 py-1 bg-blue-600 text-white text-xs rounded">
                               Main Photo
                             </div>
                           )}
@@ -762,43 +880,44 @@ function HostSignupContent() {
 
                   {/* Empty State */}
                   {vehiclePhotos.length === 0 && (
-                    <div className="text-center py-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-                      <IoImageOutline className="w-10 h-10 text-gray-400 mx-auto mb-2" />
-                      <p className="text-sm text-gray-500 dark:text-gray-400">No photos uploaded yet</p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                    <div className="text-center py-6 border border-gray-700 rounded-lg bg-gray-800/50">
+                      <IoImageOutline className="w-10 h-10 text-gray-500 mx-auto mb-2" />
+                      <p className="text-sm text-gray-400">No photos uploaded yet</p>
+                      <p className="text-xs text-gray-500 mt-1">
                         Add photos of exterior, interior, and key features
                       </p>
                     </div>
                   )}
 
                   {/* Terms Agreement */}
-                  <div className="flex items-start gap-3 mt-6 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <div className="flex items-start gap-3 mt-6 p-4 bg-gray-700/50 rounded-lg">
                     <input
                       type="checkbox"
                       id="terms"
                       checked={formData.agreeToTerms}
                       onChange={(e) => setFormData({...formData, agreeToTerms: e.target.checked})}
-                      className="mt-0.5 h-5 w-5 text-green-600 focus:ring-green-500 border-2 border-gray-300 dark:border-gray-500 rounded cursor-pointer bg-white dark:bg-gray-800"
+                      className="mt-0.5 h-5 w-5 text-blue-600 focus:ring-blue-500 border-2 border-gray-500 rounded cursor-pointer bg-gray-800 flex-shrink-0"
                       required
                     />
-                    <label htmlFor="terms" className="text-sm text-gray-600 dark:text-gray-400 cursor-pointer select-none">
+                    <label htmlFor="terms" className="text-xs lg:text-sm text-gray-400 cursor-pointer select-none">
                       I agree to the{' '}
-                      <Link href="/terms" className="text-green-600 hover:text-green-700 underline font-medium">
-                        Terms of Service
+                      <Link href="/terms" className="text-blue-400 hover:text-blue-300 underline font-medium">
+                        Terms and Conditions
                       </Link>{' '}
                       and{' '}
-                      <Link href="/privacy" className="text-green-600 hover:text-green-700 underline font-medium">
+                      <Link href="/privacy" className="text-blue-400 hover:text-blue-300 underline font-medium">
                         Privacy Policy
                       </Link>
-                      {' '}<span className="text-red-500">*</span>
                     </label>
                   </div>
 
                   {/* Error Message */}
                   {error && (
-                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg text-sm flex items-center gap-2">
-                      <IoWarningOutline className="w-5 h-5 flex-shrink-0" />
-                      {error}
+                    <div className="p-3 bg-red-500/10 border border-red-500/50 rounded-lg">
+                      <p className="text-red-400 text-sm flex items-center gap-2">
+                        <IoWarningOutline className="w-5 h-5 flex-shrink-0" />
+                        {error}
+                      </p>
                     </div>
                   )}
 
@@ -807,14 +926,14 @@ function HostSignupContent() {
                     <button
                       type="button"
                       onClick={handlePrevStep}
-                      className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-3 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium"
+                      className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-all duration-200"
                     >
                       Back
                     </button>
                     <button
                       type="submit"
                       disabled={isLoading || !isStep3Valid()}
-                      className="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
+                      className="flex-1 py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isLoading ? 'Creating Host Profile...' : 'Create Account'}
                     </button>
@@ -825,20 +944,20 @@ function HostSignupContent() {
 
             {/* Login Link */}
             <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-gray-400">
                 Already have an account?{' '}
-                <Link href="/host/login" className="text-green-600 hover:text-green-700 font-medium">
+                <Link href="/host/login" className="text-blue-400 hover:text-blue-300 font-medium">
                   Sign In
                 </Link>
               </p>
             </div>
 
             {/* Renter Signup Link */}
-            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 text-center">
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+            <div className="mt-4 pt-4 border-t border-gray-700 text-center">
+              <p className="text-sm text-gray-500 mb-1">
                 Looking to rent a car instead?
               </p>
-              <Link href="/auth/signup" className="text-blue-600 hover:text-blue-700 font-medium text-sm">
+              <Link href="/auth/signup" className="text-blue-400 hover:text-blue-300 font-medium text-sm">
                 Create Renter Account
               </Link>
             </div>
@@ -846,25 +965,25 @@ function HostSignupContent() {
 
           {/* Benefits */}
           <div className="mt-8">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4 text-center">
+            <h3 className="text-sm font-semibold text-white mb-4 text-center">
               Why host with ItWhip?
             </h3>
             <div className="grid grid-cols-1 gap-3">
-              <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
+              <div className="flex items-center gap-3 text-sm text-gray-400">
                 <IoCheckmarkCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
                 <span>Earn up to 90% of each rental</span>
               </div>
-              <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
+              <div className="flex items-center gap-3 text-sm text-gray-400">
                 <IoCheckmarkCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
                 <span>$1M liability insurance included</span>
               </div>
-              <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
+              <div className="flex items-center gap-3 text-sm text-gray-400">
                 <IoCheckmarkCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
                 <span>24/7 roadside assistance</span>
               </div>
-              <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
+              <div className="flex items-center gap-3 text-sm text-gray-400">
                 <IoCheckmarkCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                <span>You control pricing & availability</span>
+                <span>You control pricing &amp; availability</span>
               </div>
             </div>
           </div>
@@ -878,8 +997,8 @@ function HostSignupContent() {
 export default function HostSignupPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
       </div>
     }>
       <HostSignupContent />
