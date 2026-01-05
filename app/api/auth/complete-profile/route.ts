@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { phone, roleHint, carData } = body
+    const { phone, roleHint, carData, hostRole, vehiclePhotoUrls } = body
 
     // Phone is optional - only validate format if provided
     let digitsOnly = ''
@@ -311,13 +311,18 @@ export async function POST(request: NextRequest) {
 
               // Default commission
               commissionRate: 0.20,
-              hostType: 'REAL'
+              hostType: 'REAL',
+
+              // Host role fields from signup selection
+              isHostManager: hostRole === 'manage' || hostRole === 'both',
+              managesOwnCars: hostRole === 'own' || hostRole === 'both',
+              managesOthersCars: hostRole === 'manage' || hostRole === 'both'
             }
           })
           console.log(`[Complete Profile] Created RentalHost profile (pending approval) with verified email`)
 
           // 4. Create Car
-          await tx.rentalCar.create({
+          const newCar = await tx.rentalCar.create({
             data: {
               hostId: host.id,
 
@@ -388,7 +393,23 @@ export async function POST(request: NextRequest) {
               garageAddress: null
             }
           })
-          console.log(`[Complete Profile] Created RentalCar for host`)
+          console.log(`[Complete Profile] Created RentalCar for host: ${newCar.id}`)
+
+          // 5. Create vehicle photos if provided
+          if (vehiclePhotoUrls && Array.isArray(vehiclePhotoUrls) && vehiclePhotoUrls.length > 0) {
+            await tx.rentalCarPhoto.createMany({
+              data: vehiclePhotoUrls.map((url: string, index: number) => ({
+                carId: newCar.id,
+                url: url,
+                isHero: index === 0, // First photo is the hero/main photo
+                order: index,
+                uploadedBy: host.id,
+                uploadedByType: 'HOST',
+                photoContext: 'LISTING'
+              }))
+            })
+            console.log(`[Complete Profile] Created ${vehiclePhotoUrls.length} photos for car`)
+          }
         } else if (roleHint === 'guest') {
           // SECURITY: Block guest profile creation for existing HOST users
           const existingHost = await tx.rentalHost.findFirst({
@@ -578,13 +599,18 @@ export async function POST(request: NextRequest) {
 
           // Default commission
           commissionRate: 0.20,
-          hostType: 'REAL'
+          hostType: 'REAL',
+
+          // Host role fields from signup selection
+          isHostManager: hostRole === 'manage' || hostRole === 'both',
+          managesOwnCars: hostRole === 'own' || hostRole === 'both',
+          managesOthersCars: hostRole === 'manage' || hostRole === 'both'
         }
       })
       console.log(`[Complete Profile] Created RentalHost for guest upgrade: ${host.id}`)
 
       // Create RentalCar
-      await prisma.rentalCar.create({
+      const newCar = await prisma.rentalCar.create({
         data: {
           hostId: host.id,
 
@@ -655,7 +681,23 @@ export async function POST(request: NextRequest) {
           garageAddress: null
         }
       })
-      console.log(`[Complete Profile] Created RentalCar for guest upgrade`)
+      console.log(`[Complete Profile] Created RentalCar for guest upgrade: ${newCar.id}`)
+
+      // Create vehicle photos if provided
+      if (vehiclePhotoUrls && Array.isArray(vehiclePhotoUrls) && vehiclePhotoUrls.length > 0) {
+        await prisma.rentalCarPhoto.createMany({
+          data: vehiclePhotoUrls.map((url: string, index: number) => ({
+            carId: newCar.id,
+            url: url,
+            isHero: index === 0,
+            order: index,
+            uploadedBy: host.id,
+            uploadedByType: 'HOST',
+            photoContext: 'LISTING'
+          }))
+        })
+        console.log(`[Complete Profile] Created ${vehiclePhotoUrls.length} photos for car`)
+      }
 
       // Create AdminNotification for Fleet visibility
       await prisma.adminNotification.create({
