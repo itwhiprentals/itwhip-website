@@ -9,7 +9,7 @@ import { format, formatDistance } from 'date-fns'
 import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
 import PendingBanner from '../components/PendingBanner'
-import { 
+import {
   IoCalendarOutline,
   IoCarOutline,
   IoPersonOutline,
@@ -32,7 +32,8 @@ import {
   IoInformationCircleOutline,
   IoSchoolOutline,
   IoArrowBackOutline,
-  IoStarOutline
+  IoStarOutline,
+  IoAddCircleOutline
 } from 'react-icons/io5'
 
 interface Booking {
@@ -94,6 +95,8 @@ export default function HostBookingsPage() {
   const [hostStatus, setHostStatus] = useState<HostStatus | null>(null)
   const [loading, setLoading] = useState(true)
   const [statusLoading, setStatusLoading] = useState(true)
+  const [managesOwnCars, setManagesOwnCars] = useState<boolean | null>(null)
+  const [managedVehicleCount, setManagedVehicleCount] = useState(0)
   const [activeTab, setActiveTab] = useState<TabType>('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedBooking, setSelectedBooking] = useState<string | null>(null)
@@ -115,14 +118,23 @@ export default function HostBookingsPage() {
   const checkHostStatus = async () => {
     try {
       setStatusLoading(true)
+
+      // Fetch account type to check if Fleet Manager
+      const accountTypeRes = await fetch('/api/host/account-type', { credentials: 'include' })
+      if (accountTypeRes.ok) {
+        const accountData = await accountTypeRes.json()
+        setManagesOwnCars(accountData.managesOwnCars ?? true)
+        setManagedVehicleCount(accountData.managedVehicleCount || 0)
+      }
+
       const response = await fetch('/api/host/verification-status', {
         credentials: 'include',
         cache: 'no-store'
       })
-      
+
       if (response.ok) {
         const result = await response.json()
-        
+
         if (result.success && result.data) {
           setHostStatus({
             approvalStatus: result.data.overallStatus,
@@ -360,6 +372,15 @@ export default function HostBookingsPage() {
 
   const isApproved = hostStatus?.approvalStatus === 'APPROVED'
   const isPending = hostStatus?.approvalStatus === 'PENDING' || hostStatus?.approvalStatus === 'NEEDS_ATTENTION'
+  const isFleetManager = managesOwnCars === false
+
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      router.back()
+    } else {
+      router.push(isFleetManager ? '/partner/dashboard' : '/host/dashboard')
+    }
+  }
 
   const renderEducationalContent = () => (
     <div className="space-y-6">
@@ -368,11 +389,12 @@ export default function HostBookingsPage() {
           <IoSchoolOutline className="w-8 h-8 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-1" />
           <div>
             <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-2">
-              Learn About Booking Management
+              {isFleetManager ? 'Manage Bookings for Vehicle Owners' : 'Learn About Booking Management'}
             </h3>
             <p className="text-sm text-blue-800 dark:text-blue-200 mb-4">
-              Once your account is approved, you'll be able to manage guest bookings, approve requests, 
-              and coordinate trip details directly from this page.
+              {isFleetManager
+                ? "You'll be able to manage bookings once your account is approved and you have vehicles under management."
+                : "Once your account is approved, you'll be able to manage guest bookings, approve requests, and coordinate trip details directly from this page."}
             </p>
             <div className="space-y-3">
               <div className="flex items-start gap-3">
@@ -692,20 +714,25 @@ export default function HostBookingsPage() {
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <button
-                  onClick={() => router.push('/host/dashboard')}
+                  onClick={handleBack}
                   className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
                 >
                   <IoArrowBackOutline className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                 </button>
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-                  {isApproved ? 'Bookings' : 'Bookings (Preview)'}
+                  {isFleetManager
+                    ? 'Managed Bookings'
+                    : isApproved
+                      ? 'Bookings'
+                      : 'Bookings (Preview)'}
                 </h1>
               </div>
               <p className="text-gray-600 dark:text-gray-400 ml-14">
-                {isApproved 
-                  ? `${tabCounts.all} total bookings`
-                  : 'Learn about booking management features'
-                }
+                {isFleetManager
+                  ? 'Bookings for vehicles you manage'
+                  : isApproved
+                    ? `${tabCounts.all} total bookings`
+                    : 'Learn about booking management features'}
               </p>
             </div>
 
@@ -720,7 +747,8 @@ export default function HostBookingsPage() {
             )}
           </div>
 
-          {!isApproved && hostStatus && (
+          {/* Pending Banner - Hidden for Fleet Managers */}
+          {!isFleetManager && !isApproved && hostStatus && (
             <PendingBanner
               approvalStatus={hostStatus.approvalStatus}
               page="bookings"
@@ -728,6 +756,28 @@ export default function HostBookingsPage() {
               restrictionReasons={hostStatus.restrictionReasons}
               onActionClick={() => router.push('/host/dashboard')}
             />
+          )}
+
+          {/* Fleet Manager Info Banner */}
+          {isFleetManager && !isApproved && (
+            <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4 mb-6">
+              <div className="flex items-start gap-3">
+                <IoInformationCircleOutline className="w-5 h-5 text-purple-600 dark:text-purple-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm text-purple-800 dark:text-purple-200">
+                    You'll be able to manage bookings once your account is approved and you have vehicles under management.
+                  </p>
+                  <div className="flex gap-3 mt-3">
+                    <Link
+                      href="/host/fleet/invite-owner"
+                      className="text-sm font-medium text-purple-600 dark:text-purple-400 hover:underline"
+                    >
+                      Invite Car Owners →
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
 
           {!isApproved ? (
@@ -808,26 +858,49 @@ export default function HostBookingsPage() {
               {/* Bookings List */}
               {filteredBookings.length === 0 ? (
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
-                  <IoCalendarOutline className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <div className="w-20 h-20 bg-purple-50 dark:bg-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <IoCalendarOutline className="w-10 h-10 text-purple-400" />
+                  </div>
                   <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                    {searchTerm ? 'No bookings found' : `No ${activeTab === 'all' ? '' : activeTab} bookings`}
+                    {searchTerm
+                      ? 'No bookings found'
+                      : isFleetManager
+                        ? 'No managed bookings yet'
+                        : `No ${activeTab === 'all' ? '' : activeTab} bookings`}
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-6">
-                    {searchTerm 
+                  <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
+                    {searchTerm
                       ? 'Try adjusting your search terms'
-                      : activeTab === 'all'
-                      ? 'Your bookings will appear here once guests make reservations'
-                      : `No ${activeTab} bookings at this time`
-                    }
+                      : isFleetManager
+                        ? 'Start by inviting car owners to partner with you. Bookings will appear here once guests reserve managed vehicles.'
+                        : activeTab === 'all'
+                          ? 'Your bookings will appear here once guests make reservations'
+                          : `No ${activeTab} bookings at this time`}
                   </p>
-                  {searchTerm && (
+                  {searchTerm ? (
                     <button
                       onClick={() => setSearchTerm('')}
                       className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
                     >
                       Clear Search
                     </button>
-                  )}
+                  ) : isFleetManager && managedVehicleCount === 0 ? (
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                      <Link
+                        href="/host/fleet/invite-owner"
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                      >
+                        <IoAddCircleOutline className="w-5 h-5" />
+                        Invite Car Owners
+                      </Link>
+                      <Link
+                        href="/partner/dashboard"
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                      >
+                        Go to Partner Dashboard
+                      </Link>
+                    </div>
+                  ) : null}
                 </div>
               ) : (
                 <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-2">

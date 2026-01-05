@@ -55,6 +55,7 @@ export async function GET(request: NextRequest) {
       isHostManager: false,
       isVehicleOwner: false,
       isPartner: false,
+      managesOwnCars: true,  // Default to true (regular host)
       ownedVehicleCount: 0,
       managedVehicleCount: 0,
       ownedManagedVehicleCount: 0
@@ -64,12 +65,13 @@ export async function GET(request: NextRequest) {
       response.isHostManager = hostProfile.isHostManager || false
       response.isVehicleOwner = hostProfile.isVehicleOwner || false
       response.isPartner = ['FLEET_PARTNER', 'PARTNER'].includes(hostProfile.hostType || '')
+      response.managesOwnCars = hostProfile.managesOwnCars ?? true  // Default to true if not set
 
       // Count owned vehicles (where hostId = current user)
       response.ownedVehicleCount = await prisma.rentalCar.count({
         where: {
           hostId: hostProfile.id,
-          active: true
+          isActive: true
         }
       })
 

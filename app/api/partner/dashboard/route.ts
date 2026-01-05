@@ -1,5 +1,6 @@
 // app/api/partner/dashboard/route.ts
 // GET /api/partner/dashboard - Get partner dashboard data
+// Accepts both partner_token AND hostAccessToken for fleet managers
 
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
@@ -13,7 +14,9 @@ const JWT_SECRET = new TextEncoder().encode(
 export async function GET(request: NextRequest) {
   try {
     const cookieStore = await cookies()
-    const token = cookieStore.get('partner_token')?.value
+    // Accept both partner_token AND hostAccessToken (for fleet managers after signup)
+    const token = cookieStore.get('partner_token')?.value ||
+                  cookieStore.get('hostAccessToken')?.value
 
     if (!token) {
       return NextResponse.json(
@@ -52,9 +55,15 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    if (partner.hostType !== 'FLEET_PARTNER' && partner.hostType !== 'PARTNER') {
+    // Allow access for:
+    // 1. FLEET_PARTNER or PARTNER hostType (traditional partners)
+    // 2. isHostManager = true (fleet managers from signup)
+    const isTraditionalPartner = partner.hostType === 'FLEET_PARTNER' || partner.hostType === 'PARTNER'
+    const isFleetManager = partner.isHostManager === true
+
+    if (!isTraditionalPartner && !isFleetManager) {
       return NextResponse.json(
-        { error: 'Not a partner account' },
+        { error: 'Not a partner or fleet manager account' },
         { status: 403 }
       )
     }

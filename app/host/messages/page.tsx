@@ -104,8 +104,21 @@ export default function HostMessagesPage() {
   const [counts, setCounts] = useState<Counts>({ all: 0, unread: 0, urgent: 0 })
   const [activeFilter, setActiveFilter] = useState<'all' | 'unread' | 'urgent'>('all')
   const [hostId, setHostId] = useState<string | null>(null)
+  const [managesOwnCars, setManagesOwnCars] = useState<boolean | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fetchTimeoutRef = useRef<NodeJS.Timeout>()
+
+  // Computed value for Fleet Manager detection
+  const isFleetManager = managesOwnCars === false
+
+  // Smart back button handler
+  const handleBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 2) {
+      router.back()
+    } else {
+      router.push(isFleetManager ? '/partner/dashboard' : '/host/dashboard')
+    }
+  }
 
   // Memoized scroll function
   const scrollToBottom = useCallback(() => {
@@ -155,6 +168,20 @@ export default function HostMessagesPage() {
       const data = await response.json()
       if (data.authenticated && data.host) {
         setHostId(data.host.id)
+
+        // Fetch account type for Fleet Manager detection
+        try {
+          const accountTypeResponse = await fetch('/api/host/account-type', {
+            credentials: 'include',
+            cache: 'no-store'
+          })
+          if (accountTypeResponse.ok) {
+            const accountData = await accountTypeResponse.json()
+            setManagesOwnCars(accountData.managesOwnCars)
+          }
+        } catch (err) {
+          console.error('Account type check error:', err)
+        }
       } else {
         router.push('/host/login')
       }
@@ -363,7 +390,7 @@ export default function HostMessagesPage() {
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => router.push('/host/dashboard')}
+                  onClick={handleBack}
                   className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
                 >
                   <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
@@ -372,13 +399,24 @@ export default function HostMessagesPage() {
               </div>
             </div>
 
+            {isFleetManager && (
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+                <p className="text-blue-800 dark:text-blue-200 text-sm">
+                  <strong>Fleet Manager:</strong> You&apos;re viewing messages for vehicles you manage. Vehicle owners will also receive copies of messages.
+                </p>
+              </div>
+            )}
+
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-12 text-center">
               <MessageSquare className="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                 No messages yet
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-6">
-                When guests book your cars, you'll be able to message them here.
+                {isFleetManager
+                  ? "When guests book vehicles you manage, their messages will appear here."
+                  : "When guests book your cars, you'll be able to message them here."
+                }
               </p>
               <button
                 onClick={() => router.push('/host/bookings')}
@@ -405,7 +443,7 @@ export default function HostMessagesPage() {
           <div className="flex items-center justify-between mb-4 sm:mb-6">
             <div className="flex items-center gap-3">
               <button
-                onClick={() => router.push('/host/dashboard')}
+                onClick={handleBack}
                 className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
                 aria-label="Back to dashboard"
               >
@@ -414,6 +452,7 @@ export default function HostMessagesPage() {
               <div>
                 <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Messages</h1>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {isFleetManager ? 'Messages for vehicles you manage • ' : ''}
                   {counts.all} {counts.all === 1 ? 'conversation' : 'conversations'}
                   {counts.unread > 0 && (
                     <span className="ml-2 text-purple-600 dark:text-purple-400 font-medium">
@@ -434,6 +473,15 @@ export default function HostMessagesPage() {
               <RefreshCw className={`w-5 h-5 text-gray-600 dark:text-gray-400 ${loading ? 'animate-spin' : ''}`} />
             </button>
           </div>
+
+          {/* Fleet Manager Info Banner */}
+          {isFleetManager && (
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
+              <p className="text-blue-800 dark:text-blue-200 text-sm">
+                <strong>Fleet Manager:</strong> You&apos;re viewing messages for vehicles you manage. Vehicle owners will also receive copies of messages.
+              </p>
+            </div>
+          )}
 
           {/* Filter Tabs */}
           <div className="flex gap-2 mb-4 overflow-x-auto pb-2">

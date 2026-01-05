@@ -206,6 +206,7 @@ export interface AccountTypeResponse {
   isHostManager: boolean
   isVehicleOwner: boolean
   isPartner: boolean
+  managesOwnCars: boolean  // false = Fleet Manager only (manages others' cars)
 
   ownedVehicleCount: number
   managedVehicleCount: number

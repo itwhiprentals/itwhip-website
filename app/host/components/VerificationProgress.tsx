@@ -52,6 +52,7 @@ interface VerificationProgressProps {
   hasIncompleteCar?: boolean
   incompleteCarId?: string
   onActionClick?: (stepId: string) => void
+  managesOwnCars?: boolean  // If false, hide vehicle-related steps (manage-only fleet managers)
 }
 
 // Helper to check car completion
@@ -208,7 +209,8 @@ export default function VerificationProgress({
   pendingActions = [],
   hasIncompleteCar: hasIncompleteCarProp,
   incompleteCarId: incompleteCarIdProp,
-  onActionClick
+  onActionClick,
+  managesOwnCars = true  // Default to true for backwards compatibility
 }: VerificationProgressProps) {
   const router = useRouter()
   const [progress, setProgress] = useState(0)
@@ -323,7 +325,7 @@ export default function VerificationProgress({
   useEffect(() => {
     if (!carsFetched || !profileFetched) return
     buildVerificationSteps()
-  }, [carsFetched, profileFetched, hasIncompleteCar, incompleteCarId, cars, approvalStatus, backgroundCheckStatus, documentStatuses, profileData])
+  }, [carsFetched, profileFetched, hasIncompleteCar, incompleteCarId, cars, approvalStatus, backgroundCheckStatus, documentStatuses, profileData, managesOwnCars])
 
   const checkInsuranceTierSelected = async (): Promise<{ selected: boolean; tier: 'BASIC' | 'STANDARD' | 'PREMIUM' | null; percentage: number }> => {
     try {
@@ -422,26 +424,29 @@ export default function VerificationProgress({
         priority: 'HIGH'
       })
 
-      const vehicleStatus = hasIncompleteCar ? 'IN_PROGRESS' : 'COMPLETED'
-      const vehicleEditUrl = incompleteCarId
-        ? `/host/cars/${incompleteCarId}/edit`
-        : cars.length > 0
-          ? `/host/cars/${cars[0].id}/edit`
-          : undefined
+      // Only show vehicle step for hosts who manage their own cars (not manage-only fleet managers)
+      if (managesOwnCars !== false) {
+        const vehicleStatus = hasIncompleteCar ? 'IN_PROGRESS' : 'COMPLETED'
+        const vehicleEditUrl = incompleteCarId
+          ? `/host/cars/${incompleteCarId}/edit`
+          : cars.length > 0
+            ? `/host/cars/${cars[0].id}/edit`
+            : undefined
 
-      verificationSteps.push({
-        id: 'vehicle',
-        title: 'Complete Your Vehicle Listing',
-        description: hasIncompleteCar
-          ? 'Add photos, VIN, pricing to finish your listing'
-          : 'Your vehicle listing is complete',
-        status: vehicleStatus,
-        icon: IoCarSportOutline,
-        actionUrl: vehicleEditUrl,
-        actionLabel: 'Complete Listing',
-        estimatedTime: '10 min',
-        priority: 'HIGH'
-      })
+        verificationSteps.push({
+          id: 'vehicle',
+          title: 'Complete Your Vehicle Listing',
+          description: hasIncompleteCar
+            ? 'Add photos, VIN, pricing to finish your listing'
+            : 'Your vehicle listing is complete',
+          status: vehicleStatus,
+          icon: IoCarSportOutline,
+          actionUrl: vehicleEditUrl,
+          actionLabel: 'Complete Listing',
+          estimatedTime: '10 min',
+          priority: 'HIGH'
+        })
+      }
 
       const isHostApproved = approvalStatus === 'APPROVED'
       verificationSteps.push({
@@ -458,24 +463,27 @@ export default function VerificationProgress({
         priority: 'MEDIUM'
       })
 
-      const tierStatus = await checkInsuranceTierSelected()
-      verificationSteps.push({
-        id: 'insurance_tier',
-        title: 'Select Insurance Tier',
-        description: tierStatus.selected
-          ? 'Your earnings tier is configured'
-          : 'Choose your coverage level',
-        status: tierStatus.selected ? 'COMPLETED' : 'NOT_STARTED',
-        icon: IoShieldCheckmarkOutline,
-        actionUrl: '/host/profile?tab=insurance',
-        actionLabel: 'Select Tier',
-        estimatedTime: '5 min',
-        priority: 'HIGH',
-        tierInfo: tierStatus.selected ? {
-          tier: tierStatus.tier,
-          percentage: tierStatus.percentage
-        } : undefined
-      })
+      // Only show insurance step for hosts who own their own cars (not manage-only fleet managers)
+      if (managesOwnCars !== false) {
+        const tierStatus = await checkInsuranceTierSelected()
+        verificationSteps.push({
+          id: 'insurance_tier',
+          title: 'Select Insurance Tier',
+          description: tierStatus.selected
+            ? 'Your earnings tier is configured'
+            : 'Choose your coverage level',
+          status: tierStatus.selected ? 'COMPLETED' : 'NOT_STARTED',
+          icon: IoShieldCheckmarkOutline,
+          actionUrl: '/host/profile?tab=insurance',
+          actionLabel: 'Select Tier',
+          estimatedTime: '5 min',
+          priority: 'HIGH',
+          tierInfo: tierStatus.selected ? {
+            tier: tierStatus.tier,
+            percentage: tierStatus.percentage
+          } : undefined
+        })
+      }
 
       setSteps(verificationSteps)
 
@@ -707,7 +715,10 @@ export default function VerificationProgress({
                 Verification Complete
               </h4>
               <p className="text-sm text-emerald-700 dark:text-emerald-300">
-                Your account is ready. Start listing your vehicles and earn.
+                {managesOwnCars === false
+                  ? "Your account is ready. Start managing vehicles and earning commissions."
+                  : "Your account is ready. Start listing your vehicles and earn."
+                }
               </p>
             </div>
           </div>
@@ -716,7 +727,12 @@ export default function VerificationProgress({
         <div className="mx-4 mb-4 sm:mx-5 sm:mb-5 p-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg">
           <div className="flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">
             <IoInformationCircleOutline className="w-4 h-4 flex-shrink-0" />
-            <span>Complete all steps to activate your host account</span>
+            <span>
+              {managesOwnCars === false
+                ? "Complete all steps to activate your fleet manager account"
+                : "Complete all steps to activate your host account"
+              }
+            </span>
           </div>
         </div>
       )}

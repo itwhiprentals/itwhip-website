@@ -29,7 +29,8 @@ import {
   IoChevronUpOutline,
   IoLocationOutline,
   IoPeopleOutline,
-  IoBusinessOutline
+  IoBusinessOutline,
+  IoLockClosedOutline
 } from 'react-icons/io5'
 import VerificationProgress from '../components/VerificationProgress'
 import PendingBanner from '../components/PendingBanner'
@@ -727,6 +728,7 @@ function HostDashboardContent() {
                   pendingActions={hostData.pendingActions}
                   hasIncompleteCar={hasIncompleteCar}
                   incompleteCarId={incompleteCars[0]?.id || hostData.cars?.[0]?.id}
+                  managesOwnCars={hostData.managesOwnCars}
                 />
               </div>
             )}
@@ -736,7 +738,9 @@ function HostDashboardContent() {
               <Link href="/host/earnings" className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-3 sm:p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-purple-300 dark:hover:border-purple-700 transition-all cursor-pointer">
                 <div className="flex items-center justify-between">
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs text-gray-600 dark:text-gray-400 truncate">Earnings</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
+                      {hostData?.managesOwnCars === false ? 'Commission' : 'Earnings'}
+                    </p>
                     <p className="text-xl sm:text-2xl font-bold mt-1 text-gray-900 dark:text-white">
                       ${hostData?.stats.totalEarnings?.toLocaleString() || '0'}
                     </p>
@@ -745,17 +749,29 @@ function HostDashboardContent() {
                 </div>
               </Link>
               
-              <Link href="/host/bookings" className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-3 sm:p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-purple-300 dark:hover:border-purple-700 transition-all cursor-pointer">
-                <div className="flex items-center justify-between">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs text-gray-600 dark:text-gray-400 truncate">Total Trips</p>
-                    <p className="text-xl sm:text-2xl font-bold mt-1 text-gray-900 dark:text-white">
-                      {hostData?.stats.totalTrips || 0}
-                    </p>
+              {hostData?.managesOwnCars === false ? (
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-3 sm:p-4 border border-gray-200 dark:border-gray-700 opacity-60">
+                  <div className="flex items-center justify-between">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs text-gray-400 truncate">My Trips</p>
+                      <p className="text-xl sm:text-2xl font-bold mt-1 text-gray-400">—</p>
+                    </div>
+                    <IoLockClosedOutline className="w-6 h-6 sm:w-8 sm:h-8 text-gray-300 flex-shrink-0 ml-2" />
                   </div>
-                  <IoStatsChartOutline className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500 opacity-60 flex-shrink-0 ml-2" />
                 </div>
-              </Link>
+              ) : (
+                <Link href="/host/bookings" className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-3 sm:p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-purple-300 dark:hover:border-purple-700 transition-all cursor-pointer">
+                  <div className="flex items-center justify-between">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 truncate">Total Trips</p>
+                      <p className="text-xl sm:text-2xl font-bold mt-1 text-gray-900 dark:text-white">
+                        {hostData?.stats.totalTrips || 0}
+                      </p>
+                    </div>
+                    <IoStatsChartOutline className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500 opacity-60 flex-shrink-0 ml-2" />
+                  </div>
+                </Link>
+              )}
               
               <Link href="/host/reviews" className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-3 sm:p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-purple-300 dark:hover:border-purple-700 transition-all cursor-pointer">
                 <div className="flex items-center justify-between">
@@ -849,42 +865,72 @@ function HostDashboardContent() {
 
             {/* My Cars Section - Complete Cars with Photos & Metrics */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6 mb-8">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">My Cars</h2>
-                {isApproved && completeCars.length > 0 && incompleteCars.length === 0 && (
-                  <Link
-                    href="/host/cars/add"
-                    className="text-sm text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1"
-                  >
-                    <IoAddCircleOutline className="w-4 h-4" />
-                    Add Another
-                  </Link>
-                )}
-              </div>
-
-              {completeCars.length > 0 ? (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {completeCars.map(car => (
-                    <ActiveCarCard key={car.id} car={car} isApproved={isApproved} />
-                  ))}
-                </div>
-              ) : incompleteCars.length === 0 ? (
-                <div className="text-center py-12">
-                  <IoCarOutline className="mx-auto w-12 h-12 text-gray-400" />
-                  <p className="mt-3 text-gray-600 dark:text-gray-400">
-                    {!isApproved ? 'Your cars will appear here after approval' : 'No cars listed yet'}
-                  </p>
-                  {isApproved && (
-                    <Link href="/host/cars/add" className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors">
+              {hostData?.managesOwnCars === false ? (
+                // LOCKED STATE for manage-only Fleet Managers
+                <div className="relative">
+                  <div className="flex items-center gap-2 mb-4">
+                    <IoLockClosedOutline className="w-5 h-5 text-gray-400" />
+                    <h2 className="text-lg sm:text-xl font-bold text-gray-400">My Vehicles</h2>
+                    <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 px-2 py-0.5 rounded">Optional</span>
+                  </div>
+                  <div className="text-center py-8 bg-gray-50 dark:bg-gray-700/30 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-600">
+                    <IoCarOutline className="mx-auto w-12 h-12 text-gray-300 dark:text-gray-600" />
+                    <p className="mt-3 text-gray-500 dark:text-gray-400">
+                      You&apos;re currently a Fleet Manager
+                    </p>
+                    <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+                      Invite car owners to list their vehicles with you
+                    </p>
+                    <Link
+                      href="/host/fleet/invite-owner"
+                      className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors"
+                    >
                       <IoAddCircleOutline className="w-5 h-5" />
-                      Add Your First Car
+                      Invite Car Owners
                     </Link>
-                  )}
+                  </div>
                 </div>
               ) : (
-                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                  <p className="text-sm">Complete your listing{incompleteCars.length > 1 ? 's' : ''} above to start earning</p>
-                </div>
+                // NORMAL STATE for hosts who own cars
+                <>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">My Cars</h2>
+                    {isApproved && completeCars.length > 0 && incompleteCars.length === 0 && (
+                      <Link
+                        href="/host/cars/add"
+                        className="text-sm text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1"
+                      >
+                        <IoAddCircleOutline className="w-4 h-4" />
+                        Add Another
+                      </Link>
+                    )}
+                  </div>
+
+                  {completeCars.length > 0 ? (
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      {completeCars.map(car => (
+                        <ActiveCarCard key={car.id} car={car} isApproved={isApproved} />
+                      ))}
+                    </div>
+                  ) : incompleteCars.length === 0 ? (
+                    <div className="text-center py-12">
+                      <IoCarOutline className="mx-auto w-12 h-12 text-gray-400" />
+                      <p className="mt-3 text-gray-600 dark:text-gray-400">
+                        {!isApproved ? 'Your cars will appear here after approval' : 'No cars listed yet'}
+                      </p>
+                      {isApproved && (
+                        <Link href="/host/cars/add" className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors">
+                          <IoAddCircleOutline className="w-5 h-5" />
+                          Add Your First Car
+                        </Link>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                      <p className="text-sm">Complete your listing{incompleteCars.length > 1 ? 's' : ''} above to start earning</p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
@@ -1019,17 +1065,26 @@ function HostDashboardContent() {
               </div>
             )}
 
-            {/* Insurance Disclaimer */}
+            {/* Important Information - Different content for Fleet Managers vs Regular Hosts */}
             <div className="mt-8 p-4 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg">
               <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-2">
                 Important Information
               </h4>
-              <p className="text-xs text-gray-500 dark:text-gray-500 leading-relaxed">
-                Protection provided through licensed third-party insurance carriers. Coverage amounts and availability subject to vehicle eligibility, location, and underwriter approval. ItWhip facilitates coverage but is not an insurance company. Protection applies only during active rental periods booked through our platform. Physical damage reimbursement is contractual allocation of risk, not insurance. Deductibles and coverage limits are subject to change.{' '}
-                <Link href="/insurance-guide" className="text-purple-600 dark:text-purple-400 hover:underline font-medium">
-                  Read full insurance guide →
-                </Link>
-              </p>
+              {hostData?.managesOwnCars === false ? (
+                <p className="text-xs text-gray-500 dark:text-gray-500 leading-relaxed">
+                  As a Fleet Manager, you earn commission by managing vehicles for car owners. Commission rates are negotiated with each vehicle owner (typically 20-30% of trip earnings). Vehicle owners are responsible for insurance coverage on their vehicles. Your role includes handling bookings, guest communication, and vehicle coordination.{' '}
+                  <Link href="/how-it-works" className="text-purple-600 dark:text-purple-400 hover:underline font-medium">
+                    Read fleet manager guide →
+                  </Link>
+                </p>
+              ) : (
+                <p className="text-xs text-gray-500 dark:text-gray-500 leading-relaxed">
+                  Protection provided through licensed third-party insurance carriers. Coverage amounts and availability subject to vehicle eligibility, location, and underwriter approval. ItWhip facilitates coverage but is not an insurance company. Protection applies only during active rental periods booked through our platform. Physical damage reimbursement is contractual allocation of risk, not insurance. Deductibles and coverage limits are subject to change.{' '}
+                  <Link href="/insurance-guide" className="text-purple-600 dark:text-purple-400 hover:underline font-medium">
+                    Read full insurance guide →
+                  </Link>
+                </p>
+              )}
             </div>
           </div>
         </main>

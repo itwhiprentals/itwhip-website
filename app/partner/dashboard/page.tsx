@@ -25,7 +25,9 @@ import {
   IoPeopleOutline,
   IoPersonOutline,
   IoKeyOutline,
-  IoCashOutline
+  IoCashOutline,
+  IoSettingsOutline,
+  IoBriefcaseOutline
 } from 'react-icons/io5'
 import Image from 'next/image'
 
@@ -35,6 +37,9 @@ import RevenueChart from './components/RevenueChart'
 import RecentBookings from './components/RecentBookings'
 import FleetOverview from './components/FleetOverview'
 import QuickActions from './components/QuickActions'
+import InvitationsStatsCard from './components/InvitationsStatsCard'
+import InvitationsList from './components/InvitationsList'
+import ManagedCarsSection from './components/ManagedCarsSection'
 
 interface DashboardStats {
   fleetSize: number
@@ -128,20 +133,26 @@ export default function PartnerDashboardPage() {
   // Vehicle Owner lite view state
   const [isVehicleOwner, setIsVehicleOwner] = useState(false)
   const [isFleetPartner, setIsFleetPartner] = useState(true) // Default to fleet partner view
+  const [isHostManager, setIsHostManager] = useState(false) // Fleet Manager from signup
+  const [hostName, setHostName] = useState<string>('')
   const [vehicleOwnerStats, setVehicleOwnerStats] = useState<VehicleOwnerStats | null>(null)
   const [managedVehicles, setManagedVehicles] = useState<ManagedVehicleOwnerView[]>([])
+  const [invitationsTab, setInvitationsTab] = useState<'sent' | 'received'>('sent')
 
   useEffect(() => {
     checkAccountType()
   }, [])
 
   useEffect(() => {
-    if (isVehicleOwner && !isFleetPartner) {
+    // Fleet Managers get their own view
+    if (isHostManager && !isFleetPartner) {
+      fetchDashboardData() // Still fetch dashboard data for stats
+    } else if (isVehicleOwner && !isFleetPartner) {
       fetchVehicleOwnerData()
     } else {
       fetchDashboardData()
     }
-  }, [isVehicleOwner, isFleetPartner])
+  }, [isVehicleOwner, isFleetPartner, isHostManager])
 
   const checkAccountType = async () => {
     try {
@@ -154,6 +165,19 @@ export default function PartnerDashboardPage() {
         setIsVehicleOwner(data.isVehicleOwner || data.ownedManagedVehicleCount > 0)
         // User is a Fleet Partner if they are a partner or have their own fleet
         setIsFleetPartner(data.isPartner)
+        // User is a Host Manager (Fleet Manager from signup flow)
+        setIsHostManager(data.isHostManager || false)
+      }
+
+      // Also fetch host profile for the name
+      const profileResponse = await fetch('/api/host/profile', {
+        credentials: 'include'
+      })
+      if (profileResponse.ok) {
+        const profileData = await profileResponse.json()
+        if (profileData.profile) {
+          setHostName(profileData.profile.displayName || profileData.profile.firstName || 'Fleet Manager')
+        }
       }
     } catch (error) {
       console.error('Failed to check account type:', error)
@@ -267,6 +291,156 @@ export default function PartnerDashboardPage() {
   }
 
   const revenueChange = getRevenueChange()
+
+  // Fleet Manager View - For hosts who signed up to manage others' vehicles
+  if (isHostManager && !isFleetPartner) {
+    return (
+      <div className="p-4 sm:p-6 space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                Welcome back{hostName ? `, ${hostName}` : ''}!
+              </h1>
+              <span className="px-2 py-1 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 text-xs font-medium rounded-full flex items-center gap-1">
+                <IoBriefcaseOutline className="w-3 h-3" />
+                Fleet Manager
+              </span>
+            </div>
+            <p className="text-gray-500 dark:text-gray-400 mt-1">
+              Manage vehicles and grow your fleet
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/host/dashboard"
+              className="flex items-center gap-2 px-4 py-2 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors text-sm"
+            >
+              <IoSettingsOutline className="w-4 h-4" />
+              <span className="hidden sm:inline">My Account</span>
+            </Link>
+            <button
+              onClick={fetchDashboardData}
+              disabled={refreshing}
+              className="flex items-center gap-2 px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            >
+              <IoRefreshOutline className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
+        </div>
+
+        {/* Quick Stats Row */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+            <p className="text-xs text-gray-500 dark:text-gray-400">Managed Vehicles</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+              {stats?.fleetSize || 0}
+            </p>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+            <p className="text-xs text-gray-500 dark:text-gray-400">Active Bookings</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+              {stats?.activeBookings || 0}
+            </p>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+            <p className="text-xs text-gray-500 dark:text-gray-400">This Month</p>
+            <p className="text-2xl font-bold text-green-600 dark:text-green-400 mt-1">
+              {formatCurrency(stats?.thisMonthRevenue || 0)}
+            </p>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+            <p className="text-xs text-gray-500 dark:text-gray-400">Rating</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+              {stats?.avgRating?.toFixed(1) || '—'}
+            </p>
+          </div>
+        </div>
+
+        {/* Invitations Stats Card */}
+        <InvitationsStatsCard
+          onViewInvitations={(type) => setInvitationsTab(type)}
+        />
+
+        {/* Two Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Invitations List */}
+          <InvitationsList
+            initialTab={invitationsTab}
+            limit={5}
+            showViewAll={true}
+          />
+
+          {/* Quick Actions for Fleet Managers */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h2>
+            <div className="space-y-3">
+              <Link
+                href="/host/fleet/invite-owner"
+                className="flex items-center gap-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
+              >
+                <div className="p-2 bg-purple-100 dark:bg-purple-900/40 rounded-lg">
+                  <IoAddCircleOutline className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <p className="font-medium text-purple-900 dark:text-purple-100">Invite Car Owner</p>
+                  <p className="text-xs text-purple-700 dark:text-purple-300">Grow your managed fleet</p>
+                </div>
+              </Link>
+              <Link
+                href="/host/cars/add"
+                className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                  <IoCarOutline className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900 dark:text-white">Add Own Vehicle</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">List your own car</p>
+                </div>
+              </Link>
+              <Link
+                href="/host/dashboard"
+                className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                  <IoSettingsOutline className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900 dark:text-white">Account Settings</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Profile, bank, documents</p>
+                </div>
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Managed Cars Section */}
+        <ManagedCarsSection limit={6} showViewAll={true} />
+
+        {/* Recent Bookings */}
+        {recentBookings.length > 0 && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <IoCalendarOutline className="w-5 h-5 text-orange-600" />
+                Recent Bookings
+              </h2>
+              <Link
+                href="/partner/bookings"
+                className="text-sm text-purple-600 hover:text-purple-700 dark:text-purple-400 flex items-center gap-1"
+              >
+                View All
+                <IoArrowForwardOutline className="w-4 h-4" />
+              </Link>
+            </div>
+            <RecentBookings bookings={recentBookings.slice(0, 5)} />
+          </div>
+        )}
+      </div>
+    )
+  }
 
   // Vehicle Owner Lite View - Simplified dashboard for passive vehicle owners
   if (isVehicleOwner && !isFleetPartner) {

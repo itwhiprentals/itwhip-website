@@ -38,22 +38,32 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Check if host is approved
-    if (host.approvalStatus !== 'APPROVED') {
-      return NextResponse.json(
-        { error: 'Host account not approved' },
-        { status: 403 }
-      )
-    }
-
     // Get filter from query params
     const { searchParams } = new URL(request.url)
     const filter = searchParams.get('filter') || 'all' // all, unread, urgent
 
-    // Fetch all bookings for this host
+    // Get managed vehicle IDs if host is a Fleet Manager
+    let managedVehicleIds: string[] = []
+    const hostProfile = await prisma.rentalHost.findUnique({
+      where: { id: host.id },
+      select: { isHostManager: true }
+    })
+
+    if (hostProfile?.isHostManager) {
+      const managedVehicles = await prisma.vehicleManagement.findMany({
+        where: { managerId: host.id, status: 'ACTIVE' },
+        select: { vehicleId: true }
+      })
+      managedVehicleIds = managedVehicles.map(v => v.vehicleId)
+    }
+
+    // Fetch all bookings for this host (owned OR managed vehicles)
     const bookings = await prisma.rentalBooking.findMany({
       where: {
-        hostId: host.id
+        OR: [
+          { hostId: host.id },
+          ...(managedVehicleIds.length > 0 ? [{ carId: { in: managedVehicleIds } }] : [])
+        ]
       },
       select: {
         id: true,
@@ -187,13 +197,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (host.approvalStatus !== 'APPROVED') {
-      return NextResponse.json(
-        { error: 'Host account not approved' },
-        { status: 403 }
-      )
-    }
-
     const { bookingId, message, isUrgent, attachments } = await request.json()
 
     if (!bookingId || !message?.trim()) {
@@ -203,11 +206,29 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verify the booking belongs to this host
+    // Get managed vehicle IDs if host is a Fleet Manager
+    let managedVehicleIds: string[] = []
+    const hostProfile = await prisma.rentalHost.findUnique({
+      where: { id: host.id },
+      select: { isHostManager: true }
+    })
+
+    if (hostProfile?.isHostManager) {
+      const managedVehicles = await prisma.vehicleManagement.findMany({
+        where: { managerId: host.id, status: 'ACTIVE' },
+        select: { vehicleId: true }
+      })
+      managedVehicleIds = managedVehicles.map(v => v.vehicleId)
+    }
+
+    // Verify the booking belongs to this host (owns OR manages the vehicle)
     const booking = await prisma.rentalBooking.findFirst({
       where: {
         id: bookingId,
-        hostId: host.id
+        OR: [
+          { hostId: host.id },
+          ...(managedVehicleIds.length > 0 ? [{ carId: { in: managedVehicleIds } }] : [])
+        ]
       },
       select: {
         id: true,
@@ -300,11 +321,29 @@ export async function PATCH(request: NextRequest) {
       )
     }
 
-    // Verify booking belongs to host
+    // Get managed vehicle IDs if host is a Fleet Manager
+    let managedVehicleIds: string[] = []
+    const hostProfile = await prisma.rentalHost.findUnique({
+      where: { id: host.id },
+      select: { isHostManager: true }
+    })
+
+    if (hostProfile?.isHostManager) {
+      const managedVehicles = await prisma.vehicleManagement.findMany({
+        where: { managerId: host.id, status: 'ACTIVE' },
+        select: { vehicleId: true }
+      })
+      managedVehicleIds = managedVehicles.map(v => v.vehicleId)
+    }
+
+    // Verify booking belongs to host (owns OR manages)
     const booking = await prisma.rentalBooking.findFirst({
       where: {
         id: bookingId,
-        hostId: host.id
+        OR: [
+          { hostId: host.id },
+          ...(managedVehicleIds.length > 0 ? [{ carId: { in: managedVehicleIds } }] : [])
+        ]
       }
     })
 

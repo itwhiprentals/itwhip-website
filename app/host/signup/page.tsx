@@ -313,9 +313,15 @@ function HostSignupContent() {
       }
 
       // For OAuth users, email is already verified and they're already authenticated
-      // Redirect to dashboard with welcome message (dashboard shows pending status banner)
+      // Redirect to appropriate dashboard based on role
       if (isOAuthUser) {
-        router.push('/host/dashboard?welcome=true')
+        if (formData.hostRole === 'manage' || formData.hostRole === 'both') {
+          // Fleet managers AND "both" go to partner dashboard (primary workspace)
+          router.push('/partner/dashboard?welcome=true')
+        } else {
+          // Hosts who only own cars go to host dashboard
+          router.push('/host/dashboard?welcome=true')
+        }
         return
       }
 

@@ -405,14 +405,25 @@ function CompleteProfileContent() {
         // Force a hard redirect to get fresh session state
         console.log('[Complete Profile] Guest upgraded to Host')
         setTimeout(() => {
-          // Redirect to dashboard - it will show pending approval status if needed
-          window.location.href = '/host/dashboard'
+          // Redirect based on host role
+          if (hostRole === 'manage' || hostRole === 'both') {
+            // Fleet managers AND "both" go to partner dashboard (primary workspace)
+            window.location.href = '/partner/dashboard?welcome=true'
+          } else {
+            // Hosts who only own cars go to host dashboard
+            window.location.href = '/host/dashboard?welcome=true'
+          }
         }, 100)
       } else {
         // Existing user - update session and redirect normally
         await update()
         if (roleHint === 'host') {
-          router.push('/host/dashboard')
+          // Redirect based on host role
+          if (hostRole === 'manage' || hostRole === 'both') {
+            router.push('/partner/dashboard?welcome=true')
+          } else {
+            router.push('/host/dashboard?welcome=true')
+          }
         } else {
           router.push(redirectTo)
         }

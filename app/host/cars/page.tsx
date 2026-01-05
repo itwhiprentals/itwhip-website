@@ -119,6 +119,8 @@ export default function HostCarsPage() {
   const [hostStatus, setHostStatus] = useState<HostStatus | null>(null)
   const [loading, setLoading] = useState(true)
   const [statusLoading, setStatusLoading] = useState(true)
+  const [managesOwnCars, setManagesOwnCars] = useState<boolean | null>(null)
+  const [managedVehicleCount, setManagedVehicleCount] = useState(0)
   const [filters, setFilters] = useState<FilterOptions>({
     status: 'all',
     search: '',
@@ -140,13 +142,22 @@ export default function HostCarsPage() {
   const checkHostStatus = async () => {
     try {
       setStatusLoading(true)
+
+      // Fetch account type to check if Fleet Manager
+      const accountTypeRes = await fetch('/api/host/account-type', { credentials: 'include' })
+      if (accountTypeRes.ok) {
+        const accountData = await accountTypeRes.json()
+        setManagesOwnCars(accountData.managesOwnCars ?? true)
+        setManagedVehicleCount(accountData.managedVehicleCount || 0)
+      }
+
       const response = await fetch('/api/host/verification-status', {
         credentials: 'include'
       })
-      
+
       if (response.ok) {
         const result = await response.json()
-        
+
         if (result.success && result.data) {
           setHostStatus({
             approvalStatus: result.data.overallStatus,
@@ -311,7 +322,16 @@ export default function HostCarsPage() {
 
   const isApproved = hostStatus?.approvalStatus === 'APPROVED'
   const isPending = hostStatus?.approvalStatus === 'PENDING' || hostStatus?.approvalStatus === 'NEEDS_ATTENTION'
-  const canAddCars = isApproved
+  const canAddCars = isApproved && managesOwnCars !== false  // Fleet Managers can't add cars
+  const isFleetManager = managesOwnCars === false
+
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      router.back()
+    } else {
+      router.push(isFleetManager ? '/partner/dashboard' : '/host/dashboard')
+    }
+  }
 
   if (statusLoading) {
     return (
@@ -354,23 +374,38 @@ export default function HostCarsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
           <div className="mb-8">
-            <button
-              onClick={() => router.push('/host/dashboard')}
-              className="flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 mb-4"
-            >
-              <IoArrowBackOutline className="w-5 h-5 mr-2" />
-              Back to Dashboard
-            </button>
-            
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">My Cars</h1>
-                <p className="text-gray-600 dark:text-gray-400 mt-1">
-                  {isApproved ? 'Manage your vehicle fleet' : 'Your vehicles (preparing for approval)'}
+                <div className="flex items-center gap-3 mb-2">
+                  <button
+                    onClick={handleBack}
+                    className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  >
+                    <IoArrowBackOutline className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                  </button>
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+                    {isFleetManager ? 'Managed Vehicles' : 'My Cars'}
+                  </h1>
+                </div>
+                <p className="text-gray-600 dark:text-gray-400 ml-12">
+                  {isFleetManager
+                    ? 'Vehicles you manage for other owners'
+                    : isApproved
+                      ? 'Manage your vehicle fleet'
+                      : 'Your vehicles (preparing for approval)'}
                 </p>
               </div>
-              
-              {canAddCars ? (
+
+              {isFleetManager ? (
+                // Fleet Managers: Show Invite Car Owners button
+                <Link
+                  href="/host/fleet/invite-owner"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                >
+                  <IoAddCircleOutline className="w-5 h-5" />
+                  Invite Car Owners
+                </Link>
+              ) : canAddCars ? (
                 <Link
                   href="/host/cars/add"
                   className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
@@ -395,8 +430,8 @@ export default function HostCarsPage() {
             </div>
           </div>
 
-          {/* Pending/Restriction Banner */}
-          {!isApproved && hostStatus && (
+          {/* Pending/Restriction Banner - Hidden for Fleet Managers */}
+          {!isFleetManager && !isApproved && hostStatus && (
             <PendingBanner
               approvalStatus={hostStatus.approvalStatus}
               page="cars"
@@ -411,33 +446,41 @@ export default function HostCarsPage() {
             <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Total Cars</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{cars.length}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {isFleetManager ? 'Managed' : 'Total Cars'}
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {isFleetManager ? managedVehicleCount : cars.length}
+                  </p>
                 </div>
                 <IoCarOutline className="w-8 h-8 text-purple-600 dark:text-purple-400" />
               </div>
             </div>
-            
+
             <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {isApproved ? 'Active' : 'Ready'}
+                    {isFleetManager ? 'Active' : isApproved ? 'Active' : 'Ready'}
                   </p>
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {isApproved ? cars.filter(c => c.isActive).length : cars.length}
+                    {isFleetManager
+                      ? managedVehicleCount  // For now, assume all managed are active
+                      : isApproved
+                        ? cars.filter(c => c.isActive).length
+                        : cars.length}
                   </p>
                 </div>
                 <IoCheckmarkCircleOutline className="w-8 h-8 text-green-600 dark:text-green-400" />
               </div>
             </div>
-            
+
             <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Avg Rating</p>
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {cars.length > 0 
+                    {cars.length > 0
                       ? (cars.reduce((sum, car) => sum + car.rating, 0) / cars.length).toFixed(1)
                       : '0.0'}
                   </p>
@@ -445,7 +488,7 @@ export default function HostCarsPage() {
                 <IoStarOutline className="w-8 h-8 text-yellow-600 dark:text-yellow-400" />
               </div>
             </div>
-            
+
             <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between">
                 <div>
@@ -502,20 +545,48 @@ export default function HostCarsPage() {
           {/* Cars Grid */}
           {filteredCars.length === 0 ? (
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
-              <IoCarOutline className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <div className="w-20 h-20 bg-purple-50 dark:bg-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <IoCarOutline className="w-10 h-10 text-purple-400" />
+              </div>
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                {cars.length === 0 ? 'No cars yet' : 'No cars match your filters'}
+                {isFleetManager
+                  ? managedVehicleCount === 0
+                    ? 'No vehicles under management'
+                    : 'No vehicles match your filters'
+                  : cars.length === 0
+                    ? 'No cars yet'
+                    : 'No cars match your filters'}
               </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
-                {cars.length === 0 
-                  ? isApproved 
-                    ? 'Start building your fleet by adding your first car.'
-                    : 'You can add draft vehicles now and they\'ll go live when approved.'
-                  : 'Try adjusting your search or filters.'}
+              <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
+                {isFleetManager
+                  ? managedVehicleCount === 0
+                    ? 'Start managing vehicles by inviting car owners to partner with you.'
+                    : 'Try adjusting your search or filters.'
+                  : cars.length === 0
+                    ? isApproved
+                      ? 'Start building your fleet by adding your first car.'
+                      : 'You can add draft vehicles now and they\'ll go live when approved.'
+                    : 'Try adjusting your search or filters.'}
               </p>
-              {cars.length === 0 && (
-                <div>
-                  {canAddCars ? (
+              {(isFleetManager ? managedVehicleCount === 0 : cars.length === 0) && (
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  {isFleetManager ? (
+                    <>
+                      <Link
+                        href="/host/fleet/invite-owner"
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                      >
+                        <IoAddCircleOutline className="w-5 h-5" />
+                        Invite Car Owners
+                      </Link>
+                      <Link
+                        href="/partner/dashboard"
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                      >
+                        Go to Partner Dashboard
+                      </Link>
+                    </>
+                  ) : canAddCars ? (
                     <Link
                       href="/host/cars/add"
                       className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"

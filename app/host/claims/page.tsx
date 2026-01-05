@@ -18,7 +18,8 @@ import {
   IoLockClosedOutline,
   IoCheckmarkCircleOutline,
   IoTimeOutline,
-  IoShieldCheckmarkOutline
+  IoShieldCheckmarkOutline,
+  IoArrowBackOutline
 } from 'react-icons/io5'
 
 interface Claim {
@@ -100,11 +101,35 @@ function ClaimsContent() {
   const [statusFilter, setStatusFilter] = useState('ALL')
   const [refreshing, setRefreshing] = useState(false)
   const [claimNotifications, setClaimNotifications] = useState<ClaimNotification[]>([])
+  const [managesOwnCars, setManagesOwnCars] = useState<boolean | null>(null)
+
+  const isFleetManager = managesOwnCars === false
+
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      router.back()
+    } else {
+      router.push(isFleetManager ? '/partner/dashboard' : '/host/dashboard')
+    }
+  }
 
   useEffect(() => {
+    fetchAccountType()
     fetchClaims()
     fetchNotifications()
   }, [statusFilter])
+
+  const fetchAccountType = async () => {
+    try {
+      const response = await fetch('/api/host/account-type', { credentials: 'include' })
+      if (response.ok) {
+        const data = await response.json()
+        setManagesOwnCars(data.managesOwnCars ?? true)
+      }
+    } catch (err) {
+      console.error('Error fetching account type:', err)
+    }
+  }
 
   const fetchNotifications = async () => {
     try {
@@ -209,11 +234,21 @@ function ClaimsContent() {
         <div className="mb-6 sm:mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1">
-                Insurance Claims
-              </h1>
-              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
-                Manage damage claims for your rental vehicles
+              <div className="flex items-center gap-3 mb-2">
+                <button
+                  onClick={handleBack}
+                  className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  <IoArrowBackOutline className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                </button>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+                  {isFleetManager ? 'Managed Vehicle Claims' : 'Insurance Claims'}
+                </h1>
+              </div>
+              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 ml-12">
+                {isFleetManager
+                  ? 'View claims for vehicles you manage'
+                  : 'Manage damage claims for your rental vehicles'}
               </p>
             </div>
 
@@ -229,16 +264,29 @@ function ClaimsContent() {
                 Refresh
               </button>
 
-              <Link
-                href="/host/claims/new"
-                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium text-sm flex items-center gap-2 transition-colors"
-              >
-                <IoAddOutline className="w-5 h-5" />
-                <span className="hidden sm:inline">File New Claim</span>
-                <span className="sm:hidden">New</span>
-              </Link>
+              {/* Hide File New Claim button for Fleet Managers */}
+              {!isFleetManager && (
+                <Link
+                  href="/host/claims/new"
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium text-sm flex items-center gap-2 transition-colors"
+                >
+                  <IoAddOutline className="w-5 h-5" />
+                  <span className="hidden sm:inline">File New Claim</span>
+                  <span className="sm:hidden">New</span>
+                </Link>
+              )}
             </div>
           </div>
+
+          {/* Fleet Manager Info Banner */}
+          {isFleetManager && (
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+              <p className="text-blue-800 dark:text-blue-200 text-sm">
+                <strong>View Only:</strong> As a Fleet Manager, you can view claims filed by vehicle owners.
+                Owners are responsible for filing and managing claims on their vehicles.
+              </p>
+            </div>
+          )}
 
           {/* Summary Cards */}
           {summary && (
@@ -355,11 +403,13 @@ function ClaimsContent() {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
             <IoDocumentTextOutline className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              No Claims Found
+              {isFleetManager ? 'No claims for managed vehicles' : 'No Claims Found'}
             </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              {statusFilter === 'ALL' 
-                ? "You haven't filed any insurance claims yet"
+            <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
+              {statusFilter === 'ALL'
+                ? isFleetManager
+                  ? "When vehicle owners file claims for vehicles you manage, they'll appear here for your reference."
+                  : "You haven't filed any insurance claims yet"
                 : `No claims with status "${statusFilters.find(f => f.value === statusFilter)?.label}"`}
             </p>
             {statusFilter !== 'ALL' && (
