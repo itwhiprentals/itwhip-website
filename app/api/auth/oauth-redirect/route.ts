@@ -132,11 +132,13 @@ export async function GET(request: NextRequest) {
     if (pendingOAuth && !isProfileComplete) {
       console.log(`[OAuth Redirect] Pending OAuth user - roleHint: ${roleHint}, mode: ${mode}`)
 
-      // For HOST signups, skip complete-profile and go directly to host signup
-      // Host signup page has its own 3-step flow that collects all required info
+      // For HOST signups, redirect to complete-profile to collect phone and vehicle info
       if (roleHint === 'host') {
-        console.log('[OAuth Redirect] New HOST signup - skipping complete-profile, going to host signup directly')
-        const response = NextResponse.redirect(new URL('/host/signup?oauth=true', request.url))
+        const redirectUrl = '/host/dashboard'
+        const completeProfileUrl = `/auth/complete-profile?roleHint=host&mode=${mode}&redirectTo=${encodeURIComponent(redirectUrl)}`
+        console.log(`[OAuth Redirect] Host signup - redirecting to complete profile: ${completeProfileUrl}`)
+
+        const response = NextResponse.redirect(new URL(completeProfileUrl, request.url))
         response.cookies.delete('oauth_role_hint')
         response.cookies.delete('oauth_mode')
         response.cookies.delete('oauth_return_to')
@@ -355,11 +357,10 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // GUEST user wants to become HOST → Allow upgrade flow
-      // Redirect to full host signup for complete 3-step flow (hostRole, vehicle, photos)
+      // GUEST user wants to become HOST → Allow upgrade flow via complete-profile
       if (guestProfile && !hostProfile) {
-        console.log('[OAuth Redirect] GUEST user wants to become HOST - redirecting to FULL host signup for upgrade')
-        return createRedirectWithCookies(`/host/signup?oauth=true`)
+        console.log('[OAuth Redirect] GUEST user wants to become HOST - redirecting to complete-profile for upgrade')
+        return createRedirectWithCookies(`/auth/complete-profile?roleHint=host&mode=signup&guard=guest-on-host&redirectTo=/host/dashboard`)
       }
 
       // No host profile and no guest profile - handle based on mode
@@ -369,11 +370,10 @@ export async function GET(request: NextRequest) {
         return createRedirectWithCookies('/host/login?error=no-account')
       }
 
-      // ✅ New host signup - redirect to full host signup flow with hostRole and photos
-      // complete-profile only has 2 steps, but host signup needs 3 (hostRole, vehicle, photos)
+      // New host signup - redirect to complete-profile for phone and vehicle info
       if (!hostProfile && userId) {
-        console.log('[OAuth Redirect] No host profile, redirecting to FULL host signup flow')
-        return createRedirectWithCookies(`/host/signup?oauth=true`)
+        console.log('[OAuth Redirect] No host profile, redirecting to complete profile')
+        return createRedirectWithCookies(`/auth/complete-profile?roleHint=host&mode=signup&redirectTo=/host/dashboard`)
       }
 
       // If profile exists but missing phone, redirect to complete it

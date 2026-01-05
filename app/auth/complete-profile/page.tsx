@@ -3,7 +3,7 @@
 
 import { useState, useEffect, Suspense, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useSession, signOut } from 'next-auth/react'
+import { useSession } from 'next-auth/react'
 import Header from '@/app/components/Header'
 import CarInformationForm, { type CarData } from '@/app/components/host/CarInformationForm'
 import {
@@ -42,7 +42,6 @@ function CompleteProfileContent() {
   const isHostToGuestBlocked = guard === 'host-on-guest'
 
   // Multi-step wizard state (for hosts) - 3 steps: Phone → Vehicle+hostRole → Photos
-  const totalSteps = roleHint === 'host' ? 3 : 1
   const [currentStep, setCurrentStep] = useState(1)
   const [carData, setCarData] = useState<CarData>({
     vin: '',
@@ -281,9 +280,10 @@ function CompleteProfileContent() {
   }
 
   const validatePhone = () => {
-    // Phone is optional - only validate format if provided
+    // Phone is REQUIRED for OAuth users (OAuth only provides email/name)
     if (!phone || phone.trim() === '') {
-      return true // No phone is valid (optional)
+      setError('Phone number is required')
+      return false
     }
     const digits = phone.replace(/\D/g, '')
     if (digits.length !== 10) {
@@ -443,7 +443,7 @@ function CompleteProfileContent() {
                   Upgrade to Host
                 </h1>
                 <p className="text-gray-400">
-                  You have a <span className="text-orange-400 font-semibold">Guest</span> account. Complete the form below to also become a host!
+                  You have a <span className="text-orange-500 font-semibold">Guest</span> account. Complete the form below to also become a host!
                 </p>
               </div>
 
@@ -518,7 +518,7 @@ function CompleteProfileContent() {
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Phone Number <span className="text-gray-500 text-xs">(optional)</span>
+                      Phone Number <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
                       <IoPhonePortraitOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
@@ -527,11 +527,12 @@ function CompleteProfileContent() {
                         value={phone}
                         onChange={handlePhoneChange}
                         placeholder="(555) 123-4567"
+                        required
                         className="w-full pl-10 pr-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
                       />
                     </div>
                     <p className="mt-2 text-xs text-gray-500">
-                      Add your phone for booking notifications (optional)
+                      Required for booking notifications and account verification
                     </p>
                   </div>
 
@@ -754,7 +755,7 @@ function CompleteProfileContent() {
                       <>
                         <IoCloudUploadOutline className="w-10 h-10 text-blue-500 mx-auto mb-2" />
                         <p className="text-sm font-medium text-gray-300">Click to upload photos</p>
-                        <p className="text-xs text-gray-500 mt-1">JPG, PNG up to 10MB each</p>
+                        <p className="text-xs text-gray-400 mt-1">JPG, PNG up to 10MB each</p>
                       </>
                     )}
                   </label>
@@ -896,7 +897,7 @@ function CompleteProfileContent() {
                   You are already registered as a <span className="text-blue-400 font-semibold">Host</span> with this email.
                 </p>
                 <p className="text-gray-400 text-sm">
-                  To also use this account as a Guest, please use the <span className="text-white">Account Linking</span> feature from your Host dashboard.
+                  To also use this account as a Guest, please use the <span className="text-white font-medium">Account Linking</span> feature from your Host dashboard.
                 </p>
               </div>
 
@@ -1073,7 +1074,7 @@ function CompleteProfileContent() {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Phone Number <span className="text-gray-500 text-xs">(optional)</span>
+                  Phone Number <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <IoPhonePortraitOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
@@ -1082,16 +1083,12 @@ function CompleteProfileContent() {
                     value={phone}
                     onChange={handlePhoneChange}
                     placeholder="(555) 123-4567"
+                    required
                     className="w-full pl-10 pr-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
                   />
                 </div>
                 <p className="mt-2 text-xs text-gray-500">
-                  {isLoginModeNoAccount
-                    ? roleHint === 'host'
-                      ? 'Add your phone for booking notifications (optional)'
-                      : 'Add your phone for booking notifications (optional)'
-                    : "We'll use this for booking confirmations (optional)"
-                  }
+                  Required for booking notifications and account verification
                 </p>
               </div>
 
@@ -1325,7 +1322,7 @@ function CompleteProfileContent() {
                     <>
                       <IoCloudUploadOutline className="w-10 h-10 text-blue-500 mx-auto mb-2" />
                       <p className="text-sm font-medium text-gray-300">Click to upload photos</p>
-                      <p className="text-xs text-gray-500 mt-1">JPG, PNG up to 10MB each</p>
+                      <p className="text-xs text-gray-400 mt-1">JPG, PNG up to 10MB each</p>
                     </>
                   )}
                 </label>
