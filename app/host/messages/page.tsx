@@ -105,6 +105,7 @@ export default function HostMessagesPage() {
   const [activeFilter, setActiveFilter] = useState<'all' | 'unread' | 'urgent'>('all')
   const [hostId, setHostId] = useState<string | null>(null)
   const [managesOwnCars, setManagesOwnCars] = useState<boolean | null>(null)
+  const [hasApprovedOwners, setHasApprovedOwners] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fetchTimeoutRef = useRef<NodeJS.Timeout>()
 
@@ -178,6 +179,26 @@ export default function HostMessagesPage() {
           if (accountTypeResponse.ok) {
             const accountData = await accountTypeResponse.json()
             setManagesOwnCars(accountData.managesOwnCars)
+
+            // For Fleet Managers, check if they have approved owner relationships
+            if (accountData.managesOwnCars === false && accountData.isHostManager) {
+              try {
+                const invitationsResponse = await fetch('/api/fleet-manager/invitations/stats', {
+                  credentials: 'include',
+                  cache: 'no-store'
+                })
+                if (invitationsResponse.ok) {
+                  const invStats = await invitationsResponse.json()
+                  // Has approved owners if they received approved invitations from owners
+                  // OR if they sent invitations that were accepted
+                  const hasOwners = (invStats.received?.accepted || 0) > 0 ||
+                                   (invStats.sent?.accepted || 0) > 0
+                  setHasApprovedOwners(hasOwners)
+                }
+              } catch (err) {
+                console.error('Invitation stats check error:', err)
+              }
+            }
           }
         } catch (err) {
           console.error('Account type check error:', err)
@@ -346,7 +367,7 @@ export default function HostMessagesPage() {
     return (
       <>
         <Header />
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-16 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
             <p className="text-gray-600 dark:text-gray-400">Loading your messages...</p>
@@ -362,7 +383,7 @@ export default function HostMessagesPage() {
     return (
       <>
         <Header />
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-16 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-8 max-w-md w-full text-center border border-gray-200 dark:border-gray-700">
             <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Unable to Load Messages</h2>
@@ -385,46 +406,88 @@ export default function HostMessagesPage() {
     return (
       <>
         <Header />
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 p-4 sm:p-6">
             <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={handleBack}
-                  className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                >
-                  <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                </button>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Messages</h1>
+              <div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={handleBack}
+                    className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  >
+                    <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                  </button>
+                  <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Messages</h1>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 ml-12">
+                  {isFleetManager ? 'Messages for vehicles you manage' : 'Communicate with your guests'}
+                </p>
               </div>
             </div>
 
+            {/* Fleet Manager Conversation Starters */}
             {isFleetManager && (
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
-                <p className="text-blue-800 dark:text-blue-200 text-sm">
-                  <strong>Fleet Manager:</strong> You&apos;re viewing messages for vehicles you manage. Vehicle owners will also receive copies of messages.
+              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 mb-6">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Start a Conversation</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  As a Fleet Manager, you can message ItWhip support anytime. Once vehicle owners approve your partnership, you can communicate with them directly - even before their vehicles go live.
                 </p>
+                <div className="flex flex-wrap gap-3">
+                  <Link
+                    href="/contact?type=support&from=fleet-manager"
+                    className="px-4 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-lg font-medium text-sm hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors inline-flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    Contact Support
+                  </Link>
+                  {hasApprovedOwners ? (
+                    <Link
+                      href="/partner/messages?type=owner"
+                      className="px-4 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg font-medium text-sm hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors inline-flex items-center gap-2"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      Contact Owner
+                    </Link>
+                  ) : (
+                    <button
+                      onClick={() => alert('You can contact vehicle owners once they approve your partnership invitation.')}
+                      className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 rounded-lg font-medium text-sm cursor-not-allowed inline-flex items-center gap-2"
+                      title="No approved owner partnerships yet"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      Contact Owner
+                    </button>
+                  )}
+                </div>
               </div>
             )}
 
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-12 text-center">
               <MessageSquare className="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                No messages yet
+                No conversations yet
               </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
+              <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
                 {isFleetManager
-                  ? "When guests book vehicles you manage, their messages will appear here."
+                  ? "When guests book vehicles you manage, their messages will appear here. You can also contact support anytime using the button above."
                   : "When guests book your cars, you'll be able to message them here."
                 }
               </p>
-              <button
-                onClick={() => router.push('/host/bookings')}
-                className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors inline-flex items-center gap-2"
-              >
-                <Car className="w-5 h-5" />
-                <span>View Bookings</span>
-              </button>
+              {!isFleetManager && (
+                <button
+                  onClick={() => router.push('/host/bookings')}
+                  className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors inline-flex items-center gap-2"
+                >
+                  <Car className="w-5 h-5" />
+                  <span>View Bookings</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -437,34 +500,34 @@ export default function HostMessagesPage() {
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 p-4 sm:p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-4 sm:mb-6">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={handleBack}
-                className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                aria-label="Back to dashboard"
-              >
-                <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-              </button>
-              <div>
+            <div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleBack}
+                  className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  aria-label="Back to dashboard"
+                >
+                  <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                </button>
                 <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Messages</h1>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {isFleetManager ? 'Messages for vehicles you manage • ' : ''}
-                  {counts.all} {counts.all === 1 ? 'conversation' : 'conversations'}
-                  {counts.unread > 0 && (
-                    <span className="ml-2 text-purple-600 dark:text-purple-400 font-medium">
-                      • {counts.unread} unread
-                    </span>
-                  )}
-                </p>
               </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400 ml-12">
+                {isFleetManager ? 'Messages for vehicles you manage • ' : 'Communicate with your guests • '}
+                {counts.all} {counts.all === 1 ? 'conversation' : 'conversations'}
+                {counts.unread > 0 && (
+                  <span className="ml-2 text-purple-600 dark:text-purple-400 font-medium">
+                    • {counts.unread} unread
+                  </span>
+                )}
+              </p>
             </div>
 
             <button
-              onClick={fetchMessages}
+              onClick={() => fetchMessages()}
               disabled={loading}
               className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50"
               title="Refresh messages"
@@ -474,12 +537,43 @@ export default function HostMessagesPage() {
             </button>
           </div>
 
-          {/* Fleet Manager Info Banner */}
+          {/* Fleet Manager Quick Actions */}
           {isFleetManager && (
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
-              <p className="text-blue-800 dark:text-blue-200 text-sm">
-                <strong>Fleet Manager:</strong> You&apos;re viewing messages for vehicles you manage. Vehicle owners will also receive copies of messages.
-              </p>
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 mb-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Quick Actions:</span>
+                <Link
+                  href="/contact?type=support&from=fleet-manager"
+                  className="px-3 py-1.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-lg text-sm hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors inline-flex items-center gap-1.5"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                  Contact Support
+                </Link>
+                {hasApprovedOwners ? (
+                  <Link
+                    href="/partner/messages?type=owner"
+                    className="px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg text-sm hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors inline-flex items-center gap-1.5"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    Contact Owner
+                  </Link>
+                ) : (
+                  <button
+                    onClick={() => alert('You can contact vehicle owners once they approve your partnership invitation.')}
+                    className="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 rounded-lg text-sm cursor-not-allowed inline-flex items-center gap-1.5"
+                    title="No approved owner partnerships yet"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    Contact Owner
+                  </button>
+                )}
+              </div>
             </div>
           )}
 

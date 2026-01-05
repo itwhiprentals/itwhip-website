@@ -20,6 +20,7 @@ interface PendingBannerProps {
   estimatedApprovalTime?: string
   onActionClick?: () => void
   dismissible?: boolean
+  isFleetManager?: boolean
 }
 
 export default function PendingBanner({
@@ -29,7 +30,8 @@ export default function PendingBanner({
   restrictionReasons = [],
   estimatedApprovalTime = '2-3 business days',
   onActionClick,
-  dismissible = false
+  dismissible = false,
+  isFleetManager = false
 }: PendingBannerProps) {
   const [isDismissed, setIsDismissed] = useState(false)
 
@@ -94,8 +96,10 @@ export default function PendingBanner({
         iconColor: 'text-blue-600 dark:text-blue-400',
         bgColor: 'bg-blue-50 dark:bg-blue-900/20',
         borderColor: 'border-blue-200 dark:border-blue-800',
-        title: 'Earnings Dashboard Preview',
-        message: 'This is a preview of your future earnings dashboard. Start earning once your account is approved!',
+        title: isFleetManager ? 'Commission Earnings Preview' : 'Earnings Dashboard Preview',
+        message: isFleetManager
+          ? 'This is a preview of your future commission dashboard. Start earning once your account is approved and you have vehicles under management!'
+          : 'This is a preview of your future earnings dashboard. Start earning once your account is approved!',
         action: null,
         showProgress: true
       },

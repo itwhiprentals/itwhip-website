@@ -141,37 +141,37 @@ function HostLoginContent() {
   // ========================================================================
   if (guard) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100">
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 dark:from-gray-900 dark:to-gray-800">
         <Header />
         <div className="flex items-center justify-center px-4 py-16 pt-24">
           <div className="w-full max-w-md">
-            <div className="bg-white rounded-lg shadow-lg p-8">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 border border-transparent dark:border-gray-700">
               {/* Warning Icon */}
               <div className="flex justify-center mb-6">
-                <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center">
-                  <IoAlertCircleOutline className="w-10 h-10 text-yellow-600" />
+                <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
+                  <IoAlertCircleOutline className="w-10 h-10 text-yellow-600 dark:text-yellow-400" />
                 </div>
               </div>
 
               {/* Message */}
               <div className="text-center mb-8">
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                   {guard.title}
                 </h1>
-                <p className="text-gray-600 mb-4">
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
                   {guard.message}
                 </p>
               </div>
 
               {/* User Info */}
-              <div className="bg-gray-50 rounded-lg p-4 mb-6">
+              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 mb-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
-                    <IoPersonOutline className="w-6 h-6 text-gray-500" />
+                  <div className="w-12 h-12 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center">
+                    <IoPersonOutline className="w-6 h-6 text-gray-500 dark:text-gray-400" />
                   </div>
                   <div>
-                    <p className="text-gray-900 font-medium">{email}</p>
-                    <p className="text-gray-500 text-sm">Guest Account</p>
+                    <p className="text-gray-900 dark:text-white font-medium">{email}</p>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">Guest Account</p>
                   </div>
                 </div>
               </div>
@@ -198,7 +198,7 @@ function HostLoginContent() {
                     setEmail('')
                     setPassword('')
                   }}
-                  className="block w-full py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors text-center"
+                  className="block w-full py-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors text-center"
                 >
                   Use a Different Account
                 </button>
@@ -211,19 +211,18 @@ function HostLoginContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 dark:from-gray-900 dark:to-gray-800">
       <Header />
 
       {/* Login Form */}
       <div className="flex items-center justify-center px-4 py-16 pt-24">
         <div className="w-full max-w-md">
-          {/* ✅ CHANGED: rounded-lg → rounded-lg */}
-          <div className="bg-white rounded-lg shadow-lg p-8">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 border border-transparent dark:border-gray-700">
             <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                 Host / Car Owner Login
               </h1>
-              <p className="text-gray-600">
+              <p className="text-gray-600 dark:text-gray-400">
                 Sign in to manage your vehicles and earnings
               </p>
             </div>
@@ -231,29 +230,29 @@ function HostLoginContent() {
             {/* Status Messages */}
             {statusMessage.type && (
               <div className={`mb-6 p-4 rounded-lg ${
-                statusMessage.type === 'pending' 
-                  ? 'bg-yellow-50 border border-yellow-200' 
+                statusMessage.type === 'pending'
+                  ? 'bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800'
                   : statusMessage.type === 'rejected'
-                  ? 'bg-red-50 border border-red-200'
-                  : 'bg-orange-50 border border-orange-200'
+                  ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
+                  : 'bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800'
               }`}>
                 <div className="flex items-start gap-3">
                   {statusMessage.type === 'pending' ? (
-                    <IoTimeOutline className="text-2xl text-yellow-600 mt-0.5" />
+                    <IoTimeOutline className="text-2xl text-yellow-600 dark:text-yellow-400 mt-0.5" />
                   ) : statusMessage.type === 'rejected' ? (
-                    <IoCloseCircleOutline className="text-2xl text-red-600 mt-0.5" />
+                    <IoCloseCircleOutline className="text-2xl text-red-600 dark:text-red-400 mt-0.5" />
                   ) : (
-                    <IoAlertCircleOutline className="text-2xl text-orange-600 mt-0.5" />
+                    <IoAlertCircleOutline className="text-2xl text-orange-600 dark:text-orange-400 mt-0.5" />
                   )}
                   <div className="flex-1">
                     <h3 className={`font-semibold mb-1 ${
                       statusMessage.type === 'pending'
-                        ? 'text-yellow-900'
+                        ? 'text-yellow-900 dark:text-yellow-200'
                         : statusMessage.type === 'rejected'
-                        ? 'text-red-900'
-                        : 'text-orange-900'
+                        ? 'text-red-900 dark:text-red-200'
+                        : 'text-orange-900 dark:text-orange-200'
                     }`}>
-                      {statusMessage.type === 'pending' 
+                      {statusMessage.type === 'pending'
                         ? 'Application Under Review'
                         : statusMessage.type === 'rejected'
                         ? 'Application Rejected'
@@ -261,17 +260,17 @@ function HostLoginContent() {
                     </h3>
                     <p className={`text-sm ${
                       statusMessage.type === 'pending'
-                        ? 'text-yellow-700'
+                        ? 'text-yellow-700 dark:text-yellow-300'
                         : statusMessage.type === 'rejected'
-                        ? 'text-red-700'
-                        : 'text-orange-700'
+                        ? 'text-red-700 dark:text-red-300'
+                        : 'text-orange-700 dark:text-orange-300'
                     }`}>
                       {statusMessage.message}
                     </p>
                     {statusMessage.type === 'rejected' && (
-                      <Link 
-                        href="/host/signup" 
-                        className="inline-block mt-2 text-sm text-green-600 hover:text-green-700 font-medium"
+                      <Link
+                        href="/host/signup"
+                        className="inline-block mt-2 text-sm text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 font-medium"
                       >
                         Apply again →
                       </Link>
@@ -283,8 +282,8 @@ function HostLoginContent() {
 
             {/* Error Message */}
             {error && (
-              <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-sm text-red-800">{error}</p>
+              <div className="mb-6 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <p className="text-sm text-red-800 dark:text-red-300">{error}</p>
               </div>
             )}
 
@@ -299,19 +298,19 @@ function HostLoginContent() {
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Email Address
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <IoMailOutline className="h-5 w-5 text-gray-400" />
+                    <IoMailOutline className="h-5 w-5 text-gray-400 dark:text-gray-500" />
                   </div>
                   <input
                     id="email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                     placeholder="you@example.com"
                     required
                     suppressHydrationWarning={true}
@@ -320,19 +319,19 @@ function HostLoginContent() {
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Password
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <IoLockClosedOutline className="h-5 w-5 text-gray-400" />
+                    <IoLockClosedOutline className="h-5 w-5 text-gray-400 dark:text-gray-500" />
                   </div>
                   <input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="block w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="block w-full pl-10 pr-10 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                     placeholder="Enter your password"
                     required
                     suppressHydrationWarning={true}
@@ -344,9 +343,9 @@ function HostLoginContent() {
                     suppressHydrationWarning={true}
                   >
                     {showPassword ? (
-                      <IoEyeOffOutline className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                      <IoEyeOffOutline className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400" />
                     ) : (
-                      <IoEyeOutline className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                      <IoEyeOutline className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400" />
                     )}
                   </button>
                 </div>
@@ -356,13 +355,13 @@ function HostLoginContent() {
                 <label className="flex items-center">
                   <input
                     type="checkbox"
-                    className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700"
                   />
-                  <span className="ml-2 text-sm text-gray-600">Remember me</span>
+                  <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">Remember me</span>
                 </label>
-                <Link 
-                  href="/host/forgot-password" 
-                  className="text-sm text-green-600 hover:text-green-700"
+                <Link
+                  href="/host/forgot-password"
+                  className="text-sm text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
                 >
                   Forgot password?
                 </Link>
@@ -389,11 +388,11 @@ function HostLoginContent() {
             </form>
 
             <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 New to ItWhip?{' '}
                 <Link
                   href="/host/signup"
-                  className="font-medium text-green-600 hover:text-green-700"
+                  className="font-medium text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
                 >
                   Become a host
                 </Link>
@@ -401,22 +400,22 @@ function HostLoginContent() {
             </div>
 
             {/* Role Selection Card */}
-            <div className="mt-6 pt-6 border-t border-gray-200">
+            <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
               <Link
                 href="/auth/login"
-                className="block p-4 bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-lg hover:border-blue-400 hover:bg-blue-100 transition-all group"
+                className="block p-4 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 border border-blue-200 dark:border-blue-700 rounded-lg hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-all group"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-200 rounded-lg flex items-center justify-center">
-                      <IoSearchOutline className="w-5 h-5 text-blue-600" />
+                    <div className="w-10 h-10 bg-blue-200 dark:bg-blue-800 rounded-lg flex items-center justify-center">
+                      <IoSearchOutline className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div>
-                      <p className="font-semibold text-gray-900 text-sm">Looking to Rent a Car?</p>
-                      <p className="text-blue-600/80 text-xs">Guest / Renter Login</p>
+                      <p className="font-semibold text-gray-900 dark:text-white text-sm">Looking to Rent a Car?</p>
+                      <p className="text-blue-600/80 dark:text-blue-400/80 text-xs">Guest / Renter Login</p>
                     </div>
                   </div>
-                  <IoArrowForwardOutline className="w-5 h-5 text-blue-600 transform group-hover:translate-x-1 transition-transform" />
+                  <IoArrowForwardOutline className="w-5 h-5 text-blue-600 dark:text-blue-400 transform group-hover:translate-x-1 transition-transform" />
                 </div>
               </Link>
             </div>
@@ -424,10 +423,10 @@ function HostLoginContent() {
 
           {/* Help Links */}
           <div className="mt-6 text-center space-y-2">
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               Need help? Contact our Quick Response Support
             </p>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-gray-400 dark:text-gray-500">
               Typical response within 1-2 hours • Available 7 days a week
             </p>
           </div>
@@ -440,8 +439,8 @@ function HostLoginContent() {
 export default function HostLoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 dark:border-green-400"></div>
       </div>
     }>
       <HostLoginContent />

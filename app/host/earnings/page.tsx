@@ -26,7 +26,8 @@ import {
   IoBarChartOutline,
   IoShieldCheckmarkOutline,
   IoPeopleOutline,
-  IoKeyOutline
+  IoKeyOutline,
+  IoArrowBackOutline
 } from 'react-icons/io5'
 
 interface EarningsData {
@@ -139,7 +140,28 @@ export default function HostEarningsPage() {
   const [daysPerMonth, setDaysPerMonth] = useState(15)
   const [calculatorTier, setCalculatorTier] = useState<'BASIC' | 'STANDARD' | 'PREMIUM'>('STANDARD')
   const [isHostManager, setIsHostManager] = useState(false)
+  const [managesOwnCars, setManagesOwnCars] = useState<boolean | null>(null)
   const [showBreakdown, setShowBreakdown] = useState(false)
+
+  // Fleet Manager Commission Calculator state (for pending view)
+  const [vehiclesManaged, setVehiclesManaged] = useState(5)
+  const [avgBookingValue, setAvgBookingValue] = useState(100)
+  const [commissionRate, setCommissionRate] = useState(25)
+  const [daysBookedPerMonth, setDaysBookedPerMonth] = useState(15)
+
+  // Fleet Manager = hosts who ONLY manage other people's cars (no vehicles of their own)
+  const isFleetManager = managesOwnCars === false
+
+  // Commission calculator for Fleet Managers
+  const calculateCommissionEarnings = () => {
+    const monthlyCommission = vehiclesManaged * avgBookingValue * daysBookedPerMonth * (commissionRate / 100)
+    return {
+      monthly: monthlyCommission,
+      annual: monthlyCommission * 12,
+      grossBookings: vehiclesManaged * avgBookingValue * daysBookedPerMonth
+    }
+  }
+  const commissionEarnings = calculateCommissionEarnings()
 
   useEffect(() => {
     fetchHostStatus()
@@ -154,9 +176,19 @@ export default function HostEarningsPage() {
       if (response.ok) {
         const data = await response.json()
         setIsHostManager(data.isHostManager || data.managedVehicleCount > 0)
+        setManagesOwnCars(data.managesOwnCars)
       }
     } catch (error) {
       console.error('Failed to check account type:', error)
+    }
+  }
+
+  // Smart back button - goes to previous page or appropriate dashboard
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      router.back()
+    } else {
+      router.push(isFleetManager ? '/partner/dashboard' : '/host/dashboard')
     }
   }
 
@@ -599,12 +631,13 @@ export default function HostEarningsPage() {
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-16">
           <div className="p-4 sm:p-6 max-w-7xl mx-auto">
             {hostStatus && (
-              <PendingBanner 
+              <PendingBanner
                 approvalStatus={hostStatus.approvalStatus}
                 page="earnings"
                 pendingActions={hostStatus.pendingActions}
                 restrictionReasons={hostStatus.restrictionReasons}
                 onActionClick={() => router.push('/host/profile?tab=documents')}
+                isFleetManager={isFleetManager}
               />
             )}
 
@@ -638,225 +671,428 @@ export default function HostEarningsPage() {
               </div>
             )}
 
-            <div className="mb-6">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                Earnings Potential
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                See how much you could earn once your account is approved
-              </p>
-            </div>
-
-            {/* ✅ NEW: 3-Tier Calculator */}
-            <div className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg shadow-sm border border-purple-200 dark:border-purple-800 p-6 mb-6">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-purple-100 dark:bg-purple-900/40 rounded-lg">
-                  <IoCalculatorOutline className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                    Earnings Calculator
-                  </h2>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Estimate your potential monthly income
+            {isFleetManager ? (
+              /* ========================================
+                 FLEET MANAGER PENDING VIEW
+                 They have NO cars, earn commission from managing others' vehicles
+                 ======================================== */
+              <>
+                <div className="mb-6">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                    Commission Earnings Preview
+                  </h1>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    See how your commission earnings will work once your account is approved
                   </p>
                 </div>
-              </div>
 
-              {/* ✅ 3-Tier Selection */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                  Choose Your Earnings Tier
-                </label>
-                <div className="grid md:grid-cols-3 gap-3">
-                  <button
-                    onClick={() => setCalculatorTier('BASIC')}
-                    className={`p-4 rounded-lg text-left border-2 transition-all ${
-                      calculatorTier === 'BASIC'
-                        ? 'border-gray-500 bg-gray-50 dark:bg-gray-900/40'
-                        : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 mb-2">
-                      <IoShieldCheckmarkOutline className={`w-5 h-5 ${calculatorTier === 'BASIC' ? 'text-gray-600' : 'text-gray-400'}`} />
-                      <span className={`font-semibold ${calculatorTier === 'BASIC' ? 'text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300'}`}>
-                        Basic Tier
-                      </span>
-                    </div>
-                    <p className={`text-sm ${calculatorTier === 'BASIC' ? 'text-gray-700 dark:text-gray-300' : 'text-gray-500 dark:text-gray-400'}`}>
-                      <strong className="text-lg">Earn 40%</strong> per booking
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      No insurance required
-                    </p>
-                  </button>
-
-                  <button
-                    onClick={() => setCalculatorTier('STANDARD')}
-                    className={`p-4 rounded-lg text-left border-2 transition-all ${
-                      calculatorTier === 'STANDARD'
-                        ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                        : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 mb-2">
-                      <IoShieldCheckmarkOutline className={`w-5 h-5 ${calculatorTier === 'STANDARD' ? 'text-green-600' : 'text-gray-400'}`} />
-                      <span className={`font-semibold ${calculatorTier === 'STANDARD' ? 'text-green-900 dark:text-green-100' : 'text-gray-700 dark:text-gray-300'}`}>
-                        Standard Tier
-                      </span>
-                    </div>
-                    <p className={`text-sm ${calculatorTier === 'STANDARD' ? 'text-green-700 dark:text-green-300' : 'text-gray-500 dark:text-gray-400'}`}>
-                      <strong className="text-lg">Earn 75%</strong> per booking
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      P2P insurance required
-                    </p>
-                  </button>
-
-                  <button
-                    onClick={() => setCalculatorTier('PREMIUM')}
-                    className={`p-4 rounded-lg text-left border-2 transition-all ${
-                      calculatorTier === 'PREMIUM'
-                        ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
-                        : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 mb-2">
-                      <IoShieldCheckmarkOutline className={`w-5 h-5 ${calculatorTier === 'PREMIUM' ? 'text-purple-600' : 'text-gray-400'}`} />
-                      <span className={`font-semibold ${calculatorTier === 'PREMIUM' ? 'text-purple-900 dark:text-purple-100' : 'text-gray-700 dark:text-gray-300'}`}>
-                        Premium Tier
-                      </span>
-                    </div>
-                    <p className={`text-sm ${calculatorTier === 'PREMIUM' ? 'text-purple-700 dark:text-purple-300' : 'text-gray-500 dark:text-gray-400'}`}>
-                      <strong className="text-lg">Earn 90%</strong> per booking
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Commercial insurance required
-                    </p>
-                  </button>
-                </div>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Vehicle Type
-                    </label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {(['economy', 'standard', 'luxury'] as const).map((type) => (
-                        <button
-                          key={type}
-                          onClick={() => setVehicleType(type)}
-                          className={`px-4 py-3 rounded-lg text-sm font-medium capitalize transition-all ${
-                            vehicleType === type
-                              ? 'bg-purple-600 text-white shadow-md'
-                              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                          }`}
-                        >
-                          {type}
-                        </button>
-                      ))}
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                      {vehicleType === 'economy' && 'Avg. $50/day - Compact cars, sedans'}
-                      {vehicleType === 'standard' && 'Avg. $100/day - SUVs, midsize vehicles'}
-                      {vehicleType === 'luxury' && 'Avg. $250/day - Premium, exotic vehicles'}
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Days Rented Per Month: {daysPerMonth}
-                    </label>
-                    <input
-                      type="range"
-                      min="1"
-                      max="30"
-                      value={daysPerMonth}
-                      onChange={(e) => setDaysPerMonth(parseInt(e.target.value))}
-                      className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-600"
-                    />
-                    <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      <span>1 day</span>
-                      <span>15 days</span>
-                      <span>30 days</span>
+                {/* How Fleet Manager Earnings Work */}
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 mb-6">
+                  <div className="flex items-start gap-3">
+                    <IoPeopleOutline className="w-6 h-6 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                        How Fleet Manager Earnings Work
+                      </h3>
+                      <p className="text-sm text-blue-800 dark:text-blue-200">
+                        As a Fleet Manager, you earn commission on every booking for vehicles you manage.
+                        Commission rates (typically 20-30%) are negotiated with each vehicle owner when they approve your partnership.
+                        You don't need to own any vehicles or handle insurance - owners take care of that.
+                      </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 space-y-4">
-                  <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Gross Monthly Earnings</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {formatCurrency(potentialEarnings.gross)}
+                {/* Commission Calculator */}
+                <div className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg shadow-sm border border-purple-200 dark:border-purple-800 p-6 mb-6">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="p-3 bg-purple-100 dark:bg-purple-900/40 rounded-lg">
+                      <IoCalculatorOutline className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                        Commission Calculator
+                      </h2>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Estimate your potential commission earnings
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-5">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Vehicles You'll Manage: {vehiclesManaged}
+                        </label>
+                        <input
+                          type="range"
+                          min="1"
+                          max="20"
+                          value={vehiclesManaged}
+                          onChange={(e) => setVehiclesManaged(parseInt(e.target.value))}
+                          className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-600"
+                        />
+                        <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          <span>1</span>
+                          <span>10</span>
+                          <span>20</span>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Avg. Booking Value: ${avgBookingValue}/day
+                        </label>
+                        <input
+                          type="range"
+                          min="50"
+                          max="300"
+                          step="10"
+                          value={avgBookingValue}
+                          onChange={(e) => setAvgBookingValue(parseInt(e.target.value))}
+                          className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-600"
+                        />
+                        <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          <span>$50</span>
+                          <span>$175</span>
+                          <span>$300</span>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Your Commission Rate: {commissionRate}%
+                        </label>
+                        <input
+                          type="range"
+                          min="10"
+                          max="40"
+                          value={commissionRate}
+                          onChange={(e) => setCommissionRate(parseInt(e.target.value))}
+                          className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-600"
+                        />
+                        <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          <span>10%</span>
+                          <span>25%</span>
+                          <span>40%</span>
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          Typical rates: 20-30% (negotiated with owners)
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Days Booked Per Month: {daysBookedPerMonth}
+                        </label>
+                        <input
+                          type="range"
+                          min="1"
+                          max="30"
+                          value={daysBookedPerMonth}
+                          onChange={(e) => setDaysBookedPerMonth(parseInt(e.target.value))}
+                          className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-600"
+                        />
+                        <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          <span>1 day</span>
+                          <span>15 days</span>
+                          <span>30 days</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 space-y-4">
+                      <div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Fleet Bookings</p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                          {formatCurrency(commissionEarnings.grossBookings)}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {vehiclesManaged} vehicles × ${avgBookingValue}/day × {daysBookedPerMonth} days
+                        </p>
+                      </div>
+
+                      <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
+                        <div className="flex justify-between text-sm mb-2">
+                          <span className="text-gray-600 dark:text-gray-400">
+                            Your Commission ({commissionRate}%)
+                          </span>
+                          <span className="text-purple-600 dark:text-purple-400 font-bold">
+                            {formatCurrency(commissionEarnings.monthly)}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3">
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
+                          Potential Monthly Commission
+                        </p>
+                        <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                          {formatCurrency(commissionEarnings.monthly)}
+                        </p>
+                      </div>
+
+                      <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
+                          Potential Annual Commission
+                        </p>
+                        <p className="text-xl font-bold text-green-600 dark:text-green-400">
+                          {formatCurrency(commissionEarnings.annual)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 rounded-lg p-4 border bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800">
+                    <p className="text-sm text-purple-900 dark:text-purple-100">
+                      <strong>💡 How it works:</strong> Vehicle owners set your commission rate when approving your partnership.
+                      Higher commission rates can be negotiated based on your services (marketing, customer service, vehicle maintenance coordination, etc.).
                     </p>
                   </div>
-                  
-                  <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
-                    <div className="flex justify-between text-sm mb-2">
-                      <span className="text-gray-600 dark:text-gray-400">
-                        Platform Fee ({potentialEarnings.platformFeePercent}%)
-                      </span>
-                      <span className="text-gray-900 dark:text-white font-medium">
-                        -{formatCurrency(potentialEarnings.platformFee)}
-                      </span>
+                </div>
+
+                {/* CTA */}
+                <div className="text-center">
+                  <Link
+                    href="/host/fleet/invite-owner"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors"
+                  >
+                    <IoPeopleOutline className="w-5 h-5" />
+                    Invite Car Owners to Get Started
+                  </Link>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">
+                    Once your account is approved, invite vehicle owners to start earning commission
+                  </p>
+                </div>
+              </>
+            ) : (
+              /* ========================================
+                 REGULAR HOST PENDING VIEW
+                 They own cars, earn via insurance tiers (40%, 75%, 90%)
+                 ======================================== */
+              <>
+                <div className="mb-6">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                    Earnings Potential
+                  </h1>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    See how much you could earn once your account is approved
+                  </p>
+                </div>
+
+                {/* ✅ 3-Tier Calculator */}
+                <div className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg shadow-sm border border-purple-200 dark:border-purple-800 p-6 mb-6">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="p-3 bg-purple-100 dark:bg-purple-900/40 rounded-lg">
+                      <IoCalculatorOutline className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600 dark:text-gray-400">
-                        Your Earnings ({potentialEarnings.earningsPercent}%)
-                      </span>
-                      <span className={`font-bold ${
-                        calculatorTier === 'BASIC' ? 'text-gray-600 dark:text-gray-400' :
-                        calculatorTier === 'STANDARD' ? 'text-green-600 dark:text-green-400' :
-                        'text-purple-600 dark:text-purple-400'
+                    <div>
+                      <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                        Earnings Calculator
+                      </h2>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Estimate your potential monthly income
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* 3-Tier Selection */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                      Choose Your Earnings Tier
+                    </label>
+                    <div className="grid md:grid-cols-3 gap-3">
+                      <button
+                        onClick={() => setCalculatorTier('BASIC')}
+                        className={`p-4 rounded-lg text-left border-2 transition-all ${
+                          calculatorTier === 'BASIC'
+                            ? 'border-gray-500 bg-gray-50 dark:bg-gray-900/40'
+                            : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          <IoShieldCheckmarkOutline className={`w-5 h-5 ${calculatorTier === 'BASIC' ? 'text-gray-600' : 'text-gray-400'}`} />
+                          <span className={`font-semibold ${calculatorTier === 'BASIC' ? 'text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300'}`}>
+                            Basic Tier
+                          </span>
+                        </div>
+                        <p className={`text-sm ${calculatorTier === 'BASIC' ? 'text-gray-700 dark:text-gray-300' : 'text-gray-500 dark:text-gray-400'}`}>
+                          <strong className="text-lg">Earn 40%</strong> per booking
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          No insurance required
+                        </p>
+                      </button>
+
+                      <button
+                        onClick={() => setCalculatorTier('STANDARD')}
+                        className={`p-4 rounded-lg text-left border-2 transition-all ${
+                          calculatorTier === 'STANDARD'
+                            ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                            : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          <IoShieldCheckmarkOutline className={`w-5 h-5 ${calculatorTier === 'STANDARD' ? 'text-green-600' : 'text-gray-400'}`} />
+                          <span className={`font-semibold ${calculatorTier === 'STANDARD' ? 'text-green-900 dark:text-green-100' : 'text-gray-700 dark:text-gray-300'}`}>
+                            Standard Tier
+                          </span>
+                        </div>
+                        <p className={`text-sm ${calculatorTier === 'STANDARD' ? 'text-green-700 dark:text-green-300' : 'text-gray-500 dark:text-gray-400'}`}>
+                          <strong className="text-lg">Earn 75%</strong> per booking
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          P2P insurance required
+                        </p>
+                      </button>
+
+                      <button
+                        onClick={() => setCalculatorTier('PREMIUM')}
+                        className={`p-4 rounded-lg text-left border-2 transition-all ${
+                          calculatorTier === 'PREMIUM'
+                            ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                            : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          <IoShieldCheckmarkOutline className={`w-5 h-5 ${calculatorTier === 'PREMIUM' ? 'text-purple-600' : 'text-gray-400'}`} />
+                          <span className={`font-semibold ${calculatorTier === 'PREMIUM' ? 'text-purple-900 dark:text-purple-100' : 'text-gray-700 dark:text-gray-300'}`}>
+                            Premium Tier
+                          </span>
+                        </div>
+                        <p className={`text-sm ${calculatorTier === 'PREMIUM' ? 'text-purple-700 dark:text-purple-300' : 'text-gray-500 dark:text-gray-400'}`}>
+                          <strong className="text-lg">Earn 90%</strong> per booking
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          Commercial insurance required
+                        </p>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Vehicle Type
+                        </label>
+                        <div className="grid grid-cols-3 gap-2">
+                          {(['economy', 'standard', 'luxury'] as const).map((type) => (
+                            <button
+                              key={type}
+                              onClick={() => setVehicleType(type)}
+                              className={`px-4 py-3 rounded-lg text-sm font-medium capitalize transition-all ${
+                                vehicleType === type
+                                  ? 'bg-purple-600 text-white shadow-md'
+                                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                              }`}
+                            >
+                              {type}
+                            </button>
+                          ))}
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                          {vehicleType === 'economy' && 'Avg. $50/day - Compact cars, sedans'}
+                          {vehicleType === 'standard' && 'Avg. $100/day - SUVs, midsize vehicles'}
+                          {vehicleType === 'luxury' && 'Avg. $250/day - Premium, exotic vehicles'}
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Days Rented Per Month: {daysPerMonth}
+                        </label>
+                        <input
+                          type="range"
+                          min="1"
+                          max="30"
+                          value={daysPerMonth}
+                          onChange={(e) => setDaysPerMonth(parseInt(e.target.value))}
+                          className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-600"
+                        />
+                        <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          <span>1 day</span>
+                          <span>15 days</span>
+                          <span>30 days</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 space-y-4">
+                      <div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Gross Monthly Earnings</p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                          {formatCurrency(potentialEarnings.gross)}
+                        </p>
+                      </div>
+
+                      <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
+                        <div className="flex justify-between text-sm mb-2">
+                          <span className="text-gray-600 dark:text-gray-400">
+                            Platform Fee ({potentialEarnings.platformFeePercent}%)
+                          </span>
+                          <span className="text-gray-900 dark:text-white font-medium">
+                            -{formatCurrency(potentialEarnings.platformFee)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600 dark:text-gray-400">
+                            Your Earnings ({potentialEarnings.earningsPercent}%)
+                          </span>
+                          <span className={`font-bold ${
+                            calculatorTier === 'BASIC' ? 'text-gray-600 dark:text-gray-400' :
+                            calculatorTier === 'STANDARD' ? 'text-green-600 dark:text-green-400' :
+                            'text-purple-600 dark:text-purple-400'
+                          }`}>
+                            {formatCurrency(potentialEarnings.net)}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className={`rounded-lg p-3 ${
+                        calculatorTier === 'BASIC' ? 'bg-gray-50 dark:bg-gray-900/20' :
+                        calculatorTier === 'STANDARD' ? 'bg-green-50 dark:bg-green-900/20' :
+                        'bg-purple-50 dark:bg-purple-900/20'
                       }`}>
-                        {formatCurrency(potentialEarnings.net)}
-                      </span>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
+                          Potential Annual Income
+                        </p>
+                        <p className={`text-xl font-bold ${
+                          calculatorTier === 'BASIC' ? 'text-gray-600 dark:text-gray-400' :
+                          calculatorTier === 'STANDARD' ? 'text-green-600 dark:text-green-400' :
+                          'text-purple-600 dark:text-purple-400'
+                        }`}>
+                          {formatCurrency(potentialEarnings.annual)}
+                        </p>
+                      </div>
                     </div>
                   </div>
 
-                  <div className={`rounded-lg p-3 ${
-                    calculatorTier === 'BASIC' ? 'bg-gray-50 dark:bg-gray-900/20' :
-                    calculatorTier === 'STANDARD' ? 'bg-green-50 dark:bg-green-900/20' :
-                    'bg-purple-50 dark:bg-purple-900/20'
+                  {/* Tier Impact Notice */}
+                  <div className={`mt-4 rounded-lg p-4 border ${
+                    calculatorTier === 'BASIC'
+                      ? 'bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-800'
+                      : calculatorTier === 'STANDARD'
+                      ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                      : 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800'
                   }`}>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
-                      Potential Annual Income
-                    </p>
-                    <p className={`text-xl font-bold ${
-                      calculatorTier === 'BASIC' ? 'text-gray-600 dark:text-gray-400' :
-                      calculatorTier === 'STANDARD' ? 'text-green-600 dark:text-green-400' :
-                      'text-purple-600 dark:text-purple-400'
+                    <p className={`text-sm ${
+                      calculatorTier === 'BASIC' ? 'text-gray-900 dark:text-gray-100' :
+                      calculatorTier === 'STANDARD' ? 'text-green-900 dark:text-green-100' :
+                      'text-purple-900 dark:text-purple-100'
                     }`}>
-                      {formatCurrency(potentialEarnings.annual)}
+                      <strong>💡 Tip:</strong> {
+                        calculatorTier === 'BASIC'
+                          ? 'Basic tier requires no insurance but earns 40%. Upgrade to Standard (75%) or Premium (90%) for higher earnings!'
+                          : calculatorTier === 'STANDARD'
+                          ? 'With P2P insurance, you keep 75% of every booking! Upgrade to commercial insurance for 90%.'
+                          : 'Maximum earnings! With commercial insurance, you keep 90% of every booking. 🎉'}
                     </p>
                   </div>
                 </div>
-              </div>
-
-              {/* ✅ Tier Impact Notice */}
-              <div className={`mt-4 rounded-lg p-4 border ${
-                calculatorTier === 'BASIC' 
-                  ? 'bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-800' 
-                  : calculatorTier === 'STANDARD'
-                  ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-                  : 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800'
-              }`}>
-                <p className={`text-sm ${
-                  calculatorTier === 'BASIC' ? 'text-gray-900 dark:text-gray-100' :
-                  calculatorTier === 'STANDARD' ? 'text-green-900 dark:text-green-100' :
-                  'text-purple-900 dark:text-purple-100'
-                }`}>
-                  <strong>💡 Tip:</strong> {
-                    calculatorTier === 'BASIC' 
-                      ? 'Basic tier requires no insurance but earns 40%. Upgrade to Standard (75%) or Premium (90%) for higher earnings!' 
-                      : calculatorTier === 'STANDARD'
-                      ? 'With P2P insurance, you keep 75% of every booking! Upgrade to commercial insurance for 90%.'
-                      : 'Maximum earnings! With commercial insurance, you keep 90% of every booking. 🎉'}
-                </p>
-              </div>
-            </div>
+              </>
+            )}
           </div>
         </div>
         <Footer />
@@ -1006,13 +1242,24 @@ export default function HostEarningsPage() {
       <Header />
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-16">
         <div className="p-4 sm:p-6 max-w-7xl mx-auto">
+          {/* Back Button */}
+          <button
+            onClick={handleBack}
+            className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-4 transition-colors"
+          >
+            <IoArrowBackOutline className="w-5 h-5" />
+            <span>Back</span>
+          </button>
+
           <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                Earnings
+                {isFleetManager ? 'Commission Earnings' : 'Earnings'}
               </h1>
               <p className="text-gray-600 dark:text-gray-400">
-                Track your income and manage payouts
+                {isFleetManager
+                  ? 'Your commission from managed vehicles'
+                  : 'Track your income and manage payouts'}
               </p>
             </div>
 
@@ -1025,8 +1272,17 @@ export default function HostEarningsPage() {
             )}
           </div>
 
-          {/* ✅ NEW: 3-Tier Info Banner */}
-          {earnings && (
+          {/* Fleet Manager Commission Info Banner */}
+          {isFleetManager && (
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+              <p className="text-blue-800 dark:text-blue-200 text-sm">
+                <strong>Commission Earnings:</strong> As a Fleet Manager, you earn commission (typically 20-30%) on bookings for vehicles you manage. Commission rates are set when owners approve your partnership.
+              </p>
+            </div>
+          )}
+
+          {/* ✅ NEW: 3-Tier Info Banner - Only show for non-Fleet Managers */}
+          {earnings && !isFleetManager && (
             <div className={`mb-6 rounded-lg p-4 border ${
               earnings.earningsTier === 'BASIC'
                 ? 'bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-800'
@@ -1066,6 +1322,30 @@ export default function HostEarningsPage() {
                     Upgrade →
                   </Link>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* Fleet Manager Empty State - Show when no commission earnings */}
+          {isFleetManager && earnings && earnings.totalEarnings === 0 && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-8 mb-6 text-center">
+              <div className="max-w-md mx-auto">
+                <div className="p-4 bg-purple-100 dark:bg-purple-900/30 rounded-full inline-block mb-4">
+                  <IoPeopleOutline className="w-12 h-12 text-purple-600 dark:text-purple-400" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                  No commission earnings yet
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                  Start managing vehicles by inviting car owners. You'll earn commission on every booking for vehicles you manage.
+                </p>
+                <Link
+                  href="/host/fleet/invite-owner"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors"
+                >
+                  <IoPeopleOutline className="w-5 h-5" />
+                  Invite Car Owners
+                </Link>
               </div>
             </div>
           )}
@@ -1218,7 +1498,9 @@ export default function HostEarningsPage() {
                   Request Payout
                 </button>
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Available Balance</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                {isFleetManager ? 'Commission Available' : 'Available Balance'}
+              </p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {formatCurrency(earnings?.currentBalance || 0)}
               </p>
@@ -1231,10 +1513,12 @@ export default function HostEarningsPage() {
                 </div>
                 <IoInformationCircleOutline
                   className="w-4 h-4 text-gray-400 cursor-help"
-                  title="Funds from recent bookings that are being processed"
+                  title={isFleetManager ? "Commission from recent bookings being processed" : "Funds from recent bookings that are being processed"}
                 />
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Pending</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                {isFleetManager ? 'Pending Commission' : 'Pending'}
+              </p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {formatCurrency(earnings?.pendingBalance || 0)}
               </p>
@@ -1250,7 +1534,9 @@ export default function HostEarningsPage() {
                 </div>
                 <span className="text-xs text-gray-500 capitalize">{timeRange === 'all' ? 'All Time' : timeRange}</span>
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Earnings</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                {isFleetManager ? 'Total Commission' : 'Total Earnings'}
+              </p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {formatCurrency(earnings?.totalEarnings || 0)}
               </p>

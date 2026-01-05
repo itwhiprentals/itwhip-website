@@ -358,14 +358,14 @@ export default function MobileMenu({
               </div>
               
               {/* Quick Actions Grid - Different for Each User Type */}
-              <div className="grid grid-cols-2 gap-2">
+              <div className={`grid gap-2 ${isHost ? 'grid-cols-3' : 'grid-cols-2'}`}>
                 {isHost ? (
                   // HOST QUICK ACTIONS
                   <>
                     <Link
                       href="/host/dashboard"
                       onClick={handleNavClick}
-                      className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900 
+                      className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900
                         rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105
                         focus:outline-none focus:ring-2 focus:ring-purple-500"
                     >
@@ -375,7 +375,7 @@ export default function MobileMenu({
                     <Link
                       href="/host/cars"
                       onClick={handleNavClick}
-                      className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900 
+                      className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900
                         rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105
                         focus:outline-none focus:ring-2 focus:ring-purple-500"
                     >
@@ -383,9 +383,19 @@ export default function MobileMenu({
                       <span className="text-xs text-gray-700 dark:text-gray-300">My Cars</span>
                     </Link>
                     <Link
+                      href="/host/messages"
+                      onClick={handleNavClick}
+                      className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900
+                        rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105
+                        focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    >
+                      <IoChatbubbleOutline className="w-5 h-5 text-gray-700 dark:text-gray-300 mb-1" />
+                      <span className="text-xs text-gray-700 dark:text-gray-300">Messages</span>
+                    </Link>
+                    <Link
                       href="/host/bookings"
                       onClick={handleNavClick}
-                      className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900 
+                      className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900
                         rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105
                         focus:outline-none focus:ring-2 focus:ring-purple-500"
                     >
@@ -395,12 +405,22 @@ export default function MobileMenu({
                     <Link
                       href="/host/earnings"
                       onClick={handleNavClick}
-                      className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900 
+                      className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900
                         rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105
                         focus:outline-none focus:ring-2 focus:ring-purple-500"
                     >
                       <IoWalletOutline className="w-5 h-5 text-gray-700 dark:text-gray-300 mb-1" />
                       <span className="text-xs text-gray-700 dark:text-gray-300">Earnings</span>
+                    </Link>
+                    <Link
+                      href="/host/profile?tab=settings"
+                      onClick={handleNavClick}
+                      className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900
+                        rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105
+                        focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    >
+                      <IoSettingsOutline className="w-5 h-5 text-gray-700 dark:text-gray-300 mb-1" />
+                      <span className="text-xs text-gray-700 dark:text-gray-300">Settings</span>
                     </Link>
                   </>
                 ) : isGuest ? (
