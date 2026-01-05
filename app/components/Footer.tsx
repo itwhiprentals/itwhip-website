@@ -128,6 +128,11 @@ export default function Footer() {
                   Reviews
                 </Link>
               </li>
+              <li>
+                <Link href="/auth/login" className="text-xs md:text-sm text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 font-medium transition-colors">
+                  Guest Portal →
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -294,8 +299,8 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/partner/login" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Partner Portal
+                <Link href="/partner/login" className="text-xs md:text-sm text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 font-medium transition-colors">
+                  Partners Portal →
                 </Link>
               </li>
               <li>
