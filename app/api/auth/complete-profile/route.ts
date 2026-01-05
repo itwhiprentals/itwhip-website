@@ -139,11 +139,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Validate car data for hosts
-    if (roleHint === 'host') {
+    // Validate car data for hosts who own cars (not manage-only fleet managers)
+    if (roleHint === 'host' && hostRole !== 'manage') {
+      // Only require car data for hosts who own cars ('own' or 'both')
       if (!carData) {
         return NextResponse.json(
-          { error: 'Vehicle information is required for hosts' },
+          { error: 'Vehicle information is required for hosts who own cars' },
           { status: 400 }
         )
       }
@@ -283,6 +284,9 @@ export async function POST(request: NextRequest) {
         if (roleHint === 'host') {
           // Create RentalHost for host signup
           // Note: Host will still need approval, this just creates the profile
+          // For manage-only hosts, they don't have car data so we use empty location
+          const isManageOnly = hostRole === 'manage'
+
           const host = await tx.rentalHost.create({
             data: {
               userId: user.id,
@@ -291,10 +295,10 @@ export async function POST(request: NextRequest) {
               phone: digitsOnly || null,
               profilePhoto: pendingOAuth.image,
 
-              // Location from car data
-              city: carData!.city,
-              state: carData!.state,
-              zipCode: carData!.zipCode,
+              // Location from car data (empty for manage-only fleet managers)
+              city: isManageOnly ? '' : carData!.city,
+              state: isManageOnly ? '' : carData!.state,
+              zipCode: isManageOnly ? '' : carData!.zipCode,
 
               // Status
               approvalStatus: 'PENDING',
@@ -319,96 +323,100 @@ export async function POST(request: NextRequest) {
               managesOthersCars: hostRole === 'manage' || hostRole === 'both'
             }
           })
-          console.log(`[Complete Profile] Created RentalHost profile (pending approval) with verified email`)
+          console.log(`[Complete Profile] Created RentalHost profile (pending approval) - isManageOnly: ${isManageOnly}`)
 
-          // 4. Create Car
-          const newCar = await tx.rentalCar.create({
-            data: {
-              hostId: host.id,
+          // 4. Create Car - ONLY for hosts who own cars (not manage-only fleet managers)
+          if (!isManageOnly && carData) {
+            const newCar = await tx.rentalCar.create({
+              data: {
+                hostId: host.id,
 
-              // Vehicle info from form
-              make: carData!.make,
-              model: carData!.model,
-              year: parseInt(carData!.year),
-              trim: carData!.trim || null,
-              color: carData!.color,
+                // Vehicle info from form
+                make: carData.make,
+                model: carData.model,
+                year: parseInt(carData.year),
+                trim: carData.trim || null,
+                color: carData.color,
 
-              // Location (matches host)
-              city: carData!.city,
-              state: carData!.state,
-              zipCode: carData!.zipCode,
-              address: carData!.address || '',
+                // Location (matches host)
+                city: carData.city,
+                state: carData.state,
+                zipCode: carData.zipCode,
+                address: carData.address || '',
 
-              // Status - NOT ACTIVE until fully completed
-              isActive: false,
+                // Status - NOT ACTIVE until fully completed
+                isActive: false,
 
-              // VIN-decoded specs (with sensible defaults)
-              carType: mapBodyClassToCarType(carData!.bodyClass) || 'midsize',
-              seats: 5,  // NHTSA doesn't provide seats - will be updated from our database
-              doors: carData!.doors ? parseInt(carData!.doors) : 4,
-              transmission: normalizeTransmission(carData!.transmission) || 'automatic',
-              fuelType: carData!.fuelType || 'gas',
-              driveType: carData!.driveType || null,
+                // VIN-decoded specs (with sensible defaults)
+                carType: mapBodyClassToCarType(carData.bodyClass) || 'midsize',
+                seats: 5,  // NHTSA doesn't provide seats - will be updated from our database
+                doors: carData.doors ? parseInt(carData.doors) : 4,
+                transmission: normalizeTransmission(carData.transmission) || 'automatic',
+                fuelType: carData.fuelType || 'gas',
+                driveType: carData.driveType || null,
 
-              // Pricing - must be set before activation
-              dailyRate: 0,
-              weeklyRate: 0,
-              monthlyRate: 0,
-              weeklyDiscount: 15,
-              monthlyDiscount: 30,
-              deliveryFee: 35,
+                // Pricing - must be set before activation
+                dailyRate: 0,
+                weeklyRate: 0,
+                monthlyRate: 0,
+                weeklyDiscount: 15,
+                monthlyDiscount: 30,
+                deliveryFee: 35,
 
-              // Delivery options
-              airportPickup: true,
-              hotelDelivery: true,
-              homeDelivery: false,
+                // Delivery options
+                airportPickup: true,
+                hotelDelivery: true,
+                homeDelivery: false,
 
-              // Availability
-              instantBook: false,
-              advanceNotice: 24,
-              minTripDuration: 1,
-              maxTripDuration: 30,
+                // Availability
+                instantBook: false,
+                advanceNotice: 24,
+                minTripDuration: 1,
+                maxTripDuration: 30,
 
-              // Insurance
-              insuranceIncluded: false,
-              insuranceDaily: 25,
+                // Insurance
+                insuranceIncluded: false,
+                insuranceDaily: 25,
 
-              // Stats
-              totalTrips: 0,
-              rating: 0,
+                // Stats
+                totalTrips: 0,
+                rating: 0,
 
-              // JSON fields
-              features: '[]',
-              rules: '[]',
+                // JSON fields
+                features: '[]',
+                rules: '[]',
 
-              // Required fields (VIN and address may be provided at signup)
-              vin: carData!.vin || null,
-              licensePlate: null,
-              description: null,
-              currentMileage: null,
-              registeredOwner: null,
-              registrationState: carData!.state,
-              registrationExpiryDate: null,
-              titleStatus: 'Clean',
-              garageAddress: null
-            }
-          })
-          console.log(`[Complete Profile] Created RentalCar for host: ${newCar.id}`)
-
-          // 5. Create vehicle photos if provided
-          if (vehiclePhotoUrls && Array.isArray(vehiclePhotoUrls) && vehiclePhotoUrls.length > 0) {
-            await tx.rentalCarPhoto.createMany({
-              data: vehiclePhotoUrls.map((url: string, index: number) => ({
-                carId: newCar.id,
-                url: url,
-                isHero: index === 0, // First photo is the hero/main photo
-                order: index,
-                uploadedBy: host.id,
-                uploadedByType: 'HOST',
-                photoContext: 'LISTING'
-              }))
+                // Required fields (VIN and address may be provided at signup)
+                vin: carData.vin || null,
+                licensePlate: null,
+                description: null,
+                currentMileage: null,
+                registeredOwner: null,
+                registrationState: carData.state,
+                registrationExpiryDate: null,
+                titleStatus: 'Clean',
+                garageAddress: null
+              }
             })
-            console.log(`[Complete Profile] Created ${vehiclePhotoUrls.length} photos for car`)
+            console.log(`[Complete Profile] Created RentalCar for host: ${newCar.id}`)
+
+            // 5. Create vehicle photos if provided
+            if (vehiclePhotoUrls && Array.isArray(vehiclePhotoUrls) && vehiclePhotoUrls.length > 0) {
+              await tx.rentalCarPhoto.createMany({
+                data: vehiclePhotoUrls.map((url: string, index: number) => ({
+                  carId: newCar.id,
+                  url: url,
+                  isHero: index === 0, // First photo is the hero/main photo
+                  order: index,
+                  uploadedBy: host.id,
+                  uploadedByType: 'HOST',
+                  photoContext: 'LISTING'
+                }))
+              })
+              console.log(`[Complete Profile] Created ${vehiclePhotoUrls.length} photos for car`)
+            }
+          } else if (isManageOnly) {
+            console.log(`[Complete Profile] Skipping RentalCar creation for manage-only fleet manager`)
           }
         } else if (roleHint === 'guest') {
           // SECURITY: Block guest profile creation for existing HOST users
@@ -548,9 +556,10 @@ export async function POST(request: NextRequest) {
     // ========================================================================
     // HOST UPGRADE CHECK - Must come FIRST before generic profile handling
     // This allows existing guests (with ReviewerProfile) to also become hosts
+    // Supports both hosts with cars AND manage-only fleet managers
     // ========================================================================
-    if (roleHint === 'host' && carData) {
-      console.log(`[Complete Profile] Host upgrade check for existing user: ${userId}`)
+    if (roleHint === 'host') {
+      console.log(`[Complete Profile] Host upgrade check for existing user: ${userId}, hostRole: ${hostRole}`)
 
       // Check if user already has host profile
       const existingHost = await prisma.rentalHost.findFirst({
@@ -570,6 +579,7 @@ export async function POST(request: NextRequest) {
 
       // Create RentalHost for existing user (guest-to-host upgrade)
       console.log(`[Complete Profile] Guest-to-Host upgrade for existing user: ${userId}`)
+      const isManageOnly = hostRole === 'manage'
 
       const host = await prisma.rentalHost.create({
         data: {
@@ -579,10 +589,10 @@ export async function POST(request: NextRequest) {
           phone: digitsOnly || null,
           profilePhoto: updatedUser.image,
 
-          // Location from car data
-          city: carData.city,
-          state: carData.state,
-          zipCode: carData.zipCode,
+          // Location from car data (empty for manage-only fleet managers)
+          city: isManageOnly ? '' : (carData?.city || ''),
+          state: isManageOnly ? '' : (carData?.state || ''),
+          zipCode: isManageOnly ? '' : (carData?.zipCode || ''),
 
           // Status
           approvalStatus: 'PENDING',
@@ -607,96 +617,100 @@ export async function POST(request: NextRequest) {
           managesOthersCars: hostRole === 'manage' || hostRole === 'both'
         }
       })
-      console.log(`[Complete Profile] Created RentalHost for guest upgrade: ${host.id}`)
+      console.log(`[Complete Profile] Created RentalHost for guest upgrade: ${host.id} - isManageOnly: ${isManageOnly}`)
 
-      // Create RentalCar
-      const newCar = await prisma.rentalCar.create({
-        data: {
-          hostId: host.id,
+      // Create RentalCar - ONLY for hosts who own cars (not manage-only fleet managers)
+      if (!isManageOnly && carData) {
+        const newCar = await prisma.rentalCar.create({
+          data: {
+            hostId: host.id,
 
-          // Vehicle info from form
-          make: carData.make,
-          model: carData.model,
-          year: parseInt(carData.year),
-          trim: carData.trim || null,
-          color: carData.color,
+            // Vehicle info from form
+            make: carData.make,
+            model: carData.model,
+            year: parseInt(carData.year),
+            trim: carData.trim || null,
+            color: carData.color,
 
-          // Location (matches host)
-          city: carData.city,
-          state: carData.state,
-          zipCode: carData.zipCode,
-          address: carData.address || '',
+            // Location (matches host)
+            city: carData.city,
+            state: carData.state,
+            zipCode: carData.zipCode,
+            address: carData.address || '',
 
-          // Status - NOT ACTIVE until fully completed
-          isActive: false,
+            // Status - NOT ACTIVE until fully completed
+            isActive: false,
 
-          // VIN-decoded specs (with sensible defaults)
-          carType: mapBodyClassToCarType(carData.bodyClass) || 'midsize',
-          seats: 5,
-          doors: carData.doors ? parseInt(carData.doors) : 4,
-          transmission: normalizeTransmission(carData.transmission) || 'automatic',
-          fuelType: carData.fuelType || 'gas',
-          driveType: carData.driveType || null,
+            // VIN-decoded specs (with sensible defaults)
+            carType: mapBodyClassToCarType(carData.bodyClass) || 'midsize',
+            seats: 5,
+            doors: carData.doors ? parseInt(carData.doors) : 4,
+            transmission: normalizeTransmission(carData.transmission) || 'automatic',
+            fuelType: carData.fuelType || 'gas',
+            driveType: carData.driveType || null,
 
-          // Pricing - must be set before activation
-          dailyRate: 0,
-          weeklyRate: 0,
-          monthlyRate: 0,
-          weeklyDiscount: 15,
-          monthlyDiscount: 30,
-          deliveryFee: 35,
+            // Pricing - must be set before activation
+            dailyRate: 0,
+            weeklyRate: 0,
+            monthlyRate: 0,
+            weeklyDiscount: 15,
+            monthlyDiscount: 30,
+            deliveryFee: 35,
 
-          // Delivery options
-          airportPickup: true,
-          hotelDelivery: true,
-          homeDelivery: false,
+            // Delivery options
+            airportPickup: true,
+            hotelDelivery: true,
+            homeDelivery: false,
 
-          // Availability
-          instantBook: false,
-          advanceNotice: 24,
-          minTripDuration: 1,
-          maxTripDuration: 30,
+            // Availability
+            instantBook: false,
+            advanceNotice: 24,
+            minTripDuration: 1,
+            maxTripDuration: 30,
 
-          // Insurance
-          insuranceIncluded: false,
-          insuranceDaily: 25,
+            // Insurance
+            insuranceIncluded: false,
+            insuranceDaily: 25,
 
-          // Stats
-          totalTrips: 0,
-          rating: 0,
+            // Stats
+            totalTrips: 0,
+            rating: 0,
 
-          // JSON fields
-          features: '[]',
-          rules: '[]',
+            // JSON fields
+            features: '[]',
+            rules: '[]',
 
-          // Required fields
-          vin: carData.vin || null,
-          licensePlate: null,
-          description: null,
-          currentMileage: null,
-          registeredOwner: null,
-          registrationState: carData.state,
-          registrationExpiryDate: null,
-          titleStatus: 'Clean',
-          garageAddress: null
-        }
-      })
-      console.log(`[Complete Profile] Created RentalCar for guest upgrade: ${newCar.id}`)
-
-      // Create vehicle photos if provided
-      if (vehiclePhotoUrls && Array.isArray(vehiclePhotoUrls) && vehiclePhotoUrls.length > 0) {
-        await prisma.rentalCarPhoto.createMany({
-          data: vehiclePhotoUrls.map((url: string, index: number) => ({
-            carId: newCar.id,
-            url: url,
-            isHero: index === 0,
-            order: index,
-            uploadedBy: host.id,
-            uploadedByType: 'HOST',
-            photoContext: 'LISTING'
-          }))
+            // Required fields
+            vin: carData.vin || null,
+            licensePlate: null,
+            description: null,
+            currentMileage: null,
+            registeredOwner: null,
+            registrationState: carData.state,
+            registrationExpiryDate: null,
+            titleStatus: 'Clean',
+            garageAddress: null
+          }
         })
-        console.log(`[Complete Profile] Created ${vehiclePhotoUrls.length} photos for car`)
+        console.log(`[Complete Profile] Created RentalCar for guest upgrade: ${newCar.id}`)
+
+        // Create vehicle photos if provided
+        if (vehiclePhotoUrls && Array.isArray(vehiclePhotoUrls) && vehiclePhotoUrls.length > 0) {
+          await prisma.rentalCarPhoto.createMany({
+            data: vehiclePhotoUrls.map((url: string, index: number) => ({
+              carId: newCar.id,
+              url: url,
+              isHero: index === 0,
+              order: index,
+              uploadedBy: host.id,
+              uploadedByType: 'HOST',
+              photoContext: 'LISTING'
+            }))
+          })
+          console.log(`[Complete Profile] Created ${vehiclePhotoUrls.length} photos for car`)
+        }
+      } else if (isManageOnly) {
+        console.log(`[Complete Profile] Skipping RentalCar creation for manage-only fleet manager upgrade`)
       }
 
       // Create AdminNotification for Fleet visibility

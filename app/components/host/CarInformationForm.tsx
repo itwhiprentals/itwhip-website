@@ -361,11 +361,6 @@ export default function CarInformationForm({
     <div className={`space-y-4 ${className}`}>
       {/* Vehicle Section */}
       <div className="space-y-4">
-        <h3 className="text-sm font-medium text-white flex items-center gap-2">
-          <IoCarSportOutline className="w-4 h-4" />
-          Vehicle Details
-        </h3>
-
         {/* VIN Input - Quick Auto-Fill */}
         <div className="p-4 bg-purple-900/30 border border-purple-700/50 rounded-lg">
           <label className="block text-sm font-medium text-white mb-1">

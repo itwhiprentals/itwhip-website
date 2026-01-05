@@ -27,7 +27,9 @@ import {
   IoChevronForwardOutline,
   IoChevronDownOutline,
   IoChevronUpOutline,
-  IoLocationOutline
+  IoLocationOutline,
+  IoPeopleOutline,
+  IoBusinessOutline
 } from 'react-icons/io5'
 import VerificationProgress from '../components/VerificationProgress'
 import PendingBanner from '../components/PendingBanner'
@@ -75,6 +77,11 @@ interface HostData {
   backgroundCheckStatus?: string
   pendingActions?: string[]
   restrictionReasons?: string[]
+  // Host Role Fields (from signup selection)
+  isHostManager?: boolean
+  managesOwnCars?: boolean
+  managesOthersCars?: boolean
+  hostType?: string
   permissions: {
     canViewBookings: boolean
     canEditCalendar: boolean
@@ -92,6 +99,7 @@ interface HostData {
     pendingClaims?: number
     approvedClaims?: number
     totalClaims?: number
+    managedVehicles?: number
   }
   cars?: CarData[]
   documents?: {
@@ -844,7 +852,7 @@ function HostDashboardContent() {
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">My Cars</h2>
                 {isApproved && completeCars.length > 0 && incompleteCars.length === 0 && (
-                  <Link 
+                  <Link
                     href="/host/cars/add"
                     className="text-sm text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1"
                   >
@@ -853,7 +861,7 @@ function HostDashboardContent() {
                   </Link>
                 )}
               </div>
-              
+
               {completeCars.length > 0 ? (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {completeCars.map(car => (
@@ -879,6 +887,87 @@ function HostDashboardContent() {
                 </div>
               )}
             </div>
+
+            {/* Fleet Manager / Partner Section - Only shows for hosts who manage others' cars */}
+            {isApproved && hostData?.isHostManager && (
+              <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-lg shadow-sm border border-purple-200 dark:border-purple-700 p-4 sm:p-6 mb-8">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-purple-100 dark:bg-purple-800/50 rounded-lg flex items-center justify-center">
+                      <IoBusinessOutline className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Fleet Management</h2>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Manage vehicles for other owners</p>
+                    </div>
+                  </div>
+                  <Link
+                    href="/partner/dashboard"
+                    className="text-sm text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1"
+                  >
+                    View Full Dashboard
+                    <IoChevronForwardOutline className="w-4 h-4" />
+                  </Link>
+                </div>
+
+                {/* Stats Row */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-purple-100 dark:border-purple-800">
+                    <div className="flex items-center gap-2 mb-1">
+                      <IoPeopleOutline className="w-4 h-4 text-purple-500" />
+                      <span className="text-xs text-gray-600 dark:text-gray-400">Managed Vehicles</span>
+                    </div>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {hostData?.stats.managedVehicles || 0}
+                    </p>
+                  </div>
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-purple-100 dark:border-purple-800">
+                    <div className="flex items-center gap-2 mb-1">
+                      <IoWalletOutline className="w-4 h-4 text-green-500" />
+                      <span className="text-xs text-gray-600 dark:text-gray-400">Fleet Earnings</span>
+                    </div>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      $0
+                    </p>
+                    <p className="text-xs text-gray-500">Coming soon</p>
+                  </div>
+                  <div className="hidden sm:block bg-white dark:bg-gray-800 rounded-lg p-4 border border-purple-100 dark:border-purple-800">
+                    <div className="flex items-center gap-2 mb-1">
+                      <IoStarOutline className="w-4 h-4 text-yellow-500" />
+                      <span className="text-xs text-gray-600 dark:text-gray-400">Fleet Rating</span>
+                    </div>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      N/A
+                    </p>
+                    <p className="text-xs text-gray-500">Coming soon</p>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Link
+                    href="/host/fleet/invite-owner"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors"
+                  >
+                    <IoPeopleOutline className="w-5 h-5" />
+                    Invite Vehicle Owners
+                  </Link>
+                  <Link
+                    href="/partner/dashboard"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-white dark:bg-gray-800 border border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-400 font-medium rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors"
+                  >
+                    <IoBusinessOutline className="w-5 h-5" />
+                    Partner Dashboard
+                    <IoChevronForwardOutline className="w-4 h-4" />
+                  </Link>
+                </div>
+
+                {/* Info Note */}
+                <p className="mt-4 text-xs text-gray-500 dark:text-gray-400 text-center">
+                  As a Fleet Manager, you can manage vehicles for other owners and earn commission on their bookings.
+                </p>
+              </div>
+            )}
 
             {/* Quick Actions */}
             {isApproved && (

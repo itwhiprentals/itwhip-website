@@ -131,6 +131,20 @@ export async function GET(request: NextRequest) {
       console.error('Error fetching unread messages:', err)
     }
 
+    // Get managed vehicles count (for fleet managers)
+    let managedVehiclesCount = 0
+    try {
+      managedVehiclesCount = await prisma.vehicleManagement.count({
+        where: {
+          managerId: hostId,
+          status: 'ACTIVE'
+        }
+      })
+    } catch (err) {
+      // VehicleManagement table might not exist yet
+      console.error('Error fetching managed vehicles:', err)
+    }
+
     // Calculate additional stats
     const stats = {
       totalCars: host.cars.length,
@@ -143,7 +157,8 @@ export async function GET(request: NextRequest) {
       totalEarnings: host.totalEarnings || 0,
       monthlyEarnings: 0,
       pendingClaims: claimsCount,
-      unreadMessages: unreadMessagesCount
+      unreadMessages: unreadMessagesCount,
+      managedVehicles: managedVehiclesCount
     }
 
     // Format cars with completion status data and enhanced metrics
@@ -228,6 +243,12 @@ export async function GET(request: NextRequest) {
           documentsVerified: host.documentsVerified
         },
         
+        // Host Role Fields (from signup selection)
+        isHostManager: host.isHostManager || false,
+        managesOwnCars: host.managesOwnCars || false,
+        managesOthersCars: host.managesOthersCars || false,
+        hostType: host.hostType || 'REAL',
+
         // Financial
         commissionRate: host.commissionRate,
         bankVerified: host.bankVerified,

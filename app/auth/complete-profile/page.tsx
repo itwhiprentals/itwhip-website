@@ -73,6 +73,11 @@ function CompleteProfileContent() {
 
   // Step validation functions
   const isStep2Valid = () => {
+    // Fleet managers (manage-only) don't need vehicle info - they just need to select their role
+    if (hostRole === 'manage') {
+      return true
+    }
+    // For 'own' or 'both', they need valid car info AND role selected
     return isCarValid && hostRole !== ''
   }
 
@@ -304,12 +309,19 @@ function CompleteProfileContent() {
       return
     }
 
-    // For hosts at step 2, validate and proceed to step 3
+    // For hosts at step 2, validate and proceed to step 3 OR submit directly for manage-only
     if (roleHint === 'host' && currentStep === 2) {
       if (isStep2Valid()) {
-        setCurrentStep(3)
+        // Fleet managers (manage-only) skip photos step - submit directly
+        if (hostRole === 'manage') {
+          // Don't return here - let the code continue to form submission below
+        } else {
+          setCurrentStep(3)
+          return
+        }
+      } else {
+        return
       }
-      return
     }
 
     // For hosts at step 3 or guests at step 1, submit to API
@@ -317,37 +329,46 @@ function CompleteProfileContent() {
     setError('')
 
     try {
+      // Build request body - conditionally include vehicle data for hosts who own cars
+      const requestBody: any = {
+        phone: phone.replace(/\D/g, ''),
+        roleHint: roleHint
+      }
+
+      // For hosts, always include hostRole and terms agreement
+      if (roleHint === 'host') {
+        requestBody.hostRole = hostRole
+        requestBody.agreeToTerms = agreeToTerms
+
+        // Only include vehicle data for hosts who own cars (not manage-only)
+        if (hostRole !== 'manage') {
+          requestBody.vehiclePhotoUrls = vehiclePhotos.map(p => p.url)
+          requestBody.carData = {
+            vin: carData.vin || null,
+            make: carData.make,
+            model: carData.model,
+            year: carData.year,
+            color: carData.color,
+            trim: carData.trim || null,
+            // VIN-decoded specs
+            fuelType: carData.fuelType || null,
+            doors: carData.doors || null,
+            bodyClass: carData.bodyClass || null,
+            transmission: carData.transmission || null,
+            driveType: carData.driveType || null,
+            // Location
+            address: carData.address || '',
+            city: carData.city,
+            state: carData.state,
+            zipCode: carData.zipCode
+          }
+        }
+      }
+
       const response = await fetch('/api/auth/complete-profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phone: phone.replace(/\D/g, ''),
-          roleHint: roleHint,
-          ...(roleHint === 'host' && {
-            hostRole: hostRole,
-            vehiclePhotoUrls: vehiclePhotos.map(p => p.url),
-            agreeToTerms: agreeToTerms,
-            carData: {
-              vin: carData.vin || null,
-              make: carData.make,
-              model: carData.model,
-              year: carData.year,
-              color: carData.color,
-              trim: carData.trim || null,
-              // VIN-decoded specs
-              fuelType: carData.fuelType || null,
-              doors: carData.doors || null,
-              bodyClass: carData.bodyClass || null,
-              transmission: carData.transmission || null,
-              driveType: carData.driveType || null,
-              // Location
-              address: carData.address || '',
-              city: carData.city,
-              state: carData.state,
-              zipCode: carData.zipCode
-            }
-          })
-        })
+        body: JSON.stringify(requestBody)
       })
 
       const data = await response.json()
@@ -427,9 +448,9 @@ function CompleteProfileContent() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
         <Header />
-        <div className="flex items-center justify-center px-4 py-16 pt-24">
-          <div className="w-full max-w-md">
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-xl p-8 border border-gray-700">
+        <div className="flex items-center justify-center px-4 py-8 lg:py-12 pt-20 lg:pt-24">
+          <div className="w-full max-w-md lg:max-w-4xl">
+            <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-xl p-6 lg:p-8 border border-gray-700">
               {/* Upgrade Icon */}
               <div className="flex justify-center mb-6">
                 <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center">
@@ -450,13 +471,22 @@ function CompleteProfileContent() {
               {/* User Info */}
               <div className="bg-gray-700/50 rounded-lg p-4 mb-6">
                 <div className="flex items-center gap-3">
-                  {userImage ? (
-                    <img src={userImage} alt="Profile" className="w-12 h-12 rounded-full" />
-                  ) : (
-                    <div className="w-12 h-12 bg-gray-600 rounded-full flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-600 flex items-center justify-center flex-shrink-0">
+                    {userImage ? (
+                      <img
+                        src={userImage}
+                        alt="Profile"
+                        className="w-12 h-12 object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none'
+                          e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                        }}
+                      />
+                    ) : null}
+                    <div className={`flex items-center justify-center w-full h-full ${userImage ? 'hidden' : ''}`}>
                       <IoPersonOutline className="w-6 h-6 text-gray-400" />
                     </div>
-                  )}
+                  </div>
                   <div>
                     <p className="text-white font-medium">{userName}</p>
                     <p className="text-gray-400 text-sm">{userEmail}</p>
@@ -464,7 +494,7 @@ function CompleteProfileContent() {
                 </div>
               </div>
 
-              {/* Progress Indicator - 3 Steps */}
+              {/* Progress Indicator - 2 or 3 Steps depending on hostRole */}
               <div className="flex items-center justify-center mb-8">
                 {/* Step 1 Circle */}
                 <div className="flex flex-col items-center">
@@ -490,27 +520,31 @@ function CompleteProfileContent() {
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-700 text-gray-400'
                   }`}>
-                    {currentStep > 2 ? '✓' : '2'}
+                    {(hostRole === 'manage' && currentStep === 2) ? '✓' : (currentStep > 2 ? '✓' : '2')}
                   </div>
-                  <span className="text-xs text-gray-400 mt-2">Vehicle</span>
+                  <span className="text-xs text-gray-400 mt-2">{hostRole === 'manage' ? 'Role' : 'Vehicle'}</span>
                 </div>
 
-                {/* Connector 2-3 */}
-                <div className={`w-12 h-1 mx-2 transition-all ${
-                  currentStep >= 3 ? 'bg-blue-600' : 'bg-gray-700'
-                }`}></div>
+                {/* Connector 2-3 and Step 3 - only show if not manage-only */}
+                {hostRole !== 'manage' && (
+                  <>
+                    <div className={`w-12 h-1 mx-2 transition-all ${
+                      currentStep >= 3 ? 'bg-blue-600' : 'bg-gray-700'
+                    }`}></div>
 
-                {/* Step 3 Circle */}
-                <div className="flex flex-col items-center">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all ${
-                    currentStep >= 3
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-700 text-gray-400'
-                  }`}>
-                    3
-                  </div>
-                  <span className="text-xs text-gray-400 mt-2">Photos</span>
-                </div>
+                    {/* Step 3 Circle */}
+                    <div className="flex flex-col items-center">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all ${
+                        currentStep >= 3
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-700 text-gray-400'
+                      }`}>
+                        3
+                      </div>
+                      <span className="text-xs text-gray-400 mt-2">Photos</span>
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Step 1: Phone Form */}
@@ -565,108 +599,151 @@ function CompleteProfileContent() {
 
               {/* Step 2: Vehicle + Host Role */}
               {currentStep === 2 && (
-                <div className="space-y-6">
-                  {/* Host Role Selection */}
-                  <div className="mb-6">
-                    <h2 className="text-xl font-bold text-white mb-2">What will you be doing on ItWhip?</h2>
-                    <p className="text-gray-400 text-sm mb-4">Choose how you plan to use the platform</p>
+                <div className="space-y-4 lg:space-y-6">
+                  {/* Desktop: Two-column layout for role selection and vehicle info */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Left Column: Host Role Selection */}
+                    <div>
+                      <h2 className="text-xl font-bold text-white mb-1 text-center">What will you be doing on ItWhip?</h2>
+                      <p className="text-gray-400 text-sm mb-4 text-center">Choose how you plan to use the platform</p>
 
-                    <div className="space-y-3">
-                      {/* Option: Rent out my own cars */}
-                      <label
-                        className={`flex items-start gap-4 p-4 rounded-lg cursor-pointer transition border-2 ${
-                          hostRole === 'own'
-                            ? 'bg-green-900/30 border-green-500'
-                            : 'bg-gray-700/50 border-transparent hover:border-gray-600'
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="hostRole"
-                          value="own"
-                          checked={hostRole === 'own'}
-                          onChange={() => setHostRole('own')}
-                          className="mt-1 w-4 h-4 text-green-600 focus:ring-green-500"
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <IoCarOutline className="w-5 h-5 text-green-500" />
-                            <span className="font-medium text-white">Rent out my own car(s)</span>
+                      <div className="space-y-3">
+                        {/* Option: Rent out my own cars */}
+                        <label
+                          className={`flex items-start gap-3 p-3 lg:p-4 rounded-lg cursor-pointer transition border-2 ${
+                            hostRole === 'own'
+                              ? 'bg-green-900/30 border-green-500'
+                              : 'bg-gray-700/50 border-transparent hover:border-gray-600'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="hostRole"
+                            value="own"
+                            checked={hostRole === 'own'}
+                            onChange={() => setHostRole('own')}
+                            className="mt-1 w-4 h-4 text-green-600 focus:ring-green-500"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <IoCarOutline className="w-5 h-5 text-green-500" />
+                              <span className="font-medium text-white text-sm lg:text-base">Rent out my own car(s)</span>
+                            </div>
+                            <p className="text-xs lg:text-sm text-gray-400 mt-1">
+                              I&apos;ll manage my vehicles and handle bookings myself
+                            </p>
                           </div>
-                          <p className="text-sm text-gray-400 mt-1">
-                            I'll manage my vehicles and handle bookings myself
+                        </label>
+
+                        {/* Option: Manage other people's cars */}
+                        <label
+                          className={`flex items-start gap-3 p-3 lg:p-4 rounded-lg cursor-pointer transition border-2 ${
+                            hostRole === 'manage'
+                              ? 'bg-purple-900/30 border-purple-500'
+                              : 'bg-gray-700/50 border-transparent hover:border-gray-600'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="hostRole"
+                            value="manage"
+                            checked={hostRole === 'manage'}
+                            onChange={() => setHostRole('manage')}
+                            className="mt-1 w-4 h-4 text-purple-600 focus:ring-purple-500"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <IoPeopleOutline className="w-5 h-5 text-purple-500" />
+                              <span className="font-medium text-white text-sm lg:text-base">Manage other people&apos;s cars</span>
+                            </div>
+                            <p className="text-xs lg:text-sm text-gray-400 mt-1">
+                              I&apos;m a fleet manager - I&apos;ll manage vehicles for other owners
+                            </p>
+                          </div>
+                        </label>
+
+                        {/* Option: Both */}
+                        <label
+                          className={`flex items-start gap-3 p-3 lg:p-4 rounded-lg cursor-pointer transition border-2 ${
+                            hostRole === 'both'
+                              ? 'bg-indigo-900/30 border-indigo-500'
+                              : 'bg-gray-700/50 border-transparent hover:border-gray-600'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="hostRole"
+                            value="both"
+                            checked={hostRole === 'both'}
+                            onChange={() => setHostRole('both')}
+                            className="mt-1 w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <IoLayersOutline className="w-5 h-5 text-indigo-500" />
+                              <span className="font-medium text-white text-sm lg:text-base">Both - I want to do it all</span>
+                            </div>
+                            <p className="text-xs lg:text-sm text-gray-400 mt-1">
+                              I&apos;ll rent my own vehicles AND manage for other owners
+                            </p>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Right Column: Vehicle Information OR Fleet Manager Info */}
+                    <div>
+                      {/* Vehicle Information - only shown for hosts who own cars */}
+                      {hostRole !== 'manage' && hostRole !== '' && (
+                        <>
+                          <h2 className="text-lg font-bold text-white mb-1 text-center">Vehicle Details</h2>
+                          <p className="text-gray-400 text-sm mb-4 text-center">Add your first vehicle to start earning</p>
+
+                          <CarInformationForm
+                            carData={carData}
+                            onCarDataChange={(data) => setCarData({ ...carData, ...data })}
+                            onValidationChange={setIsCarValid}
+                            showLocationFields={true}
+                            className=""
+                          />
+                        </>
+                      )}
+
+                      {/* Placeholder when no role selected */}
+                      {hostRole === '' && (
+                        <div className="h-full flex items-center justify-center border-2 border-dashed border-gray-700 rounded-lg p-8">
+                          <p className="text-gray-500 text-center">
+                            Select how you plan to use ItWhip to continue
                           </p>
                         </div>
-                      </label>
+                      )}
 
-                      {/* Option: Manage other people's cars */}
-                      <label
-                        className={`flex items-start gap-4 p-4 rounded-lg cursor-pointer transition border-2 ${
-                          hostRole === 'manage'
-                            ? 'bg-purple-900/30 border-purple-500'
-                            : 'bg-gray-700/50 border-transparent hover:border-gray-600'
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="hostRole"
-                          value="manage"
-                          checked={hostRole === 'manage'}
-                          onChange={() => setHostRole('manage')}
-                          className="mt-1 w-4 h-4 text-purple-600 focus:ring-purple-500"
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <IoPeopleOutline className="w-5 h-5 text-purple-500" />
-                            <span className="font-medium text-white">Manage other people's cars</span>
-                          </div>
-                          <p className="text-sm text-gray-400 mt-1">
-                            I'm a fleet manager - I'll manage vehicles for other owners and earn commission
-                          </p>
-                        </div>
-                      </label>
+                      {/* Fleet Manager Info - shown in right column when manage is selected */}
+                      {hostRole === 'manage' && (
+                        <div className="flex flex-col">
+                          {/* Header spacing to align with left column */}
+                          <h2 className="text-lg font-bold text-white mb-1 text-center">Fleet Manager</h2>
+                          <p className="text-gray-400 text-sm mb-4 text-center">Your fleet management profile</p>
 
-                      {/* Option: Both */}
-                      <label
-                        className={`flex items-start gap-4 p-4 rounded-lg cursor-pointer transition border-2 ${
-                          hostRole === 'both'
-                            ? 'bg-indigo-900/30 border-indigo-500'
-                            : 'bg-gray-700/50 border-transparent hover:border-gray-600'
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="hostRole"
-                          value="both"
-                          checked={hostRole === 'both'}
-                          onChange={() => setHostRole('both')}
-                          className="mt-1 w-4 h-4 text-indigo-600 focus:ring-indigo-500"
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <IoLayersOutline className="w-5 h-5 text-indigo-500" />
-                            <span className="font-medium text-white">Both - I want to do it all</span>
+                          <div className="p-4 lg:p-5 bg-purple-900/30 border border-purple-700 rounded-lg">
+                            <div className="flex items-start gap-3">
+                              <IoPeopleOutline className="w-6 h-6 text-purple-400 flex-shrink-0 mt-0.5" />
+                              <div>
+                                <h3 className="font-medium text-white mb-2">Fleet Manager Account</h3>
+                                <p className="text-sm text-gray-400">
+                                  After approval, you&apos;ll get your own profile page to showcase your fleet management services.
+                                  You can invite car owners to have you manage their vehicles, or they can invite you to manage their listings.{' '}
+                                  <Link href="/how-it-works" className="text-purple-400 hover:text-purple-300">
+                                    Learn more →
+                                  </Link>
+                                </p>
+                              </div>
+                            </div>
                           </div>
-                          <p className="text-sm text-gray-400 mt-1">
-                            I'll rent my own vehicles AND manage vehicles for other owners
-                          </p>
                         </div>
-                      </label>
+                      )}
                     </div>
                   </div>
-
-                  <div className="text-center mb-4">
-                    <h2 className="text-lg font-bold text-white mb-2">Vehicle Information</h2>
-                    <p className="text-gray-400 text-sm">Add your first vehicle to start earning on ItWhip</p>
-                  </div>
-
-                  <CarInformationForm
-                    carData={carData}
-                    onCarDataChange={(data) => setCarData({ ...carData, ...data })}
-                    onValidationChange={setIsCarValid}
-                    showLocationFields={true}
-                    className="mb-6"
-                  />
 
                   {/* Error Message */}
                   {error && (
@@ -687,11 +764,21 @@ function CompleteProfileContent() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setCurrentStep(3)}
-                      disabled={!isStep2Valid()}
+                      onClick={hostRole === 'manage' ? handleSubmit : () => setCurrentStep(3)}
+                      disabled={!isStep2Valid() || (hostRole === 'manage' && isLoading)}
                       className="flex-1 py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Continue to Photos
+                      {hostRole === 'manage' ? (
+                        isLoading ? (
+                          <span className="flex items-center justify-center">
+                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Creating Fleet Manager Account...
+                          </span>
+                        ) : 'Complete Signup'
+                      ) : 'Continue to Photos'}
                     </button>
                   </div>
                 </div>
@@ -904,13 +991,22 @@ function CompleteProfileContent() {
               {/* User Info */}
               <div className="bg-gray-700/50 rounded-lg p-4 mb-6">
                 <div className="flex items-center gap-3">
-                  {userImage ? (
-                    <img src={userImage} alt="Profile" className="w-12 h-12 rounded-full" />
-                  ) : (
-                    <div className="w-12 h-12 bg-gray-600 rounded-full flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-600 flex items-center justify-center flex-shrink-0">
+                    {userImage ? (
+                      <img
+                        src={userImage}
+                        alt="Profile"
+                        className="w-12 h-12 object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none'
+                          e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                        }}
+                      />
+                    ) : null}
+                    <div className={`flex items-center justify-center w-full h-full ${userImage ? 'hidden' : ''}`}>
                       <IoPersonOutline className="w-6 h-6 text-gray-400" />
                     </div>
-                  )}
+                  </div>
                   <div>
                     <p className="text-white font-medium">{userName}</p>
                     <p className="text-gray-400 text-sm">{userEmail}</p>
@@ -950,9 +1046,9 @@ function CompleteProfileContent() {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
       <Header />
 
-      <div className="flex items-center justify-center px-4 py-16 pt-24">
-        <div className="w-full max-w-md">
-          <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-xl p-8 border border-gray-700">
+      <div className="flex items-center justify-center px-4 py-8 lg:py-12 pt-20 lg:pt-24">
+        <div className="w-full max-w-md lg:max-w-4xl">
+          <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-xl p-6 lg:p-8 border border-gray-700">
             {/* Icon - Different based on mode */}
             <div className="flex justify-center mb-6">
               {isLoginModeNoAccount ? (
@@ -997,7 +1093,7 @@ function CompleteProfileContent() {
               )}
             </div>
 
-            {/* Progress Indicator (hosts only) - 3 Steps */}
+            {/* Progress Indicator (hosts only) - 2 or 3 Steps depending on hostRole */}
             {roleHint === 'host' && (
               <div className="flex items-center justify-center mb-8">
                 {/* Step 1 Circle */}
@@ -1024,44 +1120,53 @@ function CompleteProfileContent() {
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-700 text-gray-400'
                   }`}>
-                    {currentStep > 2 ? '✓' : '2'}
+                    {(hostRole === 'manage' && currentStep === 2) ? '✓' : (currentStep > 2 ? '✓' : '2')}
                   </div>
-                  <span className="text-xs text-gray-400 mt-2">Vehicle</span>
+                  <span className="text-xs text-gray-400 mt-2">{hostRole === 'manage' ? 'Role' : 'Vehicle'}</span>
                 </div>
 
-                {/* Connector 2-3 */}
-                <div className={`w-12 h-1 mx-2 transition-all ${
-                  currentStep >= 3 ? 'bg-blue-600' : 'bg-gray-700'
-                }`}></div>
+                {/* Connector 2-3 and Step 3 - only show if not manage-only */}
+                {hostRole !== 'manage' && (
+                  <>
+                    <div className={`w-12 h-1 mx-2 transition-all ${
+                      currentStep >= 3 ? 'bg-blue-600' : 'bg-gray-700'
+                    }`}></div>
 
-                {/* Step 3 Circle */}
-                <div className="flex flex-col items-center">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all ${
-                    currentStep >= 3
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-700 text-gray-400'
-                  }`}>
-                    3
-                  </div>
-                  <span className="text-xs text-gray-400 mt-2">Photos</span>
-                </div>
+                    {/* Step 3 Circle */}
+                    <div className="flex flex-col items-center">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all ${
+                        currentStep >= 3
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-700 text-gray-400'
+                      }`}>
+                        3
+                      </div>
+                      <span className="text-xs text-gray-400 mt-2">Photos</span>
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
             {/* User Info Preview */}
             <div className="bg-gray-700/50 rounded-lg p-4 mb-6">
               <div className="flex items-center gap-3">
-                {userImage ? (
-                  <img
-                    src={userImage}
-                    alt="Profile"
-                    className="w-12 h-12 rounded-full"
-                  />
-                ) : (
-                  <div className="w-12 h-12 bg-gray-600 rounded-full flex items-center justify-center">
+                <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-600 flex items-center justify-center flex-shrink-0">
+                  {userImage ? (
+                    <img
+                      src={userImage}
+                      alt="Profile"
+                      className="w-12 h-12 object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none'
+                        e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                      }}
+                    />
+                  ) : null}
+                  <div className={`flex items-center justify-center w-full h-full ${userImage ? 'hidden' : ''}`}>
                     <IoPersonOutline className="w-6 h-6 text-gray-400" />
                   </div>
-                )}
+                </div>
                 <div>
                   <p className="text-white font-medium">{userName}</p>
                   <p className="text-gray-400 text-sm">{userEmail}</p>
@@ -1132,108 +1237,151 @@ function CompleteProfileContent() {
 
             {/* Step 2: Vehicle + Host Role (hosts only) */}
             {currentStep === 2 && roleHint === 'host' && (
-              <div className="space-y-6">
-                {/* Host Role Selection */}
-                <div className="mb-6">
-                  <h2 className="text-xl font-bold text-white mb-2">What will you be doing on ItWhip?</h2>
-                  <p className="text-gray-400 text-sm mb-4">Choose how you plan to use the platform</p>
+              <div className="space-y-4 lg:space-y-6">
+                {/* Desktop: Two-column layout for role selection and vehicle info */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Left Column: Host Role Selection */}
+                  <div>
+                    <h2 className="text-xl font-bold text-white mb-1 text-center">What will you be doing on ItWhip?</h2>
+                    <p className="text-gray-400 text-sm mb-4 text-center">Choose how you plan to use the platform</p>
 
-                  <div className="space-y-3">
-                    {/* Option: Rent out my own cars */}
-                    <label
-                      className={`flex items-start gap-4 p-4 rounded-lg cursor-pointer transition border-2 ${
-                        hostRole === 'own'
-                          ? 'bg-green-900/30 border-green-500'
-                          : 'bg-gray-700/50 border-transparent hover:border-gray-600'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="hostRole2"
-                        value="own"
-                        checked={hostRole === 'own'}
-                        onChange={() => setHostRole('own')}
-                        className="mt-1 w-4 h-4 text-green-600 focus:ring-green-500"
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <IoCarOutline className="w-5 h-5 text-green-500" />
-                          <span className="font-medium text-white">Rent out my own car(s)</span>
+                    <div className="space-y-3">
+                      {/* Option: Rent out my own cars */}
+                      <label
+                        className={`flex items-start gap-3 p-3 lg:p-4 rounded-lg cursor-pointer transition border-2 ${
+                          hostRole === 'own'
+                            ? 'bg-green-900/30 border-green-500'
+                            : 'bg-gray-700/50 border-transparent hover:border-gray-600'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="hostRole2"
+                          value="own"
+                          checked={hostRole === 'own'}
+                          onChange={() => setHostRole('own')}
+                          className="mt-1 w-4 h-4 text-green-600 focus:ring-green-500"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <IoCarOutline className="w-5 h-5 text-green-500" />
+                            <span className="font-medium text-white text-sm lg:text-base">Rent out my own car(s)</span>
+                          </div>
+                          <p className="text-xs lg:text-sm text-gray-400 mt-1">
+                            I&apos;ll manage my vehicles and handle bookings myself
+                          </p>
                         </div>
-                        <p className="text-sm text-gray-400 mt-1">
-                          I'll manage my vehicles and handle bookings myself
+                      </label>
+
+                      {/* Option: Manage other people's cars */}
+                      <label
+                        className={`flex items-start gap-3 p-3 lg:p-4 rounded-lg cursor-pointer transition border-2 ${
+                          hostRole === 'manage'
+                            ? 'bg-purple-900/30 border-purple-500'
+                            : 'bg-gray-700/50 border-transparent hover:border-gray-600'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="hostRole2"
+                          value="manage"
+                          checked={hostRole === 'manage'}
+                          onChange={() => setHostRole('manage')}
+                          className="mt-1 w-4 h-4 text-purple-600 focus:ring-purple-500"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <IoPeopleOutline className="w-5 h-5 text-purple-500" />
+                            <span className="font-medium text-white text-sm lg:text-base">Manage other people&apos;s cars</span>
+                          </div>
+                          <p className="text-xs lg:text-sm text-gray-400 mt-1">
+                            I&apos;m a fleet manager - I&apos;ll manage vehicles for other owners
+                          </p>
+                        </div>
+                      </label>
+
+                      {/* Option: Both */}
+                      <label
+                        className={`flex items-start gap-3 p-3 lg:p-4 rounded-lg cursor-pointer transition border-2 ${
+                          hostRole === 'both'
+                            ? 'bg-indigo-900/30 border-indigo-500'
+                            : 'bg-gray-700/50 border-transparent hover:border-gray-600'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="hostRole2"
+                          value="both"
+                          checked={hostRole === 'both'}
+                          onChange={() => setHostRole('both')}
+                          className="mt-1 w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <IoLayersOutline className="w-5 h-5 text-indigo-500" />
+                            <span className="font-medium text-white text-sm lg:text-base">Both - I want to do it all</span>
+                          </div>
+                          <p className="text-xs lg:text-sm text-gray-400 mt-1">
+                            I&apos;ll rent my own vehicles AND manage for other owners
+                          </p>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Right Column: Vehicle Information OR Placeholder */}
+                  <div>
+                    {/* Vehicle Details - only shown for hosts who own cars */}
+                    {hostRole !== 'manage' && hostRole !== '' && (
+                      <>
+                        <h2 className="text-lg font-bold text-white mb-1 text-center">Vehicle Details</h2>
+                        <p className="text-gray-400 text-sm mb-4 text-center">Add your first vehicle to start earning</p>
+
+                        <CarInformationForm
+                          carData={carData}
+                          onCarDataChange={(data) => setCarData({ ...carData, ...data })}
+                          onValidationChange={setIsCarValid}
+                          showLocationFields={true}
+                          className=""
+                        />
+                      </>
+                    )}
+
+                    {/* Placeholder when no role selected */}
+                    {hostRole === '' && (
+                      <div className="h-full flex items-center justify-center border-2 border-dashed border-gray-700 rounded-lg p-8">
+                        <p className="text-gray-500 text-center">
+                          Select how you plan to use ItWhip to continue
                         </p>
                       </div>
-                    </label>
+                    )}
 
-                    {/* Option: Manage other people's cars */}
-                    <label
-                      className={`flex items-start gap-4 p-4 rounded-lg cursor-pointer transition border-2 ${
-                        hostRole === 'manage'
-                          ? 'bg-purple-900/30 border-purple-500'
-                          : 'bg-gray-700/50 border-transparent hover:border-gray-600'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="hostRole2"
-                        value="manage"
-                        checked={hostRole === 'manage'}
-                        onChange={() => setHostRole('manage')}
-                        className="mt-1 w-4 h-4 text-purple-600 focus:ring-purple-500"
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <IoPeopleOutline className="w-5 h-5 text-purple-500" />
-                          <span className="font-medium text-white">Manage other people's cars</span>
-                        </div>
-                        <p className="text-sm text-gray-400 mt-1">
-                          I'm a fleet manager - I'll manage vehicles for other owners and earn commission
-                        </p>
-                      </div>
-                    </label>
+                    {/* Fleet Manager Info - shown in right column when manage is selected */}
+                    {hostRole === 'manage' && (
+                      <div className="flex flex-col">
+                        {/* Header spacing to align with left column */}
+                        <h2 className="text-lg font-bold text-white mb-1 text-center">Fleet Manager</h2>
+                        <p className="text-gray-400 text-sm mb-4 text-center">Your fleet management profile</p>
 
-                    {/* Option: Both */}
-                    <label
-                      className={`flex items-start gap-4 p-4 rounded-lg cursor-pointer transition border-2 ${
-                        hostRole === 'both'
-                          ? 'bg-indigo-900/30 border-indigo-500'
-                          : 'bg-gray-700/50 border-transparent hover:border-gray-600'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="hostRole2"
-                        value="both"
-                        checked={hostRole === 'both'}
-                        onChange={() => setHostRole('both')}
-                        className="mt-1 w-4 h-4 text-indigo-600 focus:ring-indigo-500"
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <IoLayersOutline className="w-5 h-5 text-indigo-500" />
-                          <span className="font-medium text-white">Both - I want to do it all</span>
+                        <div className="p-4 lg:p-5 bg-purple-900/30 border border-purple-700 rounded-lg">
+                          <div className="flex items-start gap-3">
+                            <IoPeopleOutline className="w-6 h-6 text-purple-400 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <h3 className="font-medium text-white mb-2">Fleet Manager Account</h3>
+                              <p className="text-sm text-gray-400">
+                                After approval, you&apos;ll get your own profile page to showcase your fleet management services.
+                                You can invite car owners to have you manage their vehicles, or they can invite you to manage their listings.{' '}
+                                <Link href="/how-it-works" className="text-purple-400 hover:text-purple-300">
+                                  Learn more →
+                                </Link>
+                              </p>
+                            </div>
+                          </div>
                         </div>
-                        <p className="text-sm text-gray-400 mt-1">
-                          I'll rent my own vehicles AND manage vehicles for other owners
-                        </p>
                       </div>
-                    </label>
+                    )}
                   </div>
                 </div>
-
-                <div className="text-center mb-4">
-                  <h2 className="text-lg font-bold text-white mb-2">Vehicle Information</h2>
-                  <p className="text-gray-400 text-sm">Add your first vehicle to start earning on ItWhip</p>
-                </div>
-
-                <CarInformationForm
-                  carData={carData}
-                  onCarDataChange={(data) => setCarData({ ...carData, ...data })}
-                  onValidationChange={setIsCarValid}
-                  showLocationFields={true}
-                  className="mb-6"
-                />
 
                 {/* Error Message */}
                 {error && (
@@ -1254,11 +1402,21 @@ function CompleteProfileContent() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setCurrentStep(3)}
-                    disabled={!isStep2Valid()}
+                    onClick={hostRole === 'manage' ? handleSubmit : () => setCurrentStep(3)}
+                    disabled={!isStep2Valid() || (hostRole === 'manage' && isLoading)}
                     className="flex-1 py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Continue to Photos
+                    {hostRole === 'manage' ? (
+                      isLoading ? (
+                        <span className="flex items-center justify-center">
+                          <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Creating Fleet Manager Account...
+                        </span>
+                      ) : 'Complete Signup'
+                    ) : 'Continue to Photos'}
                   </button>
                 </div>
               </div>
