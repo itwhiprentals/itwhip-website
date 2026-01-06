@@ -45,11 +45,8 @@ function getBaseUrl(): string {
   if (process.env.NEXT_PUBLIC_BASE_URL) {
     return process.env.NEXT_PUBLIC_BASE_URL
   }
-  // Vercel production URL
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`
-  }
-  // Production domain fallback
+  // IMPORTANT: In production, ALWAYS use the production domain
+  // Do NOT use VERCEL_URL as it returns preview deployment URLs
   if (process.env.NODE_ENV === 'production') {
     return 'https://itwhip.com'
   }
