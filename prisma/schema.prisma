@@ -643,6 +643,8 @@ model RentalHost {
   stripePayoutsEnabled    Boolean   @default(false)
   stripeChargesEnabled    Boolean   @default(false)
   stripeDetailsSubmitted  Boolean   @default(false)
+  stripeRequirements      Json?     // Stores currently_due requirements from Stripe
+  stripeDisabledReason    String?   // e.g. "requirements.past_due"
   stripeOnboardingLink    String?
   stripeTosAcceptanceDate DateTime?
   stripeTosAcceptanceIp   String?

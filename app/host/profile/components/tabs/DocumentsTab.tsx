@@ -27,12 +27,41 @@ interface HostProfile {
   stripeDetailsSubmitted?: boolean
   stripePayoutsEnabled?: boolean
   stripeChargesEnabled?: boolean
+  stripeRequirements?: string[] | null  // Pending requirements from Stripe
+  stripeDisabledReason?: string | null  // Why account is disabled
   // Legacy document fields
   documentStatuses?: {
     governmentId?: 'pending' | 'approved' | 'rejected'
     driversLicense?: 'pending' | 'approved' | 'rejected'
     insurance?: 'pending' | 'approved' | 'rejected'
   }
+}
+
+// Map Stripe requirement codes to user-friendly messages
+function getRequirementMessage(requirement: string): string {
+  const messages: Record<string, string> = {
+    'individual.id_number': 'Full Social Security Number (SSN)',
+    'individual.ssn_last_4': 'Last 4 digits of SSN',
+    'individual.verification.document': 'Government-issued ID photo',
+    'individual.verification.additional_document': 'Additional ID document',
+    'individual.dob.day': 'Date of birth',
+    'individual.dob.month': 'Date of birth',
+    'individual.dob.year': 'Date of birth',
+    'individual.address.line1': 'Street address',
+    'individual.address.city': 'City',
+    'individual.address.state': 'State',
+    'individual.address.postal_code': 'ZIP code',
+    'individual.phone': 'Phone number',
+    'individual.email': 'Email address',
+    'individual.first_name': 'First name',
+    'individual.last_name': 'Last name',
+    'external_account': 'Bank account information',
+    'tos_acceptance.date': 'Terms of Service acceptance',
+    'tos_acceptance.ip': 'Terms of Service acceptance',
+  }
+
+  // Return mapped message or clean up the requirement code
+  return messages[requirement] || requirement.replace(/^individual\./, '').replace(/[._]/g, ' ')
 }
 
 interface DocumentsTabProps {
@@ -189,13 +218,30 @@ export default function DocumentsTab({
         <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
           <div className="flex items-start">
             <IoWarningOutline className="w-5 h-5 text-yellow-600 dark:text-yellow-500 mr-3 flex-shrink-0 mt-0.5" />
-            <div>
+            <div className="flex-1">
               <p className="text-sm font-medium text-yellow-900 dark:text-yellow-200">
                 Verification Incomplete
               </p>
-              <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
-                Complete your identity verification to unlock all features.
-              </p>
+              {profile.stripeRequirements && profile.stripeRequirements.length > 0 ? (
+                <div className="mt-2">
+                  <p className="text-xs text-yellow-700 dark:text-yellow-300 mb-2">
+                    To complete verification, please provide:
+                  </p>
+                  <ul className="text-xs text-yellow-800 dark:text-yellow-200 space-y-1">
+                    {/* Dedupe requirements (e.g., multiple dob fields) */}
+                    {[...new Set(profile.stripeRequirements.map(r => getRequirementMessage(r)))].map((msg, idx) => (
+                      <li key={idx} className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 bg-yellow-500 rounded-full flex-shrink-0" />
+                        {msg}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
+                  Complete your identity verification to unlock all features.
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -283,17 +329,33 @@ export default function DocumentsTab({
             </div>
           ) : stripePending ? (
             <div className="space-y-4">
-              <div className="flex items-center gap-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                <div className="p-3 bg-yellow-100 dark:bg-yellow-800 rounded-full">
+              <div className="flex items-start gap-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                <div className="p-3 bg-yellow-100 dark:bg-yellow-800 rounded-full flex-shrink-0">
                   <IoWarningOutline className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
                 </div>
                 <div className="flex-1">
                   <p className="font-medium text-yellow-900 dark:text-yellow-100">
-                    Verification In Progress
+                    Action Required
                   </p>
-                  <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                    Complete the remaining steps to finish verification.
-                  </p>
+                  {profile.stripeRequirements && profile.stripeRequirements.length > 0 ? (
+                    <div className="mt-2">
+                      <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-2">
+                        Please provide the following to complete verification:
+                      </p>
+                      <ul className="text-sm text-yellow-800 dark:text-yellow-200 space-y-1.5">
+                        {[...new Set(profile.stripeRequirements.map(r => getRequirementMessage(r)))].map((msg, idx) => (
+                          <li key={idx} className="flex items-center gap-2">
+                            <span className="w-2 h-2 bg-yellow-500 rounded-full flex-shrink-0" />
+                            {msg}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                      Complete the remaining steps to finish verification.
+                    </p>
+                  )}
                 </div>
               </div>
 

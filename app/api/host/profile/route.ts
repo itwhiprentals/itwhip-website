@@ -214,7 +214,9 @@ export async function GET(request: NextRequest) {
       stripeAccountStatus: host.stripeAccountStatus,
       stripeDetailsSubmitted: host.stripeDetailsSubmitted,
       stripePayoutsEnabled: host.stripePayoutsEnabled,
-      stripeChargesEnabled: host.stripeChargesEnabled
+      stripeChargesEnabled: host.stripeChargesEnabled,
+      stripeRequirements: host.stripeRequirements,
+      stripeDisabledReason: host.stripeDisabledReason
     }
 
     return NextResponse.json({ profile })

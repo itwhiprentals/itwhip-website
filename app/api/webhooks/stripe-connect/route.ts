@@ -47,7 +47,10 @@ export async function POST(request: NextRequest) {
         break
 
       case 'account.application.deauthorized':
-        await handleAccountDeauthorized(event.data.object as Stripe.Account)
+        // For deauthorized events, the account ID is in event.account, not data.object
+        if (event.account) {
+          await handleAccountDeauthorized(event.account)
+        }
         break
 
       default:
@@ -92,11 +95,20 @@ async function handleAccountUpdated(account: Stripe.Account) {
   console.log(`   Current approval status: ${host.approvalStatus}`)
 
   // Update Stripe-related fields always
+  const requirements = account.requirements?.currently_due || []
+  const disabledReason = account.requirements?.disabled_reason || null
+
+  console.log(`   Requirements currently_due: ${JSON.stringify(requirements)}`)
+  console.log(`   Disabled reason: ${disabledReason}`)
+
   const updateData: any = {
     stripeDetailsSubmitted: account.details_submitted || false,
     stripePayoutsEnabled: account.payouts_enabled || false,
     stripeChargesEnabled: account.charges_enabled || false,
     stripeAccountStatus: account.charges_enabled ? 'complete' : 'pending',
+    // Store pending requirements so we can show user what's needed
+    stripeRequirements: requirements.length > 0 ? requirements : null,
+    stripeDisabledReason: disabledReason,
   }
 
   // AUTO-APPROVE: When Stripe verification is complete
@@ -142,16 +154,16 @@ async function handleAccountUpdated(account: Stripe.Account) {
 /**
  * Handle account deauthorization (user disconnected their Stripe account)
  */
-async function handleAccountDeauthorized(account: Stripe.Account) {
-  console.log(`📥 account.application.deauthorized for ${account.id}`)
+async function handleAccountDeauthorized(accountId: string) {
+  console.log(`📥 account.application.deauthorized for ${accountId}`)
 
   const host = await prisma.rentalHost.findFirst({
-    where: { stripeConnectAccountId: account.id },
+    where: { stripeConnectAccountId: accountId },
     select: { id: true, email: true }
   })
 
   if (!host) {
-    console.log(`⚠️ No host found for deauthorized account ${account.id}`)
+    console.log(`⚠️ No host found for deauthorized account ${accountId}`)
     return
   }
 
@@ -164,6 +176,8 @@ async function handleAccountDeauthorized(account: Stripe.Account) {
       stripeDetailsSubmitted: false,
       stripePayoutsEnabled: false,
       stripeChargesEnabled: false,
+      stripeRequirements: null,
+      stripeDisabledReason: null,
       payoutsEnabled: false,
     }
   })
