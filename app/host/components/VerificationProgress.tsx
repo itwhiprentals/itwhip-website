@@ -109,8 +109,8 @@ function getCardStyles(status: VerificationStep['status']) {
       }
     case 'IN_PROGRESS':
       return {
-        container: 'border-l-4 border-l-blue-500 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40',
-        iconBg: 'bg-blue-100 dark:bg-blue-900/50',
+        container: 'border-l-4 border-l-blue-500 bg-blue-50 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700',
+        iconBg: 'bg-blue-100 dark:bg-blue-800/50',
         iconColor: 'text-blue-600 dark:text-blue-400',
         textMuted: false
       }
@@ -123,9 +123,9 @@ function getCardStyles(status: VerificationStep['status']) {
       }
     default: // NOT_STARTED
       return {
-        container: 'border-l-4 border-l-gray-300 dark:border-l-gray-600 bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700',
-        iconBg: 'bg-gray-100 dark:bg-gray-700',
-        iconColor: 'text-gray-500 dark:text-gray-400',
+        container: 'border-l-4 border-l-purple-400 dark:border-l-purple-500 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600',
+        iconBg: 'bg-purple-50 dark:bg-purple-900/30',
+        iconColor: 'text-purple-600 dark:text-purple-400',
         textMuted: false
       }
   }
@@ -454,7 +454,7 @@ export default function VerificationProgress({
         title: 'Connect Bank Account',
         description: isHostApproved
           ? 'Add your payout method to receive earnings'
-          : 'Available after identity verification',
+          : 'Available after verification',
         status: isHostApproved ? 'NOT_STARTED' : 'LOCKED',
         icon: IoCardOutline,
         actionUrl: isHostApproved ? '/host/profile?tab=banking' : undefined,

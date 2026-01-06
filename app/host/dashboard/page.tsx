@@ -742,17 +742,17 @@ function HostDashboardContent() {
 
             {/* Stats Grid */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 mb-8">
-              <Link href="/host/earnings" className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-3 sm:p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-purple-300 dark:hover:border-purple-700 transition-all cursor-pointer">
+              <Link href="/host/earnings" className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-3 sm:p-4 border border-gray-300 dark:border-gray-600 hover:shadow-md hover:border-purple-400 dark:hover:border-purple-600 transition-all cursor-pointer">
                 <div className="flex items-center justify-between">
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
+                    <p className="text-xs font-medium text-gray-600 dark:text-gray-400 truncate">
                       {hostData?.managesOwnCars === false ? 'Commission' : 'Earnings'}
                     </p>
                     <p className="text-xl sm:text-2xl font-bold mt-1 text-gray-900 dark:text-white">
                       ${hostData?.stats.totalEarnings?.toLocaleString() || '0'}
                     </p>
                   </div>
-                  <IoWalletOutline className="w-6 h-6 sm:w-8 sm:h-8 text-green-500 opacity-60 flex-shrink-0 ml-2" />
+                  <IoWalletOutline className="w-6 h-6 sm:w-8 sm:h-8 text-green-500 flex-shrink-0 ml-2" />
                 </div>
               </Link>
               
@@ -767,67 +767,67 @@ function HostDashboardContent() {
                   </div>
                 </div>
               ) : (
-                <Link href="/host/bookings" className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-3 sm:p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-purple-300 dark:hover:border-purple-700 transition-all cursor-pointer">
+                <Link href="/host/bookings" className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-3 sm:p-4 border border-gray-300 dark:border-gray-600 hover:shadow-md hover:border-purple-400 dark:hover:border-purple-600 transition-all cursor-pointer">
                   <div className="flex items-center justify-between">
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs text-gray-600 dark:text-gray-400 truncate">Total Trips</p>
+                      <p className="text-xs font-medium text-gray-600 dark:text-gray-400 truncate">Total Trips</p>
                       <p className="text-xl sm:text-2xl font-bold mt-1 text-gray-900 dark:text-white">
                         {hostData?.stats.totalTrips || 0}
                       </p>
                     </div>
-                    <IoStatsChartOutline className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500 opacity-60 flex-shrink-0 ml-2" />
+                    <IoStatsChartOutline className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500 flex-shrink-0 ml-2" />
                   </div>
                 </Link>
               )}
-              
-              <Link href="/host/reviews" className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-3 sm:p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-purple-300 dark:hover:border-purple-700 transition-all cursor-pointer">
+
+              <Link href="/host/reviews" className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-3 sm:p-4 border border-gray-300 dark:border-gray-600 hover:shadow-md hover:border-purple-400 dark:hover:border-purple-600 transition-all cursor-pointer">
                 <div className="flex items-center justify-between">
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs text-gray-600 dark:text-gray-400 truncate">Rating</p>
+                    <p className="text-xs font-medium text-gray-600 dark:text-gray-400 truncate">Rating</p>
                     <p className="text-xl sm:text-2xl font-bold mt-1 text-gray-900 dark:text-white">
                       {hostData?.stats.rating?.toFixed(1) || 'N/A'}
                     </p>
                   </div>
-                  <IoStarOutline className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-500 opacity-60 flex-shrink-0 ml-2" />
+                  <IoStarOutline className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-500 flex-shrink-0 ml-2" />
                 </div>
               </Link>
-              
-              <Link href="/host/cars" className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-3 sm:p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-purple-300 dark:hover:border-purple-700 transition-all cursor-pointer">
+
+              <Link href="/host/cars" className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-3 sm:p-4 border border-gray-300 dark:border-gray-600 hover:shadow-md hover:border-purple-400 dark:hover:border-purple-600 transition-all cursor-pointer">
                 <div className="flex items-center justify-between">
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs text-gray-600 dark:text-gray-400 truncate">Active Cars</p>
+                    <p className="text-xs font-medium text-gray-600 dark:text-gray-400 truncate">Active Cars</p>
                     <p className="text-xl sm:text-2xl font-bold mt-1 text-gray-900 dark:text-white">
                       {hostData?.stats.activeCars || 0}
                     </p>
                   </div>
-                  <IoCarOutline className="w-6 h-6 sm:w-8 sm:h-8 text-purple-500 opacity-60 flex-shrink-0 ml-2" />
+                  <IoCarOutline className="w-6 h-6 sm:w-8 sm:h-8 text-purple-500 flex-shrink-0 ml-2" />
                 </div>
               </Link>
 
-              <Link href="/host/claims" className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-3 sm:p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-purple-300 dark:hover:border-purple-700 transition-all cursor-pointer relative">
+              <Link href="/host/claims" className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-3 sm:p-4 border border-gray-300 dark:border-gray-600 hover:shadow-md hover:border-purple-400 dark:hover:border-purple-600 transition-all cursor-pointer relative">
                 <div className="flex items-center justify-between">
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs text-gray-600 dark:text-gray-400 truncate">Claims</p>
+                    <p className="text-xs font-medium text-gray-600 dark:text-gray-400 truncate">Claims</p>
                     <p className="text-xl sm:text-2xl font-bold mt-1 text-gray-900 dark:text-white">
                       {hostData?.stats.pendingClaims || 0}
                     </p>
                   </div>
-                  <IoShieldCheckmarkOutline className="w-6 h-6 sm:w-8 sm:h-8 text-orange-500 opacity-60 flex-shrink-0 ml-2" />
+                  <IoShieldCheckmarkOutline className="w-6 h-6 sm:w-8 sm:h-8 text-orange-500 flex-shrink-0 ml-2" />
                 </div>
                 {(hostData?.stats.pendingClaims || 0) > 0 && (
                   <div className="absolute top-2 right-2 w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
                 )}
               </Link>
 
-              <Link href="/host/messages" className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-3 sm:p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-purple-300 dark:hover:border-purple-700 transition-all cursor-pointer relative">
+              <Link href="/host/messages" className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-3 sm:p-4 border border-gray-300 dark:border-gray-600 hover:shadow-md hover:border-purple-400 dark:hover:border-purple-600 transition-all cursor-pointer relative">
                 <div className="flex items-center justify-between">
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs text-gray-600 dark:text-gray-400 truncate">Messages</p>
+                    <p className="text-xs font-medium text-gray-600 dark:text-gray-400 truncate">Messages</p>
                     <p className="text-xl sm:text-2xl font-bold mt-1 text-gray-900 dark:text-white">
                       {hostData?.stats.unreadMessages || 0}
                     </p>
                   </div>
-                  <IoChatbubbleOutline className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500 opacity-60 flex-shrink-0 ml-2" />
+                  <IoChatbubbleOutline className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500 flex-shrink-0 ml-2" />
                 </div>
                 {(hostData?.stats.unreadMessages || 0) > 0 && (
                   <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></div>
