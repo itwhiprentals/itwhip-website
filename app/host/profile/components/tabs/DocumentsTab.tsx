@@ -40,13 +40,15 @@ interface DocumentsTabProps {
   isApproved: boolean
   isSuspended: boolean
   onDocumentUpdate: () => void
+  managesOwnCars?: boolean
 }
 
 export default function DocumentsTab({
   profile,
   isApproved,
   isSuspended,
-  onDocumentUpdate
+  onDocumentUpdate,
+  managesOwnCars
 }: DocumentsTabProps) {
   const [loading, setLoading] = useState(false)
   const [insuranceUrl, setInsuranceUrl] = useState<string | null>(null)
@@ -372,109 +374,111 @@ export default function DocumentsTab({
         </div>
       </div>
 
-      {/* Insurance Certificate Section */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-start justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <IoDocumentTextOutline className="w-5 h-5 text-blue-600" />
-                Insurance Certificate
-                <span className="ml-2 text-xs font-normal bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded-full">
-                  Optional
-                </span>
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                Required for 90% earnings tier
-              </p>
-            </div>
-            {insuranceStatus === 'APPROVED' && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium rounded-full">
-                <IoCheckmarkCircleOutline className="w-3.5 h-3.5" />
-                Verified
-              </span>
-            )}
-          </div>
-        </div>
-
-        <div className="p-4 sm:p-6">
-          {isSuspended ? (
-            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-              <IoLockClosedOutline className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p>Uploads disabled during suspension</p>
-            </div>
-          ) : insuranceUrl ? (
-            <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-              <div className="w-16 h-16 bg-white dark:bg-gray-600 rounded-lg flex items-center justify-center">
-                <IoDocumentTextOutline className="w-8 h-8 text-gray-400" />
-              </div>
-              <div className="flex-1">
-                <p className="font-medium text-gray-900 dark:text-white">Insurance Document</p>
-                <p className={`text-sm ${
-                  insuranceStatus === 'APPROVED'
-                    ? 'text-green-600 dark:text-green-400'
-                    : insuranceStatus === 'REJECTED'
-                    ? 'text-red-600 dark:text-red-400'
-                    : 'text-yellow-600 dark:text-yellow-400'
-                }`}>
-                  {insuranceStatus === 'APPROVED' ? 'Verified' : insuranceStatus === 'REJECTED' ? 'Rejected' : 'Under Review'}
+      {/* Insurance Certificate Section - Hidden for Fleet Managers who don't own cars */}
+      {managesOwnCars !== false && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                  <IoDocumentTextOutline className="w-5 h-5 text-blue-600" />
+                  Insurance Certificate
+                  <span className="ml-2 text-xs font-normal bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded-full">
+                    Optional
+                  </span>
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  Required for 90% earnings tier
                 </p>
               </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setPreviewUrl(insuranceUrl)}
-                  className="p-2 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded-lg transition-colors"
-                  title="View document"
-                >
-                  <IoEyeOutline className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-                </button>
-                {insuranceStatus !== 'APPROVED' && (
-                  <button
-                    onClick={() => insuranceInputRef.current?.click()}
-                    className="p-2 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 rounded-lg transition-colors"
-                    title="Replace document"
-                  >
-                    <IoRefreshOutline className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                  </button>
-                )}
-              </div>
+              {insuranceStatus === 'APPROVED' && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium rounded-full">
+                  <IoCheckmarkCircleOutline className="w-3.5 h-3.5" />
+                  Verified
+                </span>
+              )}
             </div>
-          ) : (
-            <button
-              onClick={() => insuranceInputRef.current?.click()}
-              disabled={uploadingInsurance}
-              className="w-full p-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
-            >
-              <div className="flex flex-col items-center gap-3 text-gray-500 dark:text-gray-400">
-                {uploadingInsurance ? (
-                  <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <IoCloudUploadOutline className="w-10 h-10" />
-                )}
-                <div className="text-center">
-                  <span className="text-sm font-medium block">
-                    {uploadingInsurance ? 'Uploading...' : 'Upload Insurance Certificate'}
-                  </span>
-                  <span className="text-xs mt-1 block">
-                    JPG, PNG, or PDF up to 10MB
-                  </span>
+          </div>
+
+          <div className="p-4 sm:p-6">
+            {isSuspended ? (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                <IoLockClosedOutline className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>Uploads disabled during suspension</p>
+              </div>
+            ) : insuranceUrl ? (
+              <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <div className="w-16 h-16 bg-white dark:bg-gray-600 rounded-lg flex items-center justify-center">
+                  <IoDocumentTextOutline className="w-8 h-8 text-gray-400" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-gray-900 dark:text-white">Insurance Document</p>
+                  <p className={`text-sm ${
+                    insuranceStatus === 'APPROVED'
+                      ? 'text-green-600 dark:text-green-400'
+                      : insuranceStatus === 'REJECTED'
+                      ? 'text-red-600 dark:text-red-400'
+                      : 'text-yellow-600 dark:text-yellow-400'
+                  }`}>
+                    {insuranceStatus === 'APPROVED' ? 'Verified' : insuranceStatus === 'REJECTED' ? 'Rejected' : 'Under Review'}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setPreviewUrl(insuranceUrl)}
+                    className="p-2 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded-lg transition-colors"
+                    title="View document"
+                  >
+                    <IoEyeOutline className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                  </button>
+                  {insuranceStatus !== 'APPROVED' && (
+                    <button
+                      onClick={() => insuranceInputRef.current?.click()}
+                      className="p-2 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 rounded-lg transition-colors"
+                      title="Replace document"
+                    >
+                      <IoRefreshOutline className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    </button>
+                  )}
                 </div>
               </div>
-            </button>
-          )}
+            ) : (
+              <button
+                onClick={() => insuranceInputRef.current?.click()}
+                disabled={uploadingInsurance}
+                className="w-full p-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
+              >
+                <div className="flex flex-col items-center gap-3 text-gray-500 dark:text-gray-400">
+                  {uploadingInsurance ? (
+                    <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <IoCloudUploadOutline className="w-10 h-10" />
+                  )}
+                  <div className="text-center">
+                    <span className="text-sm font-medium block">
+                      {uploadingInsurance ? 'Uploading...' : 'Upload Insurance Certificate'}
+                    </span>
+                    <span className="text-xs mt-1 block">
+                      JPG, PNG, or PDF up to 10MB
+                    </span>
+                  </div>
+                </div>
+              </button>
+            )}
 
-          <input
-            ref={insuranceInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/jpg,application/pdf"
-            onChange={(e) => {
-              const file = e.target.files?.[0]
-              if (file) handleInsuranceUpload(file)
-            }}
-            className="hidden"
-          />
+            <input
+              ref={insuranceInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/jpg,application/pdf"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) handleInsuranceUpload(file)
+              }}
+              className="hidden"
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Preview Modal */}
       {previewUrl && (

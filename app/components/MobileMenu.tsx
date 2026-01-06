@@ -157,12 +157,18 @@ export default function MobileMenu({
 }: MobileMenuProps) {
   const pathname = usePathname()
   const [expandedSection, setExpandedSection] = useState<string | null>(null)
+  const [profileImageError, setProfileImageError] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const previousFocusRef = useRef<HTMLElement | null>(null)
 
   // Determine user type
   const isAdmin = user?.role === 'ADMIN'
   const isGuest = isLoggedIn && user && !isAdmin && !isHost
+
+  // Reset profile image error when user changes
+  useEffect(() => {
+    setProfileImageError(false)
+  }, [user?.profilePhoto])
   
   // Check if we're on guest pages
   const isGuestPage = pathname?.startsWith('/dashboard') || 
@@ -312,18 +318,19 @@ export default function MobileMenu({
             <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950 border-b border-gray-200 dark:border-gray-800">
               <div className="flex items-center space-x-3 mb-4">
                 {/* Profile Photo or Initial */}
-                {user.profilePhoto ? (
-                  <img 
-                    src={user.profilePhoto} 
-                    alt={user.name || 'Profile'} 
+                {user.profilePhoto && !profileImageError ? (
+                  <img
+                    src={user.profilePhoto}
+                    alt={user.name || 'Profile'}
                     className="w-12 h-12 rounded-full object-cover border-2 border-green-500 shadow-lg"
+                    onError={() => setProfileImageError(true)}
                   />
                 ) : (
                   <div className={`
-                    w-12 h-12 rounded-full flex items-center justify-center 
+                    w-12 h-12 rounded-full flex items-center justify-center
                     text-white font-medium text-lg shadow-lg border-2 border-green-500
-                    ${isAdmin 
-                      ? 'bg-gradient-to-br from-red-500 to-red-600' 
+                    ${isAdmin
+                      ? 'bg-gradient-to-br from-red-500 to-red-600'
                       : isHost
                       ? 'bg-gradient-to-br from-purple-500 to-purple-600'
                       : 'bg-gradient-to-br from-green-500 to-blue-600'}

@@ -128,6 +128,7 @@ function HeaderInner({
   const [scrolled, setScrolled] = useState(false)
   const [showProfileModal, setShowProfileModal] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [profileImageError, setProfileImageError] = useState(false)
 
   // Check if we're on specific pages
   const isHostPage = pathname?.startsWith('/host/')
@@ -274,6 +275,11 @@ function HeaderInner({
 
   // Get profile photo - prioritize profilePhoto over avatar
   const profilePhotoUrl = user?.profilePhoto || user?.avatar
+
+  // Reset image error state when user or photo URL changes
+  useEffect(() => {
+    setProfileImageError(false)
+  }, [profilePhotoUrl])
 
   return (
     <>
@@ -465,11 +471,12 @@ function HeaderInner({
                       aria-label="Go to profile"
                     >
                       <div className="relative">
-                        {profilePhotoUrl ? (
+                        {profilePhotoUrl && !profileImageError ? (
                           <img
                             src={profilePhotoUrl}
                             alt={user.name || 'Profile'}
                             className="w-7 h-7 rounded-full object-cover border-2 border-green-500 shadow-sm"
+                            onError={() => setProfileImageError(true)}
                           />
                         ) : (
                           <div className={`w-7 h-7 ${

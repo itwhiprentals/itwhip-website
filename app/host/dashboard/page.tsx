@@ -641,8 +641,9 @@ function HostDashboardContent() {
                 {!isApproved ? 'Your host dashboard (limited access)' : 'Manage your car rental business'}
               </p>
               
-              {isApproved && incompleteCars.length === 0 && (
-                <Link 
+              {/* Add New Car button - Only for hosts who own their cars */}
+              {isApproved && incompleteCars.length === 0 && hostData?.managesOwnCars !== false && (
+                <Link
                   href="/host/cars/add"
                   className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors"
                 >
@@ -849,17 +850,10 @@ function HostDashboardContent() {
               </div>
             )}
 
-            {/* ESG DASHBOARD CARD */}
-            {isApproved && hostData && (
+            {/* ESG DASHBOARD CARD - Only for hosts who own their cars (not Fleet Managers) */}
+            {isApproved && hostData && hostData.managesOwnCars !== false && (
               <div className="mb-8">
                 <ESGDashboardCard hostId={hostData.id} />
-              </div>
-            )}
-
-            {/* SERVICE METRICS DASHBOARD CARD */}
-            {isApproved && hostData && (
-              <div className="mb-8">
-                <ServiceMetricsDashboardCard hostId={hostData.id} />
               </div>
             )}
 
@@ -937,23 +931,9 @@ function HostDashboardContent() {
             {/* Fleet Manager / Partner Section - Only shows for hosts who manage others' cars */}
             {isApproved && hostData?.isHostManager && (
               <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-lg shadow-sm border border-purple-200 dark:border-purple-700 p-4 sm:p-6 mb-8">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-purple-100 dark:bg-purple-800/50 rounded-lg flex items-center justify-center">
-                      <IoBusinessOutline className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                    </div>
-                    <div>
-                      <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Fleet Management</h2>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Manage vehicles for other owners</p>
-                    </div>
-                  </div>
-                  <Link
-                    href="/partner/dashboard"
-                    className="text-sm text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1"
-                  >
-                    View Full Dashboard
-                    <IoChevronForwardOutline className="w-4 h-4" />
-                  </Link>
+                <div className="flex flex-col items-center justify-center mb-4">
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Fleet Management</h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Manage vehicles for other owners</p>
                 </div>
 
                 {/* Stats Row */}
@@ -1003,7 +983,7 @@ function HostDashboardContent() {
                     className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-white dark:bg-gray-800 border border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-400 font-medium rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors"
                   >
                     <IoBusinessOutline className="w-5 h-5" />
-                    Partner Dashboard
+                    View Full Dashboard
                     <IoChevronForwardOutline className="w-4 h-4" />
                   </Link>
                 </div>
@@ -1012,6 +992,14 @@ function HostDashboardContent() {
                 <p className="mt-4 text-xs text-gray-500 dark:text-gray-400 text-center">
                   As a Fleet Manager, you can manage vehicles for other owners and earn commission on their bookings.
                 </p>
+              </div>
+            )}
+
+            {/* SERVICE METRICS / FLEET MAINTENANCE STATUS - Shows for all approved hosts */}
+            {/* Useful for Fleet Managers to see maintenance issues on cars they manage */}
+            {isApproved && hostData && (
+              <div className="mb-8">
+                <ServiceMetricsDashboardCard hostId={hostData.id} />
               </div>
             )}
 

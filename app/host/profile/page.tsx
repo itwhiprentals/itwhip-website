@@ -574,6 +574,7 @@ function HostProfileContent() {
                 isApproved={isApproved}
                 isSuspended={isSuspended}
                 onDocumentUpdate={fetchProfile}
+                managesOwnCars={managesOwnCars ?? undefined}
               />
             )}
 
