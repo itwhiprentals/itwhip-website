@@ -397,7 +397,7 @@ export default function VerificationProgress({
         title: 'Complete Your Profile',
         description: hasPhotoIdUploaded
           ? 'Add your bio, profile photo, and basic information'
-          : 'Add your bio, profile photo, and upload Photo ID',
+          : 'Add your bio and profile photo',
         status: isProfileComplete ? 'COMPLETED' : 'IN_PROGRESS',
         icon: IoPersonOutline,
         actionUrl: !isProfileComplete ? '/host/profile?tab=profile' : undefined,
@@ -408,18 +408,18 @@ export default function VerificationProgress({
       const docsStatus = determinePhotoIdStatus()
       verificationSteps.push({
         id: 'documents',
-        title: 'Upload Required Documents',
+        title: 'Verify Your Identity',
         description: docsStatus === 'COMPLETED'
-          ? 'Photo ID verified'
+          ? 'Identity verified'
           : docsStatus === 'FAILED'
-          ? 'Photo ID rejected - please re-upload'
+          ? 'Verification failed - please re-upload'
           : docsStatus === 'PENDING_REVIEW'
-          ? 'Photo ID under review'
-          : 'Upload front and back of your Photo ID',
+          ? 'Identity verification in progress'
+          : 'Upload Photo ID to verify your identity',
         status: docsStatus,
         icon: IoDocumentTextOutline,
         actionUrl: docsStatus !== 'COMPLETED' ? '/host/profile?tab=documents' : undefined,
-        actionLabel: docsStatus === 'FAILED' ? 'Re-upload Documents' : 'Upload Documents',
+        actionLabel: docsStatus === 'FAILED' ? 'Re-upload ID' : 'Verify Identity',
         estimatedTime: '5 min',
         priority: 'HIGH'
       })
@@ -454,7 +454,7 @@ export default function VerificationProgress({
         title: 'Connect Bank Account',
         description: isHostApproved
           ? 'Add your payout method to receive earnings'
-          : 'Available after account approval',
+          : 'Available after identity verification',
         status: isHostApproved ? 'NOT_STARTED' : 'LOCKED',
         icon: IoCardOutline,
         actionUrl: isHostApproved ? '/host/profile?tab=banking' : undefined,
