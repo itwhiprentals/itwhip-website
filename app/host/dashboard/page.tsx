@@ -865,7 +865,6 @@ function HostDashboardContent() {
                   <div className="flex items-center gap-2 mb-4">
                     <IoLockClosedOutline className="w-5 h-5 text-gray-400" />
                     <h2 className="text-lg sm:text-xl font-bold text-gray-400">My Vehicles</h2>
-                    <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 px-2 py-0.5 rounded">Optional</span>
                   </div>
                   <div className="text-center py-8 bg-gray-50 dark:bg-gray-700/30 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-600">
                     <IoCarOutline className="mx-auto w-12 h-12 text-gray-300 dark:text-gray-600" />
@@ -1060,7 +1059,7 @@ function HostDashboardContent() {
               </h4>
               {hostData?.managesOwnCars === false ? (
                 <p className="text-xs text-gray-500 dark:text-gray-500 leading-relaxed">
-                  As a Fleet Manager, you earn commission by managing vehicles for car owners. Commission rates are negotiated with each vehicle owner (typically 20-30% of trip earnings). Vehicle owners are responsible for insurance coverage on their vehicles. Your role includes handling bookings, guest communication, and vehicle coordination.{' '}
+                  As a Fleet Manager, you earn commission by managing vehicles for car owners. Commission rates are negotiated individually with each vehicle owner and shown per vehicle in your dashboard. Vehicle owners are responsible for insurance coverage on their vehicles. Your role includes handling bookings, guest communication, and vehicle coordination.{' '}
                   <Link href="/how-it-works" className="text-purple-600 dark:text-purple-400 hover:underline font-medium">
                     Read fleet manager guide →
                   </Link>

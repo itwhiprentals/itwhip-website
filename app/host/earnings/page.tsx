@@ -696,7 +696,7 @@ export default function HostEarningsPage() {
                       </h3>
                       <p className="text-sm text-blue-800 dark:text-blue-200">
                         As a Fleet Manager, you earn commission on every booking for vehicles you manage.
-                        Commission rates (typically 20-30%) are negotiated with each vehicle owner when they approve your partnership.
+                        Commission rates are negotiated individually with each vehicle owner when they approve your partnership.
                         You don't need to own any vehicles or handle insurance - owners take care of that.
                       </p>
                     </div>
@@ -778,7 +778,7 @@ export default function HostEarningsPage() {
                           <span>40%</span>
                         </div>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          Typical rates: 20-30% (negotiated with owners)
+                          Rates vary per vehicle (negotiated with each owner)
                         </p>
                       </div>
 
@@ -846,8 +846,8 @@ export default function HostEarningsPage() {
 
                   <div className="mt-4 rounded-lg p-4 border bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800">
                     <p className="text-sm text-purple-900 dark:text-purple-100">
-                      <strong>💡 How it works:</strong> Vehicle owners set your commission rate when approving your partnership.
-                      Higher commission rates can be negotiated based on your services (marketing, customer service, vehicle maintenance coordination, etc.).
+                      <strong>💡 How it works:</strong> Each vehicle owner sets your commission rate when approving your partnership.
+                      Commission rates vary per vehicle and are shown in each car's profile. Rates can be negotiated based on your services (marketing, customer service, vehicle coordination, etc.).
                     </p>
                   </div>
                 </div>
@@ -1263,8 +1263,8 @@ export default function HostEarningsPage() {
               </p>
             </div>
 
-            {/* ✅ NEW: 3-Tier Badge */}
-            {earnings && (
+            {/* ✅ NEW: 3-Tier Badge - Only for hosts with cars, not Fleet Managers */}
+            {earnings && !isFleetManager && (
               <div className={`px-4 py-2 rounded-full text-sm font-semibold flex items-center gap-2 ${getTierBadgeColor(earnings.earningsTier)}`}>
                 <IoShieldCheckmarkOutline className="w-4 h-4" />
                 {earnings.earningsLabel}
@@ -1276,7 +1276,7 @@ export default function HostEarningsPage() {
           {isFleetManager && (
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
               <p className="text-blue-800 dark:text-blue-200 text-sm">
-                <strong>Commission Earnings:</strong> As a Fleet Manager, you earn commission (typically 20-30%) on bookings for vehicles you manage. Commission rates are set when owners approve your partnership.
+                <strong>Commission Earnings:</strong> As a Fleet Manager, you earn commission on bookings for vehicles you manage. Each vehicle has its own commission rate set when owners approve your partnership. View individual vehicle earnings in each car's profile.
               </p>
             </div>
           )}
@@ -1337,7 +1337,7 @@ export default function HostEarningsPage() {
                   No commission earnings yet
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-6">
-                  Start managing vehicles by inviting car owners. You'll earn commission on every booking for vehicles you manage.
+                  Start managing vehicles by inviting car owners. Commission rates are negotiated with each owner and shown per vehicle.
                 </p>
                 <Link
                   href="/host/fleet/invite-owner"
