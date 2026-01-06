@@ -38,16 +38,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check approval status
-    if (host.approvalStatus !== 'APPROVED') {
-      return NextResponse.json(
-        { 
-          error: 'Account must be approved before adding banking information',
-          approvalStatus: host.approvalStatus 
-        },
-        { status: 403 }
-      )
-    }
+    // NOTE: Removed approval check - Stripe Connect onboarding now handles identity verification
+    // When host completes Stripe onboarding, webhook will auto-approve them
 
     // If already has Connect account, return existing
     if (host.stripeConnectAccountId) {
@@ -97,7 +89,8 @@ export async function POST(request: NextRequest) {
       country: 'US',
       email: host.email,
       capabilities: {
-        transfers: { requested: true },
+        card_payments: { requested: true },  // Required by Stripe for Express accounts
+        transfers: { requested: true },       // For receiving payouts
       },
       business_type: 'individual',
       
@@ -234,7 +227,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         success: true,
         hasAccount: false,
-        canSetup: host.approvalStatus === 'APPROVED',
+        canSetup: true, // All hosts can start Stripe Connect onboarding - Stripe handles verification
         approvalStatus: host.approvalStatus
       })
     }

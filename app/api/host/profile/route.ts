@@ -208,7 +208,13 @@ export async function GET(request: NextRequest) {
       canWithdrawFunds: host.canWithdrawFunds,
       // GDPR fields
       userStatus: host.user?.status || 'ACTIVE',
-      deletionScheduledFor: host.user?.deletionScheduledFor || null
+      deletionScheduledFor: host.user?.deletionScheduledFor || null,
+      // Stripe Connect fields for verification status
+      stripeConnectAccountId: host.stripeConnectAccountId,
+      stripeAccountStatus: host.stripeAccountStatus,
+      stripeDetailsSubmitted: host.stripeDetailsSubmitted,
+      stripePayoutsEnabled: host.stripePayoutsEnabled,
+      stripeChargesEnabled: host.stripeChargesEnabled
     }
 
     return NextResponse.json({ profile })

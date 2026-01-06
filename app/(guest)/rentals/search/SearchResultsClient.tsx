@@ -1,7 +1,7 @@
 // app/(guest)/rentals/search/SearchResultsClient.tsx
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import {
   IoCarOutline,
@@ -36,6 +36,9 @@ function CarCardSkeleton() {
 
 interface SearchResultsClientProps {
   initialCars: any[]
+  initialCarsInCity?: any[]
+  initialNearbyCars?: any[]
+  initialSearchedCity?: string
   initialTotal: number
   initialMetadata: any
   initialLocation: string
@@ -47,6 +50,9 @@ interface SearchResultsClientProps {
 
 export default function SearchResultsClient({
   initialCars,
+  initialCarsInCity = [],
+  initialNearbyCars = [],
+  initialSearchedCity = '',
   initialTotal,
   initialMetadata,
   initialLocation,
@@ -62,6 +68,9 @@ export default function SearchResultsClient({
   const viewParam = searchParams.get('view')
 
   const [cars, setCars] = useState<any[]>(initialCars)
+  const [carsInCity, setCarsInCity] = useState<any[]>(initialCarsInCity)
+  const [nearbyCars, setNearbyCars] = useState<any[]>(initialNearbyCars)
+  const [searchedCity, setSearchedCity] = useState<string>(initialSearchedCity || initialLocation.split(',')[0].trim())
   const [isLoading, setIsLoading] = useState(false)
   const [filters, setFilters] = useState({
     carType: [] as string[],
@@ -119,16 +128,23 @@ export default function SearchResultsClient({
 
       if (data.success) {
         setCars(data.results || [])
+        setCarsInCity(data.carsInCity || [])
+        setNearbyCars(data.nearbyCars || [])
+        setSearchedCity(data.searchedCity || location.split(',')[0].trim())
         setTotalCount(data.total || 0)
         setSearchMetadata(data.metadata || null)
       } else {
         console.error('Search failed:', data.error)
         setCars([])
+        setCarsInCity([])
+        setNearbyCars([])
         setTotalCount(0)
       }
     } catch (error) {
       console.error('Error fetching cars:', error)
       setCars([])
+      setCarsInCity([])
+      setNearbyCars([])
       setTotalCount(0)
     } finally {
       setIsLoading(false)
@@ -154,27 +170,47 @@ export default function SearchResultsClient({
     }
   }, [sortBy, filters, fetchCars])
 
+  // Track last fetched params to avoid duplicate fetches
+  const lastFetchedRef = useRef({
+    location: initialLocation,
+    pickupDate: initialPickupDate,
+    returnDate: initialReturnDate
+  })
+
   // Re-fetch when search params change
   useEffect(() => {
-    const urlLocation = searchParams.get('location')
-    const urlPickupDate = searchParams.get('pickupDate')
-    const urlReturnDate = searchParams.get('returnDate')
+    const urlLocation = searchParams.get('location') || initialLocation
+    const urlPickupDate = searchParams.get('pickupDate') || initialPickupDate
+    const urlReturnDate = searchParams.get('returnDate') || initialReturnDate
 
-    // Only fetch if URL params are different from initial
-    if (
-      (urlLocation && urlLocation !== initialLocation) ||
-      (urlPickupDate && urlPickupDate !== initialPickupDate) ||
-      (urlReturnDate && urlReturnDate !== initialReturnDate)
-    ) {
+    // Normalize dates - remove time component if present for comparison
+    const normalizeDate = (d: string) => d.split('T')[0]
+    const currentPickup = normalizeDate(urlPickupDate)
+    const currentReturn = normalizeDate(urlReturnDate)
+    const lastPickup = normalizeDate(lastFetchedRef.current.pickupDate)
+    const lastReturn = normalizeDate(lastFetchedRef.current.returnDate)
+
+    // Only fetch if params changed from last fetch
+    const hasLocationChanged = urlLocation !== lastFetchedRef.current.location
+    const hasDateChanged = currentPickup !== lastPickup || currentReturn !== lastReturn
+
+    if (hasLocationChanged || hasDateChanged) {
+      // Update ref before fetching
+      lastFetchedRef.current = {
+        location: urlLocation,
+        pickupDate: currentPickup,
+        returnDate: currentReturn
+      }
+      // Also update the searchedCity for display
+      setSearchedCity(urlLocation.split(',')[0].trim())
       fetchCars()
     }
   }, [searchParams, initialLocation, initialPickupDate, initialReturnDate, fetchCars])
 
   // Filter cars by availability filter
-  const filteredCars = useMemo(() => {
-    if (filters.availability === 'all') return cars
-
-    return cars.filter(car => {
+  const filterByAvailability = useCallback((carList: any[]) => {
+    if (filters.availability === 'all') return carList
+    return carList.filter(car => {
       if (filters.availability === 'available') {
         return car.availability?.isFullyAvailable
       }
@@ -183,7 +219,11 @@ export default function SearchResultsClient({
       }
       return true
     })
-  }, [cars, filters.availability])
+  }, [filters.availability])
+
+  const filteredCars = useMemo(() => filterByAvailability(cars), [cars, filterByAvailability])
+  const filteredCarsInCity = useMemo(() => filterByAvailability(carsInCity), [carsInCity, filterByAvailability])
+  const filteredNearbyCars = useMemo(() => filterByAvailability(nearbyCars), [nearbyCars, filterByAvailability])
 
   // Handle search update
   const handleSearchUpdate = (params: any) => {
@@ -484,30 +524,95 @@ export default function SearchResultsClient({
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
-                {filteredCars.map((car) => (
-                  <CompactCarCard
-                    key={car.id}
-                    car={{
-                      id: car.id,
-                      make: car.make,
-                      model: car.model,
-                      year: car.year,
-                      dailyRate: Number(car.dailyRate),
-                      carType: car.type || car.carType,
-                      seats: car.seats,
-                      city: car.location?.city || 'Phoenix',
-                      rating: car.rating?.average ?? car.rating ?? null,
-                      totalTrips: car.trips || car.totalTrips,
-                      instantBook: car.instantBook,
-                      photos: car.photos,
-                      host: car.host ? {
-                        name: car.host.name,
-                        profilePhoto: car.host.avatar || car.host.profilePhoto
-                      } : null
-                    }}
-                  />
-                ))}
+              <div className="space-y-8">
+                {/* Cars in Searched City */}
+                {filteredCarsInCity.length > 0 ? (
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                      <IoLocationOutline className="w-5 h-5 text-amber-600" />
+                      Cars in {searchedCity}
+                      <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
+                        ({filteredCarsInCity.length} available)
+                      </span>
+                    </h2>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+                      {filteredCarsInCity.map((car) => (
+                        <CompactCarCard
+                          key={car.id}
+                          car={{
+                            id: car.id,
+                            make: car.make,
+                            model: car.model,
+                            year: car.year,
+                            dailyRate: Number(car.dailyRate),
+                            carType: car.type || car.carType,
+                            seats: car.seats,
+                            city: car.location?.city || 'Phoenix',
+                            rating: car.rating?.average ?? car.rating ?? null,
+                            totalTrips: car.trips || car.totalTrips,
+                            instantBook: car.instantBook,
+                            photos: car.photos,
+                            host: car.host ? {
+                              name: car.host.name,
+                              profilePhoto: car.host.avatar || car.host.profilePhoto
+                            } : null
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  /* No Cars in City Message */
+                  <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-6 text-center">
+                    <IoLocationOutline className="w-12 h-12 text-amber-500 mx-auto mb-3" />
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                      No cars available in {searchedCity}
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">
+                      {filteredNearbyCars.length > 0
+                        ? `Check out ${filteredNearbyCars.length} car${filteredNearbyCars.length !== 1 ? 's' : ''} from nearby cities below.`
+                        : 'Try expanding your search area or adjusting your dates.'}
+                    </p>
+                  </div>
+                )}
+
+                {/* Nearby Cars from Other Cities */}
+                {filteredNearbyCars.length > 0 && (
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                      <IoCarOutline className="w-5 h-5 text-blue-600" />
+                      {filteredCarsInCity.length > 0 ? 'Nearby Cars from Other Cities' : 'Cars from Nearby Cities'}
+                      <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
+                        ({filteredNearbyCars.length} available)
+                      </span>
+                    </h2>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+                      {filteredNearbyCars.map((car) => (
+                        <CompactCarCard
+                          key={car.id}
+                          car={{
+                            id: car.id,
+                            make: car.make,
+                            model: car.model,
+                            year: car.year,
+                            dailyRate: Number(car.dailyRate),
+                            carType: car.type || car.carType,
+                            seats: car.seats,
+                            city: car.location?.city || 'Phoenix',
+                            rating: car.rating?.average ?? car.rating ?? null,
+                            totalTrips: car.trips || car.totalTrips,
+                            instantBook: car.instantBook,
+                            photos: car.photos,
+                            host: car.host ? {
+                              name: car.host.name,
+                              profilePhoto: car.host.avatar || car.host.profilePhoto
+                            } : null
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </>

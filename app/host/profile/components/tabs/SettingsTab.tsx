@@ -3,7 +3,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { IoSaveOutline, IoTimeOutline, IoBanOutline, IoTrendingUpOutline, IoShieldCheckmarkOutline, IoLinkOutline, IoChevronForwardOutline, IoDownloadOutline, IoTrashOutline, IoWarningOutline, IoPeopleOutline } from 'react-icons/io5'
+import { IoSaveOutline, IoTimeOutline, IoBanOutline, IoTrendingUpOutline, IoShieldCheckmarkOutline, IoLinkOutline, IoChevronForwardOutline, IoDownloadOutline, IoTrashOutline, IoWarningOutline, IoPeopleOutline, IoBriefcaseOutline, IoWalletOutline } from 'react-icons/io5'
 import { EARNINGS_TIERS, determineHostTier, getTierConfig } from '@/app/fleet/financial-constants'
 import DeleteAccountModal from '../DeleteAccountModal'
 
@@ -36,6 +36,7 @@ interface SettingsTabProps {
   userEmail?: string
   userStatus?: 'ACTIVE' | 'PENDING_DELETION' | 'DELETED' | 'SUSPENDED'
   deletionScheduledFor?: string | null
+  isFleetManager?: boolean
 }
 
 export default function SettingsTab({
@@ -49,7 +50,8 @@ export default function SettingsTab({
   onTabChange,
   userEmail = '',
   userStatus = 'ACTIVE',
-  deletionScheduledFor
+  deletionScheduledFor,
+  isFleetManager = false
 }: SettingsTabProps) {
   // GDPR state
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -155,7 +157,54 @@ export default function SettingsTab({
         </div>
       )}
 
-      {/* Settings Cards */}
+      {/* Fleet Manager: Partner Dashboard Link */}
+      {isFleetManager && (
+        <Link
+          href="/partner/dashboard"
+          className="flex items-center justify-between p-4 border-2 border-purple-200 dark:border-purple-700 rounded-lg bg-purple-50/50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors mb-4"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+              <IoBriefcaseOutline className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-purple-900 dark:text-purple-100 text-sm sm:text-base">
+                Partner Dashboard
+              </h3>
+              <p className="text-xs sm:text-sm text-purple-700 dark:text-purple-300 mt-1">
+                Manage your fleet partnerships and invitations
+              </p>
+            </div>
+          </div>
+          <IoChevronForwardOutline className="w-5 h-5 text-purple-400 flex-shrink-0" />
+        </Link>
+      )}
+
+      {/* Fleet Manager: Commission Info Banner */}
+      {isFleetManager && (
+        <div className="p-3 sm:p-4 border border-blue-200 dark:border-blue-800 rounded-lg bg-blue-50 dark:bg-blue-900/20 mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <IoWalletOutline className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <h3 className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base">
+              Your Commission
+            </h3>
+          </div>
+          <p className="text-sm text-blue-800 dark:text-blue-200">
+            As a Fleet Manager, you earn commission (typically 20-30%) on each booking for vehicles you manage.
+            Commission rates are set by vehicle owners when they approve your partnership.
+          </p>
+          <Link
+            href="/host/earnings"
+            className="inline-flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:underline mt-2"
+          >
+            View Commission Earnings
+            <IoChevronForwardOutline className="w-4 h-4" />
+          </Link>
+        </div>
+      )}
+
+      {/* Settings Cards - Hide for Fleet Managers (they don't own vehicles) */}
+      {!isFleetManager && (
       <div className="space-y-3 sm:space-y-4">
         {/* Auto-approve Bookings */}
         <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 border border-gray-200 dark:border-gray-700 rounded-lg ${
@@ -332,9 +381,10 @@ export default function SettingsTab({
           </div>
         </div>
       </div>
+      )}
 
-      {/* Save Button */}
-      {isApproved && !isSuspended && (
+      {/* Save Button - Hide for Fleet Managers (no settings to save) */}
+      {isApproved && !isSuspended && !isFleetManager && (
         <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
           <button
             onClick={onSave}

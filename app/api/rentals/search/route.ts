@@ -68,7 +68,11 @@ export async function GET(request: NextRequest) {
     // ============================================================================
     
     const whereClause: any = {
-      isActive: true
+      isActive: true,
+      // CRITICAL: Only show cars from APPROVED hosts
+      host: {
+        approvalStatus: 'APPROVED'
+      }
     }
 
     // If exact city is specified, filter by city name (case-insensitive)
@@ -481,12 +485,28 @@ export async function GET(request: NextRequest) {
     })
 
     // ============================================================================
-    // STEP 7: RETURN RESPONSE
+    // STEP 7: SEPARATE EXACT CITY vs NEARBY RESULTS
+    // ============================================================================
+
+    // Extract the searched city name for grouping
+    const searchedCity = exactCity || location.split(',')[0].trim()
+
+    // Separate cars into exact city match vs nearby
+    const carsInCity = transformedCars.filter(car =>
+      car.location?.city?.toLowerCase() === searchedCity.toLowerCase()
+    )
+    const nearbyCars = transformedCars.filter(car =>
+      car.location?.city?.toLowerCase() !== searchedCity.toLowerCase()
+    )
+
+    // ============================================================================
+    // STEP 8: RETURN RESPONSE WITH GROUPED RESULTS
     // ============================================================================
 
     return NextResponse.json({
       success: true,
       location,
+      searchedCity,
       searchCoordinates,
       radiusMiles,
       dates: {
@@ -504,13 +524,20 @@ export async function GET(request: NextRequest) {
           max: priceMax
         }
       },
+      // Grouped results for better UX
+      carsInCity,
+      nearbyCars,
+      // Legacy flat results for backward compatibility
       results: transformedCars,
       total: transformedCars.length,
       metadata: {
         totalResults: transformedCars.length,
+        inCityCount: carsInCity.length,
+        nearbyCount: nearbyCars.length,
         fullyAvailable: transformedCars.filter(c => c.availability?.isFullyAvailable).length,
         partiallyAvailable: transformedCars.filter(c => c.availability?.isPartiallyAvailable).length,
         unavailable: transformedCars.filter(c => c.availability?.isCompletelyUnavailable).length,
+        searchCoordinates,
         cached: false
       }
     })

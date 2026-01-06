@@ -15,8 +15,13 @@ export async function GET(request: NextRequest) {
 
     console.log('Searching for similar cars:', { exclude, excludeHost, city, carType })
 
-    // Build where clause
-    const where: any = {}
+    // Build where clause - CRITICAL: Only show active cars from APPROVED hosts
+    const where: any = {
+      isActive: true,
+      host: {
+        approvalStatus: 'APPROVED'
+      }
+    }
 
     // Exclude current car
     if (exclude) {
@@ -41,7 +46,8 @@ export async function GET(request: NextRequest) {
           select: {
             id: true,
             name: true,
-            profilePhoto: true
+            profilePhoto: true,
+            approvalStatus: true
           }
         },
         reviews: {

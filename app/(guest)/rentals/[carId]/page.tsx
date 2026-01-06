@@ -1,6 +1,7 @@
 // app/(guest)/rentals/[carId]/page.tsx
 import { Metadata, Viewport } from 'next'
 import { redirect, notFound } from 'next/navigation'
+import { isRedirectError } from 'next/dist/client/components/redirect'
 import Script from 'next/script'
 import CarDetailsClient from './CarDetailsClient'
 import { extractCarId, generateCarUrl, isOldUrlFormat } from '@/app/lib/utils/urls'
@@ -144,6 +145,10 @@ export default async function CarDetailsPage({
         redirect(seoUrl)
       }
     } catch (error) {
+      // Re-throw redirect errors - they're not real errors, just Next.js redirect mechanism
+      if (isRedirectError(error)) {
+        throw error
+      }
       console.error('Error during SEO redirect:', error)
       // Continue without redirect if fetch fails
     }

@@ -73,6 +73,10 @@ async function getInitialCars(location: string, pickupDate: string, returnDate: 
   const cars = await prisma.rentalCar.findMany({
     where: {
       isActive: true,
+      // CRITICAL: Only show cars from APPROVED hosts
+      host: {
+        approvalStatus: 'APPROVED'
+      },
       AND: [
         { latitude: { gte: boundingBox.minLat, lte: boundingBox.maxLat } },
         { longitude: { gte: boundingBox.minLng, lte: boundingBox.maxLng } }
@@ -220,13 +224,29 @@ async function getInitialCars(location: string, pickupDate: string, returnDate: 
   const minPrice = prices.length > 0 ? Math.min(...prices) : 59
   const maxPrice = prices.length > 0 ? Math.max(...prices) : 499
 
+  // Extract searched city name for grouping
+  const searchedCity = location.split(',')[0].trim()
+
+  // Separate cars by city
+  const carsInCity = processedCars.filter(car =>
+    car!.location?.city?.toLowerCase() === searchedCity.toLowerCase()
+  )
+  const nearbyCars = processedCars.filter(car =>
+    car!.location?.city?.toLowerCase() !== searchedCity.toLowerCase()
+  )
+
   return {
     cars: processedCars,
+    carsInCity,
+    nearbyCars,
+    searchedCity,
     total: processedCars.length,
     searchCoordinates,
     priceRange: { min: minPrice, max: maxPrice },
     metadata: {
       totalResults: processedCars.length,
+      inCityCount: carsInCity.length,
+      nearbyCount: nearbyCars.length,
       fullyAvailable: processedCars.length,
       partiallyAvailable: 0,
       unavailable: 0,
@@ -590,7 +610,7 @@ export default async function SearchResultsPage({
   const cityName = location.split(',')[0].trim()
 
   // Fetch initial cars on the server
-  const { cars, total, metadata, priceRange } = await getInitialCars(location, pickupDate, returnDate)
+  const { cars, carsInCity, nearbyCars, searchedCity, total, metadata, priceRange } = await getInitialCars(location, pickupDate, returnDate)
 
   return (
     <>
@@ -639,6 +659,9 @@ export default async function SearchResultsPage({
       <Suspense fallback={<SearchLoadingFallback />}>
         <SearchResultsClient
           initialCars={cars as any[]}
+          initialCarsInCity={carsInCity as any[]}
+          initialNearbyCars={nearbyCars as any[]}
+          initialSearchedCity={searchedCity}
           initialTotal={total}
           initialMetadata={metadata}
           initialLocation={location}

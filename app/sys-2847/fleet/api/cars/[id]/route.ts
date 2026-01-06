@@ -210,25 +210,29 @@ export async function PUT(
   }
 }
 
-// DELETE - Soft delete (just marks as inactive)
+// DELETE - Hard delete (removes car and related records)
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params
-    
-    // Soft delete - just mark as inactive
-    const car = await prisma.rentalCar.update({
-      where: { id },
-      data: {
-        isActive: false
-      }
+
+    // Delete related records first (foreign key constraints)
+    await prisma.rentalCarPhoto.deleteMany({
+      where: { carId: id }
     })
+
+    // Delete the car
+    await prisma.rentalCar.delete({
+      where: { id }
+    })
+
+    console.log(`Car ${id} permanently deleted`)
 
     return NextResponse.json({
       success: true,
-      message: 'Car removed from listings'
+      message: 'Car permanently deleted'
     })
   } catch (error) {
     console.error('Error deleting car:', error)

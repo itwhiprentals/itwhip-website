@@ -19,10 +19,14 @@ export async function GET(request: NextRequest) {
     console.log('Fetching cars for host:', hostId, 'excluding:', excludeCarId)
     
     // Fetch all active cars from this host, excluding the current car
+    // CRITICAL: Only show cars if the host is APPROVED
     const hostCars = await prisma.rentalCar.findMany({
       where: {
         hostId: hostId,
         isActive: true,
+        host: {
+          approvalStatus: 'APPROVED'
+        },
         id: {
           not: excludeCarId || undefined
         }
@@ -175,12 +179,16 @@ export async function POST(request: NextRequest) {
     }
     
     // Fetch cars from multiple hosts
+    // CRITICAL: Only show cars from APPROVED hosts
     const hostCars = await prisma.rentalCar.findMany({
       where: {
         hostId: {
           in: hostIds
         },
         isActive: true,
+        host: {
+          approvalStatus: 'APPROVED'
+        },
         id: {
           not: excludeCarId || undefined
         }

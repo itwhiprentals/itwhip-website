@@ -203,7 +203,22 @@ function HostProfileContent() {
   const [insuranceFormMode, setInsuranceFormMode] = useState<'submit' | 'update' | 'reactivate'>('submit')
   const [insuranceData, setInsuranceData] = useState<InsuranceData | null>(null)
   const [loadingInsurance, setLoadingInsurance] = useState(false)
-  
+
+  // Fleet Manager state
+  const [managesOwnCars, setManagesOwnCars] = useState<boolean | null>(null)
+
+  // Fleet Manager detection
+  const isFleetManager = managesOwnCars === false
+
+  // Smart back button handler
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      router.back()
+    } else {
+      router.push(isFleetManager ? '/partner/dashboard' : '/host/dashboard')
+    }
+  }
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -241,14 +256,14 @@ function HostProfileContent() {
       const response = await fetch('/api/host/profile', {
         credentials: 'include'
       })
-      
+
       if (!response.ok) {
         if (response.status === 401) {
           router.push('/host/login')
         }
         return
       }
-      
+
       const data = await response.json()
       setProfile(data.profile)
       setFormData({
@@ -263,6 +278,19 @@ function HostProfileContent() {
         requireDeposit: data.profile.requireDeposit !== false,
         depositAmount: data.profile.depositAmount || 500
       })
+
+      // Fetch account type for Fleet Manager detection
+      try {
+        const accountTypeResponse = await fetch('/api/host/account-type', {
+          credentials: 'include'
+        })
+        if (accountTypeResponse.ok) {
+          const accountData = await accountTypeResponse.json()
+          setManagesOwnCars(accountData.managesOwnCars)
+        }
+      } catch (err) {
+        console.error('Account type check error:', err)
+      }
     } catch (error) {
       console.error('Failed to fetch profile:', error)
     } finally {
@@ -479,11 +507,11 @@ function HostProfileContent() {
           {/* Page Header */}
           <div className="mb-4 sm:mb-8">
             <button
-              onClick={() => router.push('/host/dashboard')}
+              onClick={handleBack}
               className="flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 mb-4"
             >
               <IoArrowBackOutline className="w-5 h-5 mr-2" />
-              <span className="hidden sm:inline">Back to Dashboard</span>
+              <span className="hidden sm:inline">{isFleetManager ? 'Back' : 'Back to Dashboard'}</span>
               <span className="sm:hidden">Back</span>
             </button>
             
@@ -515,6 +543,7 @@ function HostProfileContent() {
             activeTab={activeTab}
             onTabChange={setActiveTab}
             isApproved={isApproved}
+            isFleetManager={isFleetManager}
           />
 
           {/* Tab Content */}
@@ -593,6 +622,7 @@ function HostProfileContent() {
                 userEmail={profile.email}
                 userStatus={profile.userStatus || 'ACTIVE'}
                 deletionScheduledFor={profile.deletionScheduledFor}
+                isFleetManager={isFleetManager}
               />
             )}
           </div>
