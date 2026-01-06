@@ -57,20 +57,38 @@ export async function POST(request: NextRequest) {
       vehicleBodyClass,
       vehicleTransmission,
       vehicleDriveType,
+      // Vehicle photos
+      vehiclePhotoUrls,
       // Terms
-      agreeToTerms
+      agreeToTerms,
+      // Host role flags
+      isManageOnly,
+      managesOwnCars,
+      isHostManager,
+      managesOthersCars,
+      // OAuth
+      isOAuthUser,
+      oauthUserId
     } = body
 
-    // Validation - essential fields
-    if (!name || !email || !password || !phone) {
+    // Validation - essential fields (password not required for OAuth users)
+    if (!name || !email) {
       return NextResponse.json(
-        { error: 'Missing required fields: name, email, password, and phone are required' },
+        { error: 'Missing required fields: name and email are required' },
         { status: 400 }
       )
     }
 
-    // Validation - location fields
-    if (!city || !state || !zipCode) {
+    // Non-OAuth users require password and phone
+    if (!isOAuthUser && (!password || !phone)) {
+      return NextResponse.json(
+        { error: 'Missing required fields: password and phone are required' },
+        { status: 400 }
+      )
+    }
+
+    // Validation - location fields only required for hosts with vehicles (not manage-only)
+    if (!isManageOnly && (!city || !state || !zipCode)) {
       return NextResponse.json(
         { error: 'Missing required fields: city, state, and zip code are required' },
         { status: 400 }
@@ -93,16 +111,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate password length
-    if (password.length < 8) {
+    // Validate password length (only for non-OAuth users)
+    if (!isOAuthUser && password && password.length < 8) {
       return NextResponse.json(
         { error: 'Password must be at least 8 characters' },
         { status: 400 }
       )
     }
 
-    // Validate zip code format
-    if (!/^\d{5}$/.test(zipCode)) {
+    // Validate zip code format (only if provided - required for vehicle owners)
+    if (zipCode && !/^\d{5}$/.test(zipCode)) {
       return NextResponse.json(
         { error: 'Please enter a valid 5-digit zip code' },
         { status: 400 }
@@ -137,59 +155,73 @@ export async function POST(request: NextRequest) {
       where: { email }
     })
 
-    if (existingUser) {
+    // For OAuth users, we link to existing user
+    // For non-OAuth users, user should not exist
+    if (existingUser && !isOAuthUser) {
       return NextResponse.json(
         { error: 'Email already registered. Please login instead.' },
         { status: 409 }
       )
     }
 
-    // Hash password
-    const passwordHash = await hash(password)
+    // Hash password (only for non-OAuth users)
+    const passwordHash = !isOAuthUser && password ? await hash(password) : null
 
     // Create the host with PENDING status
     const newHost = await prisma.rentalHost.create({
       data: {
         name,
         email,
-        phone,
-        
-        // Location from form
-        city,
-        state,
-        zipCode,
-        
+        phone: phone || '',
+
+        // Location from form (required in schema - use placeholder for manage-only fleet managers)
+        city: city || 'Not Set',
+        state: state || 'N/A',
+        zipCode: zipCode || null,
+
         // Host type and status
         hostType: 'REAL',
         approvalStatus: 'PENDING',
         dashboardAccess: false,
-        
+
+        // Host role flags
+        managesOwnCars: managesOwnCars ?? true,
+        isHostManager: isHostManager ?? false,
+        managesOthersCars: managesOthersCars ?? false,
+
         // Default permissions (all false for new hosts)
         canViewBookings: false,
         canEditCalendar: false,
         canSetPricing: false,
         canMessageGuests: false,
         canWithdrawFunds: false,
-        
+
         // Default commission (will be set based on insurance tier later)
         commissionRate: 0.20,
-        
+
         // Status - not active until verified and approved
         active: false,
-        isVerified: false,
-        
-        // Create associated User account for authentication
-        user: {
-          create: {
-            email,
-            name,
-            phone,
-            passwordHash,
-            role: 'CLAIMED',
-            emailVerified: false,
-            isActive: true
+        // OAuth users have verified email already
+        isVerified: isOAuthUser ? true : false,
+
+        // Link to existing user (OAuth) or create new user
+        ...(isOAuthUser && existingUser ? {
+          user: {
+            connect: { id: existingUser.id }
           }
-        }
+        } : {
+          user: {
+            create: {
+              email,
+              name,
+              phone: phone || null,
+              passwordHash: passwordHash || '',
+              role: 'CLAIMED',
+              emailVerified: false,
+              isActive: true
+            }
+          }
+        })
       },
       include: {
         user: true
@@ -277,13 +309,13 @@ export async function POST(request: NextRequest) {
             
             // Registration fields - to be completed later
             registeredOwner: null,
-            registrationState: state,
+            registrationState: state || null,
             registrationExpiryDate: null,
             titleStatus: 'Clean',
             garageAddress: null,
-            garageCity: city,
-            garageState: state,
-            garageZip: zipCode,
+            garageCity: city || null,
+            garageState: state || null,
+            garageZip: zipCode || null,
             estimatedValue: null,
             hasLien: false,
             lienholderName: null,
@@ -299,6 +331,21 @@ export async function POST(request: NextRequest) {
         })
 
         createdCarId = newCar.id
+
+        // Create photo records if provided
+        if (vehiclePhotoUrls && Array.isArray(vehiclePhotoUrls) && vehiclePhotoUrls.length > 0) {
+          await prisma.rentalCarPhoto.createMany({
+            data: vehiclePhotoUrls.map((url: string, index: number) => ({
+              carId: newCar.id,
+              url,
+              isHero: index === 0,
+              order: index,
+              uploadedBy: newHost.id,
+              uploadedByType: 'HOST',
+              photoContext: 'LISTING'
+            }))
+          })
+        }
 
         // Log vehicle creation
         await prisma.activityLog.create({
@@ -317,10 +364,11 @@ export async function POST(request: NextRequest) {
               vehicleYear,
               vehicleTrim: vehicleTrim || null,
               vehicleColor: vehicleColor || null,
+              photoCount: vehiclePhotoUrls?.length || 0,
               status: vehicleVin ? 'VIN_PROVIDED' : 'INCOMPLETE',
               note: vehicleVin
-                ? 'Vehicle created during signup with VIN - needs photos, pricing to complete listing'
-                : 'Vehicle created during signup - needs photos, VIN, pricing to complete listing'
+                ? 'Vehicle created during signup with VIN - needs pricing to complete listing'
+                : 'Vehicle created during signup - needs VIN, pricing to complete listing'
             }
           }
         })

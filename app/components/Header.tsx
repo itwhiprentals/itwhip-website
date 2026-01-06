@@ -139,10 +139,10 @@ function HeaderInner({
   // User should appear logged out until they choose an action on the guard screen
   const showAsLoggedIn = isLoggedIn && !isGuardActive
 
-  // ✅ FIXED: Determine user type with fallback logic
-  // Use showAsLoggedIn to hide user types when guard is active
+  // ✅ FIXED: Determine user type - only by actual role, not by page location
+  // User must have role === 'BUSINESS' to be considered a host (have actual host profile)
   const isAdmin = user?.role === 'ADMIN'
-  const isHost = user?.role === 'BUSINESS' || (isHostPage && showAsLoggedIn && !isAdmin)
+  const isHost = user?.role === 'BUSINESS'
   const isGuest = showAsLoggedIn && !isAdmin && !isHost
 
   // ✅ DEBUG: Log user detection (can remove later)

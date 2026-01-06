@@ -367,7 +367,7 @@ export async function GET(request: NextRequest) {
       if (mode === 'login') {
         // LOGIN mode: User trying to login without an account
         console.log('[OAuth Redirect] NO HOST PROFILE FOR LOGIN')
-        return createRedirectWithCookies('/host/login?error=no-account')
+        return createRedirectWithCookies('/host/login?error=no_account')
       }
 
       // New host signup - redirect to complete-profile for phone and vehicle info

@@ -668,10 +668,16 @@ function HostDashboardContent() {
                       Welcome to ItWhip! 🎉
                     </h3>
                     <p className="text-green-700 dark:text-green-300 mt-1">
-                      Thank you for signing up as a host. Your application is being reviewed and you&apos;ll be notified within 24-48 hours once approved.
+                      {hostData?.managesOwnCars === false
+                        ? "Thank you for signing up as a Fleet Manager. Your application is being reviewed and you'll be notified within 24-48 hours once approved."
+                        : "Thank you for signing up as a host. Your application is being reviewed and you'll be notified within 24-48 hours once approved."
+                      }
                     </p>
                     <p className="text-sm text-green-600 dark:text-green-400 mt-2">
-                      While you wait, you can complete your vehicle listing by adding photos, VIN, and pricing.
+                      {hostData?.managesOwnCars === false
+                        ? "While you wait, explore the Partner Dashboard to start inviting car owners to list their vehicles with you."
+                        : "While you wait, you can complete your vehicle listing by adding photos, VIN, and pricing."
+                      }
                     </p>
                   </div>
                   <button

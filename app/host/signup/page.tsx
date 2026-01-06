@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import Header from '@/app/components/Header'
-import Footer from '@/app/components/Footer'
 import OAuthButtons from '@/app/components/auth/OAuthButtons'
 import CarInformationForm, { type CarData } from '@/app/components/host/CarInformationForm'
 import {
@@ -27,6 +26,18 @@ import {
   IoTrashOutline
 } from 'react-icons/io5'
 import Image from 'next/image'
+
+// Format phone number as (###) ###-####
+function formatPhoneNumber(value: string): string {
+  // Remove all non-digit characters
+  const digits = value.replace(/\D/g, '')
+
+  // Apply formatting based on length
+  if (digits.length === 0) return ''
+  if (digits.length <= 3) return `(${digits}`
+  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`
+}
 
 function HostSignupContent() {
   const router = useRouter()
@@ -313,15 +324,9 @@ function HostSignupContent() {
       }
 
       // For OAuth users, email is already verified and they're already authenticated
-      // Redirect to appropriate dashboard based on role
+      // All hosts go to /host/dashboard first for approval
       if (isOAuthUser) {
-        if (formData.hostRole === 'manage' || formData.hostRole === 'both') {
-          // Fleet managers AND "both" go to partner dashboard (primary workspace)
-          router.push('/partner/dashboard?welcome=true')
-        } else {
-          // Hosts who only own cars go to host dashboard
-          router.push('/host/dashboard?welcome=true')
-        }
+        router.push('/host/dashboard?welcome=true')
         return
       }
 
@@ -494,9 +499,10 @@ function HostSignupContent() {
                       <input
                         type="tel"
                         value={formData.phone}
-                        onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                        onChange={(e) => setFormData({...formData, phone: formatPhoneNumber(e.target.value)})}
                         className="w-full pl-10 pr-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
                         placeholder="(555) 123-4567"
+                        maxLength={14}
                         required
                       />
                     </div>
@@ -995,7 +1001,6 @@ function HostSignupContent() {
           </div>
         </div>
       </div>
-      <Footer />
     </>
   )
 }

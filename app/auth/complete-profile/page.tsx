@@ -391,11 +391,12 @@ function CompleteProfileContent() {
       if (data.isNewUser) {
         console.log('[Complete Profile] New user created')
 
-        // Skip phone verification - phone is optional and not part of login flow
-        // Redirect directly to dashboard
+        // OAuth users are already authenticated - redirect directly to dashboard
+        // All hosts go to /host/dashboard first for approval (via Stripe)
+        // Partner dashboard is accessed from host dashboard after approval
         setTimeout(() => {
           if (roleHint === 'host') {
-            window.location.href = '/host/login?status=pending'
+            window.location.href = '/host/dashboard?welcome=true'
           } else {
             window.location.href = redirectTo
           }
@@ -405,25 +406,15 @@ function CompleteProfileContent() {
         // Force a hard redirect to get fresh session state
         console.log('[Complete Profile] Guest upgraded to Host')
         setTimeout(() => {
-          // Redirect based on host role
-          if (hostRole === 'manage' || hostRole === 'both') {
-            // Fleet managers AND "both" go to partner dashboard (primary workspace)
-            window.location.href = '/partner/dashboard?welcome=true'
-          } else {
-            // Hosts who only own cars go to host dashboard
-            window.location.href = '/host/dashboard?welcome=true'
-          }
+          // All hosts go to /host/dashboard first for approval
+          window.location.href = '/host/dashboard?welcome=true'
         }, 100)
       } else {
         // Existing user - update session and redirect normally
         await update()
         if (roleHint === 'host') {
-          // Redirect based on host role
-          if (hostRole === 'manage' || hostRole === 'both') {
-            router.push('/partner/dashboard?welcome=true')
-          } else {
-            router.push('/host/dashboard?welcome=true')
-          }
+          // All hosts go to /host/dashboard
+          router.push('/host/dashboard?welcome=true')
         } else {
           router.push(redirectTo)
         }
