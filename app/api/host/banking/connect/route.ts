@@ -3,6 +3,24 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { stripe } from '@/app/lib/stripe'
 
+// Get base URL with fallback for production
+function getBaseUrl(): string {
+  // Check for explicit base URL first
+  if (process.env.NEXT_PUBLIC_BASE_URL) {
+    return process.env.NEXT_PUBLIC_BASE_URL
+  }
+  // Vercel production URL
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`
+  }
+  // Production domain fallback
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://itwhip.com'
+  }
+  // Development fallback
+  return 'http://localhost:3000'
+}
+
 // POST - Create Stripe Connect Express account + Stripe Customer
 export async function POST(request: NextRequest) {
   try {
@@ -52,10 +70,11 @@ export async function POST(request: NextRequest) {
 
         if (needsOnboarding) {
           // Create new account link for re-onboarding
+          const baseUrl = getBaseUrl()
           const accountLink = await stripe.accountLinks.create({
             account: host.stripeConnectAccountId,
-            refresh_url: `${process.env.NEXT_PUBLIC_BASE_URL}/host/profile?tab=banking&refresh=true`,
-            return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/host/profile?tab=banking&success=true`,
+            refresh_url: `${baseUrl}/host/profile?tab=banking&refresh=true`,
+            return_url: `${baseUrl}/host/profile?tab=banking&success=true`,
             type: 'account_onboarding',
           })
 
@@ -159,10 +178,11 @@ export async function POST(request: NextRequest) {
     })
 
     // Create account link for onboarding
+    const baseUrl = getBaseUrl()
     const accountLink = await stripe.accountLinks.create({
       account: connectAccount.id,
-      refresh_url: `${process.env.NEXT_PUBLIC_BASE_URL}/host/profile?tab=banking&refresh=true`,
-      return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/host/profile?tab=banking&success=true`,
+      refresh_url: `${baseUrl}/host/profile?tab=banking&refresh=true`,
+      return_url: `${baseUrl}/host/profile?tab=banking&success=true`,
       type: 'account_onboarding',
     })
 
