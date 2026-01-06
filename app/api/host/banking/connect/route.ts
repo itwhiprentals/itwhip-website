@@ -3,6 +3,42 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { stripe } from '@/app/lib/stripe'
 
+// Helper to parse full name into first and last name
+function parseFullName(fullName: string): { firstName: string; lastName: string } {
+  const parts = fullName.trim().split(/\s+/)
+  if (parts.length === 1) {
+    return { firstName: parts[0], lastName: '' }
+  }
+  // First word is first name, rest is last name
+  const firstName = parts[0]
+  const lastName = parts.slice(1).join(' ')
+  return { firstName, lastName }
+}
+
+// Helper to format phone for Stripe (E.164 format: +1XXXXXXXXXX)
+function formatPhoneForStripe(phone: string | null): string | undefined {
+  if (!phone) return undefined
+
+  // Remove all non-digit characters
+  const digits = phone.replace(/\D/g, '')
+
+  // If empty after stripping, return undefined
+  if (!digits) return undefined
+
+  // If 10 digits, assume US number and add +1
+  if (digits.length === 10) {
+    return `+1${digits}`
+  }
+
+  // If 11 digits starting with 1, add + prefix
+  if (digits.length === 11 && digits.startsWith('1')) {
+    return `+${digits}`
+  }
+
+  // Return as-is if already formatted or different length
+  return phone.startsWith('+') ? phone : `+${digits}`
+}
+
 // Get base URL with fallback for production
 function getBaseUrl(): string {
   // Check for explicit base URL first
@@ -45,7 +81,11 @@ export async function POST(request: NextRequest) {
         approvalStatus: true,
         stripeConnectAccountId: true,
         stripeCustomerId: true,
-        stripeAccountStatus: true
+        stripeAccountStatus: true,
+        // Additional fields for Stripe pre-fill
+        city: true,
+        state: true,
+        zipCode: true
       }
     })
 
@@ -65,8 +105,8 @@ export async function POST(request: NextRequest) {
         const account = await stripe.accounts.retrieve(host.stripeConnectAccountId)
         
         // Check if account needs re-onboarding
-        const needsOnboarding = !account.details_submitted || 
-                               account.requirements?.currently_due?.length > 0
+        const needsOnboarding = !account.details_submitted ||
+                               (account.requirements?.currently_due?.length ?? 0) > 0
 
         if (needsOnboarding) {
           // Create new account link for re-onboarding
@@ -102,6 +142,22 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Parse host name for pre-filling
+    const { firstName, lastName } = parseFullName(host.name)
+
+    // Debug: Log what we're sending to Stripe
+    const formattedPhone = formatPhoneForStripe(host.phone)
+    console.log('🔍 Stripe Connect Pre-fill Data:', {
+      firstName,
+      lastName,
+      email: host.email,
+      rawPhone: host.phone,
+      formattedPhone,
+      city: host.city,
+      state: host.state,
+      zipCode: host.zipCode
+    })
+
     // Create new Stripe Connect Express account (FOR RECEIVING PAYOUTS)
     const connectAccount = await stripe.accounts.create({
       type: 'express',
@@ -112,7 +168,22 @@ export async function POST(request: NextRequest) {
         transfers: { requested: true },       // For receiving payouts
       },
       business_type: 'individual',
-      
+
+      // PRE-FILL HOST INFORMATION - Makes onboarding look professional
+      individual: {
+        first_name: firstName,
+        last_name: lastName || undefined,  // Don't send empty string
+        email: host.email,
+        phone: formatPhoneForStripe(host.phone),  // Format to E.164
+        address: {
+          // Handle empty strings, 'Not Set', and 'N/A' placeholders
+          city: host.city && host.city !== 'Not Set' && host.city.trim() !== '' ? host.city : undefined,
+          state: host.state && host.state !== 'N/A' && host.state.trim() !== '' ? host.state : undefined,
+          postal_code: host.zipCode && host.zipCode.trim() !== '' ? host.zipCode : undefined,
+          country: 'US'
+        }
+      },
+
       // CRITICAL PAYOUT CONTROL - Added for automated payout system
       settings: {
         payouts: {
@@ -124,7 +195,7 @@ export async function POST(request: NextRequest) {
         }
       },
       // END PAYOUT CONTROL BLOCK
-      
+
       metadata: {
         hostId: host.id,
         hostName: host.name,
@@ -264,8 +335,8 @@ export async function GET(request: NextRequest) {
         payoutsEnabled: account.payouts_enabled,
         chargesEnabled: account.charges_enabled,
         detailsSubmitted: account.details_submitted,
-        requiresAction: !account.details_submitted || 
-                        account.requirements?.currently_due?.length > 0,
+        requiresAction: !account.details_submitted ||
+                        (account.requirements?.currently_due?.length ?? 0) > 0,
         requirements: account.requirements?.currently_due || [],
         balances: {
           current: host.currentBalance,
