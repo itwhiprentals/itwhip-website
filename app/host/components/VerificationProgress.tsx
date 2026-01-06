@@ -116,7 +116,7 @@ function getCardStyles(status: VerificationStep['status']) {
       }
     case 'LOCKED':
       return {
-        container: 'border-l-4 border-l-gray-300 dark:border-l-gray-600 bg-gray-100 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 opacity-60',
+        container: 'border-l-4 border-l-gray-400 dark:border-l-gray-500 bg-gray-100 dark:bg-gray-800/50 border border-gray-300 dark:border-gray-600',
         iconBg: 'bg-gray-200 dark:bg-gray-700',
         iconColor: 'text-gray-400 dark:text-gray-500',
         textMuted: true
@@ -415,7 +415,7 @@ export default function VerificationProgress({
           ? 'Verification failed - please retry'
           : docsStatus === 'PENDING_REVIEW'
           ? 'Identity verification in progress'
-          : 'Secure verification powered by Stripe',
+          : 'Secure verification by Stripe',
         status: docsStatus,
         icon: IoDocumentTextOutline,
         actionUrl: docsStatus !== 'COMPLETED' ? '/host/profile?tab=documents' : undefined,

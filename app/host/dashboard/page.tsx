@@ -864,7 +864,7 @@ function HostDashboardContent() {
             )}
 
             {/* My Cars Section - Complete Cars with Photos & Metrics */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6 mb-8">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-300 dark:border-gray-600 p-4 sm:p-6 mb-8">
               {hostData?.managesOwnCars === false ? (
                 // LOCKED STATE for manage-only Fleet Managers
                 <div className="relative">
