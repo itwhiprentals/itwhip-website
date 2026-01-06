@@ -1240,27 +1240,27 @@ export default function HostEarningsPage() {
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-16">
-        <div className="p-4 sm:p-6 max-w-7xl mx-auto">
-          {/* Back Button */}
-          <button
-            onClick={handleBack}
-            className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-4 transition-colors"
-          >
-            <IoArrowBackOutline className="w-5 h-5" />
-            <span>Back</span>
-          </button>
-
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-20">
+        <div className="px-4 sm:px-6 py-2 max-w-7xl mx-auto">
           <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                {isFleetManager ? 'Commission Earnings' : 'Earnings'}
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                {isFleetManager
-                  ? 'Your commission from managed vehicles'
-                  : 'Track your income and manage payouts'}
-              </p>
+            <div className="flex items-center gap-3">
+              {/* Back Button - Inline with title */}
+              <button
+                onClick={handleBack}
+                className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                <IoArrowBackOutline className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              </button>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+                  {isFleetManager ? 'Commission Earnings' : 'Earnings'}
+                </h1>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">
+                  {isFleetManager
+                    ? 'Your commission from managed vehicles'
+                    : 'Track your income and manage payouts'}
+                </p>
+              </div>
             </div>
 
             {/* ✅ NEW: 3-Tier Badge - Only for hosts with cars, not Fleet Managers */}

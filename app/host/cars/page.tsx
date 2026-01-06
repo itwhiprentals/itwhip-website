@@ -371,29 +371,29 @@ export default function HostCarsPage() {
     <>
       <Header />
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
           {/* Header */}
-          <div className="mb-8">
+          <div className="mb-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <button
-                    onClick={handleBack}
-                    className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                  >
-                    <IoArrowBackOutline className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                  </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleBack}
+                  className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  <IoArrowBackOutline className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                </button>
+                <div>
                   <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
                     {isFleetManager ? 'Managed Vehicles' : 'My Cars'}
                   </h1>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">
+                    {isFleetManager
+                      ? 'Vehicles you manage for other owners'
+                      : isApproved
+                        ? 'Manage your vehicle fleet'
+                        : 'Your vehicles (preparing for approval)'}
+                  </p>
                 </div>
-                <p className="text-gray-600 dark:text-gray-400 ml-12">
-                  {isFleetManager
-                    ? 'Vehicles you manage for other owners'
-                    : isApproved
-                      ? 'Manage your vehicle fleet'
-                      : 'Your vehicles (preparing for approval)'}
-                </p>
               </div>
 
               {isFleetManager ? (
