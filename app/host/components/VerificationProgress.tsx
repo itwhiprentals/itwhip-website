@@ -410,16 +410,16 @@ export default function VerificationProgress({
         id: 'documents',
         title: 'Verify Your Identity',
         description: docsStatus === 'COMPLETED'
-          ? 'Identity verified'
+          ? 'Identity verified via Stripe'
           : docsStatus === 'FAILED'
-          ? 'Verification failed - please re-upload'
+          ? 'Verification failed - please retry'
           : docsStatus === 'PENDING_REVIEW'
           ? 'Identity verification in progress'
-          : 'Upload Photo ID to verify your identity',
+          : 'Secure verification powered by Stripe',
         status: docsStatus,
         icon: IoDocumentTextOutline,
         actionUrl: docsStatus !== 'COMPLETED' ? '/host/profile?tab=documents' : undefined,
-        actionLabel: docsStatus === 'FAILED' ? 'Re-upload ID' : 'Verify Identity',
+        actionLabel: docsStatus === 'FAILED' ? 'Retry Verification' : 'Verify with Stripe',
         estimatedTime: '5 min',
         priority: 'HIGH'
       })
@@ -454,7 +454,7 @@ export default function VerificationProgress({
         title: 'Connect Bank Account',
         description: isHostApproved
           ? 'Add your payout method to receive earnings'
-          : 'Available after verification',
+          : 'Available after Stripe verification',
         status: isHostApproved ? 'NOT_STARTED' : 'LOCKED',
         icon: IoCardOutline,
         actionUrl: isHostApproved ? '/host/profile?tab=banking' : undefined,
