@@ -264,21 +264,12 @@ function PartnerLoginForm() {
           </div>
 
           {/* Signup/Apply Link */}
-          {inviteToken ? (
-            <Link
-              href={`/partner/signup?token=${inviteToken}`}
-              className="w-full flex items-center justify-center gap-2 py-3 border-2 border-orange-600 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 font-semibold rounded-lg transition-colors"
-            >
-              Create Account Instead
-            </Link>
-          ) : (
-            <Link
-              href="/partners/apply"
-              className="w-full flex items-center justify-center gap-2 py-3 border-2 border-orange-600 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 font-semibold rounded-lg transition-colors"
-            >
-              Apply to become a Fleet Partner
-            </Link>
-          )}
+          <Link
+            href={inviteToken ? `/partners/apply/start?token=${inviteToken}` : '/partners/apply/start'}
+            className="w-full flex items-center justify-center gap-2 py-3 border-2 border-orange-600 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 font-semibold rounded-lg transition-colors"
+          >
+            {inviteToken ? 'Create Account Instead' : 'Become a Partner'}
+          </Link>
         </div>
 
         {/* Footer */}

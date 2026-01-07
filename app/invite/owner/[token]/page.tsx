@@ -60,5 +60,5 @@ export default async function OwnerInvitePage({ params }: PageProps) {
   }
 
   // User is not logged in as a partner, redirect to signup with the token
-  redirect(`/partner/signup?token=${token}`)
+  redirect(`/partners/apply/start?token=${token}`)
 }
