@@ -98,8 +98,8 @@ export default function PartnerVehicleGrid({ vehicles, availableMakes }: Partner
   return (
     <div>
       {/* Section Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white text-center sm:text-left w-full sm:w-auto">
           Available Vehicles
         </h2>
         <div className="flex items-center gap-2">
@@ -134,11 +134,11 @@ export default function PartnerVehicleGrid({ vehicles, availableMakes }: Partner
         filteredCount={filteredVehicles.length}
       />
 
-      {/* Vehicle Grid */}
+      {/* Vehicle Grid - Tighter spacing */}
       {filteredVehicles.length > 0 ? (
         <div className={
           viewMode === 'grid'
-            ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4'
+            ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3'
             : 'space-y-4'
         }>
           {filteredVehicles.map((vehicle) => (
@@ -152,6 +152,7 @@ export default function PartnerVehicleGrid({ vehicles, availableMakes }: Partner
                   year: vehicle.year,
                   dailyRate: vehicle.dailyRate,
                   carType: vehicle.carType,
+                  vehicleType: vehicle.vehicleType as 'RENTAL' | 'RIDESHARE' | null,
                   seats: vehicle.seats,
                   city: vehicle.city,
                   rating: vehicle.rating,
@@ -214,17 +215,16 @@ function VehicleListItem({ vehicle }: { vehicle: Vehicle }) {
 
         {/* Badges */}
         <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
-          {vehicle.instantBook && (
+          {/* Rideshare Badge - Primary */}
+          {vehicle.vehicleType === 'RIDESHARE' && (
+            <div className="px-2 py-1 bg-orange-500 text-white text-xs font-medium rounded-full">
+              Rideshare
+            </div>
+          )}
+          {vehicle.instantBook && vehicle.vehicleType !== 'RIDESHARE' && (
             <div className="flex items-center gap-1 px-2 py-1 bg-green-500 text-white text-xs font-medium rounded-full">
               <IoFlashOutline className="w-3 h-3" />
               Instant
-            </div>
-          )}
-          {/* Rideshare Badge */}
-          {vehicle.vehicleType === 'RIDESHARE' && (
-            <div className="flex items-center gap-1 px-2 py-1 bg-orange-500 text-white text-xs font-medium rounded-full">
-              <IoTimeOutline className="w-3 h-3" />
-              3 Day Min
             </div>
           )}
         </div>

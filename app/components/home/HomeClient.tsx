@@ -43,6 +43,7 @@ export default function HomeClient({ initialEsgCars, initialCityCars }: HomeClie
     year: car.year,
     dailyRate: car.dailyRate,
     carType: car.carType,
+    vehicleType: car.vehicleType,  // For rideshare badge
     seats: car.seats,
     city: car.city,
     rating: car.rating,
@@ -80,6 +81,7 @@ export default function HomeClient({ initialEsgCars, initialCityCars }: HomeClie
               year: car.year,
               dailyRate: Number(car.dailyRate),
               carType: car.carType || car.type,
+              vehicleType: car.vehicleType || null,  // For rideshare badge
               seats: car.seats,
               city: car.city || car.location?.city || 'Phoenix',
               rating: car.totalTrips > 0 ? (car.rating?.average ?? car.rating) : null,

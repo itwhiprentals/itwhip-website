@@ -131,7 +131,8 @@ export async function GET(request: NextRequest) {
         mpgHighway: true,
         esgScore: true,        // ✅ ADDED FOR ECO ELITE BADGE
         fuelType: true,        // ✅ ADDED FOR EV BADGE DETECTION
-        
+        vehicleType: true,     // ✅ ADDED FOR RIDESHARE BADGE
+
         // Location
         address: true,
         city: true,
@@ -409,6 +410,7 @@ export async function GET(request: NextRequest) {
         instantBook: car.instantBook,
         esgScore: car.esgScore,     // ✅ PASS ESG SCORE TO FRONTEND
         fuelType: car.fuelType,     // ✅ PASS FUEL TYPE FOR EV DETECTION
+        vehicleType: car.vehicleType || null,  // ✅ PASS VEHICLE TYPE FOR RIDESHARE BADGE
         location: {
           address: car.address,
           city: car.city,

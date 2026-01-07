@@ -11,6 +11,7 @@ export interface HomePageCar {
   year: number
   dailyRate: number
   carType: string
+  vehicleType?: 'RENTAL' | 'RIDESHARE' | null  // For rideshare badge
   seats: number
   city: string
   rating: number | null
@@ -280,6 +281,7 @@ function transformCar(car: any): HomePageCar {
     year: car.year,
     dailyRate: Number(car.dailyRate),
     carType: car.carType,
+    vehicleType: car.vehicleType || null,  // For rideshare badge
     seats: car.seats,
     city: car.city || 'Phoenix',
     // Only use rating if car has real trips (avoids 5.0 default issue)

@@ -798,6 +798,20 @@ model RentalHost {
   partnerSupportEmail   String?
   partnerSupportPhone   String?
 
+  // Partner Social Media & Website
+  partnerWebsite        String?
+  partnerInstagram      String?
+  partnerFacebook       String?
+  partnerTwitter        String?
+  partnerLinkedIn       String?
+  partnerTikTok         String?
+  partnerYouTube        String?
+
+  // Partner Contact Visibility Settings
+  partnerShowEmail      Boolean   @default(true)
+  partnerShowPhone      Boolean   @default(true)
+  partnerShowWebsite    Boolean   @default(true)
+
   // Tiered Commission System (set by Fleet)
   tier1VehicleCount     Int       @default(10)    // 10+ cars → 20%
   tier1CommissionRate   Float     @default(0.20)
@@ -821,6 +835,9 @@ model RentalHost {
 
   // Partner Page Customization
   partnerHeroImage      String?               // Cloudinary URL for hero background (1920x400)
+  partnerHeroTitle      String?               // Main headline on landing page
+  partnerHeroSubtitle   String?               // Subheadline on landing page
+  partnerPrimaryColor   String?               // Hex color for branding (e.g. #f97316)
   partnerBadges         Json?                 // Array of badge objects: [{name, imageUrl}]
   partnerBenefits       Json?                 // Array of benefits: [{icon, title, description}]
   partnerPolicies       Json?                 // {refundPolicy, cancellationPolicy, bookingRequirements}

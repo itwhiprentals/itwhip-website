@@ -12,7 +12,6 @@ import PartnerBenefits from '../components/PartnerBenefits'
 import PartnerPolicies from '../components/PartnerPolicies'
 import FAQAccordion from '../components/FAQAccordion'
 import PartnerVehicleGrid from './PartnerVehicleGrid'
-import { IoLocationOutline } from 'react-icons/io5'
 import Footer from '@/app/components/Footer'
 
 interface PageProps {
@@ -182,6 +181,7 @@ export default async function PartnerLandingPage({ params, searchParams }: PageP
     totalTrips,
     totalReviews,
     operatingCities: operatingCities.length,
+    operatingCityNames: operatingCities as string[],
     priceRange
   }
 
@@ -340,10 +340,24 @@ export default async function PartnerLandingPage({ params, searchParams }: PageP
             businessHours={partner.businessHours}
             yearEstablished={partner.yearEstablished}
             stats={stats}
+            socialLinks={{
+              website: partner.partnerWebsite,
+              instagram: partner.partnerInstagram,
+              facebook: partner.partnerFacebook,
+              twitter: partner.partnerTwitter,
+              linkedin: partner.partnerLinkedIn,
+              tiktok: partner.partnerTikTok,
+              youtube: partner.partnerYouTube
+            }}
+            visibility={{
+              showEmail: partner.partnerShowEmail ?? true,
+              showPhone: partner.partnerShowPhone ?? true,
+              showWebsite: partner.partnerShowWebsite ?? true
+            }}
           />
 
         {/* Main Content - WITH container */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           {/* Trust Badges */}
           {badges && badges.length > 0 && (
             <TrustBadges badges={badges} />
@@ -351,33 +365,13 @@ export default async function PartnerLandingPage({ params, searchParams }: PageP
 
           {/* Discount Banner */}
           {discounts.length > 0 && (
-            <section className="mt-8">
+            <section className="mt-6">
               <DiscountBanner discounts={discounts} variant="hero" />
             </section>
           )}
 
-          {/* Operating Cities */}
-          {operatingCities.length > 0 && (
-            <section className="mt-8">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                <IoLocationOutline className="w-5 h-5 text-orange-500" />
-                Operating Areas
-              </h2>
-              <div className="flex flex-wrap gap-2">
-                {operatingCities.map((city, index) => (
-                  <span
-                    key={index}
-                    className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full text-sm"
-                  >
-                    {city}
-                  </span>
-                ))}
-              </div>
-            </section>
-          )}
-
           {/* Vehicles Grid with Filters - Client Component */}
-          <section className="mt-12">
+          <section className="mt-2">
             <PartnerVehicleGrid
               vehicles={transformedVehicles}
               availableMakes={availableMakes}

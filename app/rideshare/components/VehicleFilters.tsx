@@ -1,10 +1,10 @@
 // app/rideshare/components/VehicleFilters.tsx
-// Vehicle filters for partner fleet pages - 6 Rideshare Makes Only
+// Vehicle filters for partner fleet pages - Polished design
 
 'use client'
 
 import { useState } from 'react'
-import { IoFilterOutline, IoCloseOutline } from 'react-icons/io5'
+import { IoFilterOutline, IoCloseOutline, IoFlashOutline, IoCarSportOutline } from 'react-icons/io5'
 
 // Only these 6 makes are approved for rideshare
 const RIDESHARE_MAKES = ['Toyota', 'Honda', 'Hyundai', 'Kia', 'Nissan', 'Chevrolet']
@@ -58,31 +58,49 @@ export default function VehicleFilters({
   const hasActiveFilters = filters.make !== '' || filters.availability !== 'all'
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 mb-6">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-        {/* Filter Icon & Label */}
-        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-          <IoFilterOutline className="w-5 h-5" />
-          <span className="font-medium text-sm">Filters</span>
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden mb-6">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center gap-2">
+          <IoFilterOutline className="w-5 h-5 text-orange-500" />
+          <span className="font-semibold text-sm text-gray-900 dark:text-white">Filter Vehicles</span>
+        </div>
+        <div className="flex items-center gap-3">
           {hasActiveFilters && (
             <button
               onClick={clearFilters}
-              className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full text-xs hover:bg-gray-200 dark:hover:bg-gray-600"
+              className="inline-flex items-center gap-1 px-2.5 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-full text-xs font-medium hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors"
             >
-              Clear
-              <IoCloseOutline className="w-3 h-3" />
+              Clear filters
+              <IoCloseOutline className="w-3.5 h-3.5" />
             </button>
           )}
+          <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
+            {filteredCount === totalCount ? (
+              <span className="flex items-center gap-1.5">
+                <IoCarSportOutline className="w-4 h-4 text-orange-500" />
+                {totalCount} vehicles
+              </span>
+            ) : (
+              <span className="flex items-center gap-1.5">
+                <IoCarSportOutline className="w-4 h-4 text-orange-500" />
+                {filteredCount} of {totalCount}
+              </span>
+            )}
+          </div>
         </div>
+      </div>
 
-        {/* Filters */}
-        <div className="flex flex-wrap gap-3 flex-1">
+      {/* Filter Controls */}
+      <div className="p-4">
+        <div className="flex flex-col sm:flex-row gap-3">
           {/* Make Filter */}
-          <div className="flex-1 min-w-[120px]">
+          <div className="flex-1">
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Make</label>
             <select
               value={filters.make}
               onChange={(e) => handleFilterChange('make', e.target.value)}
-              className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              className="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
             >
               <option value="">All Makes</option>
               {displayMakes.map(make => (
@@ -92,11 +110,12 @@ export default function VehicleFilters({
           </div>
 
           {/* Sort By */}
-          <div className="flex-1 min-w-[140px]">
+          <div className="flex-1">
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Sort By</label>
             <select
               value={filters.sortBy}
               onChange={(e) => handleFilterChange('sortBy', e.target.value)}
-              className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              className="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
             >
               <option value="newest">Newest First</option>
               <option value="price_low">Price: Low to High</option>
@@ -107,53 +126,58 @@ export default function VehicleFilters({
           </div>
 
           {/* Availability */}
-          <div className="flex-1 min-w-[140px]">
+          <div className="flex-1">
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Availability</label>
             <select
               value={filters.availability}
               onChange={(e) => handleFilterChange('availability', e.target.value)}
-              className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              className="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
             >
               <option value="all">All Vehicles</option>
-              <option value="instant">Instant Book</option>
+              <option value="instant">Instant Book Only</option>
             </select>
           </div>
         </div>
 
-        {/* Results Count */}
-        <div className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-          {filteredCount === totalCount ? (
-            <span>{totalCount} vehicles</span>
-          ) : (
-            <span>{filteredCount} of {totalCount}</span>
-          )}
-        </div>
-      </div>
-
-      {/* Make Pills (Quick Select) */}
-      <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-        <button
-          onClick={() => handleFilterChange('make', '')}
-          className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-            filters.make === ''
-              ? 'bg-orange-500 text-white'
-              : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
-          }`}
-        >
-          All
-        </button>
-        {displayMakes.map(make => (
+        {/* Quick Make Pills */}
+        <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
           <button
-            key={make}
-            onClick={() => handleFilterChange('make', make)}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-              filters.make === make
-                ? 'bg-orange-500 text-white'
+            onClick={() => handleFilterChange('make', '')}
+            className={`px-3.5 py-1.5 rounded-full text-sm font-medium transition-all ${
+              filters.make === ''
+                ? 'bg-orange-500 text-white shadow-sm'
                 : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
             }`}
           >
-            {make}
+            All
           </button>
-        ))}
+          {displayMakes.map(make => (
+            <button
+              key={make}
+              onClick={() => handleFilterChange('make', make)}
+              className={`px-3.5 py-1.5 rounded-full text-sm font-medium transition-all ${
+                filters.make === make
+                  ? 'bg-orange-500 text-white shadow-sm'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+              }`}
+            >
+              {make}
+            </button>
+          ))}
+
+          {/* Instant Book Quick Filter */}
+          <button
+            onClick={() => handleFilterChange('availability', filters.availability === 'instant' ? 'all' : 'instant')}
+            className={`px-3.5 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1.5 ${
+              filters.availability === 'instant'
+                ? 'bg-emerald-500 text-white shadow-sm'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+            }`}
+          >
+            <IoFlashOutline className="w-3.5 h-3.5" />
+            Instant
+          </button>
+        </div>
       </div>
     </div>
   )

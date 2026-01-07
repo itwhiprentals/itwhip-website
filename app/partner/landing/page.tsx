@@ -16,7 +16,14 @@ import {
   IoTrashOutline,
   IoReorderThreeOutline,
   IoCheckmarkCircleOutline,
-  IoLinkOutline
+  IoLinkOutline,
+  IoCallOutline,
+  IoLogoInstagram,
+  IoLogoFacebook,
+  IoLogoTwitter,
+  IoLogoLinkedin,
+  IoLogoTiktok,
+  IoLogoYoutube
 } from 'react-icons/io5'
 
 interface LandingPageData {
@@ -32,6 +39,18 @@ interface LandingPageData {
   primaryColor: string
   faqs: FAQ[]
   isPublished: boolean
+  // Social Media & Website
+  website: string
+  instagram: string
+  facebook: string
+  twitter: string
+  linkedin: string
+  tiktok: string
+  youtube: string
+  // Visibility Settings
+  showEmail: boolean
+  showPhone: boolean
+  showWebsite: boolean
 }
 
 interface FAQ {
@@ -53,12 +72,24 @@ export default function PartnerLandingPage() {
     supportPhone: '',
     primaryColor: '#f97316',
     faqs: [],
-    isPublished: false
+    isPublished: false,
+    // Social Media & Website
+    website: '',
+    instagram: '',
+    facebook: '',
+    twitter: '',
+    linkedin: '',
+    tiktok: '',
+    youtube: '',
+    // Visibility Settings
+    showEmail: true,
+    showPhone: true,
+    showWebsite: true
   })
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'content' | 'branding' | 'faqs'>('content')
+  const [activeTab, setActiveTab] = useState<'content' | 'social' | 'branding' | 'faqs'>('content')
 
   useEffect(() => {
     fetchLandingData()
@@ -222,6 +253,19 @@ export default function PartnerLandingPage() {
             </div>
           </button>
           <button
+            onClick={() => setActiveTab('social')}
+            className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'social'
+                ? 'border-orange-500 text-orange-600 dark:text-orange-400'
+                : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <IoCallOutline className="w-4 h-4" />
+              Contact & Social
+            </div>
+          </button>
+          <button
             onClick={() => setActiveTab('branding')}
             className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'branding'
@@ -293,32 +337,202 @@ export default function PartnerLandingPage() {
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
             />
           </div>
+        </div>
+      )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Support Email
-              </label>
-              <input
-                type="email"
-                value={data.supportEmail}
-                onChange={(e) => setData(prev => ({ ...prev, supportEmail: e.target.value }))}
-                placeholder="support@yourcompany.com"
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
-              />
+      {/* Contact & Social Tab */}
+      {activeTab === 'social' && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 space-y-6">
+          {/* Contact Info with Visibility Toggles */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Contact Information</h3>
+            <div className="space-y-4">
+              {/* Email with Toggle */}
+              <div className="flex items-center justify-between gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Support Email
+                  </label>
+                  <input
+                    type="email"
+                    value={data.supportEmail}
+                    onChange={(e) => setData(prev => ({ ...prev, supportEmail: e.target.value }))}
+                    placeholder="support@yourcompany.com"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  />
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-xs text-gray-500 dark:text-gray-400">Visible</span>
+                  <button
+                    onClick={() => setData(prev => ({ ...prev, showEmail: !prev.showEmail }))}
+                    className={`relative w-12 h-6 rounded-full transition-colors ${
+                      data.showEmail ? 'bg-orange-500' : 'bg-gray-300 dark:bg-gray-600'
+                    }`}
+                  >
+                    <span className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
+                      data.showEmail ? 'translate-x-7' : 'translate-x-1'
+                    }`} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Phone with Toggle */}
+              <div className="flex items-center justify-between gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Support Phone
+                  </label>
+                  <input
+                    type="tel"
+                    value={data.supportPhone}
+                    onChange={(e) => setData(prev => ({ ...prev, supportPhone: e.target.value }))}
+                    placeholder="(555) 123-4567"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  />
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-xs text-gray-500 dark:text-gray-400">Visible</span>
+                  <button
+                    onClick={() => setData(prev => ({ ...prev, showPhone: !prev.showPhone }))}
+                    className={`relative w-12 h-6 rounded-full transition-colors ${
+                      data.showPhone ? 'bg-orange-500' : 'bg-gray-300 dark:bg-gray-600'
+                    }`}
+                  >
+                    <span className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
+                      data.showPhone ? 'translate-x-7' : 'translate-x-1'
+                    }`} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Website with Toggle */}
+              <div className="flex items-center justify-between gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <IoGlobeOutline className="w-4 h-4 inline mr-2" />
+                    Website
+                  </label>
+                  <input
+                    type="url"
+                    value={data.website}
+                    onChange={(e) => setData(prev => ({ ...prev, website: e.target.value }))}
+                    placeholder="https://yourcompany.com"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  />
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-xs text-gray-500 dark:text-gray-400">Visible</span>
+                  <button
+                    onClick={() => setData(prev => ({ ...prev, showWebsite: !prev.showWebsite }))}
+                    className={`relative w-12 h-6 rounded-full transition-colors ${
+                      data.showWebsite ? 'bg-orange-500' : 'bg-gray-300 dark:bg-gray-600'
+                    }`}
+                  >
+                    <span className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
+                      data.showWebsite ? 'translate-x-7' : 'translate-x-1'
+                    }`} />
+                  </button>
+                </div>
+              </div>
             </div>
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Support Phone
-              </label>
-              <input
-                type="tel"
-                value={data.supportPhone}
-                onChange={(e) => setData(prev => ({ ...prev, supportPhone: e.target.value }))}
-                placeholder="(555) 123-4567"
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
-              />
+          {/* Social Media Links */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Social Media Links</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              Add your social media links to display on your public page. Leave blank to hide.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Instagram */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <IoLogoInstagram className="w-4 h-4 inline mr-2 text-pink-500" />
+                  Instagram
+                </label>
+                <input
+                  type="url"
+                  value={data.instagram}
+                  onChange={(e) => setData(prev => ({ ...prev, instagram: e.target.value }))}
+                  placeholder="https://instagram.com/yourcompany"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+              </div>
+
+              {/* Facebook */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <IoLogoFacebook className="w-4 h-4 inline mr-2 text-blue-600" />
+                  Facebook
+                </label>
+                <input
+                  type="url"
+                  value={data.facebook}
+                  onChange={(e) => setData(prev => ({ ...prev, facebook: e.target.value }))}
+                  placeholder="https://facebook.com/yourcompany"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+              </div>
+
+              {/* Twitter/X */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <IoLogoTwitter className="w-4 h-4 inline mr-2 text-sky-500" />
+                  Twitter / X
+                </label>
+                <input
+                  type="url"
+                  value={data.twitter}
+                  onChange={(e) => setData(prev => ({ ...prev, twitter: e.target.value }))}
+                  placeholder="https://twitter.com/yourcompany"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+              </div>
+
+              {/* LinkedIn */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <IoLogoLinkedin className="w-4 h-4 inline mr-2 text-blue-700" />
+                  LinkedIn
+                </label>
+                <input
+                  type="url"
+                  value={data.linkedin}
+                  onChange={(e) => setData(prev => ({ ...prev, linkedin: e.target.value }))}
+                  placeholder="https://linkedin.com/company/yourcompany"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+              </div>
+
+              {/* TikTok */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <IoLogoTiktok className="w-4 h-4 inline mr-2" />
+                  TikTok
+                </label>
+                <input
+                  type="url"
+                  value={data.tiktok}
+                  onChange={(e) => setData(prev => ({ ...prev, tiktok: e.target.value }))}
+                  placeholder="https://tiktok.com/@yourcompany"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+              </div>
+
+              {/* YouTube */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <IoLogoYoutube className="w-4 h-4 inline mr-2 text-red-600" />
+                  YouTube
+                </label>
+                <input
+                  type="url"
+                  value={data.youtube}
+                  onChange={(e) => setData(prev => ({ ...prev, youtube: e.target.value }))}
+                  placeholder="https://youtube.com/@yourcompany"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+              </div>
             </div>
           </div>
         </div>
