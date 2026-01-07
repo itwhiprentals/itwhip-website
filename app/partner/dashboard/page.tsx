@@ -915,6 +915,18 @@ export default function PartnerDashboardPage() {
       {/* Quick Actions */}
       <QuickActions />
 
+      {/* Invitations Stats Card */}
+      <InvitationsStatsCard
+        onViewInvitations={(type) => setInvitationsTab(type)}
+      />
+
+      {/* Invitations List */}
+      <InvitationsList
+        initialTab={invitationsTab}
+        limit={5}
+        showViewAll={true}
+      />
+
       {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Revenue Chart */}

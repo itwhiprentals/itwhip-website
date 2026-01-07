@@ -20,8 +20,17 @@ import {
   IoWarningOutline,
   IoShieldCheckmark,
   IoFlash,
-  IoLeaf
+  IoLeaf,
+  IoCalendarOutline,
+  IoCashOutline,
+  IoShareSocialOutline,
+  IoCopyOutline,
+  IoOpenOutline
 } from 'react-icons/io5'
+
+// Import components
+import HostAssignmentSection from './components/HostAssignmentSection'
+import InviteHostModal from './components/InviteHostModal'
 
 interface VehicleData {
   id: string
@@ -71,6 +80,8 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
   const [selectedPhoto, setSelectedPhoto] = useState(0)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showInviteModal, setShowInviteModal] = useState(false)
+  const [refreshManagement, setRefreshManagement] = useState(0)
 
   useEffect(() => {
     const fetchVehicle = async () => {
@@ -220,7 +231,7 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
         <div className="grid lg:grid-cols-2 gap-6">
           {/* Photos */}
           <div>
-            <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm border border-gray-200 dark:border-gray-700">
+            <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm border border-gray-200 dark:border-gray-700">
               {/* Main Photo */}
               <div className="relative aspect-[4/3]">
                 {vehicle.photos.length > 0 ? (
@@ -274,18 +285,18 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
 
             {/* Stats */}
             <div className="mt-4 grid grid-cols-3 gap-4">
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 text-center shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-4 text-center shadow-sm border border-gray-200 dark:border-gray-700">
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">{vehicle.totalTrips}</p>
                 <p className="text-sm text-gray-500">Trips</p>
               </div>
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 text-center shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-4 text-center shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-center gap-1">
                   <IoStar className="w-5 h-5 text-yellow-500" />
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">{vehicle.rating.toFixed(1)}</p>
                 </div>
                 <p className="text-sm text-gray-500">Rating</p>
               </div>
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 text-center shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-4 text-center shadow-sm border border-gray-200 dark:border-gray-700">
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">{vehicle.photos.length}</p>
                 <p className="text-sm text-gray-500">Photos</p>
               </div>
@@ -295,7 +306,7 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
           {/* Details */}
           <div className="space-y-4">
             {/* Pricing */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Pricing</h2>
               <div className="grid grid-cols-3 gap-4">
                 <div>
@@ -318,7 +329,7 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
             </div>
 
             {/* Vehicle Details */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
               <div className="flex items-center gap-2 mb-4">
                 <IoShieldCheckmark className="w-5 h-5 text-green-600" />
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Vehicle Details</h2>
@@ -365,7 +376,7 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
             </div>
 
             {/* Location */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
               <div className="flex items-center gap-2 mb-4">
                 <IoLocationOutline className="w-5 h-5 text-purple-600" />
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Location</h2>
@@ -377,7 +388,7 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
             </div>
 
             {/* Delivery Options */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Delivery Options</h2>
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
@@ -418,7 +429,7 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
 
             {/* Features */}
             {vehicle.features && vehicle.features.length > 0 && (
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Features</h2>
                 <div className="flex flex-wrap gap-2">
                   {vehicle.features.map((feature, index) => (
@@ -435,15 +446,62 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
 
             {/* Description */}
             {vehicle.description && (
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Description</h2>
                 <p className="text-gray-700 dark:text-gray-300">{vehicle.description}</p>
               </div>
             )}
 
+            {/* Host Assignment Section */}
+            <HostAssignmentSection
+              key={refreshManagement}
+              vehicleId={id}
+              onInviteHost={() => setShowInviteModal(true)}
+            />
+
+            {/* Quick Actions */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h2>
+              <div className="grid grid-cols-2 gap-3">
+                <Link
+                  href={`/partner/fleet/${id}/bookings`}
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/30 rounded-lg font-medium transition-colors"
+                >
+                  <IoCalendarOutline className="w-5 h-5" />
+                  View Bookings
+                </Link>
+                <Link
+                  href={`/partner/fleet/${id}/earnings`}
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg font-medium transition-colors"
+                >
+                  <IoCashOutline className="w-5 h-5" />
+                  View Earnings
+                </Link>
+                <button
+                  onClick={() => {
+                    const url = `${window.location.origin}/cars/${vehicle.id}`
+                    navigator.clipboard.writeText(url)
+                    alert('Link copied to clipboard!')
+                  }}
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg font-medium transition-colors"
+                >
+                  <IoShareSocialOutline className="w-5 h-5" />
+                  Share Listing
+                </button>
+                <Link
+                  href={`/cars/${vehicle.id}`}
+                  target="_blank"
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg font-medium transition-colors"
+                >
+                  <IoOpenOutline className="w-5 h-5" />
+                  View Public
+                </Link>
+              </div>
+            </div>
+
             {/* Actions */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Actions</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Vehicle Status</h2>
               <div className="space-y-3">
                 <button
                   onClick={handleToggleActive}
@@ -489,7 +547,7 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Delete Vehicle?</h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
               Are you sure you want to delete this {vehicle.year} {vehicle.make} {vehicle.model}? This action cannot be undone.
@@ -512,6 +570,17 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
           </div>
         </div>
       )}
+
+      {/* Invite Host Modal */}
+      <InviteHostModal
+        isOpen={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        vehicleId={id}
+        vehicleName={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
+        onInviteSent={() => {
+          setRefreshManagement(prev => prev + 1)
+        }}
+      />
     </div>
   )
 }

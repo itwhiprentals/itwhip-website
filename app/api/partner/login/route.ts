@@ -8,7 +8,7 @@ import { SignJWT } from 'jose'
 import { cookies } from 'next/headers'
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'your-secret-key-here'
+  process.env.JWT_SECRET || 'fallback-secret-key'
 )
 
 export async function POST(request: NextRequest) {
@@ -87,6 +87,7 @@ export async function POST(request: NextRequest) {
 
     // Create JWT token
     const token = await new SignJWT({
+      userId: host.userId || host.id, // userId for verifyRequest compatibility
       hostId: host.id,
       email: host.email,
       hostType: host.hostType,

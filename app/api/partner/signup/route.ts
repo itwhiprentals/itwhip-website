@@ -9,7 +9,7 @@ import { SignJWT } from 'jose'
 import { cookies } from 'next/headers'
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'your-secret-key-here'
+  process.env.JWT_SECRET || 'fallback-secret-key'
 )
 
 export async function POST(request: NextRequest) {
@@ -264,6 +264,7 @@ export async function POST(request: NextRequest) {
     // If approved (has invitation), create session
     if (invitation) {
       const token = await new SignJWT({
+        userId: newPartner.userId || newPartner.id, // userId for verifyRequest compatibility
         hostId: newPartner.id,
         email: newPartner.email,
         hostType: newPartner.hostType,

@@ -38,6 +38,7 @@ import ClaimBanner from './components/ClaimBanner'
 import SuspensionBanner from '@/app/components/SuspensionBanner'
 import ESGDashboardCard from '@/app/components/host/ESGDashboardCard'
 import ServiceMetricsDashboardCard from '@/app/components/host/ServiceMetricsDashboardCard'
+import PendingInvitationsCard from './components/PendingInvitationsCard'
 
 interface CarData {
   id: string
@@ -723,6 +724,11 @@ function HostDashboardContent() {
 
               return null
             })()}
+
+            {/* Pending Management Invitations */}
+            {hostData && (
+              <PendingInvitationsCard hostId={hostData.id} />
+            )}
 
             {/* Verification Progress */}
             {(isPending || needsAttention) && hostData && !notifications.some(n => n.type.includes('CLAIM')) && (

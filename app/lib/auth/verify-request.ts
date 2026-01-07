@@ -13,6 +13,9 @@ const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'fallback-secret-key'
 )
 
+// Legacy secret for backward compatibility with older partner tokens
+const LEGACY_JWT_SECRET = new TextEncoder().encode('your-secret-key')
+
 // User type returned from verification
 export interface VerifiedUser {
   id: string
@@ -34,7 +37,8 @@ export interface VerifiedUser {
 async function verifyTokenWithSecrets(token: string) {
   const secrets = [
     { secret: GUEST_JWT_SECRET, type: 'guest' as const },
-    { secret: JWT_SECRET, type: 'platform' as const }
+    { secret: JWT_SECRET, type: 'platform' as const },
+    { secret: LEGACY_JWT_SECRET, type: 'platform' as const } // Backward compatibility
   ]
 
   // Try each secret until one works
@@ -67,9 +71,10 @@ export async function verifyRequest(
   request: NextRequest
 ): Promise<VerifiedUser | null> {
   try {
-    // Get token from cookie - check both guest and host tokens
+    // Get token from cookie - check guest, host, and partner tokens
     const token = request.cookies.get('accessToken')?.value ||
-                 request.cookies.get('hostAccessToken')?.value
+                 request.cookies.get('hostAccessToken')?.value ||
+                 request.cookies.get('partner_token')?.value
 
     if (!token) {
       return null
@@ -78,11 +83,15 @@ export async function verifyRequest(
     // Verify the token (tries both guest and platform secrets)
     const { payload, secretType } = await verifyTokenWithSecrets(token)
 
+    // For partner tokens, use hostId as fallback for userId (backwards compatibility)
+    const effectiveUserId = (payload.userId || payload.hostId) as string | undefined
+
     // Validate required fields
-    if (!payload.userId || !payload.email) {
-      console.warn('⚠️ Token missing required fields:', { 
-        hasUserId: !!payload.userId, 
-        hasEmail: !!payload.email 
+    if (!effectiveUserId || !payload.email) {
+      console.warn('⚠️ Token missing required fields:', {
+        hasUserId: !!payload.userId,
+        hasHostId: !!payload.hostId,
+        hasEmail: !!payload.email
       })
       return null
     }
@@ -96,8 +105,8 @@ export async function verifyRequest(
 
     // Return verified user data
     return {
-      id: payload.userId as string,
-      userId: payload.userId as string,
+      id: effectiveUserId,
+      userId: effectiveUserId,
       email: payload.email as string,
       name: (payload.name as string) || '',
       role: (payload.role as string) || 'CLAIMED',
