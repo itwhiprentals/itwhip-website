@@ -20,11 +20,15 @@ import {
   IoMoonOutline,
   IoCheckmarkCircleOutline
 } from 'react-icons/io5'
+import { useSession } from 'next-auth/react'
+import OAuthButtons from '@/app/components/auth/OAuthButtons'
 
 function PartnerSignupForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { data: session, status } = useSession()
   const inviteToken = searchParams.get('token')
+  const isOAuthUser = searchParams.get('oauth') === 'true' && session?.user
 
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -41,7 +45,13 @@ function PartnerSignupForm() {
   useEffect(() => {
     const isDarkMode = document.documentElement.classList.contains('dark')
     setIsDark(isDarkMode)
-  }, [])
+
+    // Pre-fill from OAuth session if available
+    if (isOAuthUser && session?.user) {
+      setName(session.user.name || '')
+      setEmail(session.user.email || '')
+    }
+  }, [isOAuthUser, session])
 
   const toggleTheme = () => {
     const newDark = !isDark
@@ -60,17 +70,19 @@ function PartnerSignupForm() {
     setError('')
     setLoading(true)
 
-    // Client-side validation
-    if (password !== confirmPassword) {
-      setError('Passwords do not match')
-      setLoading(false)
-      return
-    }
+    // Client-side validation - OAuth users skip password checks
+    if (!isOAuthUser) {
+      if (password !== confirmPassword) {
+        setError('Passwords do not match')
+        setLoading(false)
+        return
+      }
 
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters')
-      setLoading(false)
-      return
+      if (password.length < 8) {
+        setError('Password must be at least 8 characters')
+        setLoading(false)
+        return
+      }
     }
 
     if (!agreeToTerms) {
@@ -80,16 +92,28 @@ function PartnerSignupForm() {
     }
 
     try {
+      const requestBody: any = {
+        name,
+        email,
+        inviteToken
+      }
+
+      // Only include password for non-OAuth users
+      if (!isOAuthUser && password) {
+        requestBody.password = password
+      }
+
+      // Mark as OAuth user if applicable
+      if (isOAuthUser) {
+        requestBody.isOAuthUser = true
+        requestBody.oauthUserId = (session?.user as any)?.id
+      }
+
       const response = await fetch('/api/partner/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({
-          name,
-          email,
-          password,
-          inviteToken
-        })
+        body: JSON.stringify(requestBody)
       })
 
       const data = await response.json()
@@ -206,12 +230,33 @@ function PartnerSignupForm() {
             )}
 
             {/* Invite Token Notice */}
-            {inviteToken && (
+            {inviteToken && !isOAuthUser && (
               <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                 <p className="text-sm text-blue-600 dark:text-blue-400">
                   You&apos;ve been invited to join ItWhip as a car owner. Create your account to view and respond to the invitation.
                 </p>
               </div>
+            )}
+
+            {/* OAuth Welcome Message */}
+            {isOAuthUser && (
+              <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg flex items-center gap-2">
+                <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                <p className="text-sm text-green-600 dark:text-green-400">
+                  Welcome, {session?.user?.name || 'Partner'}! Complete your registration below.
+                </p>
+              </div>
+            )}
+
+            {/* Google OAuth - Only show for non-OAuth users */}
+            {!isOAuthUser && (
+              <OAuthButtons
+                theme="host"
+                roleHint="partner"
+                callbackUrl={inviteToken ? `/partners/apply/start?token=${inviteToken}` : '/partner/dashboard'}
+                showDivider={true}
+                mode="signup"
+              />
             )}
 
             {/* Name Field */}
@@ -250,65 +295,70 @@ function PartnerSignupForm() {
               </div>
             </div>
 
-            {/* Password Field */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <IoLockClosedOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Minimum 8 characters"
-                  required
-                  minLength={8}
-                  className="w-full pl-10 pr-12 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  {showPassword ? (
-                    <IoEyeOffOutline className="w-5 h-5" />
-                  ) : (
-                    <IoEyeOutline className="w-5 h-5" />
-                  )}
-                </button>
-              </div>
-            </div>
+            {/* Password Fields - Only for non-OAuth users */}
+            {!isOAuthUser && (
+              <>
+                {/* Password Field */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <IoLockClosedOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Minimum 8 characters"
+                      required
+                      minLength={8}
+                      className="w-full pl-10 pr-12 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    >
+                      {showPassword ? (
+                        <IoEyeOffOutline className="w-5 h-5" />
+                      ) : (
+                        <IoEyeOutline className="w-5 h-5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
 
-            {/* Confirm Password Field */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Confirm Password
-              </label>
-              <div className="relative">
-                <IoLockClosedOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirm your password"
-                  required
-                  minLength={8}
-                  className="w-full pl-10 pr-12 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  {showConfirmPassword ? (
-                    <IoEyeOffOutline className="w-5 h-5" />
-                  ) : (
-                    <IoEyeOutline className="w-5 h-5" />
-                  )}
-                </button>
-              </div>
-            </div>
+                {/* Confirm Password Field */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Confirm Password
+                  </label>
+                  <div className="relative">
+                    <IoLockClosedOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Confirm your password"
+                      required
+                      minLength={8}
+                      className="w-full pl-10 pr-12 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    >
+                      {showConfirmPassword ? (
+                        <IoEyeOffOutline className="w-5 h-5" />
+                      ) : (
+                        <IoEyeOutline className="w-5 h-5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Terms Agreement */}
             <div className="flex items-start gap-3">

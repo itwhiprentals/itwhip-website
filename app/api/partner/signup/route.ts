@@ -15,12 +15,19 @@ const JWT_SECRET = new TextEncoder().encode(
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { name, email, password, inviteToken } = body
+    const { name, email, password, inviteToken, isOAuthUser, oauthUserId } = body
 
-    // Validation
-    if (!name || !email || !password) {
+    // Validation - password required for non-OAuth users
+    if (!name || !email) {
       return NextResponse.json(
-        { error: 'Name, email, and password are required' },
+        { error: 'Name and email are required' },
+        { status: 400 }
+      )
+    }
+
+    if (!isOAuthUser && !password) {
+      return NextResponse.json(
+        { error: 'Password is required' },
         { status: 400 }
       )
     }
@@ -34,8 +41,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate password length
-    if (password.length < 8) {
+    // Validate password length for non-OAuth users
+    if (!isOAuthUser && password && password.length < 8) {
       return NextResponse.json(
         { error: 'Password must be at least 8 characters' },
         { status: 400 }
@@ -61,7 +68,9 @@ export async function POST(request: NextRequest) {
       where: { email: normalizedEmail }
     })
 
-    if (existingUser) {
+    // For OAuth users, we allow linking to existing User record
+    // For non-OAuth users, we reject if email exists
+    if (existingUser && !isOAuthUser) {
       return NextResponse.json(
         { error: 'Email already registered. Please login instead.' },
         { status: 409 }
@@ -101,65 +110,114 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Hash password
-    const passwordHash = await hash(password)
+    // Hash password for non-OAuth users
+    const passwordHash = isOAuthUser ? null : await hash(password)
 
-    // Create the partner account
-    // hostType = 'PARTNER' for individual car owners invited by hosts
-    // approvalStatus = 'APPROVED' since they're invited by an approved host
-    const newPartner = await prisma.rentalHost.create({
-      data: {
-        name: name.trim(),
-        email: normalizedEmail,
-        phone: '',
+    // For OAuth users with existing User record, link to it
+    // For non-OAuth users, create new User record
+    let newPartner
 
-        // Partner type - individual car owner
-        hostType: 'PARTNER',
-        isVehicleOwner: true,
+    if (isOAuthUser && existingUser) {
+      // OAuth user with existing User record - just create RentalHost linked to existing User
+      newPartner = await prisma.rentalHost.create({
+        data: {
+          name: name.trim(),
+          email: normalizedEmail,
+          phone: '',
 
-        // Auto-approve if they have a valid invitation
-        // Otherwise pending approval
-        approvalStatus: invitation ? 'APPROVED' : 'PENDING',
-        approvedAt: invitation ? new Date() : null,
-        approvedBy: invitation ? 'INVITATION_AUTO_APPROVE' : null,
+          // Partner type - individual car owner
+          hostType: 'PARTNER',
+          isVehicleOwner: true,
 
-        // Location placeholder - can be updated in settings
-        city: 'Not Set',
-        state: 'N/A',
-        zipCode: null,
+          // Auto-approve if they have a valid invitation
+          // Otherwise pending approval
+          approvalStatus: invitation ? 'APPROVED' : 'PENDING',
+          approvedAt: invitation ? new Date() : null,
+          approvedBy: invitation ? 'INVITATION_AUTO_APPROVE' : null,
 
-        // Dashboard access only if approved
-        dashboardAccess: !!invitation,
-        canViewBookings: !!invitation,
-        canEditCalendar: !!invitation,
-        canSetPricing: !!invitation,
-        canMessageGuests: !!invitation,
-        canWithdrawFunds: false, // Requires Stripe Connect setup
+          // Location placeholder - can be updated in settings
+          city: 'Not Set',
+          state: 'N/A',
+          zipCode: null,
 
-        // Commission defaults (will be set per vehicle)
-        commissionRate: 0.30, // Default 30% platform fee
+          // Dashboard access only if approved
+          dashboardAccess: !!invitation,
+          canViewBookings: !!invitation,
+          canEditCalendar: !!invitation,
+          canSetPricing: !!invitation,
+          canMessageGuests: !!invitation,
+          canWithdrawFunds: false, // Requires Stripe Connect setup
 
-        // Status
-        active: !!invitation,
-        isVerified: true, // Email verified by clicking invite link
+          // Commission defaults (will be set per vehicle)
+          commissionRate: 0.30, // Default 30% platform fee
 
-        // Create linked User record
-        user: {
-          create: {
-            email: normalizedEmail,
-            name: name.trim(),
-            phone: null,
-            passwordHash,
-            role: 'CLAIMED',
-            emailVerified: true, // Verified by invite link
-            isActive: true
-          }
+          // Status
+          active: !!invitation,
+          isVerified: true, // OAuth users are email verified
+
+          // Link to existing User record
+          userId: existingUser.id
+        },
+        include: {
+          user: true
         }
-      },
-      include: {
-        user: true
-      }
-    })
+      })
+    } else {
+      // Create new partner with new User record
+      newPartner = await prisma.rentalHost.create({
+        data: {
+          name: name.trim(),
+          email: normalizedEmail,
+          phone: '',
+
+          // Partner type - individual car owner
+          hostType: 'PARTNER',
+          isVehicleOwner: true,
+
+          // Auto-approve if they have a valid invitation
+          // Otherwise pending approval
+          approvalStatus: invitation ? 'APPROVED' : 'PENDING',
+          approvedAt: invitation ? new Date() : null,
+          approvedBy: invitation ? 'INVITATION_AUTO_APPROVE' : null,
+
+          // Location placeholder - can be updated in settings
+          city: 'Not Set',
+          state: 'N/A',
+          zipCode: null,
+
+          // Dashboard access only if approved
+          dashboardAccess: !!invitation,
+          canViewBookings: !!invitation,
+          canEditCalendar: !!invitation,
+          canSetPricing: !!invitation,
+          canMessageGuests: !!invitation,
+          canWithdrawFunds: false, // Requires Stripe Connect setup
+
+          // Commission defaults (will be set per vehicle)
+          commissionRate: 0.30, // Default 30% platform fee
+
+          // Status
+          active: !!invitation,
+          isVerified: true, // Email verified by clicking invite link
+
+          // Create linked User record
+          user: {
+            create: {
+              email: normalizedEmail,
+              name: name.trim(),
+              phone: null,
+              passwordHash: passwordHash || '',
+              role: 'CLAIMED',
+              emailVerified: true, // Verified by invite link or OAuth
+              isActive: true
+            }
+          }
+        },
+        include: {
+          user: true
+        }
+      })
+    }
 
     // Log the signup
     await prisma.activityLog.create({
@@ -175,7 +233,8 @@ export async function POST(request: NextRequest) {
           email: normalizedEmail,
           hasInvitation: !!invitation,
           invitedBy: invitation?.invitedByHost?.name || null,
-          invitedByHostId: invitation?.invitedByHostId || null
+          invitedByHostId: invitation?.invitedByHostId || null,
+          signupMethod: isOAuthUser ? 'google_oauth' : 'email_password'
         }
       }
     })

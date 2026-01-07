@@ -17,14 +17,18 @@ import {
   IoArrowBackOutline,
   IoSunnyOutline,
   IoMoonOutline,
-  IoCheckmarkCircleOutline
+  IoCheckmarkCircleOutline,
+  IoAlertCircleOutline
 } from 'react-icons/io5'
+import OAuthButtons from '@/app/components/auth/OAuthButtons'
 
 function PartnerLoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const inviteToken = searchParams.get('token')
   const justRegistered = searchParams.get('registered') === 'true'
+  const oauthError = searchParams.get('error')
+  const statusParam = searchParams.get('status')
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -37,7 +41,12 @@ function PartnerLoginForm() {
     // Check initial dark mode state
     const isDarkMode = document.documentElement.classList.contains('dark')
     setIsDark(isDarkMode)
-  }, [])
+
+    // Handle OAuth errors
+    if (oauthError === 'no_account') {
+      setError('No partner account found with this email. Please sign up first.')
+    }
+  }, [oauthError])
 
   const toggleTheme = () => {
     const newDark = !isDark
@@ -167,12 +176,35 @@ function PartnerLoginForm() {
               </div>
             )}
 
+            {/* Status Messages (rejected/suspended) */}
+            {statusParam && (
+              <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-2">
+                <IoAlertCircleOutline className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-red-600 dark:text-red-400">
+                  {statusParam === 'rejected'
+                    ? 'Your partner application was rejected. Please contact support for details.'
+                    : statusParam === 'suspended'
+                    ? 'Your account has been suspended. Please contact support.'
+                    : 'There was an issue with your account. Please contact support.'}
+                </p>
+              </div>
+            )}
+
             {/* Error Message */}
             {error && (
               <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
                 <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
               </div>
             )}
+
+            {/* Google OAuth */}
+            <OAuthButtons
+              theme="host"
+              roleHint="partner"
+              callbackUrl={inviteToken ? `/invite/view/${inviteToken}` : '/partner/dashboard'}
+              showDivider={true}
+              mode="login"
+            />
 
             {/* Email Field */}
             <div>

@@ -50,6 +50,33 @@ function generateHostTokens(host: {
   return { accessToken, refreshToken }
 }
 
+// Helper to generate PARTNER JWT tokens (for partners/car owners)
+function generatePartnerTokens(partner: {
+  id: string
+  userId: string
+  email: string
+  name: string
+  hostType: string
+  approvalStatus: string
+}) {
+  // Generate access token with PARTNER claims
+  const accessToken = sign(
+    {
+      userId: partner.userId,
+      hostId: partner.id,
+      email: partner.email,
+      name: partner.name,
+      hostType: partner.hostType,
+      isPartner: true,
+      approvalStatus: partner.approvalStatus
+    },
+    JWT_SECRET,
+    { expiresIn: '7d' }
+  )
+
+  return { accessToken }
+}
+
 // Helper to generate GUEST JWT tokens (for regular users)
 function generateGuestTokens(user: {
   id: string
@@ -384,6 +411,122 @@ export async function GET(request: NextRequest) {
 
       // Both profile and phone exist - continue with host flow
       console.log('[OAuth Redirect] Host profile and phone exist, continuing...')
+    }
+
+    // ========================================================================
+    // PARTNER ROLE HANDLING
+    // ========================================================================
+    if (roleHint === 'partner') {
+      // Check if user has partner profile (hostType = PARTNER or FLEET_PARTNER)
+      const partnerProfile = await prisma.rentalHost.findFirst({
+        where: {
+          OR: [
+            { userId: userId },
+            { email: email }
+          ],
+          hostType: { in: ['PARTNER', 'FLEET_PARTNER'] }
+        },
+        select: {
+          id: true,
+          userId: true,
+          email: true,
+          name: true,
+          hostType: true,
+          approvalStatus: true
+        }
+      })
+
+      if (partnerProfile) {
+        // User has partner profile
+        if (partnerProfile.approvalStatus === 'APPROVED') {
+          // Generate partner token and set cookie
+          const partnerTokens = generatePartnerTokens({
+            id: partnerProfile.id,
+            userId: user.id,
+            email: email,
+            name: partnerProfile.name || user.name || '',
+            hostType: partnerProfile.hostType,
+            approvalStatus: partnerProfile.approvalStatus
+          })
+
+          const response = NextResponse.redirect(new URL('/partner/dashboard', request.url))
+          response.cookies.set('partner_token', partnerTokens.accessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 7 * 24 * 60 * 60, // 7 days
+            path: '/'
+          })
+          response.cookies.delete('oauth_role_hint')
+          response.cookies.delete('oauth_mode')
+          response.cookies.delete('oauth_return_to')
+          console.log('[OAuth Redirect] Partner approved, redirecting to partner dashboard')
+          return response
+        } else if (partnerProfile.approvalStatus === 'PENDING') {
+          // Partner pending - still redirect to dashboard (will show pending message)
+          const partnerTokens = generatePartnerTokens({
+            id: partnerProfile.id,
+            userId: user.id,
+            email: email,
+            name: partnerProfile.name || user.name || '',
+            hostType: partnerProfile.hostType,
+            approvalStatus: partnerProfile.approvalStatus
+          })
+
+          const response = NextResponse.redirect(new URL('/partner/dashboard', request.url))
+          response.cookies.set('partner_token', partnerTokens.accessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 7 * 24 * 60 * 60,
+            path: '/'
+          })
+          response.cookies.delete('oauth_role_hint')
+          response.cookies.delete('oauth_mode')
+          response.cookies.delete('oauth_return_to')
+          console.log('[OAuth Redirect] Partner pending, redirecting to partner dashboard')
+          return response
+        } else {
+          // Rejected or suspended
+          console.log(`[OAuth Redirect] Partner ${partnerProfile.approvalStatus}, redirecting to login`)
+          const response = NextResponse.redirect(new URL(`/partner/login?status=${partnerProfile.approvalStatus.toLowerCase()}`, request.url))
+          response.cookies.delete('oauth_role_hint')
+          response.cookies.delete('oauth_mode')
+          response.cookies.delete('oauth_return_to')
+          return response
+        }
+      }
+
+      // No partner profile found
+      if (mode === 'login') {
+        // LOGIN mode: User trying to login without partner account
+        console.log('[OAuth Redirect] NO PARTNER PROFILE FOR LOGIN')
+        const response = NextResponse.redirect(new URL('/partner/login?error=no_account', request.url))
+        response.cookies.delete('oauth_role_hint')
+        response.cookies.delete('oauth_mode')
+        response.cookies.delete('oauth_return_to')
+        return response
+      }
+
+      // SIGNUP mode: Create new partner profile
+      // Redirect to partner signup to complete registration
+      let inviteToken: string | null = null
+      if (returnTo && returnTo.includes('token=')) {
+        try {
+          inviteToken = new URL(returnTo, request.url).searchParams.get('token')
+        } catch {
+          // Invalid URL, ignore
+        }
+      }
+      const signupUrl = inviteToken
+        ? `/partners/apply/start?oauth=true&token=${inviteToken}`
+        : '/partners/apply/start?oauth=true'
+      console.log('[OAuth Redirect] No partner profile, redirecting to partner signup')
+      const response = NextResponse.redirect(new URL(signupUrl, request.url))
+      response.cookies.delete('oauth_role_hint')
+      response.cookies.delete('oauth_mode')
+      response.cookies.delete('oauth_return_to')
+      return response
     }
 
     if (roleHint === 'guest') {
