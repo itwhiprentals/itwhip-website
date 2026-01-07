@@ -207,7 +207,7 @@ function formatCarType(carType?: string | null): string {
 
 function formatDriveType(driveType?: string | null): string {
   if (!driveType) return ''
-  
+
   switch(driveType.toUpperCase()) {
     case 'FWD': return 'Front-Wheel Drive'
     case 'RWD': return 'Rear-Wheel Drive'
@@ -215,6 +215,12 @@ function formatDriveType(driveType?: string | null): string {
     case '4WD': return '4-Wheel Drive'
     default: return driveType.toUpperCase()
   }
+}
+
+// Format car make with proper capitalization (TOYOTA → Toyota)
+function formatMake(make?: string | null): string {
+  if (!make) return ''
+  return make.charAt(0).toUpperCase() + make.slice(1).toLowerCase()
 }
 
 export default function CarDetailsClient({ params, initialSimilarCars, initialHostCars }: PageProps) {
@@ -583,7 +589,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
             )}
             <PhotoGallery
               photos={car.photos || []}
-              carName={`${car.year} ${car.make} ${car.model}`}
+              carName={`${car.year} ${formatMake(car.make)} ${car.model}`}
               onViewModeChange={setIsViewingAllPhotos}
             />
           </div>
@@ -622,7 +628,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
           )}
           <PhotoGallery
             photos={car.photos || []}
-            carName={`${car.year} ${car.make} ${car.model}`}
+            carName={`${car.year} ${formatMake(car.make)} ${car.model}`}
             onViewModeChange={setIsViewingAllPhotos}
           />
         </div>
@@ -637,7 +643,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
             <div>
               <div className="flex items-center gap-2 flex-wrap mb-1">
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-                  {car.year} {car.make}
+                  {car.year} {formatMake(car.make)}
                 </h1>
                 {vehicleClass && <VehicleBadge label={vehicleClass} />}
                 {fuelTypeBadge && <VehicleBadge label={fuelTypeBadge} />}
@@ -725,20 +731,6 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
                     {formatCarType(car.carType || car.type)}
                   </span>
                 </div>
-                
-                {car.doors && (
-                  <div className="flex items-center gap-2">
-                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4h7a2 2 0 012 2v12a2 2 0 01-2 2H4V4z" />
-                      <circle cx="9" cy="12" r="1" fill="currentColor" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 4h3v16h-3" />
-                    </svg>
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Doors</span>
-                    <span className="font-semibold text-gray-900 dark:text-white">
-                      {car.doors}
-                    </span>
-                  </div>
-                )}
               </div>
             </div>
 
@@ -763,7 +755,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
                   {/* Description */}
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Experience the perfect blend of style and performance with this {car.year} {car.make} {car.model}. 
+                      Experience the perfect blend of style and performance with this {car.year} {formatMake(car.make)} {car.model}. 
                       This {formatCarType(car.carType || car.type).toLowerCase()} offers comfortable seating for {car.seats || 5} passengers 
                       and comes equipped with {formatTransmission(car.transmission).toLowerCase() === 'automatic' ? 'an' : 'a'} {formatTransmission(car.transmission).toLowerCase()} transmission 
                       for a smooth driving experience.
