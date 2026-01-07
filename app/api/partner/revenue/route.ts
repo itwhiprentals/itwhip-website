@@ -76,14 +76,14 @@ export async function GET(request: NextRequest) {
     }
 
     // Get completed bookings in period
-    const bookings = await prisma.booking.findMany({
+    const bookings = await prisma.rentalBooking.findMany({
       where: {
-        rentalCarId: { in: vehicleIds },
-        status: { in: ['COMPLETED', 'FINISHED'] },
+        carId: { in: vehicleIds },
+        status: 'COMPLETED',
         endDate: { gte: startDate }
       },
       include: {
-        rentalCar: {
+        car: {
           select: {
             make: true,
             model: true,
@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
     })
 
     const commissionRate = partner.currentCommissionRate || 0.25
-    const grossRevenue = bookings.reduce((sum, b) => sum + b.totalPrice, 0)
+    const grossRevenue = bookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0)
     const commission = grossRevenue * commissionRate
     const netRevenue = grossRevenue - commission
 
@@ -105,10 +105,10 @@ export async function GET(request: NextRequest) {
       const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1)
       const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59)
 
-      const monthBookings = await prisma.booking.findMany({
+      const monthBookings = await prisma.rentalBooking.findMany({
         where: {
-          rentalCarId: { in: vehicleIds },
-          status: { in: ['COMPLETED', 'FINISHED'] },
+          carId: { in: vehicleIds },
+          status: 'COMPLETED',
           endDate: {
             gte: monthStart,
             lte: monthEnd
@@ -116,7 +116,7 @@ export async function GET(request: NextRequest) {
         }
       })
 
-      const monthGross = monthBookings.reduce((sum, b) => sum + b.totalPrice, 0)
+      const monthGross = monthBookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0)
       const monthCommission = monthGross * commissionRate
       const monthNet = monthGross - monthCommission
 
@@ -131,19 +131,19 @@ export async function GET(request: NextRequest) {
     }
 
     // Get top performing vehicles
-    const vehicleRevenue = await prisma.booking.groupBy({
-      by: ['rentalCarId'],
+    const vehicleRevenue = await prisma.rentalBooking.groupBy({
+      by: ['carId'],
       where: {
-        rentalCarId: { in: vehicleIds },
-        status: { in: ['COMPLETED', 'FINISHED'] }
+        carId: { in: vehicleIds },
+        status: 'COMPLETED'
       },
       _sum: {
-        totalPrice: true
+        totalAmount: true
       },
       _count: true,
       orderBy: {
         _sum: {
-          totalPrice: 'desc'
+          totalAmount: 'desc'
         }
       },
       take: 5
@@ -152,13 +152,13 @@ export async function GET(request: NextRequest) {
     const topVehicles = await Promise.all(
       vehicleRevenue.map(async (v) => {
         const car = await prisma.rentalCar.findUnique({
-          where: { id: v.rentalCarId },
+          where: { id: v.carId },
           select: { make: true, model: true, year: true }
         })
         return {
-          id: v.rentalCarId,
+          id: v.carId,
           name: car ? `${car.year} ${car.make} ${car.model}` : 'Unknown Vehicle',
-          revenue: v._sum.totalPrice || 0,
+          revenue: v._sum.totalAmount || 0,
           bookings: v._count
         }
       })

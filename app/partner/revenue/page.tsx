@@ -16,6 +16,12 @@ import {
   IoCardOutline
 } from 'react-icons/io5'
 
+interface BankingStatus {
+  stripeConnectStatus: 'not_connected' | 'pending' | 'connected' | 'restricted'
+  stripeAccountId: string | null
+  payoutsEnabled: boolean
+}
+
 interface RevenueData {
   grossRevenue: number
   commission: number
@@ -56,9 +62,12 @@ export default function PartnerRevenuePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [period, setPeriod] = useState<'month' | 'quarter' | 'year' | 'all'>('month')
   const [showGross, setShowGross] = useState(false)
+  const [bankingStatus, setBankingStatus] = useState<BankingStatus | null>(null)
+  const [connectingStripe, setConnectingStripe] = useState(false)
 
   useEffect(() => {
     fetchRevenue()
+    fetchBankingStatus()
   }, [period])
 
   const fetchRevenue = async () => {
@@ -72,6 +81,39 @@ export default function PartnerRevenuePage() {
       console.error('Failed to fetch revenue:', error)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const fetchBankingStatus = async () => {
+    try {
+      const res = await fetch('/api/partner/banking/connect')
+      const result = await res.json()
+      if (result.success) {
+        setBankingStatus({
+          stripeConnectStatus: result.hasAccount
+            ? (result.payoutsEnabled ? 'connected' : (result.detailsSubmitted ? 'restricted' : 'pending'))
+            : 'not_connected',
+          stripeAccountId: result.accountId || null,
+          payoutsEnabled: result.payoutsEnabled || false
+        })
+      }
+    } catch (error) {
+      console.error('Failed to fetch banking status:', error)
+    }
+  }
+
+  const handleConnectStripe = async () => {
+    setConnectingStripe(true)
+    try {
+      const res = await fetch('/api/partner/banking/connect', { method: 'POST' })
+      const result = await res.json()
+      if (result.success && result.onboardingUrl) {
+        window.location.href = result.onboardingUrl
+      }
+    } catch (error) {
+      console.error('Failed to connect Stripe:', error)
+    } finally {
+      setConnectingStripe(false)
     }
   }
 
@@ -162,6 +204,105 @@ export default function PartnerRevenuePage() {
           </button>
         </div>
       </div>
+
+      {/* Banking Status Alert */}
+      {bankingStatus && bankingStatus.stripeConnectStatus !== 'connected' && (
+        <div className={`rounded-lg border p-4 ${
+          bankingStatus.stripeConnectStatus === 'not_connected'
+            ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
+            : bankingStatus.stripeConnectStatus === 'restricted'
+            ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+            : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+        }`}>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                bankingStatus.stripeConnectStatus === 'not_connected'
+                  ? 'bg-amber-100 dark:bg-amber-900/30'
+                  : bankingStatus.stripeConnectStatus === 'restricted'
+                  ? 'bg-red-100 dark:bg-red-900/30'
+                  : 'bg-blue-100 dark:bg-blue-900/30'
+              }`}>
+                <IoCardOutline className={`w-5 h-5 ${
+                  bankingStatus.stripeConnectStatus === 'not_connected'
+                    ? 'text-amber-600 dark:text-amber-400'
+                    : bankingStatus.stripeConnectStatus === 'restricted'
+                    ? 'text-red-600 dark:text-red-400'
+                    : 'text-blue-600 dark:text-blue-400'
+                }`} />
+              </div>
+              <div>
+                <h3 className={`font-semibold ${
+                  bankingStatus.stripeConnectStatus === 'not_connected'
+                    ? 'text-amber-800 dark:text-amber-300'
+                    : bankingStatus.stripeConnectStatus === 'restricted'
+                    ? 'text-red-800 dark:text-red-300'
+                    : 'text-blue-800 dark:text-blue-300'
+                }`}>
+                  {bankingStatus.stripeConnectStatus === 'not_connected'
+                    ? 'Set Up Payouts'
+                    : bankingStatus.stripeConnectStatus === 'restricted'
+                    ? 'Action Required'
+                    : 'Verification Pending'}
+                </h3>
+                <p className={`text-sm mt-0.5 ${
+                  bankingStatus.stripeConnectStatus === 'not_connected'
+                    ? 'text-amber-700 dark:text-amber-400'
+                    : bankingStatus.stripeConnectStatus === 'restricted'
+                    ? 'text-red-700 dark:text-red-400'
+                    : 'text-blue-700 dark:text-blue-400'
+                }`}>
+                  {bankingStatus.stripeConnectStatus === 'not_connected'
+                    ? 'Connect your bank account to receive payouts for your bookings.'
+                    : bankingStatus.stripeConnectStatus === 'restricted'
+                    ? 'Complete verification to enable payouts. Additional information is required.'
+                    : 'Your account is being verified. This usually takes 1-2 business days.'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleConnectStripe}
+              disabled={connectingStripe || bankingStatus.stripeConnectStatus === 'pending'}
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors whitespace-nowrap disabled:opacity-50 ${
+                bankingStatus.stripeConnectStatus === 'not_connected'
+                  ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                  : bankingStatus.stripeConnectStatus === 'restricted'
+                  ? 'bg-red-600 hover:bg-red-700 text-white'
+                  : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 cursor-not-allowed'
+              }`}
+            >
+              {connectingStripe ? 'Connecting...' : (
+                bankingStatus.stripeConnectStatus === 'not_connected'
+                  ? 'Connect Bank Account'
+                  : bankingStatus.stripeConnectStatus === 'restricted'
+                  ? 'Complete Verification'
+                  : 'Pending...'
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Connected Banking Badge */}
+      {bankingStatus && bankingStatus.stripeConnectStatus === 'connected' && (
+        <div className="flex items-center justify-between bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+              <IoCardOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
+            </div>
+            <div>
+              <p className="font-medium text-green-800 dark:text-green-300">Payouts Enabled</p>
+              <p className="text-sm text-green-700 dark:text-green-400">Your bank account is connected and ready to receive payouts.</p>
+            </div>
+          </div>
+          <a
+            href="/partner/settings?tab=banking"
+            className="text-sm text-green-700 dark:text-green-400 hover:underline font-medium"
+          >
+            Manage →
+          </a>
+        </div>
+      )}
 
       {/* Revenue Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

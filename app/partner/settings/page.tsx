@@ -4,6 +4,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import {
   IoPersonOutline,
   IoBusinessOutline,
@@ -58,6 +59,7 @@ interface PartnerSettings {
 }
 
 export default function PartnerSettingsPage() {
+  const searchParams = useSearchParams()
   const [settings, setSettings] = useState<PartnerSettings>({
     email: '',
     firstName: '',
@@ -108,7 +110,12 @@ export default function PartnerSettingsPage() {
 
   useEffect(() => {
     fetchSettings()
-  }, [])
+    // Check for tab query param
+    const tab = searchParams.get('tab')
+    if (tab && ['account', 'company', 'banking', 'security', 'notifications', 'privacy'].includes(tab)) {
+      setActiveSection(tab as any)
+    }
+  }, [searchParams])
 
   const fetchSettings = async () => {
     try {
@@ -157,11 +164,14 @@ export default function PartnerSettingsPage() {
       })
       const data = await res.json()
 
-      if (data.success && data.url) {
-        window.location.href = data.url
+      if (data.success && data.onboardingUrl) {
+        window.location.href = data.onboardingUrl
+      } else if (!data.success) {
+        setSaveMessage({ type: 'error', text: data.error || 'Failed to connect Stripe' })
       }
     } catch (error) {
       console.error('Failed to start Stripe Connect:', error)
+      setSaveMessage({ type: 'error', text: 'Failed to connect with Stripe' })
     }
   }
 
@@ -599,7 +609,9 @@ export default function PartnerSettingsPage() {
                     <div>
                       <p className="font-medium text-gray-900 dark:text-white">Stripe Connect</p>
                       <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        Connect your bank account to receive payouts
+                        {settings.stripeConnectStatus === 'connected'
+                          ? 'Your payout account is set up and ready'
+                          : 'Connect your bank account to receive payouts'}
                       </p>
                     </div>
                     {getStripeStatusBadge()}
@@ -624,41 +636,104 @@ export default function PartnerSettingsPage() {
                       Complete Verification
                     </button>
                   )}
+
+                  {settings.stripeConnectStatus === 'pending' && (
+                    <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                      <p className="text-sm text-yellow-700 dark:text-yellow-400">
+                        Your account verification is in progress. This typically takes 1-2 business days.
+                      </p>
+                    </div>
+                  )}
                 </div>
 
-                {/* Payout Schedule */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Payout Schedule
-                  </label>
-                  <select
-                    value={settings.payoutSchedule}
-                    onChange={(e) => setSettings(prev => ({ ...prev, payoutSchedule: e.target.value as any }))}
-                    disabled={settings.stripeConnectStatus !== 'connected'}
-                    className="w-full sm:w-auto px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                  >
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="biweekly">Bi-weekly</option>
-                    <option value="monthly">Monthly</option>
-                  </select>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                    {settings.stripeConnectStatus === 'connected'
-                      ? 'Payouts will be deposited to your connected bank account'
-                      : 'Connect your Stripe account to set up payouts'}
-                  </p>
-                </div>
+                {/* Connected Account Details */}
+                {settings.stripeConnectStatus === 'connected' && settings.stripeAccountId && (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                          <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium text-green-800 dark:text-green-300">Account Verified</p>
+                          <p className="text-sm text-green-700 dark:text-green-400 mt-1">
+                            Your bank account is connected and payouts are enabled. You&apos;ll receive earnings directly to your account.
+                          </p>
+                          <p className="text-xs text-green-600 dark:text-green-500 mt-2 font-mono">
+                            Account ID: {settings.stripeAccountId}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
 
-                <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                  <button
-                    onClick={() => handleSave('banking')}
-                    disabled={isSaving || settings.stripeConnectStatus !== 'connected'}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg transition-colors"
-                  >
-                    <IoSaveOutline className="w-5 h-5" />
-                    {isSaving ? 'Saving...' : 'Save Changes'}
-                  </button>
-                </div>
+                    {/* Stripe Express Dashboard Link */}
+                    <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-gray-900 dark:text-white">Stripe Express Dashboard</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                            View your full payout history, update bank details, and download tax documents
+                          </p>
+                        </div>
+                        <a
+                          href="https://connect.stripe.com/express_login"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-100 text-white dark:text-gray-900 rounded-lg transition-colors text-sm font-medium"
+                        >
+                          <IoLinkOutline className="w-4 h-4" />
+                          Open Dashboard
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Payout Info */}
+                {settings.stripeConnectStatus === 'connected' && (
+                  <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <h3 className="font-medium text-gray-900 dark:text-white mb-3">Payout Information</h3>
+                    <div className="space-y-3 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-500 dark:text-gray-400">Payout Schedule</span>
+                        <span className="text-gray-900 dark:text-white font-medium">Platform Managed</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500 dark:text-gray-400">Currency</span>
+                        <span className="text-gray-900 dark:text-white font-medium">USD</span>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 pt-2 border-t border-gray-200 dark:border-gray-700">
+                        Payouts are processed by ItWhip and deposited directly to your connected bank account.
+                        View your complete payout history in your Stripe Express Dashboard.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Not Connected Info */}
+                {settings.stripeConnectStatus === 'not_connected' && (
+                  <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <h3 className="font-medium text-gray-900 dark:text-white mb-2">Why Connect with Stripe?</h3>
+                    <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
+                      <li className="flex items-start gap-2">
+                        <IoCheckmarkCircleOutline className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                        <span>Receive payouts directly to your bank account</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <IoCheckmarkCircleOutline className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                        <span>Secure, encrypted payment processing</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <IoCheckmarkCircleOutline className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                        <span>Access to detailed payout history and tax documents</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <IoCheckmarkCircleOutline className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                        <span>1099 tax forms automatically available</span>
+                      </li>
+                    </ul>
+                  </div>
+                )}
               </div>
             )}
 

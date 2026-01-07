@@ -1,6 +1,7 @@
 // app/lib/email/templates/management-invitation.ts
 
 import { ManagementInvitationData, EmailTemplate } from '../types'
+import { emailFooterHtml, emailFooterText } from './email-footer'
 
 /**
  * Email template for fleet management invitations
@@ -322,11 +323,12 @@ export function getManagementInvitationTemplate(data: ManagementInvitationData):
             </p>
           </div>
 
-          <div class="footer">
-            <strong>ITWHIP</strong><br>
-            Premium Vehicle Rentals<br>
-            <span style="font-size: 11px;">You're receiving this because ${data.senderEmail} invited you to ITWhip.</span>
-          </div>
+          ${emailFooterHtml({
+            recipientEmail: data.recipientEmail,
+            includeAppButtons: true,
+            includeSocialLinks: true,
+            footerType: 'full'
+          })}
         </div>
       </body>
     </html>
@@ -361,7 +363,12 @@ This invitation expires on ${data.expiresAt}
 
 Questions? Contact info@itwhip.com
 
-ITWHIP - Premium Vehicle Rentals
+${emailFooterText({
+    recipientEmail: data.recipientEmail,
+    includeAppButtons: true,
+    includeSocialLinks: true,
+    footerType: 'full'
+  })}
   `
 
   return { subject, html, text }

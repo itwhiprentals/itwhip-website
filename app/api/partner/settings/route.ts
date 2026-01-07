@@ -29,6 +29,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Partner not found' }, { status: 404 })
     }
 
+    // Determine Stripe Connect status
+    let stripeConnectStatus: 'not_connected' | 'pending' | 'connected' | 'restricted' = 'not_connected'
+    if (partner.stripeConnectAccountId) {
+      if (partner.stripeChargesEnabled && partner.stripePayoutsEnabled) {
+        stripeConnectStatus = 'connected'
+      } else if (partner.stripeDetailsSubmitted) {
+        stripeConnectStatus = 'restricted' // Details submitted but not fully enabled
+      } else {
+        stripeConnectStatus = 'pending'
+      }
+    }
+
     return NextResponse.json({
       success: true,
       settings: {
@@ -43,11 +55,16 @@ export async function GET(request: NextRequest) {
         city: partner.city || '',
         state: partner.state || '',
         zipCode: partner.zipCode || '',
-        bankConnected: false,
+        // Stripe Connect status
+        stripeConnectStatus,
+        stripeAccountId: partner.stripeConnectAccountId || null,
+        payoutSchedule: 'weekly',
+        bankConnected: stripeConnectStatus === 'connected',
         twoFactorEnabled: partner.user?.twoFactorEnabled || false,
         emailNotifications: true,
         smsNotifications: false,
         bookingAlerts: true,
+        payoutAlerts: true,
         marketingEmails: false,
         // GDPR fields
         userStatus: partner.user?.status || 'ACTIVE',

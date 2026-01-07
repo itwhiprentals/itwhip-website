@@ -122,6 +122,7 @@ export async function POST(request: NextRequest) {
       country: 'US',
       email: partner.email,
       capabilities: {
+        card_payments: { requested: true },
         transfers: { requested: true },
       },
       business_type: 'company', // Partners are businesses
