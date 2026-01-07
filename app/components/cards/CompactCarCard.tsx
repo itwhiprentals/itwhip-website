@@ -202,7 +202,7 @@ export default function CompactCarCard({ car, accentColor = 'amber', className =
           {car.model}
         </div>
 
-        {/* Car details + rating row */}
+        {/* Car details + rating + trips row */}
         <div className="flex items-center gap-x-1.5 text-xs text-gray-500 dark:text-gray-400 mt-1.5">
           <span>{car.seats || 5} seats</span>
           <span>•</span>
@@ -210,6 +210,8 @@ export default function CompactCarCard({ car, accentColor = 'amber', className =
             <>
               <IoStar className="w-3.5 h-3.5 text-amber-400 fill-current" />
               <span className="font-semibold text-gray-700 dark:text-gray-300">{(rating ?? 5).toFixed(1)}</span>
+              <span>•</span>
+              <span>{trips} trip{trips !== 1 ? 's' : ''}</span>
             </>
           ) : (
             <span className="italic">New</span>

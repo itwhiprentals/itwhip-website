@@ -26,8 +26,9 @@ import { format } from 'date-fns'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
 
-// Import Arizona tax calculation
-import { getTaxRate, getCityFromAddress } from '@/app/(guest)/rentals/lib/arizona-taxes'
+// Import shared booking pricing utility (ensures consistent calculations)
+import { calculateBookingPricing, formatPrice } from '@/app/(guest)/rentals/lib/booking-pricing'
+import { getCityFromAddress } from '@/app/(guest)/rentals/lib/arizona-taxes'
 
 // Import Header component
 import Header from '@/app/components/Header'
@@ -1877,81 +1878,70 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
           {/* Price Summary */}
           <div className="border-t dark:border-gray-700 pt-6">
             {(() => {
-              // Calculate dynamic tax rate based on car's location
-              // Use car.city first (like BookingWidget), fallback to parsing address
+              // Use shared pricing utility for consistent calculations with BookingWidget
               const carCity = car?.city || getCityFromAddress(car?.address || 'Phoenix, AZ')
-              const { rate: taxRate, display: taxRateDisplay } = getTaxRate(carCity)
-
-              // Calculate subtotal (before tax)
-              const enhancementsTotal = savedBookingDetails.pricing.breakdown.refuelService +
-                                       savedBookingDetails.pricing.breakdown.additionalDriver +
-                                       savedBookingDetails.pricing.breakdown.extraMiles +
-                                       savedBookingDetails.pricing.breakdown.vipConcierge
-
-              const subtotal = savedBookingDetails.pricing.basePrice +
-                              savedBookingDetails.pricing.insurancePrice +
-                              savedBookingDetails.pricing.serviceFee +
-                              savedBookingDetails.pricing.deliveryFee +
-                              enhancementsTotal
-
-              // Recalculate taxes with accurate city-specific rate
-              const calculatedTaxes = Math.round(subtotal * taxRate * 100) / 100
-
-              // Recalculate trip total with new taxes
-              const calculatedTripTotal = Math.round((subtotal + calculatedTaxes) * 100) / 100
+              const pricing = calculateBookingPricing({
+                dailyRate: savedBookingDetails.pricing.dailyRate,
+                days: savedBookingDetails.pricing.days,
+                insurancePrice: savedBookingDetails.pricing.insurancePrice,
+                deliveryFee: savedBookingDetails.pricing.deliveryFee,
+                enhancements: {
+                  refuelService: savedBookingDetails.pricing.breakdown.refuelService,
+                  additionalDriver: savedBookingDetails.pricing.breakdown.additionalDriver,
+                  extraMiles: savedBookingDetails.pricing.breakdown.extraMiles,
+                  vipConcierge: savedBookingDetails.pricing.breakdown.vipConcierge
+                },
+                city: carCity
+              })
 
               return (
                 <div className="space-y-2 text-sm">
                   {/* Rental */}
                   <div className="flex justify-between">
                     <span className="font-semibold text-gray-900 dark:text-white">Rental ({numberOfDays} days)</span>
-                    <span className="font-medium text-gray-900 dark:text-white">${savedBookingDetails.pricing.basePrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span className="font-medium text-gray-900 dark:text-white">${formatPrice(pricing.basePrice)}</span>
                   </div>
 
                   {/* Insurance */}
                   <div className="flex justify-between">
                     <span className="font-semibold text-gray-900 dark:text-white">Insurance</span>
-                    <span className="font-medium text-gray-900 dark:text-white">${savedBookingDetails.pricing.insurancePrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span className="font-medium text-gray-900 dark:text-white">${formatPrice(pricing.insurancePrice)}</span>
                   </div>
 
                   {/* Delivery (conditional) */}
-                  {savedBookingDetails.pricing.deliveryFee > 0 && (
+                  {pricing.deliveryFee > 0 && (
                     <div className="flex justify-between">
                       <span className="text-gray-600 dark:text-gray-400">Delivery</span>
-                      <span className="font-medium text-gray-900 dark:text-white">${savedBookingDetails.pricing.deliveryFee.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      <span className="font-medium text-gray-900 dark:text-white">${formatPrice(pricing.deliveryFee)}</span>
                     </div>
                   )}
 
                   {/* Enhancements (conditional) */}
-                  {enhancementsTotal > 0 && (
+                  {pricing.enhancementsTotal > 0 && (
                     <div className="flex justify-between">
                       <span className="text-gray-600 dark:text-gray-400">Enhancements</span>
-                      <span className="font-medium text-gray-900 dark:text-white">
-                        ${enhancementsTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </span>
+                      <span className="font-medium text-gray-900 dark:text-white">${formatPrice(pricing.enhancementsTotal)}</span>
                     </div>
                   )}
 
                   {/* Service fee */}
                   <div className="flex justify-between">
                     <span className="font-semibold text-gray-900 dark:text-white">Service Fee</span>
-                    <span className="font-medium text-gray-900 dark:text-white">${savedBookingDetails.pricing.serviceFee.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span className="font-medium text-gray-900 dark:text-white">${formatPrice(pricing.serviceFee)}</span>
                   </div>
 
                   {/* Taxes with dynamic percentage */}
                   <div className="flex justify-between">
-                    <span className="font-semibold text-gray-900 dark:text-white">Taxes ({taxRateDisplay})</span>
-                    <span className="font-medium text-gray-900 dark:text-white">${calculatedTaxes.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">Taxes ({pricing.taxRateDisplay})</span>
+                    <span className="font-medium text-gray-900 dark:text-white">${formatPrice(pricing.taxes)}</span>
                   </div>
 
                   {/* Totals Section */}
                   <div className="pt-4 mt-4 border-t dark:border-gray-700">
-                    {/* Trip Total - using recalculated amount */}
+                    {/* Trip Total - using shared utility calculation */}
                     <div className="flex justify-between items-baseline">
                       <span className="font-bold text-gray-900 dark:text-white">Trip Total</span>
-                      <span className="text-lg font-bold text-gray-900 dark:text-white">
-                        ${calculatedTripTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </span>
+                      <span className="text-lg font-bold text-gray-900 dark:text-white">${formatPrice(pricing.total)}</span>
                     </div>
 
                 {/* Security Deposit - Compact Red Box, right-aligned under amount */}
@@ -1994,7 +1984,7 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
                       <span className="text-base font-semibold text-gray-900 dark:text-white">Total Due Today</span>
                       <div className="text-right">
                         <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                          ${(calculatedTripTotal + adjustedDeposit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          ${formatPrice(pricing.total + adjustedDeposit)}
                         </span>
                       </div>
                     </div>
@@ -2060,34 +2050,34 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
           <div className="flex items-center justify-between gap-3">
             {/* Pricing Info - Compact on mobile */}
             {(() => {
-              // Recalculate trip total with accurate tax for floating bar
-              // Use car.city first (like BookingWidget), fallback to parsing address
+              // Use shared pricing utility for consistent calculations with BookingWidget
               const carCity = car?.city || getCityFromAddress(car?.address || 'Phoenix, AZ')
-              const { rate: taxRate } = getTaxRate(carCity)
-              const enhancementsTotal = savedBookingDetails.pricing.breakdown.refuelService +
-                                       savedBookingDetails.pricing.breakdown.additionalDriver +
-                                       savedBookingDetails.pricing.breakdown.extraMiles +
-                                       savedBookingDetails.pricing.breakdown.vipConcierge
-              const subtotal = savedBookingDetails.pricing.basePrice +
-                              savedBookingDetails.pricing.insurancePrice +
-                              savedBookingDetails.pricing.serviceFee +
-                              savedBookingDetails.pricing.deliveryFee +
-                              enhancementsTotal
-              const calculatedTaxes = Math.round(subtotal * taxRate * 100) / 100
-              const tripTotal = Math.round((subtotal + calculatedTaxes) * 100) / 100
-              const grandTotal = tripTotal + adjustedDeposit
+              const pricing = calculateBookingPricing({
+                dailyRate: savedBookingDetails.pricing.dailyRate,
+                days: savedBookingDetails.pricing.days,
+                insurancePrice: savedBookingDetails.pricing.insurancePrice,
+                deliveryFee: savedBookingDetails.pricing.deliveryFee,
+                enhancements: {
+                  refuelService: savedBookingDetails.pricing.breakdown.refuelService,
+                  additionalDriver: savedBookingDetails.pricing.breakdown.additionalDriver,
+                  extraMiles: savedBookingDetails.pricing.breakdown.extraMiles,
+                  vipConcierge: savedBookingDetails.pricing.breakdown.vipConcierge
+                },
+                city: carCity
+              })
+              const grandTotal = pricing.total + adjustedDeposit
 
               return (
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline gap-1.5 sm:gap-2">
                     <span className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
-                      ${grandTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      ${formatPrice(grandTotal)}
                     </span>
                     <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">total</span>
                   </div>
                   <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
-                    <span className="hidden sm:inline">${tripTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} + </span>
-                    <span className="text-red-600 dark:text-red-400">${adjustedDeposit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} deposit</span>
+                    <span className="hidden sm:inline">${formatPrice(pricing.total)} + </span>
+                    <span className="text-red-600 dark:text-red-400">${formatPrice(adjustedDeposit)} deposit</span>
                     <span className="text-gray-400 dark:text-gray-500 ml-1">(refundable)</span>
                   </p>
                   {userProfile?.insuranceVerified && (

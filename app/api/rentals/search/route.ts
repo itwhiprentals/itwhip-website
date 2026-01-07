@@ -4,6 +4,7 @@ import prisma from '@/app/lib/database/prisma'
 import { calculateDistance, getBoundingBox } from '@/lib/utils/distance'
 import { checkAvailability } from '@/lib/utils/availability'
 import { getLocationByName, ALL_ARIZONA_LOCATIONS } from '@/lib/data/arizona-locations'
+import { getTaxRate } from '@/app/(guest)/rentals/lib/arizona-taxes'
 
 // Default search radius in miles
 const DEFAULT_RADIUS_MILES = 25
@@ -352,14 +353,16 @@ export async function GET(request: NextRequest) {
         parsedRules = []
       }
 
-      // Calculate pricing
+      // Calculate pricing with city-specific tax
       const serviceFee = car.dailyRate * 0.15
-      const totalDaily = car.dailyRate + serviceFee
-      
+      const { rate: taxRate } = getTaxRate(car.city || 'Phoenix')
+      const taxAmount = Math.round((car.dailyRate + serviceFee) * taxRate * 100) / 100
+      const totalDaily = car.dailyRate + serviceFee + taxAmount
+
       let totalPrice = totalDaily
       if (pickupDate && returnDate) {
         const days = Math.ceil(
-          (new Date(returnDate).getTime() - new Date(pickupDate).getTime()) / 
+          (new Date(returnDate).getTime() - new Date(pickupDate).getTime()) /
           (1000 * 60 * 60 * 24)
         )
         totalPrice = totalDaily * days
@@ -405,6 +408,8 @@ export async function GET(request: NextRequest) {
         weeklyRate: car.weeklyRate,
         monthlyRate: car.monthlyRate,
         serviceFee,
+        taxRate,
+        taxAmount,
         totalDaily,
         totalPrice,
         instantBook: car.instantBook,

@@ -25,8 +25,8 @@ import {
   IoInformationCircleOutline
 } from 'react-icons/io5'
 
-// Import Arizona tax calculation
-import { getTaxRate } from '@/app/(guest)/rentals/lib/arizona-taxes'
+// Import shared booking pricing utility (ensures consistent calculations across all booking stages)
+import { calculateFromWidgetState, formatPrice } from '@/app/(guest)/rentals/lib/booking-pricing'
 
 interface BookingWidgetProps {
   car: any
@@ -187,13 +187,24 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
   const vipConcierge = addOns.vipConcierge ? 150 * days : 0
   const deliveryFee = deliveryType === 'valet' ? 195 : deliveryType === 'airport' ? 50 : deliveryType === 'hotel' ? 105 : 0
 
-  // Get city-specific Arizona tax rate
+  // Use shared pricing utility for consistent calculations across all booking stages
   const carCity = car?.city || car?.address || 'Phoenix'
-  const { rate: taxRate, display: taxRateDisplay } = getTaxRate(carCity)
+  const pricing = calculateFromWidgetState({
+    dailyRate,
+    days,
+    weeklyRate: car?.weeklyRate,
+    monthlyRate: car?.monthlyRate,
+    insurancePrice,
+    deliveryFee,
+    refuelService,
+    additionalDriver,
+    extraMiles,
+    vipConcierge,
+    city: carCity
+  })
 
-  const serviceFee = Math.round(basePrice * 0.15)
-  const taxes = Math.round((basePrice + serviceFee) * taxRate)
-  const total = basePrice + insurancePrice + refuelService + additionalDriver + extraMiles + vipConcierge + deliveryFee + serviceFee + taxes
+  // Extract values from shared calculation
+  const { serviceFee, taxes, taxRate, taxRateDisplay, total } = pricing
   
   // Fetch insurance quotes when dates change
   useEffect(() => {
@@ -272,15 +283,17 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
       pricing: {
         days,
         dailyRate,
-        basePrice,
-        insurancePrice,
-        deliveryFee,
-        serviceFee,
-        taxes,
-        taxRate,
-        taxRateDisplay,
-        total,
+        basePrice: pricing.basePrice,  // Use shared calculation (includes discounts)
+        insurancePrice: pricing.insurancePrice,
+        deliveryFee: pricing.deliveryFee,
+        serviceFee: pricing.serviceFee,
+        taxes: pricing.taxes,
+        taxRate: pricing.taxRate,
+        taxRateDisplay: pricing.taxRateDisplay,
+        total: pricing.total,
         deposit: actualDeposit,
+        // Stripe-ready line items for payment processing
+        lineItems: pricing.lineItems,
         breakdown: {
           refuelService,
           additionalDriver,
@@ -821,44 +834,44 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
           )}
         </div>
         
-        {/* Price Breakdown */}
+        {/* Price Breakdown - Using shared pricing for consistency */}
         <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mb-4 space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-gray-600 dark:text-gray-300">
-              ${dailyRate.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} × {days} {days === 1 ? 'day' : 'days'}
+              ${formatPrice(dailyRate)} × {days} {days === 1 ? 'day' : 'days'}
             </span>
-            <span className="text-gray-900 dark:text-white">${basePrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <span className="text-gray-900 dark:text-white">${formatPrice(pricing.basePrice)}</span>
           </div>
 
-          {insurancePrice > 0 && (
+          {pricing.insurancePrice > 0 && (
             <div className="flex justify-between text-sm">
               <span className="text-gray-600 dark:text-gray-300">Insurance ({getInsuranceTierName(insuranceTier)})</span>
-              <span className="text-gray-900 dark:text-white">${insurancePrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <span className="text-gray-900 dark:text-white">${formatPrice(pricing.insurancePrice)}</span>
             </div>
           )}
 
-          {(refuelService + additionalDriver + extraMiles + vipConcierge) > 0 && (
+          {pricing.enhancementsTotal > 0 && (
             <div className="flex justify-between text-sm">
               <span className="text-gray-600 dark:text-gray-300">Enhancements</span>
-              <span className="text-gray-900 dark:text-white">${(refuelService + additionalDriver + extraMiles + vipConcierge).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <span className="text-gray-900 dark:text-white">${formatPrice(pricing.enhancementsTotal)}</span>
             </div>
           )}
 
-          {deliveryFee > 0 && (
+          {pricing.deliveryFee > 0 && (
             <div className="flex justify-between text-sm">
               <span className="text-gray-600 dark:text-gray-300">Delivery</span>
-              <span className="text-gray-900 dark:text-white">${deliveryFee.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <span className="text-gray-900 dark:text-white">${formatPrice(pricing.deliveryFee)}</span>
             </div>
           )}
 
           <div className="flex justify-between text-sm">
             <span className="text-gray-600 dark:text-gray-300">Service fee</span>
-            <span className="text-gray-900 dark:text-white">${serviceFee.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <span className="text-gray-900 dark:text-white">${formatPrice(pricing.serviceFee)}</span>
           </div>
 
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600 dark:text-gray-300">Taxes ({taxRateDisplay})</span>
-            <span className="text-gray-900 dark:text-white">${taxes.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <span className="text-gray-600 dark:text-gray-300">Taxes ({pricing.taxRateDisplay})</span>
+            <span className="text-gray-900 dark:text-white">${formatPrice(pricing.taxes)}</span>
           </div>
 
           <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
@@ -866,10 +879,10 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
               <span className="font-semibold text-gray-900 dark:text-white">Total</span>
               <div className="text-right">
                 <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                  ${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  ${formatPrice(pricing.total)}
                 </span>
                 <p className="text-xs text-gray-500 dark:text-gray-300 mt-1">
-                  Plus ${actualDeposit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} security deposit (hold)
+                  Plus ${formatPrice(actualDeposit)} security deposit (hold)
                 </p>
               </div>
             </div>
@@ -917,7 +930,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
               <div>
                 <div className="flex items-baseline gap-2">
                   <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                    ${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    ${formatPrice(pricing.total)}
                   </span>
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-300">{days} {days === 1 ? 'day' : 'days'} • Tax included</p>

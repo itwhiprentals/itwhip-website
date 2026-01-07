@@ -1,8 +1,8 @@
 // app/(guest)/rentals/lib/pricing.ts
 // Pricing calculations for the rental system
 
-import { 
-  PricingCalculation, 
+import {
+  PricingCalculation,
   BookingPriceBreakdown,
   CarType,
   DeliveryType,
@@ -10,6 +10,7 @@ import {
 } from '@/app/types/rental'
 import { PRICING_CONFIG, CAR_TYPES, DELIVERY_OPTIONS } from './constants'
 import { differenceInDays, differenceInHours } from 'date-fns'
+import { getTaxRate } from './arizona-taxes'
 
 // ============================================================================
 // MAIN PRICING CALCULATOR
@@ -29,6 +30,7 @@ export function calculateRentalPrice(params: {
   source?: CarSource
   weeklyRate?: number
   monthlyRate?: number
+  city?: string  // For city-specific tax rate
 }): PricingCalculation {
   const start = new Date(params.startDate)
   const end = new Date(params.endDate)
@@ -129,10 +131,10 @@ export function calculateRentalPrice(params: {
   const subtotal = basePrice + deliveryFee + insuranceTotal
   const serviceFeeAmount = subtotal * serviceFeePercentage
 
-  // Calculate tax
+  // Calculate tax using city-specific rate
   const totalBeforeTax = subtotal + serviceFeeAmount
-  const taxRate = PRICING_CONFIG.RENTAL_TAX_RATE
-  const taxAmount = totalBeforeTax * taxRate
+  const { rate: taxRate } = getTaxRate(params.city || 'phoenix')
+  const taxAmount = Math.round(totalBeforeTax * taxRate * 100) / 100
 
   // Calculate total
   const totalAmount = totalBeforeTax + taxAmount
@@ -171,6 +173,7 @@ export function calculatePricing(params: {
   monthlyDiscount?: number
   deliveryFee?: number
   insuranceDaily?: number
+  city?: string  // For city-specific tax rate
 }): {
   subtotal: number
   serviceFee: number
@@ -205,7 +208,9 @@ export function calculatePricing(params: {
   const insurance = params.insuranceDaily ? params.insuranceDaily * days : 0
   const delivery = params.deliveryFee || 0
   const serviceFee = subtotal * 0.15 // 15% service fee
-  const taxes = (subtotal + serviceFee) * 0.08 // 8% taxes
+  // Use city-specific tax rate (defaults to Phoenix ~8.4%)
+  const { rate: taxRate } = getTaxRate(params.city || 'phoenix')
+  const taxes = Math.round((subtotal + serviceFee) * taxRate * 100) / 100
   
   // Calculate total
   const total = subtotal + serviceFee + taxes + insurance + delivery
@@ -257,7 +262,8 @@ export function estimatePrice(
   dailyRate: number,
   numberOfDays: number,
   carType: CarType = 'midsize',
-  includeInsurance: boolean = false
+  includeInsurance: boolean = false,
+  city?: string  // For city-specific tax rate
 ): number {
   let price = dailyRate * numberOfDays
 
@@ -276,8 +282,9 @@ export function estimatePrice(
   // Add service fee
   price *= (1 + PRICING_CONFIG.SERVICE_FEE_PERCENTAGE)
 
-  // Add tax
-  price *= (1 + PRICING_CONFIG.RENTAL_TAX_RATE)
+  // Add tax using city-specific rate
+  const { rate: taxRate } = getTaxRate(city || 'phoenix')
+  price *= (1 + taxRate)
 
   return Math.round(price * 100) / 100
 }
@@ -291,6 +298,7 @@ export function calculateHostEarnings(params: {
   serviceFee: number
   numberOfDays: number
   source: CarSource
+  city?: string  // For city-specific tax rate
 }): {
   grossEarnings: number
   platformFee: number
@@ -299,7 +307,8 @@ export function calculateHostEarnings(params: {
 } {
   // Remove service fee and tax from total to get base amount
   const baseAmount = params.totalAmount - params.serviceFee
-  const taxAmount = baseAmount * PRICING_CONFIG.RENTAL_TAX_RATE
+  const { rate: taxRate } = getTaxRate(params.city || 'phoenix')
+  const taxAmount = baseAmount * taxRate
   const grossEarnings = baseAmount - taxAmount
 
   // Calculate platform fee based on source

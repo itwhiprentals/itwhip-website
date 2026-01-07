@@ -157,7 +157,8 @@ export async function POST(request: NextRequest) {
         monthlyRate: true,
         deliveryFee: true,
         insuranceDaily: true,
-        
+        city: true,  // For city-specific tax rate
+
         // Host info - minimal for notifications
         hostId: true,
         host: {
@@ -273,7 +274,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Calculate pricing
+    // Calculate pricing with city-specific tax rate
     const driverAge = calculateDriverAge(bookingData.driverInfo.dateOfBirth)
     const pricing = calculatePricing({
       dailyRate: car.dailyRate,
@@ -282,7 +283,8 @@ export async function POST(request: NextRequest) {
       extras: bookingData.extras || [],
       insurance: bookingData.insurance,
       deliveryType: bookingData.pickupType,
-      driverAge
+      driverAge,
+      city: car.city || 'Phoenix'  // Pass city for tax calculation
     })
 
     // ========== SIMPLIFIED FRAUD DETECTION ==========
