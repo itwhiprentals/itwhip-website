@@ -1,8 +1,17 @@
 // app/(guest)/rentals/[carId]/page.tsx
 import { Metadata, Viewport } from 'next'
 import { redirect, notFound } from 'next/navigation'
-import { isRedirectError } from 'next/dist/client/components/redirect'
 import Script from 'next/script'
+
+// Helper to detect Next.js redirect errors (works across Next.js versions)
+function isNextRedirectError(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    'digest' in error &&
+    typeof (error as any).digest === 'string' &&
+    (error as any).digest.startsWith('NEXT_REDIRECT')
+  )
+}
 import CarDetailsClient from './CarDetailsClient'
 import { extractCarId, generateCarUrl, isOldUrlFormat } from '@/app/lib/utils/urls'
 import { getRelatedCars } from '@/app/lib/server/fetchSimilarCars'
@@ -146,7 +155,7 @@ export default async function CarDetailsPage({
       }
     } catch (error) {
       // Re-throw redirect errors - they're not real errors, just Next.js redirect mechanism
-      if (isRedirectError(error)) {
+      if (isNextRedirectError(error)) {
         throw error
       }
       console.error('Error during SEO redirect:', error)
