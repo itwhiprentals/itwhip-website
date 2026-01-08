@@ -40,6 +40,7 @@ import { formatCurrency } from '@/app/(guest)/rentals/lib/rental-utils'
 import Header from '@/app/components/Header'
 import VehicleBadge from '@/app/components/VehicleBadge'
 import { getVehicleClass, formatFuelTypeBadge } from '@/app/lib/utils/vehicleClassification'
+import { getVehicleSpecData } from '@/app/lib/utils/vehicleSpec'
 
 // Updated type definition with suspension fields
 interface RentalCarWithDetails {
@@ -732,20 +733,26 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
                   </span>
                 </div>
 
-                {/* Doors - show actual value from database */}
-                {car.doors && (
-                  <div className="flex items-center gap-2">
-                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4h7a2 2 0 012 2v12a2 2 0 01-2 2H4V4z" />
-                      <circle cx="9" cy="12" r="1" fill="currentColor" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 4h3v16h-3" />
-                    </svg>
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Doors</span>
-                    <span className="font-semibold text-gray-900 dark:text-white">
-                      {car.doors}
-                    </span>
-                  </div>
-                )}
+                {/* Doors - use vehicle spec lookup for accurate count */}
+                {(() => {
+                  // Look up correct doors from vehicle specs database
+                  const vehicleSpec = getVehicleSpecData(car.make, car.model, String(car.year))
+                  const actualDoors = vehicleSpec.doors || car.doors
+                  if (!actualDoors) return null
+                  return (
+                    <div className="flex items-center gap-2">
+                      <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4h7a2 2 0 012 2v12a2 2 0 01-2 2H4V4z" />
+                        <circle cx="9" cy="12" r="1" fill="currentColor" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 4h3v16h-3" />
+                      </svg>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Doors</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">
+                        {actualDoors}
+                      </span>
+                    </div>
+                  )
+                })()}
               </div>
             </div>
 
