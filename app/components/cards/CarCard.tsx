@@ -20,6 +20,12 @@ interface CarCardProps {
   showHostAvatar?: boolean
 }
 
+// Capitalize first letter only (Toyota not TOYOTA)
+const capitalizeFirst = (s: string | null | undefined): string => {
+  if (!s) return ''
+  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
+}
+
 // Check if host photo URL is valid (not a placeholder/default)
 const isValidHostPhoto = (url: string | undefined | null): boolean => {
   if (!url) return false
@@ -55,7 +61,11 @@ export default function CarCard({ car, showHostAvatar = false }: CarCardProps) {
                 <IoStarSharp className="w-3 h-3" /> LOCAL HOST
               </span>
             )}
-            {car.instantBook && (
+            {car.vehicleType === 'RIDESHARE' ? (
+              <span className="px-3 py-1 bg-orange-500 text-white text-xs font-bold rounded-full shadow-lg flex items-center gap-1">
+                <IoCarSportOutline className="w-3 h-3" /> RIDESHARE
+              </span>
+            ) : car.instantBook && (
               <span className="px-3 py-1 bg-amber-500 text-white text-xs font-bold rounded-full shadow-lg flex items-center gap-1">
                 <IoFlashOutline className="w-3 h-3" /> INSTANT
               </span>
@@ -118,7 +128,7 @@ export default function CarCard({ car, showHostAvatar = false }: CarCardProps) {
           <div>
             <div className="flex items-center justify-between">
               <h3 className="text-base font-semibold text-gray-700 dark:text-gray-300">
-                {car.year} {car.make}
+                {car.year} {capitalizeFirst(car.make)}
               </h3>
               {showEcoElite && (
                 <div className="group/tooltip relative">
