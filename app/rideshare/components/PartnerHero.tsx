@@ -70,6 +70,7 @@ interface PartnerHeroProps {
   stats: PartnerStats
   socialLinks?: SocialLinks
   visibility?: VisibilitySettings
+  isStripeVerified?: boolean
 }
 
 export default function PartnerHero({
@@ -84,7 +85,8 @@ export default function PartnerHero({
   yearEstablished,
   stats,
   socialLinks,
-  visibility = { showEmail: true, showPhone: true, showWebsite: true }
+  visibility = { showEmail: true, showPhone: true, showWebsite: true },
+  isStripeVerified = false
 }: PartnerHeroProps) {
   const [showFullBio, setShowFullBio] = useState(false)
 
@@ -106,18 +108,16 @@ export default function PartnerHero({
 
   return (
     <div className="relative">
-      {/* Hero Image Section - FULL WIDTH, NO CONTAINER */}
-      <div className="relative w-full h-[300px] sm:h-[350px] md:h-[400px]">
+      {/* Hero Image Section - FULL WIDTH, displays at natural aspect ratio */}
+      <div className="relative w-full">
         {heroImage ? (
-          <Image
+          <img
             src={heroImage}
             alt={`${companyName} hero`}
-            fill
-            className="object-cover"
-            priority
+            className="w-full h-auto"
           />
         ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-orange-600 via-orange-500 to-amber-500" />
+          <div className="w-full h-[300px] sm:h-[350px] md:h-[400px] bg-gradient-to-br from-orange-600 via-orange-500 to-amber-500" />
         )}
 
         {/* Dark overlay */}
@@ -133,26 +133,31 @@ export default function PartnerHero({
         {/* Logo - Centered, overlapping bottom */}
         <div className="absolute left-1/2 -translate-x-1/2 -bottom-[75px] z-20">
           <div className="relative">
-            <div className="w-[150px] h-[150px] bg-white dark:bg-gray-800 rounded-full flex items-center justify-center overflow-hidden shadow-2xl border-4 border-white dark:border-gray-700">
+            {/* White background ensures all logos visible in both light/dark modes */}
+            <div className="w-[150px] h-[150px] rounded-full overflow-hidden shadow-2xl ring-1 ring-white/50 bg-white">
               {logo ? (
                 <Image
                   src={logo}
                   alt={companyName}
                   width={150}
                   height={150}
-                  className="object-contain p-3"
+                  className="object-cover w-full h-full scale-110"
                 />
               ) : (
-                <span className="text-6xl font-bold text-orange-500">
-                  {companyName.charAt(0)}
-                </span>
+                <div className="w-full h-full flex items-center justify-center">
+                  <span className="text-6xl font-bold text-orange-500">
+                    {companyName.charAt(0)}
+                  </span>
+                </div>
               )}
             </div>
 
-            {/* Verified badge */}
-            <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-2 shadow-lg border-2 border-white">
-              <IoCheckmarkCircleOutline className="w-5 h-5 text-white" />
-            </div>
+            {/* Verified badge - only show if Stripe verified */}
+            {isStripeVerified && (
+              <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-2 shadow-lg border-2 border-white">
+                <IoCheckmarkCircleOutline className="w-5 h-5 text-white" />
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -175,10 +180,12 @@ export default function PartnerHero({
                 </div>
               )}
             </div>
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg text-[10px] sm:text-xs font-medium">
-              <IoCheckmarkCircleOutline className="w-3 h-3" />
-              Verified Partner
-            </span>
+            {isStripeVerified && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg text-[10px] sm:text-xs font-medium">
+                <IoCheckmarkCircleOutline className="w-3 h-3" />
+                Verified Partner
+              </span>
+            )}
           </div>
 
           {/* Bio */}

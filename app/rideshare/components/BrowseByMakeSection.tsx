@@ -78,11 +78,11 @@ export default function BrowseByMakeSection() {
                   {make.badge}
                 </span>
                 {/* Logo */}
-                <div className="h-10 sm:h-12 flex items-center justify-center mb-1">
+                <div className="h-12 sm:h-14 flex items-center justify-center mb-1 bg-gray-100 dark:bg-gray-700 rounded-md mx-1">
                   <img
                     src={make.logo}
                     alt={`${make.name} logo`}
-                    className="h-full w-auto max-w-[80px] sm:max-w-[90px] object-contain group-hover:scale-105 transition-transform"
+                    className="h-8 sm:h-10 w-auto max-w-[70px] sm:max-w-[80px] object-contain group-hover:scale-105 transition-transform"
                   />
                 </div>
                 {/* Price */}

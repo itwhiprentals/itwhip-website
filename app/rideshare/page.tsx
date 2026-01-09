@@ -411,7 +411,9 @@ async function getPartners() {
           percentage: d.percentage,
           expiresAt: d.expiresAt?.toISOString() || null
         })),
-        hasActiveDiscount: partner.partnerDiscounts.length > 0
+        hasActiveDiscount: partner.partnerDiscounts.length > 0,
+        // Stripe verification: verified if payouts enabled AND details submitted
+        isStripeVerified: Boolean(partner.stripePayoutsEnabled && partner.stripeDetailsSubmitted)
         }
       })
   } catch (error) {

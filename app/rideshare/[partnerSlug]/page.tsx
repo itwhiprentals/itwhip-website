@@ -354,6 +354,7 @@ export default async function PartnerLandingPage({ params, searchParams }: PageP
               showPhone: partner.partnerShowPhone ?? true,
               showWebsite: partner.partnerShowWebsite ?? true
             }}
+            isStripeVerified={Boolean(partner.stripePayoutsEnabled && partner.stripeDetailsSubmitted)}
           />
 
         {/* Main Content - WITH container */}

@@ -1,5 +1,5 @@
-// app/api/partner/hero-image/route.ts
-// Partner Hero Image Upload API
+// app/api/partner/logo/route.ts
+// Partner Logo Upload API
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
@@ -18,9 +18,9 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 })
 
-// Hero image specs
-const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+// Logo specs
+const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2MB
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']
 
 async function getAuthenticatedPartner() {
   const cookieStore = await cookies()
@@ -44,7 +44,7 @@ async function getAuthenticatedPartner() {
         id: true,
         partnerCompanyName: true,
         partnerSlug: true,
-        partnerHeroImage: true,
+        partnerLogo: true,
         approvalStatus: true,
         hostType: true
       }
@@ -60,7 +60,7 @@ async function getAuthenticatedPartner() {
   }
 }
 
-// GET - Get current hero image
+// GET - Get current logo
 export async function GET(request: NextRequest) {
   try {
     const partner = await getAuthenticatedPartner()
@@ -74,19 +74,19 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      heroImage: partner.partnerHeroImage
+      logo: partner.partnerLogo
     })
 
   } catch (error: any) {
-    console.error('[Partner Hero Image GET] Error:', error)
+    console.error('[Partner Logo GET] Error:', error)
     return NextResponse.json(
-      { success: false, error: 'Failed to get hero image' },
+      { success: false, error: 'Failed to get logo' },
       { status: 500 }
     )
   }
 }
 
-// POST - Upload new hero image
+// POST - Upload new logo
 export async function POST(request: NextRequest) {
   try {
     const partner = await getAuthenticatedPartner()
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
     // Validate file type
     if (!ALLOWED_TYPES.includes(file.type)) {
       return NextResponse.json(
-        { success: false, error: 'Invalid file type. Allowed: JPG, PNG, WebP' },
+        { success: false, error: 'Invalid file type. Allowed: JPG, PNG, WebP, SVG' },
         { status: 400 }
       )
     }
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
-        { success: false, error: 'File too large. Maximum 5MB' },
+        { success: false, error: 'File too large. Maximum 2MB' },
         { status: 400 }
       )
     }
@@ -129,25 +129,25 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(bytes)
     const base64 = `data:${file.type};base64,${buffer.toString('base64')}`
 
-    // Delete old hero image if exists
-    if (partner.partnerHeroImage) {
+    // Delete old logo if exists
+    if (partner.partnerLogo) {
       try {
         // Extract public_id from URL
-        const urlParts = partner.partnerHeroImage.split('/')
+        const urlParts = partner.partnerLogo.split('/')
         const fileName = urlParts[urlParts.length - 1]
-        const publicId = `partner-hero/${partner.id}/${fileName.split('.')[0]}`
+        const publicId = `partner-logo/${partner.id}/${fileName.split('.')[0]}`
         await cloudinary.uploader.destroy(publicId)
       } catch (e) {
-        console.error('Failed to delete old hero image:', e)
+        console.error('Failed to delete old logo:', e)
       }
     }
 
-    // Upload to Cloudinary - limit width only, preserve full height/aspect ratio
+    // Upload to Cloudinary - logos are square, preserve aspect ratio
     const uploadResult = await cloudinary.uploader.upload(base64, {
-      folder: `partner-hero/${partner.id}`,
+      folder: `partner-logo/${partner.id}`,
       resource_type: 'image',
       transformation: [
-        { width: 1920, crop: 'limit' },
+        { width: 400, height: 400, crop: 'fit' },
         { quality: 'auto:good' },
         { fetch_format: 'auto' }
       ]
@@ -156,24 +156,24 @@ export async function POST(request: NextRequest) {
     // Update partner record
     await prisma.rentalHost.update({
       where: { id: partner.id },
-      data: { partnerHeroImage: uploadResult.secure_url }
+      data: { partnerLogo: uploadResult.secure_url }
     })
 
     return NextResponse.json({
       success: true,
-      heroImage: uploadResult.secure_url
+      logo: uploadResult.secure_url
     })
 
   } catch (error: any) {
-    console.error('[Partner Hero Image POST] Error:', error)
+    console.error('[Partner Logo POST] Error:', error)
     return NextResponse.json(
-      { success: false, error: 'Failed to upload hero image' },
+      { success: false, error: 'Failed to upload logo' },
       { status: 500 }
     )
   }
 }
 
-// DELETE - Remove hero image
+// DELETE - Remove logo
 export async function DELETE(request: NextRequest) {
   try {
     const partner = await getAuthenticatedPartner()
@@ -185,18 +185,18 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    if (!partner.partnerHeroImage) {
+    if (!partner.partnerLogo) {
       return NextResponse.json(
-        { success: false, error: 'No hero image to delete' },
+        { success: false, error: 'No logo to delete' },
         { status: 400 }
       )
     }
 
     // Delete from Cloudinary
     try {
-      const urlParts = partner.partnerHeroImage.split('/')
+      const urlParts = partner.partnerLogo.split('/')
       const fileName = urlParts[urlParts.length - 1]
-      const publicId = `partner-hero/${partner.id}/${fileName.split('.')[0]}`
+      const publicId = `partner-logo/${partner.id}/${fileName.split('.')[0]}`
       await cloudinary.uploader.destroy(publicId)
     } catch (e) {
       console.error('Failed to delete from Cloudinary:', e)
@@ -205,18 +205,18 @@ export async function DELETE(request: NextRequest) {
     // Update partner record
     await prisma.rentalHost.update({
       where: { id: partner.id },
-      data: { partnerHeroImage: null }
+      data: { partnerLogo: null }
     })
 
     return NextResponse.json({
       success: true,
-      message: 'Hero image deleted'
+      message: 'Logo deleted'
     })
 
   } catch (error: any) {
-    console.error('[Partner Hero Image DELETE] Error:', error)
+    console.error('[Partner Logo DELETE] Error:', error)
     return NextResponse.json(
-      { success: false, error: 'Failed to delete hero image' },
+      { success: false, error: 'Failed to delete logo' },
       { status: 500 }
     )
   }

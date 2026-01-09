@@ -47,6 +47,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Parse policies JSON
+    const policies = partner.partnerPolicies as {
+      refundPolicy?: string
+      cancellationPolicy?: string
+      bookingRequirements?: string
+      additionalTerms?: string
+    } | null
+
     // Map database fields to frontend expected format
     return NextResponse.json({
       success: true,
@@ -78,7 +86,14 @@ export async function GET(request: NextRequest) {
         // Visibility Settings
         showEmail: partner.partnerShowEmail ?? true,
         showPhone: partner.partnerShowPhone ?? true,
-        showWebsite: partner.partnerShowWebsite ?? true
+        showWebsite: partner.partnerShowWebsite ?? true,
+        // Policies
+        policies: {
+          refundPolicy: policies?.refundPolicy || '',
+          cancellationPolicy: policies?.cancellationPolicy || '',
+          bookingRequirements: policies?.bookingRequirements || '',
+          additionalTerms: policies?.additionalTerms || ''
+        }
       }
     })
   } catch (error) {
@@ -96,6 +111,14 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
+
+    // Build policies object (only include non-empty values)
+    const policiesData = body.policies ? {
+      refundPolicy: body.policies.refundPolicy || '',
+      cancellationPolicy: body.policies.cancellationPolicy || '',
+      bookingRequirements: body.policies.bookingRequirements || '',
+      additionalTerms: body.policies.additionalTerms || ''
+    } : undefined
 
     // Update partner landing page fields
     await prisma.rentalHost.update({
@@ -120,7 +143,9 @@ export async function PUT(request: NextRequest) {
         // Visibility Settings
         partnerShowEmail: body.showEmail ?? true,
         partnerShowPhone: body.showPhone ?? true,
-        partnerShowWebsite: body.showWebsite ?? true
+        partnerShowWebsite: body.showWebsite ?? true,
+        // Policies (stored as JSON)
+        ...(policiesData && { partnerPolicies: policiesData })
       }
     })
 

@@ -3,7 +3,7 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   IoGlobeOutline,
   IoImageOutline,
@@ -23,8 +23,20 @@ import {
   IoLogoTwitter,
   IoLogoLinkedin,
   IoLogoTiktok,
-  IoLogoYoutube
+  IoLogoYoutube,
+  IoCloudUploadOutline,
+  IoDocumentTextOutline,
+  IoRefreshOutline,
+  IoCloseCircleOutline,
+  IoShieldCheckmarkOutline
 } from 'react-icons/io5'
+
+interface Policies {
+  refundPolicy: string
+  cancellationPolicy: string
+  bookingRequirements: string
+  additionalTerms: string
+}
 
 interface LandingPageData {
   slug: string
@@ -51,12 +63,22 @@ interface LandingPageData {
   showEmail: boolean
   showPhone: boolean
   showWebsite: boolean
+  // Policies
+  policies: Policies
 }
 
 interface FAQ {
   id: string
   question: string
   answer: string
+}
+
+// Default policies for fallback
+const DEFAULT_POLICIES: Policies = {
+  refundPolicy: '',
+  cancellationPolicy: '',
+  bookingRequirements: '',
+  additionalTerms: ''
 }
 
 export default function PartnerLandingPage() {
@@ -84,12 +106,21 @@ export default function PartnerLandingPage() {
     // Visibility Settings
     showEmail: true,
     showPhone: true,
-    showWebsite: true
+    showWebsite: true,
+    // Policies
+    policies: DEFAULT_POLICIES
   })
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'content' | 'social' | 'branding' | 'faqs'>('content')
+  const [activeTab, setActiveTab] = useState<'content' | 'social' | 'branding' | 'policies' | 'faqs'>('content')
+
+  // Upload states
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false)
+  const [isUploadingHero, setIsUploadingHero] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const logoInputRef = useRef<HTMLInputElement>(null)
+  const heroInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     fetchLandingData()
@@ -158,6 +189,153 @@ export default function PartnerLandingPage() {
     setData(prev => ({
       ...prev,
       faqs: prev.faqs.filter(faq => faq.id !== id)
+    }))
+  }
+
+  // Logo upload handler
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Client-side validation
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']
+    if (!allowedTypes.includes(file.type)) {
+      setUploadError('Invalid file type. Allowed: JPG, PNG, WebP, SVG')
+      return
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      setUploadError('File too large. Maximum 2MB')
+      return
+    }
+
+    setIsUploadingLogo(true)
+    setUploadError(null)
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const res = await fetch('/api/partner/logo', {
+        method: 'POST',
+        body: formData
+      })
+
+      const result = await res.json()
+
+      if (result.success) {
+        setData(prev => ({ ...prev, logo: result.logo }))
+      } else {
+        setUploadError(result.error || 'Failed to upload logo')
+      }
+    } catch (error) {
+      setUploadError('Failed to upload logo')
+    } finally {
+      setIsUploadingLogo(false)
+      // Reset input
+      if (logoInputRef.current) {
+        logoInputRef.current.value = ''
+      }
+    }
+  }
+
+  // Hero image upload handler
+  const handleHeroUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Client-side validation
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
+    if (!allowedTypes.includes(file.type)) {
+      setUploadError('Invalid file type. Allowed: JPG, PNG, WebP')
+      return
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError('File too large. Maximum 5MB')
+      return
+    }
+
+    setIsUploadingHero(true)
+    setUploadError(null)
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const res = await fetch('/api/partner/hero-image', {
+        method: 'POST',
+        body: formData
+      })
+
+      const result = await res.json()
+
+      if (result.success) {
+        setData(prev => ({ ...prev, heroImage: result.heroImage }))
+      } else {
+        setUploadError(result.error || 'Failed to upload hero image')
+      }
+    } catch (error) {
+      setUploadError('Failed to upload hero image')
+    } finally {
+      setIsUploadingHero(false)
+      // Reset input
+      if (heroInputRef.current) {
+        heroInputRef.current.value = ''
+      }
+    }
+  }
+
+  // Delete logo handler
+  const handleDeleteLogo = async () => {
+    if (!data.logo) return
+
+    try {
+      const res = await fetch('/api/partner/logo', {
+        method: 'DELETE'
+      })
+
+      const result = await res.json()
+
+      if (result.success) {
+        setData(prev => ({ ...prev, logo: null }))
+      } else {
+        setUploadError(result.error || 'Failed to delete logo')
+      }
+    } catch (error) {
+      setUploadError('Failed to delete logo')
+    }
+  }
+
+  // Delete hero image handler
+  const handleDeleteHero = async () => {
+    if (!data.heroImage) return
+
+    try {
+      const res = await fetch('/api/partner/hero-image', {
+        method: 'DELETE'
+      })
+
+      const result = await res.json()
+
+      if (result.success) {
+        setData(prev => ({ ...prev, heroImage: null }))
+      } else {
+        setUploadError(result.error || 'Failed to delete hero image')
+      }
+    } catch (error) {
+      setUploadError('Failed to delete hero image')
+    }
+  }
+
+  // Update policy field
+  const updatePolicy = (field: keyof Policies, value: string) => {
+    setData(prev => ({
+      ...prev,
+      policies: {
+        ...prev.policies,
+        [field]: value
+      }
     }))
   }
 
@@ -276,6 +454,19 @@ export default function PartnerLandingPage() {
             <div className="flex items-center gap-2">
               <IoColorPaletteOutline className="w-4 h-4" />
               Branding
+            </div>
+          </button>
+          <button
+            onClick={() => setActiveTab('policies')}
+            className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'policies'
+                ? 'border-orange-500 text-orange-600 dark:text-orange-400'
+                : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <IoDocumentTextOutline className="w-4 h-4" />
+              Policies
             </div>
           </button>
           <button
@@ -541,35 +732,96 @@ export default function PartnerLandingPage() {
       {/* Branding Tab */}
       {activeTab === 'branding' && (
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 space-y-6">
+          {/* Upload Error */}
+          {uploadError && (
+            <div className="p-4 rounded-lg bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+              {uploadError}
+              <button
+                onClick={() => setUploadError(null)}
+                className="ml-2 text-red-500 hover:text-red-600"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Logo Upload */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Company Logo
               </label>
-              <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
-                {data.logo ? (
-                  <div className="space-y-4">
-                    <img
-                      src={data.logo}
-                      alt="Company logo"
-                      className="max-h-24 mx-auto object-contain"
-                    />
-                    <button
-                      onClick={() => setData(prev => ({ ...prev, logo: null }))}
-                      className="text-sm text-red-600 hover:text-red-700 dark:text-red-400"
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                Square format recommended. Max 2MB. JPG, PNG, WebP, or SVG.
+              </p>
+              <input
+                type="file"
+                ref={logoInputRef}
+                onChange={handleLogoUpload}
+                accept="image/jpeg,image/png,image/webp,image/svg+xml"
+                className="hidden"
+              />
+              <div
+                onClick={() => !isUploadingLogo && logoInputRef.current?.click()}
+                className={`border-2 border-dashed rounded-lg text-center cursor-pointer transition-colors overflow-hidden ${
+                  isUploadingLogo
+                    ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20 p-6'
+                    : data.logo
+                    ? 'border-gray-300 dark:border-gray-600 hover:border-orange-400 dark:hover:border-orange-500 p-2'
+                    : 'border-gray-300 dark:border-gray-600 hover:border-orange-400 dark:hover:border-orange-500 p-6'
+                }`}
+              >
+                {isUploadingLogo ? (
+                  <div className="space-y-2">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto"></div>
+                    <p className="text-sm text-orange-600 dark:text-orange-400">Uploading...</p>
+                  </div>
+                ) : data.logo ? (
+                  <div className="space-y-2">
+                    {/* Checkered background for transparent logos - works in both light/dark mode */}
+                    <div
+                      className="relative mx-auto rounded-lg overflow-hidden"
+                      style={{
+                        backgroundImage: 'linear-gradient(45deg, #e5e7eb 25%, transparent 25%), linear-gradient(-45deg, #e5e7eb 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e5e7eb 75%), linear-gradient(-45deg, transparent 75%, #e5e7eb 75%)',
+                        backgroundSize: '16px 16px',
+                        backgroundPosition: '0 0, 0 8px, 8px -8px, -8px 0px'
+                      }}
                     >
-                      Remove Logo
-                    </button>
+                      <img
+                        src={data.logo}
+                        alt="Company logo"
+                        className="w-full h-32 object-contain bg-white/80 dark:bg-gray-900/80"
+                      />
+                    </div>
+                    <div className="flex items-center justify-center gap-4 pt-1">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          logoInputRef.current?.click()
+                        }}
+                        className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400"
+                      >
+                        Replace
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteLogo()
+                        }}
+                        className="text-sm text-red-600 hover:text-red-700 dark:text-red-400"
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div>
-                    <IoImageOutline className="w-10 h-10 text-gray-400 mx-auto mb-2" />
+                    <IoCloudUploadOutline className="w-10 h-10 text-gray-400 mx-auto mb-2" />
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Drag & drop or click to upload
+                      Click to upload logo
                     </p>
                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                      PNG, JPG up to 2MB
+                      400x400px recommended
                     </p>
                   </div>
                 )}
@@ -579,31 +831,67 @@ export default function PartnerLandingPage() {
             {/* Hero Image Upload */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Hero Image
+                Hero Banner Image
               </label>
-              <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
-                {data.heroImage ? (
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                Wide banner format. Max 5MB. JPG, PNG, or WebP. Auto-cropped to 1920x400px.
+              </p>
+              <input
+                type="file"
+                ref={heroInputRef}
+                onChange={handleHeroUpload}
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+              />
+              <div
+                onClick={() => !isUploadingHero && heroInputRef.current?.click()}
+                className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+                  isUploadingHero
+                    ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20'
+                    : 'border-gray-300 dark:border-gray-600 hover:border-orange-400 dark:hover:border-orange-500'
+                }`}
+              >
+                {isUploadingHero ? (
+                  <div className="space-y-2">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto"></div>
+                    <p className="text-sm text-orange-600 dark:text-orange-400">Uploading...</p>
+                  </div>
+                ) : data.heroImage ? (
                   <div className="space-y-4">
                     <img
                       src={data.heroImage}
-                      alt="Hero"
-                      className="max-h-24 mx-auto object-cover rounded"
+                      alt="Hero banner"
+                      className="max-h-24 w-full mx-auto object-cover rounded"
                     />
-                    <button
-                      onClick={() => setData(prev => ({ ...prev, heroImage: null }))}
-                      className="text-sm text-red-600 hover:text-red-700 dark:text-red-400"
-                    >
-                      Remove Image
-                    </button>
+                    <div className="flex items-center justify-center gap-4">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          heroInputRef.current?.click()
+                        }}
+                        className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400"
+                      >
+                        Replace
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteHero()
+                        }}
+                        className="text-sm text-red-600 hover:text-red-700 dark:text-red-400"
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div>
-                    <IoImageOutline className="w-10 h-10 text-gray-400 mx-auto mb-2" />
+                    <IoCloudUploadOutline className="w-10 h-10 text-gray-400 mx-auto mb-2" />
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Drag & drop or click to upload
+                      Click to upload hero image
                     </p>
                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                      Recommended: 1920x600px
+                      1920x400px or wider
                     </p>
                   </div>
                 )}
@@ -634,6 +922,108 @@ export default function PartnerLandingPage() {
               </p>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Policies Tab */}
+      {activeTab === 'policies' && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 space-y-6">
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              Rental Policies
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Set clear policies for your renters. Leave blank to use default policies.
+            </p>
+          </div>
+
+          {/* Refund Policy */}
+          <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+            <div className="flex items-center gap-2 mb-3">
+              <IoRefreshOutline className="w-5 h-5 text-green-500" />
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Refund Policy
+              </label>
+            </div>
+            <textarea
+              value={data.policies.refundPolicy}
+              onChange={(e) => updatePolicy('refundPolicy', e.target.value)}
+              rows={4}
+              maxLength={2000}
+              placeholder="Describe your refund policy. For example: Full refunds available if cancelled 48+ hours before pickup. Partial refunds for cancellations within 24-48 hours..."
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+            />
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 text-right">
+              {data.policies.refundPolicy.length}/2000
+            </p>
+          </div>
+
+          {/* Cancellation Policy */}
+          <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+            <div className="flex items-center gap-2 mb-3">
+              <IoCloseCircleOutline className="w-5 h-5 text-red-500" />
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Cancellation Policy
+              </label>
+            </div>
+            <textarea
+              value={data.policies.cancellationPolicy}
+              onChange={(e) => updatePolicy('cancellationPolicy', e.target.value)}
+              rows={4}
+              maxLength={2000}
+              placeholder="Describe your cancellation policy. For example: Free cancellation up to 48 hours before pickup. Late cancellations or no-shows forfeit the booking amount..."
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+            />
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 text-right">
+              {data.policies.cancellationPolicy.length}/2000
+            </p>
+          </div>
+
+          {/* Booking Requirements */}
+          <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+            <div className="flex items-center gap-2 mb-3">
+              <IoDocumentTextOutline className="w-5 h-5 text-blue-500" />
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Booking Requirements
+              </label>
+            </div>
+            <textarea
+              value={data.policies.bookingRequirements}
+              onChange={(e) => updatePolicy('bookingRequirements', e.target.value)}
+              rows={4}
+              maxLength={2000}
+              placeholder="List requirements for renters. For example: Must be 21+ years old, valid driver's license, clean driving record, proof of rideshare platform approval..."
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+            />
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 text-right">
+              {data.policies.bookingRequirements.length}/2000
+            </p>
+          </div>
+
+          {/* Additional Terms */}
+          <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+            <div className="flex items-center gap-2 mb-3">
+              <IoShieldCheckmarkOutline className="w-5 h-5 text-purple-500" />
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Additional Terms
+              </label>
+            </div>
+            <textarea
+              value={data.policies.additionalTerms}
+              onChange={(e) => updatePolicy('additionalTerms', e.target.value)}
+              rows={4}
+              maxLength={2000}
+              placeholder="Any additional rules or terms. For example: No smoking, no pets, mileage limits, cleaning fees for excessive mess..."
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+            />
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 text-right">
+              {data.policies.additionalTerms.length}/2000
+            </p>
+          </div>
+
+          <p className="text-xs text-gray-500 dark:text-gray-500 text-center pt-4">
+            These policies will be displayed on your public landing page. Clear policies help set expectations and reduce disputes.
+          </p>
         </div>
       )}
 
