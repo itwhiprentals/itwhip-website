@@ -48,7 +48,7 @@ export default function Footer() {
                 ITWHIP RIDES
               </span>
               <p className="text-[10px] text-gray-600 dark:text-gray-400 mt-1 -ml-0.5">
-                Rentals & Rideshare
+                Peer-to-Peer Car Sharing & Rideshare
               </p>
             </div>
             {/* Social Links */}
@@ -99,8 +99,8 @@ export default function Footer() {
             </h4>
             <ul className="space-y-1.5">
               <li>
-                <Link href="/how-it-works" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  How It Works
+                <Link href="/rentals/budget" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Budget Cars
                 </Link>
               </li>
               <li>
@@ -221,6 +221,11 @@ export default function Footer() {
             </h4>
             <ul className="space-y-1.5">
               <li>
+                <Link href="/how-it-works" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  How It Works
+                </Link>
+              </li>
+              <li>
                 <Link href="/about" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
                   About Us
                 </Link>
@@ -299,11 +304,6 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/partner/login" className="text-xs md:text-sm text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 font-medium transition-colors">
-                  Partners Portal →
-                </Link>
-              </li>
-              <li>
                 <Link href="/partners/commission" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
                   Commission Tiers
                 </Link>
@@ -311,6 +311,11 @@ export default function Footer() {
               <li>
                 <Link href="/partners/resources" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
                   Partner Resources
+                </Link>
+              </li>
+              <li>
+                <Link href="/partner/login" className="text-xs md:text-sm text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 font-medium transition-colors">
+                  Partners Portal →
                 </Link>
               </li>
             </ul>

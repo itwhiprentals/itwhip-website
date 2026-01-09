@@ -739,6 +739,12 @@ export default function PayoutsPage() {
               Compare Protection Plans
             </Link>
           </div>
+          <p className="text-center text-sm text-emerald-200 mt-4">
+            Want to estimate your earnings?{' '}
+            <Link href="/host-earnings" className="text-white hover:text-emerald-100 font-medium underline">
+              Use our earnings calculator →
+            </Link>
+          </p>
         </div>
       </section>
 

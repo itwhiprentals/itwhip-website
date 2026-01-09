@@ -1,6 +1,7 @@
 // app/(guest)/rentals/budget/page.tsx
 import { Metadata } from 'next'
 import Link from 'next/link'
+import Image from 'next/image'
 import Script from 'next/script'
 import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
@@ -12,10 +13,7 @@ import {
   IoHomeOutline,
   IoHelpCircleOutline,
   IoShieldCheckmarkOutline,
-  IoCashOutline,
-  IoCarOutline,
-  IoWalletOutline,
-  IoCheckmarkCircleOutline
+  IoCarOutline
 } from 'react-icons/io5'
 
 // Add ISR - Revalidate every 60 seconds
@@ -24,63 +22,134 @@ export const revalidate = 60
 // Budget threshold
 const MAX_DAILY_RATE = 100
 
-// Budget-specific FAQs
-const BUDGET_FAQS = (carCount: number, minPrice: number) => [
+// Budget-specific FAQs with links
+const BUDGET_FAQS = (carCount: number, minPrice: number): { question: string; answer: React.ReactNode }[] => [
   {
     question: 'How can I find cheap car rentals in Phoenix?',
-    answer: `ItWhip offers ${carCount}+ budget-friendly cars starting at just $${minPrice}/day. Our peer-to-peer model means you rent directly from local owners, saving up to 35% compared to traditional rental companies. All rentals include $1M liability coverage with no hidden fees.`
+    answer: (
+      <>
+        ItWhip offers {carCount}+ budget-friendly cars starting at just ${minPrice}/day. Our{' '}
+        <Link href="/how-it-works" className="text-emerald-600 hover:underline font-medium">peer-to-peer model</Link>{' '}
+        means you rent directly from local owners, saving up to 35% compared to traditional rental companies.
+        All rentals include{' '}
+        <Link href="/insurance-guide" className="text-emerald-600 hover:underline font-medium">$1M liability coverage</Link>{' '}
+        with no hidden fees.
+      </>
+    )
   },
   {
-    question: 'What\'s the cheapest car rental in Arizona?',
-    answer: `Budget car rentals on ItWhip start from $${minPrice}/day. We have ${carCount} vehicles available under $${MAX_DAILY_RATE}/day, including economy sedans, compact cars, and reliable SUVs. Prices are transparent with no surprise charges at pickup.`
+    question: 'Can I rent a car for Uber or Lyft in Phoenix?',
+    answer: (
+      <>
+        Yes! Many of our budget cars are{' '}
+        <Link href="/rideshare" className="text-emerald-600 hover:underline font-medium">rideshare-approved</Link>{' '}
+        for Uber, Lyft, and other gig platforms. Look for the orange &quot;Rideshare&quot; badge when{' '}
+        <Link href="/rentals" className="text-emerald-600 hover:underline font-medium">browsing cars</Link>.
+        These vehicles meet all rideshare requirements and come with the insurance coverage you need to drive for gig apps.
+      </>
+    )
+  },
+  {
+    question: 'What\'s the cheapest rideshare rental for Uber drivers?',
+    answer: (
+      <>
+        Budget{' '}
+        <Link href="/rideshare" className="text-emerald-600 hover:underline font-medium">rideshare rentals</Link>{' '}
+        on ItWhip start from ${minPrice}/day. We have rideshare-approved vehicles perfect for Uber, Lyft, DoorDash, Instacart, Amazon Flex, and other delivery apps.{' '}
+        <Link href="/rentals/weekly" className="text-emerald-600 hover:underline font-medium">Weekly</Link> and monthly discounts available for gig economy drivers.
+      </>
+    )
   },
   {
     question: 'Are budget car rentals on ItWhip safe?',
-    answer: 'Absolutely! Every rental includes $1M liability insurance. All hosts and vehicles are verified, and we maintain strict safety standards. You get the same protection as premium rentals at a fraction of the cost.'
+    answer: (
+      <>
+        Absolutely! Every rental includes{' '}
+        <Link href="/insurance-guide" className="text-emerald-600 hover:underline font-medium">$1M liability insurance</Link>.
+        All hosts and vehicles are verified through our{' '}
+        <Link href="/how-it-works" className="text-emerald-600 hover:underline font-medium">verification process</Link>,
+        and we maintain strict safety standards. You get the same{' '}
+        <Link href="/host-protection" className="text-emerald-600 hover:underline font-medium">protection</Link>{' '}
+        as premium rentals at a fraction of the cost.
+      </>
+    )
   },
   {
-    question: 'Can I get airport delivery with a budget car rental?',
-    answer: 'Yes! Many budget-friendly hosts offer free delivery to Phoenix Sky Harbor (PHX), Mesa Gateway (AZA), and other locations. Look for the delivery icon when browsing vehicles to find hosts who offer this service.'
+    question: 'Can I use a rental car for Amazon Flex or DoorDash?',
+    answer: (
+      <>
+        Yes! Our budget rentals are perfect for delivery drivers. Whether you drive for Amazon Flex, DoorDash, Uber Eats, Instacart, or Grubhub, our affordable rates help you maximize your earnings. Check out our{' '}
+        <Link href="/rideshare" className="text-emerald-600 hover:underline font-medium">rideshare-approved vehicles</Link>{' '}
+        for the best fit.
+      </>
+    )
   },
   {
-    question: 'What do I need to rent a budget car in Arizona?',
-    answer: 'To rent any car on ItWhip, you need: a valid driver\'s license, to be 21+ years old, a clean driving record, and a valid payment method. Verification takes just minutes, and many cars offer instant booking.'
+    question: 'What do I need to rent a car for rideshare or delivery?',
+    answer: (
+      <>
+        To rent on ItWhip, you need: a valid driver&apos;s license, to be 21+ years old, a clean driving record, and a valid payment method. See our full{' '}
+        <Link href="/how-it-works" className="text-emerald-600 hover:underline font-medium">requirements</Link>.
+        For rideshare apps like Uber and Lyft, you&apos;ll also need to meet their specific driver requirements.
+      </>
+    )
   },
   {
     question: 'Why are ItWhip rentals cheaper than Hertz or Enterprise?',
-    answer: 'ItWhip is a peer-to-peer platform where you rent directly from local car owners. Without expensive rental lots and corporate overhead, owners can offer competitive rates while still earning more than selling to traditional companies. Everyone wins!'
+    answer: (
+      <>
+        ItWhip is a{' '}
+        <Link href="/how-it-works" className="text-emerald-600 hover:underline font-medium">peer-to-peer platform</Link>{' '}
+        where you rent directly from local car owners. Without expensive rental lots and corporate overhead, owners can offer competitive rates. Perfect for gig workers who need affordable wheels to earn!
+      </>
+    )
+  },
+  {
+    question: 'Do you offer weekly rates for rideshare drivers?',
+    answer: (
+      <>
+        Yes! Many hosts offer significant discounts for{' '}
+        <Link href="/rentals/weekly" className="text-emerald-600 hover:underline font-medium">weekly</Link> and monthly rentals - ideal for full-time Uber, Lyft, and delivery drivers. Browse our{' '}
+        <Link href="/rentals" className="text-emerald-600 hover:underline font-medium">available cars</Link>{' '}
+        and contact hosts directly to negotiate the best rates for longer rentals.
+      </>
+    )
   }
 ]
 
 // Metadata
 export const metadata: Metadata = {
-  title: 'Budget Car Rentals in Arizona - Under $100/day | ItWhip',
-  description: 'Find cheap car rentals in Phoenix & Arizona starting at $29/day. Budget-friendly cars from local owners with $1M insurance included. No hidden fees. Book instantly!',
+  title: 'Budget Car Rentals & Rideshare Vehicles in Arizona - Under $100/day | ItWhip',
+  description: 'Find cheap car rentals and rideshare-approved vehicles in Phoenix starting at $29/day. Perfect for Uber, Lyft, DoorDash, Amazon Flex drivers. $1M insurance included.',
   keywords: [
     'cheap car rental phoenix',
     'budget car rental arizona',
-    'affordable car rental phoenix',
-    'cheap car rental near me',
+    'uber rental car phoenix',
+    'lyft rental phoenix',
+    'rideshare rental phoenix',
+    'doordash car rental',
+    'amazon flex rental car',
+    'gig economy car rental',
+    'cheap rideshare rental arizona',
     'budget rental cars phoenix az',
-    'low cost car rental arizona',
-    'discount car rental phoenix',
+    'instacart driver car rental',
+    'uber eats rental car phoenix',
+    'affordable car rental phoenix',
     'economy car rental arizona',
-    'phoenix car rental under $100',
-    'cheap rental cars scottsdale',
-    'budget friendly car rental mesa',
-    'inexpensive car rental tempe'
+    'phoenix car rental under $100'
   ],
   openGraph: {
-    title: 'Budget Car Rentals - Under $100/day | ItWhip Arizona',
-    description: 'Affordable car rentals from local owners. $1M insurance included. No hidden fees.',
+    title: 'Budget & Rideshare Car Rentals - Under $100/day | ItWhip Arizona',
+    description: 'Affordable car rentals for Uber, Lyft, DoorDash, Amazon Flex drivers. $1M insurance included.',
     url: 'https://itwhip.com/rentals/budget',
     images: [{ url: 'https://itwhip.com/og/budget-rentals.png', width: 1200, height: 630 }],
     type: 'website'
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Budget Car Rentals Under $100/day',
-    description: 'Affordable Arizona car rentals with $1M insurance included.'
+    title: 'Budget & Rideshare Rentals Under $100/day',
+    description: 'Affordable Arizona car rentals for gig drivers. Uber, Lyft, delivery apps. $1M insurance.',
+    images: ['https://itwhip.com/og/budget-rentals.png']
   },
   alternates: {
     canonical: 'https://itwhip.com/rentals/budget'
@@ -90,60 +159,34 @@ export const metadata: Metadata = {
 // Hero Section
 function HeroSection({ carCount, minPrice }: { carCount: number; minPrice: number }) {
   return (
-    <section className="relative py-12 sm:py-16 lg:py-20 overflow-hidden bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-500">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-0 left-0 w-72 h-72 bg-white rounded-full -translate-x-1/2 -translate-y-1/2" />
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full translate-x-1/3 translate-y-1/3" />
-      </div>
+    <section className="relative h-[280px] sm:h-[320px] overflow-hidden">
+      {/* Background Image */}
+      <Image
+        src="/og/budget-rentals.png"
+        alt="Budget Car Rentals in Arizona"
+        fill
+        className="object-cover object-center"
+        priority
+      />
+      {/* Dark Overlay for text readability */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent" />
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/20 backdrop-blur-sm rounded-full text-white text-sm font-medium mb-4">
-            <IoWalletOutline className="w-4 h-4" />
-            Under ${MAX_DAILY_RATE}/day
-          </div>
-
-          {/* Main Heading */}
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 leading-tight">
-            Budget Car Rentals in Arizona
+      <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2">
+            Budget Car Rentals
           </h1>
-
-          {/* Subtitle */}
-          <p className="text-lg sm:text-xl text-white/90 mb-6 max-w-2xl mx-auto">
-            Affordable cars from local owners. $1M insurance included. No hidden fees.
+          <p className="text-white/90 text-sm sm:text-base mb-3">
+            From ${minPrice}/day · {carCount}+ cars · Rideshare approved
           </p>
-
-          {/* Stats Row */}
-          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-white mb-8">
-            <div className="flex items-center gap-2">
-              <IoCashOutline className="w-5 h-5" />
-              <span>From <strong>${minPrice}</strong>/day</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <IoCarOutline className="w-5 h-5" />
-              <span><strong>{carCount}</strong> cars available</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <IoShieldCheckmarkOutline className="w-5 h-5" />
-              <span><strong>$1M</strong> insurance</span>
-            </div>
-          </div>
-
-          {/* Value Props */}
-          <div className="flex flex-wrap items-center justify-center gap-3 text-white/90 text-sm">
+          <div className="flex flex-wrap gap-3 text-xs sm:text-sm text-white/80">
             <span className="flex items-center gap-1">
-              <IoCheckmarkCircleOutline className="w-4 h-4" />
-              No hidden fees
+              <IoShieldCheckmarkOutline className="w-4 h-4" />
+              $1M Insurance
             </span>
             <span className="flex items-center gap-1">
-              <IoCheckmarkCircleOutline className="w-4 h-4" />
-              Free cancellation
-            </span>
-            <span className="flex items-center gap-1">
-              <IoCheckmarkCircleOutline className="w-4 h-4" />
-              Airport delivery
+              <IoCarOutline className="w-4 h-4" />
+              Uber & Lyft Ready
             </span>
           </div>
         </div>
@@ -188,7 +231,7 @@ function FAQSection({ carCount, minPrice }: { carCount: number; minPrice: number
         <div className="max-w-3xl mx-auto">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
             <IoHelpCircleOutline className="w-6 h-6 text-emerald-600" />
-            Budget Car Rental FAQs
+            Budget & Rideshare Rental FAQs
           </h2>
           <div className="space-y-3">
             {faqs.map((faq, i) => (
@@ -280,6 +323,7 @@ export default async function BudgetRentalsPage() {
       rating: true,
       totalTrips: true,
       instantBook: true,
+      vehicleType: true,
       reviews: {
         select: { rating: true }
       },
@@ -483,7 +527,7 @@ export default async function BudgetRentalsPage() {
 
           {/* Savings Callout */}
           {carCount > 0 && (
-            <div className="mt-8 p-4 sm:p-6 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl">
+            <div className="mt-8 p-4 sm:p-6 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                   <h3 className="text-lg font-semibold text-emerald-800 dark:text-emerald-300 mb-1">

@@ -2,28 +2,33 @@
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'How It Works | ItWhip - P2P Car Rental in Phoenix',
-  description: 'Learn how to rent cars from local owners or list your car to earn up to 90%. Simple 3-step process, $1M insurance coverage, 48-hour payments for hosts.',
+  title: 'How It Works | Peer-to-Peer Car Sharing & Rideshare Rentals | ItWhip',
+  description: 'Rent cars from local Phoenix hosts or become a host. Peer-to-peer car sharing and rideshare-ready vehicles. Earn up to 90% or manage a fleet without owning a car.',
   keywords: [
-    'how to rent car Phoenix',
-    'peer to peer car rental',
-    'list your car for rent',
+    'peer to peer car rental Phoenix',
+    'rideshare rental Phoenix',
+    'Uber rental car Phoenix',
+    'Lyft rental Phoenix',
     'car sharing Arizona',
     'Turo alternative Phoenix',
     'rent car from owner',
-    'earn money with car'
+    'rideshare vehicle rental',
+    'gig economy car rental',
+    'fleet manager car sharing',
+    'earn money with car',
+    'list your car for rent'
   ],
   openGraph: {
-    title: 'How It Works | ItWhip P2P Car Sharing',
-    description: 'Rent cars from local Phoenix owners or earn up to 90% listing your car. Full insurance, fast payments.',
+    title: 'How It Works | Peer-to-Peer Car Sharing & Rideshare | ItWhip',
+    description: 'Rent cars from local Phoenix owners, list your car to earn up to 90%, or become a fleet manager. Rideshare-ready vehicles with full insurance.',
     url: 'https://itwhip.com/how-it-works',
     siteName: 'ItWhip',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'How It Works | ItWhip',
-    description: 'P2P car rental in Phoenix. Rent from owners or earn up to 90% as a host.',
+    title: 'How It Works | ItWhip P2P & Rideshare',
+    description: 'P2P car rental in Phoenix. Rent, host, or manage a fleet. Rideshare-ready vehicles available.',
   },
   alternates: {
     canonical: 'https://itwhip.com/how-it-works'
@@ -109,6 +114,43 @@ export default function HowItWorksLayout({
     ]
   }
 
+  // HowTo Schema - Fleet Manager (No Car Required)
+  const howToFleetSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'HowTo',
+    'name': 'How to Become a Fleet Manager on ItWhip',
+    'description': 'Earn commission on car rentals without owning a vehicle. Invite car owners to your fleet and earn 10-30% on every booking.',
+    'totalTime': 'PT10M',
+    'estimatedCost': {
+      '@type': 'MonetaryAmount',
+      'currency': 'USD',
+      'value': '0'
+    },
+    'step': [
+      {
+        '@type': 'HowToStep',
+        'position': 1,
+        'name': 'Sign Up as Fleet Manager',
+        'text': 'Create your fleet manager account and get your personalized page at itwhip.com/fleet/[your-slug]. No vehicle ownership required.',
+        'url': 'https://itwhip.com/how-it-works#fleet-step-1'
+      },
+      {
+        '@type': 'HowToStep',
+        'position': 2,
+        'name': 'Invite Car Owners',
+        'text': 'Share your referral link on social media and invite car owners in your network. Negotiate commission splits with each partner (default 70/30).',
+        'url': 'https://itwhip.com/how-it-works#fleet-step-2'
+      },
+      {
+        '@type': 'HowToStep',
+        'position': 3,
+        'name': 'Earn on Every Booking',
+        'text': 'Track all managed vehicles in your dashboard. Earn 10-30% commission on bookings. Get paid via Stripe Connect.',
+        'url': 'https://itwhip.com/how-it-works#fleet-step-3'
+      }
+    ]
+  }
+
   // FAQPage Schema
   const faqSchema = {
     '@context': 'https://schema.org',
@@ -190,6 +232,10 @@ export default function HowItWorksLayout({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(howToListSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(howToFleetSchema) }}
       />
       <script
         type="application/ld+json"

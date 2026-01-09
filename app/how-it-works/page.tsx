@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
-import { 
+import {
   IoCarSportOutline,
   IoShieldCheckmarkOutline,
   IoWalletOutline,
@@ -34,12 +34,14 @@ import {
   IoLeafOutline,
   IoGlobeOutline,
   IoPeopleOutline,
-  IoStatsChartOutline
+  IoStatsChartOutline,
+  IoBusinessOutline,
+  IoShareSocialOutline
 } from 'react-icons/io5'
 
 export default function HowItWorksPage() {
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<'guest' | 'host'>('guest')
+  const [activeTab, setActiveTab] = useState<'guest' | 'host' | 'fleet'>('guest')
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const handleGetAppClick = () => {
@@ -132,6 +134,47 @@ export default function HowItWorksPage() {
     }
   ]
 
+  const fleetSteps = [
+    {
+      icon: IoBusinessOutline,
+      title: 'Sign Up as Fleet Manager',
+      description: 'Create your account and get your own fleet page. No vehicle required to start.',
+      details: [
+        'Create your fleet manager account',
+        'Get personalized page: itwhip.com/fleet/[your-slug]',
+        'No vehicle ownership required',
+        'Complete Stripe Connect setup',
+        'Pass background verification'
+      ],
+      cta: { text: 'Apply Now', link: '/host/signup' }
+    },
+    {
+      icon: IoPeopleOutline,
+      title: 'Invite Car Owners',
+      description: 'Share your referral link and invite car owners in your network to join your fleet.',
+      details: [
+        'Share your referral link on social media',
+        'Invite car owners in your network',
+        'Negotiate commission splits (default 70/30)',
+        'Onboard partners through your dashboard',
+        'Build your fleet with no upfront costs'
+      ]
+    },
+    {
+      icon: IoCashOutline,
+      title: 'Earn on Every Booking',
+      description: 'Earn 10-30% commission on every booking from vehicles in your fleet.',
+      details: [
+        'Track all managed vehicles in dashboard',
+        'Earn 10-30% commission on bookings',
+        'Get paid via Stripe Connect',
+        'Automated monthly payouts',
+        'Full reporting and analytics'
+      ],
+      cta: { text: 'View Commission Tiers', link: '/partners/commission' }
+    }
+  ]
+
   const guestBenefits = [
     {
       icon: IoPeopleOutline,
@@ -212,6 +255,45 @@ export default function HowItWorksPage() {
     }
   ]
 
+  const fleetBenefits = [
+    {
+      icon: IoCarOutline,
+      title: 'No Car Required',
+      description: 'Earn without owning a vehicle. Build your fleet with cars from your network.',
+      highlight: 'Zero inventory needed'
+    },
+    {
+      icon: IoTrendingUpOutline,
+      title: 'Commission on Every Trip',
+      description: 'Earn 10-30% commission on every booking from vehicles in your fleet.',
+      highlight: '10-30% per booking'
+    },
+    {
+      icon: IoGlobeOutline,
+      title: 'Your Own Fleet Page',
+      description: 'Get your personalized landing page at itwhip.com/fleet/[your-slug].',
+      highlight: 'Custom branding'
+    },
+    {
+      icon: IoShareSocialOutline,
+      title: 'Social Media Tools',
+      description: 'Share your referral link and track conversions. Built-in marketing assets.',
+      highlight: 'Promote & grow'
+    },
+    {
+      icon: IoWalletOutline,
+      title: 'Stripe Payouts',
+      description: 'Get paid directly to your bank via Stripe Connect. Automated monthly payouts.',
+      highlight: 'Direct deposit'
+    },
+    {
+      icon: IoStatsChartOutline,
+      title: 'Full Dashboard Access',
+      description: 'Track all managed vehicles, earnings, and partner performance in real-time.',
+      highlight: 'Complete visibility'
+    }
+  ]
+
   const insuranceTiers = [
     {
       tier: 'BASIC',
@@ -269,7 +351,7 @@ export default function HowItWorksPage() {
     }
   ]
 
-  const requirements = {
+  const requirements: Record<'guest' | 'host' | 'fleet', { text: string; required: boolean }[]> = {
     guest: [
       { text: 'Valid driver\'s license (US or international)', required: true },
       { text: '21+ years old (25+ for luxury/exotic)', required: true },
@@ -284,6 +366,14 @@ export default function HowItWorksPage() {
       { text: 'Pass vehicle safety inspection', required: true },
       { text: 'Phoenix metro area location', required: true },
       { text: 'P2P or commercial insurance (for higher tiers)', required: false }
+    ],
+    fleet: [
+      { text: 'Valid government-issued ID', required: true },
+      { text: '18+ years old', required: true },
+      { text: 'Pass background check', required: true },
+      { text: 'Stripe account for payouts', required: true },
+      { text: 'Phoenix metro area (initially)', required: true },
+      { text: 'Social media presence (recommended)', required: false }
     ]
   }
 
@@ -422,28 +512,42 @@ export default function HowItWorksPage() {
               </p>
 
               {/* Tab Selector */}
-              <div className="inline-flex bg-gray-200 dark:bg-gray-800 rounded-lg p-1.5 shadow-lg border border-gray-300 dark:border-gray-700">
+              <div className="inline-flex flex-wrap justify-center bg-gray-200 dark:bg-gray-800 rounded-lg p-1.5 shadow-lg border border-gray-300 dark:border-gray-700 gap-1">
                 <button
                   onClick={() => setActiveTab('guest')}
-                  className={`px-6 py-3 rounded-lg text-sm font-medium transition-all ${
-                    activeTab === 'guest' 
-                      ? 'bg-white dark:bg-gray-700 text-purple-600 shadow-xl border-2 border-purple-500' 
+                  className={`px-4 sm:px-6 py-3 rounded-lg text-sm font-medium transition-all ${
+                    activeTab === 'guest'
+                      ? 'bg-white dark:bg-gray-700 text-purple-600 shadow-xl border-2 border-purple-500'
                       : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 hover:bg-gray-100 dark:hover:bg-gray-700'
                   }`}
                 >
-                  <IoPersonOutline className="inline w-5 h-5 mr-2" />
-                  I Need a Car
+                  <IoPersonOutline className="inline w-5 h-5 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">I Need a Car</span>
+                  <span className="sm:hidden">Rent</span>
                 </button>
                 <button
                   onClick={() => setActiveTab('host')}
-                  className={`px-6 py-3 rounded-lg text-sm font-medium transition-all ${
-                    activeTab === 'host' 
-                      ? 'bg-white dark:bg-gray-700 text-purple-600 shadow-xl border-2 border-purple-500' 
+                  className={`px-4 sm:px-6 py-3 rounded-lg text-sm font-medium transition-all ${
+                    activeTab === 'host'
+                      ? 'bg-white dark:bg-gray-700 text-purple-600 shadow-xl border-2 border-purple-500'
                       : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 hover:bg-gray-100 dark:hover:bg-gray-700'
                   }`}
                 >
-                  <IoCarOutline className="inline w-5 h-5 mr-2" />
-                  I Have a Car
+                  <IoCarOutline className="inline w-5 h-5 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">I Have a Car</span>
+                  <span className="sm:hidden">Host</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('fleet')}
+                  className={`px-4 sm:px-6 py-3 rounded-lg text-sm font-medium transition-all ${
+                    activeTab === 'fleet'
+                      ? 'bg-white dark:bg-gray-700 text-purple-600 shadow-xl border-2 border-purple-500'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  <IoBusinessOutline className="inline w-5 h-5 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">I Don&apos;t Have a Car</span>
+                  <span className="sm:hidden">Manage</span>
                 </button>
               </div>
             </div>
@@ -455,17 +559,19 @@ export default function HowItWorksPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-8">
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                {activeTab === 'guest' ? '3 Simple Steps to Rent' : '3 Steps to Start Earning'}
+                {activeTab === 'guest' && '3 Simple Steps to Rent'}
+                {activeTab === 'host' && '3 Steps to Start Earning'}
+                {activeTab === 'fleet' && '3 Steps to Manage a Fleet'}
               </h2>
               <p className="text-gray-600 dark:text-gray-400">
-                {activeTab === 'guest' 
-                  ? 'Rent from local owners with full insurance coverage' 
-                  : 'Choose your tier, set your price, get paid fast'}
+                {activeTab === 'guest' && 'Rent from local owners with full insurance coverage'}
+                {activeTab === 'host' && 'Choose your tier, set your price, get paid fast'}
+                {activeTab === 'fleet' && 'Earn commission without owning a vehicle'}
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {(activeTab === 'guest' ? guestSteps : hostSteps).map((step, idx) => (
+              {(activeTab === 'guest' ? guestSteps : activeTab === 'host' ? hostSteps : fleetSteps).map((step, idx) => (
                 <div key={idx} className="relative">
                   {idx < 2 && (
                     <div className="hidden md:block absolute top-12 left-full w-full">
@@ -630,22 +736,86 @@ export default function HowItWorksPage() {
           </section>
         )}
 
+        {/* Fleet Manager Commission Section - Fleet Only */}
+        {activeTab === 'fleet' && (
+          <section className="py-8 sm:py-10 bg-gray-100 dark:bg-gray-900">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="text-center mb-8">
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                  How You Earn
+                </h2>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Earn commission on every booking from vehicles in your fleet
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-xl text-center border border-gray-100 dark:border-gray-700">
+                  <div className="text-4xl font-black text-purple-600 mb-2">10%</div>
+                  <div className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Starter</div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">1-5 vehicles in your fleet</p>
+                </div>
+                <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-6 shadow-xl text-center border-2 border-purple-500 relative">
+                  <div className="absolute -top-3 right-4 bg-purple-500 text-white text-xs font-bold px-3 py-1 rounded-lg">
+                    POPULAR
+                  </div>
+                  <div className="text-4xl font-black text-purple-600 mb-2">20%</div>
+                  <div className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Growth</div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">6-15 vehicles in your fleet</p>
+                </div>
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-xl text-center border border-gray-100 dark:border-gray-700">
+                  <div className="text-4xl font-black text-purple-600 mb-2">30%</div>
+                  <div className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Pro</div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">16+ vehicles in your fleet</p>
+                </div>
+              </div>
+
+              <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-5 shadow-lg border border-amber-200 dark:border-amber-800">
+                <div className="flex items-start gap-3">
+                  <IoInformationCircleOutline className="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="font-semibold text-amber-800 dark:text-amber-400 mb-1">
+                      Default Commission Split: 70/30
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Car owners keep 70% of their earnings tier, you keep 30% as the fleet manager.
+                      Negotiate custom splits with each partner through your dashboard.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-center mt-6">
+                <Link
+                  href="/partners/commission"
+                  className="inline-flex items-center text-purple-600 hover:text-purple-700 font-medium"
+                >
+                  View full commission structure
+                  <IoArrowForwardOutline className="w-4 h-4 ml-1" />
+                </Link>
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Benefits Section */}
         <section className="py-8 sm:py-10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-8">
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                {activeTab === 'guest' ? 'Why Rent on ItWhip' : 'Why Hosts Choose ItWhip'}
+                {activeTab === 'guest' && 'Why Rent on ItWhip'}
+                {activeTab === 'host' && 'Why Hosts Choose ItWhip'}
+                {activeTab === 'fleet' && 'Why Become a Fleet Manager'}
               </h2>
               <p className="text-gray-600 dark:text-gray-400">
-                {activeTab === 'guest' 
-                  ? 'Peer-to-peer car sharing with full insurance coverage' 
-                  : 'Transparent tiers, complete protection, professional tools'}
+                {activeTab === 'guest' && 'Peer-to-peer car sharing with full insurance coverage'}
+                {activeTab === 'host' && 'Transparent tiers, complete protection, professional tools'}
+                {activeTab === 'fleet' && 'Build a fleet business with zero vehicle investment'}
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {(activeTab === 'guest' ? guestBenefits : hostBenefits).map((benefit, idx) => (
+              {(activeTab === 'guest' ? guestBenefits : activeTab === 'host' ? hostBenefits : fleetBenefits).map((benefit, idx) => (
                 <div key={idx} className="bg-white dark:bg-gray-900 rounded-lg p-5 shadow-xl hover:shadow-2xl transition-shadow border border-gray-100 dark:border-gray-800">
                   <benefit.icon className="w-10 h-10 text-purple-600 mb-3" />
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
@@ -707,9 +877,11 @@ export default function HowItWorksPage() {
 
             <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl p-6 border border-gray-100 dark:border-gray-800">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-5">
-                {activeTab === 'guest' ? 'To Rent a Car' : 'To List Your Car'}
+                {activeTab === 'guest' && 'To Rent a Car'}
+                {activeTab === 'host' && 'To List Your Car'}
+                {activeTab === 'fleet' && 'To Become a Fleet Manager'}
               </h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {requirements[activeTab].map((req, idx) => (
                   <div key={idx} className="flex items-start">
@@ -731,11 +903,13 @@ export default function HowItWorksPage() {
               </div>
 
               <div className="mt-5 pt-5 border-t border-gray-200 dark:border-gray-700">
-                <Link 
-                  href={activeTab === 'host' ? '/host-protection' : '/insurance-guide'}
+                <Link
+                  href={activeTab === 'host' ? '/host-protection' : activeTab === 'fleet' ? '/partners/commission' : '/insurance-guide'}
                   className="inline-flex items-center text-purple-600 hover:text-purple-700 font-medium"
                 >
-                  {activeTab === 'host' ? 'View full host protection details' : 'Learn about guest protection'}
+                  {activeTab === 'guest' && 'Learn about guest protection'}
+                  {activeTab === 'host' && 'View full host protection details'}
+                  {activeTab === 'fleet' && 'View commission structure'}
                   <IoArrowForwardOutline className="w-4 h-4 ml-1" />
                 </Link>
               </div>
@@ -807,43 +981,62 @@ export default function HowItWorksPage() {
         <section className="py-8 sm:py-10 bg-gradient-to-r from-purple-600 to-purple-700">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-3">
-              {activeTab === 'guest' ? 'Ready to Rent?' : 'Ready to Earn?'}
+              {activeTab === 'guest' && 'Ready to Rent?'}
+              {activeTab === 'host' && 'Ready to Earn?'}
+              {activeTab === 'fleet' && 'Ready to Build Your Fleet?'}
             </h2>
             <p className="text-base sm:text-lg text-purple-100 mb-6">
-              {activeTab === 'guest' 
-                ? 'Find your perfect car from local Phoenix owners' 
-                : 'Choose your tier and start earning up to 90%'}
+              {activeTab === 'guest' && 'Find your perfect car from local Phoenix owners'}
+              {activeTab === 'host' && 'Choose your tier and start earning up to 90%'}
+              {activeTab === 'fleet' && 'Start earning commission without owning a vehicle'}
             </p>
-            
+
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              {activeTab === 'guest' ? (
+              {activeTab === 'guest' && (
                 <>
-                  <Link 
+                  <Link
                     href="/"
                     className="inline-block px-8 py-3 bg-white text-purple-600 rounded-lg font-bold hover:bg-purple-50 transition shadow-xl"
                   >
                     Browse Available Cars
                   </Link>
-                  <button 
+                  <button
                     onClick={() => setActiveTab('host')}
                     className="inline-block px-8 py-3 bg-purple-500 text-white rounded-lg font-bold hover:bg-purple-400 transition"
                   >
                     Or List Your Car
                   </button>
                 </>
-              ) : (
+              )}
+              {activeTab === 'host' && (
                 <>
-                  <Link 
+                  <Link
                     href="/host/signup"
                     className="inline-block px-8 py-3 bg-white text-purple-600 rounded-lg font-bold hover:bg-purple-50 transition shadow-xl"
                   >
                     List Your Car Now
                   </Link>
-                  <Link 
+                  <Link
                     href="/insurance-guide"
                     className="inline-block px-8 py-3 bg-purple-500 text-white rounded-lg font-bold hover:bg-purple-400 transition"
                   >
                     Insurance Guide
+                  </Link>
+                </>
+              )}
+              {activeTab === 'fleet' && (
+                <>
+                  <Link
+                    href="/host/signup"
+                    className="inline-block px-8 py-3 bg-white text-purple-600 rounded-lg font-bold hover:bg-purple-50 transition shadow-xl"
+                  >
+                    Apply as Fleet Manager
+                  </Link>
+                  <Link
+                    href="/partners/commission"
+                    className="inline-block px-8 py-3 bg-purple-500 text-white rounded-lg font-bold hover:bg-purple-400 transition"
+                  >
+                    View Commission Tiers
                   </Link>
                 </>
               )}

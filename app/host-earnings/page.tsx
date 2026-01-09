@@ -262,19 +262,25 @@ export default function HostEarningsPage() {
               </div>
 
               <div className="flex flex-col sm:flex-row items-center justify-center space-y-3 sm:space-y-0 sm:space-x-4">
-                <Link 
+                <Link
                   href="/list-your-car"
                   className="w-full sm:w-auto inline-block px-6 sm:px-8 py-3 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 transition shadow-lg"
                 >
                   Start Earning Today →
                 </Link>
-                <Link 
+                <Link
                   href="/insurance-guide"
                   className="w-full sm:w-auto inline-block px-6 sm:px-8 py-3 bg-white dark:bg-gray-800 text-purple-600 rounded-lg font-bold hover:bg-purple-50 transition border-2 border-purple-600"
                 >
                   Learn About Tiers
                 </Link>
               </div>
+              <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-4">
+                Already a host?{' '}
+                <Link href="/host/payouts" className="text-purple-600 hover:text-purple-700 font-medium">
+                  Learn about payouts & Stripe setup →
+                </Link>
+              </p>
             </div>
           </div>
         </section>
