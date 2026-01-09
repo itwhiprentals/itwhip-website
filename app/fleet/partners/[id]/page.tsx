@@ -11,6 +11,7 @@ import {
   IoBusinessOutline,
   IoCarOutline,
   IoCheckmarkCircleOutline,
+  IoCheckmarkOutline,
   IoCloseCircleOutline,
   IoTimeOutline,
   IoTrendingUpOutline,
@@ -27,7 +28,16 @@ import {
   IoPauseCircleOutline,
   IoPlayCircleOutline,
   IoCreateOutline,
-  IoShieldCheckmarkOutline
+  IoShieldCheckmarkOutline,
+  IoCardOutline,
+  IoWalletOutline,
+  IoSwapHorizontalOutline,
+  IoReceiptOutline,
+  IoAlertCircleOutline,
+  IoCloseOutline,
+  IoSpeedometerOutline,
+  IoLocationOutline,
+  IoStar
 } from 'react-icons/io5'
 
 interface Partner {
@@ -64,12 +74,39 @@ interface Partner {
 
   // Stripe
   stripeConnectAccountId?: string
+  stripePayoutsEnabled?: boolean
+  stripeChargesEnabled?: boolean
+  stripeDetailsSubmitted?: boolean
+  stripeRequirements?: Record<string, any>
+  stripeDisabledReason?: string
 
   // Timestamps
   createdAt: string
   updatedAt: string
 
   // Relations
+  cars?: {
+    id: string
+    make: string
+    model: string
+    year: number
+    trim?: string
+    vin?: string
+    color?: string
+    licensePlate?: string
+    dailyRate?: number
+    weeklyRate?: number
+    monthlyRate?: number
+    transmission?: string
+    fuelType?: string
+    seats?: number
+    currentMileage?: number
+    isActive: boolean
+    totalTrips?: number
+    rating?: number
+    createdAt: string
+    photos: { url: string; isHero: boolean; order?: number }[]
+  }[]
   partnerApplication?: {
     id: string
     status: string
@@ -108,6 +145,85 @@ interface Partner {
   }
 }
 
+interface Activity {
+  id: string
+  type: string
+  title: string
+  description?: string
+  timestamp: string
+  severity: 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR'
+  metadata?: Record<string, any>
+}
+
+interface BankingData {
+  partner: {
+    id: string
+    name: string
+    email: string
+    companyName: string
+    approvalStatus: string
+    commissionRate: number
+  }
+  stripeConnect: {
+    accountId?: string
+    payoutsEnabled: boolean
+    chargesEnabled: boolean
+    detailsSubmitted: boolean
+  }
+  stripeCustomer: {
+    customerId?: string
+    canCharge: boolean
+  }
+  balances: {
+    current: number
+    pending: number
+    hold: number
+    negative: number
+    availableForPayout: number
+  }
+  payout: {
+    lastPayoutDate?: string
+    lastPayoutAmount?: number
+    totalPayouts: number
+    payoutCount: number
+    enabled: boolean
+    disabledReason?: string
+    instantEnabled: boolean
+    schedule?: string
+    minimumAmount?: number
+  }
+  bankAccount?: {
+    last4: string
+    bankName: string
+    accountType: string
+    verified: boolean
+  }
+  debitCard?: {
+    last4: string
+    brand: string
+    expMonth: number
+    expYear: number
+  }
+  recentCharges: {
+    id: string
+    amount: number
+    chargeType: string
+    reason: string
+    status: string
+    createdAt: string
+  }[]
+  recentPayouts: {
+    id: string
+    amount: number
+    status: string
+    createdAt: string
+  }[]
+  stats: {
+    totalChargedAmount: number
+    totalPayouts: number
+  }
+}
+
 export default function PartnerDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params)
   const searchParams = useSearchParams()
@@ -122,9 +238,54 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ id: st
   const [suspendReason, setSuspendReason] = useState('')
   const [processing, setProcessing] = useState(false)
 
+  // Activity state
+  const [activities, setActivities] = useState<Activity[]>([])
+  const [activityLoading, setActivityLoading] = useState(false)
+
+  // Banking state
+  const [banking, setBanking] = useState<BankingData | null>(null)
+  const [bankingLoading, setBankingLoading] = useState(false)
+  const [chargeAmount, setChargeAmount] = useState('')
+  const [chargeReason, setChargeReason] = useState('')
+  const [chargeMethod, setChargeMethod] = useState<'customer' | 'connect'>('connect') // default to debit balance
+  const [chargeProcessing, setChargeProcessing] = useState(false)
+
+  // Funds management state
+  const [showHoldModal, setShowHoldModal] = useState(false)
+  const [showPayoutModal, setShowPayoutModal] = useState(false)
+  const [holdAction, setHoldAction] = useState<'hold' | 'release'>('hold')
+  const [holdAmount, setHoldAmount] = useState('')
+  const [holdReason, setHoldReason] = useState('')
+  const [holdUntil, setHoldUntil] = useState('')
+  const [payoutAmount, setPayoutAmount] = useState('')
+  const [payoutReason, setPayoutReason] = useState('')
+  const [fundsProcessing, setFundsProcessing] = useState(false)
+
+  // Vehicle modal state
+  const [selectedVehicle, setSelectedVehicle] = useState<Partner['cars'][0] | null>(null)
+  const [vehicleModalPhoto, setVehicleModalPhoto] = useState(0)
+
+  // Document request state
+  const [requestingDoc, setRequestingDoc] = useState<string | null>(null)
+  const [requestAllDocs, setRequestAllDocs] = useState(false)
+
   useEffect(() => {
     fetchPartner()
   }, [resolvedParams.id])
+
+  // Fetch activities when activity tab is selected
+  useEffect(() => {
+    if (activeTab === 'activity' && partner && activities.length === 0) {
+      fetchActivities()
+    }
+  }, [activeTab, partner])
+
+  // Fetch banking when banking tab is selected
+  useEffect(() => {
+    if (activeTab === 'banking' && partner && !banking) {
+      fetchBanking()
+    }
+  }, [activeTab, partner])
 
   const fetchPartner = async () => {
     try {
@@ -219,6 +380,294 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ id: st
       alert('Failed to update commission rate')
     } finally {
       setProcessing(false)
+    }
+  }
+
+  const fetchActivities = async () => {
+    if (!partner) return
+    try {
+      setActivityLoading(true)
+      const response = await fetch(`/api/fleet/partners/${partner.id}/activity?key=${apiKey}`)
+      const data = await response.json()
+      if (data.success) {
+        setActivities(data.activities || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch activities:', error)
+    } finally {
+      setActivityLoading(false)
+    }
+  }
+
+  const fetchBanking = async () => {
+    if (!partner) return
+    try {
+      setBankingLoading(true)
+      const response = await fetch(`/api/fleet/partners/${partner.id}/banking?key=${apiKey}`)
+      const data = await response.json()
+      if (data.success) {
+        setBanking(data.data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch banking:', error)
+    } finally {
+      setBankingLoading(false)
+    }
+  }
+
+  const handleChargePartner = async () => {
+    if (!partner || !chargeAmount || !chargeReason) return
+
+    try {
+      setChargeProcessing(true)
+      const response = await fetch(`/api/fleet/partners/${partner.id}/banking?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: parseFloat(chargeAmount),
+          reason: chargeReason,
+          method: chargeMethod // 'connect' = debit balance, 'customer' = charge card
+        })
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        const methodLabel = chargeMethod === 'connect' ? 'debited from balance' : 'charged to card'
+        alert(`Successfully ${methodLabel}: $${chargeAmount}`)
+        setChargeAmount('')
+        setChargeReason('')
+        // Refresh banking data
+        fetchBanking()
+      } else {
+        alert(data.error || 'Failed to charge partner')
+      }
+    } catch (error) {
+      console.error('Failed to charge partner:', error)
+      alert('Failed to charge partner')
+    } finally {
+      setChargeProcessing(false)
+    }
+  }
+
+  // Handle hold/release funds
+  const handleFundsAction = async () => {
+    if (!partner || !holdReason) return
+
+    if ((holdAction === 'hold' || holdAction === 'release') && (!holdAmount || parseFloat(holdAmount) <= 0)) {
+      alert('Valid amount is required')
+      return
+    }
+
+    try {
+      setFundsProcessing(true)
+      const response = await fetch(`/api/fleet/partners/${partner.id}/funds?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: holdAction,
+          amount: parseFloat(holdAmount),
+          reason: holdReason,
+          holdUntil: holdUntil || undefined
+        })
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        alert(data.data.message)
+        setShowHoldModal(false)
+        setHoldAmount('')
+        setHoldReason('')
+        setHoldUntil('')
+        fetchBanking()
+      } else {
+        alert(data.error || 'Failed to process funds action')
+      }
+    } catch (error) {
+      console.error('Failed to process funds action:', error)
+      alert('Failed to process funds action')
+    } finally {
+      setFundsProcessing(false)
+    }
+  }
+
+  // Handle force payout
+  const handleForcePayout = async () => {
+    if (!partner || !payoutAmount || !payoutReason) return
+
+    if (parseFloat(payoutAmount) <= 0) {
+      alert('Valid payout amount is required')
+      return
+    }
+
+    if (!confirm(`Force payout of $${payoutAmount} to ${partner.partnerCompanyName || partner.name}?`)) {
+      return
+    }
+
+    try {
+      setFundsProcessing(true)
+      const response = await fetch(`/api/fleet/partners/${partner.id}/funds?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'force_payout',
+          amount: parseFloat(payoutAmount),
+          reason: payoutReason
+        })
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        alert(data.data.message)
+        setShowPayoutModal(false)
+        setPayoutAmount('')
+        setPayoutReason('')
+        fetchBanking()
+      } else {
+        alert(data.error || 'Failed to process payout')
+      }
+    } catch (error) {
+      console.error('Failed to process payout:', error)
+      alert('Failed to process payout')
+    } finally {
+      setFundsProcessing(false)
+    }
+  }
+
+  // Handle toggle payouts (suspend/enable)
+  const handleTogglePayouts = async (enable: boolean) => {
+    if (!partner) return
+
+    const action = enable ? 'enable_payouts' : 'suspend_payouts'
+    const confirmMsg = enable
+      ? `Enable payouts for ${partner.partnerCompanyName || partner.name}?`
+      : `Suspend payouts for ${partner.partnerCompanyName || partner.name}?`
+
+    const reason = prompt(confirmMsg + '\n\nPlease enter a reason:')
+    if (!reason) return
+
+    try {
+      setFundsProcessing(true)
+      const response = await fetch(`/api/fleet/partners/${partner.id}/funds?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, reason })
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        alert(data.data.message)
+        fetchBanking()
+      } else {
+        alert(data.error || 'Failed to update payout status')
+      }
+    } catch (error) {
+      console.error('Failed to toggle payouts:', error)
+      alert('Failed to update payout status')
+    } finally {
+      setFundsProcessing(false)
+    }
+  }
+
+  // Handle toggle instant payout
+  const handleToggleInstantPayout = async () => {
+    if (!partner || !banking) return
+
+    const currentStatus = banking.payout?.instantEnabled || false
+    const newStatus = !currentStatus
+    const confirmMsg = newStatus
+      ? `Enable instant payouts for ${partner.partnerCompanyName || partner.name}?`
+      : `Disable instant payouts for ${partner.partnerCompanyName || partner.name}?`
+
+    const reason = prompt(confirmMsg + '\n\nPlease enter a reason:')
+    if (!reason) return
+
+    try {
+      setFundsProcessing(true)
+      const response = await fetch(`/api/fleet/partners/${partner.id}/funds?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'toggle_instant_payout',
+          enableInstant: newStatus,
+          reason
+        })
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        alert(data.data.message)
+        fetchBanking()
+      } else {
+        alert(data.error || 'Failed to toggle instant payout')
+      }
+    } catch (error) {
+      console.error('Failed to toggle instant payout:', error)
+      alert('Failed to toggle instant payout')
+    } finally {
+      setFundsProcessing(false)
+    }
+  }
+
+  // Request documents from partner
+  const handleRequestDocuments = async (documentTypes: string[]) => {
+    if (!partner || documentTypes.length === 0) return
+
+    const isAll = documentTypes.length > 1
+    if (isAll) {
+      setRequestAllDocs(true)
+    } else {
+      setRequestingDoc(documentTypes[0])
+    }
+
+    try {
+      const response = await fetch(`/api/fleet/partners/${partner.id}/request-documents?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          documentTypes,
+          deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days
+        })
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        const docCount = documentTypes.length
+        const docNames = docCount === 1
+          ? getDocumentTypeName(documentTypes[0])
+          : `${docCount} documents`
+        const emailStatus = data.data?.emailSent
+          ? `✓ Email sent to ${data.data.partnerEmail}`
+          : '⚠ Request logged but email failed to send'
+        alert(`Document request for ${docNames}\n\n${emailStatus}`)
+      } else {
+        alert(data.error || 'Failed to send document request')
+      }
+    } catch (error) {
+      console.error('Failed to request documents:', error)
+      alert('Failed to send document request')
+    } finally {
+      setRequestingDoc(null)
+      setRequestAllDocs(false)
+    }
+  }
+
+  const getActivityIcon = (type: string) => {
+    const icons: Record<string, { icon: React.ReactNode; bgColor: string }> = {
+      'COMMISSION': { icon: <IoSwapHorizontalOutline className="w-4 h-4 text-purple-600" />, bgColor: 'bg-purple-100 dark:bg-purple-900/30' },
+      'DOCUMENT': { icon: <IoDocumentTextOutline className="w-4 h-4 text-blue-600" />, bgColor: 'bg-blue-100 dark:bg-blue-900/30' },
+      'PAYOUT': { icon: <IoCashOutline className="w-4 h-4 text-green-600" />, bgColor: 'bg-green-100 dark:bg-green-900/30' },
+      'BOOKING': { icon: <IoCarOutline className="w-4 h-4 text-orange-600" />, bgColor: 'bg-orange-100 dark:bg-orange-900/30' },
+      'ACTIVITY': { icon: <IoTimeOutline className="w-4 h-4 text-gray-600" />, bgColor: 'bg-gray-100 dark:bg-gray-900/30' }
+    }
+    return icons[type] || icons['ACTIVITY']
+  }
+
+  const getActivitySeverityColor = (severity: string) => {
+    switch (severity) {
+      case 'SUCCESS': return 'border-l-green-500'
+      case 'WARNING': return 'border-l-yellow-500'
+      case 'ERROR': return 'border-l-red-500'
+      default: return 'border-l-gray-300 dark:border-l-gray-600'
     }
   }
 
@@ -388,7 +837,7 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ id: st
 
           {/* Tabs - scrollable on mobile */}
           <div className="flex gap-1 mt-4 border-b border-gray-200 dark:border-gray-700 -mb-px overflow-x-auto scrollbar-hide">
-            {['overview', 'documents', 'commission', 'activity'].map((tab) => (
+            {['overview', 'fleet', 'documents', 'commission', 'banking', 'activity'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -632,13 +1081,56 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ id: st
                 </Link>
               </div>
 
-              {/* Stripe Status */}
+              {/* Stripe Status - Enhanced */}
               <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Payouts</h3>
+
                 {partner.stripeConnectAccountId ? (
-                  <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
-                    <IoShieldCheckmarkOutline className="w-5 h-5" />
-                    <span className="text-sm font-medium">Stripe Connected</span>
+                  <div className="space-y-3">
+                    {/* Connection Status */}
+                    <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                      <IoShieldCheckmarkOutline className="w-5 h-5" />
+                      <span className="text-sm font-medium">Stripe Connected</span>
+                    </div>
+
+                    {/* Payouts Enabled */}
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-500 dark:text-gray-400">Payouts</span>
+                      <span className={partner.stripePayoutsEnabled ? 'text-green-600 dark:text-green-400 font-medium' : 'text-red-600 dark:text-red-400 font-medium'}>
+                        {partner.stripePayoutsEnabled ? 'Enabled' : 'Disabled'}
+                      </span>
+                    </div>
+
+                    {/* Charges Enabled */}
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-500 dark:text-gray-400">Charges</span>
+                      <span className={partner.stripeChargesEnabled ? 'text-green-600 dark:text-green-400 font-medium' : 'text-red-600 dark:text-red-400 font-medium'}>
+                        {partner.stripeChargesEnabled ? 'Enabled' : 'Disabled'}
+                      </span>
+                    </div>
+
+                    {/* Details Submitted */}
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-500 dark:text-gray-400">Details</span>
+                      <span className={partner.stripeDetailsSubmitted ? 'text-green-600 dark:text-green-400 font-medium' : 'text-yellow-600 dark:text-yellow-400 font-medium'}>
+                        {partner.stripeDetailsSubmitted ? 'Submitted' : 'Pending'}
+                      </span>
+                    </div>
+
+                    {/* Requirements Warning */}
+                    {partner.stripeRequirements && Object.keys(partner.stripeRequirements).length > 0 && (
+                      <div className="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded text-sm text-yellow-700 dark:text-yellow-400">
+                        <IoWarningOutline className="inline w-4 h-4 mr-1" />
+                        Pending requirements
+                      </div>
+                    )}
+
+                    {/* Disabled Reason */}
+                    {partner.stripeDisabledReason && (
+                      <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 rounded text-sm text-red-700 dark:text-red-400">
+                        {partner.stripeDisabledReason}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 text-yellow-600 dark:text-yellow-400">
@@ -651,57 +1143,229 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ id: st
           </div>
         )}
 
-        {activeTab === 'documents' && (
+        {activeTab === 'fleet' && (
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Partner Documents</h3>
-            {partner.partnerDocuments.length === 0 ? (
-              <p className="text-gray-500 dark:text-gray-400">No documents uploaded yet.</p>
-            ) : (
-              <div className="space-y-4">
-                {partner.partnerDocuments.map((doc) => (
-                  <div
-                    key={doc.id}
-                    className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              Fleet Vehicles ({partner.cars?.length || 0})
+            </h3>
+            {partner.cars && partner.cars.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                {partner.cars.map((car) => (
+                  <button
+                    key={car.id}
+                    onClick={() => {
+                      setSelectedVehicle(car)
+                      setVehicleModalPhoto(0)
+                    }}
+                    className="group block text-left"
                   >
-                    <div className="flex items-center gap-3">
-                      <IoDocumentTextOutline className="w-6 h-6 text-gray-400" />
-                      <div>
-                        <div className="font-medium text-gray-900 dark:text-white">
-                          {getDocumentTypeName(doc.type)}
+                    <div className="aspect-[4/3] rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 mb-2">
+                      {car.photos?.[0]?.url ? (
+                        <img
+                          src={car.photos[0].url}
+                          alt={`${car.year} ${car.make} ${car.model}`}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <IoCarOutline className="w-8 h-8 text-gray-400" />
                         </div>
-                        {doc.expiresAt && (
-                          <div className={`text-sm ${doc.isExpired ? 'text-red-600' : 'text-gray-500'}`}>
-                            {doc.isExpired ? 'Expired: ' : 'Expires: '}
-                            {formatDate(doc.expiresAt)}
-                          </div>
-                        )}
-                      </div>
+                      )}
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        doc.isExpired
-                          ? 'text-red-700 bg-red-100 dark:text-red-400 dark:bg-red-900/30'
-                          : doc.status === 'VERIFIED'
-                          ? 'text-green-700 bg-green-100 dark:text-green-400 dark:bg-green-900/30'
-                          : 'text-yellow-700 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/30'
-                      }`}>
-                        {doc.isExpired ? 'EXPIRED' : doc.status}
+                    <div className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
+                      {car.year} {car.make} {car.model}
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className={`text-xs ${car.isActive ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}`}>
+                        {car.isActive ? 'Active' : 'Inactive'}
                       </span>
-                      <a
-                        href={doc.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-3 py-1 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded text-sm font-medium transition-colors"
-                      >
-                        View
-                      </a>
+                      {car.dailyRate && (
+                        <span className="text-xs font-medium text-orange-600 dark:text-orange-400">
+                          ${car.dailyRate}/day
+                        </span>
+                      )}
                     </div>
-                  </div>
+                  </button>
                 ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <IoCarOutline className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-500 dark:text-gray-400">No vehicles in fleet yet.</p>
               </div>
             )}
           </div>
         )}
+
+        {activeTab === 'documents' && (() => {
+          const allDocTypes = [
+            { type: 'BUSINESS_LICENSE', name: 'Business License', description: 'Valid business license or permit' },
+            { type: 'INSURANCE_CERTIFICATE', name: 'Insurance Certificate', description: 'Proof of general liability insurance' },
+            { type: 'COMMERCIAL_AUTO_POLICY', name: 'Commercial Auto Policy', description: 'Commercial auto insurance covering fleet vehicles' },
+            { type: 'BACKGROUND_CHECK', name: 'Background Check', description: 'Background check clearance document' },
+            { type: 'W9_FORM', name: 'W-9 Form', description: 'IRS W-9 tax form for payments' },
+            { type: 'ARTICLES_OF_INCORPORATION', name: 'Articles of Incorporation', description: 'Business formation documents' }
+          ]
+          const missingOrExpiredDocs = allDocTypes.filter(dt => {
+            const doc = partner.partnerDocuments.find(d => d.type === dt.type)
+            return !doc || doc.status !== 'VERIFIED' || doc.isExpired
+          }).map(dt => dt.type)
+
+          return (
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Required Documents</h3>
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  {partner.partnerDocuments.filter(d => d.status === 'VERIFIED' && !d.isExpired).length} / 6 verified
+                </span>
+              </div>
+              {missingOrExpiredDocs.length > 0 && (
+                <button
+                  onClick={() => handleRequestDocuments(missingOrExpiredDocs)}
+                  disabled={requestAllDocs}
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                >
+                  {requestAllDocs ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <IoMailOutline className="w-4 h-4" />
+                      Request All Missing ({missingOrExpiredDocs.length})
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+
+            {/* Email notification info */}
+            <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <div className="flex items-center gap-2 text-sm">
+                <IoMailOutline className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <span className="text-blue-800 dark:text-blue-200">
+                  Document requests will be sent to: <strong>{partner.email}</strong>
+                </span>
+              </div>
+            </div>
+
+            {/* Document Checklist */}
+            <div className="space-y-3">
+              {allDocTypes.map((docType) => {
+                const uploadedDoc = partner.partnerDocuments.find(d => d.type === docType.type)
+                const isVerified = uploadedDoc?.status === 'VERIFIED' && !uploadedDoc?.isExpired
+                const isPending = uploadedDoc?.status === 'PENDING'
+                const isRejected = uploadedDoc?.status === 'REJECTED'
+                const isExpired = uploadedDoc?.isExpired
+                const needsRequest = !isVerified
+
+                return (
+                  <div
+                    key={docType.type}
+                    className={`p-4 rounded-lg border ${
+                      isVerified
+                        ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                        : isExpired
+                        ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                        : isRejected
+                        ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                        : isPending
+                        ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+                        : 'bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-3">
+                        <div className={`mt-0.5 w-5 h-5 rounded-full flex items-center justify-center ${
+                          isVerified
+                            ? 'bg-green-500 text-white'
+                            : isExpired || isRejected
+                            ? 'bg-red-500 text-white'
+                            : isPending
+                            ? 'bg-yellow-500 text-white'
+                            : 'bg-gray-300 dark:bg-gray-600'
+                        }`}>
+                          {isVerified ? (
+                            <IoCheckmarkOutline className="w-3 h-3" />
+                          ) : isExpired || isRejected ? (
+                            <IoCloseOutline className="w-3 h-3" />
+                          ) : isPending ? (
+                            <IoTimeOutline className="w-3 h-3" />
+                          ) : null}
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-900 dark:text-white">
+                            {docType.name}
+                          </div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                            {docType.description}
+                          </div>
+                          {uploadedDoc && (
+                            <div className="mt-1 text-xs text-gray-400">
+                              Uploaded: {formatDate(uploadedDoc.uploadedAt)}
+                              {uploadedDoc.expiresAt && (
+                                <span className={uploadedDoc.isExpired ? ' text-red-500' : ''}>
+                                  {' • '}{uploadedDoc.isExpired ? 'Expired' : 'Expires'}: {formatDate(uploadedDoc.expiresAt)}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          {uploadedDoc?.rejectNote && (
+                            <div className="mt-1 text-xs text-red-600 dark:text-red-400">
+                              Rejection reason: {uploadedDoc.rejectNote}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          isVerified
+                            ? 'text-green-700 bg-green-100 dark:text-green-400 dark:bg-green-900/30'
+                            : isExpired
+                            ? 'text-red-700 bg-red-100 dark:text-red-400 dark:bg-red-900/30'
+                            : isRejected
+                            ? 'text-red-700 bg-red-100 dark:text-red-400 dark:bg-red-900/30'
+                            : isPending
+                            ? 'text-yellow-700 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/30'
+                            : 'text-gray-500 bg-gray-200 dark:text-gray-400 dark:bg-gray-600'
+                        }`}>
+                          {isVerified ? 'Verified' : isExpired ? 'Expired' : isRejected ? 'Rejected' : isPending ? 'Pending Review' : 'Missing'}
+                        </span>
+                        {uploadedDoc?.url && (
+                          <a
+                            href={uploadedDoc.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-2 py-1 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded text-xs font-medium transition-colors"
+                          >
+                            View
+                          </a>
+                        )}
+                        {needsRequest && (
+                          <button
+                            onClick={() => handleRequestDocuments([docType.type])}
+                            disabled={requestingDoc === docType.type || requestAllDocs}
+                            className="px-2 py-1 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white rounded text-xs font-medium transition-colors flex items-center gap-1"
+                          >
+                            {requestingDoc === docType.type ? (
+                              <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            ) : (
+                              <IoMailOutline className="w-3 h-3" />
+                            )}
+                            Request
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+          )
+        })()}
 
         {activeTab === 'commission' && (
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
@@ -738,10 +1402,452 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ id: st
           </div>
         )}
 
+        {activeTab === 'banking' && (
+          <div className="space-y-6">
+            {bankingLoading ? (
+              <div className="animate-pulse space-y-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="h-24 bg-gray-200 dark:bg-gray-700 rounded-lg" />
+                  ))}
+                </div>
+                <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded-lg" />
+              </div>
+            ) : banking ? (
+              <>
+                {/* Balance Cards */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 mb-1">
+                      <IoWalletOutline className="w-4 h-4" />
+                      <span className="text-xs">Available</span>
+                    </div>
+                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                      ${(banking.balances.current || 0).toFixed(2)}
+                    </div>
+                  </div>
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 mb-1">
+                      <IoTimeOutline className="w-4 h-4" />
+                      <span className="text-xs">Pending</span>
+                    </div>
+                    <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
+                      ${(banking.balances.pending || 0).toFixed(2)}
+                    </div>
+                  </div>
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 mb-1">
+                      <IoAlertCircleOutline className="w-4 h-4" />
+                      <span className="text-xs">On Hold</span>
+                    </div>
+                    <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+                      ${(banking.balances.hold || 0).toFixed(2)}
+                    </div>
+                  </div>
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 mb-1">
+                      <IoCashOutline className="w-4 h-4" />
+                      <span className="text-xs">Total Payouts</span>
+                    </div>
+                    <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                      ${(banking.payout.totalPayouts || 0).toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Payment Methods & Stripe Status */}
+                <div className="grid lg:grid-cols-2 gap-6">
+                  {/* Payment Methods */}
+                  <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Payment Methods</h3>
+                    {banking.bankAccount ? (
+                      <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg mb-3">
+                        <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                          <IoCashOutline className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-medium text-gray-900 dark:text-white">
+                            {banking.bankAccount.bankName}
+                          </div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                            ••••{banking.bankAccount.last4} ({banking.bankAccount.accountType})
+                          </div>
+                        </div>
+                        {banking.bankAccount.verified && (
+                          <span className="text-xs text-green-600 dark:text-green-400 font-medium">Verified</span>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">No bank account on file</p>
+                    )}
+
+                    {banking.debitCard && (
+                      <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                        <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                          <IoCardOutline className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-medium text-gray-900 dark:text-white">
+                            {banking.debitCard.brand}
+                          </div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                            ••••{banking.debitCard.last4} • Exp {banking.debitCard.expMonth}/{banking.debitCard.expYear}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Stripe Status */}
+                  <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Stripe Status</h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-500 dark:text-gray-400">Connect Account</span>
+                        <span className={`text-sm font-medium ${banking.stripeConnect.accountId ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                          {banking.stripeConnect.accountId ? 'Connected' : 'Not Connected'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-500 dark:text-gray-400">Payouts</span>
+                        <span className={`text-sm font-medium ${banking.stripeConnect.payoutsEnabled ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                          {banking.stripeConnect.payoutsEnabled ? 'Enabled' : 'Disabled'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-500 dark:text-gray-400">Charges</span>
+                        <span className={`text-sm font-medium ${banking.stripeConnect.chargesEnabled ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                          {banking.stripeConnect.chargesEnabled ? 'Enabled' : 'Disabled'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-500 dark:text-gray-400">Customer (for charging)</span>
+                        <span className={`text-sm font-medium ${banking.stripeCustomer.canCharge ? 'text-green-600 dark:text-green-400' : 'text-yellow-600 dark:text-yellow-400'}`}>
+                          {banking.stripeCustomer.canCharge ? 'Ready' : 'No payment method'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Charge Partner Section */}
+                <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Charge Partner</h3>
+
+                  {/* Charge Method Selector */}
+                  <div className="flex gap-2 mb-4">
+                    <button
+                      onClick={() => setChargeMethod('connect')}
+                      className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        chargeMethod === 'connect'
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                      }`}
+                    >
+                      <IoWalletOutline className="inline w-4 h-4 mr-1" />
+                      Debit Balance
+                    </button>
+                    <button
+                      onClick={() => setChargeMethod('customer')}
+                      disabled={!banking.stripeCustomer.canCharge}
+                      className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        chargeMethod === 'customer'
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                      } ${!banking.stripeCustomer.canCharge ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <IoCardOutline className="inline w-4 h-4 mr-1" />
+                      Charge Card
+                    </button>
+                  </div>
+
+                  {/* Method Description */}
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                    {chargeMethod === 'connect'
+                      ? 'Debit from partner\'s payout balance (requires sufficient balance)'
+                      : 'Charge partner\'s payment method on file (card/bank)'}
+                  </p>
+
+                  {(chargeMethod === 'connect' && banking.stripeConnect.accountId) ||
+                   (chargeMethod === 'customer' && banking.stripeCustomer.canCharge) ? (
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <input
+                        type="number"
+                        placeholder="Amount ($)"
+                        value={chargeAmount}
+                        onChange={(e) => setChargeAmount(e.target.value)}
+                        className="w-full sm:w-32 px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Reason for charge"
+                        value={chargeReason}
+                        onChange={(e) => setChargeReason(e.target.value)}
+                        className="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                      />
+                      <button
+                        onClick={handleChargePartner}
+                        disabled={chargeProcessing || !chargeAmount || !chargeReason}
+                        className={`px-4 py-2 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                          chargeMethod === 'connect' ? 'bg-purple-600 hover:bg-purple-700' : 'bg-red-600 hover:bg-red-700'
+                        }`}
+                      >
+                        {chargeProcessing ? 'Processing...' : chargeMethod === 'connect'
+                          ? `Debit $${chargeAmount || '0'}`
+                          : `Charge $${chargeAmount || '0'}`}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                      <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                        <IoWarningOutline className="inline w-4 h-4 mr-1" />
+                        {chargeMethod === 'connect'
+                          ? 'Partner has no Stripe Connect account.'
+                          : 'Partner has no payment method on file.'}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Recent Charges */}
+                {banking.recentCharges && banking.recentCharges.length > 0 && (
+                  <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Recent Charges</h3>
+                    <div className="space-y-3">
+                      {banking.recentCharges.map((charge) => (
+                        <div key={charge.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                          <div>
+                            <div className="font-medium text-gray-900 dark:text-white">
+                              ${charge.amount.toFixed(2)}
+                            </div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                              {charge.reason}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <span className={`text-xs px-2 py-1 rounded font-medium ${
+                              charge.status === 'COMPLETED'
+                                ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                                : charge.status === 'FAILED'
+                                ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                                : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
+                            }`}>
+                              {charge.status}
+                            </span>
+                            <div className="text-xs text-gray-400 mt-1">
+                              {formatDate(charge.createdAt)}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Recent Payouts */}
+                {banking.recentPayouts && banking.recentPayouts.length > 0 && (
+                  <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Recent Payouts</h3>
+                    <div className="space-y-3">
+                      {banking.recentPayouts.map((payout) => (
+                        <div key={payout.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                              <IoCashOutline className="w-4 h-4 text-green-600 dark:text-green-400" />
+                            </div>
+                            <div className="font-medium text-gray-900 dark:text-white">
+                              ${payout.amount.toFixed(2)}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <span className={`text-xs px-2 py-1 rounded font-medium ${
+                              payout.status === 'COMPLETED'
+                                ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                                : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
+                            }`}>
+                              {payout.status}
+                            </span>
+                            <div className="text-xs text-gray-400 mt-1">
+                              {formatDate(payout.createdAt)}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Funds Management Section */}
+                <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Funds Management</h3>
+
+                  {/* Payout Settings */}
+                  <div className="grid sm:grid-cols-2 gap-4 mb-6">
+                    <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-gray-500 dark:text-gray-400">Payouts Status</span>
+                        {banking.payout.enabled ? (
+                          <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 font-medium">
+                            <IoCheckmarkCircleOutline className="w-4 h-4" />
+                            Enabled
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1 text-xs text-red-600 dark:text-red-400 font-medium">
+                            <IoCloseCircleOutline className="w-4 h-4" />
+                            Suspended
+                          </span>
+                        )}
+                      </div>
+                      {!banking.payout.enabled && banking.payout.disabledReason && (
+                        <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                          Reason: {banking.payout.disabledReason}
+                        </p>
+                      )}
+                      <button
+                        onClick={() => handleTogglePayouts(!banking.payout.enabled)}
+                        disabled={fundsProcessing}
+                        className={`mt-2 w-full px-3 py-1.5 text-xs font-medium rounded-lg transition-colors disabled:opacity-50 ${
+                          banking.payout.enabled
+                            ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50'
+                            : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50'
+                        }`}
+                      >
+                        {banking.payout.enabled ? 'Suspend Payouts' : 'Enable Payouts'}
+                      </button>
+                    </div>
+
+                    <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-gray-500 dark:text-gray-400">Instant Payouts</span>
+                        {banking.payout.instantEnabled ? (
+                          <span className="flex items-center gap-1 text-xs text-purple-600 dark:text-purple-400 font-medium">
+                            <IoSpeedometerOutline className="w-4 h-4" />
+                            Enabled
+                          </span>
+                        ) : (
+                          <span className="text-xs text-gray-500 dark:text-gray-400">Disabled</span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                        {banking.debitCard ? 'Debit card on file' : 'No debit card on file'}
+                      </p>
+                      <button
+                        onClick={handleToggleInstantPayout}
+                        disabled={fundsProcessing || !banking.debitCard}
+                        className={`w-full px-3 py-1.5 text-xs font-medium rounded-lg transition-colors disabled:opacity-50 ${
+                          banking.payout.instantEnabled
+                            ? 'bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-500'
+                            : 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 hover:bg-purple-200 dark:hover:bg-purple-900/50'
+                        }`}
+                      >
+                        {banking.payout.instantEnabled ? 'Disable Instant' : 'Enable Instant'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="grid sm:grid-cols-3 gap-3">
+                    <button
+                      onClick={() => {
+                        setHoldAction('hold')
+                        setShowHoldModal(true)
+                      }}
+                      disabled={fundsProcessing || (banking.balances.current || 0) <= 0}
+                      className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Hold Funds
+                    </button>
+                    <button
+                      onClick={() => {
+                        setHoldAction('release')
+                        setShowHoldModal(true)
+                      }}
+                      disabled={fundsProcessing || (banking.balances.hold || 0) <= 0}
+                      className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Release Funds
+                    </button>
+                    <button
+                      onClick={() => setShowPayoutModal(true)}
+                      disabled={fundsProcessing || (banking.balances.availableForPayout || 0) <= 0 || !banking.stripeConnect.accountId}
+                      className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Force Payout
+                    </button>
+                  </div>
+
+                  {/* Available for payout info */}
+                  <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <p className="text-sm text-blue-800 dark:text-blue-200">
+                      <strong>Available for payout:</strong> ${(banking.balances.availableForPayout || 0).toFixed(2)}
+                      {banking.balances.hold > 0 && (
+                        <span className="text-xs ml-2">
+                          (${banking.balances.current.toFixed(2)} balance - ${banking.balances.hold.toFixed(2)} held)
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-12 text-center">
+                <IoWalletOutline className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                  No banking data available
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400">
+                  Banking information could not be loaded.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
         {activeTab === 'activity' && (
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Activity Log</h3>
-            <p className="text-gray-500 dark:text-gray-400">Activity log coming soon...</p>
+
+            {activityLoading ? (
+              <div className="animate-pulse space-y-3">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="h-16 bg-gray-200 dark:bg-gray-700 rounded-lg" />
+                ))}
+              </div>
+            ) : activities.length > 0 ? (
+              <div className="space-y-3">
+                {activities.map((activity) => {
+                  const activityIcon = getActivityIcon(activity.type)
+                  return (
+                    <div
+                      key={activity.id}
+                      className={`flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border-l-4 ${getActivitySeverityColor(activity.severity)}`}
+                    >
+                      <div className={`p-2 rounded-full ${activityIcon.bgColor}`}>
+                        {activityIcon.icon}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          {activity.title}
+                        </p>
+                        {activity.description && (
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
+                            {activity.description}
+                          </p>
+                        )}
+                        <p className="text-xs text-gray-400 mt-1">
+                          {formatDate(activity.timestamp)}
+                        </p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <IoTimeOutline className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-500 dark:text-gray-400">No activity recorded yet.</p>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -846,6 +1952,367 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ id: st
                 className="flex-1 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
               >
                 {processing ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Vehicle Detail Modal */}
+      {selectedVehicle && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setSelectedVehicle(null)}>
+          <div
+            className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-2xl shadow-xl max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-white dark:bg-gray-800 p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between z-10">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  {selectedVehicle.year} {selectedVehicle.make} {selectedVehicle.model}
+                </h2>
+                {selectedVehicle.trim && (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{selectedVehicle.trim}</p>
+                )}
+              </div>
+              <button
+                onClick={() => setSelectedVehicle(null)}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+              >
+                <IoCloseOutline className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Photo Gallery */}
+            <div className="relative aspect-[16/9] bg-gray-100 dark:bg-gray-700">
+              {selectedVehicle.photos?.length > 0 ? (
+                <>
+                  <img
+                    src={selectedVehicle.photos[vehicleModalPhoto]?.url}
+                    alt={`${selectedVehicle.year} ${selectedVehicle.make} ${selectedVehicle.model}`}
+                    className="w-full h-full object-cover"
+                  />
+                  {selectedVehicle.photos.length > 1 && (
+                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                      {selectedVehicle.photos.map((_, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => setVehicleModalPhoto(idx)}
+                          className={`w-2 h-2 rounded-full transition-colors ${
+                            idx === vehicleModalPhoto
+                              ? 'bg-white'
+                              : 'bg-white/50 hover:bg-white/75'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <IoCarOutline className="w-16 h-16 text-gray-400" />
+                </div>
+              )}
+
+              {/* Status Badge */}
+              <div className="absolute top-3 right-3">
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  selectedVehicle.isActive
+                    ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400'
+                    : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400'
+                }`}>
+                  {selectedVehicle.isActive ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+            </div>
+
+            {/* Vehicle Info */}
+            <div className="p-4 space-y-4">
+              {/* Pricing */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="text-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                  <div className="text-xl font-bold text-orange-600 dark:text-orange-400">
+                    ${selectedVehicle.dailyRate || '—'}
+                  </div>
+                  <div className="text-xs text-gray-500">per day</div>
+                </div>
+                <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                    ${selectedVehicle.weeklyRate || '—'}
+                  </div>
+                  <div className="text-xs text-gray-500">per week</div>
+                </div>
+                <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                    ${selectedVehicle.monthlyRate || '—'}
+                  </div>
+                  <div className="text-xs text-gray-500">per month</div>
+                </div>
+              </div>
+
+              {/* Stats */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <IoCarOutline className="w-5 h-5 text-gray-400" />
+                  <div>
+                    <div className="font-medium text-gray-900 dark:text-white">{selectedVehicle.totalTrips || 0}</div>
+                    <div className="text-xs text-gray-500">Trips</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <IoStar className="w-5 h-5 text-yellow-500" />
+                  <div>
+                    <div className="font-medium text-gray-900 dark:text-white">
+                      {selectedVehicle.rating ? selectedVehicle.rating.toFixed(1) : '—'}
+                    </div>
+                    <div className="text-xs text-gray-500">Rating</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <IoSpeedometerOutline className="w-5 h-5 text-gray-400" />
+                  <div>
+                    <div className="font-medium text-gray-900 dark:text-white">
+                      {selectedVehicle.currentMileage ? `${(selectedVehicle.currentMileage / 1000).toFixed(0)}k` : '—'}
+                    </div>
+                    <div className="text-xs text-gray-500">Miles</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Details */}
+              <div className="grid grid-cols-2 gap-x-4 gap-y-3 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">Color</div>
+                  <div className="text-sm font-medium text-gray-900 dark:text-white capitalize">
+                    {selectedVehicle.color || '—'}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">Transmission</div>
+                  <div className="text-sm font-medium text-gray-900 dark:text-white capitalize">
+                    {selectedVehicle.transmission || '—'}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">Fuel Type</div>
+                  <div className="text-sm font-medium text-gray-900 dark:text-white capitalize">
+                    {selectedVehicle.fuelType || '—'}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">Seats</div>
+                  <div className="text-sm font-medium text-gray-900 dark:text-white">
+                    {selectedVehicle.seats || '—'}
+                  </div>
+                </div>
+                {selectedVehicle.licensePlate && (
+                  <div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">License Plate</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">
+                      {selectedVehicle.licensePlate}
+                    </div>
+                  </div>
+                )}
+                {selectedVehicle.vin && (
+                  <div className="col-span-2">
+                    <div className="text-xs text-gray-500 dark:text-gray-400">VIN</div>
+                    <div className="text-sm font-mono text-gray-900 dark:text-white break-all">
+                      {selectedVehicle.vin}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Added Date */}
+              <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                Added {formatDate(selectedVehicle.createdAt)}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Hold/Release Funds Modal */}
+      {showHoldModal && banking && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-md shadow-xl">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                {holdAction === 'hold' ? 'Hold Funds' : 'Release Funds'}
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                {partner?.partnerCompanyName || partner?.name}
+              </p>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {/* Hold/Release toggle */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setHoldAction('hold')}
+                  className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    holdAction === 'hold'
+                      ? 'bg-amber-600 text-white'
+                      : 'border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  Hold
+                </button>
+                <button
+                  onClick={() => setHoldAction('release')}
+                  className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    holdAction === 'release'
+                      ? 'bg-green-600 text-white'
+                      : 'border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  Release
+                </button>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Amount ($)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={holdAmount}
+                  onChange={(e) => setHoldAmount(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="0.00"
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  {holdAction === 'hold'
+                    ? `Available: $${(banking.balances.current || 0).toFixed(2)}`
+                    : `Currently held: $${(banking.balances.hold || 0).toFixed(2)}`}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Reason *
+                </label>
+                <textarea
+                  value={holdReason}
+                  onChange={(e) => setHoldReason(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  rows={3}
+                  placeholder={holdAction === 'hold' ? 'Explain why you are holding these funds...' : 'Explain why you are releasing these funds...'}
+                />
+              </div>
+
+              {holdAction === 'hold' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Hold Until (optional)
+                  </label>
+                  <input
+                    type="date"
+                    value={holdUntil}
+                    onChange={(e) => setHoldUntil(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex gap-3">
+              <button
+                onClick={() => {
+                  setShowHoldModal(false)
+                  setHoldAmount('')
+                  setHoldReason('')
+                  setHoldUntil('')
+                }}
+                disabled={fundsProcessing}
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleFundsAction}
+                disabled={fundsProcessing || !holdAmount || !holdReason}
+                className={`flex-1 px-4 py-2 text-white rounded-lg font-medium transition-colors disabled:opacity-50 ${
+                  holdAction === 'hold' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-green-600 hover:bg-green-700'
+                }`}
+              >
+                {fundsProcessing ? 'Processing...' : holdAction === 'hold' ? 'Hold Funds' : 'Release Funds'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Force Payout Modal */}
+      {showPayoutModal && banking && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-md shadow-xl">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                Force Immediate Payout
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                {partner?.partnerCompanyName || partner?.name}
+              </p>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                  This will override the normal payout schedule and send money immediately to the partner's bank account.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Amount ($)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={payoutAmount}
+                  onChange={(e) => setPayoutAmount(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="0.00"
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Available for payout: ${(banking.balances.availableForPayout || 0).toFixed(2)}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Reason *
+                </label>
+                <textarea
+                  value={payoutReason}
+                  onChange={(e) => setPayoutReason(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  rows={3}
+                  placeholder="Explain why this payout is being forced..."
+                />
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex gap-3">
+              <button
+                onClick={() => {
+                  setShowPayoutModal(false)
+                  setPayoutAmount('')
+                  setPayoutReason('')
+                }}
+                disabled={fundsProcessing}
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleForcePayout}
+                disabled={fundsProcessing || !payoutAmount || !payoutReason}
+                className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+              >
+                {fundsProcessing ? 'Processing...' : 'Force Payout'}
               </button>
             </div>
           </div>

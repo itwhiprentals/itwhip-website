@@ -16,7 +16,9 @@ import {
   getHostRejectionTemplate,
   getHostApprovalTemplate,
   // OAuth Welcome Template
-  getOAuthWelcomeTemplate
+  getOAuthWelcomeTemplate,
+  // Partner Document Request Template
+  getPartnerDocumentRequestTemplate
 } from './templates'
 import type {
   EmailResponse,
@@ -25,7 +27,8 @@ import type {
   HostActionRequiredData,
   HostRejectionData,
   HostApprovalData,
-  OAuthWelcomeData
+  OAuthWelcomeData,
+  PartnerDocumentRequestData
 } from './types'
 
 /**
@@ -687,6 +690,27 @@ export async function sendOAuthWelcomeEmail(
   } catch (error) {
     console.error('Error sending OAuth welcome email:', error)
     return { success: false, error: 'Failed to send OAuth welcome email' }
+  }
+}
+
+// ============================================================================
+// PARTNER DOCUMENT REQUEST EMAIL - Fleet Partner Document Requests
+// ============================================================================
+
+/**
+ * Send partner document request email to fleet partners
+ * Used by fleet managers to request missing/expired documents
+ */
+export async function sendPartnerDocumentRequest(
+  to: string,
+  data: PartnerDocumentRequestData
+): Promise<EmailResponse> {
+  try {
+    const template = getPartnerDocumentRequestTemplate(data)
+    return await sendEmail(to, template.subject, template.html, template.text)
+  } catch (error) {
+    console.error('Error sending partner document request email:', error)
+    return { success: false, error: 'Failed to send partner document request email' }
   }
 }
 

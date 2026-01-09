@@ -52,6 +52,9 @@ export { getCounterOfferTemplate } from './counter-offer'
 export { getInvitationAcceptedTemplate } from './invitation-accepted'
 export { getInvitationDeclinedTemplate } from './invitation-declined'
 
+// PARTNER DOCUMENT REQUEST TEMPLATE
+export { getPartnerDocumentRequestTemplate } from './partner-document-request'
+
 // Re-export all types for convenience
 export type {
   // Base types

@@ -47,12 +47,47 @@ export async function GET(
 
         // Stripe
         stripeConnectAccountId: true,
+        stripePayoutsEnabled: true,
+        stripeChargesEnabled: true,
+        stripeDetailsSubmitted: true,
+        stripeRequirements: true,
+        stripeDisabledReason: true,
 
         // Timestamps
         createdAt: true,
         updatedAt: true,
 
         // Relations
+        cars: {
+          select: {
+            id: true,
+            make: true,
+            model: true,
+            year: true,
+            trim: true,
+            vin: true,
+            color: true,
+            licensePlate: true,
+            dailyRate: true,
+            weeklyRate: true,
+            monthlyRate: true,
+            transmission: true,
+            fuelType: true,
+            seats: true,
+            currentMileage: true,
+            isActive: true,
+            totalTrips: true,
+            rating: true,
+            createdAt: true,
+            photos: {
+              select: { url: true, isHero: true, order: true },
+              orderBy: { order: 'asc' },
+              take: 5
+            }
+          },
+          take: 50,
+          orderBy: { createdAt: 'desc' }
+        },
         partnerApplication: {
           select: {
             id: true,

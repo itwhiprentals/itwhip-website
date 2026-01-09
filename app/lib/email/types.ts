@@ -482,6 +482,27 @@ export interface HostOAuthWelcomeData {
 }
 
 // ============================================================================
+// PARTNER DOCUMENT REQUEST EMAIL INTERFACES
+// ============================================================================
+
+export interface PartnerDocumentIssue {
+  documentType: string
+  displayName: string
+  issue?: string
+  instructions?: string
+}
+
+export interface PartnerDocumentRequestData {
+  partnerName: string
+  companyName?: string
+  documentIssues: PartnerDocumentIssue[]
+  uploadUrl: string
+  deadline?: string
+  requestedBy?: string
+  supportEmail?: string
+}
+
+// ============================================================================
 // RESPONSE TYPES
 // ============================================================================
 
