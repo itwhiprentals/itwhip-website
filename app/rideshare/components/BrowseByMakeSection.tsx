@@ -69,7 +69,7 @@ export default function BrowseByMakeSection() {
           {rideshareFleetMakes.map((make) => (
             <Link
               key={make.name}
-              href={`/rideshare?make=${make.slug}`}
+              href={`/rideshare/makes/${make.slug}`}
               className="group"
             >
               <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden shadow-sm hover:shadow-lg hover:border-orange-300 dark:hover:border-orange-500 transition-all duration-200 text-center p-2 sm:p-3">

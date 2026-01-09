@@ -174,12 +174,12 @@ const itemListSchema = {
   description: 'Browse rideshare-approved vehicles by make',
   numberOfItems: 6,
   itemListElement: [
-    { '@type': 'ListItem', position: 1, name: 'Toyota', url: 'https://itwhip.com/rideshare/toyota' },
-    { '@type': 'ListItem', position: 2, name: 'Honda', url: 'https://itwhip.com/rideshare/honda' },
-    { '@type': 'ListItem', position: 3, name: 'Nissan', url: 'https://itwhip.com/rideshare/nissan' },
-    { '@type': 'ListItem', position: 4, name: 'Hyundai', url: 'https://itwhip.com/rideshare/hyundai' },
-    { '@type': 'ListItem', position: 5, name: 'Kia', url: 'https://itwhip.com/rideshare/kia' },
-    { '@type': 'ListItem', position: 6, name: 'Chevrolet', url: 'https://itwhip.com/rideshare/chevrolet' }
+    { '@type': 'ListItem', position: 1, name: 'Toyota', url: 'https://itwhip.com/rideshare/makes/toyota' },
+    { '@type': 'ListItem', position: 2, name: 'Honda', url: 'https://itwhip.com/rideshare/makes/honda' },
+    { '@type': 'ListItem', position: 3, name: 'Nissan', url: 'https://itwhip.com/rideshare/makes/nissan' },
+    { '@type': 'ListItem', position: 4, name: 'Hyundai', url: 'https://itwhip.com/rideshare/makes/hyundai' },
+    { '@type': 'ListItem', position: 5, name: 'Kia', url: 'https://itwhip.com/rideshare/makes/kia' },
+    { '@type': 'ListItem', position: 6, name: 'Chevrolet', url: 'https://itwhip.com/rideshare/makes/chevrolet' }
   ]
 }
 
