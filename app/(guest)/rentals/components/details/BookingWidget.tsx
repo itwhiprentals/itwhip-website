@@ -101,9 +101,15 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
   const [dateError, setDateError] = useState<string | null>(null)
   const widgetRef = useRef<HTMLDivElement>(null)
 
-  // Rideshare detection and minimum trip duration
-  const isRideshare = car?.vehicleType === 'RIDESHARE'
-  const minDays = car?.minTripDuration || (isRideshare ? 3 : 1)
+  // Rideshare detection - vehicleType is set when adding vehicles in partner dashboard
+  // Fallback checks for legacy records: host type or partnerSlug
+  const isRideshare = car?.vehicleType?.toUpperCase() === 'RIDESHARE'
+    || car?.host?.hostType === 'FLEET_PARTNER'
+    || car?.host?.hostType === 'PARTNER'
+    || !!car?.host?.partnerSlug
+  // RIDESHARE = ALWAYS 3+ DAYS, NO EXCEPTIONS (ignores DB value if it's wrong)
+  // For rentals only, use minTripDuration from DB or default to 1
+  const minDays = isRideshare ? 3 : (car?.minTripDuration || 1)
   
   // Read search params from URL
   const pickupDateParam = searchParams.get('pickupDate') || ''
@@ -122,11 +128,27 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
   const [startDate, setStartDate] = useState(pickupDateFromUrl || tomorrow)
   const [endDate, setEndDate] = useState(returnDateFromUrl || defaultEndDate)
 
-  // Validate minimum trip duration
+  // Helper to get date string N days from a given date
+  const getDatePlusDays = (dateStr: string, daysToAdd: number): string => {
+    const date = new Date(dateStr + 'T00:00:00')
+    date.setDate(date.getDate() + daysToAdd)
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  // Calculate minimum end date (startDate + minDays)
+  const minEndDate = getDatePlusDays(startDate, minDays)
+
+  // Auto-adjust end date when start date changes or if end date is too soon
   useEffect(() => {
     const tripDays = Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24))
     if (tripDays < minDays) {
-      setDateError(`Minimum rental is ${minDays} days for this vehicle`)
+      // Automatically adjust end date to meet minimum
+      const newEndDate = getDatePlusDays(startDate, minDays)
+      setEndDate(newEndDate)
+      setDateError(null)
     } else {
       setDateError(null)
     }
@@ -408,7 +430,12 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
                     <span>LUXURY</span>
                   </div>
                 )}
-                {car?.instantBook && (
+                {isRideshare ? (
+                  <div className="flex items-center gap-1 text-orange-600 text-sm">
+                    <IoCarOutline className="w-3.5 h-3.5" />
+                    <span className="font-medium">Rideshare</span>
+                  </div>
+                ) : car?.instantBook && (
                   <div className="flex items-center gap-1 text-amber-600 text-sm">
                     <IoFlashOutline className="w-3.5 h-3.5" />
                     <span className="font-medium">Instant Book</span>
@@ -473,7 +500,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
               <input
                 type="date"
                 value={endDate}
-                min={startDate}
+                min={minEndDate}
                 onChange={(e) => setEndDate(e.target.value)}
                 className="w-full px-2 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-amber-500 focus:border-amber-500 cursor-pointer"
               />
@@ -549,6 +576,11 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
                   }`}
                 >
                   2 Weeks
+                  {car?.weeklyRate && (
+                    <span className="block text-green-600 dark:text-green-400 mt-0.5">
+                      Save ${Math.round((car.dailyRate * 14) - (car.weeklyRate * 2))}
+                    </span>
+                  )}
                 </button>
                 <button
                   onClick={() => {

@@ -29,6 +29,12 @@ export async function GET(request: NextRequest) {
       ? parseInt(searchParams.get('radius')!)
       : DEFAULT_RADIUS_MILES
 
+    // Additional filter parameters
+    const transmission = searchParams.get('transmission')
+    const seats = searchParams.get('seats')
+    const features = searchParams.get('features')?.split(',').filter(Boolean) || []
+    const delivery = searchParams.get('delivery')?.split(',').filter(Boolean) || []
+
     // ============================================================================
     // STEP 1: DETERMINE SEARCH LOCATION COORDINATES
     // ============================================================================
@@ -91,7 +97,10 @@ export async function GET(request: NextRequest) {
 
     // Add other filters
     if (instantBook) whereClause.instantBook = true
-    if (carType && carType !== 'all') whereClause.carType = carType.toUpperCase()
+    if (carType && carType !== 'all') {
+      // Case-insensitive carType matching
+      whereClause.carType = { equals: carType.toUpperCase(), mode: 'insensitive' }
+    }
 
     // Make filter (case-insensitive)
     const make = searchParams.get('make')
@@ -104,6 +113,24 @@ export async function GET(request: NextRequest) {
       if (priceMin) whereClause.dailyRate.gte = parseFloat(priceMin)
       if (priceMax) whereClause.dailyRate.lte = parseFloat(priceMax)
     }
+
+    // Transmission filter (case-insensitive)
+    if (transmission && transmission !== 'all') {
+      whereClause.transmission = { equals: transmission, mode: 'insensitive' }
+    }
+
+    // Seats filter (minimum seats)
+    if (seats && seats !== 'all') {
+      const minSeats = parseInt(seats)
+      if (!isNaN(minSeats)) {
+        whereClause.seats = { gte: minSeats }
+      }
+    }
+
+    // Delivery filters
+    if (delivery.includes('airport')) whereClause.airportPickup = true
+    if (delivery.includes('hotel')) whereClause.hotelDelivery = true
+    if (delivery.includes('home')) whereClause.homeDelivery = true
 
     // ============================================================================
     // STEP 3: FETCH CARS WITH RELATED DATA
@@ -255,6 +282,30 @@ export async function GET(request: NextRequest) {
         // Filter by radius
         if (distance > radiusMiles) {
           return null
+        }
+
+        // Filter by features (post-query filter since features is JSON string)
+        if (features.length > 0) {
+          let carFeatures: string[] = []
+          try {
+            if (typeof car.features === 'string') {
+              carFeatures = JSON.parse(car.features)
+            } else if (Array.isArray(car.features)) {
+              carFeatures = car.features
+            }
+          } catch {
+            carFeatures = []
+          }
+
+          // Check if car has all requested features (case-insensitive)
+          const carFeaturesLower = carFeatures.map(f => f.toLowerCase())
+          const hasAllFeatures = features.every(feature =>
+            carFeaturesLower.some(cf => cf.includes(feature.toLowerCase()))
+          )
+
+          if (!hasAllFeatures) {
+            return null
+          }
         }
 
         // Check availability if dates provided

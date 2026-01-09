@@ -188,6 +188,9 @@ export async function POST(request: NextRequest) {
       driveType,
       carType,
 
+      // Vehicle designation (RENTAL or RIDESHARE)
+      vehicleType,
+
       // Manual fields
       color,
       licensePlate,
@@ -330,11 +333,12 @@ export async function POST(request: NextRequest) {
         isActive: isAutoApproved,
         instantBook: true,
         advanceNotice: 2,
-        minTripDuration: 1,
+        // Rideshare vehicles require minimum 3 day bookings
+        minTripDuration: vehicleType === 'RIDESHARE' ? 3 : 1,
         maxTripDuration: 30,
 
-        // Vehicle type for rideshare context
-        vehicleType: 'RIDESHARE'
+        // Vehicle type - RENTAL or RIDESHARE (default to RENTAL if not specified)
+        vehicleType: vehicleType === 'RIDESHARE' ? 'RIDESHARE' : 'RENTAL'
       }
     })
 

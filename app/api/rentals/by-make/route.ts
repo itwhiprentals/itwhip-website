@@ -1,6 +1,7 @@
 // app/api/rentals/by-make/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/app/lib/database/prisma'
+import { capitalizeCarMake } from '@/app/lib/utils/formatters'
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,6 +19,7 @@ export async function GET(request: NextRequest) {
         model: true,
         year: true,
         carType: true,
+        vehicleType: true, // For rideshare badge
         dailyRate: true,
         city: true,
         rating: true,
@@ -43,17 +45,18 @@ export async function GET(request: NextRequest) {
       ]
     })
 
-    // Group cars by make
+    // Group cars by make (case-insensitive to merge "TOYOTA" and "Toyota")
     const carsByMake: Record<string, typeof cars> = {}
 
     for (const car of cars) {
-      const make = car.make
-      if (!carsByMake[make]) {
-        carsByMake[make] = []
+      // Normalize make for grouping (uppercase for consistent key)
+      const makeKey = car.make.toUpperCase()
+      if (!carsByMake[makeKey]) {
+        carsByMake[makeKey] = []
       }
       // Only add up to limit cars per make
-      if (carsByMake[make].length < limit) {
-        carsByMake[make].push(car)
+      if (carsByMake[makeKey].length < limit) {
+        carsByMake[makeKey].push(car)
       }
     }
 
@@ -85,28 +88,38 @@ export async function GET(request: NextRequest) {
     // Sort makes by car count (descending)
     const sortedMakes = Object.entries(carsByMake)
       .sort((a, b) => b[1].length - a[1].length)
-      .map(([make, makeCars]) => ({
-        make,
-        slug: makeSlugMap[make] || make.toLowerCase().replace(/\s+/g, '-'),
-        totalCars: cars.filter(c => c.make === make).length, // actual total
-        cars: makeCars.map(car => ({
-          id: car.id,
-          make: car.make,
-          model: car.model,
-          year: car.year,
-          dailyRate: Number(car.dailyRate),
-          carType: car.carType,
-          city: car.city,
-          rating: car.rating ? Number(car.rating) : null,
-          totalTrips: car.totalTrips,
-          instantBook: car.instantBook,
-          photos: car.photos || [],
-          host: car.host ? {
-            name: car.host.name,
-            profilePhoto: car.host.profilePhoto
-          } : null
-        }))
-      }))
+      .map(([makeKey, makeCars]) => {
+        // Use capitalizeCarMake for proper display (Mercedes-Benz, not MERCEDES-BENZ)
+        const displayMake = capitalizeCarMake(makeKey)
+        // Use display make for slug lookup, fallback to lowercase key
+        const slug = makeSlugMap[displayMake] || makeKey.toLowerCase().replace(/\s+/g, '-')
+        // Count total cars with case-insensitive match
+        const totalCars = cars.filter(c => c.make.toUpperCase() === makeKey).length
+
+        return {
+          make: displayMake,
+          slug,
+          totalCars,
+          cars: makeCars.map(car => ({
+            id: car.id,
+            make: car.make,
+            model: car.model,
+            year: car.year,
+            dailyRate: Number(car.dailyRate),
+            carType: car.carType,
+            vehicleType: car.vehicleType, // For rideshare badge
+            city: car.city,
+            rating: car.rating ? Number(car.rating) : null,
+            totalTrips: car.totalTrips,
+            instantBook: car.instantBook,
+            photos: car.photos || [],
+            host: car.host ? {
+              name: car.host.name,
+              profilePhoto: car.host.profilePhoto
+            } : null
+          }))
+        }
+      })
 
     return NextResponse.json({
       success: true,

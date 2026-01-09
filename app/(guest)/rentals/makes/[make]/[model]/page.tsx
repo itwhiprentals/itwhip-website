@@ -91,6 +91,9 @@ function getMakeDisplayName(makeSlug: string): string {
 
 // Helper to format model slug to display name
 function getModelDisplayName(modelSlug: string): string {
+  // Decode URL-encoded strings (e.g., hurac%C3%A1n → huracán)
+  const decodedSlug = decodeURIComponent(modelSlug)
+
   // Handle common model naming patterns
   const modelMap: Record<string, string> = {
     'model-3': 'Model 3',
@@ -147,6 +150,7 @@ function getModelDisplayName(modelSlug: string): string {
     'macan': 'Macan',
     'panamera': 'Panamera',
     'huracan': 'Huracán',
+    'huracán': 'Huracán', // Handle URL-encoded accent
     'urus': 'Urus',
     'aventador': 'Aventador',
     '488': '488',
@@ -192,7 +196,8 @@ function getModelDisplayName(modelSlug: string): string {
     'suburban': 'Suburban'
   }
 
-  return modelMap[modelSlug.toLowerCase()] || formatDisplayName(modelSlug)
+  // Try both decoded and original slug in lookup
+  return modelMap[decodedSlug.toLowerCase()] || modelMap[modelSlug.toLowerCase()] || formatDisplayName(decodedSlug)
 }
 
 interface PageProps {

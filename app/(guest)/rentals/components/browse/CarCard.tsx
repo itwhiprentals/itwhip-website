@@ -4,7 +4,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { 
+import {
   IoCarSportOutline,
   IoLocationOutline,
   IoStarOutline,
@@ -21,6 +21,7 @@ import {
 import { RentalCarWithDetails } from '@/types/rental'
 import { formatCurrency } from '@/app/(guest)/rentals/lib/rental-utils'
 import { formatPrivateName, isCompanyName } from '@/app/lib/utils/namePrivacy'
+import { capitalizeCarMake } from '@/app/lib/utils/formatters'
 
 interface CarCardProps {
   car: RentalCarWithDetails
@@ -81,7 +82,12 @@ export default function CarCard({
                 fill
                 className="object-cover"
               />
-              {car.instantBook && (
+              {car.vehicleType?.toUpperCase() === 'RIDESHARE' ? (
+                <div className="absolute top-2 left-2 bg-orange-500 text-white px-2 py-1 rounded text-xs font-semibold flex items-center gap-1">
+                  <IoCarSportOutline className="w-3 h-3" />
+                  Rideshare
+                </div>
+              ) : car.instantBook && (
                 <div className="absolute top-2 left-2 bg-green-500 text-white px-2 py-1 rounded text-xs font-semibold flex items-center gap-1">
                   <IoFlashOutline className="w-3 h-3" />
                   Instant Book
@@ -104,7 +110,7 @@ export default function CarCard({
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {car.year} {car.make} {car.model}
+                    {car.year} {capitalizeCarMake(car.make)} {car.model}
                   </h3>
                   
                   {/* Host Info */}
@@ -266,7 +272,7 @@ export default function CarCard({
         <div className="p-4">
           {/* Title */}
           <h3 className="font-semibold text-gray-900 dark:text-white">
-            {car.year} {car.make} {car.model}
+            {car.year} {capitalizeCarMake(car.make)} {car.model}
           </h3>
 
           {/* Host & Rating */}

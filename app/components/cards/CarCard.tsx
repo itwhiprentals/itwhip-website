@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { generateCarUrl } from '@/app/lib/utils/urls'
+import { capitalizeCarMake } from '@/app/lib/utils/formatters'
 import CarImage from './CarImage'
 import {
   IoFlashOutline,
@@ -18,12 +19,6 @@ import {
 interface CarCardProps {
   car: any
   showHostAvatar?: boolean
-}
-
-// Capitalize first letter only (Toyota not TOYOTA)
-const capitalizeFirst = (s: string | null | undefined): string => {
-  if (!s) return ''
-  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
 }
 
 // Check if host photo URL is valid (not a placeholder/default)
@@ -61,7 +56,7 @@ export default function CarCard({ car, showHostAvatar = false }: CarCardProps) {
                 <IoStarSharp className="w-3 h-3" /> LOCAL HOST
               </span>
             )}
-            {car.vehicleType === 'RIDESHARE' ? (
+            {car.vehicleType?.toUpperCase() === 'RIDESHARE' ? (
               <span className="px-3 py-1 bg-orange-500 text-white text-xs font-bold rounded-full shadow-lg flex items-center gap-1">
                 <IoCarSportOutline className="w-3 h-3" /> RIDESHARE
               </span>
@@ -128,7 +123,7 @@ export default function CarCard({ car, showHostAvatar = false }: CarCardProps) {
           <div>
             <div className="flex items-center justify-between">
               <h3 className="text-base font-semibold text-gray-700 dark:text-gray-300">
-                {car.year} {capitalizeFirst(car.make)}
+                {car.year} {capitalizeCarMake(car.make)}
               </h3>
               {showEcoElite && (
                 <div className="group/tooltip relative">

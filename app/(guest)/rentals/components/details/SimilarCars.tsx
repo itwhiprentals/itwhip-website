@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
   IoCarOutline,
+  IoCarSportOutline,
   IoLocationOutline,
   IoStarOutline,
   IoFlashOutline,
@@ -14,8 +15,10 @@ import {
   IoBusinessOutline,
   IoStarSharp
 } from 'react-icons/io5'
+
 import { formatPrivateName, isCompanyName } from '@/app/lib/utils/namePrivacy'
 import { optimizeImageUrl } from '@/app/lib/utils/imageOptimization'
+import { capitalizeCarMake } from '@/app/lib/utils/formatters'
 
 interface SimilarCar {
   id: string
@@ -240,8 +243,13 @@ function CarCard({
         {/* Title - Make and Model on separate lines */}
         <div className="mb-1">
           <div className="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors line-clamp-1 flex items-center justify-between">
-            <span>{car.year} {car.make}</span>
-            {car.instantBook && (
+            <span>{car.year} {capitalizeCarMake(car.make)}</span>
+            {(car as any).vehicleType?.toUpperCase() === 'RIDESHARE' ? (
+              <span className="px-1.5 py-0.5 bg-orange-500 text-white text-[9px] font-bold rounded flex items-center gap-0.5">
+                <IoCarSportOutline className="w-2.5 h-2.5" />
+                RIDESHARE
+              </span>
+            ) : car.instantBook && (
               <span className="px-1.5 py-0.5 bg-emerald-500 text-white text-[9px] font-bold rounded flex items-center gap-0.5">
                 <IoFlashOutline className="w-2.5 h-2.5" />
                 INSTANT

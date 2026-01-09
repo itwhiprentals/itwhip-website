@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { generateCarUrl } from '@/app/lib/utils/urls'
+import { capitalizeCarMake } from '@/app/lib/utils/formatters'
 import {
   IoLocationOutline,
   IoFlashOutline,
@@ -82,12 +83,6 @@ const getHostDisplayName = (name: string | null | undefined): string | null => {
   return name.trim().split(' ')[0]
 }
 
-// Capitalize first letter only (Toyota not TOYOTA)
-const capitalizeFirst = (s: string | null | undefined): string => {
-  if (!s) return ''
-  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
-}
-
 export default function CompactCarCard({ car, accentColor = 'amber', className = '' }: CompactCarCardProps) {
   const [hostAvatarError, setHostAvatarError] = useState(false)
 
@@ -143,12 +138,12 @@ export default function CompactCarCard({ car, accentColor = 'amber', className =
 
         {/* Top-left badges */}
         <div className="absolute top-2 left-2 flex gap-1.5">
-          {car.vehicleType === 'RIDESHARE' && (
+          {car.vehicleType?.toUpperCase() === 'RIDESHARE' && (
             <span className="px-2 py-0.5 bg-orange-500/90 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold rounded-full">
               Rideshare
             </span>
           )}
-          {car.instantBook && car.vehicleType !== 'RIDESHARE' && (
+          {car.instantBook && car.vehicleType?.toUpperCase() !== 'RIDESHARE' && (
             <span className="px-2 py-0.5 bg-emerald-500/90 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold rounded-full flex items-center gap-0.5">
               <IoFlashOutline className="w-3 h-3" />
               Instant
@@ -187,7 +182,7 @@ export default function CompactCarCard({ car, accentColor = 'amber', className =
         {/* Year + Make row with price aligned */}
         <div className="flex items-baseline justify-between gap-1">
           <span className={`text-sm sm:text-base font-semibold text-gray-900 dark:text-white ${colors.hoverText} transition-colors line-clamp-1 min-w-0 flex-1`}>
-            {car.year} {capitalizeFirst(car.make)}
+            {car.year} {capitalizeCarMake(car.make)}
           </span>
           {/* Price */}
           <span className="flex-shrink-0">
@@ -214,7 +209,7 @@ export default function CompactCarCard({ car, accentColor = 'amber', className =
               <span>{trips} trip{trips !== 1 ? 's' : ''}</span>
             </>
           ) : (
-            <span className="italic">New</span>
+            <span className="text-green-600 dark:text-green-400 font-medium">New Listing</span>
           )}
         </div>
 

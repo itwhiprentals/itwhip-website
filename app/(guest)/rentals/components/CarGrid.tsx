@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import CompactCarCard from '@/app/components/cards/CompactCarCard'
 import { IoCarOutline, IoArrowForwardOutline } from 'react-icons/io5'
@@ -30,6 +30,13 @@ export default function CarGrid({
   const [isLoading, setIsLoading] = useState(false)
   const [hasMore, setHasMore] = useState(initialCars.length < totalCount)
 
+  // Sync state when filters change (initialCars comes from server with new filter applied)
+  useEffect(() => {
+    setCars(initialCars)
+    setPage(currentPage)
+    setHasMore(initialCars.length < totalCount)
+  }, [initialCars, currentPage, totalCount])
+
   // Transform server data to match CompactCarCard expected format
   // Note: Initial server data uses 'carType', but search API uses 'type'
   const transformCarForCard = (car: any) => ({
@@ -39,6 +46,7 @@ export default function CarGrid({
     year: car.year,
     dailyRate: Number(car.dailyRate),
     carType: car.carType || car.type,  // Handle both field names
+    vehicleType: car.vehicleType as 'RENTAL' | 'RIDESHARE' | null,  // For rideshare badge
     seats: car.seats,
     city: car.city || car.location?.city || 'Phoenix',
     rating: car.rating?.average ?? (car.rating != null ? Number(car.rating) : null),

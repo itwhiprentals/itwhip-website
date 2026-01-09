@@ -97,12 +97,13 @@ export default async function RentalsPage({
 
   // Build Prisma where clause from filters
   const whereClause: any = {
-    isActive: true,
-    vehicleType: 'RENTAL'  // Only show rental vehicles (not rideshare)
+    isActive: true
+    // Show both RENTAL and RIDESHARE vehicles
   }
 
   if (params?.type && params.type !== 'all') {
-    whereClause.carType = params.type.toUpperCase()
+    // Case-insensitive carType matching
+    whereClause.carType = { equals: params.type.toUpperCase(), mode: 'insensitive' }
   }
 
   if (params?.make) {
@@ -134,6 +135,7 @@ export default async function RentalsPage({
         instantBook: true,
         rating: true,
         totalTrips: true,
+        vehicleType: true,  // For rideshare badge
         reviews: {
           select: {
             rating: true
@@ -172,9 +174,9 @@ export default async function RentalsPage({
       where: whereClause
     }),
 
-    // Get distinct makes for filter dropdown (only from RENTAL vehicles)
+    // Get distinct makes for filter dropdown
     prisma.rentalCar.findMany({
-      where: { isActive: true, vehicleType: 'RENTAL' },
+      where: { isActive: true },
       select: { make: true },
       distinct: ['make']
     })
@@ -211,6 +213,7 @@ export default async function RentalsPage({
       model: car.model,
       year: car.year,
       carType: car.carType,
+      vehicleType: car.vehicleType,  // For rideshare badge
       seats: car.seats,
       dailyRate: Number(car.dailyRate),
       instantBook: car.instantBook,

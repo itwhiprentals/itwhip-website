@@ -22,8 +22,11 @@ export function getVehicleSpecData(
   model: string,
   year: string
 ): VehicleSpecData {
+  // Normalize make for case-insensitive lookup
+  const normalizedMake = make?.charAt(0).toUpperCase() + make?.slice(1).toLowerCase()
+
   // Try year-specific data first (preferred source)
-  const yearSpec = vehicleSpecsByYear[make]?.[model]?.[year]
+  const yearSpec = vehicleSpecsByYear[normalizedMake]?.[model]?.[year]
   if (yearSpec) {
     return {
       seats: yearSpec.seats,
@@ -34,13 +37,31 @@ export function getVehicleSpecData(
   }
 
   // Fallback to legacy database (for current models without year data)
-  const legacySpec = vehicleSpecs[make]?.[model]
+  const legacySpec = vehicleSpecs[normalizedMake]?.[model]
   if (legacySpec) {
     return {
       seats: legacySpec.seats,
       doors: legacySpec.doors,
       carType: legacySpec.carType,
       fuelType: legacySpec.fuelType
+    }
+  }
+
+  // Try fuzzy matching for model variations (e.g., "Prius Prime (PHEV)" -> "Prius")
+  // Check if model starts with or contains a known model name
+  const makeModels = vehicleSpecs[normalizedMake]
+  if (makeModels) {
+    for (const knownModel of Object.keys(makeModels)) {
+      // Check if the model starts with the known model name
+      if (model.toLowerCase().startsWith(knownModel.toLowerCase())) {
+        const spec = makeModels[knownModel]
+        return {
+          seats: spec.seats,
+          doors: spec.doors,
+          carType: spec.carType,
+          fuelType: spec.fuelType
+        }
+      }
     }
   }
 

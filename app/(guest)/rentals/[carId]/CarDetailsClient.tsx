@@ -502,9 +502,10 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
   const vehicleClass = getVehicleClass(car.make, car.model, car.carType || car.type || undefined)
   const fuelTypeBadge = formatFuelTypeBadge(car.fuelType)
 
-  // Rideshare detection
-  const isRideshare = car.vehicleType === 'RIDESHARE'
-  const isPartner = car.host?.hostType === 'FLEET_PARTNER' || car.host?.hostType === 'PARTNER'
+  // Rideshare detection - check vehicleType OR if host is a fleet partner
+  const isFleetPartner = car.host?.hostType === 'FLEET_PARTNER' || car.host?.hostType === 'PARTNER'
+  const isRideshare = car.vehicleType?.toUpperCase() === 'RIDESHARE' || isFleetPartner
+  const isPartner = isFleetPartner
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">

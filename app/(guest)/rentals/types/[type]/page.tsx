@@ -27,6 +27,8 @@ const TYPE_HERO_IMAGES: Record<string, string> = {
   'suv': '/images/types/suv-car-rental-phoenix-arizona.jpg',
   'sports': '/images/types/sports-car-rental-phoenix-arizona.jpg',
   'electric': '/images/types/electric-car-rental-phoenix-arizona.jpg',
+  'luxury': '/images/types/luxury-car-rental-phoenix-arizona.png',
+  'truck': '/images/types/truck-car-rental-phoenix-arizona.png',
 }
 
 const TYPE_ALT_TEXT: Record<string, string> = {
@@ -34,6 +36,8 @@ const TYPE_ALT_TEXT: Record<string, string> = {
   'suv': 'SUV rentals in Phoenix Arizona - ItWhip',
   'sports': 'Sports car rentals in Phoenix Arizona - ItWhip',
   'electric': 'Electric vehicle rentals in Phoenix Arizona - ItWhip',
+  'luxury': 'Luxury car rentals in Phoenix Arizona - ItWhip',
+  'truck': 'Truck rentals in Phoenix Arizona - ItWhip',
 }
 
 // ============================================
@@ -281,10 +285,19 @@ export default async function CarTypePage({
   }
 
   // Fetch cars of this type from database
+  // For 'electric' type, also include cars with electric fuelType (e.g., Tesla Model 3 with carType='SEDAN')
+  // Use case-insensitive matching to handle both 'SEDAN' and 'sedan' in database
   const cars = await prisma.rentalCar.findMany({
     where: {
       isActive: true,
-      carType: typeData.dbValue
+      ...(type.toLowerCase() === 'electric' ? {
+        OR: [
+          { carType: { equals: 'ELECTRIC', mode: 'insensitive' } },
+          { fuelType: { in: ['electric', 'ELECTRIC', 'Electric'] } }
+        ]
+      } : {
+        carType: { equals: typeData.dbValue, mode: 'insensitive' }
+      })
     },
     select: {
       id: true,
@@ -292,6 +305,7 @@ export default async function CarTypePage({
       model: true,
       year: true,
       carType: true,
+      vehicleType: true, // For rideshare badge
       dailyRate: true,
       city: true,
       state: true,
@@ -331,6 +345,7 @@ export default async function CarTypePage({
     year: car.year,
     dailyRate: Number(car.dailyRate),
     carType: car.carType,
+    vehicleType: car.vehicleType as 'RENTAL' | 'RIDESHARE' | null, // For rideshare badge
     seats: 5, // Default since not in select
     city: car.city,
     rating: car.rating ? Number(car.rating) : null,

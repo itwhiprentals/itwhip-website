@@ -59,6 +59,9 @@ interface VehicleData {
   driveType: string
   carType: string
 
+  // Vehicle designation (RENTAL or RIDESHARE)
+  vehicleType: 'RENTAL' | 'RIDESHARE'
+
   // Manual fields
   color: string
   licensePlate: string
@@ -101,6 +104,7 @@ const INITIAL_VEHICLE_DATA: VehicleData = {
   fuelType: 'gas',
   driveType: '',
   carType: 'midsize',
+  vehicleType: 'RENTAL',
   color: '',
   licensePlate: '',
   currentMileage: 0,
@@ -442,6 +446,7 @@ export default function PartnerFleetAddPage() {
           fuelType: vehicleData.fuelType,
           driveType: vehicleData.driveType,
           carType: vehicleData.carType,
+          vehicleType: vehicleData.vehicleType,
           currentMileage: vehicleData.currentMileage,
           address: vehicleData.address,
           city: vehicleData.city,
@@ -683,6 +688,113 @@ export default function PartnerFleetAddPage() {
                     </div>
                   )}
                 </div>
+              </div>
+            )}
+
+            {/* Vehicle Designation - Rental vs Rideshare */}
+            {vinDecoded && (
+              <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-2 mb-4">
+                  <IoCarOutline className="w-6 h-6 text-purple-600" />
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Vehicle Designation</h2>
+                </div>
+
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                  How will this vehicle be used?
+                </p>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  {/* Rental Option */}
+                  <label
+                    className={`relative flex flex-col p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                      vehicleData.vehicleType === 'RENTAL'
+                        ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/20'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="vehicleType"
+                      value="RENTAL"
+                      checked={vehicleData.vehicleType === 'RENTAL'}
+                      onChange={() => setVehicleData(prev => ({ ...prev, vehicleType: 'RENTAL' }))}
+                      className="absolute opacity-0"
+                    />
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                        vehicleData.vehicleType === 'RENTAL'
+                          ? 'border-purple-600'
+                          : 'border-gray-400'
+                      }`}>
+                        {vehicleData.vehicleType === 'RENTAL' && (
+                          <div className="w-2.5 h-2.5 rounded-full bg-purple-600" />
+                        )}
+                      </div>
+                      <span className="font-semibold text-gray-900 dark:text-white">Rental</span>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 ml-8">
+                      Standard car rental for travelers and locals
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-500 ml-8 mt-1">
+                      Minimum 1 day booking
+                    </p>
+                  </label>
+
+                  {/* Rideshare Option */}
+                  <label
+                    className={`relative flex flex-col p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                      vehicleData.vehicleType === 'RIDESHARE'
+                        ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="vehicleType"
+                      value="RIDESHARE"
+                      checked={vehicleData.vehicleType === 'RIDESHARE'}
+                      onChange={() => setVehicleData(prev => ({ ...prev, vehicleType: 'RIDESHARE' }))}
+                      className="absolute opacity-0"
+                    />
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                        vehicleData.vehicleType === 'RIDESHARE'
+                          ? 'border-orange-500'
+                          : 'border-gray-400'
+                      }`}>
+                        {vehicleData.vehicleType === 'RIDESHARE' && (
+                          <div className="w-2.5 h-2.5 rounded-full bg-orange-500" />
+                        )}
+                      </div>
+                      <span className="font-semibold text-gray-900 dark:text-white">Rideshare</span>
+                      <span className="px-2 py-0.5 bg-orange-500 text-white text-xs font-bold rounded-full">
+                        UBER / LYFT
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 ml-8">
+                      For gig economy drivers (Uber, Lyft, DoorDash)
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-500 ml-8 mt-1">
+                      Minimum 3 day booking required
+                    </p>
+                  </label>
+                </div>
+
+                {vehicleData.vehicleType === 'RIDESHARE' && (
+                  <div className="mt-4 p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
+                    <div className="flex items-start gap-2">
+                      <IoInformationCircleOutline className="w-5 h-5 text-orange-600 mt-0.5" />
+                      <div className="text-sm text-orange-700 dark:text-orange-300">
+                        <p className="font-medium">Rideshare vehicles:</p>
+                        <ul className="list-disc ml-4 mt-1 text-orange-600 dark:text-orange-400">
+                          <li>Require 3+ day minimum bookings</li>
+                          <li>Optimized for weekly/monthly drivers</li>
+                          <li>Show "Rideshare" badge on listing</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

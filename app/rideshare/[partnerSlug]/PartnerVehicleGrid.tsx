@@ -17,6 +17,7 @@ import {
 import VehicleFilters, { FilterState } from '../components/VehicleFilters'
 import CompactCarCard from '@/app/components/cards/CompactCarCard'
 import { generateCarUrl } from '@/app/lib/utils/urls'
+import { capitalizeCarMake } from '@/app/lib/utils/formatters'
 
 interface Vehicle {
   id: string
@@ -235,7 +236,7 @@ function VehicleListItem({ vehicle }: { vehicle: Vehicle }) {
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-              {vehicle.year} {vehicle.make} {vehicle.model}
+              {vehicle.year} {capitalizeCarMake(vehicle.make)} {vehicle.model}
             </h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
               {vehicle.city && vehicle.state ? `${vehicle.city}, ${vehicle.state}` : ''}

@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
   IoCarOutline,
+  IoCarSportOutline,
   IoLocationOutline,
   IoStarOutline,
   IoFlashOutline,
@@ -14,7 +15,9 @@ import {
   IoBusinessOutline,
   IoSparklesOutline
 } from 'react-icons/io5'
+
 import { formatPrivateName, isCompanyName } from '@/app/lib/utils/namePrivacy'
+import { capitalizeCarMake } from '@/app/lib/utils/formatters'
 
 interface SimilarCar {
   id: string
@@ -237,7 +240,12 @@ function CarCarousel({
                   
                   {/* Top badges */}
                   <div className="absolute top-2 left-2 flex flex-wrap gap-2">
-                    {car.instantBook && (
+                    {(car as any).vehicleType?.toUpperCase() === 'RIDESHARE' ? (
+                      <span className="px-2 py-1 bg-orange-500 text-white text-xs font-semibold rounded-full flex items-center gap-1 shadow-lg">
+                        <IoCarSportOutline className="w-3 h-3" />
+                        Rideshare
+                      </span>
+                    ) : car.instantBook && (
                       <span className="px-2 py-1 bg-green-600 text-white text-xs font-semibold rounded-full flex items-center gap-1 shadow-lg">
                         <IoFlashOutline className="w-3 h-3" />
                         Instant
@@ -270,7 +278,7 @@ function CarCarousel({
                 {/* Car details */}
                 <div className="p-4">
                   <h3 className="font-semibold text-gray-900 dark:text-white mb-2 truncate">
-                    {car.year} {car.make} {car.model}
+                    {car.year} {capitalizeCarMake(car.make)} {car.model}
                   </h3>
                   
                   {/* New clean display structure */}

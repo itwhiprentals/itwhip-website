@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import CompactCarCard from '@/app/components/cards/CompactCarCard'
 import { IoArrowForwardOutline, IoCarOutline } from 'react-icons/io5'
+import { capitalizeCarMake } from '@/app/lib/utils/formatters'
 
 const carTypes = [
   {
@@ -52,6 +53,7 @@ interface CarData {
   year: number
   dailyRate: number
   carType: string
+  vehicleType?: string | null // For rideshare badge
   city: string
   rating: number | null
   totalTrips: number
@@ -193,7 +195,7 @@ export default function BrowseByTypeSection() {
                   <div className="flex items-center justify-between mb-4 sm:mb-6">
                     <div className="flex items-center gap-3">
                       <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-                        {makeData.make}
+                        {capitalizeCarMake(makeData.make)}
                       </h3>
                       <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300">
                         {makeData.totalCars} {makeData.totalCars === 1 ? 'car' : 'cars'}
@@ -203,7 +205,7 @@ export default function BrowseByTypeSection() {
                       href={`/rentals/makes/${makeData.slug}`}
                       className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors text-sm sm:text-base"
                     >
-                      View all {makeData.make === 'Mercedes-Benz' ? 'Mercedes' : makeData.make}
+                      View all {capitalizeCarMake(makeData.make) === 'Mercedes-Benz' ? 'Mercedes' : capitalizeCarMake(makeData.make)}
                       <IoArrowForwardOutline className="w-4 h-4" />
                     </Link>
                   </div>
@@ -220,6 +222,7 @@ export default function BrowseByTypeSection() {
                           year: car.year,
                           dailyRate: car.dailyRate,
                           carType: car.carType,
+                          vehicleType: car.vehicleType as 'RENTAL' | 'RIDESHARE' | null,
                           seats: 5,
                           city: car.city,
                           rating: car.rating,

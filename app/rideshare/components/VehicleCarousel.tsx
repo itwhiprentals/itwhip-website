@@ -11,6 +11,7 @@ import {
   IoCarOutline
 } from 'react-icons/io5'
 import { generateCarUrl } from '@/app/lib/utils/urls'
+import { capitalizeCarMake } from '@/app/lib/utils/formatters'
 
 interface Vehicle {
   id: string
@@ -112,7 +113,7 @@ export default function VehicleCarousel({ vehicles, partnerSlug, maxVisible = 4 
               {/* Year + Make with Daily Price */}
               <div className="flex items-baseline justify-between">
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-white leading-tight">
-                  {vehicle.year} {vehicle.make}
+                  {vehicle.year} {capitalizeCarMake(vehicle.make)}
                 </h3>
                 <div>
                   <span className="text-sm font-bold text-gray-900 dark:text-white">
