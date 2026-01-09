@@ -695,19 +695,47 @@ function HostDashboardContent() {
 
             {/* Priority Banner System */}
             {(() => {
-              const claimNotifications = notifications.filter(n =>
-                ['CLAIM_FILED', 'CLAIM_APPROVED', 'CLAIM_REJECTED', 'GUEST_RESPONSE', 'GUEST_NO_RESPONSE'].includes(n.type)
-              ) as ClaimNotification[]
+              // Check for pending claims first - show banner regardless of notification status
+              if (hostData?.stats.pendingClaims && hostData.stats.pendingClaims > 0) {
+                // Try to get latest claim notification for detailed info
+                const claimNotifications = notifications.filter(n =>
+                  ['CLAIM_FILED', 'CLAIM_APPROVED', 'CLAIM_REJECTED', 'GUEST_RESPONSE', 'GUEST_NO_RESPONSE'].includes(n.type)
+                ) as ClaimNotification[]
 
-              const priority =
-                claimNotifications.find(n => n.type === 'CLAIM_APPROVED') ||
-                claimNotifications.find(n => n.type === 'GUEST_RESPONSE') ||
-                claimNotifications.find(n => n.type === 'CLAIM_REJECTED') ||
-                claimNotifications.find(n => n.type === 'GUEST_NO_RESPONSE') ||
-                claimNotifications.find(n => n.type === 'CLAIM_FILED')
+                const priority =
+                  claimNotifications.find(n => n.type === 'CLAIM_APPROVED') ||
+                  claimNotifications.find(n => n.type === 'GUEST_RESPONSE') ||
+                  claimNotifications.find(n => n.type === 'CLAIM_REJECTED') ||
+                  claimNotifications.find(n => n.type === 'GUEST_NO_RESPONSE') ||
+                  claimNotifications.find(n => n.type === 'CLAIM_FILED')
 
-              if (priority) {
-                return <ClaimBanner notification={priority} onDismiss={markNotificationAsRead} />
+                if (priority) {
+                  return <ClaimBanner notification={priority} onDismiss={markNotificationAsRead} />
+                }
+
+                // Show generic pending claims banner if no unread notification
+                return (
+                  <div className="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 mb-6">
+                    <div className="flex items-start gap-3">
+                      <IoWarningOutline className="text-yellow-600 dark:text-yellow-400 w-5 h-5 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <h3 className="text-sm font-semibold text-yellow-900 dark:text-yellow-100">
+                          Pending Claims
+                        </h3>
+                        <p className="text-sm text-yellow-900/90 dark:text-yellow-100/90 mt-1">
+                          You have {hostData.stats.pendingClaims} pending claim{hostData.stats.pendingClaims > 1 ? 's' : ''} that require attention.
+                        </p>
+                        <Link
+                          href="/host/claims"
+                          className="mt-2.5 inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md bg-white dark:bg-gray-800 text-yellow-900 dark:text-yellow-100 border border-yellow-200 dark:border-yellow-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                        >
+                          View Claims
+                          <IoChevronForwardOutline className="ml-1 w-3 h-3" />
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                )
               }
 
               if (!isApproved) {

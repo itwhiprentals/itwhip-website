@@ -351,7 +351,7 @@ export default function InviteHostModal({
 
                     {/* Search Results (only for ItWhip) */}
                     {searchAvailable && !useManualEmail && searchResults.length > 0 && (
-                      <div className="mt-2 max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-lg divide-y divide-gray-100 dark:divide-gray-700">
+                      <div className="mt-2 max-h-32 sm:max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-lg divide-y divide-gray-100 dark:divide-gray-700">
                         {searchResults.map((host) => (
                           <button
                             key={host.id}
@@ -538,7 +538,7 @@ export default function InviteHostModal({
                 </div>
 
                 {/* Footer */}
-                <div className="flex items-center justify-end gap-3 p-4 sm:pb-4 pb-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                <div className="flex items-center justify-end gap-3 p-4 pb-6 sm:pb-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
                   <button
                     onClick={handleClose}
                     className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
