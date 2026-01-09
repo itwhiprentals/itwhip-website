@@ -542,7 +542,7 @@ export default async function RidesharePage() {
             <img
               src="/rideshare/hero-rideshare-driver.jpg"
               alt="Rideshare driver in vehicle"
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover object-top"
             />
             <div className="absolute inset-0 bg-black/40" />
           </div>
