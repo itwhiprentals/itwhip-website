@@ -24,8 +24,8 @@ export default function MaxACSection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg text-center hover:shadow-xl transition-shadow">
+        <div className="flex md:grid md:grid-cols-3 gap-4 overflow-x-auto pb-4 md:pb-0 snap-x snap-mandatory scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 md:overflow-visible">
+          <div className="snap-center flex-shrink-0 w-[85vw] sm:w-[320px] md:w-auto bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg text-center hover:shadow-xl transition-shadow">
             <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center text-white text-lg font-bold mx-auto mb-4">
               115°
             </div>
@@ -37,7 +37,7 @@ export default function MaxACSection() {
             </p>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg text-center hover:shadow-xl transition-shadow">
+          <div className="snap-center flex-shrink-0 w-[85vw] sm:w-[320px] md:w-auto bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg text-center hover:shadow-xl transition-shadow">
             <IoThermometerOutline className="w-12 h-12 text-blue-500 mx-auto mb-4" />
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
               Pre-Cooled Delivery
@@ -47,7 +47,7 @@ export default function MaxACSection() {
             </p>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg text-center hover:shadow-xl transition-shadow">
+          <div className="snap-center flex-shrink-0 w-[85vw] sm:w-[320px] md:w-auto bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg text-center hover:shadow-xl transition-shadow">
             <IoShieldCheckmarkOutline className="w-12 h-12 text-emerald-500 mx-auto mb-4" />
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
               UV Protection

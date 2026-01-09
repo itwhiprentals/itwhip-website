@@ -24,8 +24,8 @@ export default function MileageForensicsSection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg hover:shadow-xl transition-shadow">
+        <div className="flex md:grid md:grid-cols-3 gap-4 overflow-x-auto pb-4 md:pb-0 snap-x snap-mandatory scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 md:overflow-visible">
+          <div className="snap-center flex-shrink-0 w-[85vw] sm:w-[320px] md:w-auto bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg hover:shadow-xl transition-shadow">
             <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-lg flex items-center justify-center text-white mb-4">
               <IoSpeedometerOutline className="w-6 h-6" />
             </div>
@@ -51,7 +51,7 @@ export default function MileageForensicsSection() {
             </ul>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg hover:shadow-xl transition-shadow">
+          <div className="snap-center flex-shrink-0 w-[85vw] sm:w-[320px] md:w-auto bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg hover:shadow-xl transition-shadow">
             <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-amber-600 rounded-lg flex items-center justify-center text-white mb-4">
               <IoSpeedometerOutline className="w-6 h-6" />
             </div>
@@ -77,7 +77,7 @@ export default function MileageForensicsSection() {
             </ul>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg hover:shadow-xl transition-shadow">
+          <div className="snap-center flex-shrink-0 w-[85vw] sm:w-[320px] md:w-auto bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg hover:shadow-xl transition-shadow">
             <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center text-white mb-4">
               <IoSpeedometerOutline className="w-6 h-6" />
             </div>

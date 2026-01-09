@@ -2,50 +2,50 @@
 'use client'
 
 import {
-  IoLeafOutline,
   IoShieldCheckmarkOutline,
-  IoSpeedometerOutline,
-  IoDocumentTextOutline,
+  IoSnowOutline,
+  IoThermometerOutline,
   IoPersonOutline,
-  IoCashOutline
+  IoAirplaneOutline,
+  IoCheckmarkCircleOutline
 } from 'react-icons/io5'
 
 const benefits = [
   {
     icon: IoShieldCheckmarkOutline,
-    title: '$1M Protection Included',
+    title: '$1M Protection',
     description: 'Every trip backed by comprehensive liability coverage',
     stat: 'Fully insured'
   },
   {
-    icon: IoDocumentTextOutline,
-    title: 'Fast Claims Processing',
-    description: 'Digital claim submission with quick resolution',
-    stat: 'Under 7-day turnaround'
+    icon: IoThermometerOutline,
+    title: 'MaxAC™ Certified',
+    description: 'Every vehicle tested for Phoenix summer heat',
+    stat: 'Arizona ready'
   },
   {
-    icon: IoSpeedometerOutline,
-    title: 'Mileage Forensics™',
-    description: 'GPS-verified trips protect hosts and guests',
-    stat: 'Fraud prevention'
-  },
-  {
-    icon: IoLeafOutline,
-    title: 'ESG Impact Tracking',
-    description: 'See your environmental impact with every rental',
-    stat: 'Sustainability scores'
+    icon: IoSnowOutline,
+    title: 'Pre-Cooled Delivery',
+    description: 'Your car arrives cool, not sitting in a scorching lot',
+    stat: 'Skip the hot lot'
   },
   {
     icon: IoPersonOutline,
-    title: 'Verified Local Hosts',
-    description: 'Every host is background checked and verified',
-    stat: 'Trusted community'
+    title: 'Local Phoenix Hosts',
+    description: 'Real people with personalized service, not corporate counters',
+    stat: 'Verified & trusted'
   },
   {
-    icon: IoCashOutline,
-    title: 'Flexible Host Earnings',
-    description: 'Choose your insurance tier, control your income',
-    stat: 'Keep 40-90%'
+    icon: IoAirplaneOutline,
+    title: 'Flexible Pickup',
+    description: 'Airport, hotel, or home delivery available',
+    stat: 'Meet anywhere'
+  },
+  {
+    icon: IoCheckmarkCircleOutline,
+    title: 'Transparent Pricing',
+    description: 'No hidden fees or surprise counter upsells',
+    stat: 'No surprises'
   }
 ]
 
@@ -61,7 +61,7 @@ export default function BenefitsSection() {
             Why Rent with ItWhip
           </h2>
           <p className="text-base sm:text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto px-4">
-            Peer-to-peer car sharing with built-in protection and verified hosts
+            Peer-to-peer car rentals and rideshare vehicles with built-in protection
           </p>
         </div>
 

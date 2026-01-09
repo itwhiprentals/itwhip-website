@@ -34,7 +34,7 @@ export default function ArizonaEventsSection() {
       fullData: {
         name: 'Barrett-Jackson Collector Car Auction',
         month: 'JAN',
-        dates: { start: '2025-01-18', end: '2025-01-26' },
+        dates: { start: '2026-01-17', end: '2026-01-25' },
         location: 'Scottsdale',
         description: 'The world\'s greatest collector car auction brings thousands of automotive enthusiasts to Scottsdale. Luxury and classic cars take center stage, making this the perfect time to rent a premium vehicle and experience Arizona in style.',
         demandLevel: 'high',
@@ -52,7 +52,7 @@ export default function ArizonaEventsSection() {
       fullData: {
         name: 'WM Phoenix Open',
         month: 'JAN-FEB',
-        dates: { start: '2025-02-03', end: '2025-02-09' },
+        dates: { start: '2026-02-02', end: '2026-02-08' },
         location: 'Scottsdale',
         description: 'The "Greatest Show on Grass" draws over 700,000 fans to TPC Scottsdale. The famous 16th hole party atmosphere makes this one of the most attended golf events in the world.',
         demandLevel: 'high',
@@ -70,7 +70,7 @@ export default function ArizonaEventsSection() {
       fullData: {
         name: 'Cactus League Spring Training',
         month: 'FEB-MAR',
-        dates: { start: '2025-02-22', end: '2025-03-25' },
+        dates: { start: '2026-02-20', end: '2026-03-24' },
         location: 'Phoenix',
         description: '15 Major League Baseball teams train across the Valley. Fans travel between stadiums in Mesa, Scottsdale, Tempe, Glendale, and Surprise to catch their favorite teams in intimate settings.',
         demandLevel: 'high',
@@ -88,7 +88,7 @@ export default function ArizonaEventsSection() {
       fullData: {
         name: 'Scottsdale Arts Festival',
         month: 'MAR',
-        dates: { start: '2025-03-07', end: '2025-03-09' },
+        dates: { start: '2026-03-19', end: '2026-03-22' },
         location: 'Scottsdale',
         description: 'Arizona\'s premier fine arts festival features 170+ artists in downtown Scottsdale. Perfect weather makes this ideal for exploring Old Town and the surrounding desert in a convertible.',
         demandLevel: 'medium',
@@ -106,7 +106,7 @@ export default function ArizonaEventsSection() {
       fullData: {
         name: 'Phoenix Film Festival',
         month: 'APR',
-        dates: { start: '2025-04-03', end: '2025-04-13' },
+        dates: { start: '2026-04-09', end: '2026-04-19' },
         location: 'Phoenix',
         description: 'Independent filmmakers and industry professionals gather for 11 days of screenings, panels, and networking. A sophisticated crowd appreciates premium transportation.',
         demandLevel: 'medium',
@@ -124,7 +124,7 @@ export default function ArizonaEventsSection() {
       fullData: {
         name: 'Arizona State Fair',
         month: 'OCT',
-        dates: { start: '2025-09-26', end: '2025-11-02' },
+        dates: { start: '2026-09-18', end: '2026-10-26' },
         location: 'Phoenix',
         description: 'Six weeks of rides, concerts, food, and entertainment at the Arizona State Fairgrounds. Families from across Arizona and neighboring states make the trip to Phoenix.',
         demandLevel: 'medium',
@@ -142,7 +142,7 @@ export default function ArizonaEventsSection() {
       fullData: {
         name: 'Las Vegas F1 Grand Prix Weekend',
         month: 'NOV',
-        dates: { start: '2025-11-20', end: '2025-11-23' },
+        dates: { start: '2026-11-19', end: '2026-11-21' },
         location: 'Phoenix',
         description: 'The Las Vegas Grand Prix sells out hotels for 100+ miles. Savvy race fans stay in Phoenix and make the scenic 4.5-hour drive. Sky Harbor offers convenient flights too.',
         demandLevel: 'high',
@@ -160,7 +160,7 @@ export default function ArizonaEventsSection() {
       fullData: {
         name: 'College Football Playoff - Fiesta Bowl',
         month: 'DEC',
-        dates: { start: '2025-12-28', end: '2026-01-01' },
+        dates: { start: '2026-12-31', end: '2027-01-01' },
         location: 'Glendale',
         description: 'The Fiesta Bowl at State Farm Stadium hosts College Football Playoff games, bringing passionate fan bases from across the country to the West Valley.',
         demandLevel: 'high',

@@ -23,8 +23,8 @@ export default function InsuranceTiersSection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="relative bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 rounded-lg p-6 border-2 border-emerald-500 hover:shadow-xl transition-shadow">
+        <div className="flex md:grid md:grid-cols-3 gap-4 overflow-x-auto pb-4 md:pb-0 snap-x snap-mandatory scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 md:overflow-visible">
+          <div className="snap-center flex-shrink-0 w-[85vw] sm:w-[320px] md:w-auto mt-4 md:mt-0 relative bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 rounded-lg p-6 border-2 border-emerald-500 hover:shadow-xl transition-shadow">
             <div className="absolute -top-3 left-6 bg-emerald-700 text-white px-3 py-0.5 rounded-full text-xs font-bold">
               PREMIUM
             </div>
@@ -57,7 +57,7 @@ export default function InsuranceTiersSection() {
             </div>
           </div>
 
-          <div className="relative bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 rounded-lg p-6 border-2 border-amber-500 hover:shadow-xl transition-shadow">
+          <div className="snap-center flex-shrink-0 w-[85vw] sm:w-[320px] md:w-auto mt-4 md:mt-0 relative bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 rounded-lg p-6 border-2 border-amber-500 hover:shadow-xl transition-shadow">
             <div className="absolute -top-3 left-6 bg-amber-700 text-white px-3 py-0.5 rounded-full text-xs font-bold">
               STANDARD
             </div>
@@ -90,7 +90,7 @@ export default function InsuranceTiersSection() {
             </div>
           </div>
 
-          <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900/20 dark:to-gray-800/20 rounded-lg p-6 border-2 border-gray-400 hover:shadow-xl transition-shadow">
+          <div className="snap-center flex-shrink-0 w-[85vw] sm:w-[320px] md:w-auto mt-4 md:mt-0 relative bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900/20 dark:to-gray-800/20 rounded-lg p-6 border-2 border-gray-400 hover:shadow-xl transition-shadow">
             <div className="absolute -top-3 left-6 bg-gray-500 text-white px-3 py-0.5 rounded-full text-xs font-bold">
               BASIC
             </div>
