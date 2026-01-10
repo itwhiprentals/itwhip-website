@@ -2981,16 +2981,25 @@ model ReviewerProfile {
   referralCount       Int       @default(0)
   // ===== END REFERRAL FIELDS =====
 
+  // ===== GUEST FINANCIAL FIELDS =====
+  stripeCustomerId     String?   @unique   // Stripe Customer ID for saved payment methods
+  depositWalletBalance Float     @default(0)  // Funds held for security deposits only
+  creditBalance        Float     @default(0)  // Platform-applied credits (100% usable)
+  bonusBalance         Float     @default(0)  // Promotional credits (25% max per booking)
+  // ===== END GUEST FINANCIAL FIELDS =====
+
   // Relations
-  reviews             RentalReview[]
-  bookings            RentalBooking[]
-  moderationHistory   GuestModeration[]    @relation("ProfileModeration")
-  appeals             GuestAppeal[]        @relation("ProfileAppeals")
-  profileStatus       GuestProfileStatus?
-  appealNotifications AppealNotification[] @relation("GuestAppealNotifications")
-  insuranceHistory    InsuranceHistory[]
-  guestInsurance      GuestInsurance[]
-  accountHolds        AccountHold[]
+  reviews              RentalReview[]
+  bookings             RentalBooking[]
+  moderationHistory    GuestModeration[]    @relation("ProfileModeration")
+  appeals              GuestAppeal[]        @relation("ProfileAppeals")
+  profileStatus        GuestProfileStatus?
+  appealNotifications  AppealNotification[] @relation("GuestAppealNotifications")
+  insuranceHistory     InsuranceHistory[]
+  guestInsurance       GuestInsurance[]
+  accountHolds         AccountHold[]
+  depositTransactions  DepositTransaction[]
+  creditBonusTransactions CreditBonusTransaction[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -3020,6 +3029,7 @@ model ReviewerProfile {
   @@index([driverLicenseNumber])
   @@index([driverLicenseExpiry])
   @@index([legacyDualId])
+  @@index([stripeCustomerId])
 }
 
 // ============================================================================
@@ -5116,6 +5126,7 @@ model RefundRequest {
 
   // Status workflow
   status          String   @default("PENDING") // PENDING, APPROVED, REJECTED, PROCESSED
+  autoApproved    Boolean  @default(false)     // True if under partner direct refund limit
 
   // Fleet review
   reviewedBy      String?  // Fleet admin who reviewed
@@ -5216,6 +5227,10 @@ model PlatformSettings {
   referralBonus         Float    @default(0)         // Legacy/general referral bonus
   bonusExpirationDays   Int      @default(90)        // Days until bonus expires
 
+  // ===== PARTNER REFUND SETTINGS =====
+  partnerDirectRefundLimit Float @default(250)       // Auto-approve partner refunds up to this amount
+  maxBonusPercentage       Float @default(0.25)      // Max 25% of booking can be paid with bonus
+
   // ===== DAMAGE THRESHOLDS =====
   minorDamageMax        Float    @default(250)
   moderateDamageMax     Float    @default(500)
@@ -5226,4 +5241,78 @@ model PlatformSettings {
   updatedBy             String?
 
   @@map("platform_settings")
+}
+
+// ============================================================================
+// DEPOSIT WALLET TRANSACTIONS
+// ============================================================================
+
+model DepositTransaction {
+  id                    String   @id @default(cuid())
+  guestId               String
+  guest                 ReviewerProfile @relation(fields: [guestId], references: [id])
+
+  // Transaction type: LOAD (add funds), HOLD (reserve for booking), RELEASE (return after trip), REFUND (refund to card)
+  type                  String   // 'LOAD' | 'HOLD' | 'RELEASE' | 'REFUND'
+  amount                Float    // Positive for LOAD/RELEASE, negative for HOLD/REFUND
+
+  // Running balance after this transaction
+  balanceAfter          Float
+
+  // Related entities
+  bookingId             String?  // Related booking if HOLD/RELEASE
+  stripePaymentIntentId String?  // For LOAD transactions
+
+  // Description
+  description           String?
+
+  createdAt             DateTime @default(now())
+
+  @@index([guestId])
+  @@index([bookingId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// CREDIT & BONUS TRANSACTIONS
+// ============================================================================
+
+model CreditBonusTransaction {
+  id          String   @id @default(cuid())
+  guestId     String
+  guest       ReviewerProfile @relation(fields: [guestId], references: [id])
+
+  // Type: CREDIT (platform-applied, 100% usable) or BONUS (promotional, 25% max per booking)
+  type        String   // 'CREDIT' | 'BONUS'
+
+  // Action: ADD (credit added), USE (applied to booking), EXPIRE (bonus expired), ADJUST (admin adjustment)
+  action      String   // 'ADD' | 'USE' | 'EXPIRE' | 'ADJUST'
+
+  // Amount (positive for ADD, negative for USE/EXPIRE)
+  amount      Float
+
+  // Running balance after this transaction
+  balanceAfter Float
+
+  // Related booking (if USE action)
+  bookingId   String?
+
+  // Reason for the transaction
+  reason      String?  // 'REFUND' | 'GOODWILL' | 'PROMO' | 'LOYALTY' | 'SIGNUP' | 'REFERRAL' | etc.
+
+  // For bonuses that expire
+  expiresAt   DateTime?
+
+  // Admin who made the adjustment (if applicable)
+  adjustedBy  String?
+
+  createdAt   DateTime @default(now())
+
+  @@index([guestId])
+  @@index([bookingId])
+  @@index([type])
+  @@index([action])
+  @@index([expiresAt])
+  @@index([createdAt])
 }

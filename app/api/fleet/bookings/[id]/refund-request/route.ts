@@ -1,9 +1,12 @@
 // app/api/fleet/bookings/[id]/refund-request/route.ts
-// POST - Partner/Host submits refund request for Fleet approval
+// POST - Partner/Host submits refund request
+//        Auto-approves and processes if under partner direct refund limit
 // GET - Get refund request status for a booking
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
+import { PaymentProcessor } from '@/app/lib/stripe/payment-processor'
+import { stripe } from '@/app/lib/stripe/client'
 
 export async function POST(
   request: NextRequest,
@@ -61,7 +64,9 @@ export async function POST(
             name: true,
             email: true,
             partnerCompanyName: true,
-            hostType: true
+            hostType: true,
+            stripeConnectAccountId: true,
+            currentBalance: true
           }
         },
         car: {
@@ -135,7 +140,19 @@ export async function POST(
       ? 'FLEET_ADMIN'
       : (partnerId || hostId || booking.hostId)
 
-    // Create refund request
+    // Get platform settings for auto-approve threshold
+    const platformSettings = await prisma.platformSettings.findUnique({
+      where: { id: 'global' }
+    })
+    const partnerDirectRefundLimit = platformSettings?.partnerDirectRefundLimit ?? 250
+
+    // Check if eligible for auto-approve (Partner requesting && under limit)
+    const isPartnerRequest = requestedByType === 'PARTNER'
+    const underAutoApproveLimit = amount <= partnerDirectRefundLimit
+    const hasPaymentIntent = !!booking.stripePaymentIntentId
+    const shouldAutoApprove = isPartnerRequest && underAutoApproveLimit && hasPaymentIntent
+
+    // Create refund request with appropriate status
     const refundRequest = await prisma.refundRequest.create({
       data: {
         bookingId,
@@ -144,23 +161,28 @@ export async function POST(
         amount,
         reason,
         notes,
-        status: 'PENDING'
+        status: shouldAutoApprove ? 'APPROVED' : 'PENDING',
+        autoApproved: shouldAutoApprove,
+        reviewedBy: shouldAutoApprove ? 'AUTO_APPROVED' : null,
+        reviewedAt: shouldAutoApprove ? new Date() : null
       }
     })
 
-    // Create activity log
+    // Create activity log for request creation
     await prisma.activityLog.create({
       data: {
         entityType: 'BOOKING',
         entityId: bookingId,
         hostId: booking.hostId,
-        action: 'REFUND_REQUESTED',
+        action: shouldAutoApprove ? 'REFUND_AUTO_APPROVED' : 'REFUND_REQUESTED',
         metadata: {
           refundRequestId: refundRequest.id,
           amount,
           reason,
           requestedBy: requesterId,
           requestedByType,
+          autoApproved: shouldAutoApprove,
+          autoApproveLimit: partnerDirectRefundLimit,
           bookingCode: booking.bookingCode,
           guestName: booking.guestName,
           hostName: booking.host?.partnerCompanyName || booking.host?.name,
@@ -169,20 +191,146 @@ export async function POST(
       }
     })
 
+    // If auto-approved, process the refund immediately
+    let stripeRefundId = null
+    let transferReversalId = null
+    let processingError = null
+
+    if (shouldAutoApprove) {
+      try {
+        // Process refund via Stripe
+        const stripeRefund = await PaymentProcessor.refundPayment(
+          booking.stripePaymentIntentId!,
+          amount,
+          'requested_by_customer'
+        )
+        stripeRefundId = stripeRefund.id
+
+        // Try to reverse transfer if partner has Connect account
+        if (booking.host?.stripeConnectAccountId) {
+          try {
+            const paymentIntent = await stripe.paymentIntents.retrieve(
+              booking.stripePaymentIntentId!,
+              { expand: ['latest_charge.transfer'] }
+            )
+
+            const charge = paymentIntent.latest_charge as any
+            if (charge && charge.transfer) {
+              const transferId = typeof charge.transfer === 'string' ? charge.transfer : charge.transfer.id
+              const reversal = await stripe.transfers.createReversal(transferId, {
+                amount: Math.round(amount * 100),
+                description: `Auto-approved refund for booking ${booking.bookingCode}`
+              })
+              transferReversalId = reversal.id
+            }
+          } catch (transferError: any) {
+            console.error('Transfer reversal failed (non-blocking):', transferError)
+          }
+        }
+
+        // Update refund request as processed
+        await prisma.$transaction(async (tx) => {
+          await tx.refundRequest.update({
+            where: { id: refundRequest.id },
+            data: {
+              status: 'PROCESSED',
+              processedAt: new Date(),
+              stripeRefundId,
+              stripeTransferId: transferReversalId,
+              notes: notes
+                ? `${notes}\n\nAuto-processed at ${new Date().toISOString()}`
+                : `Auto-processed at ${new Date().toISOString()}`
+            }
+          })
+
+          // Update partner balance if transfer was reversed
+          if (transferReversalId && booking.host?.id) {
+            await tx.rentalHost.update({
+              where: { id: booking.host.id },
+              data: { currentBalance: { decrement: amount } }
+            })
+          }
+
+          // Update booking payment status
+          const allProcessed = await tx.refundRequest.findMany({
+            where: { bookingId, status: 'PROCESSED' }
+          })
+          const totalRefunded = allProcessed.reduce((sum, r) => sum + r.amount, 0)
+
+          if (totalRefunded >= totalPaid) {
+            await tx.rentalBooking.update({
+              where: { id: bookingId },
+              data: { paymentStatus: 'FULLY_REFUNDED', status: 'REFUNDED' }
+            })
+          } else if (totalRefunded > 0) {
+            await tx.rentalBooking.update({
+              where: { id: bookingId },
+              data: { paymentStatus: 'PARTIALLY_REFUNDED' }
+            })
+          }
+        })
+
+        // Log successful processing
+        await prisma.activityLog.create({
+          data: {
+            entityType: 'REFUND_REQUEST',
+            entityId: refundRequest.id,
+            hostId: booking.hostId,
+            action: 'REFUND_AUTO_PROCESSED',
+            metadata: {
+              refundRequestId: refundRequest.id,
+              bookingId,
+              amount,
+              stripeRefundId,
+              transferReversalId,
+              autoApproved: true
+            }
+          }
+        })
+
+      } catch (stripeError: any) {
+        console.error('Auto-process refund failed:', stripeError)
+        processingError = stripeError.message
+
+        // Revert to APPROVED status so Fleet can manually process
+        await prisma.refundRequest.update({
+          where: { id: refundRequest.id },
+          data: {
+            status: 'APPROVED',
+            notes: notes
+              ? `${notes}\n\nAuto-processing failed: ${stripeError.message}. Manual processing required.`
+              : `Auto-processing failed: ${stripeError.message}. Manual processing required.`
+          }
+        })
+      }
+    }
+
+    // Return appropriate response
+    const wasProcessed = shouldAutoApprove && stripeRefundId && !processingError
+
     return NextResponse.json({
       success: true,
-      message: 'Refund request submitted for Fleet approval',
+      message: wasProcessed
+        ? `Refund of $${amount.toFixed(2)} auto-approved and processed`
+        : shouldAutoApprove && processingError
+        ? 'Refund auto-approved but processing failed. Manual processing required.'
+        : 'Refund request submitted for Fleet approval',
       data: {
         id: refundRequest.id,
         bookingId,
         bookingCode: booking.bookingCode,
         amount,
-        status: 'PENDING',
+        status: wasProcessed ? 'PROCESSED' : (shouldAutoApprove ? 'APPROVED' : 'PENDING'),
+        autoApproved: shouldAutoApprove,
+        stripeRefundId,
+        transferReversed: !!transferReversalId,
+        processingError,
         reason,
         requestedBy: requesterId,
         requestedByType,
         createdAt: refundRequest.createdAt,
         maxRefundable,
+        autoApproveLimit: partnerDirectRefundLimit,
         booking: {
           guestName: booking.guestName,
           guestEmail: booking.guestEmail,

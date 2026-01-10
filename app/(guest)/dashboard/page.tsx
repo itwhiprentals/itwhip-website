@@ -242,7 +242,7 @@ interface DashboardStats {
   totalSaved: number
   activeRentals: number
   completedTrips: number
-  loyaltyPoints: number
+  creditsAndBonus: number  // Changed from loyaltyPoints
   unreadMessages: number
   pendingDocuments: number
   activeClaims: number
@@ -408,12 +408,13 @@ const STATS_CONFIG = [
     clickable: false
   },
   {
-    label: 'Loyalty Points',
-    key: 'loyaltyPoints' as keyof DashboardStats,
+    label: 'Credits & Bonus',
+    key: 'creditsAndBonus' as keyof DashboardStats,
     icon: Award,
     iconColor: 'text-purple-500',
     textColor: 'text-gray-900 dark:text-white',
-    path: '/profile/loyalty',
+    format: (val: number) => `$${val.toFixed(0)}`,
+    path: '/payments/credits',
     clickable: true
   },
   {
@@ -455,7 +456,7 @@ const initialState: DashboardState = {
     totalSaved: 0,
     activeRentals: 0,
     completedTrips: 0,
-    loyaltyPoints: 0,
+    creditsAndBonus: 0,
     unreadMessages: 0,
     pendingDocuments: 0,
     activeClaims: 0,
@@ -654,7 +655,7 @@ export default function GuestDashboard() {
           totalSaved: 0,
           activeRentals: dashboardData.stats.activeRentals,
           completedTrips: dashboardData.stats.completedTrips,
-          loyaltyPoints: dashboardData.stats.loyaltyPoints,
+          creditsAndBonus: (dashboardData.profile?.creditBalance || 0) + (dashboardData.profile?.bonusBalance || 0),
           unreadMessages: dashboardData.stats.unreadMessages,
           pendingDocuments: dashboardData.flags.needsVerification ? 1 : 0,
           activeClaims: dashboardData.claims?.active || 0,

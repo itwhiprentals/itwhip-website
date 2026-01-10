@@ -167,6 +167,11 @@ export async function GET(request: NextRequest) {
       memberTier,
       memberSince: profileData.memberSince,
 
+      // Financial Balances
+      creditBalance: profileData.creditBalance || 0,
+      bonusBalance: profileData.bonusBalance || 0,
+      depositWalletBalance: profileData.depositWalletBalance || 0,
+
       // Preferences
       preferredLanguage: profileData.preferredLanguage,
       preferredCurrency: profileData.preferredCurrency,

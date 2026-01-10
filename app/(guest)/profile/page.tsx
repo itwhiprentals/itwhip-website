@@ -404,7 +404,9 @@ function GuestProfileContent() {
               averageRating: profile.averageRating,
               loyaltyPoints: profile.loyaltyPoints,
               memberTier: profile.memberTier,
-              fullyVerified: profile.fullyVerified
+              fullyVerified: profile.fullyVerified,
+              creditBalance: profile.creditBalance || 0,
+              bonusBalance: profile.bonusBalance || 0
             }}
             uploadingPhoto={uploadingPhoto}
             onPhotoUpload={handlePhotoUpload}

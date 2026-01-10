@@ -3,12 +3,14 @@
 
 import { useState, useRef } from 'react'
 import Image from 'next/image'
-import { 
-  IoCameraOutline, 
+import {
+  IoCameraOutline,
   IoStarOutline,
   IoCarOutline,
   IoTrophyOutline,
-  IoShieldCheckmarkOutline
+  IoShieldCheckmarkOutline,
+  IoWalletOutline,
+  IoGiftOutline
 } from 'react-icons/io5'
 
 interface ProfileHeaderProps {
@@ -23,6 +25,9 @@ interface ProfileHeaderProps {
     loyaltyPoints: number
     memberTier: string
     fullyVerified: boolean
+    // Financial Balances
+    creditBalance?: number
+    bonusBalance?: number
   }
   uploadingPhoto: boolean
   onPhotoUpload: (file: File) => void
@@ -180,15 +185,22 @@ export default function ProfileHeader({
               <span className="text-[9px] sm:text-[10px] text-gray-600 dark:text-gray-400 block">Rating</span>
             </div>
 
-            {/* Loyalty Points */}
+            {/* Credit & Bonus */}
             <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-1.5 sm:p-2.5 text-center">
-              <div className="flex items-center justify-center gap-0.5 mb-1">
-                <IoTrophyOutline className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+              <div className="flex items-center justify-center gap-1 mb-1">
+                <IoWalletOutline className="w-3 h-3 text-green-600 dark:text-green-400" />
+                <IoGiftOutline className="w-3 h-3 text-purple-600 dark:text-purple-400" />
               </div>
-              <p className="text-sm sm:text-base font-bold text-gray-900 dark:text-white mb-0.5">
-                {profile.loyaltyPoints.toLocaleString()}
-              </p>
-              <span className="text-[9px] sm:text-[10px] text-gray-600 dark:text-gray-400 block">Points</span>
+              <div className="flex items-center justify-center gap-1">
+                <span className="text-[10px] sm:text-xs font-bold text-green-600 dark:text-green-400">
+                  ${(profile.creditBalance || 0).toFixed(0)}
+                </span>
+                <span className="text-gray-400">/</span>
+                <span className="text-[10px] sm:text-xs font-bold text-purple-600 dark:text-purple-400">
+                  ${(profile.bonusBalance || 0).toFixed(0)}
+                </span>
+              </div>
+              <span className="text-[9px] sm:text-[10px] text-gray-600 dark:text-gray-400 block">Credit/Bonus</span>
             </div>
 
             {/* Member Since */}
