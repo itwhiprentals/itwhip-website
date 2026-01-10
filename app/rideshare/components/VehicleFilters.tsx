@@ -6,9 +6,6 @@
 import { useState } from 'react'
 import { IoFilterOutline, IoCloseOutline, IoFlashOutline, IoCarSportOutline } from 'react-icons/io5'
 
-// Only these 6 makes are approved for rideshare
-const RIDESHARE_MAKES = ['Toyota', 'Honda', 'Hyundai', 'Kia', 'Nissan', 'Chevrolet']
-
 interface VehicleFiltersProps {
   availableMakes?: string[]
   onFilterChange: (filters: FilterState) => void
@@ -34,10 +31,8 @@ export default function VehicleFilters({
     availability: 'all'
   })
 
-  // Only show makes that are both in RIDESHARE_MAKES and available in fleet
-  const displayMakes = RIDESHARE_MAKES.filter(make =>
-    availableMakes.length === 0 || availableMakes.includes(make)
-  )
+  // Show all makes available in the fleet, sorted alphabetically
+  const displayMakes = [...availableMakes].sort()
 
   const handleFilterChange = (key: keyof FilterState, value: string) => {
     const newFilters = { ...filters, [key]: value }
