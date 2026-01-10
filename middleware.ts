@@ -198,21 +198,26 @@ function requiresApproval(pathname: string, method: string = 'GET'): boolean {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // 🔒 FLEET API PROTECTION - Allow phoenix-fleet-2847 key (legacy/internal)
+  // 🔒 FLEET API PROTECTION - Allow phoenix-fleet-2847 key (legacy/internal) or fleet_session cookie
   // EXCLUDE: /api/fleet/auth - public login endpoint with its own session-based auth
   if ((pathname.startsWith('/api/fleet/') || pathname.startsWith('/fleet/api/')) &&
       !pathname.startsWith('/api/fleet/auth')) {
     const url = new URL(request.url)
     const urlKey = url.searchParams.get('key')
     const headerKey = request.headers.get('x-fleet-key')
+    const fleetSession = request.cookies.get('fleet_session')?.value
 
     // Valid keys
     const phoenixKey = 'phoenix-fleet-2847'
     const externalKey = FLEET_API_KEY
 
+    // Check for valid fleet session cookie (64 char hex string)
+    const hasValidSession = fleetSession && /^[a-f0-9]{64}$/.test(fleetSession)
+
     console.log(`[FLEET API] ${request.method} ${pathname}`, {
       hasUrlKey: !!urlKey,
       hasHeaderKey: !!headerKey,
+      hasSession: hasValidSession,
       ip: request.ip || request.headers.get('x-forwarded-for') || 'unknown',
       timestamp: new Date().toISOString()
     })
@@ -224,6 +229,11 @@ export async function middleware(request: NextRequest) {
 
     if (headerKey && headerKey === externalKey) {
       console.log(`[FLEET API] ✅ ALLOWED with external key`)
+      return NextResponse.next()
+    }
+
+    if (hasValidSession) {
+      console.log(`[FLEET API] ✅ ALLOWED with fleet session cookie`)
       return NextResponse.next()
     }
 

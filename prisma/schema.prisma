@@ -859,6 +859,13 @@ model RentalHost {
 
   // ===== END FLEET MANAGER FIELDS =====
 
+  // ===== REFERRAL TRACKING FIELDS =====
+  referredByHostId    String?              // Host who referred this host
+  referralCode        String?   @unique    // Unique code for host referrals
+  referralBonusEarned Float     @default(0)
+  referralCount       Int       @default(0)
+  // ===== END REFERRAL FIELDS =====
+
   // Relations
   user                  User?                @relation(fields: [userId], references: [id])
   cars                  RentalCar[]
@@ -2636,6 +2643,12 @@ model RentalBooking {
   totalAmount   Float
   depositAmount Float @default(500)
 
+  // ===== PRICING SNAPSHOT (rates locked at booking time) =====
+  pricingSnapshot     Json?      // All PlatformSettings values at booking time
+  effectiveTaxRate    Float?     // Tax rate applied to this booking
+  serviceFeeRate      Float?     // Service fee rate applied (e.g., 0.15 for 15%)
+  settingsVersion     DateTime?  // When settings were snapshotted
+
   // ===== NEW INSURANCE DEPOSIT FIELDS =====
   securityDeposit     Float
   depositHeld         Float
@@ -2804,6 +2817,7 @@ model RentalBooking {
   claims               Claim[]
   tripInspectionPhotos TripInspectionPhoto[]
   tripIssue            TripIssue? // Pre-claim issue tracking
+  refundRequests       RefundRequest[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2959,6 +2973,13 @@ model ReviewerProfile {
   accountHoldReason    String?
   accountHoldClaimId   String?
   accountHoldAppliedAt DateTime?
+
+  // ===== REFERRAL TRACKING FIELDS =====
+  referredByGuestId   String?              // Guest who referred this guest
+  referralCode        String?   @unique    // Unique code for guest referrals
+  referralBonusEarned Float     @default(0)
+  referralCount       Int       @default(0)
+  // ===== END REFERRAL FIELDS =====
 
   // Relations
   reviews             RentalReview[]
@@ -5074,4 +5095,135 @@ enum ManagementInvitationStatus {
   DECLINED
   EXPIRED
   CANCELLED
+}
+
+// ============================================================================
+// REFUND REQUEST SYSTEM
+// ============================================================================
+
+model RefundRequest {
+  id              String   @id @default(cuid())
+  bookingId       String
+  booking         RentalBooking @relation(fields: [bookingId], references: [id])
+
+  // Who requested
+  requestedBy     String   // Partner/Host ID
+  requestedByType String   // 'PARTNER' | 'HOST' | 'FLEET'
+
+  // Refund details
+  amount          Float
+  reason          String   @db.Text
+
+  // Status workflow
+  status          String   @default("PENDING") // PENDING, APPROVED, REJECTED, PROCESSED
+
+  // Fleet review
+  reviewedBy      String?  // Fleet admin who reviewed
+  reviewedAt      DateTime?
+  reviewNotes     String?  @db.Text
+
+  // Processing
+  processedAt     DateTime?
+  stripeRefundId  String?
+  stripeTransferId String? // For reversing transfer from partner
+
+  // Audit
+  notes           String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([bookingId])
+  @@index([requestedBy])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum RefundRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PROCESSED
+  CANCELLED
+}
+
+// ============================================================================
+// PLATFORM SETTINGS (Fleet-controlled global configuration)
+// ============================================================================
+
+model PlatformSettings {
+  id                    String   @id @default("global")
+
+  // ===== TAX SETTINGS =====
+  defaultTaxRate        Float    @default(0.056)     // AZ state TPT (5.6%) - fallback for unincorporated areas
+  taxByState            Json?    // { "AZ": 0.056 } - state rates
+  taxByCityOverride     Json?    // { "Phoenix,AZ": 0.084 } - city total rates (state + city combined)
+
+  // ===== COMMISSION/FEE SETTINGS =====
+  platformCommission    Float    @default(0.20)      // 20% platform fee
+  partnerMinCommission  Float    @default(0.05)      // 5% minimum partner commission
+  partnerMaxCommission  Float    @default(0.50)      // 50% maximum partner commission
+  serviceFeeRate        Float    @default(0.15)      // 15% service fee on rentals
+
+  // ===== CANCELLATION POLICY =====
+  fullRefundHours       Int      @default(72)        // 100% refund if 72+ hours before
+  partialRefund75Hours  Int      @default(24)        // 75% refund if 24-72 hours before
+  partialRefund50Hours  Int      @default(12)        // 50% refund if 12-24 hours before
+  noRefundHours         Int      @default(12)        // 0% refund if <12 hours before
+
+  // ===== GRACE PERIODS =====
+  lateReturnGraceMinutes Int     @default(30)
+  pickupGraceMinutes     Int     @default(15)
+
+  // ===== CHARGE RATES (defaults) =====
+  mileageOverageRate    Float    @default(0.45)      // $/mile over included
+  dailyIncludedMiles    Int      @default(200)       // miles included per day
+  fuelRefillRateQuarter Float    @default(75)        // per quarter tank
+  fuelRefillRateFull    Float    @default(300)       // full tank refill
+  lateReturnHourlyRate  Float    @default(50)        // $/hour late
+  lateReturnDailyMax    Float    @default(300)       // max late fee per day
+  cleaningFeeStandard   Float    @default(50)
+  cleaningFeeDeep       Float    @default(150)
+  cleaningFeeBiohazard  Float    @default(500)
+  noShowFee             Float    @default(50)
+  smokingFee            Float    @default(250)
+  petHairFee            Float    @default(75)
+  lostKeyFee            Float    @default(200)
+
+  // ===== INSURANCE SETTINGS =====
+  basicInsuranceDaily      Float    @default(15)        // $15/day basic coverage
+  premiumInsuranceDaily    Float    @default(25)        // $25/day premium coverage
+  insuranceRequiredUnder25 Boolean  @default(true)      // Require insurance for drivers under 25
+
+  // ===== DEPOSIT SETTINGS =====
+  defaultDepositPercent Float    @default(0.25)      // 25% of rental as deposit
+  minDeposit            Float    @default(200)
+  maxDeposit            Float    @default(2500)
+  insuranceDiscountPct  Float    @default(0.50)      // 50% deposit discount with insurance
+  luxuryDeposit         Float    @default(1000)      // Deposit for luxury cars
+  exoticDeposit         Float    @default(2500)      // Deposit for exotic cars
+
+  // ===== PAYOUT SETTINGS =====
+  standardPayoutDelay   Int      @default(3)         // days after trip completion
+  newHostPayoutDelay    Int      @default(7)         // days for new hosts (<5 trips)
+  minimumPayout         Float    @default(50)
+  instantPayoutFee      Float    @default(0.015)     // 1.5% for instant payouts
+
+  // ===== SIGNUP & REFERRAL BONUSES =====
+  guestSignupBonus      Float    @default(0)         // $250 planned for new guests
+  hostSignupBonus       Float    @default(0)         // $250 planned for new hosts
+  guestReferralBonus    Float    @default(0)         // Bonus for guest referring guest
+  hostReferralBonus     Float    @default(0)         // Bonus for host referring host
+  referralBonus         Float    @default(0)         // Legacy/general referral bonus
+  bonusExpirationDays   Int      @default(90)        // Days until bonus expires
+
+  // ===== DAMAGE THRESHOLDS =====
+  minorDamageMax        Float    @default(250)
+  moderateDamageMax     Float    @default(500)
+  majorDamageMin        Float    @default(1000)
+
+  // Audit
+  updatedAt             DateTime @updatedAt
+  updatedBy             String?
+
+  @@map("platform_settings")
 }

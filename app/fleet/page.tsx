@@ -16,7 +16,10 @@ import {
   IoCloudUploadOutline,
   IoGridOutline,
   IoHomeOutline,
-  IoBriefcaseOutline
+  IoBriefcaseOutline,
+  IoWalletOutline,
+  IoReturnDownBackOutline,
+  IoSettingsOutline
 } from 'react-icons/io5'
 import { Car, CarStatus } from './types'
 import { StatCard, StatusBadge, EmptyState, LoadingSpinner, SectionHeader } from './components'
@@ -164,7 +167,7 @@ export default function FleetDashboard() {
         <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 uppercase tracking-wide">
           Management Hub
         </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-11 gap-3">
           {/* Messages */}
           <Link
             href={`/fleet/messages?key=${apiKey}`}
@@ -245,6 +248,33 @@ export default function FleetDashboard() {
                 {pendingApplications > 99 ? '99+' : pendingApplications}
               </span>
             )}
+          </Link>
+
+          {/* Banking */}
+          <Link
+            href={`/fleet/hosts?key=${apiKey}&tab=banking`}
+            className="px-4 py-3 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
+          >
+            <IoWalletOutline className="text-2xl group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-medium">Banking</span>
+          </Link>
+
+          {/* Refunds */}
+          <Link
+            href={`/fleet/refunds?key=${apiKey}`}
+            className="px-4 py-3 bg-gradient-to-br from-pink-500 to-pink-600 text-white rounded-lg hover:from-pink-600 hover:to-pink-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
+          >
+            <IoReturnDownBackOutline className="text-2xl group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-medium">Refunds</span>
+          </Link>
+
+          {/* Settings */}
+          <Link
+            href={`/fleet/settings?key=${apiKey}`}
+            className="px-4 py-3 bg-gradient-to-br from-gray-500 to-gray-600 text-white rounded-lg hover:from-gray-600 hover:to-gray-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
+          >
+            <IoSettingsOutline className="text-2xl group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-medium">Settings</span>
           </Link>
         </div>
       </div>

@@ -1,6 +1,10 @@
 // Arizona P2P Car Rental Tax Rates (2025)
 // P2P platforms are EXEMPT from county surcharges (Maricopa $2.50/3.25%, Pima $3.50 flat)
 // Source: Arizona Department of Revenue TPT rates
+//
+// NOTE: These are fallback defaults. For production, use the dynamic rates from
+// PlatformSettings via getPlatformSettings() in app/lib/settings/platform-settings.ts
+// The Settings UI allows importing these rates with "Import Arizona Rates" button.
 
 export const ARIZONA_STATE_TPT = 0.056 // 5.6% State Transaction Privilege Tax
 
@@ -112,7 +116,7 @@ export function getCityFromAddress(address: string): string {
 }
 
 /**
- * Calculate taxes for a rental amount
+ * Calculate taxes for a rental amount using static rates
  * @param amount - The taxable amount (rental + insurance + fees)
  * @param city - The city name for tax rate lookup
  * @returns Object with tax amount and rate info
@@ -131,5 +135,72 @@ export function calculateTax(amount: number, city: string): {
     rate,
     display,
     city: city.toLowerCase().trim()
+  }
+}
+
+/**
+ * Calculate taxes using dynamic rates from PlatformSettings
+ * @param amount - The taxable amount
+ * @param city - The city name
+ * @param state - The state code (e.g., 'AZ')
+ * @param platformSettings - Optional settings with taxByState and taxByCityOverride
+ * @returns Object with tax amount and rate info
+ */
+export function calculateTaxWithSettings(
+  amount: number,
+  city: string,
+  state: string,
+  platformSettings?: {
+    defaultTaxRate: number
+    taxByState: Record<string, number> | null
+    taxByCityOverride: Record<string, number> | null
+  }
+): {
+  taxAmount: number
+  rate: number
+  display: string
+  city: string
+  state: string
+  source: 'city' | 'state' | 'default' | 'fallback'
+} {
+  let rate: number
+  let source: 'city' | 'state' | 'default' | 'fallback'
+
+  if (platformSettings) {
+    const cityKey = `${city},${state.toUpperCase()}`
+    const cityOverrides = platformSettings.taxByCityOverride || {}
+    const stateRates = platformSettings.taxByState || {}
+
+    // Check city override first
+    if (cityOverrides[cityKey] !== undefined) {
+      rate = cityOverrides[cityKey]
+      source = 'city'
+    }
+    // Then check state rate
+    else if (stateRates[state.toUpperCase()] !== undefined) {
+      rate = stateRates[state.toUpperCase()]
+      source = 'state'
+    }
+    // Then use default
+    else {
+      rate = platformSettings.defaultTaxRate
+      source = 'default'
+    }
+  } else {
+    // Fallback to static Arizona rates
+    const { rate: staticRate } = getTaxRate(city)
+    rate = staticRate
+    source = 'fallback'
+  }
+
+  const taxAmount = Math.round(amount * rate * 100) / 100
+
+  return {
+    taxAmount,
+    rate,
+    display: `${(rate * 100).toFixed(1)}%`,
+    city: city.toLowerCase().trim(),
+    state: state.toUpperCase(),
+    source
   }
 }

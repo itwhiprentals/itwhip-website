@@ -1,0 +1,1140 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
+import Link from 'next/link'
+
+interface PlatformSettings {
+  global: {
+    defaultTaxRate: number
+    taxByState: Record<string, number>
+    taxByCityOverride: Record<string, number>
+    serviceFeeRate: number
+    minorDamageMax: number
+    moderateDamageMax: number
+    majorDamageMin: number
+  }
+  host: {
+    standardPayoutDelay: number
+    newHostPayoutDelay: number
+    minimumPayout: number
+    instantPayoutFee: number
+  }
+  partner: {
+    platformCommission: number
+    partnerMinCommission: number
+    partnerMaxCommission: number
+  }
+  guest: {
+    guestSignupBonus: number
+    guestReferralBonus: number
+    fullRefundHours: number
+    partialRefund75Hours: number
+    partialRefund50Hours: number
+    noRefundHours: number
+    bonusExpirationDays: number
+  }
+  insurance: {
+    basicInsuranceDaily: number
+    premiumInsuranceDaily: number
+    insuranceRequiredUnder25: boolean
+    insuranceDiscountPct: number
+  }
+  deposits: {
+    defaultDepositPercent: number
+    minDeposit: number
+    maxDeposit: number
+    luxuryDeposit: number
+    exoticDeposit: number
+  }
+  tripCharges: {
+    mileageOverageRate: number
+    dailyIncludedMiles: number
+    fuelRefillRateQuarter: number
+    fuelRefillRateFull: number
+    lateReturnGraceMinutes: number
+    pickupGraceMinutes: number
+    lateReturnHourlyRate: number
+    lateReturnDailyMax: number
+    cleaningFeeStandard: number
+    cleaningFeeDeep: number
+    cleaningFeeBiohazard: number
+    noShowFee: number
+    smokingFee: number
+    petHairFee: number
+    lostKeyFee: number
+  }
+  referrals: {
+    hostSignupBonus: number
+    hostReferralBonus: number
+    referralBonus: number
+  }
+  meta: {
+    updatedAt: string
+    updatedBy: string
+  }
+}
+
+type TabKey = 'global' | 'taxes' | 'host' | 'partner' | 'guest' | 'insurance' | 'deposits' | 'tripCharges'
+
+const TABS: { key: TabKey; label: string; icon: string }[] = [
+  { key: 'global', label: 'Global', icon: 'G' },
+  { key: 'taxes', label: 'Taxes', icon: 'T' },
+  { key: 'host', label: 'Host', icon: 'H' },
+  { key: 'partner', label: 'Partner', icon: 'P' },
+  { key: 'guest', label: 'Guest', icon: 'U' },
+  { key: 'insurance', label: 'Insurance', icon: 'I' },
+  { key: 'deposits', label: 'Deposits', icon: 'D' },
+  { key: 'tripCharges', label: 'Trip Charges', icon: '$' }
+]
+
+const US_STATES = [
+  'AZ', 'CA', 'CO', 'FL', 'GA', 'IL', 'NY', 'NV', 'TX', 'WA'
+]
+
+export default function FleetSettingsPage() {
+  const searchParams = useSearchParams()
+  const apiKey = searchParams.get('key') || ''
+
+  const [settings, setSettings] = useState<PlatformSettings | null>(null)
+  const [activeTab, setActiveTab] = useState<TabKey>('global')
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [pendingChanges, setPendingChanges] = useState<Record<string, any>>({})
+  const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+
+  // Tax modal state
+  const [showTaxModal, setShowTaxModal] = useState(false)
+  const [taxModalData, setTaxModalData] = useState({ action: 'set_state', state: '', city: '', rate: '' })
+
+  useEffect(() => {
+    fetchSettings()
+  }, [apiKey])
+
+  const fetchSettings = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const response = await fetch(`/api/fleet/settings?key=${apiKey}`)
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch settings')
+      }
+
+      setSettings(data.data)
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleChange = (field: string, value: string | number | boolean) => {
+    setPendingChanges(prev => ({
+      ...prev,
+      [field]: typeof value === 'string' ? parseFloat(value) || value : value
+    }))
+  }
+
+  const handleSave = async () => {
+    if (Object.keys(pendingChanges).length === 0) return
+
+    setSaving(true)
+    setError(null)
+    setSuccessMessage(null)
+
+    try {
+      const response = await fetch(`/api/fleet/settings?key=${apiKey}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          updates: pendingChanges,
+          updatedBy: 'FLEET_ADMIN'
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to save settings')
+      }
+
+      setSuccessMessage(`Updated ${Object.keys(pendingChanges).length} setting(s)`)
+      setPendingChanges({})
+      fetchSettings()
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleTaxUpdate = async () => {
+    setSaving(true)
+    setError(null)
+
+    try {
+      const response = await fetch(`/api/fleet/settings/taxes?key=${apiKey}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: taxModalData.action,
+          state: taxModalData.state,
+          city: taxModalData.city,
+          rate: parseFloat(taxModalData.rate) / 100
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update tax')
+      }
+
+      setSuccessMessage(data.message)
+      setShowTaxModal(false)
+      setTaxModalData({ action: 'set_state', state: '', city: '', rate: '' })
+      fetchSettings()
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDeleteTaxRate = async (type: 'state' | 'city', key: string) => {
+    setSaving(true)
+    setError(null)
+
+    try {
+      let action, state, city
+      if (type === 'state') {
+        action = 'remove_state'
+        state = key
+      } else {
+        action = 'remove_city'
+        // Parse "City,STATE" format
+        const parts = key.split(',')
+        city = parts[0]
+        state = parts[1]
+      }
+
+      const response = await fetch(`/api/fleet/settings/taxes?key=${apiKey}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, state, city })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete tax rate')
+      }
+
+      setSuccessMessage(data.message)
+      fetchSettings()
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 sm:p-6 lg:p-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 bg-gray-200 dark:bg-gray-800 rounded w-1/4"></div>
+            <div className="h-12 bg-gray-200 dark:bg-gray-800 rounded"></div>
+            <div className="h-96 bg-gray-200 dark:bg-gray-800 rounded"></div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!settings) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 sm:p-6 lg:p-8">
+        <div className="max-w-7xl mx-auto text-center py-12">
+          <p className="text-red-600 dark:text-red-400">{error || 'Failed to load settings'}</p>
+          <button
+            onClick={fetchSettings}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+                Platform Settings
+              </h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Configure global pricing, taxes, commissions, and policies
+              </p>
+            </div>
+            <Link
+              href="/fleet"
+              className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400"
+            >
+              Back to Fleet
+            </Link>
+          </div>
+
+          {settings.meta?.updatedAt && (
+            <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+              Last updated: {new Date(settings.meta.updatedAt).toLocaleString()} by {settings.meta.updatedBy || 'System'}
+            </p>
+          )}
+        </div>
+
+        {/* Messages */}
+        {error && (
+          <div className="mb-4 p-4 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-800 rounded-lg">
+            <p className="text-red-700 dark:text-red-300">{error}</p>
+          </div>
+        )}
+        {successMessage && (
+          <div className="mb-4 p-4 bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-800 rounded-lg">
+            <p className="text-green-700 dark:text-green-300">{successMessage}</p>
+          </div>
+        )}
+
+        {/* Tabs */}
+        <div className="mb-6 border-b border-gray-200 dark:border-gray-700">
+          <nav className="flex space-x-4 overflow-x-auto pb-2">
+            {TABS.map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`px-4 py-2 text-sm font-medium rounded-t-lg whitespace-nowrap transition-colors ${
+                  activeTab === tab.key
+                    ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 border-b-2 border-blue-600'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                <span className="mr-2">{tab.icon}</span>
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+        </div>
+
+        {/* Content */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+
+          {/* Global Tab */}
+          {activeTab === 'global' && (
+            <div className="space-y-6">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Global Settings</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Platform-wide fees for Arizona operations</p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Service Fee Rate (%)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    defaultValue={((settings.global?.serviceFeeRate || 0.15) * 100).toFixed(1)}
+                    onChange={(e) => handleChange('serviceFeeRate', parseFloat(e.target.value) / 100)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Fee charged to guests on top of rental (15%)</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Guest Deposit Discount (%)
+                  </label>
+                  <input
+                    type="number"
+                    step="1"
+                    defaultValue={((settings.insurance?.insuranceDiscountPct || 0.50) * 100).toFixed(0)}
+                    onChange={(e) => handleChange('insuranceDiscountPct', parseFloat(e.target.value) / 100)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Deposit discount when guest has their own insurance (50%)</p>
+                </div>
+              </div>
+
+              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg mt-4">
+                <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-2">Commission Structure (Not Editable Here)</h4>
+                <div className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
+                  <p><strong>Host Type A (Own Car):</strong> 40% no insurance / 75% P2P insurance / 90% commercial</p>
+                  <p><strong>Host Type B (Recruiter):</strong> Platform takes 10% of their referral earnings</p>
+                  <p><strong>Partners:</strong> 25% → 20% → 15% → 10% (based on fleet size)</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Taxes Tab */}
+          {activeTab === 'taxes' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Tax Configuration</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Arizona-based operations (P2P exempt from county surcharges)</p>
+                </div>
+                <button
+                  onClick={() => setShowTaxModal(true)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                >
+                  Add Tax Rate
+                </button>
+              </div>
+
+              <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                <p className="text-sm text-green-800 dark:text-green-200">
+                  <strong>Currently operating in Arizona.</strong> All Arizona city TPT rates are pre-configured.
+                  Tax calculation: City rate → State rate (5.6%) → Default rate.
+                </p>
+              </div>
+
+              <h3 className="text-md font-semibold text-gray-900 dark:text-white mt-6">State Tax Rates</h3>
+              {Object.keys(settings.global?.taxByState || {}).length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {Object.entries(settings.global?.taxByState || {}).map(([state, rate]) => (
+                    <div key={state} className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg flex justify-between items-center">
+                      <div>
+                        <span className="font-medium text-gray-900 dark:text-white">{state}</span>
+                        <span className="ml-2 text-gray-600 dark:text-gray-400">{(Number(rate) * 100).toFixed(2)}%</span>
+                        {state === 'AZ' && <span className="ml-2 text-xs text-green-600 dark:text-green-400">(Active)</span>}
+                      </div>
+                      <button
+                        onClick={() => handleDeleteTaxRate('state', state)}
+                        className="text-red-600 hover:text-red-800 dark:text-red-400 text-sm"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 dark:text-gray-400">No state-specific rates configured.</p>
+              )}
+
+              <h3 className="text-md font-semibold text-gray-900 dark:text-white mt-6">
+                City Tax Rates ({Object.keys(settings.global?.taxByCityOverride || {}).length} cities)
+              </h3>
+              {Object.keys(settings.global?.taxByCityOverride || {}).length > 0 ? (
+                <div className="max-h-96 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg">
+                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">City</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">State</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Total Rate</th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                      {Object.entries(settings.global?.taxByCityOverride || {})
+                        .sort(([a], [b]) => a.localeCompare(b))
+                        .map(([cityKey, rate]) => {
+                          const [city, state] = cityKey.split(',')
+                          return (
+                            <tr key={cityKey}>
+                              <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">{city}</td>
+                              <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{state}</td>
+                              <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">{(Number(rate) * 100).toFixed(2)}%</td>
+                              <td className="px-4 py-3 text-right">
+                                <button
+                                  onClick={() => handleDeleteTaxRate('city', cityKey)}
+                                  className="text-red-600 hover:text-red-800 dark:text-red-400 text-sm"
+                                >
+                                  Remove
+                                </button>
+                              </td>
+                            </tr>
+                          )
+                        })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-gray-500 dark:text-gray-400">No city-specific rates configured.</p>
+              )}
+            </div>
+          )}
+
+          {/* Host Tab */}
+          {activeTab === 'host' && (
+            <div className="space-y-6">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Host Settings</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Standard Payout Delay (days)</label>
+                  <input
+                    type="number"
+                    defaultValue={settings.host?.standardPayoutDelay || 3}
+                    onChange={(e) => handleChange('standardPayoutDelay', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">New Host Payout Delay (days)</label>
+                  <input
+                    type="number"
+                    defaultValue={settings.host?.newHostPayoutDelay || 7}
+                    onChange={(e) => handleChange('newHostPayoutDelay', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Minimum Payout ($)</label>
+                  <input
+                    type="number"
+                    defaultValue={settings.host?.minimumPayout || 50}
+                    onChange={(e) => handleChange('minimumPayout', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Instant Payout Fee (%)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    defaultValue={((settings.host?.instantPayoutFee || 0.015) * 100).toFixed(1)}
+                    onChange={(e) => handleChange('instantPayoutFee', parseFloat(e.target.value) / 100)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Partner Tab */}
+          {activeTab === 'partner' && (
+            <div className="space-y-6">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Partner Commission Settings</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Platform Commission (%)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    defaultValue={((settings.partner?.platformCommission || 0.20) * 100).toFixed(1)}
+                    onChange={(e) => handleChange('platformCommission', parseFloat(e.target.value) / 100)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Platform's base fee from rentals</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Partner Min Commission (%)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    defaultValue={((settings.partner?.partnerMinCommission || 0.05) * 100).toFixed(1)}
+                    onChange={(e) => handleChange('partnerMinCommission', parseFloat(e.target.value) / 100)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Partner Max Commission (%)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    defaultValue={((settings.partner?.partnerMaxCommission || 0.50) * 100).toFixed(1)}
+                    onChange={(e) => handleChange('partnerMaxCommission', parseFloat(e.target.value) / 100)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Guest Tab */}
+          {activeTab === 'guest' && (
+            <div className="space-y-6">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Guest Settings</h2>
+
+              <h3 className="text-md font-semibold text-gray-900 dark:text-white">Bonuses & Referrals</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Guest Signup Bonus ($)</label>
+                  <input
+                    type="number"
+                    defaultValue={settings.guest?.guestSignupBonus || 0}
+                    onChange={(e) => handleChange('guestSignupBonus', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Guest Referral Bonus ($)</label>
+                  <input
+                    type="number"
+                    defaultValue={settings.guest?.guestReferralBonus || 0}
+                    onChange={(e) => handleChange('guestReferralBonus', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bonus Expiration (days)</label>
+                  <input
+                    type="number"
+                    defaultValue={settings.guest?.bonusExpirationDays || 90}
+                    onChange={(e) => handleChange('bonusExpirationDays', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <h3 className="text-md font-semibold text-gray-900 dark:text-white">Cancellation Policy</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">100% Refund (hours before)</label>
+                  <input
+                    type="number"
+                    defaultValue={settings.guest?.fullRefundHours || 72}
+                    onChange={(e) => handleChange('fullRefundHours', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">75% Refund (hours before)</label>
+                  <input
+                    type="number"
+                    defaultValue={settings.guest?.partialRefund75Hours || 24}
+                    onChange={(e) => handleChange('partialRefund75Hours', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">50% Refund (hours before)</label>
+                  <input
+                    type="number"
+                    defaultValue={settings.guest?.partialRefund50Hours || 12}
+                    onChange={(e) => handleChange('partialRefund50Hours', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">No Refund (hours before)</label>
+                  <input
+                    type="number"
+                    defaultValue={settings.guest?.noRefundHours || 12}
+                    onChange={(e) => handleChange('noRefundHours', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Insurance Tab */}
+          {activeTab === 'insurance' && (
+            <div className="space-y-8">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Insurance & Claims Settings</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Configure platform insurance options, host earnings tiers, and claims workflow</p>
+              </div>
+
+              {/* Host Earnings Tiers (Read-only info) */}
+              <div className="p-4 bg-gradient-to-r from-amber-50 to-emerald-50 dark:from-amber-900/20 dark:to-emerald-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-3">Host Earnings Tiers (Based on Insurance)</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border-2 border-gray-300">
+                    <div className="text-3xl font-bold text-gray-600 dark:text-gray-400">40%</div>
+                    <div className="font-semibold text-gray-900 dark:text-white">Platform Insurance</div>
+                    <p className="text-xs text-gray-500 mt-1">Host uses platform-provided insurance. We handle claims.</p>
+                  </div>
+                  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border-2 border-amber-400">
+                    <div className="text-3xl font-bold text-amber-600 dark:text-amber-400">75%</div>
+                    <div className="font-semibold text-gray-900 dark:text-white">P2P Insurance</div>
+                    <p className="text-xs text-gray-500 mt-1">Host has peer-to-peer coverage. Their policy is primary.</p>
+                  </div>
+                  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border-2 border-emerald-500">
+                    <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">90%</div>
+                    <div className="font-semibold text-gray-900 dark:text-white">Commercial Insurance</div>
+                    <p className="text-xs text-gray-500 mt-1">Host has commercial policy. Priority claims processing.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Platform Insurance for Guests */}
+              <div>
+                <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-3">Platform Insurance (For Guests)</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Guests can purchase insurance add-ons when booking</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Basic Insurance ($/day)</label>
+                    <input
+                      type="number"
+                      defaultValue={settings.insurance?.basicInsuranceDaily || 15}
+                      onChange={(e) => handleChange('basicInsuranceDaily', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Covers minor damage up to ${settings.global?.minorDamageMax || 250}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Premium Insurance ($/day)</label>
+                    <input
+                      type="number"
+                      defaultValue={settings.insurance?.premiumInsuranceDaily || 25}
+                      onChange={(e) => handleChange('premiumInsuranceDaily', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Full coverage including liability, $0 deductible</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Guest Insurance Rules */}
+              <div>
+                <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-3">Guest Insurance Rules</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Deposit Discount with Own Insurance (%)</label>
+                    <input
+                      type="number"
+                      step="1"
+                      defaultValue={((settings.insurance?.insuranceDiscountPct || 0.50) * 100).toFixed(0)}
+                      onChange={(e) => handleChange('insuranceDiscountPct', parseFloat(e.target.value) / 100)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Guests bringing their own insurance get reduced deposit</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Require Insurance Under 25</label>
+                    <select
+                      defaultValue={settings.insurance?.insuranceRequiredUnder25 !== false ? 'true' : 'false'}
+                      onChange={(e) => handleChange('insuranceRequiredUnder25', e.target.value === 'true')}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      <option value="true">Yes - Must purchase insurance</option>
+                      <option value="false">No - Optional</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Claims Workflow */}
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+                <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-3">Claims Workflow</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">How the system processes damage claims</p>
+
+                <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-6">
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-4">
+                      <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-sm shrink-0">1</div>
+                      <div>
+                        <div className="font-medium text-gray-900 dark:text-white">Trip Ends - Issue Detected</div>
+                        <p className="text-sm text-gray-500">Host/Guest reports damage via app. Photos captured automatically. TripIssue record created.</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-4">
+                      <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900 flex items-center justify-center text-amber-600 dark:text-amber-400 font-bold text-sm shrink-0">2</div>
+                      <div>
+                        <div className="font-medium text-gray-900 dark:text-white">Severity Assessment</div>
+                        <p className="text-sm text-gray-500">
+                          <strong>Minor</strong> (≤${settings.global?.minorDamageMax || 250}): Charged to guest deposit.
+                          <strong>Moderate</strong> (≤${settings.global?.moderateDamageMax || 500}): Review required.
+                          <strong>Major</strong> (≥${settings.global?.majorDamageMin || 1000}): Full claim filed.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-4">
+                      <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center text-purple-600 dark:text-purple-400 font-bold text-sm shrink-0">3</div>
+                      <div>
+                        <div className="font-medium text-gray-900 dark:text-white">Insurance Determination</div>
+                        <p className="text-sm text-gray-500">
+                          <strong>Host at 40% tier:</strong> Platform insurance handles claim.
+                          <strong>Host at 75%/90%:</strong> Claim goes to host&apos;s insurer first, platform as backup.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-4">
+                      <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center text-green-600 dark:text-green-400 font-bold text-sm shrink-0">4</div>
+                      <div>
+                        <div className="font-medium text-gray-900 dark:text-white">Claim Resolution</div>
+                        <p className="text-sm text-gray-500">
+                          Guest deposit released/charged. If claim exceeds deposit, remainder charged to guest payment method or sent to collections.
+                          Vehicle deactivated until repairs confirmed.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-4">
+                      <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold text-sm shrink-0">5</div>
+                      <div>
+                        <div className="font-medium text-gray-900 dark:text-white">Payout Adjustment</div>
+                        <p className="text-sm text-gray-500">
+                          Host payout held until claim resolved. If host at fault, earnings reduced. If guest at fault, host receives full earnings + damage compensation.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Damage Thresholds */}
+              <div>
+                <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-3">Damage Thresholds</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Determines claim severity and processing route</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Minor Damage Max ($)</label>
+                    <input
+                      type="number"
+                      defaultValue={settings.global?.minorDamageMax || 250}
+                      onChange={(e) => handleChange('minorDamageMax', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Auto-charged to deposit</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Moderate Damage Max ($)</label>
+                    <input
+                      type="number"
+                      defaultValue={settings.global?.moderateDamageMax || 500}
+                      onChange={(e) => handleChange('moderateDamageMax', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Requires Fleet review</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Major Damage Min ($)</label>
+                    <input
+                      type="number"
+                      defaultValue={settings.global?.majorDamageMin || 1000}
+                      onChange={(e) => handleChange('majorDamageMin', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Full insurance claim filed</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Deposits Tab */}
+          {activeTab === 'deposits' && (
+            <div className="space-y-6">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Deposit Settings</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Default Deposit (%)</label>
+                  <input
+                    type="number"
+                    step="1"
+                    defaultValue={((settings.deposits?.defaultDepositPercent || 0.25) * 100).toFixed(0)}
+                    onChange={(e) => handleChange('defaultDepositPercent', parseFloat(e.target.value) / 100)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Minimum Deposit ($)</label>
+                  <input
+                    type="number"
+                    defaultValue={settings.deposits?.minDeposit || 200}
+                    onChange={(e) => handleChange('minDeposit', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Maximum Deposit ($)</label>
+                  <input
+                    type="number"
+                    defaultValue={settings.deposits?.maxDeposit || 2500}
+                    onChange={(e) => handleChange('maxDeposit', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Luxury Deposit ($)</label>
+                  <input
+                    type="number"
+                    defaultValue={settings.deposits?.luxuryDeposit || 1000}
+                    onChange={(e) => handleChange('luxuryDeposit', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">For luxury vehicles</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Exotic Deposit ($)</label>
+                  <input
+                    type="number"
+                    defaultValue={settings.deposits?.exoticDeposit || 2500}
+                    onChange={(e) => handleChange('exoticDeposit', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">For exotic vehicles</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Trip Charges Tab */}
+          {activeTab === 'tripCharges' && (
+            <div className="space-y-6">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Trip Charge Rates</h2>
+
+              <h3 className="text-md font-semibold text-gray-900 dark:text-white">Mileage</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Daily Included Miles</label>
+                  <input
+                    type="number"
+                    defaultValue={settings.tripCharges?.dailyIncludedMiles || 200}
+                    onChange={(e) => handleChange('dailyIncludedMiles', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Overage Rate ($/mile)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    defaultValue={settings.tripCharges?.mileageOverageRate || 0.45}
+                    onChange={(e) => handleChange('mileageOverageRate', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <h3 className="text-md font-semibold text-gray-900 dark:text-white">Fuel</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Quarter Tank ($)</label>
+                  <input
+                    type="number"
+                    defaultValue={settings.tripCharges?.fuelRefillRateQuarter || 75}
+                    onChange={(e) => handleChange('fuelRefillRateQuarter', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Full Tank ($)</label>
+                  <input
+                    type="number"
+                    defaultValue={settings.tripCharges?.fuelRefillRateFull || 300}
+                    onChange={(e) => handleChange('fuelRefillRateFull', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <h3 className="text-md font-semibold text-gray-900 dark:text-white">Late Fees</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Grace Period (min)</label>
+                  <input
+                    type="number"
+                    defaultValue={settings.tripCharges?.lateReturnGraceMinutes || 30}
+                    onChange={(e) => handleChange('lateReturnGraceMinutes', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Hourly Rate ($)</label>
+                  <input
+                    type="number"
+                    defaultValue={settings.tripCharges?.lateReturnHourlyRate || 50}
+                    onChange={(e) => handleChange('lateReturnHourlyRate', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Daily Max ($)</label>
+                  <input
+                    type="number"
+                    defaultValue={settings.tripCharges?.lateReturnDailyMax || 300}
+                    onChange={(e) => handleChange('lateReturnDailyMax', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <h3 className="text-md font-semibold text-gray-900 dark:text-white">Cleaning Fees</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Standard ($)</label>
+                  <input
+                    type="number"
+                    defaultValue={settings.tripCharges?.cleaningFeeStandard || 50}
+                    onChange={(e) => handleChange('cleaningFeeStandard', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Deep ($)</label>
+                  <input
+                    type="number"
+                    defaultValue={settings.tripCharges?.cleaningFeeDeep || 150}
+                    onChange={(e) => handleChange('cleaningFeeDeep', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Biohazard ($)</label>
+                  <input
+                    type="number"
+                    defaultValue={settings.tripCharges?.cleaningFeeBiohazard || 500}
+                    onChange={(e) => handleChange('cleaningFeeBiohazard', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <h3 className="text-md font-semibold text-gray-900 dark:text-white">Other Fees</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">No-Show ($)</label>
+                  <input
+                    type="number"
+                    defaultValue={settings.tripCharges?.noShowFee || 50}
+                    onChange={(e) => handleChange('noShowFee', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Smoking ($)</label>
+                  <input
+                    type="number"
+                    defaultValue={settings.tripCharges?.smokingFee || 250}
+                    onChange={(e) => handleChange('smokingFee', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Pet Hair ($)</label>
+                  <input
+                    type="number"
+                    defaultValue={settings.tripCharges?.petHairFee || 75}
+                    onChange={(e) => handleChange('petHairFee', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Lost Key ($)</label>
+                  <input
+                    type="number"
+                    defaultValue={settings.tripCharges?.lostKeyFee || 200}
+                    onChange={(e) => handleChange('lostKeyFee', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Save Button */}
+          {Object.keys(pendingChanges).length > 0 && (
+            <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {Object.keys(pendingChanges).length} unsaved change(s)
+              </p>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setPendingChanges({})}
+                  className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Tax Modal */}
+        {showTaxModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Add Tax Rate</h3>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type</label>
+                  <select
+                    value={taxModalData.action}
+                    onChange={(e) => setTaxModalData({ ...taxModalData, action: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  >
+                    <option value="set_state">State Tax Rate</option>
+                    <option value="set_city">City Tax Override</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">State</label>
+                  <select
+                    value={taxModalData.state}
+                    onChange={(e) => setTaxModalData({ ...taxModalData, state: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  >
+                    <option value="">Select state...</option>
+                    {US_STATES.map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {taxModalData.action === 'set_city' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">City</label>
+                    <input
+                      type="text"
+                      value={taxModalData.city}
+                      onChange={(e) => setTaxModalData({ ...taxModalData, city: e.target.value })}
+                      placeholder="e.g., Phoenix"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tax Rate (%)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={taxModalData.rate}
+                    onChange={(e) => setTaxModalData({ ...taxModalData, rate: e.target.value })}
+                    placeholder="e.g., 5.6"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end gap-4">
+                <button
+                  onClick={() => setShowTaxModal(false)}
+                  className="px-4 py-2 text-gray-600 dark:text-gray-400"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleTaxUpdate}
+                  disabled={saving || !taxModalData.state || !taxModalData.rate}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {saving ? 'Saving...' : 'Add Tax Rate'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

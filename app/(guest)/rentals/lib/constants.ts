@@ -55,9 +55,9 @@ export const PRICING_CONFIG = {
   FREE_DELIVERY_RADIUS_MILES: 10,
   
   // Taxes (Arizona) - Use getTaxRate() from arizona-taxes.ts for city-specific rates
-  // These are fallback values only - always prefer city-specific calculation
-  TAX_RATE: 0.084, // ~8.4% Phoenix default (5.6% state + 2.8% city)
-  RENTAL_TAX_RATE: 0.084, // Same as TAX_RATE - no special rental surcharge for P2P
+  // Always use city-specific rates from PlatformSettings in production
+  TAX_RATE: 0.084, // Phoenix fallback (5.6% state + 2.8% city) - most common location
+  RENTAL_TAX_RATE: 0.084, // Same as TAX_RATE - P2P exempt from county surcharges
 } as const
 
 // ============================================================================

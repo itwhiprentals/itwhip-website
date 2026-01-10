@@ -13,6 +13,7 @@ import PartnerPolicies from '../components/PartnerPolicies'
 import FAQAccordion from '../components/FAQAccordion'
 import PartnerVehicleGrid from './PartnerVehicleGrid'
 import Footer from '@/app/components/Footer'
+import Header from '@/app/components/Header'
 
 interface PageProps {
   params: Promise<{ partnerSlug: string }>
@@ -290,6 +291,9 @@ export default async function PartnerLandingPage({ params, searchParams }: PageP
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
+      {/* Main Site Header */}
+      <Header />
+
       {/* Fleet Preview Banner - Only shown to fleet admins previewing unapproved partners */}
       {isFleetPreview && isPendingApproval && (
         <div className="bg-purple-600 text-white px-4 py-3 text-center">
@@ -310,20 +314,20 @@ export default async function PartnerLandingPage({ params, searchParams }: PageP
         </div>
       )}
 
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        {/* Breadcrumb */}
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-16 sm:pt-20">
+        {/* Breadcrumb - Visible on all devices */}
         <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-            <nav className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-              <Link href="/" className="hover:text-gray-700 dark:hover:text-gray-300">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 sm:py-3">
+            <nav className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+              <Link href="/" className="hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
                 Home
               </Link>
-              <span>/</span>
-              <Link href="/rideshare" className="hover:text-gray-700 dark:hover:text-gray-300">
+              <span className="text-gray-300 dark:text-gray-600">/</span>
+              <Link href="/rideshare" className="hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
                 Rideshare
               </Link>
-              <span>/</span>
-              <span className="text-gray-900 dark:text-white">{companyName}</span>
+              <span className="text-gray-300 dark:text-gray-600">/</span>
+              <span className="text-gray-900 dark:text-white font-medium truncate max-w-[150px] sm:max-w-none">{companyName}</span>
             </nav>
           </div>
         </div>

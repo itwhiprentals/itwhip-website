@@ -149,6 +149,24 @@ function InternalLayoutContent({
                   >
                     Partners
                   </Link>
+                  <Link
+                    href="/fleet/refunds"
+                    className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                  >
+                    Refunds
+                  </Link>
+                  <Link
+                    href="/fleet/claims"
+                    className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                  >
+                    Claims
+                  </Link>
+                  <Link
+                    href="/fleet/settings"
+                    className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                  >
+                    Settings
+                  </Link>
                 </nav>
                 
                 <div className="border-l border-gray-300 dark:border-gray-700 pl-6 flex items-center gap-4">
@@ -221,6 +239,27 @@ function InternalLayoutContent({
                     className="px-3 py-2 rounded-md text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
                   >
                     Partners
+                  </Link>
+                  <Link
+                    href="/fleet/refunds"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-3 py-2 rounded-md text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                  >
+                    Refunds
+                  </Link>
+                  <Link
+                    href="/fleet/claims"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-3 py-2 rounded-md text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                  >
+                    Claims
+                  </Link>
+                  <Link
+                    href="/fleet/settings"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-3 py-2 rounded-md text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                  >
+                    Settings
                   </Link>
                   <button
                     onClick={() => {

@@ -37,7 +37,8 @@ import {
   IoCloseOutline,
   IoSpeedometerOutline,
   IoLocationOutline,
-  IoStar
+  IoStar,
+  IoReturnDownBackOutline
 } from 'react-icons/io5'
 
 interface Partner {
@@ -831,6 +832,14 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ id: st
               >
                 <IoEyeOutline className="w-4 h-4" />
                 View Dashboard
+              </Link>
+              {/* View refund requests for this partner */}
+              <Link
+                href={`/fleet/refunds?key=${apiKey}&partnerId=${partner.id}`}
+                className="flex items-center justify-center gap-2 px-4 py-3 sm:py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-sm font-medium transition-colors min-h-[44px] sm:min-h-0"
+              >
+                <IoReturnDownBackOutline className="w-4 h-4" />
+                Refunds
               </Link>
             </div>
           </div>

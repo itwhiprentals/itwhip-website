@@ -334,42 +334,42 @@ export default function PartnerHero({
           )}
 
           {/* Stats Cards - Single Row */}
-          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 pb-2">
+          <div className="flex items-center justify-center gap-2 sm:gap-4 pb-2">
             {/* Vehicles */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg px-4 py-2.5 text-center shadow-sm border border-gray-200 dark:border-gray-700 min-w-[100px]">
-              <div className="flex items-center justify-center gap-1.5">
-                <IoCarOutline className="w-4 h-4 text-orange-500" />
-                <p className="text-lg font-bold text-gray-900 dark:text-white">{stats.fleetSize}</p>
+            <div className="bg-white dark:bg-gray-800 rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 text-center shadow-sm border border-gray-200 dark:border-gray-700 flex-shrink-0">
+              <div className="flex items-center justify-center gap-1">
+                <IoCarOutline className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-orange-500" />
+                <p className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">{stats.fleetSize}</p>
               </div>
               <p className="text-[10px] text-gray-500 dark:text-gray-400">Vehicles</p>
             </div>
             {/* Rating */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg px-4 py-2.5 text-center shadow-sm border border-gray-200 dark:border-gray-700 min-w-[100px]">
-              <div className="flex items-center justify-center gap-1.5">
-                <IoStarOutline className="w-4 h-4 text-amber-500" />
+            <div className="bg-white dark:bg-gray-800 rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 text-center shadow-sm border border-gray-200 dark:border-gray-700 flex-shrink-0">
+              <div className="flex items-center justify-center gap-1">
+                <IoStarOutline className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-amber-500" />
                 {stats.avgRating > 0 ? (
-                  <p className="text-lg font-bold text-gray-900 dark:text-white">{stats.avgRating.toFixed(1)}</p>
+                  <p className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">{stats.avgRating.toFixed(1)}</p>
                 ) : (
-                  <p className="text-base font-bold text-blue-600 dark:text-blue-400">New</p>
+                  <p className="text-sm sm:text-base font-bold text-blue-600 dark:text-blue-400">New</p>
                 )}
               </div>
-              <p className="text-[10px] text-gray-500 dark:text-gray-400">{stats.avgRating > 0 ? 'Rating' : 'No reviews'}</p>
+              <p className="text-[10px] text-gray-500 dark:text-gray-400 whitespace-nowrap">{stats.avgRating > 0 ? 'Rating' : 'No reviews'}</p>
             </div>
             {/* Trips */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg px-4 py-2.5 text-center shadow-sm border border-gray-200 dark:border-gray-700 min-w-[100px]">
-              <div className="flex items-center justify-center gap-1.5">
-                <IoNavigateOutline className="w-4 h-4 text-blue-500" />
-                <p className="text-lg font-bold text-gray-900 dark:text-white">
+            <div className="bg-white dark:bg-gray-800 rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 text-center shadow-sm border border-gray-200 dark:border-gray-700 flex-shrink-0">
+              <div className="flex items-center justify-center gap-1">
+                <IoNavigateOutline className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-blue-500" />
+                <p className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
                   {stats.totalTrips > 0 ? stats.totalTrips.toLocaleString() : '0'}
                 </p>
               </div>
               <p className="text-[10px] text-gray-500 dark:text-gray-400">Trips</p>
             </div>
             {/* Price Range */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg px-4 py-2.5 text-center shadow-sm border border-gray-200 dark:border-gray-700 min-w-[100px]">
-              <div className="flex items-center justify-center gap-1.5">
-                <IoCashOutline className="w-4 h-4 text-green-500" />
-                <p className="text-base font-bold text-gray-900 dark:text-white">
+            <div className="bg-white dark:bg-gray-800 rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 text-center shadow-sm border border-gray-200 dark:border-gray-700 flex-shrink-0">
+              <div className="flex items-center justify-center gap-1">
+                <IoCashOutline className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-green-500" />
+                <p className="text-sm sm:text-base font-bold text-gray-900 dark:text-white whitespace-nowrap">
                   ${stats.priceRange.min || 0}-${stats.priceRange.max || 0}
                 </p>
               </div>

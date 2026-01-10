@@ -1,5 +1,9 @@
 // app/(guest)/rentals/lib/pricing.ts
 // Pricing calculations for the rental system
+//
+// NOTE: This file supports optional PlatformSettings for configurable rates.
+// When platformSettings is provided, it uses database-configured values.
+// When not provided, it falls back to PRICING_CONFIG defaults for backward compatibility.
 
 import {
   PricingCalculation,
@@ -11,6 +15,13 @@ import {
 import { PRICING_CONFIG, CAR_TYPES, DELIVERY_OPTIONS } from './constants'
 import { differenceInDays, differenceInHours } from 'date-fns'
 import { getTaxRate } from './arizona-taxes'
+import type { PlatformSettings, PricingSnapshot } from '@/app/lib/settings/platform-settings'
+
+// Type for optional platform settings in pricing functions
+export interface PricingOptions {
+  platformSettings?: Partial<PlatformSettings>
+  pricingSnapshot?: PricingSnapshot
+}
 
 // ============================================================================
 // MAIN PRICING CALCULATOR
@@ -31,7 +42,20 @@ export function calculateRentalPrice(params: {
   weeklyRate?: number
   monthlyRate?: number
   city?: string  // For city-specific tax rate
+  state?: string // For state tax rate
+  pricingOptions?: PricingOptions // Optional platform settings
 }): PricingCalculation {
+  // Get effective rates (from settings if provided, otherwise defaults)
+  const settings = params.pricingOptions?.platformSettings
+  const snapshot = params.pricingOptions?.pricingSnapshot
+
+  const SERVICE_FEE_PERCENTAGE = snapshot?.serviceFeeRate ?? settings?.serviceFeeRate ?? PRICING_CONFIG.SERVICE_FEE_PERCENTAGE
+  const BASIC_INSURANCE_DAILY = snapshot?.basicInsuranceDaily ?? settings?.basicInsuranceDaily ?? PRICING_CONFIG.BASIC_INSURANCE_DAILY
+  const PREMIUM_INSURANCE_DAILY = snapshot?.premiumInsuranceDaily ?? settings?.premiumInsuranceDaily ?? PRICING_CONFIG.PREMIUM_INSURANCE_DAILY
+  const INSURANCE_REQUIRED_UNDER_AGE = settings?.insuranceRequiredUnder25 ? 25 : PRICING_CONFIG.INSURANCE_REQUIRED_UNDER_AGE
+  const DEFAULT_DEPOSIT = snapshot?.minDeposit ?? settings?.minDeposit ?? PRICING_CONFIG.DEFAULT_DEPOSIT
+  const LUXURY_DEPOSIT = snapshot?.luxuryDeposit ?? settings?.luxuryDeposit ?? PRICING_CONFIG.LUXURY_DEPOSIT
+  const EXOTIC_DEPOSIT = snapshot?.exoticDeposit ?? settings?.exoticDeposit ?? PRICING_CONFIG.EXOTIC_DEPOSIT
   const start = new Date(params.startDate)
   const end = new Date(params.endDate)
   
@@ -110,12 +134,12 @@ export function calculateRentalPrice(params: {
   // Calculate insurance
   let insuranceDaily = 0
   let insuranceTotal = 0
-  
-  if (params.includeInsurance || 
-      (params.driverAge && params.driverAge < PRICING_CONFIG.INSURANCE_REQUIRED_UNDER_AGE)) {
-    insuranceDaily = params.insuranceType === 'premium' 
-      ? PRICING_CONFIG.PREMIUM_INSURANCE_DAILY 
-      : PRICING_CONFIG.BASIC_INSURANCE_DAILY
+
+  if (params.includeInsurance ||
+      (params.driverAge && params.driverAge < INSURANCE_REQUIRED_UNDER_AGE)) {
+    insuranceDaily = params.insuranceType === 'premium'
+      ? PREMIUM_INSURANCE_DAILY
+      : BASIC_INSURANCE_DAILY
     insuranceTotal = insuranceDaily * chargeableDays
   }
 
@@ -126,21 +150,34 @@ export function calculateRentalPrice(params: {
     basePrice += amadeusMarkup
   }
 
-  // Calculate service fee
-  const serviceFeePercentage = PRICING_CONFIG.SERVICE_FEE_PERCENTAGE
+  // Calculate service fee using configurable rate
+  const serviceFeePercentage = SERVICE_FEE_PERCENTAGE
   const subtotal = basePrice + deliveryFee + insuranceTotal
   const serviceFeeAmount = subtotal * serviceFeePercentage
 
-  // Calculate tax using city-specific rate
+  // Calculate tax using city-specific rate or snapshot rate
   const totalBeforeTax = subtotal + serviceFeeAmount
-  const { rate: taxRate } = getTaxRate(params.city || 'phoenix')
+  let taxRate: number
+  if (snapshot?.effectiveTaxRate !== undefined) {
+    taxRate = snapshot.effectiveTaxRate
+  } else {
+    const taxInfo = getTaxRate(params.city || 'phoenix')
+    taxRate = taxInfo.rate
+  }
   const taxAmount = Math.round(totalBeforeTax * taxRate * 100) / 100
 
   // Calculate total
   const totalAmount = totalBeforeTax + taxAmount
 
-  // Determine deposit amount based on car type
-  const deposit = CAR_TYPES[params.carType]?.deposit || PRICING_CONFIG.DEFAULT_DEPOSIT
+  // Determine deposit amount based on car type using configurable values
+  let deposit: number
+  if (params.carType === 'exotic') {
+    deposit = EXOTIC_DEPOSIT
+  } else if (params.carType === 'luxury' || params.carType === 'convertible') {
+    deposit = LUXURY_DEPOSIT
+  } else {
+    deposit = CAR_TYPES[params.carType]?.deposit || DEFAULT_DEPOSIT
+  }
 
   return {
     basePrice,
@@ -174,10 +211,13 @@ export function calculatePricing(params: {
   deliveryFee?: number
   insuranceDaily?: number
   city?: string  // For city-specific tax rate
+  pricingOptions?: PricingOptions // Optional platform settings
 }): {
   subtotal: number
   serviceFee: number
+  serviceFeeRate: number
   taxes: number
+  taxRate: number
   insurance: number
   delivery: number
   total: number
@@ -185,14 +225,19 @@ export function calculatePricing(params: {
   discount: number
   discountPercent: number
 } {
+  // Get effective rates (from settings if provided, otherwise defaults)
+  const settings = params.pricingOptions?.platformSettings
+  const snapshot = params.pricingOptions?.pricingSnapshot
+  const SERVICE_FEE_RATE = snapshot?.serviceFeeRate ?? settings?.serviceFeeRate ?? PRICING_CONFIG.SERVICE_FEE_PERCENTAGE
+
   // Calculate number of days
   const days = Math.max(1, Math.ceil((params.endDate.getTime() - params.startDate.getTime()) / (1000 * 60 * 60 * 24)))
-  
+
   // Calculate base rental cost
   let subtotal = params.dailyRate * days
   let discount = 0
   let discountPercent = 0
-  
+
   // Apply weekly or monthly discounts
   if (days >= 30 && params.monthlyDiscount) {
     discountPercent = params.monthlyDiscount
@@ -203,22 +248,31 @@ export function calculatePricing(params: {
     discount = subtotal * (params.weeklyDiscount / 100)
     subtotal = subtotal - discount
   }
-  
+
   // Calculate additional fees
   const insurance = params.insuranceDaily ? params.insuranceDaily * days : 0
   const delivery = params.deliveryFee || 0
-  const serviceFee = subtotal * 0.15 // 15% service fee
-  // Use city-specific tax rate (defaults to Phoenix ~8.4%)
-  const { rate: taxRate } = getTaxRate(params.city || 'phoenix')
+  const serviceFee = subtotal * SERVICE_FEE_RATE
+
+  // Use city-specific tax rate or snapshot rate
+  let taxRate: number
+  if (snapshot?.effectiveTaxRate !== undefined) {
+    taxRate = snapshot.effectiveTaxRate
+  } else {
+    const taxInfo = getTaxRate(params.city || 'phoenix')
+    taxRate = taxInfo.rate
+  }
   const taxes = Math.round((subtotal + serviceFee) * taxRate * 100) / 100
-  
+
   // Calculate total
   const total = subtotal + serviceFee + taxes + insurance + delivery
-  
+
   return {
     subtotal,
     serviceFee,
+    serviceFeeRate: SERVICE_FEE_RATE,
     taxes,
+    taxRate,
     insurance,
     delivery,
     total,
@@ -263,8 +317,15 @@ export function estimatePrice(
   numberOfDays: number,
   carType: CarType = 'midsize',
   includeInsurance: boolean = false,
-  city?: string  // For city-specific tax rate
+  city?: string,  // For city-specific tax rate
+  pricingOptions?: PricingOptions
 ): number {
+  // Get effective rates (from settings if provided, otherwise defaults)
+  const settings = pricingOptions?.platformSettings
+  const snapshot = pricingOptions?.pricingSnapshot
+  const SERVICE_FEE_RATE = snapshot?.serviceFeeRate ?? settings?.serviceFeeRate ?? PRICING_CONFIG.SERVICE_FEE_PERCENTAGE
+  const BASIC_INSURANCE_DAILY = snapshot?.basicInsuranceDaily ?? settings?.basicInsuranceDaily ?? PRICING_CONFIG.BASIC_INSURANCE_DAILY
+
   let price = dailyRate * numberOfDays
 
   // Apply discounts
@@ -276,14 +337,20 @@ export function estimatePrice(
 
   // Add insurance if included
   if (includeInsurance) {
-    price += PRICING_CONFIG.BASIC_INSURANCE_DAILY * numberOfDays
+    price += BASIC_INSURANCE_DAILY * numberOfDays
   }
 
   // Add service fee
-  price *= (1 + PRICING_CONFIG.SERVICE_FEE_PERCENTAGE)
+  price *= (1 + SERVICE_FEE_RATE)
 
-  // Add tax using city-specific rate
-  const { rate: taxRate } = getTaxRate(city || 'phoenix')
+  // Add tax using city-specific rate or snapshot rate
+  let taxRate: number
+  if (snapshot?.effectiveTaxRate !== undefined) {
+    taxRate = snapshot.effectiveTaxRate
+  } else {
+    const taxInfo = getTaxRate(city || 'phoenix')
+    taxRate = taxInfo.rate
+  }
   price *= (1 + taxRate)
 
   return Math.round(price * 100) / 100
@@ -299,24 +366,39 @@ export function calculateHostEarnings(params: {
   numberOfDays: number
   source: CarSource
   city?: string  // For city-specific tax rate
+  pricingOptions?: PricingOptions
 }): {
   grossEarnings: number
   platformFee: number
+  platformFeeRate: number
   netEarnings: number
   earningsPerDay: number
 } {
+  // Get effective rates (from settings if provided, otherwise defaults)
+  const settings = params.pricingOptions?.platformSettings
+  const snapshot = params.pricingOptions?.pricingSnapshot
+  const PLATFORM_COMMISSION = snapshot?.platformCommission ?? settings?.platformCommission ?? PRICING_CONFIG.PLATFORM_COMMISSION
+
   // Remove service fee and tax from total to get base amount
   const baseAmount = params.totalAmount - params.serviceFee
-  const { rate: taxRate } = getTaxRate(params.city || 'phoenix')
+
+  // Get effective tax rate
+  let taxRate: number
+  if (snapshot?.effectiveTaxRate !== undefined) {
+    taxRate = snapshot.effectiveTaxRate
+  } else {
+    const taxInfo = getTaxRate(params.city || 'phoenix')
+    taxRate = taxInfo.rate
+  }
   const taxAmount = baseAmount * taxRate
   const grossEarnings = baseAmount - taxAmount
 
   // Calculate platform fee based on source
   let platformFeeRate = 0
   if (params.source === 'p2p') {
-    platformFeeRate = PRICING_CONFIG.PLATFORM_COMMISSION
+    platformFeeRate = PLATFORM_COMMISSION
   } else if (params.source === 'partner') {
-    platformFeeRate = 0.15 // Lower fee for partners
+    platformFeeRate = 0.15 // Lower fee for partners (could also be configurable)
   }
   // Amadeus cars don't pay host earnings (we keep all markup)
 
@@ -327,6 +409,7 @@ export function calculateHostEarnings(params: {
   return {
     grossEarnings: Math.round(grossEarnings * 100) / 100,
     platformFee: Math.round(platformFee * 100) / 100,
+    platformFeeRate,
     netEarnings: Math.round(netEarnings * 100) / 100,
     earningsPerDay: Math.round(earningsPerDay * 100) / 100
   }
