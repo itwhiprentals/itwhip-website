@@ -3,6 +3,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { verifyRequest } from '@/app/lib/auth/verify-request'
 import { prisma } from '@/app/lib/database/prisma'
 import { checkAccountHold } from '@/app/lib/claims/account-hold'
+import Stripe from 'stripe'
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2025-08-27.basil'
+})
 
 /**
  * Unified Dashboard API
@@ -97,7 +102,16 @@ export async function GET(request: NextRequest) {
           totalTrips: true,
           averageRating: true,
           loyaltyPoints: true,
-          memberTier: true
+          memberTier: true,
+          // ✅ Financial balances for dashboard stats
+          depositWalletBalance: true,
+          creditBalance: true,
+          bonusBalance: true,
+          // ✅ Stripe Identity verification
+          stripeIdentityStatus: true,
+          stripeIdentityVerifiedAt: true,
+          // ✅ Stripe Customer ID for payment methods
+          stripeCustomerId: true
         }
       }),
 
@@ -308,8 +322,56 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // ========== FETCH DEFAULT PAYMENT METHOD FROM STRIPE ==========
+    let defaultPaymentInfo: {
+      last4: string | null
+      brand: string | null
+      expMonth: number | null
+      expYear: number | null
+    } | null = null
+
+    if (reviewerProfile?.stripeCustomerId) {
+      try {
+        const customer = await stripe.customers.retrieve(reviewerProfile.stripeCustomerId) as Stripe.Customer
+
+        if (customer && !customer.deleted && customer.invoice_settings?.default_payment_method) {
+          const defaultPmId = customer.invoice_settings.default_payment_method as string
+          const pm = await stripe.paymentMethods.retrieve(defaultPmId)
+
+          if (pm.card) {
+            defaultPaymentInfo = {
+              last4: pm.card.last4,
+              brand: pm.card.brand,
+              expMonth: pm.card.exp_month,
+              expYear: pm.card.exp_year
+            }
+          }
+        } else if (customer && !customer.deleted) {
+          // No default set, try to get the first card
+          const paymentMethodsList = await stripe.paymentMethods.list({
+            customer: reviewerProfile.stripeCustomerId,
+            type: 'card',
+            limit: 1
+          })
+
+          if (paymentMethodsList.data.length > 0 && paymentMethodsList.data[0].card) {
+            const card = paymentMethodsList.data[0].card
+            defaultPaymentInfo = {
+              last4: card.last4,
+              brand: card.brand,
+              expMonth: card.exp_month,
+              expYear: card.exp_year
+            }
+          }
+        }
+      } catch (stripeError) {
+        console.warn('[DASHBOARD API] Failed to fetch Stripe payment method:', stripeError)
+        // Don't fail the whole request, just skip payment info
+      }
+    }
+
     // ========== PROCESS & CALCULATE STATS ==========
-    
+
     // Calculate booking stats from grouped data
     const statusCounts = bookingStats.reduce((acc, stat) => {
       acc[stat.status] = stat._count.id
@@ -427,10 +489,19 @@ export async function GET(request: NextRequest) {
         // ✅ NEW: Document verification fields for VerificationAlert
         emailVerified: reviewerProfile?.emailVerified || false,
         phoneVerified: reviewerProfile?.phoneVerified || false,
-        phoneNumber: reviewerProfile?.phoneNumber || userProfile?.phone || null,  // ✅ FIXED: Include phone number for verification check
+        phoneNumber: reviewerProfile?.phoneNumber || userProfile?.phone || null,
         documentsVerified: reviewerProfile?.documentsVerified || false,
         driversLicenseUrl: reviewerProfile?.driversLicenseUrl || null,
-        selfieUrl: reviewerProfile?.selfieUrl || null
+        selfieUrl: reviewerProfile?.selfieUrl || null,
+
+        // ✅ Stripe Identity verification fields
+        stripeIdentityStatus: reviewerProfile?.stripeIdentityStatus || null,
+        stripeIdentityVerifiedAt: reviewerProfile?.stripeIdentityVerifiedAt || null,
+
+        // ✅ Financial balances
+        depositWalletBalance: reviewerProfile?.depositWalletBalance || 0,
+        creditBalance: reviewerProfile?.creditBalance || 0,
+        bonusBalance: reviewerProfile?.bonusBalance || 0
       },
 
       // Bookings
@@ -493,6 +564,21 @@ export async function GET(request: NextRequest) {
         isDefault: pm.isDefault,
         isVerified: pm.isVerified
       })),
+
+      // ✅ Default payment info from Stripe (for dashboard stat display)
+      paymentInfo: defaultPaymentInfo ? {
+        hasCard: true,
+        last4: defaultPaymentInfo.last4,
+        brand: defaultPaymentInfo.brand,
+        expiry: defaultPaymentInfo.expMonth && defaultPaymentInfo.expYear
+          ? `${defaultPaymentInfo.expMonth}/${defaultPaymentInfo.expYear}`
+          : null
+      } : {
+        hasCard: false,
+        last4: null,
+        brand: null,
+        expiry: null
+      },
 
       // Claims data
       claims: {

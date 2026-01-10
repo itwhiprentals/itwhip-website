@@ -8,7 +8,9 @@ import {
   IoWalletOutline,
   IoGiftOutline,
   IoChevronForwardOutline,
-  IoShieldCheckmarkOutline
+  IoShieldCheckmarkOutline,
+  IoLockClosedOutline,
+  IoAlertCircleOutline
 } from 'react-icons/io5'
 
 interface WalletData {
@@ -16,6 +18,8 @@ interface WalletData {
   creditBalance: number
   bonusBalance: number
   paymentMethodCount: number
+  isVerified: boolean
+  stripeIdentityStatus: string | null
 }
 
 export default function PaymentMethodsTab() {
@@ -42,11 +46,17 @@ export default function PaymentMethodsTab() {
       const depositRes = await fetch('/api/payments/deposit-wallet', { credentials: 'include' })
       const depositData = await depositRes.json()
 
+      // Fetch identity verification status
+      const identityRes = await fetch('/api/identity/verify', { credentials: 'include' })
+      const identityData = await identityRes.json()
+
       setData({
         paymentMethodCount: methodsData.paymentMethods?.length || 0,
         depositWalletBalance: depositData.balance || 0,
         creditBalance: balanceData.creditBalance || 0,
-        bonusBalance: balanceData.bonusBalance || 0
+        bonusBalance: balanceData.bonusBalance || 0,
+        isVerified: identityData.isVerified || false,
+        stripeIdentityStatus: identityData.status || null
       })
     } catch (error) {
       console.error('Failed to fetch wallet data:', error)
@@ -54,7 +64,9 @@ export default function PaymentMethodsTab() {
         paymentMethodCount: 0,
         depositWalletBalance: 0,
         creditBalance: 0,
-        bonusBalance: 0
+        bonusBalance: 0,
+        isVerified: false,
+        stripeIdentityStatus: null
       })
     } finally {
       setLoading(false)
@@ -71,6 +83,8 @@ export default function PaymentMethodsTab() {
       </div>
     )
   }
+
+  const isVerified = data?.isVerified || false
 
   const sections = [
     {
@@ -112,29 +126,55 @@ export default function PaymentMethodsTab() {
         </p>
       </div>
 
-      {/* Security Banner */}
-      <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border-2 border-green-300 dark:border-green-700 rounded-lg">
-        <div className="flex items-start gap-2.5">
-          <IoShieldCheckmarkOutline className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
-          <div>
-            <h3 className="text-xs font-semibold text-green-900 dark:text-green-100 mb-0.5">
-              Secure Payment Processing
-            </h3>
-            <p className="text-[10px] text-green-800 dark:text-green-300">
-              Your payment information is encrypted and securely stored by Stripe.
-            </p>
+      {/* Verification Required Banner - Show if not verified */}
+      {!isVerified && (
+        <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-300 dark:border-yellow-700 rounded-lg">
+          <div className="flex items-start gap-2.5">
+            <IoAlertCircleOutline className="w-4 h-4 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="text-xs font-semibold text-yellow-900 dark:text-yellow-100 mb-0.5">
+                Identity Verification Required
+              </h3>
+              <p className="text-[10px] text-yellow-800 dark:text-yellow-300 mb-2">
+                Verify your identity and add a payment method to unlock payments. Get a signup bonus from ItWhip!
+              </p>
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center gap-1 px-2 py-1 bg-yellow-600 hover:bg-yellow-700 text-white text-[10px] font-medium rounded transition-colors"
+              >
+                <IoShieldCheckmarkOutline className="w-3 h-3" />
+                Verify Now
+              </Link>
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Security Banner - Show if verified */}
+      {isVerified && (
+        <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border-2 border-green-300 dark:border-green-700 rounded-lg">
+          <div className="flex items-start gap-2.5">
+            <IoShieldCheckmarkOutline className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <h3 className="text-xs font-semibold text-green-900 dark:text-green-100 mb-0.5">
+                Identity Verified
+              </h3>
+              <p className="text-[10px] text-green-800 dark:text-green-300">
+                Your payment information is encrypted and securely stored by Stripe.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-3 gap-2 mb-4">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-3 text-white text-center">
+        <div className={`rounded-lg p-3 text-white text-center ${isVerified ? 'bg-gradient-to-br from-blue-500 to-blue-600' : 'bg-gradient-to-br from-gray-400 to-gray-500'}`}>
           <IoCardOutline className="w-5 h-5 mx-auto mb-1 opacity-90" />
           <p className="text-lg font-bold">{data?.paymentMethodCount || 0}</p>
           <p className="text-[10px] opacity-80">Cards</p>
         </div>
-        <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg p-3 text-white text-center">
+        <div className={`rounded-lg p-3 text-white text-center ${isVerified ? 'bg-gradient-to-br from-green-500 to-emerald-600' : 'bg-gradient-to-br from-gray-400 to-gray-500'}`}>
           <IoWalletOutline className="w-5 h-5 mx-auto mb-1 opacity-90" />
           <p className="text-lg font-bold">${(data?.depositWalletBalance || 0).toFixed(0)}</p>
           <p className="text-[10px] opacity-80">Deposit</p>
@@ -180,18 +220,39 @@ export default function PaymentMethodsTab() {
 
       {/* Quick Actions */}
       <div className="mt-4 flex gap-2">
-        <Link
-          href="/payments/methods"
-          className="flex-1 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg text-center transition-colors"
-        >
-          Add Payment Method
-        </Link>
-        <Link
-          href="/payments/deposit"
-          className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white text-sm font-medium rounded-lg text-center transition-colors"
-        >
-          Add Deposit
-        </Link>
+        {isVerified ? (
+          <>
+            <Link
+              href="/payments/methods"
+              className="flex-1 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg text-center transition-colors"
+            >
+              Add Payment Method
+            </Link>
+            <Link
+              href="/payments/deposit"
+              className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white text-sm font-medium rounded-lg text-center transition-colors"
+            >
+              Add Deposit
+            </Link>
+          </>
+        ) : (
+          <>
+            <div
+              className="flex-1 px-4 py-2.5 bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 text-sm font-medium rounded-lg text-center cursor-not-allowed flex items-center justify-center gap-1"
+              title="Verify your identity to add payment methods"
+            >
+              <IoLockClosedOutline className="w-4 h-4" />
+              Add Payment Method
+            </div>
+            <div
+              className="flex-1 px-4 py-2.5 bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 text-sm font-medium rounded-lg text-center cursor-not-allowed flex items-center justify-center gap-1"
+              title="Verify your identity to add deposits"
+            >
+              <IoLockClosedOutline className="w-4 h-4" />
+              Add Deposit
+            </div>
+          </>
+        )}
       </div>
     </div>
   )

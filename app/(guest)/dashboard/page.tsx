@@ -129,13 +129,17 @@ interface AppealNotification {
   }
 }
 
-// ✅ UPDATED: Document verification state for 2 documents only
+// ✅ UPDATED: Document verification state with Stripe Identity
 interface DocumentVerificationState {
   emailVerified: boolean
   phoneVerified: boolean
+  phoneNumber?: string | null
   documentsVerified: boolean
   driversLicenseUrl: string | null
   selfieUrl: string | null
+  // Stripe Identity fields
+  stripeIdentityStatus?: string | null
+  stripeIdentityVerifiedAt?: string | null
 }
 
 // Claims state for dashboard
@@ -152,6 +156,14 @@ interface ClaimsState {
     message: string | null
     canBook: boolean
   }
+}
+
+// Payment info for card display
+interface PaymentInfoState {
+  hasCard: boolean
+  last4: string | null
+  brand: string | null
+  expiry: string | null
 }
 
 // ========== ERROR BOUNDARY ==========
@@ -239,7 +251,7 @@ interface UserProfile {
 }
 
 interface DashboardStats {
-  totalSaved: number
+  depositWalletBalance: number  // Changed from totalSaved
   activeRentals: number
   completedTrips: number
   creditsAndBonus: number  // Changed from loyaltyPoints
@@ -309,6 +321,7 @@ interface DashboardState {
   notificationsLoaded: boolean
   documentVerification: DocumentVerificationState | null
   claims: ClaimsState | null
+  paymentInfo: PaymentInfoState | null
 }
 
 type DashboardAction =
@@ -334,6 +347,7 @@ type DashboardAction =
   | { type: 'REMOVE_APPEAL_NOTIFICATION'; payload: string }
   | { type: 'SET_DOCUMENT_VERIFICATION'; payload: DocumentVerificationState | null }
   | { type: 'SET_CLAIMS'; payload: ClaimsState | null }
+  | { type: 'SET_PAYMENT_INFO'; payload: PaymentInfoState | null }
 
 // ========== CONSTANTS ==========
 const CORE_SERVICES: ServiceConfig[] = [
@@ -399,13 +413,15 @@ const STATS_CONFIG = [
     clickable: true
   },
   {
-    label: 'Total Saved',
-    key: 'totalSaved' as keyof DashboardStats,
-    icon: DollarSign,
+    label: 'Deposit',
+    key: 'depositWalletBalance' as keyof DashboardStats,
+    icon: Shield,
     iconColor: 'text-green-500',
     textColor: 'text-green-600 dark:text-green-400',
-    format: (val: number) => `$${val.toFixed(0)}`,
-    clickable: false
+    format: (val: number) => `$${val.toFixed(2)}`,
+    path: '/payments/deposit',
+    clickable: true,
+    tooltip: 'Pre-loaded funds for security deposits. Used to cover potential damages during rentals.'
   },
   {
     label: 'Credits & Bonus',
@@ -413,9 +429,10 @@ const STATS_CONFIG = [
     icon: Award,
     iconColor: 'text-purple-500',
     textColor: 'text-gray-900 dark:text-white',
-    format: (val: number) => `$${val.toFixed(0)}`,
+    format: (val: number) => `$${val.toFixed(2)}`,
     path: '/payments/credits',
-    clickable: true
+    clickable: true,
+    tooltip: 'Credits: 100% usable per booking. Bonus: Max 25% per booking. Applied automatically at checkout.'
   },
   {
     label: 'Messages',
@@ -453,7 +470,7 @@ const initialState: DashboardState = {
   suspensionInfo: null,
   moderationHistory: [],
   stats: {
-    totalSaved: 0,
+    depositWalletBalance: 0,
     activeRentals: 0,
     completedTrips: 0,
     creditsAndBonus: 0,
@@ -475,7 +492,8 @@ const initialState: DashboardState = {
   },
   notificationsLoaded: false,
   documentVerification: null,
-  claims: null
+  claims: null,
+  paymentInfo: null
 }
 
 function dashboardReducer(state: DashboardState, action: DashboardAction): DashboardState {
@@ -530,6 +548,8 @@ function dashboardReducer(state: DashboardState, action: DashboardAction): Dashb
       return { ...state, documentVerification: action.payload }
     case 'SET_CLAIMS':
       return { ...state, claims: action.payload }
+    case 'SET_PAYMENT_INFO':
+      return { ...state, paymentInfo: action.payload }
     default:
       return state
   }
@@ -612,16 +632,19 @@ export default function GuestDashboard() {
         }
       })
       
-      // ✅ UPDATED: Set document verification state with only 2 documents
+      // ✅ UPDATED: Set document verification state with Stripe Identity
       dispatch({
         type: 'SET_DOCUMENT_VERIFICATION',
         payload: {
           emailVerified: dashboardData.profile.emailVerified || false,
           phoneVerified: dashboardData.profile.phoneVerified || false,
-          phoneNumber: dashboardData.profile.phoneNumber || null,  // ✅ FIXED: Include phone number for verification check
+          phoneNumber: dashboardData.profile.phoneNumber || null,
           documentsVerified: dashboardData.profile.documentsVerified || false,
           driversLicenseUrl: dashboardData.profile.driversLicenseUrl || null,
-          selfieUrl: dashboardData.profile.selfieUrl || null
+          selfieUrl: dashboardData.profile.selfieUrl || null,
+          // Stripe Identity fields
+          stripeIdentityStatus: dashboardData.profile.stripeIdentityStatus || null,
+          stripeIdentityVerifiedAt: dashboardData.profile.stripeIdentityVerifiedAt || null
         }
       })
       
@@ -652,7 +675,7 @@ export default function GuestDashboard() {
       dispatch({
         type: 'SET_STATS',
         payload: {
-          totalSaved: 0,
+          depositWalletBalance: dashboardData.profile?.depositWalletBalance || 0,
           activeRentals: dashboardData.stats.activeRentals,
           completedTrips: dashboardData.stats.completedTrips,
           creditsAndBonus: (dashboardData.profile?.creditBalance || 0) + (dashboardData.profile?.bonusBalance || 0),
@@ -679,7 +702,20 @@ export default function GuestDashboard() {
           }
         })
       }
-      
+
+      // Set payment info (for showing card last4 in dashboard)
+      if (dashboardData.paymentInfo) {
+        dispatch({
+          type: 'SET_PAYMENT_INFO',
+          payload: {
+            hasCard: dashboardData.paymentInfo.hasCard,
+            last4: dashboardData.paymentInfo.last4,
+            brand: dashboardData.paymentInfo.brand,
+            expiry: dashboardData.paymentInfo.expiry
+          }
+        })
+      }
+
       // Set bookings
       dispatch({ 
         type: 'SET_RENTAL_BOOKINGS', 
@@ -1265,7 +1301,7 @@ export default function GuestDashboard() {
         })()}
 
         {/* Stats Grid */}
-        <div 
+        <div
           className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 mt-4 transition-all duration-700 ${
             state.statsLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
@@ -1274,27 +1310,55 @@ export default function GuestDashboard() {
             const value = state.stats[stat.key]
             const displayValue = stat.format ? stat.format(value as number) : value
             const StatIcon = stat.icon
-            
+
+            // Check if this is the Deposit stat and we have card info to show
+            const isDepositStat = stat.key === 'depositWalletBalance'
+            const showCardInfo = isDepositStat && state.paymentInfo?.hasCard && state.paymentInfo?.last4
+
+            // Get card brand color class
+            const getCardBrandColor = (brand: string | null) => {
+              switch (brand?.toLowerCase()) {
+                case 'visa': return 'text-blue-600 dark:text-blue-400'
+                case 'mastercard': return 'text-red-500 dark:text-red-400'
+                case 'amex': return 'text-blue-500 dark:text-blue-400'
+                case 'discover': return 'text-orange-500 dark:text-orange-400'
+                default: return 'text-gray-600 dark:text-gray-400'
+              }
+            }
+
             return (
               <div
                 key={stat.label}
                 onClick={() => stat.clickable && handleStatClick(stat.path)}
-                style={{ 
+                title={(stat as any).tooltip || undefined}
+                style={{
                   animationDelay: `${index * 100}ms`,
                   animation: state.statsLoaded ? 'fadeInUp 0.5s ease-out forwards' : 'none'
                 }}
-                className={`bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 sm:p-4 border-2 border-gray-300 dark:border-gray-600 min-h-[88px] ${
+                className={`bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 sm:p-4 border-2 border-gray-300 dark:border-gray-600 min-h-[88px] group relative ${
                   stat.clickable ? 'cursor-pointer hover:shadow-lg active:scale-95 transition-all' : ''
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{stat.label}</p>
+                    <div className="flex items-center gap-1">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{stat.label}</p>
+                      {(stat as any).tooltip && (
+                        <span className="text-gray-400 dark:text-gray-500 text-[10px] cursor-help" title={(stat as any).tooltip}>ⓘ</span>
+                      )}
+                    </div>
                     <p className={`text-xl sm:text-2xl font-bold mt-1 ${stat.textColor}`}>
                       {displayValue}
                     </p>
                   </div>
-                  <StatIcon className={`w-6 h-6 sm:w-8 sm:h-8 ${stat.iconColor} opacity-60 flex-shrink-0 ml-2`} aria-hidden="true" />
+                  {showCardInfo ? (
+                    <div className={`flex flex-col items-end ${getCardBrandColor(state.paymentInfo?.brand || null)} flex-shrink-0 ml-2`}>
+                      <span className="text-[10px] uppercase font-medium opacity-60">{state.paymentInfo?.brand}</span>
+                      <span className="text-sm font-bold">•••• {state.paymentInfo?.last4}</span>
+                    </div>
+                  ) : (
+                    <StatIcon className={`w-6 h-6 sm:w-8 sm:h-8 ${stat.iconColor} opacity-60 flex-shrink-0 ml-2`} aria-hidden="true" />
+                  )}
                 </div>
               </div>
             )

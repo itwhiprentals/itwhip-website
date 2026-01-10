@@ -19,7 +19,8 @@ import {
   IoBriefcaseOutline,
   IoWalletOutline,
   IoReturnDownBackOutline,
-  IoSettingsOutline
+  IoSettingsOutline,
+  IoGiftOutline
 } from 'react-icons/io5'
 import { Car, CarStatus } from './types'
 import { StatCard, StatusBadge, EmptyState, LoadingSpinner, SectionHeader } from './components'
@@ -167,7 +168,7 @@ export default function FleetDashboard() {
         <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 uppercase tracking-wide">
           Management Hub
         </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-11 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-12 gap-3">
           {/* Messages */}
           <Link
             href={`/fleet/messages?key=${apiKey}`}
@@ -266,6 +267,15 @@ export default function FleetDashboard() {
           >
             <IoReturnDownBackOutline className="text-2xl group-hover:scale-110 transition-transform" />
             <span className="text-sm font-medium">Refunds</span>
+          </Link>
+
+          {/* Bonuses */}
+          <Link
+            href={`/fleet/bonuses?key=${apiKey}`}
+            className="px-4 py-3 bg-gradient-to-br from-yellow-500 to-orange-500 text-white rounded-lg hover:from-yellow-600 hover:to-orange-600 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
+          >
+            <IoGiftOutline className="text-2xl group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-medium">Bonuses</span>
           </Link>
 
           {/* Settings */}

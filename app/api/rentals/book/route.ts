@@ -32,8 +32,7 @@ import Stripe from 'stripe'
 
 // Initialize Stripe with TEST key (using your env variable name)
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2024-06-20',
-  typescript: true,
+  apiVersion: '2025-08-27.basil'
 })
 
 // Test card numbers for development
@@ -715,6 +714,159 @@ export async function POST(request: NextRequest) {
         console.log('ℹ️ No reviewer profile found for guest email:', bookingData.guestEmail)
       }
       // ========== END ACTIVITY TRACKING ==========
+
+      // ========== APPLY CREDITS, BONUS & DEPOSIT WALLET ==========
+      let creditsApplied = 0
+      let bonusApplied = 0
+      let depositFromWallet = 0
+      let depositFromCard = pricing.deposit
+      let chargeAmount = pricing.total
+
+      if (guestProfileId) {
+        try {
+          // Get guest's current balances
+          const guestProfile = await tx.reviewerProfile.findUnique({
+            where: { id: guestProfileId },
+            select: {
+              creditBalance: true,
+              bonusBalance: true,
+              depositWalletBalance: true
+            }
+          })
+
+          if (guestProfile) {
+            const balances = {
+              creditBalance: guestProfile.creditBalance || 0,
+              bonusBalance: guestProfile.bonusBalance || 0,
+              depositWalletBalance: guestProfile.depositWalletBalance || 0
+            }
+
+            // Calculate what can be applied
+            const maxBonusPercentage = 0.25 // 25% max of base price
+
+            // 1. Calculate max bonus (25% of base rental price)
+            const basePrice = pricing.subtotal - pricing.insuranceFee - pricing.deliveryFee
+            const maxBonusAllowed = Math.round(basePrice * maxBonusPercentage * 100) / 100
+            bonusApplied = Math.min(balances.bonusBalance, maxBonusAllowed, pricing.total)
+
+            // 2. Credits apply to remaining (100% usable)
+            const afterBonus = pricing.total - bonusApplied
+            creditsApplied = Math.min(balances.creditBalance, afterBonus)
+
+            // 3. Final charge amount
+            chargeAmount = Math.round((pricing.total - creditsApplied - bonusApplied) * 100) / 100
+
+            // 4. Deposit from wallet
+            depositFromWallet = Math.min(balances.depositWalletBalance, pricing.deposit)
+            depositFromCard = Math.round((pricing.deposit - depositFromWallet) * 100) / 100
+
+            console.log('💰 Financial breakdown:', {
+              originalTotal: pricing.total,
+              creditsApplied,
+              bonusApplied,
+              chargeAmount,
+              depositFromWallet,
+              depositFromCard
+            })
+
+            // Deduct credits if applied
+            if (creditsApplied > 0) {
+              await tx.reviewerProfile.update({
+                where: { id: guestProfileId },
+                data: { creditBalance: { decrement: creditsApplied } }
+              })
+
+              await tx.creditBonusTransaction.create({
+                data: {
+                  guestId: guestProfileId,
+                  amount: creditsApplied,
+                  type: 'CREDIT',
+                  action: 'USE',
+                  balanceAfter: balances.creditBalance - creditsApplied,
+                  reason: `Applied to booking ${newBooking.bookingCode}`,
+                  bookingId: newBooking.id
+                }
+              })
+              console.log('✅ Deducted credits:', creditsApplied)
+            }
+
+            // Deduct bonus if applied
+            if (bonusApplied > 0) {
+              await tx.reviewerProfile.update({
+                where: { id: guestProfileId },
+                data: { bonusBalance: { decrement: bonusApplied } }
+              })
+
+              await tx.creditBonusTransaction.create({
+                data: {
+                  guestId: guestProfileId,
+                  amount: bonusApplied,
+                  type: 'BONUS',
+                  action: 'USE',
+                  balanceAfter: balances.bonusBalance - bonusApplied,
+                  reason: `Applied to booking ${newBooking.bookingCode} (25% max)`,
+                  bookingId: newBooking.id
+                }
+              })
+              console.log('✅ Deducted bonus:', bonusApplied)
+            }
+
+            // Deduct from deposit wallet if used
+            if (depositFromWallet > 0) {
+              await tx.reviewerProfile.update({
+                where: { id: guestProfileId },
+                data: { depositWalletBalance: { decrement: depositFromWallet } }
+              })
+
+              await tx.depositTransaction.create({
+                data: {
+                  guestId: guestProfileId,
+                  amount: depositFromWallet,
+                  type: 'HOLD',
+                  balanceAfter: balances.depositWalletBalance - depositFromWallet,
+                  bookingId: newBooking.id,
+                  description: `Security deposit hold for booking ${newBooking.bookingCode}`
+                }
+              })
+              console.log('✅ Held deposit from wallet:', depositFromWallet)
+            }
+
+            // Update the booking with financial tracking fields
+            await tx.rentalBooking.update({
+              where: { id: newBooking.id },
+              data: {
+                creditsApplied,
+                bonusApplied,
+                depositFromWallet,
+                depositFromCard,
+                chargeAmount
+              }
+            })
+          }
+        } catch (finError) {
+          console.error('⚠️ Error processing financial balances (non-blocking):', finError)
+          // Don't fail the booking if balance processing fails
+        }
+      }
+
+      // Update Stripe payment intent amount if credits/bonus reduced the charge
+      if (stripePaymentIntentId && chargeAmount < pricing.total) {
+        try {
+          await stripe.paymentIntents.update(stripePaymentIntentId, {
+            amount: Math.round(chargeAmount * 100), // Amount in cents
+            metadata: {
+              originalTotal: pricing.total.toString(),
+              creditsApplied: creditsApplied.toString(),
+              bonusApplied: bonusApplied.toString(),
+              chargeAmount: chargeAmount.toString()
+            }
+          })
+          console.log('✅ Updated Stripe PaymentIntent amount to:', chargeAmount)
+        } catch (stripeUpdateError) {
+          console.error('⚠️ Failed to update Stripe amount (non-blocking):', stripeUpdateError)
+        }
+      }
+      // ========== END FINANCIAL PROCESSING ==========
 
       // Store fraud indicators if any
       if (riskFlags.length > 0 && !isDevelopment) {

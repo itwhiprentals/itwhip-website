@@ -27,7 +27,13 @@ import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
 
 // Import shared booking pricing utility (ensures consistent calculations)
-import { calculateBookingPricing, formatPrice } from '@/app/(guest)/rentals/lib/booking-pricing'
+import {
+  calculateBookingPricing,
+  formatPrice,
+  calculateAppliedBalances,
+  type GuestBalances,
+  type AppliedBalancesResult
+} from '@/app/(guest)/rentals/lib/booking-pricing'
 import { getCityFromAddress } from '@/app/(guest)/rentals/lib/arizona-taxes'
 
 // Import Header component
@@ -227,6 +233,14 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
   const [secondDriverLastName, setSecondDriverLastName] = useState('')
   const [secondDriverAge, setSecondDriverAge] = useState<Date | null>(null)
   const [secondDriverLicense, setSecondDriverLicense] = useState('')
+
+  // ✅ Guest financial balances (Credits, Bonus, Deposit Wallet)
+  const [guestBalances, setGuestBalances] = useState<GuestBalances>({
+    creditBalance: 0,
+    bonusBalance: 0,
+    depositWalletBalance: 0
+  })
+  const [balancesLoaded, setBalancesLoaded] = useState(false)
 
   // ============================================
   // ✅ FIXED: CHECK AUTHENTICATION DIRECTLY
@@ -516,9 +530,61 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
   }, [profileLoading, userProfile, moderationStatus, driverFirstName, driverLastName, driverEmail, driverPhone, licenseUploaded, insuranceUploaded, selfieUploaded, licensePhotoUrl, insurancePhotoUrl, selfiePhotoUrl, guestName, guestEmail, guestPhone])
   
   // ============================================
+  // ✅ FETCH GUEST FINANCIAL BALANCES
+  // ============================================
+
+  useEffect(() => {
+    const fetchBalances = async () => {
+      // Only fetch if user is logged in and profile has loaded
+      if (sessionStatus !== 'authenticated' || profileLoading || hostGuard.show) {
+        return
+      }
+
+      try {
+        console.log('💰 Fetching guest financial balances...')
+
+        // Fetch balance and deposit wallet data in parallel
+        const [balanceRes, depositRes] = await Promise.all([
+          fetch('/api/payments/balance', { credentials: 'include' }),
+          fetch('/api/payments/deposit-wallet', { credentials: 'include' })
+        ])
+
+        let creditBalance = 0
+        let bonusBalance = 0
+        let depositWalletBalance = 0
+
+        if (balanceRes.ok) {
+          const balanceData = await balanceRes.json()
+          creditBalance = balanceData.creditBalance || 0
+          bonusBalance = balanceData.bonusBalance || 0
+          console.log('✅ Credit/Bonus balances:', { creditBalance, bonusBalance })
+        }
+
+        if (depositRes.ok) {
+          const depositData = await depositRes.json()
+          depositWalletBalance = depositData.balance || 0
+          console.log('✅ Deposit wallet balance:', depositWalletBalance)
+        }
+
+        setGuestBalances({
+          creditBalance,
+          bonusBalance,
+          depositWalletBalance
+        })
+        setBalancesLoaded(true)
+      } catch (error) {
+        console.error('💥 Error fetching guest balances:', error)
+        setBalancesLoaded(true) // Mark as loaded even on error to prevent infinite loading
+      }
+    }
+
+    fetchBalances()
+  }, [sessionStatus, profileLoading, hostGuard.show])
+
+  // ============================================
   // BOOKING ELIGIBILITY CHECK
   // ============================================
-  
+
   const checkBookingEligibility = (): { allowed: boolean; reason?: string } => {
     // ✅ NEW: Check if vehicle is available
     if (car && !car.isActive) {
@@ -1875,6 +1941,33 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
             </div>
           </div>
           
+          {/* ✅ Available Balances Banner - Show if user has any balance */}
+          {balancesLoaded && (guestBalances.creditBalance > 0 || guestBalances.bonusBalance > 0 || guestBalances.depositWalletBalance > 0) && (
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-700 rounded-lg p-4 mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <IoSparklesOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
+                <span className="font-semibold text-green-800 dark:text-green-200">Your Available Balances</span>
+              </div>
+              <div className="grid grid-cols-3 gap-3 text-center">
+                <div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">Deposit Wallet</p>
+                  <p className="text-lg font-bold text-green-600 dark:text-green-400">${guestBalances.depositWalletBalance.toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">Credits</p>
+                  <p className="text-lg font-bold text-purple-600 dark:text-purple-400">${guestBalances.creditBalance.toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">Bonus</p>
+                  <p className="text-lg font-bold text-amber-600 dark:text-amber-400">${guestBalances.bonusBalance.toFixed(2)}</p>
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+                Credits & bonus are auto-applied below. Deposit wallet covers your security deposit.
+              </p>
+            </div>
+          )}
+
           {/* Price Summary */}
           <div className="border-t dark:border-gray-700 pt-6">
             {(() => {
@@ -1893,6 +1986,14 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
                 },
                 city: carCity
               })
+
+              // Calculate applied balances (credits, bonus, deposit wallet)
+              const appliedBalances = calculateAppliedBalances(
+                pricing,
+                adjustedDeposit,
+                guestBalances,
+                0.25 // 25% max bonus
+              )
 
               return (
                 <div className="space-y-2 text-sm">
@@ -1936,13 +2037,47 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
                     <span className="font-medium text-gray-900 dark:text-white">${formatPrice(pricing.taxes)}</span>
                   </div>
 
+                  {/* ✅ Applied Credits (if any) */}
+                  {appliedBalances.creditsApplied > 0 && (
+                    <div className="flex justify-between text-purple-600 dark:text-purple-400">
+                      <span className="font-medium">Credits Applied</span>
+                      <span className="font-medium">-${formatPrice(appliedBalances.creditsApplied)}</span>
+                    </div>
+                  )}
+
+                  {/* ✅ Applied Bonus (if any) */}
+                  {appliedBalances.bonusApplied > 0 && (
+                    <div className="flex justify-between text-amber-600 dark:text-amber-400">
+                      <span className="font-medium">Bonus Applied (max 25%)</span>
+                      <span className="font-medium">-${formatPrice(appliedBalances.bonusApplied)}</span>
+                    </div>
+                  )}
+
                   {/* Totals Section */}
                   <div className="pt-4 mt-4 border-t dark:border-gray-700">
-                    {/* Trip Total - using shared utility calculation */}
-                    <div className="flex justify-between items-baseline">
-                      <span className="font-bold text-gray-900 dark:text-white">Trip Total</span>
-                      <span className="text-lg font-bold text-gray-900 dark:text-white">${formatPrice(pricing.total)}</span>
-                    </div>
+                    {/* Trip Total - strikethrough if savings applied */}
+                    {appliedBalances.totalSavings > 0 ? (
+                      <>
+                        <div className="flex justify-between items-baseline">
+                          <span className="text-gray-500 dark:text-gray-400">Original Total</span>
+                          <span className="text-gray-500 dark:text-gray-400 line-through">${formatPrice(pricing.total)}</span>
+                        </div>
+                        <div className="flex justify-between items-baseline mt-1">
+                          <span className="font-bold text-gray-900 dark:text-white">Amount to Pay</span>
+                          <span className="text-lg font-bold text-green-600 dark:text-green-400">${formatPrice(appliedBalances.amountToPay)}</span>
+                        </div>
+                        <div className="flex justify-end mt-1">
+                          <span className="text-xs font-medium text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded-full">
+                            You save ${formatPrice(appliedBalances.totalSavings)}!
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex justify-between items-baseline">
+                        <span className="font-bold text-gray-900 dark:text-white">Trip Total</span>
+                        <span className="text-lg font-bold text-gray-900 dark:text-white">${formatPrice(pricing.total)}</span>
+                      </div>
+                    )}
 
                 {/* Security Deposit - Compact Red Box, right-aligned under amount */}
                 <div className="flex justify-end mt-2 mb-3">

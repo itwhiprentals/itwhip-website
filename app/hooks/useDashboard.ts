@@ -33,6 +33,20 @@ interface DashboardProfile {
   suspendedUntil: string | null
   canBookLuxury: boolean
   canBookPremium: boolean
+  // Document verification
+  emailVerified?: boolean
+  phoneVerified?: boolean
+  phoneNumber?: string | null
+  documentsVerified?: boolean
+  driversLicenseUrl?: string | null
+  selfieUrl?: string | null
+  // Stripe Identity verification
+  stripeIdentityStatus?: string | null
+  stripeIdentityVerifiedAt?: string | null
+  // Financial balances
+  depositWalletBalance?: number
+  creditBalance?: number
+  bonusBalance?: number
 }
 
 interface DashboardBooking {
@@ -115,6 +129,13 @@ interface DashboardClaims {
   accountHold: AccountHoldStatus
 }
 
+interface PaymentInfo {
+  hasCard: boolean
+  last4: string | null
+  brand: string | null
+  expiry: string | null
+}
+
 export interface DashboardData {
   user: DashboardUser
   profile: DashboardProfile
@@ -122,6 +143,7 @@ export interface DashboardData {
   stats: DashboardStats
   notifications: DashboardNotifications
   paymentMethods: any[]
+  paymentInfo: PaymentInfo
   claims: DashboardClaims
   flags: DashboardFlags
 }

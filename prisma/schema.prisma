@@ -2705,6 +2705,13 @@ model RentalBooking {
   paymentFailureReason  String?
   paymentProcessedAt    DateTime?
 
+  // ===== FINANCIAL TRACKING: Credits, Bonus & Deposit Wallet =====
+  creditsApplied     Float @default(0)  // Credits applied to this booking (100% usable)
+  bonusApplied       Float @default(0)  // Bonus applied (max 25% of subtotal)
+  depositFromWallet  Float @default(0)  // Security deposit paid from Deposit Wallet
+  depositFromCard    Float @default(0)  // Security deposit held on card
+  chargeAmount       Float?             // Final amount charged to card (after credits/bonus)
+
   // Cancellation tracking
   cancellationReason String?
   cancelledBy        CancelledBy?
@@ -2877,7 +2884,7 @@ model ReviewerProfile {
   emergencyContactPhone    String?
   emergencyContactRelation String?
 
-  // Identity Documents
+  // Identity Documents (Legacy - kept for backwards compatibility)
   governmentIdUrl    String?
   governmentIdType   GovernmentIdType?
   driversLicenseUrl  String?
@@ -2886,7 +2893,22 @@ model ReviewerProfile {
   documentVerifiedAt DateTime?
   documentVerifiedBy String?
 
-  // ===== NEW: DRIVER LICENSE INFO FOR FNOL =====
+  // ===== STRIPE IDENTITY VERIFICATION =====
+  // Primary verification method - replaces manual document upload
+  stripeIdentitySessionId   String?   // Stripe VerificationSession ID
+  stripeIdentityStatus      String?   // 'pending', 'verified', 'requires_input', 'canceled'
+  stripeIdentityVerifiedAt  DateTime? // When Stripe verified the identity
+  stripeIdentityReportId    String?   // Stripe VerificationReport ID
+  // Data extracted from Stripe Identity verification
+  stripeVerifiedFirstName   String?   // First name from ID document
+  stripeVerifiedLastName    String?   // Last name from ID document
+  stripeVerifiedDob         DateTime? // Date of birth from ID document
+  stripeVerifiedIdNumber    String?   // Driver's license number from ID
+  stripeVerifiedIdExpiry    DateTime? // ID expiration date
+  stripeVerifiedAddress     String?   // Address from ID document
+  // ===== END STRIPE IDENTITY VERIFICATION =====
+
+  // ===== DRIVER LICENSE INFO FOR FNOL =====
   driverLicenseNumber String?
   driverLicenseState  String?
   driverLicenseExpiry DateTime?

@@ -156,6 +156,12 @@ function InternalLayoutContent({
                     Refunds
                   </Link>
                   <Link
+                    href="/fleet/bonuses"
+                    className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                  >
+                    Bonuses
+                  </Link>
+                  <Link
                     href="/fleet/claims"
                     className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
                   >
@@ -246,6 +252,13 @@ function InternalLayoutContent({
                     className="px-3 py-2 rounded-md text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
                   >
                     Refunds
+                  </Link>
+                  <Link
+                    href="/fleet/bonuses"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-3 py-2 rounded-md text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                  >
+                    Bonuses
                   </Link>
                   <Link
                     href="/fleet/claims"
