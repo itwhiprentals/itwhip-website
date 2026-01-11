@@ -9,6 +9,8 @@ import PartnerHero from '../components/PartnerHero'
 import DiscountBanner from '../components/DiscountBanner'
 import TrustBadges from '../components/TrustBadges'
 import PartnerBenefits from '../components/PartnerBenefits'
+import PartnerServices from '../components/PartnerServices'
+import PartnerReviews from '../components/PartnerReviews'
 import PartnerPolicies from '../components/PartnerPolicies'
 import FAQAccordion from '../components/FAQAccordion'
 import PartnerVehicleGrid from './PartnerVehicleGrid'
@@ -212,6 +214,16 @@ export default async function PartnerLandingPage({ params, searchParams }: PageP
     additionalTerms?: string
   } | null
 
+  // Parse services if available
+  const services = partner.partnerServices as {
+    id: string
+    name: string
+    description: string
+    icon?: string
+    platforms?: string[]
+    priceRange?: string
+  }[] | null
+
   // Get available makes from vehicles
   const availableMakes = [...new Set(partner.cars.map(c => c.make))]
 
@@ -389,6 +401,12 @@ export default async function PartnerLandingPage({ params, searchParams }: PageP
             companyName={companyName}
           />
 
+          {/* Services Offered */}
+          <PartnerServices
+            services={services}
+            companyName={companyName}
+          />
+
           {/* Policies Section */}
           <PartnerPolicies
             policies={policies}
@@ -397,13 +415,21 @@ export default async function PartnerLandingPage({ params, searchParams }: PageP
 
           {/* FAQs */}
           {faqs.length > 0 && (
-            <section className="mt-12">
+            <section className="mt-6 sm:mt-12">
               <FAQAccordion faqs={faqs} />
             </section>
           )}
 
+          {/* Customer Reviews - At bottom for social proof */}
+          <PartnerReviews
+            reviews={[]} // TODO: Fetch from bookings/reviews table when available
+            avgRating={avgRating}
+            totalReviews={totalReviews}
+            companyName={companyName}
+          />
+
           {/* Back to Marketplace */}
-          <div className="mt-12 text-center">
+          <div className="mt-6 sm:mt-12 text-center">
             <Link
               href="/rideshare"
               className="inline-flex items-center gap-2 text-orange-600 hover:text-orange-700 dark:text-orange-400 font-medium"

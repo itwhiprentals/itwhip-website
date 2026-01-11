@@ -87,7 +87,7 @@ export default function PartnerPolicies({ policies, companyName = 'Partner' }: P
   ]
 
   return (
-    <section className="py-8">
+    <section className="py-6 sm:py-8">
       <div className="flex items-center gap-2 mb-6">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
           Rental Policies
@@ -137,7 +137,7 @@ export default function PartnerPolicies({ policies, companyName = 'Partner' }: P
       </div>
 
       {/* Policy disclaimer */}
-      <p className="mt-6 text-xs text-gray-500 dark:text-gray-500 text-center">
+      <p className="mt-4 sm:mt-6 mb-0 text-xs text-gray-500 dark:text-gray-500 text-center">
         These policies are set by {companyName}. ItWhip acts as a marketplace and is not responsible for individual partner policies.
         Please contact the partner directly for any policy questions.
       </p>

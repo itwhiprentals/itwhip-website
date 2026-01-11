@@ -27,8 +27,8 @@ const rideshareFleetMakes = [
     slug: 'hyundai',
     badge: 'Best Value',
     price: 'from $269/week',
-    logo: '/logos/makes/hyundai.svg',
-    logoClass: 'h-14 sm:h-16 max-w-[100px] sm:max-w-[120px]',
+    logo: '/logos/makes/hyundai.png',
+    logoClass: 'h-[34px] sm:h-[38px] max-w-[60px] sm:max-w-[72px]',
   },
   {
     name: 'Kia',

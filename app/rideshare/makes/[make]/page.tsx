@@ -90,7 +90,7 @@ const RIDESHARE_MAKE_SEO_DATA: Record<string, {
     popularModels: ['Elantra', 'Sonata', 'Tucson', 'Elantra Hybrid', 'Santa Fe'],
     rideshareAdvantages: ['Best value pricing', 'Modern tech features', 'Excellent warranty coverage', 'Fuel efficient', 'Comfortable interiors'],
     weeklyPriceRange: '$269-359/week',
-    logo: '/logos/makes/hyundai.svg',
+    logo: '/logos/makes/hyundai.png',
     faqs: [
       { question: 'Why is Hyundai a great choice for new rideshare drivers?', answer: 'Hyundai offers the best value entry point for rideshare. Their vehicles feature modern technology, excellent fuel economy, and comfortable interiors at lower price points than competitors. The Elantra and Sonata both earn high passenger ratings while keeping your operating costs low.' },
       { question: 'What Hyundai models are available for rideshare in Phoenix?', answer: 'Our Hyundai rideshare fleet includes the Elantra (most affordable option), Sonata (premium comfort), Tucson (for UberXL), and Elantra Hybrid (best fuel economy). All vehicles are 2020 or newer and meet Uber/Lyft requirements.' },

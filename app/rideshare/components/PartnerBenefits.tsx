@@ -3,6 +3,7 @@
 
 'use client'
 
+import { useState } from 'react'
 import {
   IoCarSportOutline,
   IoLeafOutline,
@@ -68,8 +69,14 @@ const DEFAULT_BENEFITS = [
 ]
 
 export default function PartnerBenefits({ benefits, companyName = 'Us' }: PartnerBenefitsProps) {
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(null)
+
   // Use custom benefits if provided, otherwise defaults
   const useCustomBenefits = benefits && benefits.length > 0
+
+  const toggleExpand = (index: number) => {
+    setExpandedIndex(expandedIndex === index ? null : index)
+  }
 
   return (
     <section className="py-8">
@@ -89,14 +96,15 @@ export default function PartnerBenefits({ benefits, companyName = 'Us' }: Partne
           benefits!.map((benefit, index) => (
             <div
               key={index}
-              className="flex items-start gap-3 p-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700"
+              onClick={() => toggleExpand(index)}
+              className="flex items-start gap-3 p-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 cursor-pointer hover:border-orange-200 dark:hover:border-orange-800 transition-colors"
             >
               <span className="text-lg flex-shrink-0 mt-0.5">{benefit.icon}</span>
               <div className="min-w-0">
                 <h3 className="text-sm font-medium text-gray-900 dark:text-white leading-tight">
                   {benefit.title}
                 </h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">
+                <p className={`text-xs text-gray-500 dark:text-gray-400 mt-0.5 ${expandedIndex === index ? '' : 'line-clamp-2'}`}>
                   {benefit.description}
                 </p>
               </div>
@@ -109,7 +117,8 @@ export default function PartnerBenefits({ benefits, companyName = 'Us' }: Partne
             return (
               <div
                 key={index}
-                className="flex items-start gap-3 p-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700"
+                onClick={() => toggleExpand(index)}
+                className="flex items-start gap-3 p-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 cursor-pointer hover:border-orange-200 dark:hover:border-orange-800 transition-colors"
               >
                 <div className="w-8 h-8 rounded-lg bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center flex-shrink-0">
                   <IconComponent className="w-4 h-4 text-orange-500" />
@@ -118,7 +127,7 @@ export default function PartnerBenefits({ benefits, companyName = 'Us' }: Partne
                   <h3 className="text-sm font-medium text-gray-900 dark:text-white leading-tight">
                     {benefit.title}
                   </h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">
+                  <p className={`text-xs text-gray-500 dark:text-gray-400 mt-0.5 ${expandedIndex === index ? '' : 'line-clamp-2'}`}>
                     {benefit.description}
                   </p>
                 </div>
