@@ -24,6 +24,7 @@ import {
   IoNavigateOutline,
   IoPersonOutline
 } from 'react-icons/io5'
+import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatters'
 
 // ISR - Revalidate every 60 seconds
 export const revalidate = 60
@@ -562,9 +563,9 @@ export default async function AirportPage({
           position: index + 1,
           item: {
             '@type': 'Product',
-            name: `${car.year} ${car.make} ${car.model}`,
+            name: `${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)}`,
             url: `https://itwhip.com/rentals/${car.id}`,
-            description: `Rent this ${car.year} ${car.make} ${car.model} at ${airportData.code}`,
+            description: `Rent this ${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)} at ${airportData.code}`,
             image: car.photos?.[0]?.url,
             offers: {
               '@type': 'Offer',

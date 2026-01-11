@@ -21,7 +21,7 @@ import {
 import { RentalCarWithDetails } from '@/types/rental'
 import { formatCurrency } from '@/app/(guest)/rentals/lib/rental-utils'
 import { formatPrivateName, isCompanyName } from '@/app/lib/utils/namePrivacy'
-import { capitalizeCarMake } from '@/app/lib/utils/formatters'
+import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatters'
 import { formatRating, isNewListing, formatTransmission, formatFuelType } from '@/app/lib/utils/formatCarSpecs'
 
 interface CarCardProps {
@@ -79,7 +79,7 @@ export default function CarCard({
             <div className="relative w-72 h-48">
               <Image
                 src={images[currentImageIndex]}
-                alt={`${car.make} ${car.model}`}
+                alt={`${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)}`}
                 fill
                 className="object-cover"
               />
@@ -111,7 +111,7 @@ export default function CarCard({
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {car.year} {capitalizeCarMake(car.make)} {car.model}
+                    {car.year} {capitalizeCarMake(car.make)} {normalizeModelName(car.model, car.make)}
                   </h3>
                   
                   {/* Host Info */}
@@ -211,7 +211,7 @@ export default function CarCard({
         <div className="relative h-48 bg-gray-200 dark:bg-gray-700">
           <Image
             src={images[currentImageIndex]}
-            alt={`${car.make} ${car.model}`}
+            alt={`${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)}`}
             fill
             className={`object-cover transition-transform duration-300 ${isHovered ? 'scale-105' : ''}`}
           />
@@ -277,7 +277,7 @@ export default function CarCard({
         <div className="p-4">
           {/* Title */}
           <h3 className="font-semibold text-gray-900 dark:text-white">
-            {car.year} {capitalizeCarMake(car.make)} {car.model}
+            {car.year} {capitalizeCarMake(car.make)} {normalizeModelName(car.model, car.make)}
           </h3>
 
           {/* Host & Rating */}

@@ -57,7 +57,7 @@ export default function CityCarCard({ car }: CityCarCardProps) {
       <div className="relative h-32 sm:h-36 md:h-40 bg-gray-200 dark:bg-gray-700 overflow-hidden">
         <img
           src={photoUrl}
-          alt={`${car.year} ${car.make} ${car.model}`}
+          alt={`${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)}`}
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
         />
         

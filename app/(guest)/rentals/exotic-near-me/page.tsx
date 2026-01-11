@@ -17,6 +17,7 @@ import {
   IoStarOutline,
   IoRocketOutline
 } from 'react-icons/io5'
+import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatters'
 
 export const revalidate = 60
 
@@ -131,9 +132,9 @@ export default async function ExoticNearMePage() {
           position: index + 1,
           item: {
             '@type': 'Product',
-            name: `${car.year} ${car.make} ${car.model}`,
+            name: `${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)}`,
             url: `https://itwhip.com/rentals/${car.id}`,
-            description: `Exotic ${car.year} ${car.make} ${car.model} supercar rental in ${car.city}`,
+            description: `Exotic ${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)} supercar rental in ${car.city}`,
             image: car.photos?.[0]?.url || 'https://itwhip.com/Luxury-car.png',
             ...(car.rating && car.totalTrips > 0 ? {
               aggregateRating: {

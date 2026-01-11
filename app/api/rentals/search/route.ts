@@ -98,8 +98,29 @@ export async function GET(request: NextRequest) {
     // Add other filters
     if (instantBook) whereClause.instantBook = true
     if (carType && carType !== 'all') {
-      // Case-insensitive carType matching
-      whereClause.carType = { equals: carType.toUpperCase(), mode: 'insensitive' }
+      // Special handling for electric - include cars with electric fuelType (e.g., Tesla Model S with carType='SEDAN')
+      if (carType.toLowerCase() === 'electric') {
+        whereClause.OR = [
+          { carType: { equals: 'ELECTRIC', mode: 'insensitive' } },
+          { fuelType: { in: ['electric', 'ELECTRIC', 'Electric'] } }
+        ]
+      } else if (carType.toLowerCase() === 'luxury') {
+        // Special handling for luxury - match luxury brand makes (not a carType in DB)
+        const luxuryMakes = ['Mercedes-Benz', 'BMW', 'Audi', 'Porsche', 'Lexus', 'Cadillac', 'Bentley', 'Rolls-Royce', 'Maserati', 'Jaguar', 'Land Rover', 'Range Rover', 'Infiniti', 'Acura', 'Genesis', 'Lincoln']
+        whereClause.OR = luxuryMakes.map(make => ({ make: { equals: make, mode: 'insensitive' as const } }))
+      } else if (carType.toLowerCase() === 'sports') {
+        // Special handling for sports - match sports car makes/types
+        const sportsMakes = ['Porsche', 'Ferrari', 'Lamborghini', 'McLaren', 'Aston Martin', 'Lotus', 'Corvette']
+        whereClause.OR = [
+          { carType: { equals: 'SPORTS', mode: 'insensitive' } },
+          { carType: { equals: 'COUPE', mode: 'insensitive' } },
+          { carType: { equals: 'EXOTIC', mode: 'insensitive' } },
+          ...sportsMakes.map(make => ({ make: { equals: make, mode: 'insensitive' as const } }))
+        ]
+      } else {
+        // Case-insensitive carType matching for all other types
+        whereClause.carType = { equals: carType.toUpperCase(), mode: 'insensitive' }
+      }
     }
 
     // Make filter (case-insensitive)

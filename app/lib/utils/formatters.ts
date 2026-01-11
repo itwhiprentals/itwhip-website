@@ -4,11 +4,20 @@
 /**
  * Brands that should remain in ALL CAPS
  */
-const ALL_CAPS_BRANDS = ['BMW', 'GMC', 'RAM']
+const ALL_CAPS_BRANDS = ['BMW', 'GMC', 'RAM', 'MINI']
+
+/**
+ * Brands with special capitalization (case-insensitive lookup)
+ */
+const SPECIAL_CAPS_BRANDS: Record<string, string> = {
+  'MCLAREN': 'McLaren',
+  'MASERATI': 'Maserati',
+}
 
 /**
  * Capitalize car make properly:
- * - BMW, GMC, RAM stay ALL CAPS
+ * - BMW, GMC, RAM, MINI stay ALL CAPS
+ * - McLaren has special internal capitalization
  * - Other makes capitalize each word AND hyphenated parts
  *   (LAND ROVER → Land Rover, MERCEDES-BENZ → Mercedes-Benz)
  *
@@ -23,6 +32,11 @@ export function capitalizeCarMake(make: string | null | undefined): string {
   // Check if it's a brand that stays ALL CAPS
   if (ALL_CAPS_BRANDS.includes(trimmed)) {
     return trimmed
+  }
+
+  // Check if it's a brand with special capitalization
+  if (SPECIAL_CAPS_BRANDS[trimmed]) {
+    return SPECIAL_CAPS_BRANDS[trimmed]
   }
 
   // Capitalize each word AND each hyphenated part

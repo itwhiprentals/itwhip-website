@@ -17,7 +17,8 @@ import {
 } from 'react-icons/io5'
 
 import { formatPrivateName, isCompanyName } from '@/app/lib/utils/namePrivacy'
-import { capitalizeCarMake } from '@/app/lib/utils/formatters'
+import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatters'
+import { formatRating, isNewListing } from '@/app/lib/utils/formatCarSpecs'
 
 interface SimilarCar {
   id: string
@@ -229,7 +230,7 @@ function CarCarousel({
                   {car.photos && car.photos[0] ? (
                     <img
                       src={car.photos[0].url || car.photos[0]}
-                      alt={`${car.make} ${car.model}`}
+                      alt={`${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)}`}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   ) : (
@@ -278,7 +279,7 @@ function CarCarousel({
                 {/* Car details */}
                 <div className="p-4">
                   <h3 className="font-semibold text-gray-900 dark:text-white mb-2 truncate">
-                    {car.year} {capitalizeCarMake(car.make)} {car.model}
+                    {car.year} {capitalizeCarMake(car.make)} {normalizeModelName(car.model, car.make)}
                   </h3>
                   
                   {/* New clean display structure */}
@@ -287,7 +288,7 @@ function CarCarousel({
                       <div className="flex items-center gap-2 ml-2">
                         <div className="flex items-center gap-1">
                           <IoStarOutline className="w-3.5 h-3.5 text-amber-500 fill-current" />
-                          <span className="font-medium">{car.rating.toFixed(1)}</span>
+                          <span className="font-medium">{formatRating(car.rating)}</span>
                           <span className="text-xs text-gray-500">({car.totalTrips} trips)</span>
                         </div>
                       </div>

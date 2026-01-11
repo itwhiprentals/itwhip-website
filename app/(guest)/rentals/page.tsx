@@ -10,6 +10,7 @@ import Breadcrumbs from './components/Breadcrumbs'
 import Footer from '@/app/components/Footer'
 import { IoCarSportOutline } from 'react-icons/io5'
 import { MERCHANT_RETURN_POLICY, SHIPPING_DETAILS } from '@/app/lib/seo/return-policy'
+import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatters'
 
 const TYPE_LABELS: Record<string, string> = {
   suv: 'SUVs',
@@ -264,10 +265,10 @@ export default async function RentalsPage({
       position: idx + 1,
       item: {
         '@type': 'Product',
-        name: `${car.year} ${car.make} ${car.model}`,
+        name: `${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)}`,
         url: `https://itwhip.com/rentals/${car.id}`,
         image: car.photos[0]?.url || 'https://itwhip.com/images/placeholder-car.jpg',
-        description: `Rent a ${car.year} ${car.make} ${car.model} in ${car.city || 'Phoenix'}`,
+        description: `Rent a ${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)} in ${car.city || 'Phoenix'}`,
         offers: {
           '@type': 'Offer',
           priceCurrency: 'USD',

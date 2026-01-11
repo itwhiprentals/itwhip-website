@@ -286,8 +286,15 @@ export default async function CarTypePage({
   }
 
   // Fetch cars of this type from database
-  // For 'electric' type, also include cars with electric fuelType (e.g., Tesla Model 3 with carType='SEDAN')
+  // Special handling for:
+  // - 'electric': Include cars with electric fuelType (e.g., Tesla Model S with carType='SEDAN')
+  // - 'luxury': Include premium makes with high daily rates (Mercedes, BMW, Bentley, etc. $150+)
+  // - 'sports': Include performance models (Porsche 911, M-series, Hellcat, etc.)
   // Use case-insensitive matching to handle both 'SEDAN' and 'sedan' in database
+  const LUXURY_MAKES = ['Mercedes-Benz', 'Bentley', 'Rolls-Royce', 'Maybach', 'Maserati', 'Aston Martin']
+  const PREMIUM_MAKES = ['BMW', 'Audi', 'Lexus', 'Porsche', 'Cadillac', 'Land Rover', 'Jaguar', 'Genesis', 'Lincoln']
+  const SPORTS_MODELS = ['911', 'M2', 'M3', 'M4', 'M5', 'M6', 'M8', 'AMG', 'RS', 'Hellcat', 'SRT', 'Corvette', 'GT', 'Cayman', 'Boxster', 'Type R', 'GR86', 'Supra']
+
   const cars = await prisma.rentalCar.findMany({
     where: {
       isActive: true,
@@ -295,6 +302,32 @@ export default async function CarTypePage({
         OR: [
           { carType: { equals: 'ELECTRIC', mode: 'insensitive' } },
           { fuelType: { in: ['electric', 'ELECTRIC', 'Electric'] } }
+        ]
+      } : type.toLowerCase() === 'luxury' ? {
+        OR: [
+          { carType: { equals: 'LUXURY', mode: 'insensitive' } },
+          // Premium makes with high rates ($150+)
+          { AND: [
+            { make: { in: LUXURY_MAKES, mode: 'insensitive' } },
+            { dailyRate: { gte: 150 } }
+          ]},
+          // Super premium makes at any price
+          { make: { in: ['Bentley', 'Rolls-Royce', 'Maybach'], mode: 'insensitive' } }
+        ]
+      } : type.toLowerCase() === 'sports' ? {
+        OR: [
+          { carType: { equals: 'SPORTS', mode: 'insensitive' } },
+          // Performance models by name
+          { model: { contains: 'Hellcat', mode: 'insensitive' } },
+          { model: { contains: 'SRT', mode: 'insensitive' } },
+          { model: { contains: 'AMG', mode: 'insensitive' } },
+          { model: { contains: 'M4', mode: 'insensitive' } },
+          { model: { contains: 'M6', mode: 'insensitive' } },
+          { model: { contains: 'RS 7', mode: 'insensitive' } },
+          { model: { contains: '911', mode: 'insensitive' } },
+          { model: { contains: 'Cayman', mode: 'insensitive' } },
+          { model: { contains: 'GR86', mode: 'insensitive' } },
+          { model: { contains: 'Corvette', mode: 'insensitive' } }
         ]
       } : {
         carType: { equals: typeData.dbValue, mode: 'insensitive' }

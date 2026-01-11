@@ -14,6 +14,7 @@ import {
   IoHomeOutline,
   IoShieldCheckmarkOutline
 } from 'react-icons/io5'
+import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatters'
 
 // ISR - Revalidate every 60 seconds
 export const revalidate = 60
@@ -400,6 +401,13 @@ export async function generateStaticParams() {
   return Object.keys(CAR_MAKE_SEO_DATA).map((make) => ({ make }))
 }
 
+// Slug aliases for makes with different URL formats
+const MAKE_SLUG_ALIASES: Record<string, string> = {
+  'mercedes-benz': 'mercedes',
+  'land-rover': 'land rover',
+  'alfa-romeo': 'alfa romeo',
+}
+
 // Generate metadata
 export async function generateMetadata({
   params
@@ -407,7 +415,8 @@ export async function generateMetadata({
   params: Promise<{ make: string }>
 }): Promise<Metadata> {
   const { make } = await params
-  const makeData = CAR_MAKE_SEO_DATA[make.toLowerCase()]
+  const lookupKey = MAKE_SLUG_ALIASES[make.toLowerCase()] || make.toLowerCase()
+  const makeData = CAR_MAKE_SEO_DATA[lookupKey]
 
   if (!makeData) {
     return { title: 'Make Not Found - ItWhip' }
@@ -457,7 +466,9 @@ export default async function CarMakePage({
   params: Promise<{ make: string }>
 }) {
   const { make } = await params
-  const makeData = CAR_MAKE_SEO_DATA[make.toLowerCase()]
+  // Check aliases first, then use the make directly
+  const lookupKey = MAKE_SLUG_ALIASES[make.toLowerCase()] || make.toLowerCase()
+  const makeData = CAR_MAKE_SEO_DATA[lookupKey]
 
   if (!makeData) {
     notFound()
@@ -478,9 +489,11 @@ export default async function CarMakePage({
       model: true,
       year: true,
       carType: true,
+      vehicleType: true, // For rideshare badge
       dailyRate: true,
       city: true,
       state: true,
+      seats: true,
       latitude: true,
       longitude: true,
       rating: true,
@@ -517,7 +530,8 @@ export default async function CarMakePage({
     year: car.year,
     dailyRate: Number(car.dailyRate),
     carType: car.carType,
-    seats: 5,
+    vehicleType: car.vehicleType as 'RENTAL' | 'RIDESHARE' | null,
+    seats: car.seats,
     city: car.city,
     rating: car.rating ? Number(car.rating) : null,
     totalTrips: car.totalTrips,
@@ -591,8 +605,8 @@ export default async function CarMakePage({
       position: index + 1,
       item: {
         '@type': 'Product',
-        name: `${car.year} ${car.make} ${car.model}`,
-        description: `Rent this ${car.year} ${car.make} ${car.model} in ${car.city}, AZ`,
+        name: `${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)}`,
+        description: `Rent this ${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)} in ${car.city}, AZ`,
         image: car.photos?.[0]?.url || '',
         url: `https://itwhip.com${generateCarUrl({ id: car.id, make: car.make, model: car.model, year: car.year, city: car.city })}`,
         brand: {

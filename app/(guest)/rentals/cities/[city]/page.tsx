@@ -28,6 +28,7 @@ import {
   IoSearchOutline
 } from 'react-icons/io5'
 import { getCitySeoData, getAllCitySlugs, CITY_SEO_DATA, CitySeoData } from '@/app/lib/data/city-seo-data'
+import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatters'
 
 // Add ISR - Revalidate every 60 seconds
 export const revalidate = 60
@@ -734,9 +735,9 @@ export default async function CityPage({
           position: index + 1,
           item: {
             '@type': 'Product',
-            name: `${car.year} ${car.make} ${car.model}`,
+            name: `${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)}`,
             url: `https://itwhip.com/rentals/${car.id}`,
-            description: `Rent this ${car.year} ${car.make} ${car.model} in ${cityName}`,
+            description: `Rent this ${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)} in ${cityName}`,
             image: car.photos?.[0]?.url,
             offers: {
               '@type': 'Offer',

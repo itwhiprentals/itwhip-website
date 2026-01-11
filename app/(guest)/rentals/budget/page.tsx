@@ -15,6 +15,7 @@ import {
   IoShieldCheckmarkOutline,
   IoCarOutline
 } from 'react-icons/io5'
+import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatters'
 
 // Add ISR - Revalidate every 60 seconds
 export const revalidate = 60
@@ -387,9 +388,9 @@ export default async function BudgetRentalsPage() {
           position: index + 1,
           item: {
             '@type': 'Product',
-            name: `${car.year} ${car.make} ${car.model}`,
+            name: `${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)}`,
             url: `https://itwhip.com/rentals/${car.id}`,
-            description: `Budget ${car.year} ${car.make} ${car.model} rental in ${car.city || 'Arizona'} - $${car.dailyRate}/day`,
+            description: `Budget ${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)} rental in ${car.city || 'Arizona'} - $${car.dailyRate}/day`,
             image: car.photos?.[0]?.url,
             brand: {
               '@type': 'Brand',

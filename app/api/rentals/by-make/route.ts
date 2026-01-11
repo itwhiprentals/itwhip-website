@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
         vehicleType: true, // For rideshare badge
         dailyRate: true,
         city: true,
+        seats: true,
         rating: true,
         totalTrips: true,
         instantBook: true,
@@ -109,6 +110,7 @@ export async function GET(request: NextRequest) {
             carType: car.carType,
             vehicleType: car.vehicleType, // For rideshare badge
             city: car.city,
+            seats: car.seats,
             rating: car.rating ? Number(car.rating) : null,
             totalTrips: car.totalTrips,
             instantBook: car.instantBook,

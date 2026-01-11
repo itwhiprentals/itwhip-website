@@ -188,7 +188,7 @@ function CarCard({
       <div className="relative h-24 sm:h-28 bg-gray-200 dark:bg-gray-700 overflow-hidden">
         <img
           src={imageUrl}
-          alt={`${car.year} ${car.make} ${car.model}`}
+          alt={`${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)}`}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
         

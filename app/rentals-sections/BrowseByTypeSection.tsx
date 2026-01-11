@@ -54,6 +54,7 @@ interface CarData {
   dailyRate: number
   carType: string
   vehicleType?: string | null // For rideshare badge
+  seats?: number | null
   city: string
   rating: number | null
   totalTrips: number
@@ -132,7 +133,7 @@ export default function BrowseByTypeSection() {
             {carTypes.map((carType) => (
               <Link
                 key={carType.type}
-                href={`/rentals/types/${carType.type}`}
+                href={`/rentals/search?location=${encodeURIComponent('Phoenix, AZ')}&carType=${carType.type}`}
                 className="group"
               >
                 <div className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden shadow-sm hover:shadow-lg hover:border-purple-300 dark:hover:border-purple-500 transition-all duration-200">
@@ -223,7 +224,7 @@ export default function BrowseByTypeSection() {
                           dailyRate: car.dailyRate,
                           carType: car.carType,
                           vehicleType: car.vehicleType as 'RENTAL' | 'RIDESHARE' | null,
-                          seats: 5,
+                          seats: car.seats,
                           city: car.city,
                           rating: car.rating,
                           totalTrips: car.totalTrips,

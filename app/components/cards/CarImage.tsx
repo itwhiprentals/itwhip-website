@@ -3,6 +3,7 @@
 
 import { useState } from 'react'
 import { IoCarOutline } from 'react-icons/io5'
+import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatters'
 
 interface CarImageProps {
   car: any
@@ -76,7 +77,7 @@ export default function CarImage({ car, className = '' }: CarImageProps) {
         <div className="text-center">
           <IoCarOutline className="w-16 h-16 text-gray-400 mb-2" />
           <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
-            {car.year} {car.make} {car.model}
+            {car.year} {capitalizeCarMake(car.make)} {normalizeModelName(car.model, car.make)}
           </p>
         </div>
       </div>
@@ -92,7 +93,7 @@ export default function CarImage({ car, className = '' }: CarImageProps) {
       )}
       <img
         src={imageUrl}
-        alt={`${car.make} ${car.model} ${car.year}`}
+        alt={`${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)}`}
         className={className}
         onLoad={() => setIsLoading(false)}
         onError={() => { 

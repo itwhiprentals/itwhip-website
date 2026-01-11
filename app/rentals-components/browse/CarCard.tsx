@@ -20,7 +20,8 @@ import {
 } from 'react-icons/io5'
 import { RentalCarWithDetails } from '@/types/rental'
 import { formatCurrency } from '@/app/(guest)/rentals/lib/rental-utils'
-import { capitalizeCarMake } from '@/app/lib/utils/formatters'
+import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatters'
+import { formatRating, isNewListing, formatTransmission, formatFuelType } from '@/app/lib/utils/formatCarSpecs'
 
 interface CarCardProps {
   car: RentalCarWithDetails
@@ -77,7 +78,7 @@ export default function CarCard({
             <div className="relative w-72 h-48">
               <Image
                 src={images[currentImageIndex]}
-                alt={`${car.make} ${car.model}`}
+                alt={`${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)}`}
                 fill
                 className="object-cover"
               />
@@ -109,7 +110,7 @@ export default function CarCard({
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {car.year} {capitalizeCarMake(car.make)} {car.model}
+                    {car.year} {capitalizeCarMake(car.make)} {normalizeModelName(car.model, car.make)}
                   </h3>
                   
                   {/* Host Info */}
@@ -121,11 +122,15 @@ export default function CarCard({
                       {car.host.isVerified && (
                         <IoShieldCheckmarkOutline className="w-4 h-4 text-blue-500" />
                       )}
-                      <div className="flex items-center gap-1">
-                        <IoStar className="w-4 h-4 text-yellow-500" />
-                        <span className="text-sm font-medium">{car.rating}</span>
-                        <span className="text-sm text-gray-500">({car.totalTrips} trips)</span>
-                      </div>
+                      {isNewListing(car.totalTrips) ? (
+                        <span className="text-sm text-green-600 dark:text-green-400 font-medium">New Listing</span>
+                      ) : (
+                        <div className="flex items-center gap-1">
+                          <IoStar className="w-4 h-4 text-yellow-500" />
+                          <span className="text-sm font-medium">{formatRating(car.rating)}</span>
+                          <span className="text-sm text-gray-500">({car.totalTrips} trips)</span>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -143,11 +148,11 @@ export default function CarCard({
                     </div>
                     <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
                       <IoSpeedometerOutline className="w-4 h-4" />
-                      <span>{car.transmission}</span>
+                      <span>{formatTransmission(car.transmission)}</span>
                     </div>
                     <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
                       <IoWaterOutline className="w-4 h-4" />
-                      <span>{car.fuelType}</span>
+                      <span>{formatFuelType(car.fuelType)}</span>
                     </div>
                   </div>
 
@@ -205,7 +210,7 @@ export default function CarCard({
         <div className="relative h-48 bg-gray-200 dark:bg-gray-700">
           <Image
             src={images[currentImageIndex]}
-            alt={`${car.make} ${car.model}`}
+            alt={`${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)}`}
             fill
             className={`object-cover transition-transform duration-300 ${isHovered ? 'scale-105' : ''}`}
           />
@@ -271,7 +276,7 @@ export default function CarCard({
         <div className="p-4">
           {/* Title */}
           <h3 className="font-semibold text-gray-900 dark:text-white">
-            {car.year} {capitalizeCarMake(car.make)} {car.model}
+            {car.year} {capitalizeCarMake(car.make)} {normalizeModelName(car.model, car.make)}
           </h3>
 
           {/* Host & Rating */}
@@ -283,11 +288,15 @@ export default function CarCard({
                   <IoShieldCheckmarkOutline className="w-4 h-4 text-blue-500" />
                 )}
               </div>
-              <div className="flex items-center gap-1">
-                <IoStar className="w-4 h-4 text-yellow-500" />
-                <span className="text-sm font-medium">{car.rating}</span>
-                <span className="text-xs text-gray-500">({car.totalTrips})</span>
-              </div>
+              {isNewListing(car.totalTrips) ? (
+                <span className="text-sm text-green-600 dark:text-green-400 font-medium">New Listing</span>
+              ) : (
+                <div className="flex items-center gap-1">
+                  <IoStar className="w-4 h-4 text-yellow-500" />
+                  <span className="text-sm font-medium">{formatRating(car.rating)}</span>
+                  <span className="text-xs text-gray-500">({car.totalTrips})</span>
+                </div>
+              )}
             </div>
           )}
 

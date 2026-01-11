@@ -128,7 +128,7 @@ export default function CompactCarCard({ car, accentColor = 'amber', className =
       <div className="relative h-32 sm:h-36 bg-gray-200 dark:bg-gray-700 overflow-hidden">
         <img
           src={imageUrl}
-          alt={`${car.year} ${car.make} ${car.model} for rent - $${car.dailyRate}/day`}
+          alt={`${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)} for rent - $${car.dailyRate}/day`}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           loading="lazy"
           width={350}

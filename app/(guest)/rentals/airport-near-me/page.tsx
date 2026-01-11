@@ -17,6 +17,7 @@ import {
   IoLocationOutline,
   IoNavigateOutline
 } from 'react-icons/io5'
+import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatters'
 
 export const revalidate = 60
 
@@ -119,9 +120,9 @@ export default async function AirportNearMePage() {
           position: index + 1,
           item: {
             '@type': 'Product',
-            name: `${car.year} ${car.make} ${car.model}`,
+            name: `${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)}`,
             url: `https://itwhip.com/rentals/${car.id}`,
-            description: `Airport pickup available - ${car.year} ${car.make} ${car.model} in ${car.city}`,
+            description: `Airport pickup available - ${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)} in ${car.city}`,
             image: car.photos?.[0]?.url || 'https://itwhip.com/images/placeholder-car.jpg',
             ...(car.rating && car.totalTrips > 0 ? {
               aggregateRating: {

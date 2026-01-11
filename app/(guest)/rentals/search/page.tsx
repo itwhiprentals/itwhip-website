@@ -11,6 +11,7 @@ import { getLocationByName, ALL_ARIZONA_LOCATIONS } from '@/lib/data/arizona-loc
 import { format, addDays } from 'date-fns'
 import SearchResultsClient from './SearchResultsClient'
 import Footer from '@/app/components/Footer'
+import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatters'
 
 // Dynamic metadata based on search params
 export async function generateMetadata({ searchParams }: { searchParams: Promise<{ [key: string]: string | undefined }> }): Promise<Metadata> {
@@ -36,7 +37,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
 }
 
 // Server-side data fetching
-async function getInitialCars(location: string, pickupDate: string, returnDate: string) {
+async function getInitialCars(location: string, pickupDate: string, returnDate: string, carType?: string | null, sortBy: string = 'recommended') {
   const DEFAULT_RADIUS_MILES = 25
 
   // Determine search coordinates
@@ -70,6 +71,37 @@ async function getInitialCars(location: string, pickupDate: string, returnDate: 
   // Build query with bounding box
   const boundingBox = getBoundingBox(searchCoordinates, DEFAULT_RADIUS_MILES)
 
+  // Build carType filter - special handling for electric, luxury, sports
+  const luxuryMakes = ['Mercedes-Benz', 'BMW', 'Audi', 'Porsche', 'Lexus', 'Cadillac', 'Bentley', 'Rolls-Royce', 'Maserati', 'Jaguar', 'Land Rover', 'Range Rover', 'Infiniti', 'Acura', 'Genesis', 'Lincoln']
+  const sportsMakes = ['Porsche', 'Ferrari', 'Lamborghini', 'McLaren', 'Aston Martin', 'Lotus', 'Corvette']
+
+  let carTypeFilter: any = {}
+  if (carType && carType !== 'all') {
+    if (carType.toLowerCase() === 'electric') {
+      carTypeFilter = {
+        OR: [
+          { carType: { equals: 'ELECTRIC', mode: 'insensitive' as const } },
+          { fuelType: { in: ['electric', 'ELECTRIC', 'Electric'] } }
+        ]
+      }
+    } else if (carType.toLowerCase() === 'luxury') {
+      carTypeFilter = {
+        OR: luxuryMakes.map(make => ({ make: { equals: make, mode: 'insensitive' as const } }))
+      }
+    } else if (carType.toLowerCase() === 'sports') {
+      carTypeFilter = {
+        OR: [
+          { carType: { equals: 'SPORTS', mode: 'insensitive' as const } },
+          { carType: { equals: 'COUPE', mode: 'insensitive' as const } },
+          { carType: { equals: 'EXOTIC', mode: 'insensitive' as const } },
+          ...sportsMakes.map(make => ({ make: { equals: make, mode: 'insensitive' as const } }))
+        ]
+      }
+    } else {
+      carTypeFilter = { carType: { equals: carType.toUpperCase(), mode: 'insensitive' as const } }
+    }
+  }
+
   const cars = await prisma.rentalCar.findMany({
     where: {
       isActive: true,
@@ -80,7 +112,8 @@ async function getInitialCars(location: string, pickupDate: string, returnDate: 
       AND: [
         { latitude: { gte: boundingBox.minLat, lte: boundingBox.maxLat } },
         { longitude: { gte: boundingBox.minLng, lte: boundingBox.maxLng } }
-      ]
+      ],
+      ...carTypeFilter
     },
     select: {
       id: true,
@@ -201,7 +234,7 @@ async function getInitialCars(location: string, pickupDate: string, returnDate: 
         },
         photos: car.photos.map((photo: any) => ({
           url: photo.url,
-          alt: photo.caption || `${car.make} ${car.model}`
+          alt: photo.caption || `${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)}`
         })),
         rating: {
           average: car.rating ? parseFloat(Number(car.rating).toFixed(1)) : 5.0,
@@ -213,10 +246,23 @@ async function getInitialCars(location: string, pickupDate: string, returnDate: 
     })
     .filter(Boolean)
     .sort((a, b) => {
-      // Sort by rating then trips
-      const ratingDiff = (b!.rating.average || 0) - (a!.rating.average || 0)
-      if (Math.abs(ratingDiff) > 0.5) return ratingDiff
-      return (b!.trips || 0) - (a!.trips || 0)
+      // Apply sorting based on sortBy parameter
+      switch (sortBy) {
+        case 'price_low':
+          return (a!.dailyRate || 0) - (b!.dailyRate || 0)
+        case 'price_high':
+          return (b!.dailyRate || 0) - (a!.dailyRate || 0)
+        case 'rating':
+          return (b!.rating.average || 0) - (a!.rating.average || 0)
+        case 'distance':
+          return (a!.location?.distance || 0) - (b!.location?.distance || 0)
+        case 'recommended':
+        default:
+          // Sort by rating then trips
+          const ratingDiff = (b!.rating.average || 0) - (a!.rating.average || 0)
+          if (Math.abs(ratingDiff) > 0.5) return ratingDiff
+          return (b!.trips || 0) - (a!.trips || 0)
+      }
     })
 
   // Calculate price range
@@ -235,19 +281,40 @@ async function getInitialCars(location: string, pickupDate: string, returnDate: 
     car!.location?.city?.toLowerCase() !== searchedCity.toLowerCase()
   )
 
+  // If carType filter returned 0 results, fetch all cars and set noResultsForType flag
+  let noResultsForType: string | null = null
+  let finalProcessedCars = processedCars
+  let finalCarsInCity = carsInCity
+  let finalNearbyCars = nearbyCars
+
+  if (carType && processedCars.length === 0) {
+    noResultsForType = carType
+    // Fetch all cars without the carType filter
+    const allCarsResult = await getInitialCars(location, pickupDate, returnDate, null)
+    finalProcessedCars = allCarsResult.cars
+    finalCarsInCity = allCarsResult.carsInCity
+    finalNearbyCars = allCarsResult.nearbyCars
+  }
+
+  // Recalculate price range with final cars
+  const finalPrices = finalProcessedCars.map(c => c!.dailyRate).filter(p => p > 0)
+  const finalMinPrice = finalPrices.length > 0 ? Math.min(...finalPrices) : 59
+  const finalMaxPrice = finalPrices.length > 0 ? Math.max(...finalPrices) : 499
+
   return {
-    cars: processedCars,
-    carsInCity,
-    nearbyCars,
+    cars: finalProcessedCars,
+    carsInCity: finalCarsInCity,
+    nearbyCars: finalNearbyCars,
     searchedCity,
-    total: processedCars.length,
+    total: finalProcessedCars.length,
     searchCoordinates,
-    priceRange: { min: minPrice, max: maxPrice },
+    priceRange: { min: finalMinPrice, max: finalMaxPrice },
+    noResultsForType,
     metadata: {
-      totalResults: processedCars.length,
-      inCityCount: carsInCity.length,
-      nearbyCount: nearbyCars.length,
-      fullyAvailable: processedCars.length,
+      totalResults: finalProcessedCars.length,
+      inCityCount: finalCarsInCity.length,
+      nearbyCount: finalNearbyCars.length,
+      fullyAvailable: finalProcessedCars.length,
       partiallyAvailable: 0,
       unavailable: 0,
       searchCoordinates
@@ -268,7 +335,7 @@ function ItemListSchema({ cars, location }: { cars: any[], location: string }) {
       position: index + 1,
       item: {
         '@type': 'Car',
-        name: `${car.year} ${car.make} ${car.model}`,
+        name: `${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)}`,
         vehicleConfiguration: car.type,
         numberOfDoors: 4,
         vehicleSeatingCapacity: car.seats,
@@ -416,7 +483,7 @@ function SSRCarCard({ car }: { car: any }) {
         {car.photos?.[0]?.url ? (
           <Image
             src={car.photos[0].url}
-            alt={`${car.year} ${car.make} ${car.model} for rent in ${car.location?.city || 'Phoenix'}`}
+            alt={`${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)} for rent in ${car.location?.city || 'Phoenix'}`}
             fill
             className="object-cover"
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
@@ -434,7 +501,7 @@ function SSRCarCard({ car }: { car: any }) {
       </div>
       <div className="p-3">
         <h3 className="font-semibold text-gray-900 dark:text-white text-sm truncate">
-          {car.year} {car.make} {car.model}
+          {car.year} {capitalizeCarMake(car.make)} {normalizeModelName(car.model, car.make)}
         </h3>
         <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center mt-1">
           <IoLocationOutline className="w-3 h-3 mr-1" />
@@ -542,7 +609,7 @@ function SEOContent({ location, priceRange }: { location: string; priceRange: { 
                 <IoChevronForwardOutline className="w-4 h-4 text-gray-500 group-open:rotate-90 transition-transform flex-shrink-0 ml-2" />
               </summary>
               <div className="px-3 sm:px-4 pb-3 sm:pb-4 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                Rentals start at ${priceRange.min}/day for economy cars. <Link href="/rentals/search?sortBy=price_low" className="text-amber-600 hover:underline">View cheapest options →</Link>
+                Rentals start at ${priceRange.min}/day for economy cars. <Link href={`/rentals/search?location=${encodeURIComponent(location)}&sortBy=price_low`} className="text-amber-600 hover:underline">View cheapest options →</Link>
               </div>
             </details>
 
@@ -552,7 +619,7 @@ function SEOContent({ location, priceRange }: { location: string; priceRange: { 
                 <IoChevronForwardOutline className="w-4 h-4 text-gray-500 group-open:rotate-90 transition-transform flex-shrink-0 ml-2" />
               </summary>
               <div className="px-3 sm:px-4 pb-3 sm:pb-4 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                Yes! Many hosts offer free delivery to Phoenix Sky Harbor (PHX). <Link href="/rentals/search?delivery=airport" className="text-amber-600 hover:underline">Filter by airport pickup →</Link>
+                Yes! Many hosts offer free delivery to Phoenix Sky Harbor (PHX). <Link href={`/rentals/search?location=${encodeURIComponent(location)}&delivery=airport`} className="text-amber-600 hover:underline">Filter by airport pickup →</Link>
               </div>
             </details>
 
@@ -606,11 +673,13 @@ export default async function SearchResultsPage({
   const returnDate = params.returnDate || format(addDays(new Date(), 3), 'yyyy-MM-dd')
   const pickupTime = params.pickupTime || '10:00'
   const returnTime = params.returnTime || '10:00'
+  const carType = params.carType || null
+  const sortBy = params.sortBy || 'recommended'
 
   const cityName = location.split(',')[0].trim()
 
-  // Fetch initial cars on the server
-  const { cars, carsInCity, nearbyCars, searchedCity, total, metadata, priceRange } = await getInitialCars(location, pickupDate, returnDate)
+  // Fetch initial cars on the server (with optional carType filter and sorting)
+  const { cars, carsInCity, nearbyCars, searchedCity, total, metadata, priceRange, noResultsForType } = await getInitialCars(location, pickupDate, returnDate, carType, sortBy)
 
   return (
     <>
@@ -647,7 +716,7 @@ export default async function SearchResultsPage({
           {(cars as any[]).slice(0, 30).map((car: any) => (
             <li key={car.id}>
               <a href={`/rentals/cars/${car.id}`}>
-                {car.year} {car.make} {car.model} - ${car.dailyRate}/day in {car.location?.city || 'Phoenix'}, AZ
+                {car.year} {capitalizeCarMake(car.make)} {normalizeModelName(car.model, car.make)} - ${car.dailyRate}/day in {car.location?.city || 'Phoenix'}, AZ
                 {car.rating?.average > 0 && ` - ${car.rating.average} stars (${car.trips} trips)`}
               </a>
             </li>
@@ -658,6 +727,7 @@ export default async function SearchResultsPage({
       {/* Interactive Client Component */}
       <Suspense fallback={<SearchLoadingFallback />}>
         <SearchResultsClient
+          key={`${location}-${pickupDate}-${returnDate}-${carType || 'all'}-${sortBy}`}
           initialCars={cars as any[]}
           initialCarsInCity={carsInCity as any[]}
           initialNearbyCars={nearbyCars as any[]}
@@ -669,6 +739,9 @@ export default async function SearchResultsPage({
           initialReturnDate={returnDate}
           initialPickupTime={pickupTime}
           initialReturnTime={returnTime}
+          initialCarType={carType}
+          initialSortBy={sortBy}
+          noResultsForType={noResultsForType}
         />
       </Suspense>
 

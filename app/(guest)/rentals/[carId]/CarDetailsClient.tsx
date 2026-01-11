@@ -42,7 +42,7 @@ import VehicleBadge from '@/app/components/VehicleBadge'
 import { getVehicleClass, formatFuelTypeBadge } from '@/app/lib/utils/vehicleClassification'
 import { getVehicleSpecData } from '@/app/lib/utils/vehicleSpec'
 import { formatRating } from '@/app/lib/utils/formatCarSpecs'
-import { normalizeModelName } from '@/app/lib/utils/formatters'
+import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatters'
 
 // Updated type definition with suspension fields
 interface RentalCarWithDetails {
@@ -220,11 +220,6 @@ function formatDriveType(driveType?: string | null): string {
   }
 }
 
-// Format car make with proper capitalization (TOYOTA → Toyota)
-function formatMake(make?: string | null): string {
-  if (!make) return ''
-  return make.charAt(0).toUpperCase() + make.slice(1).toLowerCase()
-}
 
 export default function CarDetailsClient({ params, initialSimilarCars, initialHostCars }: PageProps) {
   const router = useRouter()
@@ -593,7 +588,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
             )}
             <PhotoGallery
               photos={car.photos || []}
-              carName={`${car.year} ${formatMake(car.make)} ${normalizeModelName(car.model, car.make)}`}
+              carName={`${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)}`}
               onViewModeChange={setIsViewingAllPhotos}
             />
           </div>
@@ -632,7 +627,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
           )}
           <PhotoGallery
             photos={car.photos || []}
-            carName={`${car.year} ${formatMake(car.make)} ${normalizeModelName(car.model, car.make)}`}
+            carName={`${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)}`}
             onViewModeChange={setIsViewingAllPhotos}
           />
         </div>
@@ -647,7 +642,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
             <div>
               <div className="flex items-center gap-2 flex-wrap mb-1">
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-                  {car.year} {formatMake(car.make)}
+                  {car.year} {capitalizeCarMake(car.make)}
                 </h1>
                 {vehicleClass && <VehicleBadge label={vehicleClass} />}
                 {fuelTypeBadge && <VehicleBadge label={fuelTypeBadge} />}
@@ -780,7 +775,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
                   {/* Description */}
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Experience the perfect blend of style and performance with this {car.year} {formatMake(car.make)} {normalizeModelName(car.model, car.make)}. 
+                      Experience the perfect blend of style and performance with this {car.year} {capitalizeCarMake(car.make)} {normalizeModelName(car.model, car.make)}. 
                       This {formatCarType(car.carType || car.type).toLowerCase()} offers comfortable seating for {car.seats || 5} passengers 
                       and comes equipped with {formatTransmission(car.transmission).toLowerCase() === 'automatic' ? 'an' : 'a'} {formatTransmission(car.transmission).toLowerCase()} transmission 
                       for a smooth driving experience.

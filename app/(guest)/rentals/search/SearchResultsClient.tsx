@@ -46,6 +46,9 @@ interface SearchResultsClientProps {
   initialReturnDate: string
   initialPickupTime: string
   initialReturnTime: string
+  initialCarType?: string | null
+  initialSortBy?: string
+  noResultsForType?: string | null
 }
 
 export default function SearchResultsClient({
@@ -59,7 +62,10 @@ export default function SearchResultsClient({
   initialPickupDate,
   initialReturnDate,
   initialPickupTime,
-  initialReturnTime
+  initialReturnTime,
+  initialCarType = null,
+  initialSortBy = 'recommended',
+  noResultsForType: initialNoResultsForType = null
 }: SearchResultsClientProps) {
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -73,7 +79,7 @@ export default function SearchResultsClient({
   const [searchedCity, setSearchedCity] = useState<string>(initialSearchedCity || initialLocation.split(',')[0].trim())
   const [isLoading, setIsLoading] = useState(false)
   const [filters, setFilters] = useState({
-    carType: [] as string[],
+    carType: initialNoResultsForType ? [] : (initialCarType ? [initialCarType.toLowerCase()] : [] as string[]),
     minPrice: 0,
     maxPrice: 1000,
     features: [] as string[],
@@ -83,7 +89,9 @@ export default function SearchResultsClient({
     delivery: [] as string[],
     availability: 'all' // all, available, partial
   })
-  const [sortBy, setSortBy] = useState('recommended')
+  // Track if the requested car type had no results (showing all cars with a banner)
+  const [noResultsForType, setNoResultsForType] = useState<string | null>(initialNoResultsForType)
+  const [sortBy, setSortBy] = useState(initialSortBy)
   const [showFilters, setShowFilters] = useState(false)
   const [showMap, setShowMap] = useState(viewParam === 'map')
   const [totalCount, setTotalCount] = useState(initialTotal)
@@ -105,6 +113,8 @@ export default function SearchResultsClient({
   // Fetch cars (only when params change from initial)
   const fetchCars = useCallback(async () => {
     setIsLoading(true)
+    // Clear the "no results for type" banner when starting a new search
+    setNoResultsForType(null)
     try {
       const params = new URLSearchParams({
         location,
@@ -151,21 +161,34 @@ export default function SearchResultsClient({
     }
   }, [location, pickupDate, returnDate, pickupTime, returnTime, sortBy, filters])
 
-  // Only fetch when filters/sort change (initial data is from server)
+  // Track if this is the initial mount to skip redundant fetches
+  const isInitialMount = useRef(true)
+  const initialFiltersRef = useRef({
+    carType: initialNoResultsForType ? [] : (initialCarType ? [initialCarType.toLowerCase()] : []),
+    sortBy: initialSortBy
+  })
+
+  // Only fetch when filters/sort change AFTER initial mount (initial data is from server)
   useEffect(() => {
-    // Skip initial render - we already have server data
-    const hasFilterChanges =
-      filters.carType.length > 0 ||
+    // Skip the very first render - we already have server data
+    if (isInitialMount.current) {
+      isInitialMount.current = false
+      return
+    }
+
+    // Check if filters actually changed from initial values
+    const carTypeChanged = JSON.stringify(filters.carType) !== JSON.stringify(initialFiltersRef.current.carType)
+    const sortByChanged = sortBy !== initialFiltersRef.current.sortBy
+    const hasOtherFilterChanges =
       filters.minPrice > 0 ||
       filters.maxPrice < 1000 ||
       filters.features.length > 0 ||
       filters.instantBook ||
       filters.transmission !== 'all' ||
       filters.seats !== 'all' ||
-      filters.delivery.length > 0 ||
-      sortBy !== 'recommended'
+      filters.delivery.length > 0
 
-    if (hasFilterChanges) {
+    if (carTypeChanged || sortByChanged || hasOtherFilterChanges) {
       fetchCars()
     }
   }, [sortBy, filters, fetchCars])
@@ -174,14 +197,20 @@ export default function SearchResultsClient({
   const lastFetchedRef = useRef({
     location: initialLocation,
     pickupDate: initialPickupDate,
-    returnDate: initialReturnDate
+    returnDate: initialReturnDate,
+    carType: initialCarType,
+    sortBy: initialSortBy
   })
+  // Track if we've done the first navigation (to distinguish initial load from subsequent navigations)
+  const hasNavigated = useRef(false)
 
-  // Re-fetch when search params change
+  // Re-fetch when search params change (only for actual navigation, not initial load)
   useEffect(() => {
     const urlLocation = searchParams.get('location') || initialLocation
     const urlPickupDate = searchParams.get('pickupDate') || initialPickupDate
     const urlReturnDate = searchParams.get('returnDate') || initialReturnDate
+    const urlCarType = searchParams.get('carType') || null
+    const urlSortBy = searchParams.get('sortBy') || 'recommended'
 
     // Normalize dates - remove time component if present for comparison
     const normalizeDate = (d: string) => d.split('T')[0]
@@ -193,19 +222,48 @@ export default function SearchResultsClient({
     // Only fetch if params changed from last fetch
     const hasLocationChanged = urlLocation !== lastFetchedRef.current.location
     const hasDateChanged = currentPickup !== lastPickup || currentReturn !== lastReturn
+    const hasCarTypeChanged = urlCarType !== lastFetchedRef.current.carType
+    const hasSortByChanged = urlSortBy !== lastFetchedRef.current.sortBy
 
-    if (hasLocationChanged || hasDateChanged) {
+    // On initial mount, just mark navigation tracking as ready without fetching
+    if (!hasNavigated.current) {
+      hasNavigated.current = true
+      // Still update ref to current URL state
+      lastFetchedRef.current = {
+        location: urlLocation,
+        pickupDate: currentPickup,
+        returnDate: currentReturn,
+        carType: urlCarType,
+        sortBy: urlSortBy
+      }
+      return
+    }
+
+    if (hasLocationChanged || hasDateChanged || hasCarTypeChanged || hasSortByChanged) {
       // Update ref before fetching
       lastFetchedRef.current = {
         location: urlLocation,
         pickupDate: currentPickup,
-        returnDate: currentReturn
+        returnDate: currentReturn,
+        carType: urlCarType,
+        sortBy: urlSortBy
       }
       // Also update the searchedCity for display
       setSearchedCity(urlLocation.split(',')[0].trim())
+      // Update carType filter if it changed
+      if (hasCarTypeChanged) {
+        setFilters(prev => ({
+          ...prev,
+          carType: urlCarType ? [urlCarType.toLowerCase()] : []
+        }))
+      }
+      // Update sortBy if it changed
+      if (hasSortByChanged) {
+        setSortBy(urlSortBy)
+      }
       fetchCars()
     }
-  }, [searchParams, initialLocation, initialPickupDate, initialReturnDate, fetchCars])
+  }, [searchParams, initialLocation, initialPickupDate, initialReturnDate, initialCarType, initialSortBy, fetchCars])
 
   // Filter cars by availability filter
   const filterByAvailability = useCallback((carList: any[]) => {
@@ -227,6 +285,13 @@ export default function SearchResultsClient({
 
   // Handle search update
   const handleSearchUpdate = (params: any) => {
+    // Clear the "no results for type" banner when starting a new search
+    setNoResultsForType(null)
+    // Clear any carType filter when doing a new general search
+    setFilters(prev => ({
+      ...prev,
+      carType: []
+    }))
     const newSearchParams = new URLSearchParams({
       location: params.location || location,
       pickupDate: params.pickupDate || pickupDate,
@@ -310,6 +375,8 @@ export default function SearchResultsClient({
   }
 
   const clearFilters = () => {
+    // Clear the "no results for type" banner when clearing filters
+    setNoResultsForType(null)
     setFilters({
       carType: [],
       minPrice: 0,
@@ -387,7 +454,7 @@ export default function SearchResultsClient({
               <select
                 value={filters.availability}
                 onChange={(e) => setFilters(prev => ({ ...prev, availability: e.target.value }))}
-                className="h-10 px-4 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 appearance-none cursor-pointer min-w-[140px]"
+                className="h-10 px-4 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 appearance-none cursor-pointer min-w-[140px]"
               >
                 <option value="all">All Cars</option>
                 <option value="available">Fully Available</option>
@@ -441,7 +508,7 @@ export default function SearchResultsClient({
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="h-10 pl-3 pr-8 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 appearance-none cursor-pointer min-w-[160px]"
+                  className="h-10 pl-3 pr-8 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 appearance-none cursor-pointer min-w-[160px]"
                 >
                   {sortOptions.map(option => (
                     <option key={option.value} value={option.value}>
@@ -456,14 +523,14 @@ export default function SearchResultsClient({
               <div className="flex items-center bg-gray-100 dark:bg-gray-900 rounded-lg p-1">
                 <button
                   onClick={() => setShowMap(false)}
-                  className={`p-2 rounded ${!showMap ? 'bg-white dark:bg-gray-800 shadow-sm' : ''}`}
+                  className={`p-2 rounded text-gray-700 dark:text-gray-300 ${!showMap ? 'bg-white dark:bg-gray-800 shadow-sm' : ''}`}
                   title="List view"
                 >
                   <IoListOutline className="w-5 h-5" />
                 </button>
                 <button
                   onClick={() => setShowMap(true)}
-                  className={`p-2 rounded ${showMap ? 'bg-white dark:bg-gray-800 shadow-sm' : ''}`}
+                  className={`p-2 rounded text-gray-700 dark:text-gray-300 ${showMap ? 'bg-white dark:bg-gray-800 shadow-sm' : ''}`}
                   title="Map view"
                 >
                   <IoMapOutline className="w-5 h-5" />
@@ -500,6 +567,31 @@ export default function SearchResultsClient({
       ) : (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <>
+            {/* No Results For Type Banner */}
+            {noResultsForType && !isLoading && (
+              <div className="mb-6 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex-shrink-0">
+                    <IoCarOutline className="w-8 h-8 text-amber-500" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-amber-800 dark:text-amber-200">
+                      No {noResultsForType.charAt(0).toUpperCase() + noResultsForType.slice(1)} vehicles available
+                    </h3>
+                    <p className="text-sm text-amber-700 dark:text-amber-300 mt-0.5">
+                      We don't have any {noResultsForType.toLowerCase()} cars in {searchedCity} right now. Browse our other available vehicles below.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setNoResultsForType(null)}
+                    className="flex-shrink-0 text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-200"
+                  >
+                    <IoCloseOutline className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Car Grid */}
             {isLoading ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
@@ -511,16 +603,20 @@ export default function SearchResultsClient({
               <div className="text-center py-12">
                 <IoCarOutline className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                  No cars found
+                  {filters.carType.length > 0
+                    ? `No ${filters.carType.map(t => t.charAt(0).toUpperCase() + t.slice(1)).join(', ')} cars available`
+                    : 'No cars found'}
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-6">
-                  Try adjusting your filters or search dates
+                  {filters.carType.length > 0
+                    ? `We don't have any ${filters.carType.map(t => t.toLowerCase()).join(' or ')} vehicles in ${searchedCity} right now. Browse all available cars below.`
+                    : 'Try adjusting your filters or search dates'}
                 </p>
                 <button
                   onClick={clearFilters}
                   className="px-6 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
                 >
-                  Clear Filters
+                  {filters.carType.length > 0 ? 'Browse All Cars' : 'Clear Filters'}
                 </button>
               </div>
             ) : (

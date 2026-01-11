@@ -22,6 +22,7 @@ import {
   IoBusinessOutline,
   IoMapOutline
 } from 'react-icons/io5'
+import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatters'
 
 // ISR - Revalidate every 60 seconds
 export const revalidate = 60
@@ -210,9 +211,9 @@ export default async function NearMePage() {
           position: index + 1,
           item: {
             '@type': 'Product',
-            name: `${car.year} ${car.make} ${car.model}`,
+            name: `${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)}`,
             url: `https://itwhip.com/rentals/${car.id}`,
-            description: `Rent this ${car.year} ${car.make} ${car.model} in ${car.city}, AZ`,
+            description: `Rent this ${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)} in ${car.city}, AZ`,
             image: car.photos?.[0]?.url || 'https://itwhip.com/images/placeholder-car.jpg',
             ...(car.rating && car.totalTrips > 0 ? {
               aggregateRating: {

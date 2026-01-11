@@ -38,6 +38,7 @@ import { getCityFromAddress } from '@/app/(guest)/rentals/lib/arizona-taxes'
 
 // Import Header component
 import Header from '@/app/components/Header'
+import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatters'
 
 // Import modal components
 import RentalAgreementModal from '@/app/(guest)/rentals/components/modals/RentalAgreementModal'
@@ -1178,13 +1179,13 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
               {car.photos?.[0] && (
                 <img
                   src={car.photos[0].url}
-                  alt={`${car.make} ${car.model}`}
+                  alt={`${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)}`}
                   className="w-20 h-14 object-cover rounded-lg"
                 />
               )}
               <div>
                 <p className="text-sm font-medium text-gray-900 dark:text-white">
-                  {car.year} {car.make} {car.model}
+                  {car.year} {capitalizeCarMake(car.make)} {normalizeModelName(car.model, car.make)}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   {car.carType} • {car.seats} seats
