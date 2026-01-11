@@ -133,7 +133,7 @@ export default function BrowseByTypeSection() {
             {carTypes.map((carType) => (
               <Link
                 key={carType.type}
-                href={`/rentals/search?location=${encodeURIComponent('Phoenix, AZ')}&carType=${carType.type}`}
+                href={`/rentals/types/${carType.type}`}
                 className="group"
               >
                 <div className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden shadow-sm hover:shadow-lg hover:border-purple-300 dark:hover:border-purple-500 transition-all duration-200">
