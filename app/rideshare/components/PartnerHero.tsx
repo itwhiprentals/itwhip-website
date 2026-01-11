@@ -6,11 +6,8 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import {
-  IoCarOutline,
-  IoStarOutline,
   IoStar,
   IoLocationOutline,
-  IoNavigateOutline,
   IoMailOutline,
   IoCallOutline,
   IoCheckmarkCircleOutline,
@@ -24,8 +21,7 @@ import {
   IoLogoTiktok,
   IoLogoYoutube,
   IoTimeOutline,
-  IoCalendarOutline,
-  IoCashOutline
+  IoCalendarOutline
 } from 'react-icons/io5'
 
 interface PartnerStats {
@@ -250,15 +246,15 @@ export default function PartnerHero({
             )}
           </div>
 
-          {/* Social Media Links Row */}
+          {/* Social Media Links Row - Brand Colors */}
           {hasSocialLinks && (
-            <div className="flex flex-wrap items-center justify-center gap-3 mb-4">
+            <div className="flex flex-wrap items-center justify-center gap-3 pb-2">
               {socialLinks?.website && visibility.showWebsite !== false && (
                 <a
                   href={socialLinks.website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-orange-100 dark:hover:bg-orange-900/30 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
+                  className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg text-orange-600 dark:text-orange-400 hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors"
                   title="Website"
                 >
                   <IoGlobeOutline className="w-4 h-4" />
@@ -269,7 +265,7 @@ export default function PartnerHero({
                   href={socialLinks.instagram}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-pink-100 dark:hover:bg-pink-900/30 hover:text-pink-600 dark:hover:text-pink-400 transition-colors"
+                  className="p-2 bg-pink-100 dark:bg-pink-900/30 rounded-lg text-pink-600 dark:text-pink-400 hover:bg-pink-200 dark:hover:bg-pink-900/50 transition-colors"
                   title="Instagram"
                 >
                   <IoLogoInstagram className="w-4 h-4" />
@@ -280,7 +276,7 @@ export default function PartnerHero({
                   href={socialLinks.facebook}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
                   title="Facebook"
                 >
                   <IoLogoFacebook className="w-4 h-4" />
@@ -291,7 +287,7 @@ export default function PartnerHero({
                   href={socialLinks.twitter}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-sky-100 dark:hover:bg-sky-900/30 hover:text-sky-600 dark:hover:text-sky-400 transition-colors"
+                  className="p-2 bg-sky-100 dark:bg-sky-900/30 rounded-lg text-sky-500 dark:text-sky-400 hover:bg-sky-200 dark:hover:bg-sky-900/50 transition-colors"
                   title="Twitter / X"
                 >
                   <IoLogoTwitter className="w-4 h-4" />
@@ -302,7 +298,7 @@ export default function PartnerHero({
                   href={socialLinks.linkedin}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 hover:text-blue-700 dark:hover:text-blue-400 transition-colors"
+                  className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg text-blue-700 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
                   title="LinkedIn"
                 >
                   <IoLogoLinkedin className="w-4 h-4" />
@@ -313,7 +309,7 @@ export default function PartnerHero({
                   href={socialLinks.tiktok}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-black dark:hover:text-white transition-colors"
+                  className="p-2 bg-gray-200 dark:bg-gray-700 rounded-lg text-black dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                   title="TikTok"
                 >
                   <IoLogoTiktok className="w-4 h-4" />
@@ -324,7 +320,7 @@ export default function PartnerHero({
                   href={socialLinks.youtube}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                  className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
                   title="YouTube"
                 >
                   <IoLogoYoutube className="w-4 h-4" />
@@ -332,56 +328,6 @@ export default function PartnerHero({
               )}
             </div>
           )}
-
-          {/* Stats Row - Minimal inline design */}
-          <div className="flex items-center justify-center flex-wrap gap-x-6 gap-y-2 text-sm pb-2">
-            {/* Vehicles */}
-            <div className="flex items-center gap-1.5">
-              <IoCarOutline className="w-4 h-4 text-orange-500" />
-              <span className="font-semibold text-gray-900 dark:text-white">{stats.fleetSize}</span>
-              <span className="text-gray-500 dark:text-gray-400">vehicles</span>
-            </div>
-
-            <span className="hidden sm:block text-gray-300 dark:text-gray-600">•</span>
-
-            {/* Rating */}
-            <div className="flex items-center gap-1.5">
-              {stats.avgRating > 0 ? (
-                <>
-                  <IoStar className="w-4 h-4 text-amber-400 fill-current" />
-                  <span className="font-semibold text-gray-900 dark:text-white">{stats.avgRating.toFixed(1)}</span>
-                  <span className="text-gray-500 dark:text-gray-400">rating</span>
-                </>
-              ) : (
-                <>
-                  <IoStarOutline className="w-4 h-4 text-amber-400" />
-                  <span className="font-semibold text-blue-600 dark:text-blue-400">New</span>
-                </>
-              )}
-            </div>
-
-            <span className="hidden sm:block text-gray-300 dark:text-gray-600">•</span>
-
-            {/* Trips */}
-            <div className="flex items-center gap-1.5">
-              <IoNavigateOutline className="w-4 h-4 text-blue-500" />
-              <span className="font-semibold text-gray-900 dark:text-white">
-                {stats.totalTrips > 0 ? stats.totalTrips.toLocaleString() : '0'}
-              </span>
-              <span className="text-gray-500 dark:text-gray-400">trips</span>
-            </div>
-
-            <span className="hidden sm:block text-gray-300 dark:text-gray-600">•</span>
-
-            {/* Price Range */}
-            <div className="flex items-center gap-1.5">
-              <IoCashOutline className="w-4 h-4 text-green-500" />
-              <span className="font-semibold text-gray-900 dark:text-white">
-                ${stats.priceRange.min || 0}-${stats.priceRange.max || 0}
-              </span>
-              <span className="text-gray-500 dark:text-gray-400">/day</span>
-            </div>
-          </div>
         </div>
       </div>
     </div>
