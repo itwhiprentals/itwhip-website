@@ -105,6 +105,7 @@ export async function GET(request: NextRequest) {
         dailyRate: vehicle.dailyRate,
         status,
         isActive: vehicle.isActive,
+        vehicleType: vehicle.vehicleType || 'RENTAL',
         photo: vehicle.photos?.[0]?.url || null,
         totalTrips: vehicle.totalTrips || 0,
         totalRevenue: revenueMap.get(vehicle.id) || 0,

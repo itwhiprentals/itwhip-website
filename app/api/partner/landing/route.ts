@@ -93,7 +93,13 @@ export async function GET(request: NextRequest) {
           cancellationPolicy: policies?.cancellationPolicy || '',
           bookingRequirements: policies?.bookingRequirements || '',
           additionalTerms: policies?.additionalTerms || ''
-        }
+        },
+        // Service Settings
+        enableRideshare: partner.enableRideshare ?? true,
+        enableRentals: partner.enableRentals ?? false,
+        enableSales: partner.enableSales ?? false,
+        enableLeasing: partner.enableLeasing ?? false,
+        enableRentToOwn: partner.enableRentToOwn ?? false
       }
     })
   } catch (error) {
@@ -145,7 +151,13 @@ export async function PUT(request: NextRequest) {
         partnerShowPhone: body.showPhone ?? true,
         partnerShowWebsite: body.showWebsite ?? true,
         // Policies (stored as JSON)
-        ...(policiesData && { partnerPolicies: policiesData })
+        ...(policiesData && { partnerPolicies: policiesData }),
+        // Service Settings
+        enableRideshare: body.enableRideshare ?? true,
+        enableRentals: body.enableRentals ?? false,
+        enableSales: body.enableSales ?? false,
+        enableLeasing: body.enableLeasing ?? false,
+        enableRentToOwn: body.enableRentToOwn ?? false
       }
     })
 

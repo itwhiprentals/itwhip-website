@@ -8,6 +8,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   IoCarOutline,
+  IoCarSportOutline,
+  IoKeyOutline,
   IoAddCircleOutline,
   IoSearchOutline,
   IoCheckmarkCircleOutline,
@@ -18,7 +20,8 @@ import {
   IoEyeOutline,
   IoPauseCircleOutline,
   IoPlayCircleOutline,
-  IoRefreshOutline
+  IoRefreshOutline,
+  IoSwapHorizontalOutline
 } from 'react-icons/io5'
 
 interface Vehicle {
@@ -35,6 +38,7 @@ interface Vehicle {
   totalRevenue: number
   rating: number
   isActive: boolean
+  vehicleType: 'RENTAL' | 'RIDESHARE'
 }
 
 type FilterStatus = 'all' | 'available' | 'booked' | 'maintenance' | 'inactive'
@@ -153,6 +157,25 @@ export default function PartnerFleetPage() {
         break
       default:
         break
+    }
+  }
+
+  const handleToggleVehicleType = async (vehicleId: string, currentType: 'RENTAL' | 'RIDESHARE') => {
+    const newType = currentType === 'RENTAL' ? 'RIDESHARE' : 'RENTAL'
+    try {
+      const res = await fetch(`/api/partner/fleet/${vehicleId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vehicleType: newType })
+      })
+      if (res.ok) {
+        // Update local state immediately for responsiveness
+        setVehicles(prev => prev.map(v =>
+          v.id === vehicleId ? { ...v, vehicleType: newType } : v
+        ))
+      }
+    } catch (error) {
+      console.error('Failed to toggle vehicle type:', error)
     }
   }
 
@@ -290,6 +313,9 @@ export default function PartnerFleetPage() {
                     Vehicle
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Type
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -338,6 +364,30 @@ export default function PartnerFleetPage() {
                             </p>
                           </div>
                         </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => handleToggleVehicleType(vehicle.id, vehicle.vehicleType)}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                            vehicle.vehicleType === 'RIDESHARE'
+                              ? 'bg-orange-100 text-orange-700 hover:bg-orange-200 dark:bg-orange-900/30 dark:text-orange-400 dark:hover:bg-orange-900/50'
+                              : 'bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:hover:bg-purple-900/50'
+                          }`}
+                          title="Click to switch type"
+                        >
+                          {vehicle.vehicleType === 'RIDESHARE' ? (
+                            <>
+                              <IoCarSportOutline className="w-3.5 h-3.5" />
+                              Rideshare
+                            </>
+                          ) : (
+                            <>
+                              <IoKeyOutline className="w-3.5 h-3.5" />
+                              Rental
+                            </>
+                          )}
+                          <IoSwapHorizontalOutline className="w-3 h-3 ml-1 opacity-50" />
+                        </button>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${statusConfig.color}`}>

@@ -150,6 +150,9 @@ export async function GET(
         order: photo.order
       })),
 
+      // Vehicle Type (Rental vs Rideshare)
+      vehicleType: vehicle.vehicleType || 'RENTAL',
+
       // Stats
       totalTrips: vehicle.totalTrips,
       rating: vehicle.rating,
@@ -246,7 +249,10 @@ export async function PUT(
       maxTripDuration,
 
       // Features
-      features
+      features,
+
+      // Vehicle Type (Rental vs Rideshare)
+      vehicleType
     } = body
 
     // Build update object (only include fields that were provided)
@@ -298,6 +304,11 @@ export async function PUT(
     // Features
     if (features !== undefined) {
       updateData.features = JSON.stringify(Array.isArray(features) ? features : [])
+    }
+
+    // Vehicle Type (Rental vs Rideshare)
+    if (vehicleType !== undefined && (vehicleType === 'RENTAL' || vehicleType === 'RIDESHARE')) {
+      updateData.vehicleType = vehicleType
     }
 
     // Update vehicle

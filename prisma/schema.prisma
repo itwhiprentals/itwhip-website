@@ -844,6 +844,14 @@ model RentalHost {
   businessHours         String?               // e.g. "Mon-Sun 8am-8pm"
   yearEstablished       Int?                  // Year company was founded
 
+  // Service Availability Settings (which tabs appear on landing page)
+  enableRideshare       Boolean   @default(true)  // Show Rideshare tab
+  enableRentals         Boolean   @default(false) // Show Rentals tab
+  enableSales           Boolean   @default(false) // Show For Sale tab (future)
+  enableLeasing         Boolean   @default(false) // Show Leasing tab (future)
+  enableRentToOwn       Boolean   @default(false) // Show Rent-to-Own tab (future)
+  partnerServices       Json?                     // Custom services: [{id, name, description, platforms, priceRange}]
+
   // ===== END FLEET PARTNER FIELDS =====
 
   // ===== FLEET MANAGER & VEHICLE OWNER FIELDS =====

@@ -10,6 +10,8 @@ import {
   IoChevronBack,
   IoSaveOutline,
   IoCarOutline,
+  IoCarSportOutline,
+  IoKeyOutline,
   IoImageOutline,
   IoPricetagOutline,
   IoSparklesOutline,
@@ -78,6 +80,7 @@ interface VehicleData {
   vinVerifiedAt: string | null
   vinVerificationMethod: string | null
   hasActiveBooking: boolean
+  vehicleType: 'RENTAL' | 'RIDESHARE'
 }
 
 const TABS = [
@@ -475,6 +478,110 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                   <p className="text-xs text-gray-500">Year</p>
                   <p className="text-gray-900 dark:text-white">{vehicle.year}</p>
                 </div>
+              </div>
+            </div>
+
+            {/* Service Type - Rental vs Rideshare */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Service Type</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Choose how this vehicle will be listed. Rideshare vehicles are for Uber/Lyft drivers. Rental vehicles are for standard car rentals.
+              </p>
+              <div className="grid md:grid-cols-2 gap-4">
+                {/* Rental Option */}
+                <label
+                  className={`relative flex flex-col p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                    formData.vehicleType === 'RENTAL'
+                      ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/20'
+                      : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="vehicleType"
+                    value="RENTAL"
+                    checked={formData.vehicleType === 'RENTAL'}
+                    onChange={(e) => handleChange('vehicleType', e.target.value)}
+                    className="sr-only"
+                  />
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className={`p-2 rounded-lg ${
+                      formData.vehicleType === 'RENTAL'
+                        ? 'bg-purple-100 dark:bg-purple-800'
+                        : 'bg-gray-100 dark:bg-gray-700'
+                    }`}>
+                      <IoKeyOutline className={`w-6 h-6 ${
+                        formData.vehicleType === 'RENTAL'
+                          ? 'text-purple-600 dark:text-purple-400'
+                          : 'text-gray-600 dark:text-gray-400'
+                      }`} />
+                    </div>
+                    <span className={`font-semibold ${
+                      formData.vehicleType === 'RENTAL'
+                        ? 'text-purple-700 dark:text-purple-300'
+                        : 'text-gray-900 dark:text-white'
+                    }`}>
+                      Rental
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Standard car rental for travelers and locals
+                  </p>
+                  {formData.vehicleType === 'RENTAL' && (
+                    <div className="absolute top-3 right-3">
+                      <IoCheckmarkCircle className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                    </div>
+                  )}
+                </label>
+
+                {/* Rideshare Option */}
+                <label
+                  className={`relative flex flex-col p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                    formData.vehicleType === 'RIDESHARE'
+                      ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20'
+                      : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="vehicleType"
+                    value="RIDESHARE"
+                    checked={formData.vehicleType === 'RIDESHARE'}
+                    onChange={(e) => handleChange('vehicleType', e.target.value)}
+                    className="sr-only"
+                  />
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className={`p-2 rounded-lg ${
+                      formData.vehicleType === 'RIDESHARE'
+                        ? 'bg-orange-100 dark:bg-orange-800'
+                        : 'bg-gray-100 dark:bg-gray-700'
+                    }`}>
+                      <IoCarSportOutline className={`w-6 h-6 ${
+                        formData.vehicleType === 'RIDESHARE'
+                          ? 'text-orange-600 dark:text-orange-400'
+                          : 'text-gray-600 dark:text-gray-400'
+                      }`} />
+                    </div>
+                    <span className={`font-semibold ${
+                      formData.vehicleType === 'RIDESHARE'
+                        ? 'text-orange-700 dark:text-orange-300'
+                        : 'text-gray-900 dark:text-white'
+                    }`}>
+                      Rideshare
+                    </span>
+                    <span className="px-2 py-0.5 bg-orange-500 text-white text-xs font-bold rounded-full">
+                      UBER / LYFT
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    For gig drivers needing rideshare-ready vehicles
+                  </p>
+                  {formData.vehicleType === 'RIDESHARE' && (
+                    <div className="absolute top-3 right-3">
+                      <IoCheckmarkCircle className="w-5 h-5 text-orange-500 dark:text-orange-400" />
+                    </div>
+                  )}
+                </label>
               </div>
             </div>
 

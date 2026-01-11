@@ -11,7 +11,9 @@ import {
   IoFlashOutline,
   IoStarOutline,
   IoGridOutline,
-  IoListOutline
+  IoListOutline,
+  IoCarSportOutline,
+  IoKeyOutline
 } from 'react-icons/io5'
 import VehicleFilters, { FilterState } from '../components/VehicleFilters'
 import CompactCarCard from '@/app/components/cards/CompactCarCard'
@@ -46,12 +48,24 @@ interface Vehicle {
   } | null
 }
 
+interface ServiceSettings {
+  enableRideshare: boolean
+  enableRentals: boolean
+  rideshareCount: number
+  rentalCount: number
+}
+
 interface PartnerVehicleGridProps {
   vehicles: Vehicle[]
   availableMakes: string[]
+  serviceSettings?: ServiceSettings
 }
 
-export default function PartnerVehicleGrid({ vehicles, availableMakes }: PartnerVehicleGridProps) {
+export default function PartnerVehicleGrid({
+  vehicles,
+  availableMakes,
+  serviceSettings
+}: PartnerVehicleGridProps) {
   const [filters, setFilters] = useState<FilterState>({
     make: '',
     sortBy: 'newest',
@@ -59,9 +73,29 @@ export default function PartnerVehicleGrid({ vehicles, availableMakes }: Partner
   })
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
 
+  // Show toggle when at least one service type is enabled (even if no vehicles yet)
+  const hasRideshareEnabled = serviceSettings?.enableRideshare
+  const hasRentalsEnabled = serviceSettings?.enableRentals
+  const showToggle = hasRideshareEnabled || hasRentalsEnabled
+
+  // Default to the tab with vehicles (prefer rideshare if enabled)
+  const defaultTab = hasRideshareEnabled ? 'rideshare' : hasRentalsEnabled ? 'rentals' : 'all'
+
+  const [activeTab, setActiveTab] = useState<'rideshare' | 'rentals' | 'all'>(
+    showToggle ? defaultTab : 'all'
+  )
+
   // Filter and sort vehicles
   const filteredVehicles = useMemo(() => {
     let result = [...vehicles]
+
+    // Filter by tab (vehicle type)
+    if (activeTab === 'rideshare') {
+      result = result.filter(v => v.vehicleType === 'RIDESHARE')
+    } else if (activeTab === 'rentals') {
+      result = result.filter(v => v.vehicleType === 'RENTAL' || !v.vehicleType)
+    }
+    // 'all' shows everything
 
     // Filter by make
     if (filters.make) {
@@ -93,40 +127,88 @@ export default function PartnerVehicleGrid({ vehicles, availableMakes }: Partner
     }
 
     return result
+  }, [vehicles, filters, activeTab])
+
+  // Get counts for current tab (after make/availability filters, before tab filter)
+  const tabFilteredVehicles = useMemo(() => {
+    let result = [...vehicles]
+    if (filters.make) result = result.filter(v => v.make === filters.make)
+    if (filters.availability === 'instant') result = result.filter(v => v.instantBook)
+    return {
+      rideshare: result.filter(v => v.vehicleType === 'RIDESHARE').length,
+      rentals: result.filter(v => v.vehicleType === 'RENTAL' || !v.vehicleType).length
+    }
   }, [vehicles, filters])
 
   return (
     <div>
-      {/* Section Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-        <div className="flex items-center gap-2">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Available Vehicles
-          </h2>
-          <span className="text-xs text-gray-500 dark:text-gray-400">
-            — Browse our fleet
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
+      {/* Section Header - Title only */}
+      <div className="flex items-center gap-2 mb-4">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          Available Vehicles
+        </h2>
+        <span className="text-xs text-gray-500 dark:text-gray-400">
+          — Browse and book from our fleet
+        </span>
+      </div>
+
+      {/* Controls Row: Service Toggle + Grid/List Toggle */}
+      <div className="flex items-center justify-between mb-4">
+        {/* Service Toggle - text buttons */}
+        {showToggle ? (
+          <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+            {/* Rideshare Tab */}
+            {hasRideshareEnabled && (
+              <button
+                onClick={() => setActiveTab('rideshare')}
+                className={`px-3 py-1.5 text-xs sm:text-sm font-medium rounded-md transition-colors ${
+                  activeTab === 'rideshare'
+                    ? 'bg-white dark:bg-gray-700 text-orange-600 dark:text-orange-400 shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
+              >
+                Rideshare ({tabFilteredVehicles.rideshare})
+              </button>
+            )}
+            {/* Rentals Tab */}
+            {hasRentalsEnabled && (
+              <button
+                onClick={() => setActiveTab('rentals')}
+                className={`px-3 py-1.5 text-xs sm:text-sm font-medium rounded-md transition-colors ${
+                  activeTab === 'rentals'
+                    ? 'bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-400 shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
+              >
+                Rental ({tabFilteredVehicles.rentals})
+              </button>
+            )}
+          </div>
+        ) : (
+          <div />
+        )}
+
+        {/* View Toggle */}
+        <div className="flex items-center gap-1">
           <button
             onClick={() => setViewMode('grid')}
-            className={`p-2 rounded-lg transition-colors ${
+            className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
               viewMode === 'grid'
                 ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400'
                 : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
             }`}
           >
-            <IoGridOutline className="w-5 h-5" />
+            <IoGridOutline className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
           <button
             onClick={() => setViewMode('list')}
-            className={`p-2 rounded-lg transition-colors ${
+            className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
               viewMode === 'list'
                 ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400'
                 : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
             }`}
           >
-            <IoListOutline className="w-5 h-5" />
+            <IoListOutline className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
       </div>

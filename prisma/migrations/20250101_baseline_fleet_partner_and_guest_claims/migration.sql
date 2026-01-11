@@ -251,10 +251,14 @@ CREATE INDEX IF NOT EXISTS "admin_impersonation_logs_createdAt_idx" ON "admin_im
 
 -- ============================================================================
 -- CLAIM TABLE - GUEST CLAIM FIELDS
+-- Only run if Claim table exists (it may be created in a later migration)
 -- ============================================================================
 
-ALTER TABLE "Claim" ADD COLUMN IF NOT EXISTS "filedByGuestId" TEXT;
-ALTER TABLE "Claim" ADD COLUMN IF NOT EXISTS "filedByRole" TEXT;
-
-CREATE INDEX IF NOT EXISTS "Claim_filedByGuestId_idx" ON "Claim"("filedByGuestId");
-CREATE INDEX IF NOT EXISTS "Claim_filedByRole_idx" ON "Claim"("filedByRole");
+DO $$ BEGIN
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'Claim') THEN
+        ALTER TABLE "Claim" ADD COLUMN IF NOT EXISTS "filedByGuestId" TEXT;
+        ALTER TABLE "Claim" ADD COLUMN IF NOT EXISTS "filedByRole" TEXT;
+        CREATE INDEX IF NOT EXISTS "Claim_filedByGuestId_idx" ON "Claim"("filedByGuestId");
+        CREATE INDEX IF NOT EXISTS "Claim_filedByRole_idx" ON "Claim"("filedByRole");
+    END IF;
+END $$;

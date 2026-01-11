@@ -25,6 +25,59 @@ interface PageProps {
 // Fleet preview key for unapproved partners
 const FLEET_PREVIEW_KEY = 'phoenix-fleet-2847'
 
+// Fetch ALL rental cars from the platform (for Rentals tab)
+async function getPlatformRentalCars() {
+  try {
+    const cars = await prisma.rentalCar.findMany({
+      where: {
+        isActive: true,
+        vehicleType: 'RENTAL',
+        host: {
+          approvalStatus: 'APPROVED',
+          active: true
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 50, // Limit for performance
+      select: {
+        id: true,
+        make: true,
+        model: true,
+        year: true,
+        dailyRate: true,
+        weeklyRate: true,
+        monthlyRate: true,
+        photos: true,
+        city: true,
+        state: true,
+        instantBook: true,
+        transmission: true,
+        fuelType: true,
+        seats: true,
+        carType: true,
+        description: true,
+        features: true,
+        rating: true,
+        totalTrips: true,
+        vehicleType: true,
+        minTripDuration: true,
+        host: {
+          select: {
+            name: true,
+            partnerCompanyName: true,
+            profilePhoto: true,
+            partnerLogo: true
+          }
+        }
+      }
+    })
+    return cars
+  } catch (error) {
+    console.error('[Partner Landing] Error fetching platform rentals:', error)
+    return []
+  }
+}
+
 async function getPartner(slug: string, isFleetPreview: boolean = false) {
   try {
     // Build where clause based on preview mode
@@ -156,6 +209,9 @@ export default async function PartnerLandingPage({ params, searchParams }: PageP
     notFound()
   }
 
+  // Fetch platform rental cars if rentals is enabled
+  const platformRentalCars = partner.enableRentals ? await getPlatformRentalCars() : []
+
   // Check if partner is not yet approved (only visible in preview mode)
   const isPendingApproval = partner.approvalStatus !== 'APPROVED' || !partner.active
 
@@ -224,22 +280,71 @@ export default async function PartnerLandingPage({ params, searchParams }: PageP
     priceRange?: string
   }[] | null
 
-  // Get available makes from vehicles
-  const availableMakes = [...new Set(partner.cars.map(c => c.make))]
+  // Get available makes from both partner vehicles and platform rentals
+  const partnerMakes = partner.cars.map(c => c.make)
+  const platformMakes = platformRentalCars.map(c => c.make)
+  const availableMakes = [...new Set([...partnerMakes, ...platformMakes])]
 
-  // Transform vehicles data for CompactCarCard compatibility
-  const transformedVehicles = partner.cars.map(car => {
-    // Extract photos as objects for CompactCarCard
+  // Calculate vehicle counts by type for tabs
+  const rideshareCars = partner.cars.filter(c => c.vehicleType === 'RIDESHARE')
+  // For rentals, use platform rental cars (showcasing ALL platform rentals)
+  const rentalCarsCount = platformRentalCars.length
+
+  // Service settings - determine which tabs to show
+  const serviceSettings = {
+    enableRideshare: partner.enableRideshare ?? true,
+    enableRentals: partner.enableRentals ?? false,
+    rideshareCount: rideshareCars.length,
+    rentalCount: rentalCarsCount
+  }
+
+  // Transform partner's rideshare vehicles
+  const transformedPartnerVehicles = partner.cars
+    .filter(c => c.vehicleType === 'RIDESHARE')
+    .map(car => {
+      const photos = (car.photos as any[])?.filter(p => p?.url).map(p => ({ url: p.url })) || []
+      let features: string[] = []
+      if (typeof car.features === 'string') {
+        try { features = JSON.parse(car.features) } catch { features = [] }
+      } else if (Array.isArray(car.features)) {
+        features = car.features
+      }
+
+      return {
+        id: car.id,
+        make: car.make,
+        model: car.model,
+        year: car.year,
+        dailyRate: car.dailyRate,
+        weeklyRate: car.weeklyRate,
+        monthlyRate: car.monthlyRate,
+        photos,
+        city: car.city,
+        state: car.state,
+        instantBook: car.instantBook,
+        transmission: car.transmission,
+        fuelType: car.fuelType,
+        seats: car.seats,
+        carType: null,
+        description: car.description,
+        features,
+        rating: car.rating,
+        totalTrips: car.totalTrips,
+        vehicleType: car.vehicleType,
+        minTripDuration: car.minTripDuration,
+        host: {
+          name: companyName,
+          profilePhoto: partner.partnerLogo || null
+        }
+      }
+    })
+
+  // Transform platform rental vehicles
+  const transformedRentalVehicles = platformRentalCars.map(car => {
     const photos = (car.photos as any[])?.filter(p => p?.url).map(p => ({ url: p.url })) || []
-
-    // Parse features if stored as JSON string
     let features: string[] = []
     if (typeof car.features === 'string') {
-      try {
-        features = JSON.parse(car.features)
-      } catch {
-        features = []
-      }
+      try { features = JSON.parse(car.features) } catch { features = [] }
     } else if (Array.isArray(car.features)) {
       features = car.features
     }
@@ -252,27 +357,29 @@ export default async function PartnerLandingPage({ params, searchParams }: PageP
       dailyRate: car.dailyRate,
       weeklyRate: car.weeklyRate,
       monthlyRate: car.monthlyRate,
-      photos, // Now as { url: string }[] for CompactCarCard
+      photos,
       city: car.city,
       state: car.state,
       instantBook: car.instantBook,
       transmission: car.transmission,
       fuelType: car.fuelType,
       seats: car.seats,
-      carType: null, // Will use type from vehicle
+      carType: car.carType,
       description: car.description,
       features,
       rating: car.rating,
       totalTrips: car.totalTrips,
       vehicleType: car.vehicleType,
       minTripDuration: car.minTripDuration,
-      // Partner info as "host" for CompactCarCard display
       host: {
-        name: companyName,
-        profilePhoto: partner.partnerLogo || null
+        name: car.host?.partnerCompanyName || car.host?.name || 'Host',
+        profilePhoto: car.host?.partnerLogo || car.host?.profilePhoto || null
       }
     }
   })
+
+  // Combine: partner's rideshare + platform rentals
+  const transformedVehicles = [...transformedPartnerVehicles, ...transformedRentalVehicles]
 
   // JSON-LD Structured Data
   const jsonLd = {
@@ -392,6 +499,7 @@ export default async function PartnerLandingPage({ params, searchParams }: PageP
             <PartnerVehicleGrid
               vehicles={transformedVehicles}
               availableMakes={availableMakes}
+              serviceSettings={serviceSettings}
             />
           </section>
 
@@ -405,6 +513,13 @@ export default async function PartnerLandingPage({ params, searchParams }: PageP
           <PartnerServices
             services={services}
             companyName={companyName}
+            enabledServices={{
+              rideshare: partner.enableRideshare ?? true,
+              rentals: partner.enableRentals ?? false,
+              sales: partner.enableSales ?? false,
+              leasing: partner.enableLeasing ?? false,
+              rentToOwn: partner.enableRentToOwn ?? false
+            }}
           />
 
           {/* Policies Section */}

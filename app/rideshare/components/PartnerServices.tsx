@@ -25,6 +25,13 @@ interface Service {
 interface PartnerServicesProps {
   services?: Service[] | null
   companyName?: string
+  enabledServices?: {
+    rideshare?: boolean
+    rentals?: boolean
+    sales?: boolean
+    leasing?: boolean
+    rentToOwn?: boolean
+  }
 }
 
 // Platform icon mapping with brand colors
@@ -65,8 +72,83 @@ const DEFAULT_SERVICES: Service[] = [
   }
 ]
 
-export default function PartnerServices({ services, companyName = 'Our' }: PartnerServicesProps) {
-  const displayServices = services && services.length > 0 ? services : DEFAULT_SERVICES
+export default function PartnerServices({ services, companyName = 'Our', enabledServices }: PartnerServicesProps) {
+  // Build services list based on what's enabled
+  let displayServices: Service[] = []
+
+  if (services && services.length > 0) {
+    // Use custom services if provided
+    displayServices = services
+  } else if (enabledServices) {
+    // Generate services based on enabled toggles
+    if (enabledServices.rideshare) {
+      displayServices.push({
+        id: 'rideshare',
+        name: 'Rideshare Rentals',
+        description: 'Vehicles pre-approved and ready for Uber and Lyft driving',
+        platforms: ['uber', 'lyft'],
+        priceRange: 'from $249/week'
+      })
+      displayServices.push({
+        id: 'delivery',
+        name: 'Delivery Rentals',
+        description: 'Fuel-efficient vehicles perfect for DoorDash and Instacart',
+        platforms: ['doordash', 'instacart'],
+        priceRange: 'from $199/week'
+      })
+    }
+    if (enabledServices.rentals) {
+      displayServices.push({
+        id: 'standard-rental',
+        name: 'Standard Car Rentals',
+        description: 'Quality vehicles for personal trips, vacations, and daily use',
+        priceRange: 'from $45/day'
+      })
+    }
+    if (enabledServices.leasing) {
+      displayServices.push({
+        id: 'leasing',
+        name: 'Vehicle Leasing',
+        description: 'Long-term leasing options for personal and business use',
+        priceRange: 'Contact for pricing'
+      })
+    }
+    if (enabledServices.rentToOwn) {
+      displayServices.push({
+        id: 'rent-to-own',
+        name: 'Rent to Own',
+        description: 'Build equity while you rent with our rent-to-own program',
+        priceRange: 'Contact for pricing'
+      })
+    }
+    if (enabledServices.sales) {
+      displayServices.push({
+        id: 'sales',
+        name: 'Vehicle Sales',
+        description: 'Quality pre-owned vehicles available for purchase',
+        priceRange: 'Varies by vehicle'
+      })
+    }
+
+    // Always add flexible terms and coverage if any service is enabled
+    if (displayServices.length > 0) {
+      displayServices.push({
+        id: 'flexible',
+        name: 'Flexible Terms',
+        description: 'Weekly, bi-weekly, and monthly rental options available',
+        priceRange: 'Custom pricing'
+      })
+      displayServices.push({
+        id: 'coverage',
+        name: 'Full Coverage',
+        description: 'Insurance and maintenance included in all rentals',
+        priceRange: 'Included'
+      })
+    }
+  } else {
+    // Fallback to default services
+    displayServices = DEFAULT_SERVICES
+  }
 
   return (
     <section className="py-8">
