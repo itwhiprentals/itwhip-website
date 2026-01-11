@@ -4,17 +4,31 @@
 'use client'
 
 import { useState } from 'react'
-import { IoStar, IoStarHalf, IoStarOutline, IoPersonCircle, IoChevronDown, IoChevronUp } from 'react-icons/io5'
+import Link from 'next/link'
+import { IoStar, IoStarHalf, IoStarOutline, IoPersonCircle, IoChevronDown, IoChevronUp, IoChatbubbleOutline } from 'react-icons/io5'
+import GuestProfileSheet from '@/app/reviews/components/GuestProfileSheet'
+import { generateCarUrl } from '@/app/lib/utils/urls'
+
+interface ReviewCar {
+  id: string
+  make: string
+  model: string
+  year: number
+  city: string
+}
 
 interface Review {
   id: string
   reviewerName: string
+  reviewerProfileId?: string | null
   reviewerPhoto?: string | null
   rating: number
   comment: string
   date: string
-  vehicleRented?: string | null
+  car?: ReviewCar | null
   helpful?: number
+  hostResponse?: string | null
+  hostRespondedAt?: string | null
 }
 
 interface PartnerReviewsProps {
@@ -68,6 +82,12 @@ const PLACEHOLDER_REVIEWS: Review[] = [
   }
 ]
 
+// Format relative date for host response
+function formatResponseDate(dateString: string): string {
+  const date = new Date(dateString)
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
 export default function PartnerReviews({
   reviews,
   avgRating = 0,
@@ -75,10 +95,36 @@ export default function PartnerReviews({
   companyName = 'This Partner'
 }: PartnerReviewsProps) {
   const [showAll, setShowAll] = useState(false)
+  const [selectedGuest, setSelectedGuest] = useState<{
+    id: string
+    name: string | null
+    profilePhotoUrl: string | null
+    memberSince: null
+    tripCount: null
+    isVerified: null
+    city: null
+    state: null
+  } | null>(null)
 
   const hasReviews = reviews && reviews.length > 0
   const displayReviews = hasReviews ? reviews : PLACEHOLDER_REVIEWS
   const visibleReviews = showAll ? displayReviews : displayReviews.slice(0, 3)
+
+  // Handle guest profile click
+  const handleGuestClick = (review: Review) => {
+    if (review.reviewerProfileId) {
+      setSelectedGuest({
+        id: review.reviewerProfileId,
+        name: review.reviewerName,
+        profilePhotoUrl: review.reviewerPhoto || null,
+        memberSince: null,
+        tripCount: null,
+        isVerified: null,
+        city: null,
+        state: null
+      })
+    }
+  }
 
   // Calculate rating distribution (mock for now, would come from API)
   const ratingDistribution = hasReviews ? {
@@ -157,8 +203,12 @@ export default function PartnerReviews({
               }`}
             >
               <div className="flex items-start gap-3">
-                {/* Reviewer Avatar */}
-                <div className="flex-shrink-0">
+                {/* Reviewer Avatar - Clickable to open profile */}
+                <button
+                  onClick={() => handleGuestClick(review)}
+                  className={`flex-shrink-0 ${review.reviewerProfileId ? 'cursor-pointer hover:opacity-80 transition-opacity' : 'cursor-default'}`}
+                  disabled={!review.reviewerProfileId}
+                >
                   {review.reviewerPhoto ? (
                     <img
                       src={review.reviewerPhoto}
@@ -168,26 +218,37 @@ export default function PartnerReviews({
                   ) : (
                     <IoPersonCircle className="w-10 h-10 text-gray-400 dark:text-gray-500" />
                   )}
-                </div>
+                </button>
 
                 {/* Review Content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
-                    <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                    {/* Reviewer Name - Clickable */}
+                    <button
+                      onClick={() => handleGuestClick(review)}
+                      className={`text-sm font-medium text-gray-900 dark:text-white ${
+                        review.reviewerProfileId ? 'hover:text-orange-600 dark:hover:text-orange-400 transition-colors' : ''
+                      }`}
+                      disabled={!review.reviewerProfileId}
+                    >
                       {review.reviewerName}
-                    </h4>
+                    </button>
                     <span className="text-xs text-gray-500 dark:text-gray-400">
                       {formatDate(review.date)}
                     </span>
                   </div>
 
                   {hasReviews && (
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
                       <StarRating rating={review.rating} />
-                      {review.vehicleRented && (
-                        <span className="text-xs text-gray-600 dark:text-gray-300">
-                          • {review.vehicleRented}
-                        </span>
+                      {/* Car Link - Clickable */}
+                      {review.car && (
+                        <Link
+                          href={generateCarUrl(review.car)}
+                          className="text-xs text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 transition-colors"
+                        >
+                          • {review.car.year} {review.car.make} {review.car.model}
+                        </Link>
                       )}
                     </div>
                   )}
@@ -200,6 +261,26 @@ export default function PartnerReviews({
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                       {review.helpful} people found this helpful
                     </p>
+                  )}
+
+                  {/* Host Response */}
+                  {review.hostResponse && (
+                    <div className="mt-3 pl-3 border-l-2 border-blue-400 bg-blue-50 dark:bg-blue-900/20 py-2 pr-2 rounded-r-lg">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <IoChatbubbleOutline className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                        <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                          Response from {companyName}
+                        </span>
+                        {review.hostRespondedAt && (
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            • {formatResponseDate(review.hostRespondedAt)}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-700 dark:text-gray-300">
+                        {review.hostResponse}
+                      </p>
+                    </div>
                   )}
                 </div>
               </div>
@@ -237,6 +318,13 @@ export default function PartnerReviews({
           )}
         </div>
       </div>
+
+      {/* Guest Profile Sheet */}
+      <GuestProfileSheet
+        isOpen={!!selectedGuest}
+        onClose={() => setSelectedGuest(null)}
+        guest={selectedGuest}
+      />
     </section>
   )
 }

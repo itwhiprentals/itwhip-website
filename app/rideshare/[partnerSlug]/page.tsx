@@ -25,6 +25,82 @@ interface PageProps {
 // Fleet preview key for unapproved partners
 const FLEET_PREVIEW_KEY = 'phoenix-fleet-2847'
 
+// Fetch reviews for a partner (by hostId)
+// Special case: ItWhip (the platform) shows ALL reviews
+async function getPartnerReviews(hostId: string, isPlatform: boolean = false) {
+  try {
+    // Build where clause - platform sees all reviews, partners see only their own
+    const whereClause: any = { isVisible: true }
+    if (!isPlatform) {
+      whereClause.hostId = hostId
+    }
+
+    const reviews = await prisma.rentalReview.findMany({
+      where: whereClause,
+      orderBy: { createdAt: 'desc' },
+      take: 20, // Limit for performance
+      select: {
+        id: true,
+        rating: true,
+        comment: true,
+        title: true,
+        createdAt: true,
+        isVerified: true,
+        helpfulCount: true,
+        hostResponse: true,
+        hostRespondedAt: true,
+        reviewerProfile: {
+          select: {
+            id: true,
+            name: true,
+            profilePhotoUrl: true
+          }
+        },
+        car: {
+          select: {
+            id: true,
+            make: true,
+            model: true,
+            year: true,
+            city: true
+          }
+        }
+      }
+    })
+    return reviews
+  } catch (error) {
+    console.error('[Partner Landing] Error fetching reviews:', error)
+    return []
+  }
+}
+
+// Get review stats for a partner
+// Special case: ItWhip (the platform) shows stats for ALL reviews
+async function getPartnerReviewStats(hostId: string, isPlatform: boolean = false) {
+  try {
+    // Build where clause - platform sees all reviews, partners see only their own
+    const whereClause: any = { isVisible: true }
+    if (!isPlatform) {
+      whereClause.hostId = hostId
+    }
+
+    const [count, stats] = await Promise.all([
+      prisma.rentalReview.count({ where: whereClause }),
+      prisma.rentalReview.aggregate({
+        where: whereClause,
+        _avg: { rating: true }
+      })
+    ])
+    return {
+      totalReviews: count,
+      avgRating: stats._avg.rating || 0
+    }
+  } catch (error) {
+    console.error('[Partner Landing] Error fetching review stats:', error)
+    return { totalReviews: 0, avgRating: 0 }
+  }
+}
+
 // Fetch ALL rental cars from the platform (for Rentals tab)
 async function getPlatformRentalCars() {
   try {
@@ -212,6 +288,16 @@ export default async function PartnerLandingPage({ params, searchParams }: PageP
   // Fetch platform rental cars if rentals is enabled
   const platformRentalCars = partner.enableRentals ? await getPlatformRentalCars() : []
 
+  // Check if this is the ItWhip platform page (shows ALL reviews)
+  const isPlatform = partnerSlug === 'itwhip'
+
+  // Fetch reviews and review stats for this partner
+  // ItWhip (platform) sees all reviews, other partners see only their own
+  const [partnerReviews, reviewStats] = await Promise.all([
+    getPartnerReviews(partner.id, isPlatform),
+    getPartnerReviewStats(partner.id, isPlatform)
+  ])
+
   // Check if partner is not yet approved (only visible in preview mode)
   const isPendingApproval = partner.approvalStatus !== 'APPROVED' || !partner.active
 
@@ -220,14 +306,16 @@ export default async function PartnerLandingPage({ params, searchParams }: PageP
   // Calculate stats
   const operatingCities = [...new Set(partner.cars.map((c: any) => c.city ? `${c.city}, ${c.state}` : null).filter(Boolean))]
   const totalTrips = partner.cars.reduce((sum: number, c: any) => sum + (c.totalTrips || 0), 0)
-  const totalReviews = 0 // Reviews count from bookings
+  const totalReviews = reviewStats.totalReviews
 
-  // Calculate avg rating - only count cars with actual trips (ignores database default of 5.0)
+  // Calculate avg rating - prefer review-based rating, fallback to car ratings
   const carsWithTrips = partner.cars.filter((c: any) => c.totalTrips > 0 && c.rating > 0)
-  const avgRating = partner.partnerAvgRating ||
-    (carsWithTrips.length > 0
-      ? carsWithTrips.reduce((sum: number, c: any) => sum + c.rating, 0) / carsWithTrips.length
-      : 0)
+  const avgRating = reviewStats.avgRating > 0
+    ? reviewStats.avgRating
+    : (partner.partnerAvgRating ||
+      (carsWithTrips.length > 0
+        ? carsWithTrips.reduce((sum: number, c: any) => sum + c.rating, 0) / carsWithTrips.length
+        : 0))
   const prices = partner.cars.map((c: any) => c.dailyRate).filter((p: number) => p > 0)
   const priceRange = {
     min: prices.length > 0 ? Math.min(...prices) : 0,
@@ -537,7 +625,33 @@ export default async function PartnerLandingPage({ params, searchParams }: PageP
 
           {/* Customer Reviews - At bottom for social proof */}
           <PartnerReviews
-            reviews={[]} // TODO: Fetch from bookings/reviews table when available
+            reviews={partnerReviews.map(review => {
+              // Extract first name only (never show last name)
+              const fullName = review.reviewerProfile?.name || 'Guest'
+              const firstName = fullName.split(' ')[0]
+
+              return {
+                id: review.id,
+                reviewerName: firstName,
+                reviewerProfileId: review.reviewerProfile?.id || null,
+                reviewerPhoto: review.reviewerProfile?.profilePhotoUrl || null,
+                rating: review.rating,
+                comment: review.comment || '',
+                date: review.createdAt.toISOString(),
+                // Car info for clickable link
+                car: review.car ? {
+                  id: review.car.id,
+                  make: review.car.make,
+                  model: review.car.model,
+                  year: review.car.year,
+                  city: review.car.city || 'Phoenix'
+                } : null,
+                helpful: review.helpfulCount,
+                // Host response if exists
+                hostResponse: review.hostResponse || null,
+                hostRespondedAt: review.hostRespondedAt?.toISOString() || null
+              }
+            })}
             avgRating={avgRating}
             totalReviews={totalReviews}
             companyName={companyName}
