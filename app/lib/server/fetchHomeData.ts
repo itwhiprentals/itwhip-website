@@ -1,5 +1,5 @@
 // app/lib/server/fetchHomeData.ts
-// Server-side data fetching for homepage SSR with SMART ROTATION
+// Server-side data fetching for homepage with random rotation on each request
 
 import { prisma } from '@/app/lib/database/prisma'
 
@@ -29,44 +29,18 @@ export interface HomePageCar {
 }
 
 // =============================================================================
-// SMART ROTATION HELPERS
+// ROTATION HELPERS
 // =============================================================================
 
 /**
- * Get hourly seed for deterministic rotation
- * Same seed for all users within the hour = cache-friendly
- * Changes every hour = fresh content
+ * Fisher-Yates shuffle with true randomness
+ * Different order on each request for fresh content on every page load
  */
-function getHourlySeed(): number {
-  return Math.floor(Date.now() / 3600000) // Milliseconds per hour
-}
-
-/**
- * Linear Congruential Generator (LCG) for deterministic pseudo-randomness
- * Returns a function that generates numbers between 0 and 1
- */
-function createSeededRandom(seed: number): () => number {
-  const a = 1664525
-  const c = 1013904223
-  const m = 2 ** 32
-  let state = seed
-
-  return () => {
-    state = (a * state + c) % m
-    return state / m
-  }
-}
-
-/**
- * Fisher-Yates shuffle with seeded randomness
- * Deterministic: same seed = same shuffle order
- */
-function seededShuffle<T>(array: T[], seed: number): T[] {
+function shuffle<T>(array: T[]): T[] {
   const result = [...array]
-  const random = createSeededRandom(seed)
 
   for (let i = result.length - 1; i > 0; i--) {
-    const j = Math.floor(random() * (i + 1))
+    const j = Math.floor(Math.random() * (i + 1))
     ;[result[i], result[j]] = [result[j], result[i]]
   }
 
@@ -96,15 +70,13 @@ function applyDiversityRules(cars: any[], maxPerHost: number = 2): any[] {
 }
 
 /**
- * Fetch ESG (Eco Elite) cars for homepage with SMART ROTATION
+ * Fetch ESG (Eco Elite) cars for homepage with rotation
  *
  * Strategy:
  * 1. Fetch larger pool (40 cars) of top ESG cars
  * 2. Apply diversity rules (max 2 per host)
- * 3. Shuffle with hourly time seed
+ * 3. Shuffle randomly for fresh content on each page load
  * 4. Return first 10 for display
- *
- * Result: Different 10 cars shown each hour, always premium quality
  */
 export async function getESGCars(limit = 10, excludeIds: string[] = []): Promise<HomePageCar[]> {
   const poolSize = 40 // Fetch larger pool for rotation variety
@@ -146,16 +118,15 @@ export async function getESGCars(limit = 10, excludeIds: string[] = []): Promise
   // Apply diversity rules (max 2 per host)
   const diverseCars = applyDiversityRules(cars, 2)
 
-  // Shuffle with hourly seed for rotation
-  const seed = getHourlySeed()
-  const shuffled = seededShuffle(diverseCars, seed)
+  // Shuffle randomly for fresh content on each page load
+  const shuffled = shuffle(diverseCars)
 
   // Take requested limit and transform
   return shuffled.slice(0, limit).map(transformCar)
 }
 
 /**
- * Fetch P2P (City) cars for homepage with WEIGHTED ROTATION
+ * Fetch P2P (City) cars for homepage with weighted rotation
  *
  * Strategy:
  * 1. Fetch larger pool (60 cars)
@@ -163,12 +134,10 @@ export async function getESGCars(limit = 10, excludeIds: string[] = []): Promise
  *    - Recent listings (< 14 days): 3x weight
  *    - Low trips (0-2): 2x weight
  *    - Regular cars: 1x weight
- * 3. Weighted shuffle with hourly time seed
+ * 3. Weighted shuffle randomly for fresh content
  * 4. Dedupe (exclude cars already in ESG section)
  * 5. Apply diversity rules
  * 6. Return first 10
- *
- * Result: New listings get fair exposure, variety every hour
  */
 export async function getP2PCars(city?: string, limit = 10, excludeIds: string[] = []): Promise<HomePageCar[]> {
   const poolSize = 60 // Larger pool for weighted selection
@@ -235,9 +204,8 @@ export async function getP2PCars(city?: string, limit = 10, excludeIds: string[]
     return { car, weight }
   })
 
-  // Weighted shuffle using hourly seed
-  const seed = getHourlySeed()
-  const shuffled = weightedShuffle(weightedCars, seed)
+  // Weighted shuffle randomly for fresh content on each page load
+  const shuffled = weightedShuffle(weightedCars)
 
   // Apply diversity rules (max 2 per host)
   const diverseCars = applyDiversityRules(shuffled, 2)
@@ -248,16 +216,14 @@ export async function getP2PCars(city?: string, limit = 10, excludeIds: string[]
 
 /**
  * Weighted shuffle - items with higher weights more likely to appear first
- * Uses reservoir sampling approach with weights
+ * Uses reservoir sampling approach with weights and true randomness
  */
-function weightedShuffle(items: { car: any; weight: number }[], seed: number): any[] {
-  const random = createSeededRandom(seed)
-
+function weightedShuffle(items: { car: any; weight: number }[]): any[] {
   // Assign random priority based on weight
   const withPriority = items.map(item => ({
     car: item.car,
     // Higher weight = higher average priority
-    priority: Math.pow(random(), 1 / item.weight)
+    priority: Math.pow(Math.random(), 1 / item.weight)
   }))
 
   // Sort by priority descending

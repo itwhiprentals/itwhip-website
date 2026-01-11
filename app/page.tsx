@@ -4,9 +4,8 @@
 import HomeClient from '@/app/components/home/HomeClient'
 import { getESGCars, getP2PCars } from '@/app/lib/server/fetchHomeData'
 
-// Enable hourly revalidation to match the hourly rotation seed in fetchHomeData
-// Without this, the page is statically generated at build and never refreshes
-export const revalidate = 3600 // 1 hour
+// Force dynamic rendering - fresh cars on every page load
+export const dynamic = 'force-dynamic'
 
 export default async function HomePage() {
   // Fetch car data server-side with Prisma (no API calls)

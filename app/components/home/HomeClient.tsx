@@ -3,7 +3,7 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import HeroSection from '@/app/rentals-sections/HeroSection'
 import QuickActionsBar from '@/app/rentals-sections/QuickActionsBar'
@@ -35,6 +35,12 @@ export default function HomeClient({ initialEsgCars, initialCityCars }: HomeClie
   // Use geolocation hook for progressive enhancement
   const userLocation = useUserLocation()
 
+  // GUARD: Ensure no car appears in both sections (extra safety on top of server deduplication)
+  const deduplicatedCityCars = useMemo(() => {
+    const esgCarIds = new Set(esgCars.map(c => c.id))
+    return cityCars.filter(c => !esgCarIds.has(c.id))
+  }, [esgCars, cityCars])
+
   // Transform car data for CompactCarCard compatibility
   const transformCar = (car: HomePageCar) => ({
     id: car.id,
@@ -55,67 +61,16 @@ export default function HomeClient({ initialEsgCars, initialCityCars }: HomeClie
     host: car.host
   })
 
-  // Progressive enhancement: refresh P2P cars when user city is detected
+  // Skip client-side refresh - use server-rendered cars for consistent rotation
+  // The server already provides fresh, randomly shuffled cars on each request
+  // Client-side refresh was causing cars to "flash" and revert to API data
   useEffect(() => {
-    // Only refresh once, and only if we have a served city
-    if (hasRefreshed || userLocation.isLoading || !userLocation.isServedCity || !userLocation.city) {
-      return
-    }
-
-    const refreshCityCars = async () => {
-      try {
-        setIsLoading(true)
-        const cityUrl = `/api/rentals/search?city=${encodeURIComponent(userLocation.city)}&limit=10`
-        const res = await fetch(cityUrl)
-
-        if (res.ok) {
-          const data = await res.json()
-          const cityData = data.results || []
-
-          if (cityData.length > 0) {
-            // Transform API response to match HomePageCar shape
-            const transformedCars = cityData.map((car: any) => ({
-              id: car.id,
-              make: car.make,
-              model: car.model,
-              year: car.year,
-              dailyRate: Number(car.dailyRate),
-              carType: car.carType || car.type,
-              vehicleType: car.vehicleType || null,  // For rideshare badge
-              seats: car.seats,
-              city: car.city || car.location?.city || 'Phoenix',
-              rating: car.totalTrips > 0 ? (car.rating?.average ?? car.rating) : null,
-              totalTrips: car.totalTrips || 0,
-              instantBook: car.instantBook,
-              photos: Array.isArray(car.photos) ? car.photos : [],
-              esgScore: car.esgScore,
-              fuelType: car.fuelType,
-              host: car.host ? {
-                name: car.host.name,
-                profilePhoto: car.host.profilePhoto || car.host.avatar || null
-              } : null
-            }))
-
-            setCityCars(transformedCars.slice(0, 10))
-
-            // Also filter ESG cars to remove duplicates
-            const cityCarIds = new Set(transformedCars.map((c: HomePageCar) => c.id))
-            setEsgCars(prev => prev.filter(c => !cityCarIds.has(c.id)).slice(0, 6))
-          }
-        }
-      } catch (err) {
-        console.error('[HomeClient] City refresh error:', err)
-      } finally {
-        setIsLoading(false)
-        setHasRefreshed(true)
-      }
-    }
-
-    refreshCityCars()
-  }, [userLocation.isLoading, userLocation.isServedCity, userLocation.city, hasRefreshed])
+    // Mark as refreshed immediately to prevent any refresh attempts
+    setHasRefreshed(true)
+  }, [])
 
   // Show loading skeleton only during initial SSR hydration mismatch or refresh
-  const showSkeleton = isLoading && cityCars.length === 0
+  const showSkeleton = isLoading && deduplicatedCityCars.length === 0
 
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -221,7 +176,7 @@ export default function HomeClient({ initialEsgCars, initialCityCars }: HomeClie
             )}
 
             {/* Empty State - No cars in this city */}
-            {!showSkeleton && cityCars.length === 0 && userLocation.isServedCity && (
+            {!showSkeleton && deduplicatedCityCars.length === 0 && userLocation.isServedCity && (
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 sm:p-12 text-center border border-gray-200 dark:border-gray-700">
                 <div className="w-16 h-16 mx-auto mb-4 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center">
                   <IoCarSportOutline className="w-8 h-8 text-amber-700 dark:text-amber-400" />
@@ -252,7 +207,7 @@ export default function HomeClient({ initialEsgCars, initialCityCars }: HomeClie
             )}
 
             {/* Empty State - Generic Arizona (no specific city) */}
-            {!showSkeleton && cityCars.length === 0 && !userLocation.isServedCity && (
+            {!showSkeleton && deduplicatedCityCars.length === 0 && !userLocation.isServedCity && (
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 sm:p-12 text-center border border-gray-200 dark:border-gray-700">
                 <div className="w-16 h-16 mx-auto mb-4 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center">
                   <IoMapOutline className="w-8 h-8 text-amber-700 dark:text-amber-400" />
@@ -273,10 +228,10 @@ export default function HomeClient({ initialEsgCars, initialCityCars }: HomeClie
             )}
 
             {/* Cars Grid - When cars are available */}
-            {!showSkeleton && cityCars.length > 0 && (
+            {!showSkeleton && deduplicatedCityCars.length > 0 && (
               <>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-                  {cityCars.slice(0, 6).map((car, index) => (
+                  {deduplicatedCityCars.slice(0, 6).map((car, index) => (
                     <CompactCarCard
                       key={car.id}
                       car={transformCar(car)}
