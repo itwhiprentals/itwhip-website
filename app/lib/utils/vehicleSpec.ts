@@ -22,11 +22,28 @@ export function getVehicleSpecData(
   model: string,
   year: string
 ): VehicleSpecData {
-  // Normalize make for case-insensitive lookup
-  const normalizedMake = make?.charAt(0).toUpperCase() + make?.slice(1).toLowerCase()
+  // Try multiple make name variations to handle different casing (e.g., "BMW", "Bmw", "bmw")
+  const makeVariations = [
+    make,  // Original
+    make?.toUpperCase(),  // BMW, GMC
+    make?.charAt(0).toUpperCase() + make?.slice(1).toLowerCase(),  // Toyota, Ford
+  ].filter(Boolean)
+
+  // Find the first matching make in our database
+  let matchedMake: string | null = null
+  for (const variation of makeVariations) {
+    if (vehicleSpecs[variation] || vehicleSpecsByYear[variation]) {
+      matchedMake = variation
+      break
+    }
+  }
+
+  if (!matchedMake) {
+    return { seats: null, doors: null, carType: null, fuelType: null }
+  }
 
   // Try year-specific data first (preferred source)
-  const yearSpec = vehicleSpecsByYear[normalizedMake]?.[model]?.[year]
+  const yearSpec = vehicleSpecsByYear[matchedMake]?.[model]?.[year]
   if (yearSpec) {
     return {
       seats: yearSpec.seats,
@@ -37,7 +54,7 @@ export function getVehicleSpecData(
   }
 
   // Fallback to legacy database (for current models without year data)
-  const legacySpec = vehicleSpecs[normalizedMake]?.[model]
+  const legacySpec = vehicleSpecs[matchedMake]?.[model]
   if (legacySpec) {
     return {
       seats: legacySpec.seats,
@@ -49,9 +66,11 @@ export function getVehicleSpecData(
 
   // Try fuzzy matching for model variations (e.g., "Prius Prime (PHEV)" -> "Prius")
   // Check if model starts with or contains a known model name
-  const makeModels = vehicleSpecs[normalizedMake]
+  // Sort by length descending to match longer model names first (e.g., "Escalade ESV" before "Escalade")
+  const makeModels = vehicleSpecs[matchedMake]
   if (makeModels) {
-    for (const knownModel of Object.keys(makeModels)) {
+    const sortedModels = Object.keys(makeModels).sort((a, b) => b.length - a.length)
+    for (const knownModel of sortedModels) {
       // Check if the model starts with the known model name
       if (model.toLowerCase().startsWith(knownModel.toLowerCase())) {
         const spec = makeModels[knownModel]

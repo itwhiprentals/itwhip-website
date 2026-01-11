@@ -133,46 +133,6 @@ export default function VehicleFilters({
             </select>
           </div>
         </div>
-
-        {/* Quick Make Pills */}
-        <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-          <button
-            onClick={() => handleFilterChange('make', '')}
-            className={`px-3.5 py-1.5 rounded-full text-sm font-medium transition-all ${
-              filters.make === ''
-                ? 'bg-orange-500 text-white shadow-sm'
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
-            }`}
-          >
-            All
-          </button>
-          {displayMakes.map(make => (
-            <button
-              key={make}
-              onClick={() => handleFilterChange('make', make)}
-              className={`px-3.5 py-1.5 rounded-full text-sm font-medium transition-all ${
-                filters.make === make
-                  ? 'bg-orange-500 text-white shadow-sm'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
-              }`}
-            >
-              {make}
-            </button>
-          ))}
-
-          {/* Instant Book Quick Filter */}
-          <button
-            onClick={() => handleFilterChange('availability', filters.availability === 'instant' ? 'all' : 'instant')}
-            className={`px-3.5 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1.5 ${
-              filters.availability === 'instant'
-                ? 'bg-emerald-500 text-white shadow-sm'
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
-            }`}
-          >
-            <IoFlashOutline className="w-3.5 h-3.5" />
-            Instant
-          </button>
-        </div>
       </div>
     </div>
   )

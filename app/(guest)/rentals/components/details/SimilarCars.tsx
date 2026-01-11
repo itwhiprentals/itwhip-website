@@ -18,7 +18,8 @@ import {
 
 import { formatPrivateName, isCompanyName } from '@/app/lib/utils/namePrivacy'
 import { optimizeImageUrl } from '@/app/lib/utils/imageOptimization'
-import { capitalizeCarMake } from '@/app/lib/utils/formatters'
+import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatters'
+import { formatRating, isNewListing } from '@/app/lib/utils/formatCarSpecs'
 
 interface SimilarCar {
   id: string
@@ -257,7 +258,7 @@ function CarCard({
             )}
           </div>
           <div className="text-xs font-medium text-gray-700 dark:text-gray-300 line-clamp-1">
-            {car.model}
+            {normalizeModelName(car.model, car.make)}
           </div>
         </div>
         
@@ -267,13 +268,13 @@ function CarCard({
             <span className="capitalize">{car.carType?.toLowerCase() || 'sedan'}</span>
             <span>•</span>
             <span>{car.seats || 5} seats</span>
-            {car.rating && car.rating > 0 && (
+            {!isNewListing(car.totalTrips) && car.rating && car.rating > 0 && (
               <>
                 <span>•</span>
                 <div className="flex items-center gap-0.5">
                   <IoStarOutline className="w-2.5 h-2.5 text-amber-400 fill-current" />
                   <span className="font-medium text-gray-700 dark:text-gray-300">
-                    {car.rating.toFixed(1)}
+                    {formatRating(car.rating)}
                   </span>
                 </div>
               </>
@@ -281,10 +282,11 @@ function CarCard({
           </div>
           {/* Trips or New Listing - Far right */}
           <span className="text-[10px]">
-            {car.rating && car.rating > 0 && car.totalTrips ? 
-              `(${car.totalTrips} ${car.totalTrips === 1 ? 'trip' : 'trips'})` : 
-              <span className="text-green-600 dark:text-green-400 font-medium">(New listing)</span>
-            }
+            {isNewListing(car.totalTrips) ? (
+              <span className="text-green-600 dark:text-green-400 font-medium">New Listing</span>
+            ) : (
+              `(${car.totalTrips} ${car.totalTrips === 1 ? 'trip' : 'trips'})`
+            )}
           </span>
         </div>
       </div>

@@ -22,6 +22,7 @@ import { RentalCarWithDetails } from '@/types/rental'
 import { formatCurrency } from '@/app/(guest)/rentals/lib/rental-utils'
 import { formatPrivateName, isCompanyName } from '@/app/lib/utils/namePrivacy'
 import { capitalizeCarMake } from '@/app/lib/utils/formatters'
+import { formatRating, isNewListing, formatTransmission, formatFuelType } from '@/app/lib/utils/formatCarSpecs'
 
 interface CarCardProps {
   car: RentalCarWithDetails
@@ -122,11 +123,15 @@ export default function CarCard({
                       {car.host.isVerified && (
                         <IoShieldCheckmarkOutline className="w-4 h-4 text-blue-500" />
                       )}
-                      <div className="flex items-center gap-1">
-                        <IoStar className="w-4 h-4 text-yellow-500" />
-                        <span className="text-sm font-medium">{car.rating}</span>
-                        <span className="text-sm text-gray-500">({car.totalTrips} trips)</span>
-                      </div>
+                      {isNewListing(car.totalTrips) ? (
+                        <span className="text-sm text-green-600 dark:text-green-400 font-medium">New Listing</span>
+                      ) : (
+                        <div className="flex items-center gap-1">
+                          <IoStar className="w-4 h-4 text-yellow-500" />
+                          <span className="text-sm font-medium">{formatRating(car.rating)}</span>
+                          <span className="text-sm text-gray-500">({car.totalTrips} trips)</span>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -140,15 +145,15 @@ export default function CarCard({
                   <div className="flex gap-3 mt-3">
                     <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
                       <IoPeopleOutline className="w-4 h-4" />
-                      <span>{car.seats} seats</span>
+                      <span>{car.seats || 5} seats</span>
                     </div>
                     <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
                       <IoSpeedometerOutline className="w-4 h-4" />
-                      <span>{car.transmission}</span>
+                      <span>{formatTransmission(car.transmission)}</span>
                     </div>
                     <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
                       <IoWaterOutline className="w-4 h-4" />
-                      <span>{car.fuelType}</span>
+                      <span>{formatFuelType(car.fuelType)}</span>
                     </div>
                   </div>
 
@@ -284,11 +289,15 @@ export default function CarCard({
                   <IoShieldCheckmarkOutline className="w-4 h-4 text-blue-500" />
                 )}
               </div>
-              <div className="flex items-center gap-1">
-                <IoStar className="w-4 h-4 text-yellow-500" />
-                <span className="text-sm font-medium">{car.rating}</span>
-                <span className="text-xs text-gray-500">({car.totalTrips})</span>
-              </div>
+              {isNewListing(car.totalTrips) ? (
+                <span className="text-sm text-green-600 dark:text-green-400 font-medium">New Listing</span>
+              ) : (
+                <div className="flex items-center gap-1">
+                  <IoStar className="w-4 h-4 text-yellow-500" />
+                  <span className="text-sm font-medium">{formatRating(car.rating)}</span>
+                  <span className="text-xs text-gray-500">({car.totalTrips})</span>
+                </div>
+              )}
             </div>
           )}
 

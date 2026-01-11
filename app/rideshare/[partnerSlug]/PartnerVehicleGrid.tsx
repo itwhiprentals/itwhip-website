@@ -10,7 +10,6 @@ import {
   IoCarOutline,
   IoFlashOutline,
   IoStarOutline,
-  IoTimeOutline,
   IoGridOutline,
   IoListOutline
 } from 'react-icons/io5'
@@ -100,9 +99,14 @@ export default function PartnerVehicleGrid({ vehicles, availableMakes }: Partner
     <div>
       {/* Section Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white text-center sm:text-left w-full sm:w-auto">
-          Available Vehicles
-        </h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            Available Vehicles
+          </h2>
+          <span className="text-xs text-gray-500 dark:text-gray-400">
+            — Browse our fleet
+          </span>
+        </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setViewMode('grid')}
@@ -231,55 +235,60 @@ function VehicleListItem({ vehicle }: { vehicle: Vehicle }) {
         </div>
       </div>
 
-      {/* Info */}
-      <div className="flex-1 p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+      {/* Info - Two column layout: details left, prices right */}
+      <div className="flex-1 p-4 sm:p-5">
+        <div className="flex justify-between gap-4">
+          {/* Left: Vehicle details */}
+          <div className="min-w-0 flex-1">
+            {/* Row 1: Year Make Model */}
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
               {vehicle.year} {capitalizeCarMake(vehicle.make)} {vehicle.model}
             </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+            {/* Row 2: Location */}
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               {vehicle.city && vehicle.state ? `${vehicle.city}, ${vehicle.state}` : ''}
             </p>
-
-            <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+            {/* Row 3: Specs */}
+            <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mt-2">
               <span>{vehicle.transmission}</span>
               <span>•</span>
               <span>{vehicle.seats} seats</span>
               <span>•</span>
               <span>{vehicle.fuelType}</span>
-              {/* Only show rating if car has real trips (ignores DB default of 5.0) */}
-              {vehicle.rating && vehicle.rating > 0 && vehicle.totalTrips && vehicle.totalTrips > 0 && (
+            </div>
+            {/* Row 4: Rating/New Listing & Trips */}
+            <div className="flex items-center gap-2 text-sm mt-2">
+              {vehicle.totalTrips && vehicle.totalTrips > 0 ? (
                 <>
-                  <span>•</span>
-                  <span className="flex items-center gap-1">
-                    <IoStarOutline className="w-4 h-4 text-yellow-500" />
-                    {vehicle.rating.toFixed(1)}
-                  </span>
+                  {vehicle.rating && vehicle.rating > 0 && (
+                    <span className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
+                      <IoStarOutline className="w-4 h-4 text-yellow-500" />
+                      {Math.floor(vehicle.rating * 10) / 10}
+                    </span>
+                  )}
+                  <span className="text-gray-400">•</span>
+                  <span className="text-gray-500 dark:text-gray-400">{vehicle.totalTrips} trips</span>
                 </>
-              )}
-              {vehicle.totalTrips && vehicle.totalTrips > 0 && (
-                <>
-                  <span>•</span>
-                  <span>{vehicle.totalTrips} trips</span>
-                </>
+              ) : (
+                <span className="text-blue-600 dark:text-blue-400 font-medium">New Listing</span>
               )}
             </div>
           </div>
 
-          <div className="text-right">
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">
-              ${vehicle.dailyRate}
+          {/* Right: Prices */}
+          <div className="text-right flex-shrink-0">
+            <div className="text-xl font-bold text-gray-900 dark:text-white">
+              ${Math.floor(vehicle.dailyRate)}
               <span className="text-sm font-normal text-gray-500">/day</span>
             </div>
             {vehicle.weeklyRate && (
-              <div className="text-sm text-gray-500 mt-1">
-                ${vehicle.weeklyRate}/week
+              <div className="text-sm text-gray-500">
+                ${Math.floor(vehicle.weeklyRate)}/week
               </div>
             )}
             {vehicle.monthlyRate && (
               <div className="text-sm text-gray-500">
-                ${vehicle.monthlyRate}/month
+                ${Math.floor(vehicle.monthlyRate)}/month
               </div>
             )}
           </div>

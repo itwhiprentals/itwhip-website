@@ -12,6 +12,7 @@ import { sign } from 'jsonwebtoken'
 import { nanoid } from 'nanoid'
 import { sendOAuthWelcomeEmail } from '@/app/lib/email/oauth-welcome-sender'
 import { sendHostOAuthWelcomeEmail } from '@/app/lib/email/host-oauth-welcome-sender'
+import { getVehicleSpecData } from '@/app/lib/utils/vehicleSpec'
 
 // Helper to map NHTSA bodyClass to our carType
 function mapBodyClassToCarType(bodyClass: string | null): string | null {
@@ -348,11 +349,17 @@ export async function POST(request: NextRequest) {
                 isActive: false,
 
                 // VIN-decoded specs (with sensible defaults)
-                carType: mapBodyClassToCarType(carData.bodyClass) || 'midsize',
-                seats: 5,  // NHTSA doesn't provide seats - will be updated from our database
-                doors: carData.doors ? parseInt(carData.doors) : 4,
-                transmission: normalizeTransmission(carData.transmission) || 'automatic',
-                fuelType: carData.fuelType || 'gas',
+                // Lookup specs from our vehicle database
+                ...(() => {
+                  const specs = getVehicleSpecData(carData.make, carData.model, carData.year)
+                  return {
+                    carType: mapBodyClassToCarType(carData.bodyClass) || specs?.carType || 'midsize',
+                    seats: specs?.seats || 5,
+                    doors: carData.doors ? parseInt(carData.doors) : (specs?.doors || 4),
+                    transmission: normalizeTransmission(carData.transmission) || 'automatic',
+                    fuelType: carData.fuelType || specs?.fuelType || 'gas',
+                  }
+                })(),
                 driveType: carData.driveType || null,
 
                 // Pricing - must be set before activation
@@ -642,11 +649,17 @@ export async function POST(request: NextRequest) {
             isActive: false,
 
             // VIN-decoded specs (with sensible defaults)
-            carType: mapBodyClassToCarType(carData.bodyClass) || 'midsize',
-            seats: 5,
-            doors: carData.doors ? parseInt(carData.doors) : 4,
-            transmission: normalizeTransmission(carData.transmission) || 'automatic',
-            fuelType: carData.fuelType || 'gas',
+            // Lookup specs from our vehicle database
+            ...(() => {
+              const specs = getVehicleSpecData(carData.make, carData.model, carData.year)
+              return {
+                carType: mapBodyClassToCarType(carData.bodyClass) || specs?.carType || 'midsize',
+                seats: specs?.seats || 5,
+                doors: carData.doors ? parseInt(carData.doors) : (specs?.doors || 4),
+                transmission: normalizeTransmission(carData.transmission) || 'automatic',
+                fuelType: carData.fuelType || specs?.fuelType || 'gas',
+              }
+            })(),
             driveType: carData.driveType || null,
 
             // Pricing - must be set before activation

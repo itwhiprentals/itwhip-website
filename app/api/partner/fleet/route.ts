@@ -7,6 +7,7 @@ import { cookies } from 'next/headers'
 import { jwtVerify } from 'jose'
 import { prisma } from '@/app/lib/database/prisma'
 import { updatePartnerCommissionRate } from '@/app/lib/commission/calculate-tier'
+import { getVehicleSpecData } from '@/app/lib/utils/vehicleSpec'
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'your-secret-key'
@@ -329,7 +330,11 @@ export async function POST(request: NextRequest) {
         vinVerifiedAt: new Date(),
 
         // Default settings for partners - auto-approve means active
-        seats: 5,
+        // Lookup seats from our vehicle specs database
+        seats: (() => {
+          const specs = getVehicleSpecData(make, model, year)
+          return specs?.seats || 5
+        })(),
         isActive: isAutoApproved,
         instantBook: true,
         advanceNotice: 2,

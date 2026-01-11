@@ -41,6 +41,8 @@ import Header from '@/app/components/Header'
 import VehicleBadge from '@/app/components/VehicleBadge'
 import { getVehicleClass, formatFuelTypeBadge } from '@/app/lib/utils/vehicleClassification'
 import { getVehicleSpecData } from '@/app/lib/utils/vehicleSpec'
+import { formatRating } from '@/app/lib/utils/formatCarSpecs'
+import { normalizeModelName } from '@/app/lib/utils/formatters'
 
 // Updated type definition with suspension fields
 interface RentalCarWithDetails {
@@ -591,7 +593,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
             )}
             <PhotoGallery
               photos={car.photos || []}
-              carName={`${car.year} ${formatMake(car.make)} ${car.model}`}
+              carName={`${car.year} ${formatMake(car.make)} ${normalizeModelName(car.model, car.make)}`}
               onViewModeChange={setIsViewingAllPhotos}
             />
           </div>
@@ -630,7 +632,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
           )}
           <PhotoGallery
             photos={car.photos || []}
-            carName={`${car.year} ${formatMake(car.make)} ${car.model}`}
+            carName={`${car.year} ${formatMake(car.make)} ${normalizeModelName(car.model, car.make)}`}
             onViewModeChange={setIsViewingAllPhotos}
           />
         </div>
@@ -651,7 +653,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
                 {fuelTypeBadge && <VehicleBadge label={fuelTypeBadge} />}
               </div>
               <p className="text-lg sm:text-xl text-gray-700 dark:text-gray-300 mb-3">
-                {car.model}
+                {normalizeModelName(car.model, car.make)}
               </p>
               
               {/* Location and Meta Info */}
@@ -663,20 +665,20 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
                   </span>
                 </div>
                 
-                {/* Rating and Trips Display - FIXED TO PREVENT STRAY ZEROS */}
-                {(car.rating !== null && car.rating !== undefined && car.rating > 0) && 
+                {/* Rating and Trips Display */}
+                {(car.rating !== null && car.rating !== undefined && car.rating > 0) &&
                  (car.totalTrips !== null && car.totalTrips !== undefined && car.totalTrips > 0) ? (
                   <div className="flex items-center gap-1.5">
                     <div className="flex items-center">
                       <IoStar className="w-4 h-4 text-amber-400 fill-current" />
                       <span className="font-semibold ml-1">
-                        {typeof car.rating === 'number' ? car.rating.toFixed(1) : car.rating}
+                        {formatRating(car.rating)}
                       </span>
                     </div>
                     <span className="text-gray-500">({car.totalTrips} {car.totalTrips === 1 ? 'trip' : 'trips'})</span>
                   </div>
                 ) : (
-                  <span className="text-gray-500">New listing</span>
+                  <span className="text-green-600 dark:text-green-400 font-medium">New Listing</span>
                 )}
 
                 {isRideshare ? (
@@ -778,7 +780,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
                   {/* Description */}
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Experience the perfect blend of style and performance with this {car.year} {formatMake(car.make)} {car.model}. 
+                      Experience the perfect blend of style and performance with this {car.year} {formatMake(car.make)} {normalizeModelName(car.model, car.make)}. 
                       This {formatCarType(car.carType || car.type).toLowerCase()} offers comfortable seating for {car.seats || 5} passengers 
                       and comes equipped with {formatTransmission(car.transmission).toLowerCase() === 'automatic' ? 'an' : 'a'} {formatTransmission(car.transmission).toLowerCase()} transmission 
                       for a smooth driving experience.

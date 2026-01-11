@@ -4,7 +4,8 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { generateCarUrl } from '@/app/lib/utils/urls'
-import { capitalizeCarMake } from '@/app/lib/utils/formatters'
+import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatters'
+import { formatRating } from '@/app/lib/utils/formatCarSpecs'
 import {
   IoLocationOutline,
   IoFlashOutline,
@@ -194,7 +195,7 @@ export default function CompactCarCard({ car, accentColor = 'amber', className =
         </div>
         {/* Model row */}
         <div className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 line-clamp-1">
-          {car.model}
+          {normalizeModelName(car.model, car.make)}
         </div>
 
         {/* Car details + rating + trips row */}
@@ -204,7 +205,7 @@ export default function CompactCarCard({ car, accentColor = 'amber', className =
           {trips > 0 ? (
             <>
               <IoStar className="w-3.5 h-3.5 text-amber-400 fill-current" />
-              <span className="font-semibold text-gray-700 dark:text-gray-300">{(rating ?? 5).toFixed(1)}</span>
+              <span className="font-semibold text-gray-700 dark:text-gray-300">{formatRating(rating ?? 5)}</span>
               <span>•</span>
               <span>{trips} trip{trips !== 1 ? 's' : ''}</span>
             </>

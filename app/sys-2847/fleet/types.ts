@@ -22,14 +22,16 @@ export enum CarCategory {
   export enum TransmissionType {
     AUTOMATIC = 'AUTOMATIC',
     MANUAL = 'MANUAL',
-    SEMI_AUTOMATIC = 'SEMI_AUTOMATIC'
+    SEMI_AUTOMATIC = 'SEMI_AUTOMATIC',
+    CVT = 'CVT'
   }
-  
+
   export enum FuelType {
     PREMIUM = 'PREMIUM',
     REGULAR = 'REGULAR',
     ELECTRIC = 'ELECTRIC',
     HYBRID = 'HYBRID',
+    PLUGIN_HYBRID = 'PLUGIN_HYBRID',
     DIESEL = 'DIESEL'
   }
   

@@ -7,6 +7,7 @@ import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
 import CompactCarCard from '@/app/components/cards/CompactCarCard'
 import { type UseCaseData } from '@/app/lib/data/use-cases'
+import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatters'
 import {
   IoCarOutline,
   IoLocationOutline,
@@ -75,9 +76,9 @@ export default function UseCasePage({
           position: index + 1,
           item: {
             '@type': 'Product',
-            name: `${car.year} ${car.make} ${car.model}`,
+            name: `${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)}`,
             url: `https://itwhip.com/rentals/${car.id}`,
-            description: `${useCaseData.title} - ${car.year} ${car.make} ${car.model}`,
+            description: `${useCaseData.title} - ${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)}`,
             image: car.photos?.[0]?.url,
             offers: {
               '@type': 'Offer',

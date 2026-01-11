@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { hash } from 'argon2'
+import { getVehicleSpecData } from '@/app/lib/utils/vehicleSpec'
 
 // Helper to map NHTSA bodyClass to our carType
 function mapBodyClassToCarType(bodyClass: string | null): string | null {
@@ -253,11 +254,17 @@ export async function POST(request: NextRequest) {
             isActive: false,
             
             // VIN-decoded specs (with sensible defaults)
-            carType: mapBodyClassToCarType(vehicleBodyClass) || 'midsize',
-            seats: 5,  // NHTSA doesn't provide seats - will be updated from our database
-            doors: vehicleDoors ? parseInt(vehicleDoors) : 4,
-            transmission: normalizeTransmission(vehicleTransmission) || 'automatic',
-            fuelType: vehicleFuelType || 'gas',
+            // Lookup seats from our vehicle specs database
+            ...(() => {
+              const specs = getVehicleSpecData(vehicleMake, vehicleModel, vehicleYear)
+              return {
+                carType: mapBodyClassToCarType(vehicleBodyClass) || specs?.carType || 'midsize',
+                seats: specs?.seats || 5,
+                doors: vehicleDoors ? parseInt(vehicleDoors) : (specs?.doors || 4),
+                transmission: normalizeTransmission(vehicleTransmission) || 'automatic',
+                fuelType: vehicleFuelType || specs?.fuelType || 'gas',
+              }
+            })(),
             driveType: vehicleDriveType || null,
 
             // Pricing defaults to 0 - MUST be set before going live

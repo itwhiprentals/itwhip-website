@@ -87,13 +87,15 @@ export default function PartnerPolicies({ policies, companyName = 'Partner' }: P
   ]
 
   return (
-    <section className="py-12">
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-        Rental Policies
-      </h2>
-      <p className="text-gray-600 dark:text-gray-400 mb-6">
-        Please review our policies before booking
-      </p>
+    <section className="py-8">
+      <div className="flex items-center gap-2 mb-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          Rental Policies
+        </h2>
+        <span className="text-xs text-gray-500 dark:text-gray-400">
+          — Please review before booking
+        </span>
+      </div>
 
       <div className="space-y-3">
         {policyItems.map((item) => {

@@ -24,7 +24,8 @@ export const CAR_STATUSES = [
 export const TRANSMISSION_TYPES = [
   { value: TransmissionType.AUTOMATIC, label: 'Automatic' },
   { value: TransmissionType.MANUAL, label: 'Manual' },
-  { value: TransmissionType.SEMI_AUTOMATIC, label: 'Semi-Automatic' }
+  { value: TransmissionType.SEMI_AUTOMATIC, label: 'Semi-Automatic' },
+  { value: TransmissionType.CVT, label: 'CVT' }
 ]
 
 export const FUEL_TYPES = [
@@ -32,6 +33,7 @@ export const FUEL_TYPES = [
   { value: FuelType.REGULAR, label: 'Regular' },
   { value: FuelType.ELECTRIC, label: 'Electric' },
   { value: FuelType.HYBRID, label: 'Hybrid' },
+  { value: FuelType.PLUGIN_HYBRID, label: 'Plug-in Hybrid' },
   { value: FuelType.DIESEL, label: 'Diesel' }
 ]
 

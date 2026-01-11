@@ -4,6 +4,8 @@
 import Link from 'next/link'
 import { generateCarUrl } from '@/app/lib/utils/urls'
 import { optimizeImageUrl } from '@/app/lib/utils/imageOptimization'
+import { formatRating, isNewListing } from '@/app/lib/utils/formatCarSpecs'
+import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatters'
 import { IoFlashOutline, IoStarSharp } from 'react-icons/io5'
 
 interface CityCarCardProps {
@@ -95,27 +97,29 @@ export default function CityCarCard({ car }: CityCarCardProps) {
       <div className="p-3">
         {/* Car Name - Compact */}
         <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-          {car.year} {car.make} {car.model}
+          {car.year} {capitalizeCarMake(car.make)} {normalizeModelName(car.model, car.make)}
         </h3>
         
         {/* Rating & Trips - Very compact */}
-        {(car.rating || car.totalTrips) && (
-          <div className="flex items-center gap-2 mt-1">
-            {car.rating && (
-              <div className="flex items-center gap-0.5">
-                <IoStarSharp className="w-3 h-3 text-amber-400" />
-                <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                  {car.rating.toFixed(1)}
-                </span>
-              </div>
-            )}
-            {car.totalTrips && car.totalTrips > 0 && (
+        <div className="flex items-center gap-2 mt-1">
+          {isNewListing(car.totalTrips) ? (
+            <span className="text-xs text-green-600 dark:text-green-400 font-medium">New Listing</span>
+          ) : (
+            <>
+              {car.rating && (
+                <div className="flex items-center gap-0.5">
+                  <IoStarSharp className="w-3 h-3 text-amber-400" />
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                    {formatRating(car.rating)}
+                  </span>
+                </div>
+              )}
               <span className="text-xs text-gray-500 dark:text-gray-400">
                 {car.totalTrips} trips
               </span>
-            )}
-          </div>
-        )}
+            </>
+          )}
+        </div>
       </div>
     </Link>
   )

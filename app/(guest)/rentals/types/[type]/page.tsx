@@ -9,6 +9,7 @@ import Footer from '@/app/components/Footer'
 import CompactCarCard from '@/app/components/cards/CompactCarCard'
 import prisma from '@/app/lib/database/prisma'
 import { generateCarUrl } from '@/app/lib/utils/urls'
+import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatters'
 import {
   IoCarOutline,
   IoCarSportOutline,
@@ -315,6 +316,7 @@ export default async function CarTypePage({
       totalTrips: true,
       instantBook: true,
       fuelType: true,
+      seats: true,
       esgScore: true,
       photos: {
         select: { url: true },
@@ -346,7 +348,7 @@ export default async function CarTypePage({
     dailyRate: Number(car.dailyRate),
     carType: car.carType,
     vehicleType: car.vehicleType as 'RENTAL' | 'RIDESHARE' | null, // For rideshare badge
-    seats: 5, // Default since not in select
+    seats: car.seats || 5,
     city: car.city,
     rating: car.rating ? Number(car.rating) : null,
     totalTrips: car.totalTrips,
@@ -412,8 +414,8 @@ export default async function CarTypePage({
       position: index + 1,
       item: {
         '@type': 'Product',
-        name: `${car.year} ${car.make} ${car.model}`,
-        description: `Rent this ${car.year} ${car.make} ${car.model} in ${car.city}, AZ`,
+        name: `${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)}`,
+        description: `Rent this ${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)} in ${car.city}, AZ`,
         image: car.photos?.[0]?.url || '',
         url: `https://itwhip.com${generateCarUrl({ id: car.id, make: car.make, model: car.model, year: car.year, city: car.city })}`,
         offers: {

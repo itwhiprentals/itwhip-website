@@ -4,7 +4,8 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { generateCarUrl } from '@/app/lib/utils/urls'
-import { capitalizeCarMake } from '@/app/lib/utils/formatters'
+import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatters'
+import { formatRating, isNewListing } from '@/app/lib/utils/formatCarSpecs'
 import CarImage from './CarImage'
 import {
   IoFlashOutline,
@@ -141,30 +142,36 @@ export default function CarCard({ car, showHostAvatar = false }: CarCardProps) {
               )}
             </div>
             <h4 className="text-lg font-bold text-gray-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-              {car.model}
+              {normalizeModelName(car.model, car.make)}
             </h4>
           </div>
 
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-3">
-              {car.rating && (
-                <div className="flex items-center gap-1">
-                  <div className="flex">
-                    {[...Array(5)].map((_, i) => (
-                      <IoStarOutline
-                        key={i}
-                        className={`w-3.5 h-3.5 ${i < Math.floor(car.rating.average || car.rating) ? 'text-amber-400 fill-current' : 'text-gray-300'}`}
-                      />
-                    ))}
-                  </div>
-                  <span className="font-semibold text-gray-700 dark:text-gray-300">
-                    {(car.rating.average || car.rating).toFixed(1)}
+              {isNewListing(tripCount) ? (
+                <span className="text-green-600 dark:text-green-400 font-medium">New Listing</span>
+              ) : (
+                <>
+                  {car.rating && (
+                    <div className="flex items-center gap-1">
+                      <div className="flex">
+                        {[...Array(5)].map((_, i) => (
+                          <IoStarOutline
+                            key={i}
+                            className={`w-3.5 h-3.5 ${i < Math.floor(car.rating.average || car.rating) ? 'text-amber-400 fill-current' : 'text-gray-300'}`}
+                          />
+                        ))}
+                      </div>
+                      <span className="font-semibold text-gray-700 dark:text-gray-300">
+                        {formatRating(car.rating.average || car.rating)}
+                      </span>
+                    </div>
+                  )}
+                  <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                    <IoCarSportOutline className="w-3.5 h-3.5" /> {tripCount} trips
                   </span>
-                </div>
+                </>
               )}
-              <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                <IoCarSportOutline className="w-3.5 h-3.5" /> {tripCount} trips
-              </span>
             </div>
             <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1">
               <IoLocationOutline className="w-3 h-3" /> {car.location?.city || 'Phoenix'}, {car.location?.state || 'AZ'}

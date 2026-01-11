@@ -3,7 +3,7 @@
 
 export type CarType = 'sedan' | 'suv' | 'truck' | 'coupe' | 'convertible' | 'hatchback' | 'minivan' | 'wagon' | 'sports' | 'crossover'
 export type FuelType = 'gas' | 'diesel' | 'electric' | 'hybrid' | 'plug-in hybrid' | 'hydrogen'
-export type TransmissionType = 'automatic' | 'manual' | 'both' | 'automatic/manual'
+export type TransmissionType = 'automatic' | 'manual' | 'cvt' | 'both' | 'automatic/manual'
 
 export interface CarSpec {
   trims: string[]
@@ -120,7 +120,11 @@ export const vehicleSpecs: VehicleDatabase = {
   'BMW': {
     '2 Series': { trims: ['230i', '230i xDrive', 'M240i', 'M240i xDrive'], seats: 4, doors: 2, transmission: 'automatic', carType: 'coupe', fuelType: 'gas' },
     '3 Series': { trims: ['330i', '330i xDrive', '330e', 'M340i', 'M340i xDrive'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas/hybrid' },
+    // Direct model entries for fuzzy matching
+    '330i': { trims: ['Base', 'xDrive'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
+    '340i': { trims: ['Base', 'xDrive'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
     '4 Series': { trims: ['430i', '430i xDrive', 'M440i', 'M440i xDrive'], seats: 4, doors: 2, transmission: 'automatic', carType: 'coupe', fuelType: 'gas' },
+    '430i': { trims: ['Base', 'xDrive'], seats: 4, doors: 2, transmission: 'automatic', carType: 'coupe', fuelType: 'gas' },
     '4 Series Gran Coupe': { trims: ['430i', '430i xDrive', 'M440i', 'M440i xDrive'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
     '5 Series': { trims: ['530i', '530i xDrive', '540i xDrive', '550e xDrive'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas/hybrid' },
     '7 Series': { trims: ['740i', '740i xDrive', '750e xDrive', '760i xDrive'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas/hybrid' },
@@ -157,6 +161,10 @@ export const vehicleSpecs: VehicleDatabase = {
     'C-Class': { trims: ['C 300', 'C 300 4MATIC', 'AMG C 43 4MATIC', 'AMG C 63 S E PERFORMANCE'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas/hybrid' },
     'E-Class': { trims: ['E 350', 'E 350 4MATIC', 'E 450 4MATIC', 'E 450 4MATIC All-Terrain', 'AMG E 53 Hybrid'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas/hybrid' },
     'S-Class': { trims: ['S 500 4MATIC', 'S 580 4MATIC', 'S 580e 4MATIC', 'AMG S 63 E PERFORMANCE'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas/hybrid' },
+    // Direct model entries for fuzzy matching
+    'S 550': { trims: ['Base', '4MATIC'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
+    'S550': { trims: ['Base', '4MATIC'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
+    'S 63': { trims: ['AMG', 'AMG 4MATIC'], seats: 4, doors: 2, transmission: 'automatic', carType: 'coupe', fuelType: 'gas' },
     'CLA': { trims: ['CLA 250', 'CLA 250 4MATIC', 'AMG CLA 35 4MATIC', 'AMG CLA 45 4MATIC+'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
     'CLS': { trims: ['CLS 450 4MATIC', 'AMG CLS 53 4MATIC+'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas/hybrid' },
     'GLA': { trims: ['GLA 250', 'GLA 250 4MATIC', 'AMG GLA 35 4MATIC', 'AMG GLA 45 4MATIC+'], seats: 5, doors: 4, transmission: 'automatic', carType: 'suv', fuelType: 'gas' },
@@ -265,8 +273,9 @@ export const vehicleSpecs: VehicleDatabase = {
     'Corolla': { trims: ['L', 'LE', 'SE', 'XLE', 'XSE'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas/hybrid' },
     'Corolla Hatchback': { trims: ['SE', 'XSE', 'Nightshade'], seats: 5, doors: 4, transmission: 'both', carType: 'hatchback', fuelType: 'gas' },
     'Crown': { trims: ['XLE', 'Limited', 'Platinum'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'hybrid' },
-    'Prius Prime': { trims: ['LE', 'XLE', 'Limited'], seats: 5, doors: 4, transmission: 'automatic', carType: 'hatchback', fuelType: 'plug-in hybrid' },
-    'Prius Prime PHEV': { trims: ['LE', 'XLE', 'Limited'], seats: 5, doors: 4, transmission: 'automatic', carType: 'hatchback', fuelType: 'plug-in hybrid' },
+    'Prius': { trims: ['L Eco', 'LE', 'XLE', 'Limited'], seats: 5, doors: 5, transmission: 'cvt', carType: 'hatchback', fuelType: 'hybrid' },
+    'Prius Prime': { trims: ['LE', 'XLE', 'Limited'], seats: 4, doors: 5, transmission: 'cvt', carType: 'hatchback', fuelType: 'plug-in hybrid' },
+    'Prius Prime PHEV': { trims: ['LE', 'XLE', 'Limited'], seats: 4, doors: 5, transmission: 'cvt', carType: 'hatchback', fuelType: 'plug-in hybrid' },
     'GR86': { trims: ['Base', 'Premium', 'Special Edition'], seats: 4, doors: 2, transmission: 'both', carType: 'coupe', fuelType: 'gas' },
     'Supra': { trims: ['2.0', '3.0', '3.0 Premium', 'A91-MT Edition', 'A91-CF Edition'], seats: 2, doors: 2, transmission: 'both', carType: 'sports', fuelType: 'gas' },
     'Mirai': { trims: ['XLE', 'Limited'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'hydrogen' },
@@ -297,9 +306,9 @@ export const vehicleSpecs: VehicleDatabase = {
     'Odyssey': { trims: ['LX', 'EX', 'EX-L', 'Sport', 'Touring', 'Elite'], seats: 8, doors: 4, transmission: 'automatic', carType: 'minivan', fuelType: 'gas' },
   },
   'Nissan': {
-    'Sentra': { trims: ['S', 'SV', 'SR', 'SR Midnight Edition'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
-    'Altima': { trims: ['S', 'SV', 'SR', 'SR VC-Turbo', 'SL', 'Platinum'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
-    'Versa': { trims: ['S', 'SV', 'SR'], seats: 5, doors: 4, transmission: 'automatic', carType: 'sedan', fuelType: 'gas' },
+    'Sentra': { trims: ['S', 'SV', 'SR', 'SR Midnight Edition'], seats: 5, doors: 4, transmission: 'cvt', carType: 'sedan', fuelType: 'gas' },
+    'Altima': { trims: ['S', 'SV', 'SR', 'SR VC-Turbo', 'SL', 'Platinum'], seats: 5, doors: 4, transmission: 'cvt', carType: 'sedan', fuelType: 'gas' },
+    'Versa': { trims: ['S', 'SV', 'SR'], seats: 5, doors: 4, transmission: 'cvt', carType: 'sedan', fuelType: 'gas' },
     'Leaf': { trims: ['S', 'SV Plus'], seats: 5, doors: 4, transmission: 'automatic', carType: 'hatchback', fuelType: 'electric' },
     'Z': { trims: ['Sport', 'Performance', 'NISMO'], seats: 2, doors: 2, transmission: 'both', carType: 'sports', fuelType: 'gas' },
     'GT-R': { trims: ['Premium', 'T-Spec', 'NISMO'], seats: 4, doors: 2, transmission: 'automatic', carType: 'sports', fuelType: 'gas' },

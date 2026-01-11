@@ -72,33 +72,34 @@ export default function PartnerBenefits({ benefits, companyName = 'Us' }: Partne
   const useCustomBenefits = benefits && benefits.length > 0
 
   return (
-    <section className="py-12">
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 text-center">
-        Why Book With {companyName}?
-      </h2>
-      <p className="text-gray-600 dark:text-gray-400 text-center mb-8 max-w-2xl mx-auto">
-        Join thousands of drivers who trust us for their rideshare rental needs
-      </p>
+    <section className="py-8">
+      <div className="flex items-center gap-2 mb-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          Why Book With {companyName}?
+        </h2>
+        <span className="text-xs text-gray-500 dark:text-gray-400">
+          — Trusted by thousands of drivers
+        </span>
+      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Compact 2-row grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {useCustomBenefits ? (
           // Custom benefits from partner (may have emojis)
           benefits!.map((benefit, index) => (
             <div
               key={index}
-              className="relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg p-6 border border-gray-200 dark:border-gray-700 hover:shadow-xl hover:shadow-orange-500/10 hover:border-orange-400 dark:hover:border-orange-500 hover:-translate-y-1 transition-all duration-300 group"
+              className="flex items-start gap-3 p-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700"
             >
-              <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-amber-50 dark:from-orange-900/30 dark:to-amber-900/20 rounded-lg flex items-center justify-center mb-4 group-hover:shadow-lg group-hover:shadow-orange-500/20 transition-all duration-300">
-                <span className="text-2xl group-hover:scale-110 transition-transform duration-300">
-                  {benefit.icon}
-                </span>
+              <span className="text-lg flex-shrink-0 mt-0.5">{benefit.icon}</span>
+              <div className="min-w-0">
+                <h3 className="text-sm font-medium text-gray-900 dark:text-white leading-tight">
+                  {benefit.title}
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">
+                  {benefit.description}
+                </p>
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
-                {benefit.title}
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
-                {benefit.description}
-              </p>
             </div>
           ))
         ) : (
@@ -108,17 +109,19 @@ export default function PartnerBenefits({ benefits, companyName = 'Us' }: Partne
             return (
               <div
                 key={index}
-                className="relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg p-6 border border-gray-200 dark:border-gray-700 hover:shadow-xl hover:shadow-orange-500/10 hover:border-orange-400 dark:hover:border-orange-500 hover:-translate-y-1 transition-all duration-300 group"
+                className="flex items-start gap-3 p-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700"
               >
-                <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-amber-50 dark:from-orange-900/30 dark:to-amber-900/20 rounded-lg flex items-center justify-center mb-4 group-hover:shadow-lg group-hover:shadow-orange-500/20 transition-all duration-300">
-                  <IconComponent className="w-6 h-6 text-orange-500 group-hover:scale-110 transition-transform duration-300" />
+                <div className="w-8 h-8 rounded-lg bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center flex-shrink-0">
+                  <IconComponent className="w-4 h-4 text-orange-500" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
-                  {benefit.title}
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
-                  {benefit.description}
-                </p>
+                <div className="min-w-0">
+                  <h3 className="text-sm font-medium text-gray-900 dark:text-white leading-tight">
+                    {benefit.title}
+                  </h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">
+                    {benefit.description}
+                  </p>
+                </div>
               </div>
             )
           })
