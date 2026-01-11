@@ -50,7 +50,7 @@ const RIDESHARE_MAKE_SEO_DATA: Record<string, {
     popularModels: ['Camry', 'Corolla', 'Prius', 'RAV4', 'Camry Hybrid'],
     rideshareAdvantages: ['#1 rideshare choice nationwide', 'Industry-leading reliability', 'Excellent fuel economy', 'Low maintenance costs', 'High resale value'],
     weeklyPriceRange: '$299-399/week',
-    logo: '/logos/makes/toyota.svg',
+    logo: '/logos/makes/toyota.png',
     faqs: [
       { question: 'Why is Toyota the most popular brand for Uber and Lyft drivers?', answer: 'Toyota vehicles consistently rank #1 among rideshare drivers due to their legendary reliability, excellent fuel economy (especially hybrids like the Prius), low maintenance costs, and high passenger comfort ratings. The Camry and Prius are the two most common vehicles seen on Uber and Lyft platforms nationwide.' },
       { question: 'What Toyota models are approved for rideshare in Phoenix?', answer: 'All Toyota sedans and SUVs in our fleet are pre-approved for both Uber and Lyft in Phoenix. Popular choices include the Camry (most requested), Corolla (budget-friendly), Prius (best fuel economy), and RAV4 (for UberXL/Lyft XL). Each vehicle meets platform requirements for year, doors, and seating.' },
@@ -70,7 +70,7 @@ const RIDESHARE_MAKE_SEO_DATA: Record<string, {
     popularModels: ['Accord', 'Civic', 'CR-V', 'Accord Hybrid', 'HR-V'],
     rideshareAdvantages: ['Excellent passenger comfort', 'Reliable VTEC engines', 'Smooth ride quality', 'Strong resale value', 'Low cost of ownership'],
     weeklyPriceRange: '$289-389/week',
-    logo: '/logos/makes/honda.svg',
+    logo: '/logos/makes/honda.png',
     faqs: [
       { question: 'Why do rideshare drivers prefer Honda vehicles?', answer: 'Honda vehicles are prized by rideshare drivers for their exceptional reliability, smooth ride quality, and spacious interiors. The Accord consistently receives 5-star passenger ratings due to its comfortable back seat, quiet cabin, and refined driving experience. Honda\'s VTEC engines are known for longevity—many reach 300,000+ miles.' },
       { question: 'What Honda models work best for Uber and Lyft in Phoenix?', answer: 'The Honda Accord is our most popular rideshare vehicle—passengers love the spacious interior and smooth ride. The Civic offers excellent fuel economy for budget-conscious drivers, while the CR-V qualifies for UberXL/Lyft XL with its extra space. All Honda models in our fleet meet platform requirements.' },
@@ -110,7 +110,7 @@ const RIDESHARE_MAKE_SEO_DATA: Record<string, {
     popularModels: ['Forte', 'K5', 'Sportage', 'Soul', 'Seltos'],
     rideshareAdvantages: ['Most affordable rates', 'Award-winning design', 'Excellent standard features', 'Great fuel economy', 'Comprehensive warranty'],
     weeklyPriceRange: '$249-339/week',
-    logo: '/logos/makes/kia.svg',
+    logo: '/logos/makes/kia.png',
     faqs: [
       { question: 'Why is Kia the most affordable rideshare rental option?', answer: 'Kia vehicles offer exceptional value with lower operating costs than competitors. The Forte and K5 deliver great fuel economy, low maintenance costs, and reliable performance at our lowest weekly rates. This means you keep more of every dollar you earn driving rideshare.' },
       { question: 'What Kia models qualify for Uber and Lyft?', answer: 'Our Kia rideshare fleet includes the Forte (most affordable), K5 (premium sedan), Sportage (for UberXL/Lyft XL), and Soul (compact and efficient). All vehicles meet platform age and condition requirements, with modern safety features included.' },
@@ -130,7 +130,7 @@ const RIDESHARE_MAKE_SEO_DATA: Record<string, {
     popularModels: ['Altima', 'Sentra', 'Rogue', 'Versa', 'Kicks'],
     rideshareAdvantages: ['Fleet-proven durability', 'CVT transmission efficiency', 'Comfortable seating', 'Good fuel economy', 'Affordable maintenance'],
     weeklyPriceRange: '$259-349/week',
-    logo: '/logos/makes/nissan.svg',
+    logo: '/logos/makes/nissan.png',
     faqs: [
       { question: 'Why do fleet operators choose Nissan for rideshare?', answer: 'Nissan vehicles are proven in commercial fleet applications. The Altima and Sentra offer durable CVT transmissions, comfortable interiors, and reliable performance over high mileage. Many fleet operators choose Nissan specifically for rideshare due to their balance of comfort, efficiency, and longevity.' },
       { question: 'What Nissan models are available for rideshare in Phoenix?', answer: 'Our Nissan rideshare fleet includes the Altima (mid-size comfort), Sentra (compact efficiency), Rogue (for UberXL/Lyft XL), and Kicks (urban nimble). All vehicles are rideshare-approved and maintained to fleet standards.' },
@@ -150,7 +150,7 @@ const RIDESHARE_MAKE_SEO_DATA: Record<string, {
     popularModels: ['Malibu', 'Equinox', 'Trax', 'Cruze', 'Bolt EV'],
     rideshareAdvantages: ['American-made quality', 'Comfortable ride', 'Good fuel economy', 'Strong dealer network', 'Reliable performance'],
     weeklyPriceRange: '$269-369/week',
-    logo: '/logos/makes/chevrolet.svg',
+    logo: '/logos/makes/chevrolet.png',
     faqs: [
       { question: 'Why choose Chevrolet for rideshare driving?', answer: 'Chevrolet offers American-made reliability with a strong dealer network for support. The Malibu provides a smooth, quiet ride that passengers appreciate, while the Equinox offers extra space for UberXL/Lyft XL earnings. Chevy vehicles are known for dependable performance and comfortable interiors.' },
       { question: 'What Chevrolet models are approved for rideshare in Phoenix?', answer: 'Our Chevrolet rideshare fleet includes the Malibu (sedan comfort), Equinox (versatile SUV), Trax (compact efficient), and select Bolt EVs (zero gas costs). All meet Uber and Lyft platform requirements and are maintained to professional fleet standards.' },
@@ -385,11 +385,11 @@ export default async function RideshareMakePage({
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col md:flex-row items-center gap-4">
               {/* Logo */}
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-xl p-2.5 shadow-lg flex items-center justify-center">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center">
                 <img
                   src={makeData.logo}
                   alt={`${makeData.displayName} logo`}
-                  className="w-full h-full object-contain"
+                  className="w-full h-full object-contain drop-shadow-lg"
                 />
               </div>
 

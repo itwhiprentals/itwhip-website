@@ -11,14 +11,16 @@ const rideshareFleetMakes = [
     slug: 'toyota',
     badge: 'Industry Standard',
     price: 'from $299/week',
-    logo: '/logos/makes/toyota.svg',
+    logo: '/logos/makes/toyota.png',
+    logoClass: 'h-14 sm:h-16 max-w-[100px] sm:max-w-[120px]',
   },
   {
     name: 'Honda',
     slug: 'honda',
     badge: "Driver's Choice",
     price: 'from $289/week',
-    logo: '/logos/makes/honda.svg',
+    logo: '/logos/makes/honda.png',
+    logoClass: 'h-16 sm:h-20 max-w-[110px] sm:max-w-[140px]',
   },
   {
     name: 'Hyundai',
@@ -26,27 +28,31 @@ const rideshareFleetMakes = [
     badge: 'Best Value',
     price: 'from $269/week',
     logo: '/logos/makes/hyundai.svg',
+    logoClass: 'h-14 sm:h-16 max-w-[100px] sm:max-w-[120px]',
   },
   {
     name: 'Kia',
     slug: 'kia',
     badge: 'Most Affordable',
     price: 'from $249/week',
-    logo: '/logos/makes/kia.svg',
+    logo: '/logos/makes/kia.png',
+    logoClass: 'h-10 sm:h-12 max-w-[80px] sm:max-w-[90px]',
   },
   {
     name: 'Nissan',
     slug: 'nissan',
     badge: 'Fleet Proven',
     price: 'from $259/week',
-    logo: '/logos/makes/nissan.svg',
+    logo: '/logos/makes/nissan.png',
+    logoClass: 'h-[47px] sm:h-[62px] max-w-[85px] sm:max-w-[109px]',
   },
   {
     name: 'Chevrolet',
     slug: 'chevrolet',
     badge: 'American Made',
     price: 'from $269/week',
-    logo: '/logos/makes/chevrolet.svg',
+    logo: '/logos/makes/chevrolet.png',
+    logoClass: 'h-[53px] sm:h-[61px] max-w-[95px] sm:max-w-[114px]',
   }
 ]
 
@@ -78,11 +84,11 @@ export default function BrowseByMakeSection() {
                   {make.badge}
                 </span>
                 {/* Logo */}
-                <div className="h-12 sm:h-14 flex items-center justify-center mb-1 bg-gray-100 dark:bg-gray-700 rounded-md mx-1">
+                <div className="h-14 sm:h-16 flex items-center justify-center mb-1 mx-1">
                   <img
                     src={make.logo}
                     alt={`${make.name} logo`}
-                    className="h-8 sm:h-10 w-auto max-w-[70px] sm:max-w-[80px] object-contain group-hover:scale-105 transition-transform"
+                    className={`${make.logoClass} w-auto object-contain group-hover:scale-105 transition-transform drop-shadow-lg`}
                   />
                 </div>
                 {/* Price */}
