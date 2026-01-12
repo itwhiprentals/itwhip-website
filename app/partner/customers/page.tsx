@@ -8,18 +8,16 @@ import Link from 'next/link'
 import {
   IoPersonOutline,
   IoSearchOutline,
-  IoFilterOutline,
   IoMailOutline,
   IoCallOutline,
   IoLocationOutline,
-  IoCalendarOutline,
-  IoWalletOutline,
   IoChevronForwardOutline,
-  IoAddOutline,
   IoRefreshOutline,
   IoPeopleOutline,
   IoCheckmarkCircleOutline,
-  IoTimeOutline
+  IoAddOutline,
+  IoCloseOutline,
+  IoSendOutline
 } from 'react-icons/io5'
 
 interface Customer {
@@ -49,7 +47,7 @@ export default function CustomersPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<'all' | 'active' | 'past'>('all')
-  const [showNewModal, setShowNewModal] = useState(false)
+  const [showAddModal, setShowAddModal] = useState(false)
 
   useEffect(() => {
     fetchCustomers()
@@ -110,16 +108,16 @@ export default function CustomersPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Customers</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Manage your customers and view their booking history
+            View your customers and their booking history
           </p>
         </div>
-        <Link
-          href="/partner/bookings/new"
+        <button
+          onClick={() => setShowAddModal(true)}
           className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium text-sm transition-colors"
         >
           <IoAddOutline className="w-5 h-5" />
-          New Booking
-        </Link>
+          Add Customer
+        </button>
       </div>
 
       {/* Stats Cards */}
@@ -208,16 +206,9 @@ export default function CustomersPage() {
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
               No customers found
             </h3>
-            <p className="text-gray-500 dark:text-gray-400 mb-4">
+            <p className="text-gray-500 dark:text-gray-400">
               {search ? 'Try adjusting your search criteria' : 'Customers will appear here after their first booking'}
             </p>
-            <Link
-              href="/partner/bookings/new"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium text-sm transition-colors"
-            >
-              <IoAddOutline className="w-5 h-5" />
-              Create Manual Booking
-            </Link>
           </div>
         ) : (
           <div className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -300,6 +291,232 @@ export default function CustomersPage() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Add Customer Modal */}
+      {showAddModal && (
+        <AddCustomerModal
+          onClose={() => setShowAddModal(false)}
+          onSuccess={() => {
+            setShowAddModal(false)
+            fetchCustomers()
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
+// Add Customer Modal Component
+function AddCustomerModal({
+  onClose,
+  onSuccess
+}: {
+  onClose: () => void
+  onSuccess: () => void
+}) {
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [sendVerification, setSendVerification] = useState(true)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!firstName.trim() || !email.trim()) {
+      setError('First name and email are required')
+      return
+    }
+
+    setLoading(true)
+    setError('')
+    setSuccess('')
+
+    try {
+      // Create the customer
+      const response = await fetch('/api/partner/customers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          email: email.trim().toLowerCase(),
+          phone: phone.trim() || null
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok || !data.success) {
+        setError(data.error || 'Failed to create customer')
+        setLoading(false)
+        return
+      }
+
+      // If sendVerification is checked, send verification email
+      if (sendVerification) {
+        const verifyResponse = await fetch('/api/partner/verify/send-link', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: email.trim().toLowerCase(),
+            name: `${firstName.trim()} ${lastName.trim()}`.trim()
+          })
+        })
+
+        const verifyData = await verifyResponse.json()
+
+        if (verifyData.success) {
+          setSuccess('Customer created and verification email sent!')
+        } else {
+          setSuccess('Customer created, but verification email failed to send.')
+        }
+      } else {
+        setSuccess('Customer created successfully!')
+      }
+
+      // Wait a moment to show success message, then close
+      setTimeout(() => {
+        onSuccess()
+      }, 1500)
+
+    } catch (err) {
+      setError('Failed to create customer')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Add New Customer</h3>
+          <button
+            onClick={onClose}
+            className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded"
+          >
+            <IoCloseOutline className="w-6 h-6" />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {error && (
+            <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-600 dark:text-red-400">
+              {error}
+            </div>
+          )}
+
+          {success && (
+            <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-sm text-green-600 dark:text-green-400">
+              {success}
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                First Name *
+              </label>
+              <input
+                type="text"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="John"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Last Name
+              </label>
+              <input
+                type="text"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="Doe"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Email *
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="john@example.com"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Phone
+            </label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="(555) 123-4567"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            />
+          </div>
+
+          {/* Send Verification Checkbox */}
+          <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+            <input
+              type="checkbox"
+              id="sendVerification"
+              checked={sendVerification}
+              onChange={(e) => setSendVerification(e.target.checked)}
+              className="w-4 h-4 text-orange-600 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-orange-500"
+            />
+            <label htmlFor="sendVerification" className="flex-1">
+              <span className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
+                <IoSendOutline className="w-4 h-4" />
+                Send Verification Email
+              </span>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Customer will receive a link to verify their identity
+              </p>
+            </label>
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading}
+              className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg font-medium text-sm transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg font-medium text-sm transition-colors flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <IoAddOutline className="w-4 h-4" />
+                  Add Customer
+                </>
+              )}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   )

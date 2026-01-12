@@ -30,7 +30,8 @@ import {
   IoBuildOutline,
   IoShieldCheckmarkOutline,
   IoStarOutline,
-  IoChatbubblesOutline
+  IoChatbubblesOutline,
+  IoAddCircleOutline
 } from 'react-icons/io5'
 
 interface PartnerData {
@@ -50,6 +51,7 @@ const navigationItems = [
   { name: 'Dashboard', href: '/partner/dashboard', icon: IoGridOutline },
   { name: 'Fleet', href: '/partner/fleet', icon: IoCarOutline },
   { name: 'Bookings', href: '/partner/bookings', icon: IoCalendarOutline },
+  { name: 'New Booking', href: '/partner/bookings/new', icon: IoAddCircleOutline, indent: true },
   { name: 'Customers', href: '/partner/customers', icon: IoPeopleOutline },
   { name: 'Reviews', href: '/partner/reviews', icon: IoStarOutline },
   { name: 'Messages', href: '/partner/messages', icon: IoChatbubblesOutline },
@@ -224,20 +226,23 @@ export default function PartnerLayout({
 
         {/* Navigation */}
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {navigationItems.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+          {navigationItems.map((item: any) => {
+            const isActive = pathname === item.href || (pathname.startsWith(item.href + '/') && !item.indent)
+            const isExactMatch = pathname === item.href
             return (
               <Link
                 key={item.name}
                 href={item.href}
                 onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  isActive
+                className={`flex items-center gap-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  item.indent ? 'pl-10 pr-3' : 'px-3'
+                } ${
+                  isExactMatch || (isActive && !item.indent)
                     ? 'bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400'
                     : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
               >
-                <item.icon className={`w-5 h-5 ${isActive ? 'text-orange-600 dark:text-orange-400' : ''}`} />
+                <item.icon className={`w-5 h-5 ${isExactMatch || (isActive && !item.indent) ? 'text-orange-600 dark:text-orange-400' : ''} ${item.indent ? 'w-4 h-4' : ''}`} />
                 {item.name}
               </Link>
             )

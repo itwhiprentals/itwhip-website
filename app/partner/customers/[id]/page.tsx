@@ -15,7 +15,6 @@ import {
   IoCalendarOutline,
   IoWalletOutline,
   IoCarOutline,
-  IoAddOutline,
   IoReceiptOutline,
   IoTimeOutline,
   IoCheckmarkCircleOutline,
@@ -23,7 +22,9 @@ import {
   IoHourglassOutline,
   IoWarningOutline,
   IoCreateOutline,
-  IoChevronForwardOutline
+  IoChevronForwardOutline,
+  IoShieldCheckmarkOutline,
+  IoSendOutline
 } from 'react-icons/io5'
 import GuestProfileSheet from '@/app/reviews/components/GuestProfileSheet'
 
@@ -32,6 +33,13 @@ interface CustomerStats {
   tripCount: number
   completedTrips: number
   activeBookings: number
+}
+
+interface CustomerVerification {
+  status: 'not_started' | 'pending' | 'verified' | 'failed' | null
+  verifiedAt: string | null
+  verifiedFirstName: string | null
+  verifiedLastName: string | null
 }
 
 interface Customer {
@@ -52,6 +60,7 @@ interface Customer {
     phone: string | null
     relation: string | null
   } | null
+  verification: CustomerVerification
   stats: CustomerStats
 }
 
@@ -87,6 +96,8 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
   const [showGuestProfile, setShowGuestProfile] = useState(false)
   const [showChargeModal, setShowChargeModal] = useState(false)
   const [selectedBookingForCharge, setSelectedBookingForCharge] = useState<string | null>(null)
+  const [sendingVerification, setSendingVerification] = useState(false)
+  const [verificationMessage, setVerificationMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
   useEffect(() => {
     fetchCustomerData()
@@ -119,6 +130,47 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
       }
     } catch (error) {
       console.error('Failed to fetch charges:', error)
+    }
+  }
+
+  const sendVerificationEmail = async () => {
+    if (!customer) return
+
+    setSendingVerification(true)
+    setVerificationMessage(null)
+
+    try {
+      const response = await fetch('/api/partner/verify/send-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: customer.email,
+          name: customer.name
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setVerificationMessage({
+          type: 'success',
+          text: 'Verification email sent successfully!'
+        })
+        // Refresh customer data to get updated status
+        fetchCustomerData()
+      } else {
+        setVerificationMessage({
+          type: 'error',
+          text: data.error || 'Failed to send verification email'
+        })
+      }
+    } catch (error) {
+      setVerificationMessage({
+        type: 'error',
+        text: 'Failed to send verification email'
+      })
+    } finally {
+      setSendingVerification(false)
     }
   }
 
@@ -239,15 +291,49 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
               View Profile
             </button>
           )}
-          <Link
-            href={`/partner/bookings/new?customerId=${customer.id}`}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium text-sm transition-colors"
-          >
-            <IoAddOutline className="w-5 h-5" />
-            New Booking
-          </Link>
+          {customer.verification.status === 'verified' ? (
+            <span className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg font-medium text-sm">
+              <IoShieldCheckmarkOutline className="w-5 h-5" />
+              Verified
+            </span>
+          ) : (
+            <button
+              onClick={sendVerificationEmail}
+              disabled={sendingVerification}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg font-medium text-sm transition-colors"
+            >
+              {sendingVerification ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <IoSendOutline className="w-5 h-5" />
+                  Send Verification
+                </>
+              )}
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Verification Message */}
+      {verificationMessage && (
+        <div className={`mb-6 p-4 rounded-lg ${
+          verificationMessage.type === 'success'
+            ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400'
+            : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400'
+        }`}>
+          <div className="flex items-center gap-2">
+            {verificationMessage.type === 'success'
+              ? <IoCheckmarkCircleOutline className="w-5 h-5" />
+              : <IoCloseCircleOutline className="w-5 h-5" />
+            }
+            <span className="text-sm font-medium">{verificationMessage.text}</span>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - Customer Info */}
@@ -338,6 +424,75 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                 <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{customer.stats.activeBookings}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Active</p>
               </div>
+            </div>
+          </div>
+
+          {/* Verification Status Card */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-4">Identity Verification</h3>
+            <div className="space-y-4">
+              {customer.verification.status === 'verified' ? (
+                <div className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                  <IoShieldCheckmarkOutline className="w-8 h-8 text-green-600 dark:text-green-400" />
+                  <div>
+                    <p className="text-sm font-medium text-green-700 dark:text-green-400">Identity Verified</p>
+                    {customer.verification.verifiedFirstName && customer.verification.verifiedLastName && (
+                      <p className="text-xs text-green-600 dark:text-green-500">
+                        {customer.verification.verifiedFirstName} {customer.verification.verifiedLastName}
+                      </p>
+                    )}
+                    {customer.verification.verifiedAt && (
+                      <p className="text-xs text-green-600/70 dark:text-green-500/70">
+                        Verified on {formatDate(customer.verification.verifiedAt)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ) : customer.verification.status === 'pending' ? (
+                <div className="flex items-center gap-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                  <IoHourglassOutline className="w-8 h-8 text-yellow-600 dark:text-yellow-400" />
+                  <div>
+                    <p className="text-sm font-medium text-yellow-700 dark:text-yellow-400">Verification Pending</p>
+                    <p className="text-xs text-yellow-600 dark:text-yellow-500">Customer has started verification</p>
+                  </div>
+                </div>
+              ) : customer.verification.status === 'failed' ? (
+                <div className="flex items-center gap-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                  <IoCloseCircleOutline className="w-8 h-8 text-red-600 dark:text-red-400" />
+                  <div>
+                    <p className="text-sm font-medium text-red-700 dark:text-red-400">Verification Failed</p>
+                    <p className="text-xs text-red-600 dark:text-red-500">Customer needs to re-verify</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <IoWarningOutline className="w-8 h-8 text-gray-400" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Not Verified</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Send verification to this customer</p>
+                  </div>
+                </div>
+              )}
+
+              {customer.verification.status !== 'verified' && (
+                <button
+                  onClick={sendVerificationEmail}
+                  disabled={sendingVerification}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg font-medium text-sm transition-colors"
+                >
+                  {sendingVerification ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <IoSendOutline className="w-4 h-4" />
+                      Send Verification Email
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </div>
         </div>

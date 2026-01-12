@@ -219,7 +219,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Create new customer (for manual booking)
+// POST - Create new customer (for manual booking or direct add)
 export async function POST(request: NextRequest) {
   try {
     const partner = await getPartnerFromToken()
@@ -229,18 +229,38 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, email, phone } = body
+    const { name, firstName: inputFirstName, lastName: inputLastName, email, phone } = body
 
-    if (!name || !email) {
+    // Support both name and firstName/lastName formats
+    let firstName: string
+    let lastName: string
+
+    if (inputFirstName) {
+      firstName = inputFirstName.trim()
+      lastName = (inputLastName || '').trim()
+    } else if (name) {
+      const nameParts = name.trim().split(' ')
+      firstName = nameParts[0]
+      lastName = nameParts.slice(1).join(' ') || ''
+    } else {
       return NextResponse.json(
-        { error: 'Name and email are required' },
+        { error: 'First name is required' },
         { status: 400 }
       )
     }
 
+    if (!email) {
+      return NextResponse.json(
+        { error: 'Email is required' },
+        { status: 400 }
+      )
+    }
+
+    const emailLower = email.trim().toLowerCase()
+
     // Check if user with email already exists
     let user = await prisma.user.findUnique({
-      where: { email },
+      where: { email: emailLower },
       include: {
         reviewerProfile: true
       }
@@ -252,7 +272,7 @@ export async function POST(request: NextRequest) {
         success: true,
         customer: {
           id: user.id,
-          name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || name,
+          name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || `${firstName} ${lastName}`.trim(),
           email: user.email,
           phone: user.phoneNumber || phone,
           photo: user.reviewerProfile?.profilePhotoUrl || user.profileImageUrl,
@@ -262,15 +282,10 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Parse name into first/last
-    const nameParts = name.trim().split(' ')
-    const firstName = nameParts[0]
-    const lastName = nameParts.slice(1).join(' ') || ''
-
     // Create new user
     user = await prisma.user.create({
       data: {
-        email,
+        email: emailLower,
         firstName,
         lastName,
         phoneNumber: phone || null,

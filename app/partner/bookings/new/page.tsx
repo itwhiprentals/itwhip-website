@@ -18,7 +18,11 @@ import {
   IoLocationOutline,
   IoWarningOutline,
   IoCheckmarkOutline,
-  IoChevronForwardOutline
+  IoChevronForwardOutline,
+  IoShieldCheckmarkOutline,
+  IoMailOutline,
+  IoTimeOutline,
+  IoAlertCircleOutline
 } from 'react-icons/io5'
 
 interface Customer {
@@ -29,6 +33,11 @@ interface Customer {
   photo: string | null
   isPreviousCustomer?: boolean
   totalBookings?: number
+  // Verification status
+  stripeIdentityStatus?: 'not_started' | 'pending' | 'verified' | 'failed' | null
+  stripeIdentityVerifiedAt?: string | null
+  stripeVerifiedFirstName?: string | null
+  stripeVerifiedLastName?: string | null
 }
 
 interface Vehicle {
@@ -53,7 +62,7 @@ interface AvailabilityResult {
   tripDays?: number
 }
 
-type Step = 'customer' | 'vehicle' | 'dates' | 'confirm'
+type Step = 'customer' | 'verify' | 'vehicle' | 'dates' | 'confirm'
 
 export default function NewBookingPage() {
   const router = useRouter()
@@ -87,6 +96,12 @@ export default function NewBookingPage() {
   const [pickupLocation, setPickupLocation] = useState('')
   const [notes, setNotes] = useState('')
   const [paymentType, setPaymentType] = useState<'offline' | 'collect_later'>('offline')
+
+  // Verification
+  const [sendingVerification, setSendingVerification] = useState(false)
+  const [verificationSent, setVerificationSent] = useState(false)
+  const [verificationError, setVerificationError] = useState('')
+  const [skipVerification, setSkipVerification] = useState(false)
 
   // Load preselected customer
   useEffect(() => {
@@ -282,8 +297,51 @@ export default function NewBookingPage() {
     return true
   })
 
+  // Send verification email to customer
+  const sendVerificationEmail = async () => {
+    if (!selectedCustomer) return
+
+    setSendingVerification(true)
+    setVerificationError('')
+
+    try {
+      const response = await fetch('/api/partner/verify/send-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: selectedCustomer.name,
+          email: selectedCustomer.email,
+          phone: selectedCustomer.phone || '',
+          existingProfileId: selectedCustomer.id
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setVerificationSent(true)
+        // Update customer with new verification status
+        setSelectedCustomer(prev => prev ? {
+          ...prev,
+          stripeIdentityStatus: 'pending'
+        } : null)
+      } else {
+        setVerificationError(data.error || 'Failed to send verification')
+      }
+    } catch (err) {
+      setVerificationError('Failed to send verification email')
+    } finally {
+      setSendingVerification(false)
+    }
+  }
+
+  // Check if customer is verified
+  const isCustomerVerified = selectedCustomer?.stripeIdentityStatus === 'verified'
+  const isCustomerPendingVerification = selectedCustomer?.stripeIdentityStatus === 'pending'
+
   const steps: { key: Step; label: string; icon: React.ReactNode }[] = [
     { key: 'customer', label: 'Customer', icon: <IoPersonOutline className="w-5 h-5" /> },
+    { key: 'verify', label: 'Verify', icon: <IoShieldCheckmarkOutline className="w-5 h-5" /> },
     { key: 'vehicle', label: 'Vehicle', icon: <IoCarOutline className="w-5 h-5" /> },
     { key: 'dates', label: 'Dates', icon: <IoCalendarOutline className="w-5 h-5" /> },
     { key: 'confirm', label: 'Confirm', icon: <IoCheckmarkCircleOutline className="w-5 h-5" /> }
@@ -493,17 +551,164 @@ export default function NewBookingPage() {
 
             {selectedCustomer && (
               <button
-                onClick={() => setCurrentStep('vehicle')}
+                onClick={() => setCurrentStep('verify')}
                 className="w-full mt-4 px-4 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium flex items-center justify-center gap-2"
               >
-                Continue to Vehicle Selection
+                Continue to Verification
                 <IoChevronForwardOutline className="w-5 h-5" />
               </button>
             )}
           </div>
         )}
 
-        {/* Step 2: Vehicle Selection */}
+        {/* Step 2: Identity Verification */}
+        {currentStep === 'verify' && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Identity Verification</h2>
+
+            {/* Customer Info */}
+            <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg mb-6">
+              {selectedCustomer?.photo ? (
+                <img src={selectedCustomer.photo} alt="" className="w-12 h-12 rounded-full object-cover" />
+              ) : (
+                <div className="w-12 h-12 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center">
+                  <IoPersonOutline className="w-6 h-6 text-gray-500" />
+                </div>
+              )}
+              <div>
+                <p className="font-medium text-gray-900 dark:text-white">{selectedCustomer?.name}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{selectedCustomer?.email}</p>
+                {selectedCustomer?.phone && (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{selectedCustomer.phone}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Verification Status */}
+            {isCustomerVerified ? (
+              <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg mb-6">
+                <div className="flex items-center gap-3">
+                  <IoCheckmarkCircleOutline className="w-8 h-8 text-green-500" />
+                  <div>
+                    <p className="font-semibold text-green-700 dark:text-green-400">Identity Verified</p>
+                    <p className="text-sm text-green-600 dark:text-green-500">
+                      {selectedCustomer?.stripeVerifiedFirstName} {selectedCustomer?.stripeVerifiedLastName}
+                      {selectedCustomer?.stripeIdentityVerifiedAt && (
+                        <> • Verified on {new Date(selectedCustomer.stripeIdentityVerifiedAt).toLocaleDateString()}</>
+                      )}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : isCustomerPendingVerification || verificationSent ? (
+              <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg mb-6">
+                <div className="flex items-center gap-3">
+                  <IoTimeOutline className="w-8 h-8 text-yellow-500" />
+                  <div>
+                    <p className="font-semibold text-yellow-700 dark:text-yellow-400">Verification Pending</p>
+                    <p className="text-sm text-yellow-600 dark:text-yellow-500">
+                      Verification email sent. Waiting for customer to complete identity verification.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4 mb-6">
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <IoShieldCheckmarkOutline className="w-6 h-6 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-blue-700 dark:text-blue-400">Verify Customer Identity</p>
+                      <p className="text-sm text-blue-600 dark:text-blue-500 mt-1">
+                        Send a secure verification link to the customer. They'll verify their identity using a government ID and selfie via Stripe Identity.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {verificationError && (
+                  <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400 flex items-center gap-2">
+                    <IoAlertCircleOutline className="w-5 h-5 flex-shrink-0" />
+                    {verificationError}
+                  </div>
+                )}
+
+                <button
+                  onClick={sendVerificationEmail}
+                  disabled={sendingVerification}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg font-medium"
+                >
+                  {sendingVerification ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
+                      Sending Verification...
+                    </>
+                  ) : (
+                    <>
+                      <IoMailOutline className="w-5 h-5" />
+                      Send Verification Email
+                    </>
+                  )}
+                </button>
+
+                <div className="text-center text-sm text-gray-500 dark:text-gray-400">
+                  or
+                </div>
+
+                {/* In-Person Verification Option */}
+                <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <IoPersonOutline className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-700 dark:text-gray-300">In-Person Verification</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        Customer can verify at your location using their phone or your device.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Skip Verification Checkbox */}
+            {!isCustomerVerified && (
+              <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg mb-6">
+                <input
+                  type="checkbox"
+                  id="skipVerification"
+                  checked={skipVerification}
+                  onChange={(e) => setSkipVerification(e.target.checked)}
+                  className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                />
+                <label htmlFor="skipVerification" className="text-sm text-gray-600 dark:text-gray-300">
+                  <span className="font-medium">Skip verification for now</span>
+                  <span className="block text-xs text-gray-500 dark:text-gray-400">
+                    You can verify the customer later. Note: Unverified customers may have restrictions.
+                  </span>
+                </label>
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setCurrentStep('customer')}
+                className="px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium"
+              >
+                Back
+              </button>
+              <button
+                onClick={() => setCurrentStep('vehicle')}
+                disabled={!isCustomerVerified && !skipVerification && !verificationSent}
+                className="flex-1 px-4 py-3 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 text-white rounded-lg font-medium flex items-center justify-center gap-2"
+              >
+                {isCustomerVerified ? 'Continue to Vehicle' : 'Continue (Skip Verification)'}
+                <IoChevronForwardOutline className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 3: Vehicle Selection */}
         {currentStep === 'vehicle' && (
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Select Vehicle</h2>
@@ -586,7 +791,7 @@ export default function NewBookingPage() {
 
             <div className="flex gap-3">
               <button
-                onClick={() => setCurrentStep('customer')}
+                onClick={() => setCurrentStep('verify')}
                 className="px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium"
               >
                 Back
@@ -603,7 +808,7 @@ export default function NewBookingPage() {
           </div>
         )}
 
-        {/* Step 3: Date Selection */}
+        {/* Step 4: Date Selection */}
         {currentStep === 'dates' && (
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Select Dates</h2>
@@ -741,7 +946,7 @@ export default function NewBookingPage() {
           </div>
         )}
 
-        {/* Step 4: Confirmation */}
+        {/* Step 5: Confirmation */}
         {currentStep === 'confirm' && (
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Review & Confirm</h2>

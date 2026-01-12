@@ -63,7 +63,11 @@ export async function GET(
             address: true,
             emergencyContactName: true,
             emergencyContactPhone: true,
-            emergencyContactRelation: true
+            emergencyContactRelation: true,
+            stripeIdentityStatus: true,
+            stripeIdentityVerifiedAt: true,
+            stripeVerifiedFirstName: true,
+            stripeVerifiedLastName: true
           }
         }
       }
@@ -130,6 +134,12 @@ export async function GET(
         phone: user.reviewerProfile.emergencyContactPhone,
         relation: user.reviewerProfile.emergencyContactRelation
       } : null,
+      verification: {
+        status: user.reviewerProfile?.stripeIdentityStatus || 'not_started',
+        verifiedAt: user.reviewerProfile?.stripeIdentityVerifiedAt?.toISOString() || null,
+        verifiedFirstName: user.reviewerProfile?.stripeVerifiedFirstName || null,
+        verifiedLastName: user.reviewerProfile?.stripeVerifiedLastName || null
+      },
       stats: {
         totalSpent,
         tripCount: bookings.length,
