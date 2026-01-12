@@ -85,13 +85,13 @@ export async function GET(
     const vehicleIds = vehicles.map(v => v.id)
 
     // Get all bookings with this partner
-    const bookings = await prisma.booking.findMany({
+    const bookings = await prisma.rentalBooking.findMany({
       where: {
-        userId: customerId,
-        rentalCarId: { in: vehicleIds }
+        renterId: customerId,
+        carId: { in: vehicleIds }
       },
       include: {
-        rentalCar: {
+        car: {
           select: {
             id: true,
             make: true,
@@ -105,11 +105,11 @@ export async function GET(
     })
 
     // Calculate stats
-    const totalSpent = bookings.reduce((sum, b) => sum + (Number(b.totalPrice) || 0), 0)
+    const totalSpent = bookings.reduce((sum, b) => sum + (Number(b.totalAmount) || 0), 0)
     const completedTrips = bookings.filter(b => b.status === 'COMPLETED').length
     const now = new Date()
     const activeBookings = bookings.filter(b =>
-      (b.status === 'CONFIRMED' || b.status === 'IN_PROGRESS') &&
+      (b.status === 'CONFIRMED' || b.status === 'ACTIVE') &&
       new Date(b.endDate) >= now
     )
 
@@ -151,15 +151,15 @@ export async function GET(
     // Format bookings
     const formattedBookings = bookings.map(b => ({
       id: b.id,
-      vehicle: b.rentalCar
-        ? `${b.rentalCar.year} ${b.rentalCar.make} ${b.rentalCar.model}`
+      vehicle: b.car
+        ? `${b.car.year} ${b.car.make} ${b.car.model}`
         : 'Unknown',
-      vehicleId: b.rentalCarId,
-      vehiclePhoto: b.rentalCar?.primaryPhotoUrl || null,
+      vehicleId: b.carId,
+      vehiclePhoto: b.car?.primaryPhotoUrl || null,
       startDate: b.startDate.toISOString(),
       endDate: b.endDate.toISOString(),
       status: b.status,
-      total: Number(b.totalPrice) || 0,
+      total: Number(b.totalAmount) || 0,
       createdAt: b.createdAt.toISOString()
     }))
 
@@ -197,10 +197,10 @@ export async function PUT(
     })
     const vehicleIds = vehicles.map(v => v.id)
 
-    const hasBooking = await prisma.booking.findFirst({
+    const hasBooking = await prisma.rentalBooking.findFirst({
       where: {
-        userId: customerId,
-        rentalCarId: { in: vehicleIds }
+        renterId: customerId,
+        carId: { in: vehicleIds }
       }
     })
 

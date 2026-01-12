@@ -53,14 +53,13 @@ export async function GET(request: NextRequest) {
     })
     const vehicleIds = vehicles.map(v => v.id)
 
-    // Get all bookings for partner's vehicles with user data
-    const bookings = await prisma.booking.findMany({
+    // Get all bookings for partner's vehicles with renter/guest data
+    const bookings = await prisma.rentalBooking.findMany({
       where: {
-        rentalCarId: { in: vehicleIds },
-        userId: { not: null }
+        carId: { in: vehicleIds }
       },
       include: {
-        user: {
+        renter: {
           select: {
             id: true,
             firstName: true,
@@ -79,7 +78,16 @@ export async function GET(request: NextRequest) {
             }
           }
         },
-        rentalCar: {
+        reviewerProfile: {
+          select: {
+            id: true,
+            profilePhotoUrl: true,
+            city: true,
+            state: true,
+            phoneNumber: true
+          }
+        },
+        car: {
           select: {
             id: true,
             make: true,
@@ -111,24 +119,70 @@ export async function GET(request: NextRequest) {
     const now = new Date()
 
     for (const booking of bookings) {
-      if (!booking.user) continue
+      // Skip bookings with no identifiable customer
+      if (!booking.renter && !booking.guestEmail && !booking.reviewerProfile) continue
 
-      const userId = booking.user.id
-      const existing = customerMap.get(userId)
+      // Determine customer identity - prefer renter (registered user), then reviewer profile, then guest email
+      let customerId: string
+      let customerName: string
+      let customerEmail: string
+      let customerPhone: string | null
+      let customerPhoto: string | null
+      let reviewerProfileId: string | null
+      let customerCity: string | null
+      let customerState: string | null
+      let memberSince: Date
+
+      if (booking.renter) {
+        // Registered user
+        customerId = booking.renter.id
+        customerName = `${booking.renter.firstName || ''} ${booking.renter.lastName || ''}`.trim() || 'Guest'
+        customerEmail = booking.renter.email || ''
+        customerPhone = booking.renter.phoneNumber || null
+        customerPhoto = booking.renter.reviewerProfile?.profilePhotoUrl || booking.renter.profileImageUrl || null
+        reviewerProfileId = booking.renter.reviewerProfile?.id || null
+        customerCity = booking.renter.reviewerProfile?.city || null
+        customerState = booking.renter.reviewerProfile?.state || null
+        memberSince = booking.renter.createdAt
+      } else if (booking.reviewerProfile) {
+        // Guest with reviewer profile
+        customerId = `profile_${booking.reviewerProfile.id}`
+        customerName = booking.guestName || 'Guest'
+        customerEmail = booking.guestEmail || ''
+        customerPhone = booking.guestPhone || booking.reviewerProfile.phoneNumber || null
+        customerPhoto = booking.reviewerProfile.profilePhotoUrl || null
+        reviewerProfileId = booking.reviewerProfile.id
+        customerCity = booking.reviewerProfile.city || null
+        customerState = booking.reviewerProfile.state || null
+        memberSince = booking.createdAt
+      } else {
+        // Guest with email only
+        customerId = `email_${booking.guestEmail}`
+        customerName = booking.guestName || 'Guest'
+        customerEmail = booking.guestEmail || ''
+        customerPhone = booking.guestPhone || null
+        customerPhoto = null
+        reviewerProfileId = null
+        customerCity = null
+        customerState = null
+        memberSince = booking.createdAt
+      }
+
+      const existing = customerMap.get(customerId)
 
       const bookingInfo = {
         id: booking.id,
-        vehicle: booking.rentalCar
-          ? `${booking.rentalCar.year} ${booking.rentalCar.make} ${booking.rentalCar.model}`
+        vehicle: booking.car
+          ? `${booking.car.year} ${booking.car.make} ${booking.car.model}`
           : 'Unknown',
         startDate: booking.startDate,
         endDate: booking.endDate,
         status: booking.status,
-        total: Number(booking.totalPrice) || 0
+        total: Number(booking.totalAmount) || 0
       }
 
       // Determine if active (current or upcoming confirmed booking)
-      const isActive = (booking.status === 'CONFIRMED' || booking.status === 'IN_PROGRESS') &&
+      const isActive = (booking.status === 'CONFIRMED' || booking.status === 'ACTIVE') &&
                        new Date(booking.endDate) >= now
 
       if (existing) {
@@ -139,16 +193,16 @@ export async function GET(request: NextRequest) {
         }
         if (isActive) existing.status = 'active'
       } else {
-        customerMap.set(userId, {
-          id: userId,
-          name: `${booking.user.firstName || ''} ${booking.user.lastName || ''}`.trim() || 'Guest',
-          email: booking.user.email || '',
-          phone: booking.user.phoneNumber || null,
-          photo: booking.user.reviewerProfile?.profilePhotoUrl || booking.user.profileImageUrl || null,
-          reviewerProfileId: booking.user.reviewerProfile?.id || null,
-          city: booking.user.reviewerProfile?.city || null,
-          state: booking.user.reviewerProfile?.state || null,
-          memberSince: booking.user.createdAt,
+        customerMap.set(customerId, {
+          id: customerId,
+          name: customerName,
+          email: customerEmail,
+          phone: customerPhone,
+          photo: customerPhoto,
+          reviewerProfileId,
+          city: customerCity,
+          state: customerState,
+          memberSince,
           bookings: [bookingInfo],
           totalSpent: bookingInfo.total,
           lastBooking: new Date(booking.createdAt),
