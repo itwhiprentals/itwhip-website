@@ -25,7 +25,10 @@ import {
   IoMoonOutline,
   IoSunnyOutline,
   IoPersonOutline,
-  IoNotificationsOutline
+  IoNotificationsOutline,
+  IoPeopleOutline,
+  IoBuildOutline,
+  IoShieldCheckmarkOutline
 } from 'react-icons/io5'
 
 interface PartnerData {
@@ -45,6 +48,9 @@ const navigationItems = [
   { name: 'Dashboard', href: '/partner/dashboard', icon: IoGridOutline },
   { name: 'Fleet', href: '/partner/fleet', icon: IoCarOutline },
   { name: 'Bookings', href: '/partner/bookings', icon: IoCalendarOutline },
+  { name: 'Customers', href: '/partner/customers', icon: IoPeopleOutline },
+  { name: 'Maintenance', href: '/partner/maintenance', icon: IoBuildOutline },
+  { name: 'Claims', href: '/partner/claims', icon: IoShieldCheckmarkOutline },
   { name: 'Revenue', href: '/partner/revenue', icon: IoWalletOutline },
   { name: 'Analytics', href: '/partner/analytics', icon: IoAnalyticsOutline },
   { name: 'Landing Page', href: '/partner/landing', icon: IoGlobeOutline },

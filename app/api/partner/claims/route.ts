@@ -1,0 +1,255 @@
+// app/api/partner/claims/route.ts
+// Partner Claims Management API
+
+import { NextRequest, NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
+import { jwtVerify } from 'jose'
+import { prisma } from '@/app/lib/database/prisma'
+
+const JWT_SECRET = new TextEncoder().encode(
+  process.env.JWT_SECRET || 'your-secret-key'
+)
+
+async function getPartnerFromToken() {
+  const cookieStore = await cookies()
+  const token = cookieStore.get('partner_token')?.value
+
+  if (!token) return null
+
+  try {
+    const { payload } = await jwtVerify(token, JWT_SECRET)
+    const hostId = payload.hostId as string
+
+    const partner = await prisma.rentalHost.findUnique({
+      where: { id: hostId }
+    })
+
+    if (!partner || (partner.hostType !== 'FLEET_PARTNER' && partner.hostType !== 'PARTNER')) {
+      return null
+    }
+
+    return partner
+  } catch {
+    return null
+  }
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const partner = await getPartnerFromToken()
+
+    if (!partner) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const status = searchParams.get('status') || 'all'
+    const vehicleId = searchParams.get('vehicleId')
+
+    // Build where clause - claims associated with this host
+    const where: any = {
+      hostId: partner.id
+    }
+
+    if (status !== 'all') {
+      where.status = status
+    }
+
+    // Get claims
+    const claims = await prisma.claim.findMany({
+      where,
+      include: {
+        damagePhotos: {
+          where: { deletedAt: null },
+          orderBy: { order: 'asc' },
+          take: 1
+        },
+        messages: {
+          orderBy: { createdAt: 'desc' },
+          take: 1
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    })
+
+    // Get vehicle and booking info for each claim
+    const formattedClaims = await Promise.all(claims.map(async (claim) => {
+      // Get booking and vehicle info
+      const booking = await prisma.booking.findUnique({
+        where: { id: claim.bookingId },
+        include: {
+          rentalCar: {
+            select: {
+              id: true,
+              make: true,
+              model: true,
+              year: true,
+              primaryPhotoUrl: true
+            }
+          },
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true
+            }
+          }
+        }
+      })
+
+      return {
+        id: claim.id,
+        type: claim.type,
+        status: claim.status,
+        description: claim.description,
+        incidentDate: claim.incidentDate.toISOString(),
+        createdAt: claim.createdAt.toISOString(),
+        estimatedCost: claim.estimatedCost ? Number(claim.estimatedCost) : null,
+        approvedAmount: claim.approvedAmount ? Number(claim.approvedAmount) : null,
+        paidAmount: claim.paidAmount ? Number(claim.paidAmount) : null,
+        vehicleName: booking?.rentalCar
+          ? `${booking.rentalCar.year} ${booking.rentalCar.make} ${booking.rentalCar.model}`
+          : 'Unknown Vehicle',
+        vehicleId: booking?.rentalCar?.id || null,
+        vehiclePhoto: booking?.rentalCar?.primaryPhotoUrl || null,
+        guestName: booking?.user
+          ? `${booking.user.firstName || ''} ${booking.user.lastName || ''}`.trim()
+          : 'Unknown Guest',
+        guestEmail: booking?.user?.email || null,
+        bookingId: claim.bookingId,
+        photoUrl: claim.damagePhotos[0]?.url || null,
+        photoCount: claim.damagePhotos.length,
+        hasUnreadMessages: claim.messages.some(m => !m.isRead && m.senderType !== 'HOST'),
+        lastMessageAt: claim.messages[0]?.createdAt?.toISOString() || null
+      }
+    }))
+
+    // Filter by vehicle if specified
+    let filteredClaims = formattedClaims
+    if (vehicleId) {
+      filteredClaims = formattedClaims.filter(c => c.vehicleId === vehicleId)
+    }
+
+    // Calculate stats
+    const stats = {
+      total: claims.length,
+      pending: claims.filter(c => c.status === 'PENDING' || c.status === 'UNDER_REVIEW').length,
+      approved: claims.filter(c => c.status === 'APPROVED' || c.status === 'PAID').length,
+      disputed: claims.filter(c => c.status === 'DISPUTED').length,
+      totalEstimated: claims.reduce((sum, c) => sum + (Number(c.estimatedCost) || 0), 0),
+      totalPaid: claims.reduce((sum, c) => sum + (Number(c.paidAmount) || 0), 0)
+    }
+
+    return NextResponse.json({
+      success: true,
+      claims: filteredClaims,
+      stats
+    })
+
+  } catch (error) {
+    console.error('[Partner Claims] Error:', error)
+    return NextResponse.json({ error: 'Failed to fetch claims' }, { status: 500 })
+  }
+}
+
+// POST - Create new claim
+export async function POST(request: NextRequest) {
+  try {
+    const partner = await getPartnerFromToken()
+
+    if (!partner) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const {
+      bookingId,
+      type,
+      description,
+      incidentDate,
+      estimatedCost,
+      photoUrls // Array of photo URLs
+    } = body
+
+    // Validate required fields
+    if (!bookingId || !type || !description || !incidentDate) {
+      return NextResponse.json(
+        { error: 'Missing required fields: bookingId, type, description, incidentDate' },
+        { status: 400 }
+      )
+    }
+
+    // Verify booking belongs to partner's vehicles
+    const vehicles = await prisma.rentalCar.findMany({
+      where: { hostId: partner.id },
+      select: { id: true }
+    })
+    const vehicleIds = vehicles.map(v => v.id)
+
+    const booking = await prisma.booking.findFirst({
+      where: {
+        id: bookingId,
+        rentalCarId: { in: vehicleIds }
+      },
+      include: {
+        rentalCar: {
+          include: {
+            insurancePolicy: true
+          }
+        }
+      }
+    })
+
+    if (!booking) {
+      return NextResponse.json(
+        { error: 'Booking not found or does not belong to this partner' },
+        { status: 404 }
+      )
+    }
+
+    // Get or create a policy ID (using vehicle's policy if exists)
+    const policyId = booking.rentalCar?.insurancePolicy?.id || `manual_${Date.now()}`
+
+    // Create the claim
+    const claim = await prisma.claim.create({
+      data: {
+        policyId,
+        bookingId,
+        hostId: partner.id,
+        type,
+        reportedBy: partner.id,
+        description,
+        incidentDate: new Date(incidentDate),
+        estimatedCost: estimatedCost ? parseFloat(estimatedCost) : null,
+        status: 'PENDING'
+      }
+    })
+
+    // Add photos if provided
+    if (photoUrls && photoUrls.length > 0) {
+      await prisma.claimDamagePhoto.createMany({
+        data: photoUrls.map((url: string, index: number) => ({
+          claimId: claim.id,
+          url,
+          order: index,
+          uploadedBy: 'HOST'
+        }))
+      })
+    }
+
+    return NextResponse.json({
+      success: true,
+      claim: {
+        id: claim.id,
+        type: claim.type,
+        status: claim.status
+      },
+      message: 'Claim filed successfully'
+    })
+
+  } catch (error) {
+    console.error('[Partner Claims] Create error:', error)
+    return NextResponse.json({ error: 'Failed to create claim' }, { status: 500 })
+  }
+}
