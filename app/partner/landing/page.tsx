@@ -1067,68 +1067,118 @@ export default function PartnerLandingPage() {
 
           <div className="space-y-3 sm:space-y-4">
             {/* Rideshare - Default and required if Rentals is off */}
-            <div className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg gap-3">
-              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
-                  <IoCarSportOutline className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 dark:text-orange-400" />
+            <div className={`p-3 sm:p-4 rounded-lg border-2 transition-all ${
+              data.enableRideshare
+                ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800'
+                : 'bg-gray-50 dark:bg-gray-700/50 border-transparent'
+            }`}>
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
+                    <IoCarSportOutline className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="text-sm sm:text-base font-medium text-gray-900 dark:text-white flex items-center gap-2">
+                      Rideshare Rentals
+                      <span className="text-[10px] px-1.5 py-0.5 bg-orange-500 text-white rounded">
+                        GIG
+                      </span>
+                    </h4>
+                    <p className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400">
+                      For Uber, Lyft, DoorDash drivers
+                    </p>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <h4 className="text-sm sm:text-base font-medium text-gray-900 dark:text-white flex items-center gap-2">
-                    Rideshare Rentals
-                    <span className="text-[10px] px-1.5 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded">
-                      Default
-                    </span>
-                  </h4>
-                  <p className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 truncate">
-                    Uber, Lyft, delivery drivers
-                  </p>
-                </div>
+                <button
+                  onClick={() => {
+                    // Only allow disabling if Rentals is enabled
+                    if (data.enableRideshare && !data.enableRentals) return
+                    setData(prev => ({ ...prev, enableRideshare: !prev.enableRideshare }))
+                  }}
+                  disabled={data.enableRideshare && !data.enableRentals}
+                  className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ${
+                    data.enableRideshare ? 'bg-orange-500' : 'bg-gray-400 dark:bg-gray-500'
+                  } ${data.enableRideshare && !data.enableRentals ? 'opacity-70 cursor-not-allowed' : ''}`}
+                >
+                  <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                    data.enableRideshare ? 'translate-x-5' : 'translate-x-0'
+                  }`} />
+                </button>
               </div>
-              <button
-                onClick={() => {
-                  // Only allow disabling if Rentals is enabled
-                  if (data.enableRideshare && !data.enableRentals) return
-                  setData(prev => ({ ...prev, enableRideshare: !prev.enableRideshare }))
-                }}
-                disabled={data.enableRideshare && !data.enableRentals}
-                className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ${
-                  data.enableRideshare ? 'bg-orange-500' : 'bg-gray-400 dark:bg-gray-500'
-                } ${data.enableRideshare && !data.enableRentals ? 'opacity-70 cursor-not-allowed' : ''}`}
-              >
-                <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
-                  data.enableRideshare ? 'translate-x-5' : 'translate-x-0'
-                }`} />
-              </button>
+              {/* Expanded explanation */}
+              <div className="mt-3 pl-10 sm:pl-13 space-y-1">
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                  <span className="w-1 h-1 bg-orange-500 rounded-full flex-shrink-0" />
+                  Minimum 3-day rental period
+                </p>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                  <span className="w-1 h-1 bg-orange-500 rounded-full flex-shrink-0" />
+                  Weekly & monthly rates emphasized
+                </p>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                  <span className="w-1 h-1 bg-orange-500 rounded-full flex-shrink-0" />
+                  Unlimited mileage included
+                </p>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                  <span className="w-1 h-1 bg-orange-500 rounded-full flex-shrink-0" />
+                  Listed on /rideshare/your-slug
+                </p>
+              </div>
             </div>
 
             {/* Rentals */}
-            <div className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg gap-3">
-              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
-                  <IoKeyOutline className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
+            <div className={`p-3 sm:p-4 rounded-lg border-2 transition-all ${
+              data.enableRentals
+                ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800'
+                : 'bg-gray-50 dark:bg-gray-700/50 border-transparent'
+            }`}>
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center flex-shrink-0">
+                    <IoKeyOutline className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="text-sm sm:text-base font-medium text-gray-900 dark:text-white">Standard Rentals</h4>
+                    <p className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400">
+                      Personal & business short-term rentals
+                    </p>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <h4 className="text-sm sm:text-base font-medium text-gray-900 dark:text-white">Standard Rentals</h4>
-                  <p className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 truncate">
-                    Personal & business rentals
-                  </p>
-                </div>
+                <button
+                  onClick={() => {
+                    // Only allow disabling if Rideshare is enabled
+                    if (data.enableRentals && !data.enableRideshare) return
+                    setData(prev => ({ ...prev, enableRentals: !prev.enableRentals }))
+                  }}
+                  disabled={data.enableRentals && !data.enableRideshare}
+                  className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ${
+                    data.enableRentals ? 'bg-orange-500' : 'bg-gray-400 dark:bg-gray-500'
+                  } ${data.enableRentals && !data.enableRideshare ? 'opacity-70 cursor-not-allowed' : ''}`}
+                >
+                  <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                    data.enableRentals ? 'translate-x-5' : 'translate-x-0'
+                  }`} />
+                </button>
               </div>
-              <button
-                onClick={() => {
-                  // Only allow disabling if Rideshare is enabled
-                  if (data.enableRentals && !data.enableRideshare) return
-                  setData(prev => ({ ...prev, enableRentals: !prev.enableRentals }))
-                }}
-                disabled={data.enableRentals && !data.enableRideshare}
-                className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ${
-                  data.enableRentals ? 'bg-orange-500' : 'bg-gray-400 dark:bg-gray-500'
-                } ${data.enableRentals && !data.enableRideshare ? 'opacity-70 cursor-not-allowed' : ''}`}
-              >
-                <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
-                  data.enableRentals ? 'translate-x-5' : 'translate-x-0'
-                }`} />
-              </button>
+              {/* Expanded explanation */}
+              <div className="mt-3 pl-10 sm:pl-13 space-y-1">
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                  <span className="w-1 h-1 bg-purple-500 rounded-full flex-shrink-0" />
+                  Flexible 1+ day bookings
+                </p>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                  <span className="w-1 h-1 bg-purple-500 rounded-full flex-shrink-0" />
+                  Listed on /rentals marketplace
+                </p>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                  <span className="w-1 h-1 bg-purple-500 rounded-full flex-shrink-0" />
+                  Guest identity verification required
+                </p>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                  <span className="w-1 h-1 bg-purple-500 rounded-full flex-shrink-0" />
+                  Daily mileage limits apply
+                </p>
+              </div>
             </div>
 
             {/* Vehicle Sales - Contact Sales */}

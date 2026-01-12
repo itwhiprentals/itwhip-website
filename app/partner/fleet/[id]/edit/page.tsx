@@ -481,13 +481,13 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
               </div>
             </div>
 
-            {/* Service Type - Rental vs Rideshare */}
+            {/* Service Type - Rental vs Rideshare vs Driver */}
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Service Type</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Service Type</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                Choose how this vehicle will be listed. Rideshare vehicles are for Uber/Lyft drivers. Rental vehicles are for standard car rentals.
+                Choose how this vehicle will be listed. This affects where it appears and booking requirements.
               </p>
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-3 gap-4">
                 {/* Rental Option */}
                 <label
                   className={`relative flex flex-col p-4 border-2 rounded-xl cursor-pointer transition-all ${
@@ -501,10 +501,13 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                     name="vehicleType"
                     value="RENTAL"
                     checked={formData.vehicleType === 'RENTAL'}
-                    onChange={(e) => handleChange('vehicleType', e.target.value)}
+                    onChange={(e) => {
+                      handleChange('vehicleType', e.target.value)
+                      handleChange('minTripDuration', 1) // Rentals allow 1-day minimum
+                    }}
                     className="sr-only"
                   />
-                  <div className="flex items-center gap-3 mb-2">
+                  <div className="flex items-center gap-3 mb-3">
                     <div className={`p-2 rounded-lg ${
                       formData.vehicleType === 'RENTAL'
                         ? 'bg-purple-100 dark:bg-purple-800'
@@ -524,9 +527,27 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                       Rental
                     </span>
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Standard car rental for travelers and locals
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                    For personal & business short-term rentals
                   </p>
+                  <ul className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                    <li className="flex items-center gap-1.5">
+                      <span className="w-1 h-1 bg-purple-500 rounded-full" />
+                      Flexible 1+ day bookings
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <span className="w-1 h-1 bg-purple-500 rounded-full" />
+                      Listed on /rentals marketplace
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <span className="w-1 h-1 bg-purple-500 rounded-full" />
+                      Guest verification required
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <span className="w-1 h-1 bg-purple-500 rounded-full" />
+                      Mileage limits apply
+                    </li>
+                  </ul>
                   {formData.vehicleType === 'RENTAL' && (
                     <div className="absolute top-3 right-3">
                       <IoCheckmarkCircle className="w-5 h-5 text-purple-600 dark:text-purple-400" />
@@ -547,10 +568,13 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                     name="vehicleType"
                     value="RIDESHARE"
                     checked={formData.vehicleType === 'RIDESHARE'}
-                    onChange={(e) => handleChange('vehicleType', e.target.value)}
+                    onChange={(e) => {
+                      handleChange('vehicleType', e.target.value)
+                      handleChange('minTripDuration', 3) // Rideshare requires 3-day minimum
+                    }}
                     className="sr-only"
                   />
-                  <div className="flex items-center gap-3 mb-2">
+                  <div className="flex items-center gap-3 mb-3">
                     <div className={`p-2 rounded-lg ${
                       formData.vehicleType === 'RIDESHARE'
                         ? 'bg-orange-100 dark:bg-orange-800'
@@ -570,19 +594,95 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                       Rideshare
                     </span>
                     <span className="px-2 py-0.5 bg-orange-500 text-white text-xs font-bold rounded-full">
-                      UBER / LYFT
+                      GIG
                     </span>
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    For gig drivers needing rideshare-ready vehicles
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                    For Uber, Lyft, DoorDash drivers
                   </p>
+                  <ul className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                    <li className="flex items-center gap-1.5">
+                      <span className="w-1 h-1 bg-orange-500 rounded-full" />
+                      Minimum 3-day rental
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <span className="w-1 h-1 bg-orange-500 rounded-full" />
+                      Listed on /rideshare/[your-slug]
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <span className="w-1 h-1 bg-orange-500 rounded-full" />
+                      Weekly & monthly rates
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <span className="w-1 h-1 bg-orange-500 rounded-full" />
+                      Unlimited mileage
+                    </li>
+                  </ul>
                   {formData.vehicleType === 'RIDESHARE' && (
                     <div className="absolute top-3 right-3">
                       <IoCheckmarkCircle className="w-5 h-5 text-orange-500 dark:text-orange-400" />
                     </div>
                   )}
                 </label>
+
+                {/* Driver/Chauffeur Option - Coming Soon */}
+                <div
+                  className="relative flex flex-col p-4 border-2 rounded-xl border-gray-200 dark:border-gray-600 opacity-60 cursor-not-allowed"
+                >
+                  <div className="absolute top-3 right-3">
+                    <span className="px-2 py-0.5 bg-gray-500 text-white text-xs font-medium rounded-full">
+                      Coming Soon
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700">
+                      <IoCarOutline className="w-6 h-6 text-gray-400" />
+                    </div>
+                    <span className="font-semibold text-gray-400">
+                      Chauffeur
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-400 mb-3">
+                    Vehicle with professional driver
+                  </p>
+                  <ul className="text-xs text-gray-400 space-y-1">
+                    <li className="flex items-center gap-1.5">
+                      <span className="w-1 h-1 bg-gray-400 rounded-full" />
+                      Hourly & daily rates
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <span className="w-1 h-1 bg-gray-400 rounded-full" />
+                      Driver assignment required
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <span className="w-1 h-1 bg-gray-400 rounded-full" />
+                      Premium service offering
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <span className="w-1 h-1 bg-gray-400 rounded-full" />
+                      Events & VIP transport
+                    </li>
+                  </ul>
+                </div>
               </div>
+
+              {/* Service Type Info Banner */}
+              {formData.vehicleType === 'RIDESHARE' && (
+                <div className="mt-4 p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
+                  <p className="text-sm text-orange-700 dark:text-orange-300">
+                    <strong>Rideshare Mode:</strong> This vehicle will be listed for gig economy drivers with a 3-day minimum rental.
+                    Weekly and monthly rates are emphasized. Mileage is unlimited.
+                  </p>
+                </div>
+              )}
+              {formData.vehicleType === 'RENTAL' && (
+                <div className="mt-4 p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
+                  <p className="text-sm text-purple-700 dark:text-purple-300">
+                    <strong>Rental Mode:</strong> This vehicle will be listed on the main /rentals marketplace.
+                    Guest identity verification is required. Daily mileage limits apply with overage charges.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Editable Details */}
@@ -746,8 +846,41 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
         {/* Pricing Tab */}
         {activeTab === 'pricing' && (
           <div className="space-y-6">
+            {/* Service Type Indicator */}
+            <div className={`p-4 rounded-xl border-2 ${
+              formData.vehicleType === 'RIDESHARE'
+                ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800'
+                : 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800'
+            }`}>
+              <div className="flex items-center gap-2">
+                {formData.vehicleType === 'RIDESHARE' ? (
+                  <IoCarSportOutline className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                ) : (
+                  <IoKeyOutline className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                )}
+                <span className={`font-medium ${
+                  formData.vehicleType === 'RIDESHARE'
+                    ? 'text-orange-700 dark:text-orange-300'
+                    : 'text-purple-700 dark:text-purple-300'
+                }`}>
+                  {formData.vehicleType === 'RIDESHARE' ? 'Rideshare Pricing' : 'Rental Pricing'}
+                </span>
+              </div>
+              <p className={`text-sm mt-1 ${
+                formData.vehicleType === 'RIDESHARE'
+                  ? 'text-orange-600 dark:text-orange-400'
+                  : 'text-purple-600 dark:text-purple-400'
+              }`}>
+                {formData.vehicleType === 'RIDESHARE'
+                  ? 'Weekly and monthly rates are emphasized for gig drivers. Mileage is unlimited.'
+                  : 'Daily rate is primary. Mileage limits and overage charges apply.'
+                }
+              </p>
+            </div>
+
+            {/* Rates Section */}
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Pricing</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Rates</h3>
 
               <div className="grid md:grid-cols-3 gap-4">
                 <div>
@@ -764,11 +897,14 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                       className="w-full pl-8 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 dark:bg-gray-700 dark:text-white"
                     />
                   </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {formData.vehicleType === 'RIDESHARE' ? 'Base rate (3-day min)' : 'Starting from 1 day'}
+                  </p>
                 </div>
 
-                <div>
+                <div className={formData.vehicleType === 'RIDESHARE' ? 'ring-2 ring-orange-300 dark:ring-orange-700 rounded-lg p-2 -m-2' : ''}>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Weekly Rate
+                    Weekly Rate {formData.vehicleType === 'RIDESHARE' && <span className="text-orange-500">★</span>}
                   </label>
                   <div className="relative">
                     <span className="absolute left-3 top-2.5 text-gray-500">$</span>
@@ -776,17 +912,20 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                       type="number"
                       value={formData.weeklyRate || ''}
                       onChange={(e) => handleChange('weeklyRate', parseFloat(e.target.value) || 0)}
+                      placeholder={String(Math.round((formData.dailyRate || 0) * 6.5))}
                       className="w-full pl-8 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 dark:bg-gray-700 dark:text-white"
                     />
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
-                    Suggested: ${Math.round((formData.dailyRate || 0) * 6.5)}
+                    {formData.vehicleType === 'RIDESHARE'
+                      ? 'Popular for gig drivers'
+                      : `Suggested: $${Math.round((formData.dailyRate || 0) * 6.5)}`}
                   </p>
                 </div>
 
-                <div>
+                <div className={formData.vehicleType === 'RIDESHARE' ? 'ring-2 ring-orange-300 dark:ring-orange-700 rounded-lg p-2 -m-2' : ''}>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Monthly Rate
+                    Monthly Rate {formData.vehicleType === 'RIDESHARE' && <span className="text-orange-500">★</span>}
                   </label>
                   <div className="relative">
                     <span className="absolute left-3 top-2.5 text-gray-500">$</span>
@@ -794,14 +933,73 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                       type="number"
                       value={formData.monthlyRate || ''}
                       onChange={(e) => handleChange('monthlyRate', parseFloat(e.target.value) || 0)}
+                      placeholder={String(Math.round((formData.dailyRate || 0) * 25))}
                       className="w-full pl-8 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 dark:bg-gray-700 dark:text-white"
                     />
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
-                    Suggested: ${Math.round((formData.dailyRate || 0) * 25)}
+                    {formData.vehicleType === 'RIDESHARE'
+                      ? 'Best value for drivers'
+                      : `Suggested: $${Math.round((formData.dailyRate || 0) * 25)}`}
                   </p>
                 </div>
               </div>
+
+              {/* Mileage Policy - Only for Rentals */}
+              {formData.vehicleType === 'RENTAL' && (
+                <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-3">Mileage Policy</h4>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Included Miles per Day
+                      </label>
+                      <input
+                        type="number"
+                        value={(formData as any).includedMilesPerDay || 200}
+                        onChange={(e) => handleChange('includedMilesPerDay' as any, parseInt(e.target.value) || 200)}
+                        min="50"
+                        max="500"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 dark:bg-gray-700 dark:text-white"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Standard: 200 miles/day</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Overage Rate (per mile)
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-2.5 text-gray-500">$</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={(formData as any).mileageOverageRate || 0.45}
+                          onChange={(e) => handleChange('mileageOverageRate' as any, parseFloat(e.target.value) || 0.45)}
+                          min="0.25"
+                          max="1.00"
+                          className="w-full pl-8 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 dark:bg-gray-700 dark:text-white"
+                        />
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">Standard: $0.45/mile</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Unlimited Mileage Badge - For Rideshare */}
+              {formData.vehicleType === 'RIDESHARE' && (
+                <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                    <IoCheckmarkCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
+                    <div>
+                      <p className="font-medium text-green-700 dark:text-green-300">Unlimited Mileage Included</p>
+                      <p className="text-sm text-green-600 dark:text-green-400">
+                        Rideshare rentals include unlimited miles - perfect for gig drivers.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Delivery Options */}
