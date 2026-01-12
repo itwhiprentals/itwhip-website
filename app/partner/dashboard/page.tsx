@@ -912,15 +912,6 @@ export default function PartnerDashboardPage() {
         </div>
       </div>
 
-      {/* Commission Tier Progress - B2B Feature */}
-      {stats && (
-        <TierProgressCard
-          currentRate={stats.currentCommissionRate}
-          fleetSize={stats.fleetSize}
-          tier={stats.tier}
-        />
-      )}
-
       {/* Quick Actions & Identity Verification */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <QuickActions />
@@ -986,6 +977,15 @@ export default function PartnerDashboardPage() {
         </div>
         <RecentBookings bookings={recentBookings} />
       </div>
+
+      {/* Commission Tier Progress - B2B Feature */}
+      {stats && (
+        <TierProgressCard
+          currentRate={stats.currentCommissionRate}
+          fleetSize={stats.fleetSize}
+          tier={stats.tier}
+        />
+      )}
     </div>
   )
 }

@@ -383,37 +383,84 @@ export default function SessionSecurityCard() {
 
             {/* Verification Checklist */}
             <div className="space-y-2">
+              {/* Email Verified */}
               <div className="flex items-center justify-between py-2">
                 <span className="text-sm text-gray-600 dark:text-gray-300">Email Verified</span>
-                {data.security.emailVerified ? (
-                  <IoCheckmarkCircleOutline className="w-5 h-5 text-green-500" />
-                ) : (
-                  <IoCloseCircleOutline className="w-5 h-5 text-red-400" />
-                )}
+                <div className="flex items-center gap-2">
+                  {data.security.emailVerified ? (
+                    <IoCheckmarkCircleOutline className="w-5 h-5 text-green-500" />
+                  ) : (
+                    <>
+                      <Link
+                        href="/partner/settings?tab=profile&verify=email"
+                        className="text-xs px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors"
+                      >
+                        Verify
+                      </Link>
+                      <IoCloseCircleOutline className="w-5 h-5 text-red-400" />
+                    </>
+                  )}
+                </div>
               </div>
+
+              {/* Phone Verified */}
               <div className="flex items-center justify-between py-2">
                 <span className="text-sm text-gray-600 dark:text-gray-300">Phone Verified</span>
-                {data.security.phoneVerified ? (
-                  <IoCheckmarkCircleOutline className="w-5 h-5 text-green-500" />
-                ) : (
-                  <IoCloseCircleOutline className="w-5 h-5 text-red-400" />
-                )}
+                <div className="flex items-center gap-2">
+                  {data.security.phoneVerified ? (
+                    <IoCheckmarkCircleOutline className="w-5 h-5 text-green-500" />
+                  ) : (
+                    <>
+                      <Link
+                        href="/partner/settings?tab=profile&verify=phone"
+                        className="text-xs px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors"
+                      >
+                        Verify
+                      </Link>
+                      <IoCloseCircleOutline className="w-5 h-5 text-red-400" />
+                    </>
+                  )}
+                </div>
               </div>
+
+              {/* Identity Verified */}
               <div className="flex items-center justify-between py-2">
                 <span className="text-sm text-gray-600 dark:text-gray-300">Identity Verified</span>
-                {data.security.identityVerified ? (
-                  <IoCheckmarkCircleOutline className="w-5 h-5 text-green-500" />
-                ) : (
-                  <IoCloseCircleOutline className="w-5 h-5 text-red-400" />
-                )}
+                <div className="flex items-center gap-2">
+                  {data.security.identityVerified ? (
+                    <IoCheckmarkCircleOutline className="w-5 h-5 text-green-500" />
+                  ) : (
+                    <>
+                      <Link
+                        href="/partner/settings?tab=documents&verify=identity"
+                        className="text-xs px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors"
+                      >
+                        Verify
+                      </Link>
+                      <IoCloseCircleOutline className="w-5 h-5 text-red-400" />
+                    </>
+                  )}
+                </div>
               </div>
+
+              {/* Stripe Connected */}
               <div className="flex items-center justify-between py-2">
                 <span className="text-sm text-gray-600 dark:text-gray-300">Stripe Connected</span>
-                {data.security.stripeConnected ? (
-                  <IoCheckmarkCircleOutline className="w-5 h-5 text-green-500" />
-                ) : (
-                  <IoCloseCircleOutline className="w-5 h-5 text-red-400" />
-                )}
+                <div className="flex items-center gap-2">
+                  {data.security.stripeConnected ? (
+                    <IoCheckmarkCircleOutline className="w-5 h-5 text-green-500" />
+                  ) : (
+                    <>
+                      <Link
+                        href="/partner/settings?tab=banking"
+                        className="text-xs px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors"
+                      >
+                        Connect
+                      </Link>
+                      <IoCloseCircleOutline className="w-5 h-5 text-red-400" />
+                    </>
+                  )}
+                </div>
               </div>
             </div>
 

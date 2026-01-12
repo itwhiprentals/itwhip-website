@@ -551,6 +551,15 @@ model RentalHost {
   verifiedAt        DateTime?
   verificationLevel String?
 
+  // Account Verification Flags
+  emailVerified     Boolean   @default(false)
+  emailVerifiedAt   DateTime?
+  phoneVerified     Boolean   @default(false)
+  phoneVerifiedAt   DateTime?
+  identityVerified  Boolean   @default(false)
+  identityVerifiedAt DateTime?
+  identityVerificationSessionId String?  // Stripe Identity session ID
+
   // Performance metrics
   responseTime   Int?
   responseRate   Float?

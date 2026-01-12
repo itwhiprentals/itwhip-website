@@ -41,6 +41,7 @@ export async function GET(request: NextRequest) {
               phoneVerified: true,
               identityVerified: true,
               stripeAccountId: true,
+              stripeConnectAccountId: true,
               stripeCustomerId: true,
               active: true
             }
@@ -114,11 +115,14 @@ export async function GET(request: NextRequest) {
     const apiKeys: any[] = []
 
     // Calculate security score
+    // Use stripeConnectAccountId as the primary Stripe indicator (for receiving payouts)
+    const hasStripeConnected = !!(host?.stripeConnectAccountId || host?.stripeAccountId)
+
     let securityScore = 0
     if (host?.emailVerified) securityScore += 25
     if (host?.phoneVerified) securityScore += 25
     if (host?.identityVerified) securityScore += 25
-    if (host?.stripeAccountId) securityScore += 25
+    if (hasStripeConnected) securityScore += 25
 
     // Format response
     const userInfo = host ? {
@@ -170,7 +174,7 @@ export async function GET(request: NextRequest) {
         emailVerified: host?.emailVerified || false,
         phoneVerified: host?.phoneVerified || false,
         identityVerified: host?.identityVerified || false,
-        stripeConnected: !!host?.stripeAccountId,
+        stripeConnected: hasStripeConnected,
         activeSessions,
         recentLogins: recentLogins.map(log => ({
           id: log.id,
