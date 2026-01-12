@@ -13,7 +13,10 @@ import {
   IoRefreshOutline,
   IoCarOutline,
   IoReceiptOutline,
-  IoCardOutline
+  IoCardOutline,
+  IoCloseOutline,
+  IoChevronBackOutline,
+  IoChevronForwardOutline
 } from 'react-icons/io5'
 
 interface BankingStatus {
@@ -52,9 +55,29 @@ interface VehicleRevenue {
 interface Payout {
   id: string
   period: string
+  periodLabel?: string
   amount: number
+  grossRevenue?: number
+  commission?: number
+  bookingCount?: number
   status: 'pending' | 'processing' | 'completed' | 'failed'
   paidAt?: string
+}
+
+interface PayoutHistoryData {
+  payouts: Payout[]
+  pagination: {
+    page: number
+    limit: number
+    totalCount: number
+    totalPages: number
+  }
+  stats: {
+    totalPaid: number
+    pendingAmount: number
+    totalPayouts: number
+    completedPayouts: number
+  }
 }
 
 export default function PartnerRevenuePage() {
@@ -64,11 +87,21 @@ export default function PartnerRevenuePage() {
   const [showGross, setShowGross] = useState(false)
   const [bankingStatus, setBankingStatus] = useState<BankingStatus | null>(null)
   const [connectingStripe, setConnectingStripe] = useState(false)
+  const [showPayoutHistory, setShowPayoutHistory] = useState(false)
+  const [payoutHistory, setPayoutHistory] = useState<PayoutHistoryData | null>(null)
+  const [payoutHistoryPage, setPayoutHistoryPage] = useState(1)
+  const [payoutHistoryLoading, setPayoutHistoryLoading] = useState(false)
 
   useEffect(() => {
     fetchRevenue()
     fetchBankingStatus()
   }, [period])
+
+  useEffect(() => {
+    if (showPayoutHistory) {
+      fetchPayoutHistory(payoutHistoryPage)
+    }
+  }, [showPayoutHistory, payoutHistoryPage])
 
   const fetchRevenue = async () => {
     try {
@@ -99,6 +132,28 @@ export default function PartnerRevenuePage() {
       }
     } catch (error) {
       console.error('Failed to fetch banking status:', error)
+    }
+  }
+
+  const fetchPayoutHistory = async (page: number) => {
+    setPayoutHistoryLoading(true)
+    try {
+      const res = await fetch(`/api/partner/payouts?page=${page}&limit=10`)
+      const result = await res.json()
+      if (result.success) {
+        setPayoutHistory({
+          payouts: result.payouts.map((p: any) => ({
+            ...p,
+            amount: p.netAmount
+          })),
+          pagination: result.pagination,
+          stats: result.stats
+        })
+      }
+    } catch (error) {
+      console.error('Failed to fetch payout history:', error)
+    } finally {
+      setPayoutHistoryLoading(false)
     }
   }
 
@@ -198,10 +253,14 @@ export default function PartnerRevenuePage() {
             <option value="year">This Year</option>
             <option value="all">All Time</option>
           </select>
-          <button className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+          <a
+            href="/api/partner/export?type=revenue"
+            download
+            className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          >
             <IoDownloadOutline className="w-5 h-5" />
-            Export
-          </button>
+            Export CSV
+          </a>
         </div>
       </div>
 
@@ -488,12 +547,17 @@ export default function PartnerRevenuePage() {
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Payouts</h2>
-          <a
-            href="/partner/settings#banking"
-            className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 font-medium"
-          >
-            Manage Banking →
-          </a>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => {
+                setShowPayoutHistory(true)
+                setPayoutHistoryPage(1)
+              }}
+              className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 font-medium"
+            >
+              View All Payouts →
+            </button>
+          </div>
         </div>
 
         {revenueData.recentPayouts.length === 0 ? (
@@ -560,6 +624,179 @@ export default function PartnerRevenuePage() {
           </div>
         )}
       </div>
+
+      {/* Payout History Modal */}
+      {showPayoutHistory && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="fixed inset-0 bg-black/50" onClick={() => setShowPayoutHistory(false)} />
+          <div className="relative min-h-screen flex items-center justify-center p-4">
+            <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Payout History</h2>
+                  {payoutHistory && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      {payoutHistory.stats.completedPayouts} completed · {formatCurrency(payoutHistory.stats.totalPaid)} total paid
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={() => setShowPayoutHistory(false)}
+                  className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                >
+                  <IoCloseOutline className="w-6 h-6" />
+                </button>
+              </div>
+
+              {/* Summary Stats */}
+              {payoutHistory && (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-6 bg-gray-50 dark:bg-gray-900/50">
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                      {formatCurrency(payoutHistory.stats.totalPaid)}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Total Paid</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                      {formatCurrency(payoutHistory.stats.pendingAmount)}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Pending</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {payoutHistory.stats.totalPayouts}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Total Payouts</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {payoutHistory.stats.completedPayouts}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Completed</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Payout List */}
+              <div className="overflow-y-auto max-h-[50vh]">
+                {payoutHistoryLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600" />
+                  </div>
+                ) : !payoutHistory || payoutHistory.payouts.length === 0 ? (
+                  <div className="text-center py-12">
+                    <IoWalletOutline className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                    <p className="text-gray-500 dark:text-gray-400">No payouts yet</p>
+                  </div>
+                ) : (
+                  <table className="w-full">
+                    <thead className="bg-gray-50 dark:bg-gray-900/50 sticky top-0">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                          Period
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                          Bookings
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                          Gross
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                          Commission
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                          Net Payout
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                          Status
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                          Date
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                      {payoutHistory.payouts.map((payout) => (
+                        <tr key={payout.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                          <td className="px-6 py-4">
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">
+                              {payout.periodLabel || payout.period}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="text-sm text-gray-600 dark:text-gray-400">
+                              {payout.bookingCount || '-'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="text-sm text-gray-600 dark:text-gray-400">
+                              {payout.grossRevenue ? formatCurrency(payout.grossRevenue) : '-'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="text-sm text-orange-600 dark:text-orange-400">
+                              {payout.commission ? `-${formatCurrency(payout.commission)}` : '-'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="text-sm font-semibold text-green-600 dark:text-green-400">
+                              {formatCurrency(payout.amount)}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium capitalize ${getPayoutStatusColor(payout.status)}`}>
+                              {payout.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">
+                              {payout.paidAt
+                                ? new Date(payout.paidAt).toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric'
+                                  })
+                                : '-'
+                              }
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+
+              {/* Pagination */}
+              {payoutHistory && payoutHistory.pagination.totalPages > 1 && (
+                <div className="flex items-center justify-between p-4 border-t border-gray-200 dark:border-gray-700">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Page {payoutHistory.pagination.page} of {payoutHistory.pagination.totalPages}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setPayoutHistoryPage(p => Math.max(1, p - 1))}
+                      disabled={payoutHistoryPage === 1}
+                      className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <IoChevronBackOutline className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => setPayoutHistoryPage(p => Math.min(payoutHistory.pagination.totalPages, p + 1))}
+                      disabled={payoutHistoryPage >= payoutHistory.pagination.totalPages}
+                      className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <IoChevronForwardOutline className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -28,7 +28,9 @@ import {
   IoNotificationsOutline,
   IoPeopleOutline,
   IoBuildOutline,
-  IoShieldCheckmarkOutline
+  IoShieldCheckmarkOutline,
+  IoStarOutline,
+  IoChatbubblesOutline
 } from 'react-icons/io5'
 
 interface PartnerData {
@@ -49,6 +51,8 @@ const navigationItems = [
   { name: 'Fleet', href: '/partner/fleet', icon: IoCarOutline },
   { name: 'Bookings', href: '/partner/bookings', icon: IoCalendarOutline },
   { name: 'Customers', href: '/partner/customers', icon: IoPeopleOutline },
+  { name: 'Reviews', href: '/partner/reviews', icon: IoStarOutline },
+  { name: 'Messages', href: '/partner/messages', icon: IoChatbubblesOutline },
   { name: 'Maintenance', href: '/partner/maintenance', icon: IoBuildOutline },
   { name: 'Claims', href: '/partner/claims', icon: IoShieldCheckmarkOutline },
   { name: 'Revenue', href: '/partner/revenue', icon: IoWalletOutline },
@@ -315,10 +319,12 @@ export default function PartnerLayout({
               )}
 
               {/* Notifications */}
-              <button className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 relative">
+              <Link
+                href="/partner/notifications"
+                className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 relative"
+              >
                 <IoNotificationsOutline className="w-6 h-6" />
-                {/* <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" /> */}
-              </button>
+              </Link>
 
               {/* Profile Menu */}
               <div className="relative">

@@ -21,7 +21,8 @@ import {
   IoPauseCircleOutline,
   IoPlayCircleOutline,
   IoRefreshOutline,
-  IoSwapHorizontalOutline
+  IoSwapHorizontalOutline,
+  IoCalendarOutline
 } from 'react-icons/io5'
 
 interface Vehicle {
@@ -197,13 +198,22 @@ export default function PartnerFleetPage() {
             Manage your vehicles and track their performance
           </p>
         </div>
-        <Link
-          href="/partner/fleet/add"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition-colors"
-        >
-          <IoAddCircleOutline className="w-5 h-5" />
-          Add Vehicle
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/partner/calendar"
+            className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-sm font-medium transition-colors"
+          >
+            <IoCalendarOutline className="w-5 h-5" />
+            Calendar
+          </Link>
+          <Link
+            href="/partner/fleet/add"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition-colors"
+          >
+            <IoAddCircleOutline className="w-5 h-5" />
+            Add Vehicle
+          </Link>
+        </div>
       </div>
 
       {/* Stats Cards */}
