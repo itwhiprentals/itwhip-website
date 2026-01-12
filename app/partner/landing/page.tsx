@@ -646,12 +646,12 @@ export default function PartnerLandingPage() {
                   <span className="text-xs text-gray-500 dark:text-gray-400">Visible</span>
                   <button
                     onClick={() => setData(prev => ({ ...prev, showEmail: !prev.showEmail }))}
-                    className={`relative w-12 h-6 rounded-full transition-colors ${
-                      data.showEmail ? 'bg-orange-500' : 'bg-gray-300 dark:bg-gray-600'
+                    className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ${
+                      data.showEmail ? 'bg-orange-500' : 'bg-gray-400 dark:bg-gray-500'
                     }`}
                   >
-                    <span className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
-                      data.showEmail ? 'translate-x-7' : 'translate-x-1'
+                    <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                      data.showEmail ? 'translate-x-5' : 'translate-x-0'
                     }`} />
                   </button>
                 </div>
@@ -675,12 +675,12 @@ export default function PartnerLandingPage() {
                   <span className="text-xs text-gray-500 dark:text-gray-400">Visible</span>
                   <button
                     onClick={() => setData(prev => ({ ...prev, showPhone: !prev.showPhone }))}
-                    className={`relative w-12 h-6 rounded-full transition-colors ${
-                      data.showPhone ? 'bg-orange-500' : 'bg-gray-300 dark:bg-gray-600'
+                    className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ${
+                      data.showPhone ? 'bg-orange-500' : 'bg-gray-400 dark:bg-gray-500'
                     }`}
                   >
-                    <span className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
-                      data.showPhone ? 'translate-x-7' : 'translate-x-1'
+                    <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                      data.showPhone ? 'translate-x-5' : 'translate-x-0'
                     }`} />
                   </button>
                 </div>
@@ -705,12 +705,12 @@ export default function PartnerLandingPage() {
                   <span className="text-xs text-gray-500 dark:text-gray-400">Visible</span>
                   <button
                     onClick={() => setData(prev => ({ ...prev, showWebsite: !prev.showWebsite }))}
-                    className={`relative w-12 h-6 rounded-full transition-colors ${
-                      data.showWebsite ? 'bg-orange-500' : 'bg-gray-300 dark:bg-gray-600'
+                    className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ${
+                      data.showWebsite ? 'bg-orange-500' : 'bg-gray-400 dark:bg-gray-500'
                     }`}
                   >
-                    <span className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
-                      data.showWebsite ? 'translate-x-7' : 'translate-x-1'
+                    <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                      data.showWebsite ? 'translate-x-5' : 'translate-x-0'
                     }`} />
                   </button>
                 </div>

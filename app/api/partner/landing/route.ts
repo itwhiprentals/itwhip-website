@@ -118,7 +118,7 @@ export async function PUT(request: NextRequest) {
 
     const body = await request.json()
 
-    // Build policies object (only include non-empty values)
+    // Build policies object (only include if provided)
     const policiesData = body.policies ? {
       refundPolicy: body.policies.refundPolicy || '',
       cancellationPolicy: body.policies.cancellationPolicy || '',
@@ -126,40 +126,51 @@ export async function PUT(request: NextRequest) {
       additionalTerms: body.policies.additionalTerms || ''
     } : undefined
 
-    // Update partner landing page fields
-    await prisma.rentalHost.update({
-      where: { id: partner.id },
-      data: {
-        partnerHeroTitle: body.headline,
-        partnerHeroSubtitle: body.subheadline,
-        partnerHeroImage: body.heroImage,
-        partnerLogo: body.logo,
-        partnerBio: body.bio,
-        partnerSupportEmail: body.supportEmail,
-        partnerSupportPhone: body.supportPhone,
-        partnerPrimaryColor: body.primaryColor,
-        // Social Media & Website
-        partnerWebsite: body.website || null,
-        partnerInstagram: body.instagram || null,
-        partnerFacebook: body.facebook || null,
-        partnerTwitter: body.twitter || null,
-        partnerLinkedIn: body.linkedin || null,
-        partnerTikTok: body.tiktok || null,
-        partnerYouTube: body.youtube || null,
-        // Visibility Settings
-        partnerShowEmail: body.showEmail ?? true,
-        partnerShowPhone: body.showPhone ?? true,
-        partnerShowWebsite: body.showWebsite ?? true,
-        // Policies (stored as JSON)
-        ...(policiesData && { partnerPolicies: policiesData }),
-        // Service Settings
-        enableRideshare: body.enableRideshare ?? true,
-        enableRentals: body.enableRentals ?? false,
-        enableSales: body.enableSales ?? false,
-        enableLeasing: body.enableLeasing ?? false,
-        enableRentToOwn: body.enableRentToOwn ?? false
-      }
-    })
+    // Build update data - only include fields that were explicitly sent
+    // This prevents partial saves from overwriting unrelated fields
+    const updateData: Record<string, any> = {}
+
+    // Basic fields - only update if provided
+    if (body.headline !== undefined) updateData.partnerHeroTitle = body.headline
+    if (body.subheadline !== undefined) updateData.partnerHeroSubtitle = body.subheadline
+    if (body.heroImage !== undefined) updateData.partnerHeroImage = body.heroImage
+    if (body.logo !== undefined) updateData.partnerLogo = body.logo
+    if (body.bio !== undefined) updateData.partnerBio = body.bio
+    if (body.supportEmail !== undefined) updateData.partnerSupportEmail = body.supportEmail
+    if (body.supportPhone !== undefined) updateData.partnerSupportPhone = body.supportPhone
+    if (body.primaryColor !== undefined) updateData.partnerPrimaryColor = body.primaryColor
+
+    // Social Media & Website - only update if provided
+    if (body.website !== undefined) updateData.partnerWebsite = body.website || null
+    if (body.instagram !== undefined) updateData.partnerInstagram = body.instagram || null
+    if (body.facebook !== undefined) updateData.partnerFacebook = body.facebook || null
+    if (body.twitter !== undefined) updateData.partnerTwitter = body.twitter || null
+    if (body.linkedin !== undefined) updateData.partnerLinkedIn = body.linkedin || null
+    if (body.tiktok !== undefined) updateData.partnerTikTok = body.tiktok || null
+    if (body.youtube !== undefined) updateData.partnerYouTube = body.youtube || null
+
+    // Visibility Settings - only update if provided
+    if (body.showEmail !== undefined) updateData.partnerShowEmail = body.showEmail
+    if (body.showPhone !== undefined) updateData.partnerShowPhone = body.showPhone
+    if (body.showWebsite !== undefined) updateData.partnerShowWebsite = body.showWebsite
+
+    // Policies - only update if provided
+    if (policiesData) updateData.partnerPolicies = policiesData
+
+    // Service Settings - only update if provided
+    if (body.enableRideshare !== undefined) updateData.enableRideshare = body.enableRideshare
+    if (body.enableRentals !== undefined) updateData.enableRentals = body.enableRentals
+    if (body.enableSales !== undefined) updateData.enableSales = body.enableSales
+    if (body.enableLeasing !== undefined) updateData.enableLeasing = body.enableLeasing
+    if (body.enableRentToOwn !== undefined) updateData.enableRentToOwn = body.enableRentToOwn
+
+    // Only update if there's something to update
+    if (Object.keys(updateData).length > 0) {
+      await prisma.rentalHost.update({
+        where: { id: partner.id },
+        data: updateData
+      })
+    }
 
     // Handle FAQs - delete all and recreate
     if (body.faqs && Array.isArray(body.faqs)) {
