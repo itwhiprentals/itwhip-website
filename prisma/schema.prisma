@@ -5348,3 +5348,30 @@ model CreditBonusTransaction {
   @@index([expiresAt])
   @@index([createdAt])
 }
+
+// ============================================================================
+// PARTNER VERIFICATION REQUESTS
+// ============================================================================
+
+model PartnerVerificationRequest {
+  id              String    @id @default(cuid())
+  partnerId       String    // RentalHost.id
+  guestId         String    // ReviewerProfile.id
+  email           String
+  name            String
+  phone           String?
+  purpose         String    @default("rental") // 'rental' | 'rideshare' | 'driver'
+  bookingId       String?   // Optional linked booking
+  stripeSessionId String    // Stripe Identity session ID
+  verificationUrl String    @db.Text
+  status          String    @default("pending") // 'pending' | 'verified' | 'failed' | 'expired'
+  verifiedAt      DateTime?
+  expiresAt       DateTime?
+  createdAt       DateTime  @default(now())
+
+  @@index([partnerId])
+  @@index([guestId])
+  @@index([stripeSessionId])
+  @@index([status])
+  @@index([createdAt])
+}

@@ -78,6 +78,28 @@ export async function GET(request: NextRequest) {
       }
     }) : []
 
+    // Get comprehensive audit log for all activities
+    const auditLog = hostId ? await prisma.activityLog.findMany({
+      where: {
+        OR: [
+          { entityId: hostId },
+          { adminId: hostId }
+        ]
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+      select: {
+        id: true,
+        action: true,
+        entityType: true,
+        category: true,
+        createdAt: true,
+        ipAddress: true,
+        oldValue: true,
+        newValue: true
+      }
+    }) : []
+
     // Get active sessions count
     const activeSessions = hostId ? await prisma.hostSession.count({
       where: {
@@ -170,7 +192,17 @@ export async function GET(request: NextRequest) {
           createdAt: key.createdAt,
           expiresAt: key.expiresAt
         }))
-      }
+      },
+      auditLog: auditLog.map(log => ({
+        id: log.id,
+        action: log.action,
+        entityType: log.entityType,
+        category: log.category,
+        timestamp: log.createdAt,
+        ip: log.ipAddress || 'Unknown',
+        oldValue: log.oldValue,
+        newValue: log.newValue
+      }))
     })
 
   } catch (error) {

@@ -20,7 +20,9 @@ import {
   IoRefreshOutline,
   IoLockClosedOutline,
   IoServerOutline,
-  IoEllipsisHorizontalOutline
+  IoEllipsisHorizontalOutline,
+  IoListOutline,
+  IoDocumentTextOutline
 } from 'react-icons/io5'
 
 interface SessionInfo {
@@ -69,13 +71,23 @@ interface SessionInfo {
       expiresAt: string | null
     }>
   }
+  auditLog: Array<{
+    id: string
+    action: string
+    entityType: string | null
+    category: string | null
+    timestamp: string
+    ip: string
+    oldValue: string | null
+    newValue: string | null
+  }>
 }
 
 export default function SessionSecurityCard() {
   const [data, setData] = useState<SessionInfo | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'session' | 'security' | 'api'>('session')
+  const [activeTab, setActiveTab] = useState<'session' | 'security' | 'api' | 'audit'>('session')
 
   useEffect(() => {
     fetchSessionInfo()
@@ -257,6 +269,17 @@ export default function SessionSecurityCard() {
         >
           <IoKeyOutline className="w-4 h-4 inline-block mr-1.5" />
           API
+        </button>
+        <button
+          onClick={() => setActiveTab('audit')}
+          className={`flex-1 px-4 py-2.5 text-sm font-medium transition-colors ${
+            activeTab === 'audit'
+              ? 'text-orange-600 dark:text-orange-400 border-b-2 border-orange-600 dark:border-orange-400'
+              : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+          }`}
+        >
+          <IoListOutline className="w-4 h-4 inline-block mr-1.5" />
+          Audit
         </button>
       </div>
 
@@ -483,6 +506,80 @@ export default function SessionSecurityCard() {
                 >
                   Request API Access
                 </Link>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Audit Tab */}
+        {activeTab === 'audit' && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                Activity Log
+              </p>
+              <span className="text-xs text-gray-400 dark:text-gray-500">
+                Last 20 events
+              </span>
+            </div>
+
+            {data.auditLog && data.auditLog.length > 0 ? (
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {data.auditLog.map(log => (
+                  <div
+                    key={log.id}
+                    className="p-2.5 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <IoDocumentTextOutline className="w-4 h-4 text-gray-400" />
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">
+                          {log.action.replace(/_/g, ' ')}
+                        </span>
+                      </div>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        {formatRelativeTime(log.timestamp)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                      {log.entityType && (
+                        <span className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-600 rounded">
+                          {log.entityType}
+                        </span>
+                      )}
+                      {log.category && (
+                        <span className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded">
+                          {log.category}
+                        </span>
+                      )}
+                      <span className="font-mono">{log.ip}</span>
+                    </div>
+                    {(log.oldValue || log.newValue) && (
+                      <div className="mt-1.5 text-xs">
+                        {log.oldValue && (
+                          <span className="text-red-600 dark:text-red-400 mr-2">
+                            - {log.oldValue.substring(0, 30)}{log.oldValue.length > 30 ? '...' : ''}
+                          </span>
+                        )}
+                        {log.newValue && (
+                          <span className="text-green-600 dark:text-green-400">
+                            + {log.newValue.substring(0, 30)}{log.newValue.length > 30 ? '...' : ''}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-6">
+                <IoListOutline className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  No activity recorded yet
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                  Actions like settings changes, logins, and more will appear here
+                </p>
               </div>
             )}
           </div>

@@ -41,6 +41,8 @@ import InvitationsStatsCard from './components/InvitationsStatsCard'
 import InvitationsList from './components/InvitationsList'
 import ManagedCarsSection from './components/ManagedCarsSection'
 import SessionSecurityCard from './components/SessionSecurityCard'
+import IdentityVerificationCard from './components/IdentityVerificationCard'
+import ESGScoreCard from './components/ESGScoreCard'
 
 interface DashboardStats {
   fleetSize: number
@@ -781,8 +783,11 @@ export default function PartnerDashboardPage() {
         </button>
       </div>
 
-      {/* Session & Security Card - Top of Dashboard */}
-      <SessionSecurityCard />
+      {/* Session & Security + ESG Cards - Top of Dashboard */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <SessionSecurityCard />
+        <ESGScoreCard />
+      </div>
 
       {/* Main Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -916,8 +921,11 @@ export default function PartnerDashboardPage() {
         />
       )}
 
-      {/* Quick Actions */}
-      <QuickActions />
+      {/* Quick Actions & Identity Verification */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <QuickActions />
+        <IdentityVerificationCard />
+      </div>
 
       {/* Invitations Stats Card */}
       <InvitationsStatsCard

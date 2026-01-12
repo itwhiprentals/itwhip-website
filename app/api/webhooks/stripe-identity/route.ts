@@ -61,9 +61,31 @@ async function handleVerificationSuccess(session: Stripe.Identity.VerificationSe
   console.log(`[Stripe Identity] Verification success for session: ${session.id}`)
 
   const profileId = session.metadata?.profileId
+  const partnerId = session.metadata?.partnerId  // For partner-sent verifications
+  const sentBy = session.metadata?.sentBy  // 'partner' or undefined
+
   if (!profileId) {
     console.error('[Stripe Identity] No profileId in session metadata')
     return
+  }
+
+  // Update partner verification request if sent by partner
+  if (sentBy === 'partner' && partnerId) {
+    try {
+      await prisma.partnerVerificationRequest.updateMany({
+        where: {
+          stripeSessionId: session.id
+        },
+        data: {
+          status: 'verified',
+          verifiedAt: new Date()
+        }
+      })
+      console.log(`[Stripe Identity] Updated partner verification request for session: ${session.id}`)
+    } catch (e) {
+      // Table may not exist
+      console.log('[Stripe Identity] PartnerVerificationRequest update skipped')
+    }
   }
 
   // Get the verification report to extract verified data
