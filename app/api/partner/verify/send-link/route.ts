@@ -6,9 +6,10 @@ import { cookies } from 'next/headers'
 import { jwtVerify } from 'jose'
 import Stripe from 'stripe'
 import { prisma } from '@/app/lib/database/prisma'
+import { sendEmail } from '@/app/lib/email/send-email'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-02-24.acacia'
+  apiVersion: '2025-08-27.basil'
 })
 
 const JWT_SECRET = new TextEncoder().encode(
@@ -100,11 +101,10 @@ export async function POST(request: NextRequest) {
       // Create reviewer profile
       guestProfile = await prisma.reviewerProfile.create({
         data: {
-          userId: user.id,
+          user: { connect: { id: user.id } },
           name, // Required field
-          fullName: name,
           email: email.toLowerCase(),
-          phone: phone || null,
+          phoneNumber: phone || null,
           city: 'Not specified', // Required field - will be updated on verification
           stripeIdentityStatus: 'not_started'
         }
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
         verifiedAt: guestProfile.stripeIdentityVerifiedAt,
         verifiedName: guestProfile.stripeVerifiedFirstName && guestProfile.stripeVerifiedLastName
           ? `${guestProfile.stripeVerifiedFirstName} ${guestProfile.stripeVerifiedLastName}`
-          : guestProfile.fullName
+          : guestProfile.name
       })
     }
 
@@ -163,22 +163,26 @@ export async function POST(request: NextRequest) {
     })
 
     // Track the verification request
-    await prisma.partnerVerificationRequest.create({
-      data: {
-        partnerId: partner.id,
-        guestId: guestProfile.id,
-        email,
-        name,
-        purpose,
-        bookingId: bookingId || null,
-        stripeSessionId: verificationSession.id,
-        status: 'pending',
-        verificationUrl: verificationSession.url!
+    try {
+      if (prisma.partnerVerificationRequest) {
+        await prisma.partnerVerificationRequest.create({
+          data: {
+            partnerId: partner.id,
+            guestId: guestProfile.id,
+            email,
+            name,
+            purpose,
+            bookingId: bookingId || null,
+            stripeSessionId: verificationSession.id,
+            status: 'pending',
+            verificationUrl: verificationSession.url!
+          }
+        })
       }
-    }).catch(() => {
+    } catch {
       // Table may not exist yet - that's okay
       console.log('[Partner Verify] PartnerVerificationRequest table not found, skipping tracking')
-    })
+    }
 
     // Log activity
     try {
@@ -196,12 +200,84 @@ export async function POST(request: NextRequest) {
       console.error('[Partner Verify] Activity log error:', logError)
     }
 
+    // Send verification link via email
+    let emailSent = false
+    try {
+      const partnerName = partner.partnerCompanyName || partner.name || 'Your rental provider'
+      const purposeText = purpose === 'rideshare' ? 'rideshare rental' :
+                          purpose === 'driver' ? 'driver verification' : 'car rental'
+
+      await sendEmail({
+        to: email,
+        subject: `Complete Your Identity Verification - ${partnerName}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+              <h1 style="color: white; margin: 0; font-size: 24px;">Identity Verification Required</h1>
+            </div>
+
+            <div style="background: #fff; padding: 30px; border: 1px solid #e5e7eb; border-top: none;">
+              <p style="color: #374151; font-size: 16px; margin-bottom: 20px;">
+                Hi ${name},
+              </p>
+
+              <p style="color: #374151; font-size: 16px; margin-bottom: 20px;">
+                <strong>${partnerName}</strong> has requested identity verification for your ${purposeText}.
+              </p>
+
+              <p style="color: #374151; font-size: 16px; margin-bottom: 30px;">
+                This secure process helps protect both you and the rental provider. You'll need to provide a photo of your driver's license and a selfie.
+              </p>
+
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${verificationSession.url}"
+                   style="display: inline-block; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+                  Complete Verification
+                </a>
+              </div>
+
+              <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
+                <strong>What you'll need:</strong>
+              </p>
+              <ul style="color: #6b7280; font-size: 14px; padding-left: 20px;">
+                <li>Valid driver's license</li>
+                <li>Good lighting for the selfie</li>
+                <li>About 2 minutes of your time</li>
+              </ul>
+
+              <p style="color: #9ca3af; font-size: 12px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                This verification is powered by Stripe Identity, a secure and trusted verification service used by thousands of businesses worldwide.
+              </p>
+
+              <p style="color: #9ca3af; font-size: 12px;">
+                If you didn't request this verification, please ignore this email or contact ${partnerName} directly.
+              </p>
+            </div>
+
+            <div style="background: #f9fafb; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none;">
+              <p style="color: #9ca3af; font-size: 12px; margin: 0;">
+                Powered by <a href="https://itwhip.com" style="color: #f97316;">iTWhip</a> - The trusted car rental marketplace
+              </p>
+            </div>
+          </div>
+        `,
+        text: `Hi ${name},\n\n${partnerName} has requested identity verification for your ${purposeText}.\n\nPlease complete your verification by visiting this link:\n${verificationSession.url}\n\nYou'll need your driver's license and about 2 minutes to complete this process.\n\nIf you didn't request this verification, please ignore this email.\n\nPowered by iTWhip`
+      })
+      emailSent = true
+      console.log(`[Partner Verify] Email sent to ${email}`)
+    } catch (emailError) {
+      console.error('[Partner Verify] Email send error:', emailError)
+    }
+
     return NextResponse.json({
       success: true,
       sessionId: verificationSession.id,
       verificationUrl: verificationSession.url,
       guestId: guestProfile.id,
-      message: `Verification link generated for ${name}. Share this URL with the customer.`
+      emailSent,
+      message: emailSent
+        ? `Verification link sent to ${email}`
+        : `Verification link generated for ${name}. Share this URL with the customer.`
     })
 
   } catch (error) {
@@ -222,24 +298,33 @@ export async function GET() {
     }
 
     // Get all verification requests by this partner
-    const requests = await prisma.partnerVerificationRequest.findMany({
-      where: { partnerId: partner.id },
-      orderBy: { createdAt: 'desc' },
-      take: 50
-    }).catch(() => [])
+    // Use try-catch for model that may not be available until prisma regenerates
+    let requests: Array<{ id: string; email: string; status: string; createdAt: Date }> = []
+    try {
+      if (prisma.partnerVerificationRequest) {
+        requests = await prisma.partnerVerificationRequest.findMany({
+          where: { partnerId: partner.id },
+          orderBy: { createdAt: 'desc' },
+          take: 50
+        })
+      }
+    } catch {
+      // Model may not exist yet
+    }
 
     // Also get guest profiles this partner has interacted with
     const bookings = await prisma.rentalBooking.findMany({
       where: {
         car: {
-          rentalHostId: partner.id
-        }
+          hostId: partner.id
+        },
+        reviewerProfileId: { not: null }
       },
       include: {
-        guest: {
+        reviewerProfile: {
           select: {
             id: true,
-            fullName: true,
+            name: true,
             email: true,
             stripeIdentityStatus: true,
             stripeIdentityVerifiedAt: true,
@@ -248,23 +333,23 @@ export async function GET() {
           }
         }
       },
-      distinct: ['guestId'],
       orderBy: { createdAt: 'desc' },
-      take: 100
+      take: 200
     })
 
     // Unique guests with their verification status
     const guestMap = new Map()
     for (const booking of bookings) {
-      if (booking.guest && !guestMap.has(booking.guest.id)) {
-        guestMap.set(booking.guest.id, {
-          id: booking.guest.id,
-          name: booking.guest.stripeVerifiedFirstName
-            ? `${booking.guest.stripeVerifiedFirstName} ${booking.guest.stripeVerifiedLastName}`
-            : booking.guest.fullName,
-          email: booking.guest.email,
-          verificationStatus: booking.guest.stripeIdentityStatus || 'not_started',
-          verifiedAt: booking.guest.stripeIdentityVerifiedAt
+      const profile = booking.reviewerProfile
+      if (profile && !guestMap.has(profile.id)) {
+        guestMap.set(profile.id, {
+          id: profile.id,
+          name: profile.stripeVerifiedFirstName
+            ? `${profile.stripeVerifiedFirstName} ${profile.stripeVerifiedLastName}`
+            : profile.name,
+          email: profile.email,
+          verificationStatus: profile.stripeIdentityStatus || 'not_started',
+          verifiedAt: profile.stripeIdentityVerifiedAt
         })
       }
     }

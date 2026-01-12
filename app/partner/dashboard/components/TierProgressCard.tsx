@@ -65,145 +65,151 @@ export default function TierProgressCard({
   }
 
   return (
-    <div className="bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 rounded-lg border border-orange-200 dark:border-orange-800 p-6">
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <IoTrophyOutline className="w-6 h-6 text-orange-600 dark:text-orange-400" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Commission Tier
-            </h3>
-          </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Grow your fleet to unlock lower commission rates
-          </p>
-        </div>
-        <div className={`px-4 py-2 rounded-full font-semibold ${getTierBgColor(tier.current)}`}>
-          {tier.current} Partner
-        </div>
-      </div>
-
-      {/* Current Rate Display */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-6">
-        <div className="flex items-center justify-between">
+    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+      {/* Header */}
+      <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
+        <div className="flex items-start justify-between">
           <div>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Your Commission Rate</p>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">
-              {(currentRate * 100).toFixed(0)}%
-            </p>
-            <p className="text-sm text-green-600 dark:text-green-400">
-              You keep {((1 - currentRate) * 100).toFixed(0)}% of each booking
+            <div className="flex items-center gap-2 mb-1">
+              <IoTrophyOutline className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+              <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                Commission Tier
+              </h3>
+            </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Grow your fleet to unlock lower commission rates
             </p>
           </div>
-          <div className="text-right">
-            <p className="text-sm text-gray-500 dark:text-gray-400">Fleet Size</p>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">{fleetSize}</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">vehicles</p>
+          <div className={`px-3 py-1.5 rounded-full text-sm font-semibold ${getTierBgColor(tier.current)}`}>
+            {tier.current} Partner
           </div>
         </div>
       </div>
 
-      {/* Progress to Next Tier */}
-      {nextTier && (
-        <div className="mb-6">
-          <div className="flex items-center justify-between text-sm mb-2">
-            <span className="text-gray-600 dark:text-gray-400">
-              Progress to {nextTier.name}
-            </span>
-            <span className="font-semibold text-gray-900 dark:text-white">
-              {tier.vehiclesNeeded} more vehicles needed
-            </span>
-          </div>
-          <div className="w-full h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-            <div
-              className={`h-full bg-gradient-to-r ${getTierColor(nextTier.name)} rounded-full transition-all duration-500`}
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <div className="flex items-center justify-between mt-2 text-xs text-gray-500 dark:text-gray-400">
-            <span>{fleetSize} vehicles</span>
-            <span>{nextTier.minVehicles} vehicles</span>
-          </div>
-        </div>
-      )}
-
-      {/* Tier Ladder */}
-      <div className="grid grid-cols-4 gap-2">
-        {tiers.map((t, index) => {
-          const isCurrentTier = t.name === tier.current
-          const isUnlocked = index <= currentTierIndex
-          const isNextTier = index === currentTierIndex + 1
-
-          return (
-            <div
-              key={t.name}
-              className={`relative p-3 rounded-lg text-center transition-all ${
-                isCurrentTier
-                  ? 'bg-white dark:bg-gray-800 border-2 border-orange-500 shadow-md'
-                  : isUnlocked
-                  ? 'bg-white/50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700'
-                  : 'bg-gray-100 dark:bg-gray-800/30 border border-gray-200 dark:border-gray-700 opacity-60'
-              }`}
-            >
-              {isCurrentTier && (
-                <div className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-orange-500 text-white text-xs font-bold rounded-full">
-                  Current
-                </div>
-              )}
-              {isNextTier && (
-                <div className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-blue-500 text-white text-xs font-bold rounded-full">
-                  Next
-                </div>
-              )}
-
-              <div className="mb-1">
-                {isUnlocked ? (
-                  <IoCheckmarkCircleOutline className={`w-5 h-5 mx-auto ${
-                    isCurrentTier ? 'text-orange-500' : 'text-green-500'
-                  }`} />
-                ) : (
-                  <IoLockClosedOutline className="w-5 h-5 mx-auto text-gray-400" />
-                )}
-              </div>
-
-              <p className={`text-xs font-semibold ${
-                isCurrentTier
-                  ? 'text-orange-600 dark:text-orange-400'
-                  : 'text-gray-700 dark:text-gray-300'
-              }`}>
-                {t.name}
+      {/* Content */}
+      <div className="p-4">
+        {/* Current Rate Display */}
+        <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 mb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Your Commission Rate</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-white">
+                {(currentRate * 100).toFixed(0)}%
               </p>
-
-              <p className={`text-lg font-bold ${
-                isCurrentTier
-                  ? 'text-gray-900 dark:text-white'
-                  : 'text-gray-600 dark:text-gray-400'
-              }`}>
-                {(t.rate * 100).toFixed(0)}%
-              </p>
-
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {t.minVehicles}+ cars
+              <p className="text-sm text-green-600 dark:text-green-400">
+                You keep {((1 - currentRate) * 100).toFixed(0)}% of each booking
               </p>
             </div>
-          )
-        })}
-      </div>
-
-      {/* Diamond Tier Benefits */}
-      {tier.current !== 'Diamond' && (
-        <div className="mt-6 p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
-          <div className="flex items-center gap-2 mb-2">
-            <IoTrophyOutline className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-            <span className="font-semibold text-purple-800 dark:text-purple-200">
-              Unlock Diamond Benefits
-            </span>
+            <div className="text-right">
+              <p className="text-sm text-gray-500 dark:text-gray-400">Fleet Size</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-white">{fleetSize}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">vehicles</p>
+            </div>
           </div>
-          <p className="text-sm text-purple-700 dark:text-purple-300">
-            Reach 100+ vehicles to unlock 10% commission rate, priority support, and dedicated account manager.
-          </p>
         </div>
-      )}
+
+        {/* Progress to Next Tier */}
+        {nextTier && (
+          <div className="mb-4">
+            <div className="flex items-center justify-between text-sm mb-2">
+              <span className="text-gray-600 dark:text-gray-400">
+                Progress to {nextTier.name}
+              </span>
+              <span className="font-semibold text-gray-900 dark:text-white">
+                {tier.vehiclesNeeded} more vehicles needed
+              </span>
+            </div>
+            <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+              <div
+                className={`h-full bg-gradient-to-r ${getTierColor(nextTier.name)} rounded-full transition-all duration-500`}
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <div className="flex items-center justify-between mt-2 text-xs text-gray-500 dark:text-gray-400">
+              <span>{fleetSize} vehicles</span>
+              <span>{nextTier.minVehicles} vehicles</span>
+            </div>
+          </div>
+        )}
+
+        {/* Tier Ladder */}
+        <div className="grid grid-cols-4 gap-2 mt-4">
+          {tiers.map((t, index) => {
+            const isCurrentTier = t.name === tier.current
+            const isUnlocked = index <= currentTierIndex
+            const isNextTier = index === currentTierIndex + 1
+
+            return (
+              <div
+                key={t.name}
+                className={`relative p-2.5 rounded-lg text-center transition-all ${
+                  isCurrentTier
+                    ? 'bg-gray-50 dark:bg-gray-700 border-2 border-orange-500'
+                    : isUnlocked
+                    ? 'bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600'
+                    : 'bg-gray-100 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 opacity-60'
+                }`}
+              >
+                {isCurrentTier && (
+                  <div className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-orange-500 text-white text-xs font-bold rounded-full">
+                    Current
+                  </div>
+                )}
+                {isNextTier && (
+                  <div className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-blue-500 text-white text-xs font-bold rounded-full">
+                    Next
+                  </div>
+                )}
+
+                <div className="mb-1">
+                  {isUnlocked ? (
+                    <IoCheckmarkCircleOutline className={`w-4 h-4 mx-auto ${
+                      isCurrentTier ? 'text-orange-500' : 'text-green-500'
+                    }`} />
+                  ) : (
+                    <IoLockClosedOutline className="w-4 h-4 mx-auto text-gray-400" />
+                  )}
+                </div>
+
+                <p className={`text-xs font-semibold ${
+                  isCurrentTier
+                    ? 'text-orange-600 dark:text-orange-400'
+                    : 'text-gray-700 dark:text-gray-300'
+                }`}>
+                  {t.name}
+                </p>
+
+                <p className={`text-base font-bold ${
+                  isCurrentTier
+                    ? 'text-gray-900 dark:text-white'
+                    : 'text-gray-600 dark:text-gray-400'
+                }`}>
+                  {(t.rate * 100).toFixed(0)}%
+                </p>
+
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {t.minVehicles}+ cars
+                </p>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Diamond Tier Benefits */}
+        {tier.current !== 'Diamond' && (
+          <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg">
+            <div className="flex items-center gap-2 mb-1">
+              <IoTrophyOutline className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+              <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                Unlock Diamond Benefits
+              </span>
+            </div>
+            <p className="text-xs text-gray-600 dark:text-gray-400">
+              Reach 100+ vehicles to unlock 10% commission rate, priority support, and dedicated account manager.
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
