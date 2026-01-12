@@ -200,7 +200,7 @@ export async function GET(
     const bookingRevenue = await prisma.rentalBooking.aggregate({
       where: {
         hostId: id,
-        status: { in: ['COMPLETED', 'CONFIRMED', 'IN_PROGRESS'] }
+        status: { in: ['COMPLETED', 'CONFIRMED', 'ACTIVE'] }
       },
       _sum: { totalAmount: true },
       _count: true
@@ -218,7 +218,7 @@ export async function GET(
     const pendingRevenue = await prisma.rentalBooking.aggregate({
       where: {
         hostId: id,
-        status: { in: ['CONFIRMED', 'IN_PROGRESS'] }
+        status: { in: ['CONFIRMED', 'ACTIVE'] }
       },
       _sum: { totalAmount: true },
       _count: true
