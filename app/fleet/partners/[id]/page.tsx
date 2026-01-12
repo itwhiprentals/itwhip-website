@@ -156,6 +156,26 @@ interface Activity {
   metadata?: Record<string, any>
 }
 
+interface PartnerBooking {
+  id: string
+  bookingCode: string
+  status: string
+  guestName: string
+  guestEmail: string
+  guestPhone: string
+  vehicle: {
+    id: string
+    name: string
+    photo?: string
+  } | null
+  startDate: string
+  endDate: string
+  totalAmount: number
+  commission: number
+  netAmount: number
+  createdAt: string
+}
+
 interface BankingData {
   partner: {
     id: string
@@ -223,6 +243,26 @@ interface BankingData {
     totalChargedAmount: number
     totalPayouts: number
   }
+  revenueFlow?: {
+    totalBookings: number
+    completedBookings: number
+    pendingBookings: number
+    grossRevenue: number
+    completedGrossRevenue: number
+    pendingGrossRevenue: number
+    commissionRate: number
+    totalCommission: number
+    completedCommission: number
+    pendingCommission: number
+    netRevenue: number
+    completedNetRevenue: number
+    pendingNetRevenue: number
+    totalPaidOut: number
+    awaitingPayout: number
+    currentBalance: number
+    holdBalance: number
+    availableForPayout: number
+  }
 }
 
 export default function PartnerDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -263,12 +303,36 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ id: st
   const [fundsProcessing, setFundsProcessing] = useState(false)
 
   // Vehicle modal state
-  const [selectedVehicle, setSelectedVehicle] = useState<Partner['cars'][0] | null>(null)
+  const [selectedVehicle, setSelectedVehicle] = useState<NonNullable<Partner['cars']>[0] | null>(null)
   const [vehicleModalPhoto, setVehicleModalPhoto] = useState(0)
 
   // Document request state
   const [requestingDoc, setRequestingDoc] = useState<string | null>(null)
   const [requestAllDocs, setRequestAllDocs] = useState(false)
+
+  // Bookings state
+  const [bookings, setBookings] = useState<PartnerBooking[]>([])
+  const [bookingsLoading, setBookingsLoading] = useState(false)
+  const [bookingsStats, setBookingsStats] = useState<{
+    total: number
+    pending: number
+    confirmed: number
+    inProgress: number
+    completed: number
+    cancelled: number
+    totalRevenue: number
+  } | null>(null)
+
+  // Vehicle action state
+  const [vehicleActionProcessing, setVehicleActionProcessing] = useState(false)
+
+  // Approval settings state
+  const [approvalSettings, setApprovalSettings] = useState<{
+    approvalMode: 'AUTO' | 'MANUAL' | 'DYNAMIC'
+    approvalThreshold: number
+  } | null>(null)
+  const [approvalLoading, setApprovalLoading] = useState(false)
+  const [approvalSaving, setApprovalSaving] = useState(false)
 
   useEffect(() => {
     fetchPartner()
@@ -288,6 +352,20 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ id: st
     }
   }, [activeTab, partner])
 
+  // Fetch bookings when bookings tab is selected
+  useEffect(() => {
+    if (activeTab === 'bookings' && partner && bookings.length === 0) {
+      fetchBookings()
+    }
+  }, [activeTab, partner])
+
+  // Fetch approval settings when fleet tab is selected
+  useEffect(() => {
+    if (activeTab === 'fleet' && partner && !approvalSettings) {
+      fetchApprovalSettings()
+    }
+  }, [activeTab, partner])
+
   const fetchPartner = async () => {
     try {
       setLoading(true)
@@ -302,6 +380,97 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ id: st
       console.error('Failed to fetch partner:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchBookings = async () => {
+    if (!partner) return
+    try {
+      setBookingsLoading(true)
+      const response = await fetch(`/api/fleet/bookings?key=${apiKey}&partnerId=${partner.id}&limit=50`)
+      const data = await response.json()
+      if (data.success) {
+        setBookings(data.bookings || [])
+        setBookingsStats(data.stats || null)
+      }
+    } catch (error) {
+      console.error('Failed to fetch bookings:', error)
+    } finally {
+      setBookingsLoading(false)
+    }
+  }
+
+  const handleVehicleAction = async (vehicleId: string, action: 'approve' | 'reject' | 'suspend' | 'activate', reason?: string) => {
+    try {
+      setVehicleActionProcessing(true)
+      const response = await fetch(`/api/fleet/vehicles/${vehicleId}?key=${apiKey}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, reason })
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        // Refresh partner to get updated vehicle list
+        fetchPartner()
+        setSelectedVehicle(null)
+      } else {
+        alert(data.error || `Failed to ${action} vehicle`)
+      }
+    } catch (error) {
+      console.error(`Failed to ${action} vehicle:`, error)
+      alert(`Failed to ${action} vehicle`)
+    } finally {
+      setVehicleActionProcessing(false)
+    }
+  }
+
+  const fetchApprovalSettings = async () => {
+    if (!partner) return
+    try {
+      setApprovalLoading(true)
+      const response = await fetch(`/api/fleet/partners/${partner.id}/approval-settings?key=${apiKey}`)
+      const data = await response.json()
+      if (data.success) {
+        setApprovalSettings({
+          approvalMode: data.settings.approvalMode,
+          approvalThreshold: data.settings.approvalThreshold
+        })
+      }
+    } catch (error) {
+      console.error('Failed to fetch approval settings:', error)
+    } finally {
+      setApprovalLoading(false)
+    }
+  }
+
+  const updateApprovalSettings = async (mode: 'AUTO' | 'MANUAL' | 'DYNAMIC', threshold?: number) => {
+    if (!partner) return
+    try {
+      setApprovalSaving(true)
+      const response = await fetch(`/api/fleet/partners/${partner.id}/approval-settings?key=${apiKey}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          approvalMode: mode,
+          approvalThreshold: threshold ?? approvalSettings?.approvalThreshold ?? 25
+        })
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        setApprovalSettings({
+          approvalMode: data.settings.approvalMode,
+          approvalThreshold: data.settings.approvalThreshold
+        })
+      } else {
+        alert(data.error || 'Failed to update approval settings')
+      }
+    } catch (error) {
+      console.error('Failed to update approval settings:', error)
+      alert('Failed to update approval settings')
+    } finally {
+      setApprovalSaving(false)
     }
   }
 
@@ -846,7 +1015,7 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ id: st
 
           {/* Tabs - scrollable on mobile */}
           <div className="flex gap-1 mt-4 border-b border-gray-200 dark:border-gray-700 -mb-px overflow-x-auto scrollbar-hide">
-            {['overview', 'fleet', 'documents', 'commission', 'banking', 'activity'].map((tab) => (
+            {['overview', 'fleet', 'bookings', 'documents', 'commission', 'banking', 'activity'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -1153,11 +1322,166 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ id: st
         )}
 
         {activeTab === 'fleet' && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Fleet Vehicles ({partner.cars?.length || 0})
-            </h3>
-            {partner.cars && partner.cars.length > 0 ? (
+          <div className="space-y-6">
+            {/* Vehicle Approval Rules */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                    <IoShieldCheckmarkOutline className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">Vehicle Approval Rules</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Control how new vehicles from this partner are approved
+                    </p>
+                  </div>
+                </div>
+                {approvalLoading && (
+                  <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                )}
+              </div>
+
+              {/* Approval Mode Selector */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                {/* Pre-Approve All */}
+                <button
+                  onClick={() => updateApprovalSettings('AUTO')}
+                  disabled={approvalSaving}
+                  className={`p-4 rounded-lg border-2 text-left transition-all ${
+                    approvalSettings?.approvalMode === 'AUTO'
+                      ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-700'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center ${
+                      approvalSettings?.approvalMode === 'AUTO'
+                        ? 'bg-green-500 text-white'
+                        : 'bg-gray-200 dark:bg-gray-700'
+                    }`}>
+                      {approvalSettings?.approvalMode === 'AUTO' && <IoCheckmarkOutline className="w-3 h-3" />}
+                    </div>
+                    <span className="font-medium text-gray-900 dark:text-white">Pre-Approve All</span>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    All vehicles are automatically approved when listed. Best for trusted partners like Hertz, Avis.
+                  </p>
+                </button>
+
+                {/* Must Approve All */}
+                <button
+                  onClick={() => updateApprovalSettings('MANUAL')}
+                  disabled={approvalSaving}
+                  className={`p-4 rounded-lg border-2 text-left transition-all ${
+                    approvalSettings?.approvalMode === 'MANUAL'
+                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-red-300 dark:hover:border-red-700'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center ${
+                      approvalSettings?.approvalMode === 'MANUAL'
+                        ? 'bg-red-500 text-white'
+                        : 'bg-gray-200 dark:bg-gray-700'
+                    }`}>
+                      {approvalSettings?.approvalMode === 'MANUAL' && <IoCheckmarkOutline className="w-3 h-3" />}
+                    </div>
+                    <span className="font-medium text-gray-900 dark:text-white">Must Approve All</span>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    No vehicles go live until manually approved. Full control over every listing.
+                  </p>
+                </button>
+
+                {/* Dynamic Approval */}
+                <button
+                  onClick={() => updateApprovalSettings('DYNAMIC', approvalSettings?.approvalThreshold ?? 25)}
+                  disabled={approvalSaving}
+                  className={`p-4 rounded-lg border-2 text-left transition-all ${
+                    approvalSettings?.approvalMode === 'DYNAMIC'
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center ${
+                      approvalSettings?.approvalMode === 'DYNAMIC'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-200 dark:bg-gray-700'
+                    }`}>
+                      {approvalSettings?.approvalMode === 'DYNAMIC' && <IoCheckmarkOutline className="w-3 h-3" />}
+                    </div>
+                    <span className="font-medium text-gray-900 dark:text-white">Dynamic Approval</span>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    System detects issues and requests approval. Adjustable threshold.
+                  </p>
+                </button>
+              </div>
+
+              {/* Dynamic Threshold Slider */}
+              {approvalSettings?.approvalMode === 'DYNAMIC' && (
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Approval Threshold
+                    </span>
+                    <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                      {approvalSettings.approvalThreshold}%
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="5"
+                    value={approvalSettings.approvalThreshold}
+                    onChange={(e) => {
+                      const newValue = parseInt(e.target.value)
+                      setApprovalSettings(prev => prev ? { ...prev, approvalThreshold: newValue } : null)
+                    }}
+                    onMouseUp={(e) => {
+                      const target = e.target as HTMLInputElement
+                      updateApprovalSettings('DYNAMIC', parseInt(target.value))
+                    }}
+                    onTouchEnd={(e) => {
+                      const target = e.target as HTMLInputElement
+                      updateApprovalSettings('DYNAMIC', parseInt(target.value))
+                    }}
+                    className="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                  />
+                  <div className="flex justify-between mt-2 text-xs text-gray-500 dark:text-gray-400">
+                    <span>0% - Auto-approve most</span>
+                    <span>100% - Review all</span>
+                  </div>
+                  <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                    <p className="text-xs text-blue-700 dark:text-blue-300">
+                      {approvalSettings.approvalThreshold === 0 && 'System will auto-approve all vehicles unless critical issues are detected.'}
+                      {approvalSettings.approvalThreshold > 0 && approvalSettings.approvalThreshold <= 25 && 'System will auto-approve most vehicles. Only flagged issues require review.'}
+                      {approvalSettings.approvalThreshold > 25 && approvalSettings.approvalThreshold <= 50 && 'Moderate review. System will flag more vehicles for manual approval.'}
+                      {approvalSettings.approvalThreshold > 50 && approvalSettings.approvalThreshold <= 75 && 'Strict review. Most new vehicles will require approval.'}
+                      {approvalSettings.approvalThreshold > 75 && approvalSettings.approvalThreshold < 100 && 'Very strict. Nearly all vehicles require manual approval.'}
+                      {approvalSettings.approvalThreshold === 100 && 'All vehicles require manual approval (same as "Must Approve All").'}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {approvalSaving && (
+                <div className="mt-3 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                  <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                  Saving...
+                </div>
+              )}
+            </div>
+
+            {/* Fleet Vehicles */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                Fleet Vehicles ({partner.cars?.length || 0})
+              </h3>
+              {partner.cars && partner.cars.length > 0 ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                 {partner.cars.map((car) => (
                   <button
@@ -1197,12 +1521,166 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ id: st
                   </button>
                 ))}
               </div>
-            ) : (
-              <div className="text-center py-8">
-                <IoCarOutline className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-500 dark:text-gray-400">No vehicles in fleet yet.</p>
+              ) : (
+                <div className="text-center py-8">
+                  <IoCarOutline className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                  <p className="text-gray-500 dark:text-gray-400">No vehicles in fleet yet.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'bookings' && (
+          <div className="space-y-6">
+            {/* Bookings Stats */}
+            {bookingsStats && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
+                  <div className="text-xs text-gray-500 dark:text-gray-400">Total</div>
+                  <div className="text-xl font-bold text-gray-900 dark:text-white">{bookingsStats.total}</div>
+                </div>
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-yellow-200 dark:border-yellow-800">
+                  <div className="text-xs text-yellow-600 dark:text-yellow-400">Pending</div>
+                  <div className="text-xl font-bold text-yellow-600 dark:text-yellow-400">{bookingsStats.pending}</div>
+                </div>
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
+                  <div className="text-xs text-blue-600 dark:text-blue-400">Confirmed</div>
+                  <div className="text-xl font-bold text-blue-600 dark:text-blue-400">{bookingsStats.confirmed}</div>
+                </div>
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-purple-200 dark:border-purple-800">
+                  <div className="text-xs text-purple-600 dark:text-purple-400">In Progress</div>
+                  <div className="text-xl font-bold text-purple-600 dark:text-purple-400">{bookingsStats.inProgress}</div>
+                </div>
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-green-200 dark:border-green-800">
+                  <div className="text-xs text-green-600 dark:text-green-400">Completed</div>
+                  <div className="text-xl font-bold text-green-600 dark:text-green-400">{bookingsStats.completed}</div>
+                </div>
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-red-200 dark:border-red-800">
+                  <div className="text-xs text-red-600 dark:text-red-400">Cancelled</div>
+                  <div className="text-xl font-bold text-red-600 dark:text-red-400">{bookingsStats.cancelled}</div>
+                </div>
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-orange-200 dark:border-orange-800">
+                  <div className="text-xs text-orange-600 dark:text-orange-400">Revenue</div>
+                  <div className="text-xl font-bold text-orange-600 dark:text-orange-400">
+                    ${((bookingsStats.totalRevenue || 0) / 1000).toFixed(1)}k
+                  </div>
+                </div>
               </div>
             )}
+
+            {/* Financial Summary Link */}
+            {bookingsStats && bookingsStats.totalRevenue > 0 && (
+              <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-lg border border-green-200 dark:border-green-800 p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                      <IoCashOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900 dark:text-white">
+                        ${(bookingsStats.totalRevenue * (1 - (partner?.currentCommissionRate || 0.25))).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Partner Earnings
+                      </div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        From ${bookingsStats.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })} gross revenue ({Math.round((partner?.currentCommissionRate || 0.25) * 100)}% commission)
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setActiveTab('banking')}
+                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                  >
+                    <IoWalletOutline className="w-4 h-4" />
+                    View Payouts
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Bookings List */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Bookings ({bookings.length})
+                </h3>
+              </div>
+
+              {bookingsLoading ? (
+                <div className="p-8 text-center">
+                  <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto" />
+                  <p className="text-gray-500 dark:text-gray-400 mt-2">Loading bookings...</p>
+                </div>
+              ) : bookings.length > 0 ? (
+                <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {bookings.map((booking) => (
+                    <div key={booking.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                      <div className="flex items-start gap-4">
+                        {/* Vehicle Photo */}
+                        <div className="w-16 h-12 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0">
+                          {booking.vehicle?.photo ? (
+                            <img
+                              src={booking.vehicle.photo}
+                              alt={booking.vehicle.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <IoCarOutline className="w-6 h-6 text-gray-400" />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Booking Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">
+                              {booking.bookingCode}
+                            </span>
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                              booking.status === 'COMPLETED' ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400' :
+                              booking.status === 'CONFIRMED' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400' :
+                              booking.status === 'IN_PROGRESS' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-400' :
+                              booking.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-400' :
+                              booking.status === 'CANCELLED' ? 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400' :
+                              'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400'
+                            }`}>
+                              {booking.status.replace('_', ' ')}
+                            </span>
+                          </div>
+                          <div className="text-sm text-gray-600 dark:text-gray-300">
+                            {booking.vehicle?.name || 'Unknown Vehicle'}
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            {booking.guestName} • {booking.guestEmail}
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            {new Date(booking.startDate).toLocaleDateString()} - {new Date(booking.endDate).toLocaleDateString()}
+                          </div>
+                        </div>
+
+                        {/* Financial Info */}
+                        <div className="text-right flex-shrink-0">
+                          <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                            ${booking.totalAmount.toFixed(2)}
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            Commission: ${booking.commission.toFixed(2)}
+                          </div>
+                          <div className="text-xs text-green-600 dark:text-green-400 font-medium">
+                            Net: ${booking.netAmount.toFixed(2)}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-8 text-center">
+                  <IoTrendingUpOutline className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                  <p className="text-gray-500 dark:text-gray-400">No bookings yet for this partner.</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -1424,6 +1902,99 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ id: st
               </div>
             ) : banking ? (
               <>
+                {/* Revenue Flow - Centralized Financial View */}
+                {banking.revenueFlow && (
+                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg border border-blue-200 dark:border-blue-800 p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                        <IoTrendingUpOutline className="w-5 h-5 text-blue-600" />
+                        Revenue Flow
+                      </h3>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        Commission Rate: {Math.round(banking.revenueFlow.commissionRate * 100)}%
+                      </span>
+                    </div>
+
+                    {/* Flow Diagram */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                      {/* Bookings */}
+                      <div className="text-center">
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Bookings</div>
+                        <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                          {banking.revenueFlow.totalBookings}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {banking.revenueFlow.completedBookings} completed
+                        </div>
+                      </div>
+
+                      {/* Gross Revenue */}
+                      <div className="text-center">
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Gross Revenue</div>
+                        <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                          ${banking.revenueFlow.grossRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          Before commission
+                        </div>
+                      </div>
+
+                      {/* Commission */}
+                      <div className="text-center">
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Platform Commission</div>
+                        <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                          -${banking.revenueFlow.totalCommission.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {Math.round(banking.revenueFlow.commissionRate * 100)}% of gross
+                        </div>
+                      </div>
+
+                      {/* Net Revenue */}
+                      <div className="text-center">
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Partner Earnings</div>
+                        <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                          ${banking.revenueFlow.netRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          After commission
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Payout Status Bar */}
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center justify-between text-sm mb-2">
+                        <span className="text-gray-600 dark:text-gray-300">Payout Progress</span>
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          ${banking.revenueFlow.totalPaidOut.toLocaleString(undefined, { minimumFractionDigits: 2 })} paid of ${banking.revenueFlow.completedNetRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })} earned
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
+                        <div
+                          className="bg-gradient-to-r from-green-500 to-green-400 h-3 rounded-full transition-all"
+                          style={{
+                            width: `${banking.revenueFlow.completedNetRevenue > 0
+                              ? Math.min(100, (banking.revenueFlow.totalPaidOut / banking.revenueFlow.completedNetRevenue) * 100)
+                              : 0}%`
+                          }}
+                        />
+                      </div>
+                      <div className="flex justify-between mt-2 text-xs">
+                        <span className="text-green-600 dark:text-green-400">
+                          Paid: ${banking.revenueFlow.totalPaidOut.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </span>
+                        <span className="text-amber-600 dark:text-amber-400">
+                          Awaiting: ${banking.revenueFlow.awaitingPayout.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </span>
+                        <span className="text-purple-600 dark:text-purple-400">
+                          Pending Bookings: ${banking.revenueFlow.pendingNetRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Balance Cards */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
@@ -2003,7 +2574,7 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ id: st
                   />
                   {selectedVehicle.photos.length > 1 && (
                     <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-                      {selectedVehicle.photos.map((_, idx) => (
+                      {selectedVehicle.photos.map((_photo: { url: string; isHero: boolean }, idx: number) => (
                         <button
                           key={idx}
                           onClick={() => setVehicleModalPhoto(idx)}
@@ -2135,6 +2706,49 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ id: st
               {/* Added Date */}
               <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
                 Added {formatDate(selectedVehicle.createdAt)}
+              </div>
+
+              {/* Fleet Admin Actions */}
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Fleet Controls</h4>
+                <div className="flex flex-wrap gap-2">
+                  {selectedVehicle.isActive ? (
+                    <button
+                      onClick={() => handleVehicleAction(selectedVehicle.id, 'suspend', 'Suspended by fleet admin')}
+                      disabled={vehicleActionProcessing}
+                      className="flex items-center gap-1.5 px-3 py-2 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-700 dark:text-red-400 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                    >
+                      <IoPauseCircleOutline className="w-4 h-4" />
+                      Suspend Vehicle
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleVehicleAction(selectedVehicle.id, 'activate')}
+                      disabled={vehicleActionProcessing}
+                      className="flex items-center gap-1.5 px-3 py-2 bg-green-100 hover:bg-green-200 dark:bg-green-900/30 dark:hover:bg-green-900/50 text-green-700 dark:text-green-400 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                    >
+                      <IoCheckmarkCircleOutline className="w-4 h-4" />
+                      Activate Vehicle
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      const reason = prompt('Enter rejection reason (optional):')
+                      handleVehicleAction(selectedVehicle.id, 'reject', reason || 'Rejected by fleet admin')
+                    }}
+                    disabled={vehicleActionProcessing}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                  >
+                    <IoCloseCircleOutline className="w-4 h-4" />
+                    Reject Listing
+                  </button>
+                </div>
+                {vehicleActionProcessing && (
+                  <div className="mt-2 flex items-center gap-2 text-sm text-gray-500">
+                    <div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+                    Processing...
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -196,6 +196,48 @@ export async function GET(
       }
     }
 
+    // Fetch booking revenue data for this partner
+    const bookingRevenue = await prisma.rentalBooking.aggregate({
+      where: {
+        hostId: id,
+        status: { in: ['COMPLETED', 'CONFIRMED', 'IN_PROGRESS'] }
+      },
+      _sum: { totalAmount: true },
+      _count: true
+    })
+
+    const completedRevenue = await prisma.rentalBooking.aggregate({
+      where: {
+        hostId: id,
+        status: 'COMPLETED'
+      },
+      _sum: { totalAmount: true },
+      _count: true
+    })
+
+    const pendingRevenue = await prisma.rentalBooking.aggregate({
+      where: {
+        hostId: id,
+        status: { in: ['CONFIRMED', 'IN_PROGRESS'] }
+      },
+      _sum: { totalAmount: true },
+      _count: true
+    })
+
+    // Calculate commissions based on partner's rate
+    const commissionRate = partner.currentCommissionRate || 0.25
+    const grossRevenue = bookingRevenue._sum.totalAmount || 0
+    const completedGross = completedRevenue._sum.totalAmount || 0
+    const pendingGross = pendingRevenue._sum.totalAmount || 0
+
+    const totalCommission = grossRevenue * commissionRate
+    const completedCommission = completedGross * commissionRate
+    const pendingCommission = pendingGross * commissionRate
+
+    const totalNetRevenue = grossRevenue - totalCommission
+    const completedNetRevenue = completedGross - completedCommission
+    const pendingNetRevenue = pendingGross - pendingCommission
+
     // Calculate stats
     const stats = {
       totalCharges: partner.hostCharges.length,
@@ -207,6 +249,34 @@ export async function GET(
       availableForPayout: Math.max(0, (partner.currentBalance || 0) - (partner.holdBalance || 0)),
       totalPayouts: partner.totalPayoutsAmount || 0,
       payoutCount: partner.totalPayoutsCount || 0
+    }
+
+    // Revenue flow data (connects bookings → revenue → commission → payout)
+    const revenueFlow = {
+      // Booking totals
+      totalBookings: bookingRevenue._count,
+      completedBookings: completedRevenue._count,
+      pendingBookings: pendingRevenue._count,
+      // Gross revenue (before commission)
+      grossRevenue,
+      completedGrossRevenue: completedGross,
+      pendingGrossRevenue: pendingGross,
+      // Commission (platform cut)
+      commissionRate,
+      totalCommission,
+      completedCommission,
+      pendingCommission,
+      // Net revenue (partner's earnings)
+      netRevenue: totalNetRevenue,
+      completedNetRevenue,
+      pendingNetRevenue,
+      // Payout status
+      totalPaidOut: partner.totalPayoutsAmount || 0,
+      awaitingPayout: Math.max(0, completedNetRevenue - (partner.totalPayoutsAmount || 0)),
+      // Balance reconciliation
+      currentBalance: partner.currentBalance || 0,
+      holdBalance: partner.holdBalance || 0,
+      availableForPayout: Math.max(0, (partner.currentBalance || 0) - (partner.holdBalance || 0))
     }
 
     return NextResponse.json({
@@ -279,7 +349,8 @@ export async function GET(
           createdAt: p.createdAt,
           paidAt: p.paidAt
         })),
-        stats
+        stats,
+        revenueFlow
       }
     })
 

@@ -821,8 +821,10 @@ model RentalHost {
   tier3CommissionRate   Float     @default(0.10)
   currentCommissionRate Float     @default(0.25)  // Calculated based on fleet size
 
-  // Partner Privileges
-  autoApproveListings   Boolean   @default(true)   // Pre-approved vehicle listings
+  // Partner Privileges & Vehicle Approval Settings
+  autoApproveListings         Boolean   @default(true)   // Legacy - Pre-approved vehicle listings
+  vehicleApprovalMode         String    @default("DYNAMIC") // AUTO, MANUAL, DYNAMIC
+  vehicleApprovalThreshold    Int       @default(25)        // 0-100% for DYNAMIC mode (lower = more auto-approves)
 
   // Partner Stats (denormalized for performance)
   partnerFleetSize      Int       @default(0)
