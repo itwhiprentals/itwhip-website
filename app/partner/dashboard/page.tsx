@@ -40,6 +40,7 @@ import QuickActions from './components/QuickActions'
 import InvitationsStatsCard from './components/InvitationsStatsCard'
 import InvitationsList from './components/InvitationsList'
 import ManagedCarsSection from './components/ManagedCarsSection'
+import SessionSecurityCard from './components/SessionSecurityCard'
 
 interface DashboardStats {
   fleetSize: number
@@ -779,6 +780,9 @@ export default function PartnerDashboardPage() {
           <span className="hidden sm:inline">Refresh</span>
         </button>
       </div>
+
+      {/* Session & Security Card - Top of Dashboard */}
+      <SessionSecurityCard />
 
       {/* Main Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
