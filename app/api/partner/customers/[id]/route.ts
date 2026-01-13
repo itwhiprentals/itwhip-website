@@ -116,12 +116,10 @@ export async function GET(
     // Format customer data
     const customer = {
       id: user.id,
-      name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Guest',
-      firstName: user.firstName,
-      lastName: user.lastName,
+      name: user.name || 'Guest',
       email: user.email,
-      phone: user.phoneNumber || user.reviewerProfile?.phoneNumber || null,
-      photo: user.reviewerProfile?.profilePhotoUrl || user.profileImageUrl || null,
+      phone: user.phone || user.reviewerProfile?.phoneNumber || null,
+      photo: user.reviewerProfile?.profilePhotoUrl || user.image || null,
       reviewerProfileId: user.reviewerProfile?.id || null,
       location: user.reviewerProfile?.city && user.reviewerProfile?.state
         ? `${user.reviewerProfile.city}, ${user.reviewerProfile.state}`
@@ -210,9 +208,15 @@ export async function PUT(
 
     // Update user info
     const updateData: any = {}
-    if (body.firstName !== undefined) updateData.firstName = body.firstName
-    if (body.lastName !== undefined) updateData.lastName = body.lastName
-    if (body.phone !== undefined) updateData.phoneNumber = body.phone
+    // Handle name - can be sent as name or firstName/lastName
+    if (body.name !== undefined) {
+      updateData.name = body.name
+    } else if (body.firstName !== undefined || body.lastName !== undefined) {
+      const firstName = body.firstName || ''
+      const lastName = body.lastName || ''
+      updateData.name = `${firstName} ${lastName}`.trim()
+    }
+    if (body.phone !== undefined) updateData.phone = body.phone
 
     if (Object.keys(updateData).length > 0) {
       await prisma.user.update({

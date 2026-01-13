@@ -91,11 +91,11 @@ export async function GET(request: NextRequest) {
             ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter })
           },
           include: {
-            rentalCar: {
+            car: {
               select: { make: true, model: true, year: true }
             },
-            user: {
-              select: { firstName: true, lastName: true, email: true }
+            renter: {
+              select: { name: true, email: true }
             }
           },
           orderBy: { createdAt: 'desc' }
@@ -110,9 +110,9 @@ export async function GET(request: NextRequest) {
         const rows = bookings.map(b => [
           b.bookingCode || b.id.slice(0, 8),
           b.status,
-          b.user ? `${b.user.firstName || ''} ${b.user.lastName || ''}`.trim() : b.guestName || '',
-          b.user?.email || b.guestEmail || '',
-          b.rentalCar ? `${b.rentalCar.year} ${b.rentalCar.make} ${b.rentalCar.model}` : '',
+          b.renter?.name || b.guestName || '',
+          b.renter?.email || b.guestEmail || '',
+          b.car ? `${b.car.year} ${b.car.make} ${b.car.model}` : '',
           b.startDate ? new Date(b.startDate).toLocaleDateString() : '',
           b.endDate ? new Date(b.endDate).toLocaleDateString() : '',
           b.totalAmount || 0,
@@ -165,11 +165,11 @@ export async function GET(request: NextRequest) {
             ...(Object.keys(dateFilter).length > 0 && { endDate: dateFilter })
           },
           include: {
-            rentalCar: {
+            car: {
               select: { make: true, model: true, year: true }
             },
-            user: {
-              select: { firstName: true, lastName: true }
+            renter: {
+              select: { name: true }
             }
           },
           orderBy: { endDate: 'desc' }
@@ -183,13 +183,13 @@ export async function GET(request: NextRequest) {
         ]
 
         const rows = bookings.map(b => {
-          const gross = b.totalAmount || 0
+          const gross = Number(b.totalAmount) || 0
           const commission = gross * commissionRate
           const net = gross - commission
           return [
             b.bookingCode || b.id.slice(0, 8),
-            b.user ? `${b.user.firstName || ''} ${b.user.lastName || ''}`.trim() : b.guestName || '',
-            b.rentalCar ? `${b.rentalCar.year} ${b.rentalCar.make} ${b.rentalCar.model}` : '',
+            b.renter?.name || b.guestName || '',
+            b.car ? `${b.car.year} ${b.car.make} ${b.car.model}` : '',
             b.endDate ? new Date(b.endDate).toLocaleDateString() : '',
             gross.toFixed(2),
             commission.toFixed(2),
@@ -243,11 +243,11 @@ export async function GET(request: NextRequest) {
           include: {
             booking: {
               include: {
-                rentalCar: {
+                car: {
                   select: { make: true, model: true, year: true }
                 },
-                user: {
-                  select: { firstName: true, lastName: true }
+                renter: {
+                  select: { name: true }
                 }
               }
             }
@@ -262,8 +262,8 @@ export async function GET(request: NextRequest) {
 
         const rows = reviews.map(r => [
           new Date(r.createdAt).toLocaleDateString(),
-          r.booking?.user ? `${r.booking.user.firstName || ''} ${r.booking.user.lastName || ''}`.trim() : '',
-          r.booking?.rentalCar ? `${r.booking.rentalCar.year} ${r.booking.rentalCar.make} ${r.booking.rentalCar.model}` : '',
+          r.booking?.renter?.name || '',
+          r.booking?.car ? `${r.booking.car.year} ${r.booking.car.make} ${r.booking.car.model}` : '',
           r.rating,
           r.review || '',
           r.hostResponse || '',
@@ -282,13 +282,12 @@ export async function GET(request: NextRequest) {
             carId: { in: vehicleIds }
           },
           include: {
-            user: {
+            renter: {
               select: {
                 id: true,
-                firstName: true,
-                lastName: true,
+                name: true,
                 email: true,
-                phoneNumber: true
+                phone: true
               }
             }
           }
@@ -306,15 +305,13 @@ export async function GET(request: NextRequest) {
         }>()
 
         bookings.forEach(b => {
-          const key = b.user?.id || b.guestEmail || ''
+          const key = b.renter?.id || b.guestEmail || ''
           if (!key) return
 
           const existing = customerMap.get(key)
-          const name = b.user
-            ? `${b.user.firstName || ''} ${b.user.lastName || ''}`.trim()
-            : b.guestName || ''
-          const email = b.user?.email || b.guestEmail || ''
-          const phone = b.user?.phoneNumber || b.guestPhone || ''
+          const name = b.renter?.name || b.guestName || ''
+          const email = b.renter?.email || b.guestEmail || ''
+          const phone = b.renter?.phone || b.guestPhone || ''
 
           if (existing) {
             existing.bookingCount++

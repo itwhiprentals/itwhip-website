@@ -41,8 +41,31 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Get vehicle count for tier calculation
+    const vehicleCount = await prisma.rentalCar.count({
+      where: { hostId: partner.id }
+    })
+
+    // Calculate tier based on fleet size
+    const commissionRate = partner.currentCommissionRate || 0.25
+    let tier = 'Standard'
+    if (vehicleCount >= 100) tier = 'Diamond'
+    else if (vehicleCount >= 50) tier = 'Platinum'
+    else if (vehicleCount >= 10) tier = 'Gold'
+
     return NextResponse.json({
       success: true,
+      partner: {
+        businessAddress: partner.address || '',
+        businessCity: partner.city || '',
+        businessState: partner.state || '',
+        businessZipCode: partner.zipCode || ''
+      },
+      tier: {
+        name: tier,
+        commissionRate,
+        fleetSize: vehicleCount
+      },
       settings: {
         email: partner.email,
         firstName: partner.user?.name?.split(' ')[0] || '',

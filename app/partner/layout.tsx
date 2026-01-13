@@ -29,6 +29,7 @@ import {
   IoPeopleOutline,
   IoBuildOutline,
   IoShieldCheckmarkOutline,
+  IoShieldOutline,
   IoStarOutline,
   IoChatbubblesOutline,
   IoAddCircleOutline
@@ -57,6 +58,7 @@ const navigationItems = [
   { name: 'Messages', href: '/partner/messages', icon: IoChatbubblesOutline },
   { name: 'Maintenance', href: '/partner/maintenance', icon: IoBuildOutline },
   { name: 'Claims', href: '/partner/claims', icon: IoShieldCheckmarkOutline },
+  { name: 'Insurance', href: '/partner/insurance', icon: IoShieldOutline },
   { name: 'Revenue', href: '/partner/revenue', icon: IoWalletOutline },
   { name: 'Analytics', href: '/partner/analytics', icon: IoAnalyticsOutline },
   { name: 'Landing Page', href: '/partner/landing', icon: IoGlobeOutline },

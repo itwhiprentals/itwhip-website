@@ -137,6 +137,18 @@ export async function GET(
       // Insurance & title
       titleStatus: vehicle.titleStatus,
       insuranceEligible: vehicle.insuranceEligible,
+      insuranceExpiryDate: vehicle.insuranceExpiryDate?.toISOString() || null,
+      insuranceNotes: vehicle.insuranceNotes,
+      // Parse insurance notes for frontend
+      insuranceInfo: vehicle.insuranceNotes
+        ? (() => {
+            try {
+              return JSON.parse(vehicle.insuranceNotes)
+            } catch {
+              return null
+            }
+          })()
+        : null,
 
       // VIN verification
       vinVerifiedAt: vehicle.vinVerifiedAt,
@@ -252,7 +264,14 @@ export async function PUT(
       features,
 
       // Vehicle Type (Rental vs Rideshare)
-      vehicleType
+      vehicleType,
+
+      // Insurance fields
+      hasOwnInsurance,
+      insuranceProvider,
+      insurancePolicyNumber,
+      insuranceExpiryDate,
+      useForRentals
     } = body
 
     // Build update object (only include fields that were provided)
@@ -309,6 +328,22 @@ export async function PUT(
     // Vehicle Type (Rental vs Rideshare)
     if (vehicleType !== undefined && (vehicleType === 'RENTAL' || vehicleType === 'RIDESHARE')) {
       updateData.vehicleType = vehicleType
+    }
+
+    // Insurance updates
+    if (hasOwnInsurance !== undefined) {
+      updateData.insuranceEligible = hasOwnInsurance && (useForRentals ?? false)
+      updateData.insuranceNotes = hasOwnInsurance
+        ? JSON.stringify({
+            hasOwnInsurance: true,
+            provider: insuranceProvider || null,
+            policyNumber: insurancePolicyNumber || null,
+            useForRentals: useForRentals ?? false
+          })
+        : null
+    }
+    if (insuranceExpiryDate !== undefined) {
+      updateData.insuranceExpiryDate = insuranceExpiryDate ? new Date(insuranceExpiryDate) : null
     }
 
     // Update vehicle

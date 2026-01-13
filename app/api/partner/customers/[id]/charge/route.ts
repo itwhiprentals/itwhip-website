@@ -71,25 +71,24 @@ export async function POST(
     })
     const vehicleIds = vehicles.map(v => v.id)
 
-    const booking = await prisma.booking.findFirst({
+    const booking = await prisma.rentalBooking.findFirst({
       where: {
         id: bookingId,
-        userId: customerId,
-        rentalCarId: { in: vehicleIds }
+        renterId: customerId,
+        carId: { in: vehicleIds }
       },
       include: {
-        rentalCar: {
+        car: {
           select: {
             make: true,
             model: true,
             year: true
           }
         },
-        user: {
+        renter: {
           select: {
             email: true,
-            firstName: true,
-            lastName: true
+            name: true
           }
         }
       }
@@ -102,24 +101,14 @@ export async function POST(
       )
     }
 
-    // Check for existing RentalBooking to link TripCharge
-    let rentalBooking = await prisma.rentalBooking.findFirst({
-      where: {
-        legacyBookingId: bookingId
-      }
-    })
-
-    // If no RentalBooking exists, we'll create a standalone charge record
-    // For now, we'll store it in a simpler way using BookingCharge or similar
-
     // Create charge details JSON
     const chargeDetails = {
       reason,
       description: description || getDefaultDescription(reason),
       createdBy: partner.id,
       createdAt: new Date().toISOString(),
-      vehicleName: booking.rentalCar
-        ? `${booking.rentalCar.year} ${booking.rentalCar.make} ${booking.rentalCar.model}`
+      vehicleName: booking.car
+        ? `${booking.car.year} ${booking.car.make} ${booking.car.model}`
         : 'Unknown Vehicle'
     }
 
@@ -136,61 +125,26 @@ export async function POST(
       chargeStatus: 'PENDING'
     }
 
-    if (rentalBooking) {
-      // Create TripCharge linked to RentalBooking
-      const tripCharge = await prisma.tripCharge.create({
-        data: {
-          bookingId: rentalBooking.id,
-          ...chargeData
-        }
-      })
+    // Create TripCharge linked to RentalBooking
+    const tripCharge = await prisma.tripCharge.create({
+      data: {
+        bookingId: booking.id,
+        ...chargeData
+      }
+    })
 
-      return NextResponse.json({
-        success: true,
-        charge: {
-          id: tripCharge.id,
-          amount,
-          reason,
-          description: description || getDefaultDescription(reason),
-          status: 'pending',
-          createdAt: tripCharge.createdAt.toISOString()
-        },
-        message: `Charge of $${amount.toFixed(2)} for ${reason.replace('_', ' ')} has been created.`
-      })
-    } else {
-      // No RentalBooking - create in legacy system or just log
-      // For now, we'll update the booking metadata
-      const existingMetadata = (booking.metadata as Record<string, any>) || {}
-      const existingCharges = existingMetadata.partnerCharges || []
-
-      const newCharge = {
-        id: `charge_${Date.now()}`,
-        reason,
+    return NextResponse.json({
+      success: true,
+      charge: {
+        id: tripCharge.id,
         amount,
+        reason,
         description: description || getDefaultDescription(reason),
         status: 'pending',
-        createdAt: new Date().toISOString(),
-        createdBy: partner.id
-      }
-
-      existingCharges.push(newCharge)
-
-      await prisma.booking.update({
-        where: { id: bookingId },
-        data: {
-          metadata: {
-            ...existingMetadata,
-            partnerCharges: existingCharges
-          }
-        }
-      })
-
-      return NextResponse.json({
-        success: true,
-        charge: newCharge,
-        message: `Charge of $${amount.toFixed(2)} for ${reason.replace('_', ' ')} has been created.`
-      })
-    }
+        createdAt: tripCharge.createdAt.toISOString()
+      },
+      message: `Charge of $${amount.toFixed(2)} for ${reason.replace('_', ' ')} has been created.`
+    })
 
   } catch (error) {
     console.error('[Partner Charge Customer] Error:', error)
@@ -223,52 +177,30 @@ export async function GET(
 
     // Build query
     const where: any = {
-      userId: customerId,
-      rentalCarId: { in: vehicleIds }
+      renterId: customerId,
+      carId: { in: vehicleIds }
     }
     if (bookingId) {
       where.id = bookingId
     }
 
-    const bookings = await prisma.booking.findMany({
+    // Get bookings with their TripCharges
+    const bookings = await prisma.rentalBooking.findMany({
       where,
-      select: {
-        id: true,
-        metadata: true
-      }
-    })
-
-    // Collect all charges from booking metadata
-    const allCharges: any[] = []
-
-    for (const booking of bookings) {
-      const metadata = (booking.metadata as Record<string, any>) || {}
-      const partnerCharges = metadata.partnerCharges || []
-
-      for (const charge of partnerCharges) {
-        allCharges.push({
-          ...charge,
-          bookingId: booking.id
-        })
-      }
-    }
-
-    // Also get TripCharges from RentalBookings
-    const rentalBookings = await prisma.rentalBooking.findMany({
-      where: {
-        legacyBookingId: { in: bookings.map(b => b.id) }
-      },
       include: {
         tripCharges: true
       }
     })
 
-    for (const rb of rentalBookings) {
-      for (const tc of rb.tripCharges) {
+    // Collect all charges
+    const allCharges: any[] = []
+
+    for (const booking of bookings) {
+      for (const tc of booking.tripCharges) {
         const details = tc.chargeDetails ? JSON.parse(tc.chargeDetails) : {}
         allCharges.push({
           id: tc.id,
-          bookingId: rb.legacyBookingId,
+          bookingId: booking.id,
           reason: details.reason || 'other',
           amount: Number(tc.totalCharges),
           description: details.description || '',

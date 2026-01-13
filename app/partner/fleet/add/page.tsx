@@ -20,6 +20,7 @@ import {
   IoStarOutline,
   IoCloseCircle,
   IoShieldCheckmark,
+  IoShieldOutline,
   IoSparkles,
   IoLocationOutline,
   IoRocketOutline
@@ -91,6 +92,13 @@ interface VehicleData {
   confirmCleanTitle: boolean
   confirmUnder130kMiles: boolean
   confirmNoRecalls: boolean
+
+  // Insurance
+  hasOwnInsurance: boolean
+  insuranceProvider: string
+  insurancePolicyNumber: string
+  insuranceExpiryDate: string
+  useForRentals: boolean
 }
 
 const INITIAL_VEHICLE_DATA: VehicleData = {
@@ -124,7 +132,12 @@ const INITIAL_VEHICLE_DATA: VehicleData = {
   titleStatus: 'Clean',
   confirmCleanTitle: false,
   confirmUnder130kMiles: false,
-  confirmNoRecalls: false
+  confirmNoRecalls: false,
+  hasOwnInsurance: false,
+  insuranceProvider: '',
+  insurancePolicyNumber: '',
+  insuranceExpiryDate: '',
+  useForRentals: false
 }
 
 export default function PartnerFleetAddPage() {
@@ -463,7 +476,13 @@ export default function PartnerFleetAddPage() {
           deliveryFee: vehicleData.deliveryFee,
           titleStatus: vehicleData.titleStatus,
           photos: uploadedPhotoUrls,
-          vinVerificationMethod: 'API'
+          vinVerificationMethod: 'API',
+          // Insurance fields
+          hasOwnInsurance: vehicleData.hasOwnInsurance,
+          insuranceProvider: vehicleData.insuranceProvider || null,
+          insurancePolicyNumber: vehicleData.insurancePolicyNumber || null,
+          insuranceExpiryDate: vehicleData.insuranceExpiryDate || null,
+          useForRentals: vehicleData.useForRentals
         })
       })
 
@@ -989,6 +1008,113 @@ export default function PartnerFleetAddPage() {
                 </div>
               )}
             </div>
+
+            {/* Insurance */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center gap-2 mb-4">
+                <IoShieldOutline className="w-6 h-6 text-blue-600" />
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Vehicle Insurance</h2>
+                <span className="text-xs text-gray-500 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">Optional</span>
+              </div>
+
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                Does this vehicle have its own commercial or rideshare insurance policy?
+              </p>
+
+              {/* Has Own Insurance Toggle */}
+              <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer">
+                <div>
+                  <p className="font-medium text-gray-900 dark:text-white">Vehicle Has Its Own Insurance</p>
+                  <p className="text-sm text-gray-500">This vehicle is covered under a commercial or rideshare policy</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={vehicleData.hasOwnInsurance}
+                  onChange={(e) => {
+                    const checked = e.target.checked
+                    setVehicleData(prev => ({
+                      ...prev,
+                      hasOwnInsurance: checked,
+                      useForRentals: checked ? prev.useForRentals : false
+                    }))
+                  }}
+                  className="w-5 h-5 text-blue-600 rounded focus:ring-blue-600"
+                />
+              </label>
+
+              {/* Insurance Details - Only show if has own insurance */}
+              {vehicleData.hasOwnInsurance && (
+                <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 space-y-4">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Insurance Provider
+                      </label>
+                      <input
+                        type="text"
+                        value={vehicleData.insuranceProvider}
+                        onChange={(e) => setVehicleData(prev => ({ ...prev, insuranceProvider: e.target.value }))}
+                        placeholder="e.g., State Farm, Progressive"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-600 dark:bg-gray-700 dark:text-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Policy Number
+                      </label>
+                      <input
+                        type="text"
+                        value={vehicleData.insurancePolicyNumber}
+                        onChange={(e) => setVehicleData(prev => ({ ...prev, insurancePolicyNumber: e.target.value }))}
+                        placeholder="Policy number"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-600 dark:bg-gray-700 dark:text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Policy Expiry Date
+                    </label>
+                    <input
+                      type="date"
+                      value={vehicleData.insuranceExpiryDate}
+                      onChange={(e) => setVehicleData(prev => ({ ...prev, insuranceExpiryDate: e.target.value }))}
+                      className="w-full md:w-auto px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-600 dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
+
+                  {/* Use for Rentals Toggle */}
+                  <label className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg cursor-pointer">
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white">Use This Insurance for Rentals</p>
+                      <p className="text-sm text-gray-500">
+                        Cover guests with this vehicle's insurance during rentals
+                      </p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={vehicleData.useForRentals}
+                      onChange={(e) => setVehicleData(prev => ({ ...prev, useForRentals: e.target.checked }))}
+                      className="w-5 h-5 text-blue-600 rounded focus:ring-blue-600"
+                    />
+                  </label>
+                </div>
+              )}
+
+              {/* Info about insurance */}
+              {!vehicleData.hasOwnInsurance && (
+                <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <IoInformationCircleOutline className="w-5 h-5 text-amber-600 mt-0.5" />
+                    <p className="text-sm text-amber-700 dark:text-amber-300">
+                      Without vehicle insurance, guests will need to provide their own insurance or use the platform's guest insurance option during booking.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -1355,6 +1481,35 @@ export default function PartnerFleetAddPage() {
                       </div>
                     ))}
                   </div>
+                </div>
+
+                {/* Insurance Summary */}
+                <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                    <IoShieldOutline className="w-5 h-5 text-blue-600" />
+                    Insurance
+                  </h3>
+                  {vehicleData.hasOwnInsurance ? (
+                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                      <p className="text-sm text-blue-700 dark:text-blue-300">
+                        <strong>{vehicleData.insuranceProvider || 'Own Insurance'}</strong>
+                        {vehicleData.insurancePolicyNumber && (
+                          <span className="ml-2 text-blue-600 dark:text-blue-400">
+                            Policy: {vehicleData.insurancePolicyNumber}
+                          </span>
+                        )}
+                      </p>
+                      {vehicleData.useForRentals && (
+                        <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                          Will be used to cover rentals
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500">
+                      No vehicle insurance configured - guests will use their own or platform insurance
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

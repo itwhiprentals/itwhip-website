@@ -124,11 +124,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Check for conflicts one more time
-    const conflicts = await prisma.booking.findFirst({
+    const conflicts = await prisma.rentalBooking.findFirst({
       where: {
-        rentalCarId: carId,
+        carId: carId,
         status: {
-          in: ['CONFIRMED', 'IN_PROGRESS', 'PENDING', 'PENDING_APPROVAL']
+          in: ['CONFIRMED', 'ACTIVE', 'PENDING', 'PENDING_APPROVAL']
         },
         startDate: { lte: bookingEnd },
         endDate: { gte: bookingStart }
@@ -142,33 +142,49 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create the booking
-    const booking = await prisma.booking.create({
+    // Calculate pricing breakdown
+    const dailyRate = Number(car.dailyRate) || 0
+    const subtotal = calculatedPrice
+    const serviceFee = Math.round(subtotal * 0.10 * 100) / 100 // 10% service fee
+    const taxes = Math.round(subtotal * 0.08 * 100) / 100 // 8% estimated tax
+    const totalWithFees = subtotal + serviceFee + taxes
+
+    // Create the booking with all required fields
+    const booking = await prisma.rentalBooking.create({
       data: {
-        rentalCarId: carId,
-        userId: customerId,
+        car: { connect: { id: carId } },
+        host: { connect: { id: partner.id } },
+        renter: { connect: { id: customerId } },
+        guestEmail: customer.email || '',
+        guestName: `${customer.firstName || ''} ${customer.lastName || ''}`.trim() || 'Guest',
         startDate: bookingStart,
         endDate: bookingEnd,
-        totalPrice: calculatedPrice,
+        startTime: '10:00',
+        endTime: '10:00',
+        dailyRate: dailyRate,
+        numberOfDays: tripDays,
+        subtotal: subtotal,
+        deliveryFee: 0,
+        insuranceFee: 0,
+        serviceFee: serviceFee,
+        taxes: taxes,
+        securityDeposit: 0,
+        depositHeld: 0,
+        totalAmount: totalWithFees,
         status: 'CONFIRMED', // Manual bookings are auto-confirmed
+        paymentStatus: 'PENDING',
         pickupType: pickupType || 'PARTNER_LOCATION',
-        pickupLocation: pickupLocation || null,
-        metadata: {
-          source: 'partner_manual',
-          createdBy: partner.id,
-          paymentType: paymentType || 'offline',
-          notes: notes || null
-        }
+        pickupLocation: pickupLocation || 'Partner Location',
+        notes: notes ? `${notes}\n\n[Partner Manual Booking]` : '[Partner Manual Booking]'
       },
       include: {
-        user: {
+        renter: {
           select: {
-            firstName: true,
-            lastName: true,
+            name: true,
             email: true
           }
         },
-        rentalCar: {
+        car: {
           select: {
             make: true,
             model: true,
@@ -182,12 +198,12 @@ export async function POST(request: NextRequest) {
       success: true,
       booking: {
         id: booking.id,
-        guestName: `${booking.user?.firstName || ''} ${booking.user?.lastName || ''}`.trim() || 'Guest',
-        guestEmail: booking.user?.email,
-        vehicleName: `${booking.rentalCar?.year} ${booking.rentalCar?.make} ${booking.rentalCar?.model}`,
+        guestName: booking.renter?.name || 'Guest',
+        guestEmail: booking.renter?.email,
+        vehicleName: `${booking.car?.year} ${booking.car?.make} ${booking.car?.model}`,
         startDate: booking.startDate.toISOString(),
         endDate: booking.endDate.toISOString(),
-        totalPrice: Number(booking.totalPrice),
+        totalAmount: Number(booking.totalAmount),
         status: booking.status,
         tripDays
       },

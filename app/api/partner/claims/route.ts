@@ -75,10 +75,10 @@ export async function GET(request: NextRequest) {
     // Get vehicle and booking info for each claim
     const formattedClaims = await Promise.all(claims.map(async (claim) => {
       // Get booking and vehicle info
-      const booking = await prisma.booking.findUnique({
+      const booking = await prisma.rentalBooking.findUnique({
         where: { id: claim.bookingId },
         include: {
-          rentalCar: {
+          car: {
             select: {
               id: true,
               make: true,
@@ -87,11 +87,10 @@ export async function GET(request: NextRequest) {
               primaryPhotoUrl: true
             }
           },
-          user: {
+          renter: {
             select: {
               id: true,
-              firstName: true,
-              lastName: true,
+              name: true,
               email: true
             }
           }
@@ -108,15 +107,13 @@ export async function GET(request: NextRequest) {
         estimatedCost: claim.estimatedCost ? Number(claim.estimatedCost) : null,
         approvedAmount: claim.approvedAmount ? Number(claim.approvedAmount) : null,
         paidAmount: claim.paidAmount ? Number(claim.paidAmount) : null,
-        vehicleName: booking?.rentalCar
-          ? `${booking.rentalCar.year} ${booking.rentalCar.make} ${booking.rentalCar.model}`
+        vehicleName: booking?.car
+          ? `${booking.car.year} ${booking.car.make} ${booking.car.model}`
           : 'Unknown Vehicle',
-        vehicleId: booking?.rentalCar?.id || null,
-        vehiclePhoto: booking?.rentalCar?.primaryPhotoUrl || null,
-        guestName: booking?.user
-          ? `${booking.user.firstName || ''} ${booking.user.lastName || ''}`.trim()
-          : 'Unknown Guest',
-        guestEmail: booking?.user?.email || null,
+        vehicleId: booking?.car?.id || null,
+        vehiclePhoto: booking?.car?.primaryPhotoUrl || null,
+        guestName: booking?.renter?.name || booking?.guestName || 'Unknown Guest',
+        guestEmail: booking?.renter?.email || booking?.guestEmail || null,
         bookingId: claim.bookingId,
         photoUrl: claim.damagePhotos[0]?.url || null,
         photoCount: claim.damagePhotos.length,
@@ -187,13 +184,13 @@ export async function POST(request: NextRequest) {
     })
     const vehicleIds = vehicles.map(v => v.id)
 
-    const booking = await prisma.booking.findFirst({
+    const booking = await prisma.rentalBooking.findFirst({
       where: {
         id: bookingId,
-        rentalCarId: { in: vehicleIds }
+        carId: { in: vehicleIds }
       },
       include: {
-        rentalCar: {
+        car: {
           include: {
             insurancePolicy: true
           }
@@ -209,7 +206,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get or create a policy ID (using vehicle's policy if exists)
-    const policyId = booking.rentalCar?.insurancePolicy?.id || `manual_${Date.now()}`
+    const policyId = booking.car?.insurancePolicy?.id || `manual_${Date.now()}`
 
     // Create the claim
     const claim = await prisma.claim.create({

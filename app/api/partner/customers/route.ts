@@ -62,11 +62,10 @@ export async function GET(request: NextRequest) {
         renter: {
           select: {
             id: true,
-            firstName: true,
-            lastName: true,
+            name: true,
             email: true,
-            phoneNumber: true,
-            profileImageUrl: true,
+            phone: true,
+            image: true,
             createdAt: true,
             reviewerProfile: {
               select: {
@@ -136,10 +135,10 @@ export async function GET(request: NextRequest) {
       if (booking.renter) {
         // Registered user
         customerId = booking.renter.id
-        customerName = `${booking.renter.firstName || ''} ${booking.renter.lastName || ''}`.trim() || 'Guest'
+        customerName = booking.renter.name || 'Guest'
         customerEmail = booking.renter.email || ''
-        customerPhone = booking.renter.phoneNumber || null
-        customerPhoto = booking.renter.reviewerProfile?.profilePhotoUrl || booking.renter.profileImageUrl || null
+        customerPhone = booking.renter.phone || null
+        customerPhoto = booking.renter.reviewerProfile?.profilePhotoUrl || booking.renter.image || null
         reviewerProfileId = booking.renter.reviewerProfile?.id || null
         customerCity = booking.renter.reviewerProfile?.city || null
         customerState = booking.renter.reviewerProfile?.state || null
@@ -326,10 +325,10 @@ export async function POST(request: NextRequest) {
         success: true,
         customer: {
           id: user.id,
-          name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || `${firstName} ${lastName}`.trim(),
+          name: user.name || `${firstName} ${lastName}`.trim(),
           email: user.email,
-          phone: user.phoneNumber || phone,
-          photo: user.reviewerProfile?.profilePhotoUrl || user.profileImageUrl,
+          phone: user.phone || phone,
+          photo: user.reviewerProfile?.profilePhotoUrl || user.image,
           reviewerProfileId: user.reviewerProfile?.id || null,
           isExisting: true
         }
@@ -337,13 +336,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Create new user
+    const fullName = `${firstName} ${lastName}`.trim()
     user = await prisma.user.create({
       data: {
         email: emailLower,
-        firstName,
-        lastName,
-        phoneNumber: phone || null,
-        role: 'USER'
+        name: fullName,
+        phone: phone || null,
+        role: 'STARTER'
       },
       include: {
         reviewerProfile: true
@@ -354,9 +353,9 @@ export async function POST(request: NextRequest) {
       success: true,
       customer: {
         id: user.id,
-        name: `${user.firstName} ${user.lastName}`.trim(),
+        name: user.name,
         email: user.email,
-        phone: user.phoneNumber,
+        phone: user.phone,
         photo: null,
         reviewerProfileId: null,
         isExisting: false

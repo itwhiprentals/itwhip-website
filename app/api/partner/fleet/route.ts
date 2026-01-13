@@ -103,13 +103,23 @@ export async function GET(request: NextRequest) {
         licensePlate: vehicle.licensePlate || 'N/A',
         vin: vehicle.vin || 'N/A',
         dailyRate: vehicle.dailyRate,
+        weeklyRate: vehicle.weeklyRate,
+        monthlyRate: vehicle.monthlyRate,
         status,
         isActive: vehicle.isActive,
         vehicleType: vehicle.vehicleType || 'RENTAL',
+        minTripDuration: vehicle.minTripDuration || 1,
         photo: vehicle.photos?.[0]?.url || null,
         totalTrips: vehicle.totalTrips || 0,
         totalRevenue: revenueMap.get(vehicle.id) || 0,
-        rating: vehicle.rating || 5.0
+        rating: vehicle.rating || 5.0,
+        // Vehicle specs
+        carType: vehicle.carType || 'Standard',
+        currentMileage: vehicle.currentMileage || null,
+        // Insurance fields
+        insuranceEligible: vehicle.insuranceEligible,
+        insuranceExpiryDate: vehicle.insuranceExpiryDate?.toISOString() || null,
+        insuranceNotes: vehicle.insuranceNotes || null
       }
     })
 
@@ -222,7 +232,14 @@ export async function POST(request: NextRequest) {
       photos,
       features,
       description,
-      vinVerificationMethod
+      vinVerificationMethod,
+
+      // Insurance fields
+      hasOwnInsurance,      // Vehicle has its own insurance policy
+      insuranceProvider,    // Insurance provider name
+      insurancePolicyNumber, // Policy number
+      insuranceExpiryDate,  // Policy expiry date
+      useForRentals         // Use this vehicle's insurance during rentals
     } = body
 
     // Validate VIN (REQUIRED for partners)
@@ -318,7 +335,18 @@ export async function POST(request: NextRequest) {
 
         // Insurance & title
         titleStatus: titleStatus || 'Clean',
-        insuranceEligible: true,
+
+        // Vehicle Insurance
+        insuranceEligible: hasOwnInsurance && useForRentals ? true : false,
+        insuranceExpiryDate: insuranceExpiryDate ? new Date(insuranceExpiryDate) : null,
+        insuranceNotes: hasOwnInsurance
+          ? JSON.stringify({
+              hasOwnInsurance: true,
+              provider: insuranceProvider || null,
+              policyNumber: insurancePolicyNumber || null,
+              useForRentals: useForRentals ?? false
+            })
+          : null,
 
         // Features (default auto-populated based on vehicle type)
         features: JSON.stringify(features || []),

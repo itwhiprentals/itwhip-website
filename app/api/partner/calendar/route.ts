@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
         status: { in: ['PENDING', 'CONFIRMED', 'IN_PROGRESS'] }
       },
       include: {
-        rentalCar: {
+        car: {
           select: {
             id: true,
             make: true,
@@ -87,10 +87,9 @@ export async function GET(request: NextRequest) {
             year: true
           }
         },
-        user: {
+        renter: {
           select: {
-            firstName: true,
-            lastName: true
+            name: true
           }
         }
       },
@@ -110,12 +109,10 @@ export async function GET(request: NextRequest) {
     const events = bookings.map(b => ({
       id: b.id,
       type: 'booking' as const,
-      title: b.user
-        ? `${b.user.firstName || ''} ${b.user.lastName || ''}`.trim() || 'Guest'
-        : b.guestName || 'Guest',
+      title: b.renter?.name || b.guestName || 'Guest',
       vehicleId: b.carId,
-      vehicleName: b.rentalCar
-        ? `${b.rentalCar.year} ${b.rentalCar.make} ${b.rentalCar.model}`
+      vehicleName: b.car
+        ? `${b.car.year} ${b.car.make} ${b.car.model}`
         : 'Vehicle',
       start: b.startDate.toISOString(),
       end: b.endDate.toISOString(),

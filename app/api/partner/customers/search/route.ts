@@ -61,26 +61,25 @@ export async function GET(request: NextRequest) {
     const vehicleIds = vehicles.map(v => v.id)
 
     // Get previous customers (users who have booked with this partner)
-    const previousBookings = await prisma.booking.findMany({
+    const previousBookings = await prisma.rentalBooking.findMany({
       where: {
-        rentalCarId: { in: vehicleIds },
-        userId: { not: null }
+        carId: { in: vehicleIds },
+        renterId: { not: null }
       },
       select: {
-        userId: true
+        renterId: true
       },
-      distinct: ['userId']
+      distinct: ['renterId']
     })
-    const previousCustomerIds = previousBookings.map(b => b.userId).filter(Boolean) as string[]
+    const previousCustomerIds = previousBookings.map(b => b.renterId).filter(Boolean) as string[]
 
     // Search users
     const users = await prisma.user.findMany({
       where: {
         OR: [
           { email: { contains: query, mode: 'insensitive' } },
-          { firstName: { contains: query, mode: 'insensitive' } },
-          { lastName: { contains: query, mode: 'insensitive' } },
-          { phoneNumber: { contains: query } }
+          { name: { contains: query, mode: 'insensitive' } },
+          { phone: { contains: query } }
         ]
       },
       include: {
@@ -99,19 +98,16 @@ export async function GET(request: NextRequest) {
         }
       },
       take: 10,
-      orderBy: [
-        { firstName: 'asc' },
-        { lastName: 'asc' }
-      ]
+      orderBy: { name: 'asc' }
     })
 
     // Format results with "previous customer" flag
     const customers = users.map(user => ({
       id: user.id,
-      name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Guest',
+      name: user.name || 'Guest',
       email: user.email || '',
-      phone: user.phoneNumber || null,
-      photo: user.reviewerProfile?.profilePhotoUrl || user.profileImageUrl || null,
+      phone: user.phone || null,
+      photo: user.reviewerProfile?.profilePhotoUrl || user.image || null,
       reviewerProfileId: user.reviewerProfile?.id || null,
       location: user.reviewerProfile?.city && user.reviewerProfile?.state
         ? `${user.reviewerProfile.city}, ${user.reviewerProfile.state}`

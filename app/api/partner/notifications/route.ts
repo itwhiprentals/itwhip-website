@@ -77,11 +77,11 @@ export async function GET(request: NextRequest) {
           createdAt: { gte: thirtyDaysAgo }
         },
         include: {
-          rentalCar: {
+          car: {
             select: { make: true, model: true, year: true }
           },
-          user: {
-            select: { firstName: true, lastName: true }
+          renter: {
+            select: { name: true }
           }
         },
         orderBy: { createdAt: 'desc' },
@@ -89,11 +89,9 @@ export async function GET(request: NextRequest) {
       })
 
       bookings.forEach(booking => {
-        const guestName = booking.user
-          ? `${booking.user.firstName || ''} ${booking.user.lastName || ''}`.trim()
-          : booking.guestName || 'Guest'
-        const vehicleName = booking.rentalCar
-          ? `${booking.rentalCar.year} ${booking.rentalCar.make} ${booking.rentalCar.model}`
+        const guestName = booking.renter?.name || booking.guestName || 'Guest'
+        const vehicleName = booking.car
+          ? `${booking.car.year} ${booking.car.make} ${booking.car.model}`
           : 'Vehicle'
 
         let title = ''
@@ -149,11 +147,11 @@ export async function GET(request: NextRequest) {
         include: {
           booking: {
             include: {
-              rentalCar: {
+              car: {
                 select: { make: true, model: true, year: true }
               },
-              user: {
-                select: { firstName: true, lastName: true }
+              renter: {
+                select: { name: true }
               }
             }
           }
@@ -163,11 +161,9 @@ export async function GET(request: NextRequest) {
       })
 
       reviews.forEach(review => {
-        const guestName = review.booking?.user
-          ? `${review.booking.user.firstName || ''} ${review.booking.user.lastName || ''}`.trim()
-          : 'Guest'
-        const vehicleName = review.booking?.rentalCar
-          ? `${review.booking.rentalCar.year} ${review.booking.rentalCar.make} ${review.booking.rentalCar.model}`
+        const guestName = review.booking?.renter?.name || 'Guest'
+        const vehicleName = review.booking?.car
+          ? `${review.booking.car.year} ${review.booking.car.make} ${review.booking.car.model}`
           : 'Vehicle'
 
         notifications.push({
@@ -203,11 +199,11 @@ export async function GET(request: NextRequest) {
         include: {
           booking: {
             include: {
-              rentalCar: {
+              car: {
                 select: { make: true, model: true, year: true }
               },
-              user: {
-                select: { firstName: true, lastName: true }
+              renter: {
+                select: { name: true }
               }
             }
           }
@@ -217,9 +213,7 @@ export async function GET(request: NextRequest) {
       })
 
       unreadMessages.forEach(msg => {
-        const guestName = msg.booking?.user
-          ? `${msg.booking.user.firstName || ''} ${msg.booking.user.lastName || ''}`.trim()
-          : msg.senderName || 'Guest'
+        const guestName = msg.booking?.renter?.name || msg.senderName || 'Guest'
 
         notifications.push({
           id: `message_${msg.id}`,
@@ -314,7 +308,7 @@ export async function GET(request: NextRequest) {
         include: {
           booking: {
             include: {
-              rentalCar: {
+              car: {
                 select: { make: true, model: true, year: true }
               }
             }
@@ -325,8 +319,8 @@ export async function GET(request: NextRequest) {
       })
 
       claims.forEach(claim => {
-        const vehicleName = claim.booking?.rentalCar
-          ? `${claim.booking.rentalCar.year} ${claim.booking.rentalCar.make} ${claim.booking.rentalCar.model}`
+        const vehicleName = claim.booking?.car
+          ? `${claim.booking.car.year} ${claim.booking.car.make} ${claim.booking.car.model}`
           : 'Vehicle'
 
         let title = 'Claim Update'

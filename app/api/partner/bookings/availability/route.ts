@@ -65,7 +65,9 @@ export async function GET(request: NextRequest) {
         make: true,
         model: true,
         year: true,
-        status: true,
+        isActive: true,
+        safetyHold: true,
+        requiresInspection: true,
         minTripDuration: true
       }
     })
@@ -94,11 +96,11 @@ export async function GET(request: NextRequest) {
     }
 
     // Check for conflicting bookings
-    const conflicts = await prisma.booking.findMany({
+    const conflicts = await prisma.rentalBooking.findMany({
       where: {
-        rentalCarId: carId,
+        carId: carId,
         status: {
-          in: ['CONFIRMED', 'IN_PROGRESS', 'PENDING', 'PENDING_APPROVAL']
+          in: ['CONFIRMED', 'ACTIVE', 'PENDING']
         },
         OR: [
           {
@@ -113,10 +115,10 @@ export async function GET(request: NextRequest) {
         startDate: true,
         endDate: true,
         status: true,
-        user: {
+        guestName: true,
+        renter: {
           select: {
-            firstName: true,
-            lastName: true
+            name: true
           }
         }
       },
@@ -142,17 +144,24 @@ export async function GET(request: NextRequest) {
           startDate: c.startDate.toISOString(),
           endDate: c.endDate.toISOString(),
           status: c.status,
-          guestName: c.user ? `${c.user.firstName || ''} ${c.user.lastName || ''}`.trim() : 'Guest'
+          guestName: c.renter?.name || c.guestName || 'Guest'
         })),
         nextAvailable: nextAvailable.toISOString()
       })
     }
 
-    // Check if vehicle is in maintenance or unavailable status
-    if (car.status === 'MAINTENANCE' || car.status === 'UNAVAILABLE') {
+    // Check if vehicle is inactive or in maintenance
+    if (!car.isActive) {
       return NextResponse.json({
         available: false,
-        reason: `Vehicle is currently ${car.status.toLowerCase()}`
+        reason: 'Vehicle is currently inactive'
+      })
+    }
+
+    if (car.safetyHold || car.requiresInspection) {
+      return NextResponse.json({
+        available: false,
+        reason: 'Vehicle is currently in maintenance'
       })
     }
 

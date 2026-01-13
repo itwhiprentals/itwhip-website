@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
       include: {
         booking: {
           include: {
-            rentalCar: {
+            car: {
               select: {
                 id: true,
                 make: true,
@@ -86,11 +86,10 @@ export async function GET(request: NextRequest) {
                 primaryPhotoUrl: true
               }
             },
-            user: {
+            renter: {
               select: {
                 id: true,
-                firstName: true,
-                lastName: true,
+                name: true,
                 email: true,
                 image: true
               }
@@ -126,15 +125,13 @@ export async function GET(request: NextRequest) {
         conversationMap.set(bookingKey, {
           bookingId: booking.id,
           bookingCode: booking.bookingCode || booking.id.slice(0, 8),
-          vehicleName: booking.rentalCar
-            ? `${booking.rentalCar.year} ${booking.rentalCar.make} ${booking.rentalCar.model}`
+          vehicleName: booking.car
+            ? `${booking.car.year} ${booking.car.make} ${booking.car.model}`
             : 'Unknown Vehicle',
-          vehiclePhoto: booking.rentalCar?.primaryPhotoUrl || null,
-          guestName: booking.user
-            ? `${booking.user.firstName || ''} ${booking.user.lastName || ''}`.trim() || 'Guest'
-            : booking.guestName || 'Guest',
-          guestEmail: booking.user?.email || booking.guestEmail || null,
-          guestPhoto: booking.user?.image || null,
+          vehiclePhoto: booking.car?.primaryPhotoUrl || null,
+          guestName: booking.renter?.name || booking.guestName || 'Guest',
+          guestEmail: booking.renter?.email || booking.guestEmail || null,
+          guestPhoto: booking.renter?.image || null,
           messages: [],
           unreadCount: 0,
           hasUrgent: false,

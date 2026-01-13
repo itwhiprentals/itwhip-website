@@ -20,10 +20,15 @@ import {
   IoCheckmarkOutline,
   IoChevronForwardOutline,
   IoShieldCheckmarkOutline,
+  IoShieldOutline,
   IoMailOutline,
   IoTimeOutline,
-  IoAlertCircleOutline
+  IoAlertCircleOutline,
+  IoAirplaneOutline,
+  IoBusinessOutline,
+  IoWalletOutline
 } from 'react-icons/io5'
+import { AddressAutocomplete, AddressResult } from '@/app/components/shared/AddressAutocomplete'
 
 interface Customer {
   id: string
@@ -45,14 +50,48 @@ interface Vehicle {
   make: string
   model: string
   year: number
-  primaryPhotoUrl: string | null
+  photo: string | null
   dailyRate: number
   weeklyRate: number | null
   monthlyRate: number | null
   vehicleType: string
   minTripDuration: number
   status: string
+  // Vehicle specs
+  carType: string
+  currentMileage: number | null
+  // Insurance fields
+  insuranceEligible?: boolean
+  insuranceInfo?: {
+    hasOwnInsurance: boolean
+    provider: string | null
+    policyNumber: string | null
+    useForRentals: boolean
+  } | null
 }
+
+// Arizona airports for dropdown
+const ARIZONA_AIRPORTS = [
+  { code: 'PHX', name: 'Phoenix Sky Harbor International Airport' },
+  { code: 'TUS', name: 'Tucson International Airport' },
+  { code: 'AZA', name: 'Phoenix-Mesa Gateway Airport' },
+  { code: 'SDL', name: 'Scottsdale Airport' },
+  { code: 'GCN', name: 'Grand Canyon National Park Airport' },
+  { code: 'FLG', name: 'Flagstaff Pulliam Airport' },
+  { code: 'YUM', name: 'Yuma International Airport' },
+  { code: 'PRC', name: 'Prescott Ernest A. Love Field' },
+  { code: 'IWA', name: 'Phoenix-Mesa Gateway Airport (IWA)' },
+  { code: 'DVT', name: 'Phoenix Deer Valley Airport' }
+]
+
+// Delivery/Airport fees
+const DELIVERY_FEES = {
+  partner: 0,
+  delivery: 35,
+  airport: 25
+}
+
+type InsuranceOption = 'vehicle' | 'guest' | 'partner' | 'none'
 
 interface AvailabilityResult {
   available: boolean
@@ -78,7 +117,27 @@ export default function NewBookingPage() {
   const [searchResults, setSearchResults] = useState<Customer[]>([])
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
   const [showNewCustomerForm, setShowNewCustomerForm] = useState(false)
-  const [newCustomer, setNewCustomer] = useState({ name: '', email: '', phone: '' })
+  const [newCustomer, setNewCustomer] = useState({ firstName: '', lastName: '', email: '', phone: '' })
+
+  // Phone number formatting helper
+  const formatPhoneNumber = (value: string) => {
+    // Remove all non-digit characters
+    const digits = value.replace(/\D/g, '')
+
+    // Format as (###) ###-####
+    if (digits.length <= 3) {
+      return digits
+    } else if (digits.length <= 6) {
+      return `(${digits.slice(0, 3)}) ${digits.slice(3)}`
+    } else {
+      return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`
+    }
+  }
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatPhoneNumber(e.target.value)
+    setNewCustomer(prev => ({ ...prev, phone: formatted }))
+  }
 
   // Vehicle selection
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
@@ -91,17 +150,92 @@ export default function NewBookingPage() {
   const [availability, setAvailability] = useState<AvailabilityResult | null>(null)
   const [checkingAvailability, setCheckingAvailability] = useState(false)
 
+  // Helper to calculate minimum end date based on vehicle's minimum trip duration
+  const getMinEndDate = (start: string, minDays: number) => {
+    if (!start) return ''
+    const startDateObj = new Date(start)
+    startDateObj.setDate(startDateObj.getDate() + minDays)
+    return startDateObj.toISOString().split('T')[0]
+  }
+
+  // Handle start date change - auto-adjust end date for rideshare minimum
+  const handleStartDateChange = (newStartDate: string) => {
+    setStartDate(newStartDate)
+
+    if (selectedVehicle && newStartDate) {
+      const minDays = selectedVehicle.minTripDuration || 1
+      const minEndDate = getMinEndDate(newStartDate, minDays)
+
+      // If current end date is less than minimum, auto-adjust it
+      if (!endDate || endDate < minEndDate) {
+        setEndDate(minEndDate)
+      }
+    }
+  }
+
+  // Handle vehicle selection - auto-adjust end date if needed
+  const handleVehicleSelect = (vehicle: Vehicle) => {
+    setSelectedVehicle(vehicle)
+
+    // If start date is already set, ensure end date meets minimum
+    if (startDate) {
+      const minDays = vehicle.minTripDuration || 1
+      const minEndDate = getMinEndDate(startDate, minDays)
+
+      if (!endDate || endDate < minEndDate) {
+        setEndDate(minEndDate)
+      }
+    }
+  }
+
   // Booking details
   const [pickupType, setPickupType] = useState<'partner' | 'delivery' | 'airport'>('partner')
   const [pickupLocation, setPickupLocation] = useState('')
+  const [selectedAirport, setSelectedAirport] = useState('')
   const [notes, setNotes] = useState('')
   const [paymentType, setPaymentType] = useState<'offline' | 'collect_later'>('offline')
+
+  // Partner business address
+  const [partnerAddress, setPartnerAddress] = useState<{
+    address: string
+    city: string
+    state: string
+    zipCode: string
+  } | null>(null)
+
+  // Partner tier and commission rate
+  const [partnerTier, setPartnerTier] = useState<{
+    tier: string
+    commissionRate: number
+    fleetSize: number
+  } | null>(null)
+
+  // Insurance
+  const [insuranceOption, setInsuranceOption] = useState<InsuranceOption>('guest')
+  const [partnerInsurance, setPartnerInsurance] = useState<{
+    hasInsurance: boolean
+    coversDuringRentals: boolean
+    insuranceProvider: string | null
+    rentalCoveredVehicleIds: string[]
+  } | null>(null)
+
+  // Guest insurance info (when guest must provide their own)
+  const [guestInsurance, setGuestInsurance] = useState({
+    hasConfirmed: false,
+    provider: '',
+    policyNumber: ''
+  })
 
   // Verification
   const [sendingVerification, setSendingVerification] = useState(false)
   const [verificationSent, setVerificationSent] = useState(false)
   const [verificationError, setVerificationError] = useState('')
   const [skipVerification, setSkipVerification] = useState(false)
+
+  // Send review to customer
+  const [sendingReview, setSendingReview] = useState(false)
+  const [reviewSent, setReviewSent] = useState(false)
+  const [preBookingId, setPreBookingId] = useState<string | null>(null)
 
   // Load preselected customer
   useEffect(() => {
@@ -110,10 +244,55 @@ export default function NewBookingPage() {
     }
   }, [preselectedCustomerId])
 
-  // Load vehicles on mount
+  // Load vehicles and partner info on mount
   useEffect(() => {
     fetchVehicles()
+    fetchPartnerInsurance()
+    fetchPartnerAddress()
   }, [])
+
+  const fetchPartnerAddress = async () => {
+    try {
+      const response = await fetch('/api/partner/settings')
+      const data = await response.json()
+      if (data.success) {
+        if (data.partner) {
+          setPartnerAddress({
+            address: data.partner.businessAddress || '',
+            city: data.partner.businessCity || '',
+            state: data.partner.businessState || '',
+            zipCode: data.partner.businessZipCode || ''
+          })
+        }
+        if (data.tier) {
+          setPartnerTier({
+            tier: data.tier.name || 'Standard',
+            commissionRate: data.tier.commissionRate || 0.25,
+            fleetSize: data.tier.fleetSize || 0
+          })
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch partner address:', error)
+    }
+  }
+
+  const fetchPartnerInsurance = async () => {
+    try {
+      const response = await fetch('/api/partner/insurance')
+      const data = await response.json()
+      if (data.success) {
+        setPartnerInsurance({
+          hasInsurance: data.insurance.hasPartnerInsurance,
+          coversDuringRentals: data.insurance.coversDuringRentals || false,
+          insuranceProvider: data.insurance.insuranceProvider || null,
+          rentalCoveredVehicleIds: data.insurance.rentalCoveredVehicleIds || []
+        })
+      }
+    } catch (error) {
+      console.error('Failed to fetch partner insurance:', error)
+    }
+  }
 
   const loadPreselectedCustomer = async (id: string) => {
     try {
@@ -139,7 +318,8 @@ export default function NewBookingPage() {
       const response = await fetch('/api/partner/fleet')
       const data = await response.json()
       if (data.success) {
-        setVehicles(data.vehicles.filter((v: Vehicle) => v.status === 'AVAILABLE'))
+        // Filter for available vehicles (API returns lowercase 'available')
+        setVehicles(data.vehicles.filter((v: Vehicle) => v.status === 'available'))
       }
     } catch (error) {
       console.error('Failed to fetch vehicles:', error)
@@ -164,8 +344,8 @@ export default function NewBookingPage() {
   }
 
   const createNewCustomer = async () => {
-    if (!newCustomer.name || !newCustomer.email) {
-      setError('Name and email are required')
+    if (!newCustomer.firstName || !newCustomer.email) {
+      setError('First name and email are required')
       return
     }
 
@@ -176,7 +356,12 @@ export default function NewBookingPage() {
       const response = await fetch('/api/partner/customers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newCustomer)
+        body: JSON.stringify({
+          firstName: newCustomer.firstName.trim(),
+          lastName: newCustomer.lastName.trim(),
+          email: newCustomer.email.trim().toLowerCase(),
+          phone: newCustomer.phone || null
+        })
       })
 
       const data = await response.json()
@@ -184,8 +369,9 @@ export default function NewBookingPage() {
       if (data.success) {
         setSelectedCustomer(data.customer)
         setShowNewCustomerForm(false)
-        setNewCustomer({ name: '', email: '', phone: '' })
-        setCurrentStep('vehicle')
+        setNewCustomer({ firstName: '', lastName: '', email: '', phone: '' })
+        // Go to verify step instead of skipping it
+        setCurrentStep('verify')
       } else {
         setError(data.error || 'Failed to create customer')
       }
@@ -226,20 +412,95 @@ export default function NewBookingPage() {
     }
   }, [selectedVehicle, startDate, endDate])
 
-  const calculateTotal = () => {
-    if (!selectedVehicle || !availability?.tripDays) return 0
+  // Tax rates (Arizona)
+  const TAX_RATES = {
+    stateSalesTax: 0.056, // 5.6% Arizona state sales tax
+    countyTax: 0.007, // 0.7% Maricopa County
+    cityTax: 0.023, // 2.3% Phoenix city tax
+    rentalTax: 0.05, // 5% rental surcharge
+    serviceFeePercent: 0.10 // 10% platform service fee
+  }
+
+  const calculatePriceBreakdown = () => {
+    if (!selectedVehicle || !availability?.tripDays) {
+      return {
+        days: 0,
+        dailyRate: 0,
+        rentalSubtotal: 0,
+        deliveryFee: 0,
+        serviceFee: 0,
+        stateTax: 0,
+        countyTax: 0,
+        cityTax: 0,
+        rentalTax: 0,
+        totalTaxes: 0,
+        total: 0,
+        // Payout breakdown
+        platformCommissionRate: 0,
+        platformCommission: 0,
+        partnerPayout: 0
+      }
+    }
 
     const days = availability.tripDays
     const dailyRate = selectedVehicle.dailyRate
     const weeklyRate = selectedVehicle.weeklyRate || dailyRate * 6.5
     const monthlyRate = selectedVehicle.monthlyRate || dailyRate * 25
 
+    // Calculate rental subtotal with weekly/monthly discounts
+    let rentalSubtotal = 0
     if (days >= 28) {
-      return monthlyRate * Math.floor(days / 28) + dailyRate * (days % 28)
+      rentalSubtotal = monthlyRate * Math.floor(days / 28) + dailyRate * (days % 28)
     } else if (days >= 7) {
-      return weeklyRate * Math.floor(days / 7) + dailyRate * (days % 7)
+      rentalSubtotal = weeklyRate * Math.floor(days / 7) + dailyRate * (days % 7)
+    } else {
+      rentalSubtotal = dailyRate * days
     }
-    return dailyRate * days
+
+    // Delivery/Airport fee
+    const deliveryFee = DELIVERY_FEES[pickupType] || 0
+
+    // Service fee (platform fee from customer - separate from partner commission)
+    const serviceFee = rentalSubtotal * TAX_RATES.serviceFeePercent
+
+    // Calculate taxes on subtotal + service fee
+    const taxableAmount = rentalSubtotal + serviceFee
+    const stateTax = taxableAmount * TAX_RATES.stateSalesTax
+    const countyTax = taxableAmount * TAX_RATES.countyTax
+    const cityTax = taxableAmount * TAX_RATES.cityTax
+    const rentalTax = taxableAmount * TAX_RATES.rentalTax
+    const totalTaxes = stateTax + countyTax + cityTax + rentalTax
+
+    // Total customer pays
+    const total = rentalSubtotal + deliveryFee + serviceFee + totalTaxes
+
+    // Partner payout calculation (commission is on rental subtotal only)
+    const platformCommissionRate = partnerTier?.commissionRate || 0.25
+    const platformCommission = rentalSubtotal * platformCommissionRate
+    // Partner gets: rental subtotal - platform commission + delivery fees (partner keeps delivery fees)
+    const partnerPayout = rentalSubtotal - platformCommission + deliveryFee
+
+    return {
+      days,
+      dailyRate,
+      rentalSubtotal,
+      deliveryFee,
+      serviceFee,
+      stateTax,
+      countyTax,
+      cityTax,
+      rentalTax,
+      totalTaxes,
+      total,
+      // Payout breakdown
+      platformCommissionRate,
+      platformCommission,
+      partnerPayout
+    }
+  }
+
+  const calculateTotal = () => {
+    return calculatePriceBreakdown().total
   }
 
   const createBooking = async () => {
@@ -264,7 +525,11 @@ export default function NewBookingPage() {
           pickupLocation: pickupType !== 'partner' ? pickupLocation : null,
           notes,
           totalPrice: calculateTotal(),
-          paymentType
+          paymentType,
+          insuranceOption,
+          insuranceSource: insuranceOption === 'vehicle' ? 'VEHICLE' :
+                          insuranceOption === 'partner' ? 'PARTNER' :
+                          insuranceOption === 'guest' ? 'GUEST' : 'NONE'
         })
       })
 
@@ -332,6 +597,58 @@ export default function NewBookingPage() {
       setVerificationError('Failed to send verification email')
     } finally {
       setSendingVerification(false)
+    }
+  }
+
+  // Send booking review to customer for verification
+  const sendBookingReview = async () => {
+    if (!selectedCustomer || !selectedVehicle || !startDate || !endDate) {
+      setError('Please complete all required fields')
+      return
+    }
+
+    setSendingReview(true)
+    setError('')
+
+    try {
+      // Calculate price breakdown for the email
+      const breakdown = calculatePriceBreakdown()
+
+      const response = await fetch('/api/partner/bookings/send-review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerId: selectedCustomer.id,
+          carId: selectedVehicle.id,
+          startDate,
+          endDate,
+          pickupType,
+          pickupLocation: pickupType === 'delivery' ? pickupLocation : null,
+          selectedAirport: pickupType === 'airport' ? selectedAirport : null,
+          notes,
+          insuranceOption,
+          priceBreakdown: breakdown.total > 0 ? {
+            rentalSubtotal: breakdown.rentalSubtotal,
+            deliveryFee: breakdown.deliveryFee,
+            serviceFee: breakdown.serviceFee,
+            totalTaxes: breakdown.totalTaxes,
+            total: breakdown.total
+          } : null
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setReviewSent(true)
+        setPreBookingId(data.booking.id)
+      } else {
+        setError(data.error || 'Failed to send booking review')
+      }
+    } catch (err) {
+      setError('Failed to send booking review')
+    } finally {
+      setSendingReview(false)
     }
   }
 
@@ -499,15 +816,27 @@ export default function NewBookingPage() {
                 ) : (
                   <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-4">
                     <h3 className="font-medium text-gray-900 dark:text-white">New Customer</h3>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name *</label>
-                      <input
-                        type="text"
-                        value={newCustomer.name}
-                        onChange={(e) => setNewCustomer(prev => ({ ...prev, name: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
-                        placeholder="Full name"
-                      />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">First Name *</label>
+                        <input
+                          type="text"
+                          value={newCustomer.firstName}
+                          onChange={(e) => setNewCustomer(prev => ({ ...prev, firstName: e.target.value }))}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                          placeholder="First name"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Last Name</label>
+                        <input
+                          type="text"
+                          value={newCustomer.lastName}
+                          onChange={(e) => setNewCustomer(prev => ({ ...prev, lastName: e.target.value }))}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                          placeholder="Last name"
+                        />
+                      </div>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email *</label>
@@ -524,7 +853,7 @@ export default function NewBookingPage() {
                       <input
                         type="tel"
                         value={newCustomer.phone}
-                        onChange={(e) => setNewCustomer(prev => ({ ...prev, phone: e.target.value }))}
+                        onChange={handlePhoneChange}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
                         placeholder="(555) 123-4567"
                       />
@@ -735,7 +1064,7 @@ export default function NewBookingPage() {
               {filteredVehicles.map((vehicle) => (
                 <button
                   key={vehicle.id}
-                  onClick={() => setSelectedVehicle(vehicle)}
+                  onClick={() => handleVehicleSelect(vehicle)}
                   className={`p-4 border-2 rounded-lg text-left transition-colors ${
                     selectedVehicle?.id === vehicle.id
                       ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20'
@@ -744,8 +1073,8 @@ export default function NewBookingPage() {
                 >
                   <div className="flex gap-3">
                     <div className="w-20 h-16 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden flex-shrink-0">
-                      {vehicle.primaryPhotoUrl ? (
-                        <img src={vehicle.primaryPhotoUrl} alt="" className="w-full h-full object-cover" />
+                      {vehicle.photo ? (
+                        <img src={vehicle.photo} alt="" className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
                           <IoCarOutline className="w-8 h-8 text-gray-400" />
@@ -813,13 +1142,76 @@ export default function NewBookingPage() {
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Select Dates</h2>
 
+            {/* Selected Vehicle Display */}
+            {selectedVehicle && (
+              <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg flex items-center gap-3 border border-gray-200 dark:border-gray-600">
+                {selectedVehicle.photo ? (
+                  <img
+                    src={selectedVehicle.photo}
+                    alt={`${selectedVehicle.year} ${selectedVehicle.make} ${selectedVehicle.model}`}
+                    className="w-20 h-14 object-cover rounded-md"
+                  />
+                ) : (
+                  <div className="w-20 h-14 bg-gray-200 dark:bg-gray-600 rounded-md flex items-center justify-center">
+                    <IoCarOutline className="w-6 h-6 text-gray-400" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-gray-900 dark:text-white truncate">
+                    {selectedVehicle.year} {selectedVehicle.make} {selectedVehicle.model}
+                  </p>
+                  <div className="flex items-center flex-wrap gap-2 mt-1">
+                    <span className="text-sm font-medium text-orange-600 dark:text-orange-400">
+                      ${selectedVehicle.dailyRate}/day
+                    </span>
+                    <span className="text-xs px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300">
+                      {selectedVehicle.carType || 'Standard'}
+                    </span>
+                    {selectedVehicle.currentMileage && (
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        {selectedVehicle.currentMileage.toLocaleString()} mi
+                      </span>
+                    )}
+                    <span className={`text-xs px-1.5 py-0.5 rounded ${
+                      selectedVehicle.vehicleType === 'RIDESHARE'
+                        ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
+                        : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                    }`}>
+                      {selectedVehicle.vehicleType === 'RIDESHARE' ? 'Rideshare' : 'Rental'}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setCurrentStep('vehicle')}
+                  className="text-xs text-orange-600 hover:text-orange-700 dark:text-orange-400 font-medium"
+                >
+                  Change
+                </button>
+              </div>
+            )}
+
+            {/* Minimum days notice for rideshare */}
+            {selectedVehicle && selectedVehicle.minTripDuration > 1 && (
+              <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg flex items-start gap-2">
+                <IoAlertCircleOutline className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-blue-700 dark:text-blue-400">
+                    {selectedVehicle.vehicleType === 'RIDESHARE' ? 'Rideshare Vehicle' : 'Vehicle'} - Minimum {selectedVehicle.minTripDuration} Day Rental
+                  </p>
+                  <p className="text-xs text-blue-600 dark:text-blue-500 mt-0.5">
+                    This vehicle requires a minimum rental period of {selectedVehicle.minTripDuration} days.
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date</label>
                 <input
                   type="date"
                   value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
+                  onChange={(e) => handleStartDateChange(e.target.value)}
                   min={new Date().toISOString().split('T')[0]}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
                 />
@@ -830,7 +1222,7 @@ export default function NewBookingPage() {
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  min={startDate || new Date().toISOString().split('T')[0]}
+                  min={startDate ? getMinEndDate(startDate, selectedVehicle?.minTripDuration || 1) : new Date().toISOString().split('T')[0]}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
                 />
               </div>
@@ -882,37 +1274,200 @@ export default function NewBookingPage() {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Pickup Type</label>
               <div className="grid grid-cols-3 gap-2">
                 {([
-                  { key: 'partner', label: 'Partner Location' },
-                  { key: 'delivery', label: 'Delivery' },
-                  { key: 'airport', label: 'Airport' }
+                  { key: 'partner', label: 'Partner Location', icon: IoBusinessOutline, fee: DELIVERY_FEES.partner },
+                  { key: 'delivery', label: 'Delivery', icon: IoLocationOutline, fee: DELIVERY_FEES.delivery },
+                  { key: 'airport', label: 'Airport', icon: IoAirplaneOutline, fee: DELIVERY_FEES.airport }
                 ] as const).map((option) => (
                   <button
                     key={option.key}
-                    onClick={() => setPickupType(option.key)}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    onClick={() => {
+                      setPickupType(option.key)
+                      if (option.key === 'partner') {
+                        setPickupLocation('')
+                        setSelectedAirport('')
+                      }
+                    }}
+                    className={`px-3 py-3 rounded-lg text-sm font-medium transition-colors flex flex-col items-center gap-1 ${
                       pickupType === option.key
                         ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 border-2 border-orange-500'
                         : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-2 border-transparent'
                     }`}
                   >
-                    {option.label}
+                    <option.icon className="w-5 h-5" />
+                    <span>{option.label}</span>
+                    {option.fee > 0 && (
+                      <span className="text-xs text-gray-500">+${option.fee}</span>
+                    )}
                   </button>
                 ))}
               </div>
             </div>
 
-            {pickupType !== 'partner' && (
+            {/* Partner Location Display */}
+            {pickupType === 'partner' && (
+              <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-start gap-2">
+                  <IoBusinessOutline className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-blue-700 dark:text-blue-300">Pickup at Partner Location</p>
+                    {partnerAddress && partnerAddress.address ? (
+                      <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                        {partnerAddress.address}, {partnerAddress.city}, {partnerAddress.state} {partnerAddress.zipCode}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-blue-500 dark:text-blue-500 mt-1">
+                        Business address will be used for pickup
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Delivery Address with Mapbox */}
+            {pickupType === 'delivery' && (
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {pickupType === 'airport' ? 'Airport' : 'Delivery Address'}
+                  Delivery Address
                 </label>
-                <input
-                  type="text"
+                <AddressAutocomplete
                   value={pickupLocation}
-                  onChange={(e) => setPickupLocation(e.target.value)}
-                  placeholder={pickupType === 'airport' ? 'e.g., Phoenix Sky Harbor (PHX)' : 'Enter delivery address'}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                  onAddressSelect={(address: AddressResult) => {
+                    setPickupLocation(address.fullAddress)
+                  }}
+                  placeholder="Search for delivery address..."
+                  className="w-full"
                 />
+                <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                  <IoLocationOutline className="w-3 h-3" />
+                  Delivery fee: ${DELIVERY_FEES.delivery}
+                </p>
+              </div>
+            )}
+
+            {/* Arizona Airports Dropdown */}
+            {pickupType === 'airport' && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Select Arizona Airport
+                </label>
+                <select
+                  value={selectedAirport}
+                  onChange={(e) => {
+                    setSelectedAirport(e.target.value)
+                    const airport = ARIZONA_AIRPORTS.find(a => a.code === e.target.value)
+                    if (airport) {
+                      setPickupLocation(`${airport.name} (${airport.code})`)
+                    }
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                >
+                  <option value="">Select an airport...</option>
+                  {ARIZONA_AIRPORTS.map((airport) => (
+                    <option key={airport.code} value={airport.code}>
+                      {airport.name} ({airport.code})
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                  <IoAirplaneOutline className="w-3 h-3" />
+                  Airport pickup fee: ${DELIVERY_FEES.airport}
+                </p>
+              </div>
+            )}
+
+            {/* Insurance Status Indicator */}
+            {selectedVehicle && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                  <IoShieldOutline className="w-4 h-4" />
+                  Insurance Status
+                </label>
+                {(() => {
+                  const hasVehicleInsurance = selectedVehicle.insuranceEligible && selectedVehicle.insuranceInfo?.useForRentals
+                  const hasPartnerCoverage = partnerInsurance?.hasInsurance &&
+                    partnerInsurance?.coversDuringRentals &&
+                    partnerInsurance.rentalCoveredVehicleIds?.includes(selectedVehicle.id)
+
+                  if (hasVehicleInsurance) {
+                    return (
+                      <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg flex items-start gap-2">
+                        <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium text-green-700 dark:text-green-300">Vehicle Insurance</p>
+                          <p className="text-xs text-green-600 dark:text-green-400">
+                            Covered by {selectedVehicle.insuranceInfo?.provider || 'vehicle policy'}
+                          </p>
+                        </div>
+                      </div>
+                    )
+                  } else if (hasPartnerCoverage) {
+                    return (
+                      <div className="p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg flex items-start gap-2">
+                        <IoCheckmarkCircleOutline className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium text-purple-700 dark:text-purple-300">Partner Insurance</p>
+                          <p className="text-xs text-purple-600 dark:text-purple-400">
+                            Covered by your business insurance{partnerInsurance?.insuranceProvider ? ` (${partnerInsurance.insuranceProvider})` : ''}
+                          </p>
+                        </div>
+                      </div>
+                    )
+                  } else {
+                    return (
+                      <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                        <div className="flex items-start gap-2 mb-3">
+                          <IoWarningOutline className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-sm font-medium text-amber-700 dark:text-amber-300">Guest Must Provide Insurance</p>
+                            <p className="text-xs text-amber-600 dark:text-amber-400">
+                              This vehicle has no coverage. Customer must bring their own insurance at pickup.
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Guest Insurance Options */}
+                        <div className="mt-3 pt-3 border-t border-amber-200 dark:border-amber-700 space-y-3">
+                          {/* Option 1: Add guest insurance info now */}
+                          <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
+                            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                              Add guest insurance info (optional):
+                            </p>
+                            <div className="grid grid-cols-2 gap-2">
+                              <input
+                                type="text"
+                                value={guestInsurance.provider}
+                                onChange={(e) => setGuestInsurance(prev => ({ ...prev, provider: e.target.value }))}
+                                placeholder="Insurance Provider"
+                                className="px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                              />
+                              <input
+                                type="text"
+                                value={guestInsurance.policyNumber}
+                                onChange={(e) => setGuestInsurance(prev => ({ ...prev, policyNumber: e.target.value }))}
+                                placeholder="Policy Number"
+                                className="px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Option 2: Confirm guest will bring insurance */}
+                          <label className="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-lg p-3 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={guestInsurance.hasConfirmed}
+                              onChange={(e) => setGuestInsurance(prev => ({ ...prev, hasConfirmed: e.target.checked }))}
+                              className="w-4 h-4 text-amber-600 rounded focus:ring-amber-500"
+                            />
+                            <span className="text-sm text-gray-700 dark:text-gray-300">
+                              Guest/Customer/Driver will bring valid insurance at pickup
+                            </span>
+                          </label>
+                        </div>
+                      </div>
+                    )
+                  }
+                })()}
               </div>
             )}
 
@@ -950,6 +1505,50 @@ export default function NewBookingPage() {
         {currentStep === 'confirm' && (
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Review & Confirm</h2>
+
+            {/* Prominent Selected Vehicle Display */}
+            {selectedVehicle && (
+              <div className="mb-6 p-4 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                <div className="flex items-center gap-4">
+                  {selectedVehicle.photo ? (
+                    <img
+                      src={selectedVehicle.photo}
+                      alt={`${selectedVehicle.year} ${selectedVehicle.make} ${selectedVehicle.model}`}
+                      className="w-28 h-20 object-cover rounded-lg shadow-sm"
+                    />
+                  ) : (
+                    <div className="w-28 h-20 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center">
+                      <IoCarOutline className="w-8 h-8 text-gray-400" />
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <p className="text-lg font-bold text-gray-900 dark:text-white">
+                      {selectedVehicle.year} {selectedVehicle.make} {selectedVehicle.model}
+                    </p>
+                    <div className="flex items-center flex-wrap gap-2 mt-1">
+                      <span className="text-orange-600 dark:text-orange-400 font-semibold">
+                        ${selectedVehicle.dailyRate}/day
+                      </span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium">
+                        {selectedVehicle.carType || 'Standard'}
+                      </span>
+                      {selectedVehicle.currentMileage && (
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {selectedVehicle.currentMileage.toLocaleString()} mi
+                        </span>
+                      )}
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                        selectedVehicle.vehicleType === 'RIDESHARE'
+                          ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300'
+                          : 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
+                      }`}>
+                        {selectedVehicle.vehicleType === 'RIDESHARE' ? 'Rideshare' : 'Rental'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Summary */}
             <div className="space-y-4 mb-6">
@@ -992,18 +1591,223 @@ export default function NewBookingPage() {
                 </div>
               </div>
 
-              {/* Pickup */}
-              {pickupType !== 'partner' && pickupLocation && (
-                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                  <div className="flex items-center gap-3">
+              {/* Pickup Location */}
+              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  {pickupType === 'airport' ? (
+                    <IoAirplaneOutline className="w-5 h-5 text-gray-400" />
+                  ) : pickupType === 'delivery' ? (
                     <IoLocationOutline className="w-5 h-5 text-gray-400" />
-                    <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {pickupType === 'airport' ? 'Airport Pickup' : 'Delivery'}
+                  ) : (
+                    <IoBusinessOutline className="w-5 h-5 text-gray-400" />
+                  )}
+                  <div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {pickupType === 'airport' ? 'Airport Pickup' : pickupType === 'delivery' ? 'Delivery' : 'Partner Location'}
+                    </p>
+                    <p className="font-medium text-gray-900 dark:text-white">
+                      {pickupType === 'partner'
+                        ? (partnerAddress?.address
+                            ? `${partnerAddress.address}, ${partnerAddress.city}, ${partnerAddress.state}`
+                            : 'Business location')
+                        : pickupLocation || 'Not specified'}
+                    </p>
+                    {DELIVERY_FEES[pickupType] > 0 && (
+                      <p className="text-xs text-orange-600 dark:text-orange-400 mt-0.5">
+                        +${DELIVERY_FEES[pickupType]} {pickupType === 'airport' ? 'airport fee' : 'delivery fee'}
                       </p>
-                      <p className="font-medium text-gray-900 dark:text-white">{pickupLocation}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Current Insurance Status */}
+              {selectedVehicle && (
+                <div className={`flex items-center justify-between p-4 rounded-lg ${
+                  (() => {
+                    const hasVehicleIns = selectedVehicle.insuranceEligible && selectedVehicle.insuranceInfo?.useForRentals
+                    const hasPartnerIns = partnerInsurance?.hasInsurance &&
+                      partnerInsurance?.coversDuringRentals &&
+                      partnerInsurance.rentalCoveredVehicleIds?.includes(selectedVehicle.id)
+                    if (hasVehicleIns) return 'bg-green-50 dark:bg-green-900/20'
+                    if (hasPartnerIns) return 'bg-purple-50 dark:bg-purple-900/20'
+                    return 'bg-amber-50 dark:bg-amber-900/20'
+                  })()
+                }`}>
+                  <div className="flex items-center gap-3">
+                    <IoShieldOutline className={`w-5 h-5 ${
+                      (() => {
+                        const hasVehicleIns = selectedVehicle.insuranceEligible && selectedVehicle.insuranceInfo?.useForRentals
+                        const hasPartnerIns = partnerInsurance?.hasInsurance &&
+                          partnerInsurance?.coversDuringRentals &&
+                          partnerInsurance.rentalCoveredVehicleIds?.includes(selectedVehicle.id)
+                        if (hasVehicleIns) return 'text-green-600'
+                        if (hasPartnerIns) return 'text-purple-600'
+                        return 'text-amber-600'
+                      })()
+                    }`} />
+                    <div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Insurance Coverage</p>
+                      <p className={`font-medium ${
+                        (() => {
+                          const hasVehicleIns = selectedVehicle.insuranceEligible && selectedVehicle.insuranceInfo?.useForRentals
+                          const hasPartnerIns = partnerInsurance?.hasInsurance &&
+                            partnerInsurance?.coversDuringRentals &&
+                            partnerInsurance.rentalCoveredVehicleIds?.includes(selectedVehicle.id)
+                          if (hasVehicleIns) return 'text-green-700 dark:text-green-300'
+                          if (hasPartnerIns) return 'text-purple-700 dark:text-purple-300'
+                          return 'text-amber-700 dark:text-amber-300'
+                        })()
+                      }`}>
+                        {(() => {
+                          const hasVehicleIns = selectedVehicle.insuranceEligible && selectedVehicle.insuranceInfo?.useForRentals
+                          const hasPartnerIns = partnerInsurance?.hasInsurance &&
+                            partnerInsurance?.coversDuringRentals &&
+                            partnerInsurance.rentalCoveredVehicleIds?.includes(selectedVehicle.id)
+                          if (hasVehicleIns) return `Vehicle: ${selectedVehicle.insuranceInfo?.provider || 'Own Policy'}`
+                          if (hasPartnerIns) return `Partner: ${partnerInsurance?.insuranceProvider || 'Business Policy'}`
+                          return 'Guest Must Provide'
+                        })()}
+                      </p>
                     </div>
                   </div>
+                </div>
+              )}
+            </div>
+
+            {/* Insurance Selection */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                <IoShieldOutline className="w-5 h-5" />
+                Insurance Coverage
+              </label>
+
+              {/* No Coverage Warning Banner */}
+              {selectedVehicle && (() => {
+                const hasVehicleIns = selectedVehicle.insuranceEligible && selectedVehicle.insuranceInfo?.useForRentals
+                const hasPartnerIns = partnerInsurance?.hasInsurance &&
+                  partnerInsurance?.coversDuringRentals &&
+                  partnerInsurance.rentalCoveredVehicleIds?.includes(selectedVehicle.id)
+
+                if (!hasVehicleIns && !hasPartnerIns) {
+                  return (
+                    <div className="mb-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg flex items-start gap-2">
+                      <IoWarningOutline className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-amber-700 dark:text-amber-300">No Insurance Coverage on This Vehicle</p>
+                        <p className="text-xs text-amber-600 dark:text-amber-400">
+                          Guest must bring their own valid insurance at pickup. Select how to proceed below.
+                        </p>
+                      </div>
+                    </div>
+                  )
+                }
+                return null
+              })()}
+
+              <div className="space-y-2">
+                {/* Vehicle Insurance Option - only show if vehicle has insurance */}
+                {selectedVehicle?.insuranceEligible && selectedVehicle?.insuranceInfo?.useForRentals && (
+                  <button
+                    onClick={() => setInsuranceOption('vehicle')}
+                    className={`w-full p-3 rounded-lg text-sm text-left transition-colors border-2 ${
+                      insuranceOption === 'vehicle'
+                        ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 text-blue-600 dark:text-blue-400'
+                        : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                        insuranceOption === 'vehicle' ? 'border-blue-500' : 'border-gray-400'
+                      }`}>
+                        {insuranceOption === 'vehicle' && <div className="w-2 h-2 rounded-full bg-blue-500" />}
+                      </div>
+                      <span className="font-medium">Vehicle Insurance</span>
+                    </div>
+                    <p className="text-xs opacity-75 ml-6 mt-1">
+                      Covered by {selectedVehicle.insuranceInfo.provider || 'vehicle policy'}
+                    </p>
+                  </button>
+                )}
+
+                {/* Partner Insurance Option - only show if partner has insurance that covers this vehicle */}
+                {partnerInsurance?.hasInsurance &&
+                 partnerInsurance?.coversDuringRentals &&
+                 selectedVehicle &&
+                 partnerInsurance.rentalCoveredVehicleIds?.includes(selectedVehicle.id) && (
+                  <button
+                    onClick={() => setInsuranceOption('partner')}
+                    className={`w-full p-3 rounded-lg text-sm text-left transition-colors border-2 ${
+                      insuranceOption === 'partner'
+                        ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-500 text-purple-600 dark:text-purple-400'
+                        : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                        insuranceOption === 'partner' ? 'border-purple-500' : 'border-gray-400'
+                      }`}>
+                        {insuranceOption === 'partner' && <div className="w-2 h-2 rounded-full bg-purple-500" />}
+                      </div>
+                      <span className="font-medium">Partner Insurance</span>
+                    </div>
+                    <p className="text-xs opacity-75 ml-6 mt-1">
+                      Covered by your business insurance{partnerInsurance.insuranceProvider ? ` (${partnerInsurance.insuranceProvider})` : ''}
+                    </p>
+                  </button>
+                )}
+
+                {/* Guest Provides Insurance */}
+                <button
+                  onClick={() => setInsuranceOption('guest')}
+                  className={`w-full p-3 rounded-lg text-sm text-left transition-colors border-2 ${
+                    insuranceOption === 'guest'
+                      ? 'bg-green-50 dark:bg-green-900/20 border-green-500 text-green-600 dark:text-green-400'
+                      : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                      insuranceOption === 'guest' ? 'border-green-500' : 'border-gray-400'
+                    }`}>
+                      {insuranceOption === 'guest' && <div className="w-2 h-2 rounded-full bg-green-500" />}
+                    </div>
+                    <span className="font-medium">Guest Provides Insurance</span>
+                  </div>
+                  <p className="text-xs opacity-75 ml-6 mt-1">
+                    Customer will use their own insurance policy
+                  </p>
+                </button>
+
+                {/* No Insurance - Warning */}
+                <button
+                  onClick={() => setInsuranceOption('none')}
+                  className={`w-full p-3 rounded-lg text-sm text-left transition-colors border-2 ${
+                    insuranceOption === 'none'
+                      ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-500 text-amber-600 dark:text-amber-400'
+                      : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                      insuranceOption === 'none' ? 'border-amber-500' : 'border-gray-400'
+                    }`}>
+                      {insuranceOption === 'none' && <div className="w-2 h-2 rounded-full bg-amber-500" />}
+                    </div>
+                    <span className="font-medium">No Insurance</span>
+                  </div>
+                  <p className="text-xs opacity-75 ml-6 mt-1">
+                    Proceed without insurance (not recommended)
+                  </p>
+                </button>
+              </div>
+
+              {insuranceOption === 'none' && (
+                <div className="mt-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg flex items-start gap-2">
+                  <IoWarningOutline className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-700 dark:text-amber-400">
+                    Proceeding without insurance is not recommended. You may be liable for any damages or accidents.
+                  </p>
                 </div>
               )}
             </div>
@@ -1037,40 +1841,248 @@ export default function NewBookingPage() {
               </div>
             </div>
 
-            {/* Total */}
-            <div className="p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg mb-6">
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-gray-900 dark:text-white">Total</span>
-                <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                  {formatCurrency(calculateTotal())}
-                </span>
-              </div>
+            {/* Price Breakdown */}
+            <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg mb-6 border border-gray-200 dark:border-gray-600">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Price Breakdown</h3>
+              {(() => {
+                const breakdown = calculatePriceBreakdown()
+                return (
+                  <div className="space-y-2 text-sm">
+                    {/* Rental */}
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">
+                        {formatCurrency(breakdown.dailyRate)} × {breakdown.days} {breakdown.days === 1 ? 'day' : 'days'}
+                      </span>
+                      <span className="text-gray-900 dark:text-white">{formatCurrency(breakdown.rentalSubtotal)}</span>
+                    </div>
+
+                    {/* Delivery/Airport Fee */}
+                    {breakdown.deliveryFee > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">
+                          {pickupType === 'airport' ? 'Airport pickup fee' : 'Delivery fee'}
+                        </span>
+                        <span className="text-gray-900 dark:text-white">{formatCurrency(breakdown.deliveryFee)}</span>
+                      </div>
+                    )}
+
+                    {/* Service Fee */}
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Service fee (10%)</span>
+                      <span className="text-gray-900 dark:text-white">{formatCurrency(breakdown.serviceFee)}</span>
+                    </div>
+
+                    {/* Divider */}
+                    <div className="border-t border-gray-200 dark:border-gray-600 my-2" />
+
+                    {/* Taxes Header */}
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-500 dark:text-gray-500 text-xs font-medium uppercase">Taxes & Fees</span>
+                    </div>
+
+                    {/* State Tax */}
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-500 dark:text-gray-400">Arizona State Tax (5.6%)</span>
+                      <span className="text-gray-700 dark:text-gray-300">{formatCurrency(breakdown.stateTax)}</span>
+                    </div>
+
+                    {/* County Tax */}
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-500 dark:text-gray-400">Maricopa County Tax (0.7%)</span>
+                      <span className="text-gray-700 dark:text-gray-300">{formatCurrency(breakdown.countyTax)}</span>
+                    </div>
+
+                    {/* City Tax */}
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-500 dark:text-gray-400">Phoenix City Tax (2.3%)</span>
+                      <span className="text-gray-700 dark:text-gray-300">{formatCurrency(breakdown.cityTax)}</span>
+                    </div>
+
+                    {/* Rental Tax */}
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-500 dark:text-gray-400">Rental Surcharge (5%)</span>
+                      <span className="text-gray-700 dark:text-gray-300">{formatCurrency(breakdown.rentalTax)}</span>
+                    </div>
+
+                    {/* Total Taxes */}
+                    <div className="flex justify-between pt-1">
+                      <span className="text-gray-600 dark:text-gray-400">Total Taxes</span>
+                      <span className="text-gray-900 dark:text-white">{formatCurrency(breakdown.totalTaxes)}</span>
+                    </div>
+
+                    {/* Total Divider */}
+                    <div className="border-t-2 border-orange-200 dark:border-orange-800 my-2" />
+
+                    {/* Grand Total */}
+                    <div className="flex justify-between items-center pt-1">
+                      <span className="font-bold text-gray-900 dark:text-white text-base">Total</span>
+                      <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                        {formatCurrency(breakdown.total)}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })()}
             </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => setCurrentStep('dates')}
-                className="px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium"
-              >
-                Back
-              </button>
-              <button
-                onClick={createBooking}
-                disabled={loading}
-                className="flex-1 px-4 py-3 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg font-medium flex items-center justify-center gap-2"
-              >
-                {loading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
-                    Creating...
-                  </>
-                ) : (
-                  <>
-                    <IoCheckmarkOutline className="w-5 h-5" />
-                    Create Booking
-                  </>
-                )}
-              </button>
+            {/* Partner Payout Estimate */}
+            <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg mb-6 border border-green-200 dark:border-green-800">
+              <h3 className="font-semibold text-green-800 dark:text-green-300 mb-3 flex items-center gap-2">
+                <IoWalletOutline className="w-5 h-5" />
+                Your Estimated Payout
+              </h3>
+              {(() => {
+                const breakdown = calculatePriceBreakdown()
+                const tierName = partnerTier?.tier || 'Standard'
+                const commissionPercent = Math.round((breakdown.platformCommissionRate || 0.25) * 100)
+
+                return (
+                  <div className="space-y-2 text-sm">
+                    {/* Tier Info */}
+                    <div className="flex items-center gap-2 mb-3 text-xs">
+                      <span className={`px-2 py-0.5 rounded-full font-medium ${
+                        tierName === 'Diamond' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300' :
+                        tierName === 'Platinum' ? 'bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-300' :
+                        tierName === 'Gold' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300' :
+                        'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
+                      }`}>
+                        {tierName} Tier
+                      </span>
+                      <span className="text-gray-500 dark:text-gray-400">
+                        {partnerTier?.fleetSize || 0} vehicles • {commissionPercent}% platform fee
+                      </span>
+                    </div>
+
+                    {/* Rental earnings */}
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Rental earnings</span>
+                      <span className="text-gray-900 dark:text-white">{formatCurrency(breakdown.rentalSubtotal)}</span>
+                    </div>
+
+                    {/* Delivery fee (if any) */}
+                    {breakdown.deliveryFee > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">
+                          {pickupType === 'airport' ? 'Airport fee (you keep)' : 'Delivery fee (you keep)'}
+                        </span>
+                        <span className="text-green-600 dark:text-green-400">+{formatCurrency(breakdown.deliveryFee)}</span>
+                      </div>
+                    )}
+
+                    {/* Platform commission */}
+                    <div className="flex justify-between text-red-600 dark:text-red-400">
+                      <span>Platform fee ({commissionPercent}%)</span>
+                      <span>-{formatCurrency(breakdown.platformCommission)}</span>
+                    </div>
+
+                    {/* Divider */}
+                    <div className="border-t border-green-200 dark:border-green-700 my-2" />
+
+                    {/* Your payout */}
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-green-800 dark:text-green-300">Your Payout</span>
+                      <span className="text-xl font-bold text-green-600 dark:text-green-400">
+                        {formatCurrency(breakdown.partnerPayout)}
+                      </span>
+                    </div>
+
+                    {/* Platform earnings note */}
+                    <div className="mt-3 pt-3 border-t border-green-200 dark:border-green-700 text-xs text-gray-500 dark:text-gray-400">
+                      <div className="flex justify-between">
+                        <span>Platform keeps (service fee + commission)</span>
+                        <span>{formatCurrency(breakdown.serviceFee + breakdown.platformCommission)}</span>
+                      </div>
+                      <p className="mt-1 text-gray-400 dark:text-gray-500">
+                        * This amount will be deducted from your next payout regardless of payment method
+                      </p>
+                    </div>
+                  </div>
+                )
+              })()}
+            </div>
+
+            {/* Review sent success message */}
+            {reviewSent && (
+              <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <IoCheckmarkCircleOutline className="w-6 h-6 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="font-medium text-green-800 dark:text-green-300">Review Sent Successfully</h4>
+                    <p className="text-sm text-green-700 dark:text-green-400 mt-1">
+                      Booking details have been sent to {selectedCustomer?.email}. A pre-booking has been created with reference <span className="font-mono font-semibold">{preBookingId?.slice(0, 8).toUpperCase()}</span>.
+                    </p>
+                    <p className="text-xs text-green-600 dark:text-green-500 mt-2">
+                      The customer can review and verify the details. You can still confirm the booking directly below.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="flex flex-col gap-3">
+              {/* Send for Review Button - only show if not sent yet */}
+              {!reviewSent && (
+                <button
+                  onClick={sendBookingReview}
+                  disabled={sendingReview || loading}
+                  className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg font-medium flex items-center justify-center gap-2"
+                >
+                  {sendingReview ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
+                      Sending Review...
+                    </>
+                  ) : (
+                    <>
+                      <IoMailOutline className="w-5 h-5" />
+                      Send to Customer for Review
+                    </>
+                  )}
+                </button>
+              )}
+
+              {/* Divider with "or" */}
+              {!reviewSent && (
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 border-t border-gray-200 dark:border-gray-700" />
+                  <span className="text-sm text-gray-500 dark:text-gray-400">or</span>
+                  <div className="flex-1 border-t border-gray-200 dark:border-gray-700" />
+                </div>
+              )}
+
+              {/* Back and Create Booking buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setCurrentStep('dates')}
+                  className="px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium"
+                >
+                  Back
+                </button>
+                <button
+                  onClick={createBooking}
+                  disabled={loading || sendingReview}
+                  className="flex-1 px-4 py-3 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg font-medium flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <IoCheckmarkOutline className="w-5 h-5" />
+                      {reviewSent ? 'Confirm Booking Now' : 'Create Booking Directly'}
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Help text */}
+              {!reviewSent && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                  Send for review lets the customer verify details before you finalize the booking
+                </p>
+              )}
             </div>
           </div>
         )}

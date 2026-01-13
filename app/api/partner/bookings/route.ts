@@ -54,21 +54,20 @@ export async function GET(request: NextRequest) {
     const vehicleIds = vehicles.map(v => v.id)
 
     // Get all bookings for these vehicles
-    const bookings = await prisma.booking.findMany({
+    const bookings = await prisma.rentalBooking.findMany({
       where: {
-        rentalCarId: { in: vehicleIds }
+        carId: { in: vehicleIds }
       },
       include: {
-        user: {
+        renter: {
           select: {
             id: true,
-            firstName: true,
-            lastName: true,
+            name: true,
             email: true,
-            phoneNumber: true
+            phone: true
           }
         },
-        rentalCar: {
+        car: {
           select: {
             id: true,
             make: true,
@@ -87,19 +86,17 @@ export async function GET(request: NextRequest) {
 
       return {
         id: booking.id,
-        guestName: booking.user
-          ? `${booking.user.firstName || ''} ${booking.user.lastName || ''}`.trim() || 'Guest'
-          : 'Guest',
-        guestEmail: booking.user?.email || 'N/A',
-        guestPhone: booking.user?.phoneNumber || null,
-        vehicleName: booking.rentalCar
-          ? `${booking.rentalCar.year} ${booking.rentalCar.make} ${booking.rentalCar.model}`
+        guestName: booking.renter?.name || booking.guestName || 'Guest',
+        guestEmail: booking.renter?.email || booking.guestEmail || 'N/A',
+        guestPhone: booking.renter?.phone || booking.guestPhone || null,
+        vehicleName: booking.car
+          ? `${booking.car.year} ${booking.car.make} ${booking.car.model}`
           : 'Unknown Vehicle',
-        vehicleId: booking.rentalCarId,
+        vehicleId: booking.carId,
         startDate: booking.startDate.toISOString(),
         endDate: booking.endDate.toISOString(),
         status: mapBookingStatus(booking.status),
-        totalAmount: booking.totalPrice,
+        totalAmount: Number(booking.totalAmount) || 0,
         createdAt: booking.createdAt.toISOString(),
         days
       }
