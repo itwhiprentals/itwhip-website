@@ -1,5 +1,6 @@
 // app/api/partner/session/route.ts
-// Partner Session API - Check authentication and get partner data
+// Unified Portal Session API - Check authentication and get user data with role
+// Supports both partner_token and hostAccessToken cookies for unified portal
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
@@ -10,10 +11,47 @@ const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'your-secret-key-here'
 )
 
+// Compute user role from host flags
+type UserRole = 'fleet_partner' | 'hybrid' | 'fleet_manager' | 'vehicle_owner' | 'individual'
+
+function computeRole(host: {
+  hostType: string
+  isHostManager: boolean
+  managesOwnCars: boolean
+  isVehicleOwner: boolean
+}): UserRole {
+  // Fleet partner (company-level access)
+  if (host.hostType === 'FLEET_PARTNER') {
+    return 'fleet_partner'
+  }
+
+  // Hybrid: manages own cars AND manages others
+  if (host.isHostManager && host.managesOwnCars) {
+    return 'hybrid'
+  }
+
+  // Fleet manager only: manages others' vehicles
+  if (host.isHostManager) {
+    return 'fleet_manager'
+  }
+
+  // Vehicle owner: passive income, read-only
+  if (host.isVehicleOwner && !host.managesOwnCars) {
+    return 'vehicle_owner'
+  }
+
+  // Default: individual host managing own cars
+  return 'individual'
+}
+
 export async function GET(request: NextRequest) {
   try {
     const cookieStore = await cookies()
-    const token = cookieStore.get('partner_token')?.value
+
+    // Accept both partner_token and hostAccessToken for unified portal
+    const token = cookieStore.get('partner_token')?.value ||
+                  cookieStore.get('hostAccessToken')?.value ||
+                  cookieStore.get('accessToken')?.value
 
     if (!token) {
       return NextResponse.json(
@@ -34,25 +72,40 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Check if partner flag is set
-    if (!payload.isPartner) {
+    // Get host ID from token (supports both token formats)
+    const hostId = payload.hostId as string
+    if (!hostId) {
       return NextResponse.json(
-        { authenticated: false, error: 'Not a partner session' },
-        { status: 403 }
+        { authenticated: false, error: 'Invalid token format' },
+        { status: 401 }
       )
     }
 
-    // Fetch partner data
+    // Fetch host data with all role-related fields
     const partner = await prisma.rentalHost.findUnique({
-      where: { id: payload.hostId as string },
+      where: { id: hostId },
       select: {
         id: true,
         name: true,
         email: true,
         phone: true,
+        profilePhoto: true,
         hostType: true,
         approvalStatus: true,
         active: true,
+        // Role flags
+        isHostManager: true,
+        managesOwnCars: true,
+        managesOthersCars: true,
+        isVehicleOwner: true,
+        // Permissions
+        dashboardAccess: true,
+        canViewBookings: true,
+        canEditCalendar: true,
+        canSetPricing: true,
+        canMessageGuests: true,
+        canWithdrawFunds: true,
+        // Partner-specific
         partnerCompanyName: true,
         partnerSlug: true,
         partnerLogo: true,
@@ -64,36 +117,71 @@ export async function GET(request: NextRequest) {
         partnerTotalBookings: true,
         partnerTotalRevenue: true,
         partnerAvgRating: true,
+        // Fleet manager specific
+        hostManagerSlug: true,
+        hostManagerName: true,
+        hostManagerLogo: true,
+        // Banking
         stripeConnectAccountId: true,
+        // Verification
+        isVerified: true,
+        emailVerified: true,
+        phoneVerified: true,
+        identityVerified: true,
+        documentsVerified: true,
         createdAt: true
       }
     })
 
     if (!partner) {
       return NextResponse.json(
-        { authenticated: false, error: 'Partner not found' },
+        { authenticated: false, error: 'Account not found' },
         { status: 404 }
       )
     }
 
-    // Check if partner is still approved and active
-    if (partner.hostType !== 'FLEET_PARTNER' && partner.hostType !== 'PARTNER') {
+    // Check if account is suspended
+    if (partner.approvalStatus === 'SUSPENDED') {
       return NextResponse.json(
-        { authenticated: false, error: 'Not a fleet partner account' },
+        { authenticated: false, error: 'Account suspended' },
         { status: 403 }
       )
     }
 
-    if (partner.approvalStatus === 'SUSPENDED') {
-      return NextResponse.json(
-        { authenticated: false, error: 'Partner account suspended' },
-        { status: 403 }
-      )
-    }
+    // Compute role from flags
+    const role = computeRole({
+      hostType: partner.hostType,
+      isHostManager: partner.isHostManager,
+      managesOwnCars: partner.managesOwnCars,
+      isVehicleOwner: partner.isVehicleOwner
+    })
+
+    // Get vehicle count for this host
+    const vehicleCount = await prisma.rentalCar.count({
+      where: { hostId: partner.id }
+    })
+
+    // Get managed vehicle count (for fleet managers)
+    const managedCount = partner.isHostManager ? await prisma.rentalCar.count({
+      where: {
+        managedByHostId: partner.id,
+        hostId: { not: partner.id }
+      }
+    }) : 0
 
     return NextResponse.json({
       authenticated: true,
-      partner
+      partner: {
+        ...partner,
+        // Computed fields
+        role,
+        vehicleCount,
+        managedVehicleCount: managedCount,
+        // Display name (prefer company name for partners)
+        displayName: partner.partnerCompanyName || partner.hostManagerName || partner.name,
+        // Public slug (prefer partner slug, then manager slug)
+        publicSlug: partner.partnerSlug || partner.hostManagerSlug || null
+      }
     })
 
   } catch (error: any) {

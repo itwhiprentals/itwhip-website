@@ -85,6 +85,23 @@ const authRoutes = ['/auth/login', '/auth/signup']
 const adminAuthRoutes = ['/admin/auth/login']
 const hostAuthRoutes = ['/host/login']
 
+// UNIFIED PORTAL: Redirect host routes to partner portal
+// This is the deprecation path for the old host dashboard
+const HOST_TO_PARTNER_REDIRECTS: Record<string, string> = {
+  '/host/dashboard': '/partner/dashboard',
+  '/host/cars': '/partner/fleet',
+  '/host/bookings': '/partner/bookings',
+  '/host/calendar': '/partner/calendar',
+  '/host/messages': '/partner/messages',
+  '/host/claims': '/partner/claims',
+  '/host/reviews': '/partner/reviews',
+  '/host/earnings': '/partner/revenue',
+  '/host/profile': '/partner/settings',
+  '/host/payouts': '/partner/settings',
+  '/host/trips': '/partner/bookings',
+  '/host/notifications': '/partner/notifications',
+}
+
 // EXPLICITLY PUBLIC ROUTES
 const publicRoutes = [
   '/hotel-portal',
@@ -198,6 +215,17 @@ function requiresApproval(pathname: string, method: string = 'GET'): boolean {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // UNIFIED SIGNUP FLOW: Redirect old signup paths to unified entry point
+  // Only redirect if they haven't already come from the unified flow (no 'type' param)
+  if (pathname === '/host/signup' && !request.nextUrl.searchParams.has('type')) {
+    return NextResponse.redirect(new URL('/get-started/business', request.url))
+  }
+
+  // Redirect /partners/apply/* to unified flow
+  if (pathname.startsWith('/partners/apply')) {
+    return NextResponse.redirect(new URL('/get-started/business', request.url))
+  }
+
   // 🔒 FLEET API PROTECTION - Allow phoenix-fleet-2847 key (legacy/internal) or fleet_session cookie
   // EXCLUDE: /api/fleet/auth - public login endpoint with its own session-based auth
   if ((pathname.startsWith('/api/fleet/') || pathname.startsWith('/fleet/api/')) &&
@@ -272,29 +300,40 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // HANDLE HOST PROTECTED ROUTES
-  if (pathname.startsWith('/host/') && 
-      !pathname.startsWith('/host/signup') && 
-      !pathname.startsWith('/host/login') && 
-      !pathname.startsWith('/host/forgot-password') && 
-      !pathname.startsWith('/host/reset-password')) {
-    const hostToken = request.cookies.get('hostAccessToken')?.value || 
+  // UNIFIED PORTAL: Redirect all /host/* routes to /partner/* equivalent
+  // This deprecates the old host dashboard and sends users to the unified portal
+  if (pathname.startsWith('/host/') &&
+      !pathname.startsWith('/host/signup') &&
+      !pathname.startsWith('/host/login') &&
+      !pathname.startsWith('/host/forgot-password') &&
+      !pathname.startsWith('/host/reset-password') &&
+      // Keep public landing pages accessible
+      !pathname.startsWith('/host/fleet-owners') &&
+      !pathname.startsWith('/host/tax-benefits') &&
+      !pathname.startsWith('/host/payouts') &&
+      !pathname.startsWith('/host/insurance-options')) {
+
+    const hostToken = request.cookies.get('hostAccessToken')?.value ||
+                     request.cookies.get('partner_token')?.value ||
                      request.cookies.get('accessToken')?.value
-    
+
     if (!hostToken) {
+      // Not logged in - redirect to login with return URL pointing to partner portal
       const loginUrl = new URL('/host/login', request.url)
-      loginUrl.searchParams.set('returnUrl', pathname)
+      // Map the returnUrl to partner equivalent
+      const partnerPath = HOST_TO_PARTNER_REDIRECTS[pathname] || '/partner/dashboard'
+      loginUrl.searchParams.set('returnUrl', partnerPath)
       return NextResponse.redirect(loginUrl)
     }
-    
+
     try {
       const { payload } = await verifyPlatformToken(hostToken)
-      
+
       const now = Math.floor(Date.now() / 1000)
       if (payload.exp && payload.exp < now) {
         throw new Error('Host token expired')
       }
-      
+
       const isRentalHost = payload.isRentalHost === true
       if (payload.role !== 'BUSINESS' || !isRentalHost) {
         const role = payload.role as string
@@ -309,56 +348,38 @@ export async function middleware(request: NextRequest) {
             return NextResponse.redirect(new URL('/dashboard', request.url))
         }
       }
-      
-      const approvalStatus = payload.approvalStatus as string || 'PENDING'
-      const isApproved = approvalStatus === 'APPROVED'
-      
-      if (!canHostAccessRoute(pathname, approvalStatus)) {
-        console.log('🚫 ACCESS DENIED:', {
-          approvalStatus,
-          attemptedPath: pathname,
-          reason: 'Route not accessible for this status'
-        })
-        
-        const dashboardUrl = new URL('/host/dashboard', request.url)
-        dashboardUrl.searchParams.set('restricted', 'true')
-        return NextResponse.redirect(dashboardUrl)
+
+      // UNIFIED PORTAL: Redirect to partner portal equivalent
+      // Check for exact match first
+      let partnerPath = HOST_TO_PARTNER_REDIRECTS[pathname]
+
+      // If no exact match, find closest prefix match
+      if (!partnerPath) {
+        for (const [hostRoute, partnerRoute] of Object.entries(HOST_TO_PARTNER_REDIRECTS)) {
+          if (pathname.startsWith(hostRoute)) {
+            // Replace the host prefix with partner prefix, keeping the rest of the path
+            partnerPath = pathname.replace(hostRoute, partnerRoute)
+            break
+          }
+        }
       }
-      
-      if (!isApproved && requiresApproval(pathname, 'GET')) {
-        console.log('🚫 APPROVAL REQUIRED:', {
-          approvalStatus,
-          attemptedPath: pathname,
-          reason: 'Only APPROVED hosts can perform this action'
-        })
-        
-        const claimsUrl = new URL('/host/claims', request.url)
-        claimsUrl.searchParams.set('approval_required', 'true')
-        claimsUrl.searchParams.set('action', 'create_claim')
-        return NextResponse.redirect(claimsUrl)
+
+      // Default fallback to partner dashboard
+      if (!partnerPath) {
+        partnerPath = '/partner/dashboard'
       }
-      
-      console.log('✅ ACCESS GRANTED:', {
-        pathname,
-        approvalStatus,
-        isApproved
+
+      console.log('🔄 UNIFIED PORTAL REDIRECT:', {
+        from: pathname,
+        to: partnerPath,
+        hostId: payload.hostId
       })
-      
-      const response = NextResponse.next()
-      response.headers.set('x-host-id', payload.hostId as string || '')
-      response.headers.set('x-user-id', payload.userId as string || '')
-      response.headers.set('x-host-email', payload.email as string)
-      response.headers.set('x-host-name', payload.name as string || '')
-      response.headers.set('x-host-role', 'HOST')
-      response.headers.set('x-auth-type', 'platform')
-      response.headers.set('x-host-approved', isApproved ? 'true' : 'false')
-      response.headers.set('x-approval-status', approvalStatus)
-      
-      return response
-      
+
+      return NextResponse.redirect(new URL(partnerPath, request.url))
+
     } catch (error) {
       console.error('Host JWT verification failed:', error)
-      
+
       const response = NextResponse.redirect(new URL('/host/login', request.url))
       response.cookies.set('hostAccessToken', '', {
         httpOnly: true,

@@ -1,5 +1,6 @@
 // app/api/partner/messages/route.ts
-// Partner Messages API - View and manage guest conversations
+// Unified Portal Messages API - View and manage guest conversations
+// Supports all host types in the unified portal
 
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
@@ -10,9 +11,14 @@ const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'your-secret-key'
 )
 
+// UNIFIED PORTAL: Accept all token types for the unified portal
 async function getPartnerFromToken() {
   const cookieStore = await cookies()
-  const token = cookieStore.get('partner_token')?.value
+
+  // Accept partner_token, hostAccessToken, or accessToken
+  const token = cookieStore.get('partner_token')?.value ||
+                cookieStore.get('hostAccessToken')?.value ||
+                cookieStore.get('accessToken')?.value
 
   if (!token) return null
 
@@ -20,13 +26,25 @@ async function getPartnerFromToken() {
     const { payload } = await jwtVerify(token, JWT_SECRET)
     const hostId = payload.hostId as string
 
+    if (!hostId) return null
+
     const partner = await prisma.rentalHost.findUnique({
-      where: { id: hostId }
+      where: { id: hostId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        hostType: true,
+        partnerCompanyName: true,
+        isHostManager: true,
+        managesOwnCars: true,
+        approvalStatus: true,
+        active: true
+      }
     })
 
-    if (!partner || (partner.hostType !== 'FLEET_PARTNER' && partner.hostType !== 'PARTNER')) {
-      return null
-    }
+    // UNIFIED PORTAL: Accept all host types, not just partners
+    if (!partner) return null
 
     return partner
   } catch {
@@ -46,17 +64,40 @@ export async function GET(request: NextRequest) {
     const filter = searchParams.get('filter') || 'all' // all, unread, urgent
     const bookingId = searchParams.get('bookingId')
 
-    // Get partner's vehicle IDs
-    const vehicles = await prisma.rentalCar.findMany({
+    // UNIFIED PORTAL: Get both owned AND managed vehicle IDs
+    // 1. Get owned vehicles
+    const ownedVehicles = await prisma.rentalCar.findMany({
       where: { hostId: partner.id },
       select: { id: true }
     })
-    const vehicleIds = vehicles.map(v => v.id)
+    const ownedVehicleIds = ownedVehicles.map(v => v.id)
 
-    // Get bookings for partner's vehicles
+    // 2. Get managed vehicles (for Fleet Managers)
+    let managedVehicleIds: string[] = []
+    if (partner.isHostManager) {
+      const managedRelations = await prisma.vehicleManagement.findMany({
+        where: { managerId: partner.id, status: 'ACTIVE' },
+        select: { vehicleId: true }
+      })
+      managedVehicleIds = managedRelations.map(v => v.vehicleId)
+    }
+
+    // Combine all vehicle IDs
+    const allVehicleIds = [...new Set([...ownedVehicleIds, ...managedVehicleIds])]
+
+    if (allVehicleIds.length === 0) {
+      // No vehicles means no messages
+      return NextResponse.json({
+        success: true,
+        conversations: [],
+        stats: { total: 0, unread: 0, urgent: 0, totalMessages: 0 }
+      })
+    }
+
+    // Get bookings for all accessible vehicles (owned + managed)
     const bookings = await prisma.rentalBooking.findMany({
       where: {
-        carId: { in: vehicleIds }
+        carId: { in: allVehicleIds }
       },
       select: { id: true }
     })
@@ -229,17 +270,31 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verify booking belongs to partner's vehicle
-    const vehicles = await prisma.rentalCar.findMany({
+    // UNIFIED PORTAL: Verify booking belongs to owned OR managed vehicle
+    // 1. Get owned vehicles
+    const ownedVehicles = await prisma.rentalCar.findMany({
       where: { hostId: partner.id },
       select: { id: true }
     })
-    const vehicleIds = vehicles.map(v => v.id)
+    const ownedVehicleIds = ownedVehicles.map(v => v.id)
+
+    // 2. Get managed vehicles (for Fleet Managers)
+    let managedVehicleIds: string[] = []
+    if (partner.isHostManager) {
+      const managedRelations = await prisma.vehicleManagement.findMany({
+        where: { managerId: partner.id, status: 'ACTIVE' },
+        select: { vehicleId: true }
+      })
+      managedVehicleIds = managedRelations.map(v => v.vehicleId)
+    }
+
+    // Combine all vehicle IDs
+    const allVehicleIds = [...new Set([...ownedVehicleIds, ...managedVehicleIds])]
 
     const booking = await prisma.rentalBooking.findFirst({
       where: {
         id: bookingId,
-        carId: { in: vehicleIds }
+        carId: { in: allVehicleIds }
       },
       include: {
         user: true
@@ -248,7 +303,7 @@ export async function POST(request: NextRequest) {
 
     if (!booking) {
       return NextResponse.json(
-        { error: 'Booking not found or does not belong to this partner' },
+        { error: 'Booking not found or access denied' },
         { status: 404 }
       )
     }

@@ -1,5 +1,6 @@
 // app/api/partner/banking/connect/route.ts
-// Partner Stripe Connect Onboarding
+// Unified Portal - Stripe Connect Onboarding
+// Supports all host types in the unified portal
 
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
@@ -11,15 +12,22 @@ const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'your-secret-key'
 )
 
+// UNIFIED PORTAL: Accept all token types
 async function getPartnerFromToken() {
   const cookieStore = await cookies()
-  const token = cookieStore.get('partner_token')?.value
+
+  // Accept partner_token, hostAccessToken, or accessToken
+  const token = cookieStore.get('partner_token')?.value ||
+                cookieStore.get('hostAccessToken')?.value ||
+                cookieStore.get('accessToken')?.value
 
   if (!token) return null
 
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET)
     const hostId = payload.hostId as string
+
+    if (!hostId) return null
 
     const partner = await prisma.rentalHost.findUnique({
       where: { id: hostId },
@@ -41,9 +49,8 @@ async function getPartnerFromToken() {
       }
     })
 
-    if (!partner || (partner.hostType !== 'FLEET_PARTNER' && partner.hostType !== 'PARTNER')) {
-      return null
-    }
+    // UNIFIED PORTAL: Accept all host types
+    if (!partner) return null
 
     return partner
   } catch {

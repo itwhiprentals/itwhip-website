@@ -1,5 +1,6 @@
 // app/api/partner/calendar/route.ts
-// Partner Calendar API - Vehicle availability and bookings calendar
+// Unified Portal Calendar API - Vehicle availability and bookings calendar
+// Supports all host types in the unified portal
 
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
@@ -10,9 +11,14 @@ const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'your-secret-key'
 )
 
+// UNIFIED PORTAL: Accept all token types
 async function getPartnerFromToken() {
   const cookieStore = await cookies()
-  const token = cookieStore.get('partner_token')?.value
+
+  // Accept partner_token, hostAccessToken, or accessToken
+  const token = cookieStore.get('partner_token')?.value ||
+                cookieStore.get('hostAccessToken')?.value ||
+                cookieStore.get('accessToken')?.value
 
   if (!token) return null
 
@@ -20,13 +26,23 @@ async function getPartnerFromToken() {
     const { payload } = await jwtVerify(token, JWT_SECRET)
     const hostId = payload.hostId as string
 
+    if (!hostId) return null
+
     const partner = await prisma.rentalHost.findUnique({
-      where: { id: hostId }
+      where: { id: hostId },
+      select: {
+        id: true,
+        userId: true,
+        name: true,
+        email: true,
+        hostType: true,
+        isHostManager: true,
+        managesOwnCars: true
+      }
     })
 
-    if (!partner || (partner.hostType !== 'FLEET_PARTNER' && partner.hostType !== 'PARTNER')) {
-      return null
-    }
+    // UNIFIED PORTAL: Accept all host types
+    if (!partner) return null
 
     return partner
   } catch {
@@ -51,8 +67,9 @@ export async function GET(request: NextRequest) {
     const start = startDate ? new Date(startDate) : new Date(new Date().getFullYear(), new Date().getMonth(), 1)
     const end = endDate ? new Date(endDate) : new Date(new Date().getFullYear(), new Date().getMonth() + 2, 0)
 
-    // Get partner's vehicles
-    const vehicles = await prisma.rentalCar.findMany({
+    // UNIFIED PORTAL: Get both owned AND managed vehicles
+    // 1. Get owned vehicles
+    const ownedVehicles = await prisma.rentalCar.findMany({
       where: { hostId: partner.id },
       select: {
         id: true,
@@ -63,6 +80,36 @@ export async function GET(request: NextRequest) {
         primaryPhotoUrl: true
       }
     })
+
+    // 2. Get managed vehicles (for Fleet Managers)
+    let managedVehicles: typeof ownedVehicles = []
+    if (partner.isHostManager) {
+      const managedRelations = await prisma.vehicleManagement.findMany({
+        where: { managerId: partner.id, status: 'ACTIVE' },
+        select: { vehicleId: true }
+      })
+      const managedVehicleIds = managedRelations.map(v => v.vehicleId)
+
+      if (managedVehicleIds.length > 0) {
+        managedVehicles = await prisma.rentalCar.findMany({
+          where: { id: { in: managedVehicleIds } },
+          select: {
+            id: true,
+            make: true,
+            model: true,
+            year: true,
+            status: true,
+            primaryPhotoUrl: true
+          }
+        })
+      }
+    }
+
+    // Combine all vehicles (dedupe by ID)
+    const vehicleMap = new Map()
+    ownedVehicles.forEach(v => vehicleMap.set(v.id, v))
+    managedVehicles.forEach(v => vehicleMap.set(v.id, v))
+    const vehicles = Array.from(vehicleMap.values())
 
     const vehicleIds = vehicleId ? [vehicleId] : vehicles.map(v => v.id)
 
@@ -248,16 +295,34 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verify vehicle belongs to partner
-    const vehicle = await prisma.rentalCar.findFirst({
+    // UNIFIED PORTAL: Verify vehicle is owned OR managed by this user
+    // 1. Check if owned
+    let vehicle = await prisma.rentalCar.findFirst({
       where: {
         id: vehicleId,
         hostId: partner.id
       }
     })
 
+    // 2. Check if managed (for Fleet Managers)
+    if (!vehicle && partner.isHostManager) {
+      const managedRelation = await prisma.vehicleManagement.findFirst({
+        where: {
+          vehicleId: vehicleId,
+          managerId: partner.id,
+          status: 'ACTIVE'
+        }
+      })
+
+      if (managedRelation) {
+        vehicle = await prisma.rentalCar.findUnique({
+          where: { id: vehicleId }
+        })
+      }
+    }
+
     if (!vehicle) {
-      return NextResponse.json({ error: 'Vehicle not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Vehicle not found or access denied' }, { status: 404 })
     }
 
     // Get existing blocked dates
@@ -309,16 +374,34 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    // Verify vehicle belongs to partner
-    const vehicle = await prisma.rentalCar.findFirst({
+    // UNIFIED PORTAL: Verify vehicle is owned OR managed by this user
+    // 1. Check if owned
+    let vehicle = await prisma.rentalCar.findFirst({
       where: {
         id: vehicleId,
         hostId: partner.id
       }
     })
 
+    // 2. Check if managed (for Fleet Managers)
+    if (!vehicle && partner.isHostManager) {
+      const managedRelation = await prisma.vehicleManagement.findFirst({
+        where: {
+          vehicleId: vehicleId,
+          managerId: partner.id,
+          status: 'ACTIVE'
+        }
+      })
+
+      if (managedRelation) {
+        vehicle = await prisma.rentalCar.findUnique({
+          where: { id: vehicleId }
+        })
+      }
+    }
+
     if (!vehicle) {
-      return NextResponse.json({ error: 'Vehicle not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Vehicle not found or access denied' }, { status: 404 })
     }
 
     // Remove block at index

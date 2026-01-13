@@ -83,6 +83,28 @@ function HostSignupContent() {
     }
   }, [isOAuthUser, session, oauthInitialized])
 
+  // UNIFIED FLOW: Pre-fill hostRole from query param (from /get-started/business)
+  useEffect(() => {
+    const typeParam = searchParams.get('type')
+    if (typeParam) {
+      let role: 'own' | 'manage' | 'both' | '' = ''
+      switch (typeParam) {
+        case 'own_cars':
+          role = 'own'
+          break
+        case 'manage_others':
+          role = 'manage'
+          break
+        case 'both':
+          role = 'both'
+          break
+      }
+      if (role) {
+        setFormData(prev => ({ ...prev, hostRole: role }))
+      }
+    }
+  }, [searchParams])
+
   // Vehicle + Location info
   const [vehicleData, setVehicleData] = useState<CarData>({
     vin: '',

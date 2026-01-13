@@ -35,36 +35,71 @@ import {
   IoAddCircleOutline
 } from 'react-icons/io5'
 
+// Role types matching the session API
+type UserRole = 'fleet_partner' | 'hybrid' | 'fleet_manager' | 'vehicle_owner' | 'individual'
+
 interface PartnerData {
   id: string
   name: string
   email: string
-  partnerCompanyName: string
+  profilePhoto?: string
+  partnerCompanyName?: string
   partnerLogo?: string
   partnerSlug?: string
+  hostManagerSlug?: string
+  hostManagerName?: string
+  hostManagerLogo?: string
   currentCommissionRate: number
   partnerFleetSize: number
   partnerTotalBookings: number
   partnerTotalRevenue: number
+  // Role information
+  role: UserRole
+  hostType: string
+  isHostManager: boolean
+  managesOwnCars: boolean
+  isVehicleOwner: boolean
+  vehicleCount: number
+  managedVehicleCount: number
+  displayName: string
+  publicSlug?: string
 }
 
-const navigationItems = [
-  { name: 'Dashboard', href: '/partner/dashboard', icon: IoGridOutline },
-  { name: 'Fleet', href: '/partner/fleet', icon: IoCarOutline },
-  { name: 'Bookings', href: '/partner/bookings', icon: IoCalendarOutline },
-  { name: 'New Booking', href: '/partner/bookings/new', icon: IoAddCircleOutline, indent: true },
-  { name: 'Customers', href: '/partner/customers', icon: IoPeopleOutline },
-  { name: 'Reviews', href: '/partner/reviews', icon: IoStarOutline },
-  { name: 'Messages', href: '/partner/messages', icon: IoChatbubblesOutline },
-  { name: 'Maintenance', href: '/partner/maintenance', icon: IoBuildOutline },
-  { name: 'Claims', href: '/partner/claims', icon: IoShieldCheckmarkOutline },
-  { name: 'Insurance', href: '/partner/insurance', icon: IoShieldOutline },
-  { name: 'Revenue', href: '/partner/revenue', icon: IoWalletOutline },
-  { name: 'Analytics', href: '/partner/analytics', icon: IoAnalyticsOutline },
-  { name: 'Landing Page', href: '/partner/landing', icon: IoGlobeOutline },
-  { name: 'Discounts', href: '/partner/discounts', icon: IoPricetagOutline },
-  { name: 'Settings', href: '/partner/settings', icon: IoSettingsOutline },
+interface NavItem {
+  name: string
+  href: string
+  icon: React.ComponentType<{ className?: string }>
+  indent?: boolean
+  roles: UserRole[] | 'all'  // 'all' means visible to everyone
+}
+
+// Navigation items with role-based visibility
+const navigationItems: NavItem[] = [
+  { name: 'Dashboard', href: '/partner/dashboard', icon: IoGridOutline, roles: 'all' },
+  { name: 'Fleet', href: '/partner/fleet', icon: IoCarOutline, roles: ['individual', 'hybrid', 'fleet_partner'] },
+  { name: 'Managed Vehicles', href: '/partner/managed', icon: IoCarOutline, roles: ['fleet_manager', 'hybrid'] },
+  { name: 'Bookings', href: '/partner/bookings', icon: IoCalendarOutline, roles: 'all' },
+  { name: 'New Booking', href: '/partner/bookings/new', icon: IoAddCircleOutline, indent: true, roles: ['individual', 'hybrid', 'fleet_partner', 'fleet_manager'] },
+  { name: 'Customers', href: '/partner/customers', icon: IoPeopleOutline, roles: ['individual', 'hybrid', 'fleet_partner', 'fleet_manager'] },
+  { name: 'Calendar', href: '/partner/calendar', icon: IoCalendarOutline, roles: ['individual', 'hybrid', 'fleet_partner', 'fleet_manager'] },
+  { name: 'Reviews', href: '/partner/reviews', icon: IoStarOutline, roles: ['individual', 'hybrid', 'fleet_partner', 'fleet_manager'] },
+  { name: 'Messages', href: '/partner/messages', icon: IoChatbubblesOutline, roles: ['individual', 'hybrid', 'fleet_partner', 'fleet_manager'] },
+  { name: 'Maintenance', href: '/partner/maintenance', icon: IoBuildOutline, roles: ['individual', 'hybrid', 'fleet_partner', 'fleet_manager'] },
+  { name: 'Claims', href: '/partner/claims', icon: IoShieldCheckmarkOutline, roles: 'all' },
+  { name: 'Insurance', href: '/partner/insurance', icon: IoShieldOutline, roles: ['individual', 'hybrid', 'fleet_partner'] },
+  { name: 'Revenue', href: '/partner/revenue', icon: IoWalletOutline, roles: 'all' },
+  { name: 'Analytics', href: '/partner/analytics', icon: IoAnalyticsOutline, roles: ['individual', 'hybrid', 'fleet_partner'] },
+  { name: 'Landing Page', href: '/partner/landing', icon: IoGlobeOutline, roles: ['individual', 'hybrid', 'fleet_partner'] },
+  { name: 'Discounts', href: '/partner/discounts', icon: IoPricetagOutline, roles: ['individual', 'hybrid', 'fleet_partner'] },
+  { name: 'Settings', href: '/partner/settings', icon: IoSettingsOutline, roles: 'all' },
 ]
+
+// Filter navigation based on user role
+function getVisibleNavItems(role: UserRole): NavItem[] {
+  return navigationItems.filter(item =>
+    item.roles === 'all' || item.roles.includes(role)
+  )
+}
 
 export default function PartnerLayout({
   children,
@@ -174,7 +209,19 @@ export default function PartnerLayout({
     return { label: 'Standard', color: 'bg-gray-500' }
   }
 
+  const getRoleLabel = (role: UserRole) => {
+    switch (role) {
+      case 'fleet_partner': return 'Fleet Partner'
+      case 'hybrid': return 'Host & Manager'
+      case 'fleet_manager': return 'Fleet Manager'
+      case 'vehicle_owner': return 'Vehicle Owner'
+      case 'individual': return 'Host'
+      default: return 'Partner'
+    }
+  }
+
   const tier = partner ? getTierInfo(partner.currentCommissionRate) : { label: 'Standard', color: 'bg-gray-500' }
+  const roleLabel = partner ? getRoleLabel(partner.role) : 'Partner'
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
@@ -195,9 +242,9 @@ export default function PartnerLayout({
         {/* Sidebar Header */}
         <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3">
-            {partner?.partnerLogo ? (
+            {(partner?.partnerLogo || partner?.hostManagerLogo || partner?.profilePhoto) ? (
               <Image
-                src={partner.partnerLogo}
+                src={partner.partnerLogo || partner.hostManagerLogo || partner.profilePhoto || ''}
                 alt=""
                 width={40}
                 height={40}
@@ -210,11 +257,11 @@ export default function PartnerLayout({
             )}
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                {partner?.partnerCompanyName || 'Partner Portal'}
+                {partner?.displayName || partner?.name || 'Dashboard'}
               </p>
               <div className="flex items-center gap-1.5">
                 <span className={`w-2 h-2 rounded-full ${tier.color}`} />
-                <span className="text-xs text-gray-500 dark:text-gray-400">{tier.label} Partner</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">{roleLabel}</span>
               </div>
             </div>
           </div>
@@ -226,9 +273,9 @@ export default function PartnerLayout({
           </button>
         </div>
 
-        {/* Navigation */}
+        {/* Navigation - Role-based filtering */}
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {navigationItems.map((item: any) => {
+          {getVisibleNavItems(partner?.role || 'individual').map((item) => {
             const isActive = pathname === item.href || (pathname.startsWith(item.href + '/') && !item.indent)
             const isExactMatch = pathname === item.href
             return (
@@ -253,16 +300,31 @@ export default function PartnerLayout({
 
         {/* Sidebar Footer */}
         <div className="border-t border-gray-200 dark:border-gray-700 p-4">
-          {/* Quick Stats */}
+          {/* Quick Stats - Role-aware */}
           <div className="grid grid-cols-2 gap-2 mb-4">
-            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2 text-center">
-              <p className="text-lg font-bold text-gray-900 dark:text-white">{partner?.partnerFleetSize || 0}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Vehicles</p>
-            </div>
-            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2 text-center">
-              <p className="text-lg font-bold text-gray-900 dark:text-white">{partner?.partnerTotalBookings || 0}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Bookings</p>
-            </div>
+            {(partner?.role === 'fleet_manager' || partner?.role === 'hybrid') ? (
+              <>
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2 text-center">
+                  <p className="text-lg font-bold text-gray-900 dark:text-white">{partner?.vehicleCount || 0}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">My Vehicles</p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2 text-center">
+                  <p className="text-lg font-bold text-gray-900 dark:text-white">{partner?.managedVehicleCount || 0}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Managed</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2 text-center">
+                  <p className="text-lg font-bold text-gray-900 dark:text-white">{partner?.vehicleCount || partner?.partnerFleetSize || 0}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Vehicles</p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2 text-center">
+                  <p className="text-lg font-bold text-gray-900 dark:text-white">{partner?.partnerTotalBookings || 0}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Bookings</p>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Dark Mode Toggle */}
@@ -306,22 +368,22 @@ export default function PartnerLayout({
             {/* Breadcrumb / Page Title */}
             <div className="hidden lg:flex items-center">
               <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {navigationItems.find(item => pathname === item.href || pathname.startsWith(item.href + '/'))?.name || 'Dashboard'}
+                {getVisibleNavItems(partner?.role || 'individual').find(item => pathname === item.href || pathname.startsWith(item.href + '/'))?.name || 'Dashboard'}
               </h1>
             </div>
 
             {/* Right side */}
             <div className="flex items-center gap-3">
-              {/* Partner Slug Link */}
-              {partner?.partnerSlug && (
+              {/* Public Profile Link */}
+              {partner?.publicSlug && (
                 <a
-                  href={`/rideshare/${partner.partnerSlug}`}
+                  href={`/rideshare/${partner.publicSlug}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 rounded-lg text-sm font-medium hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors"
                 >
                   <IoGlobeOutline className="w-4 h-4" />
-                  /rideshare/{partner.partnerSlug}
+                  /rideshare/{partner.publicSlug}
                 </a>
               )}
 

@@ -1,4 +1,7 @@
 // app/api/partner/settings/route.ts
+// Unified Portal - Partner Settings API
+// Supports all host types in the unified portal
+
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { jwtVerify } from 'jose'
@@ -8,17 +11,34 @@ const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'your-secret-key'
 )
 
-export async function GET(request: NextRequest) {
+// UNIFIED PORTAL: Helper to get host from any token type
+async function getHostFromToken() {
+  const cookieStore = await cookies()
+
+  // Accept partner_token, hostAccessToken, or accessToken
+  const token = cookieStore.get('partner_token')?.value ||
+                cookieStore.get('hostAccessToken')?.value ||
+                cookieStore.get('accessToken')?.value
+
+  if (!token) return null
+
   try {
-    const cookieStore = await cookies()
-    const token = cookieStore.get('partner_token')?.value
-
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const { payload } = await jwtVerify(token, JWT_SECRET)
     const hostId = payload.hostId as string
+    if (!hostId) return null
+    return hostId
+  } catch {
+    return null
+  }
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const hostId = await getHostFromToken()
+
+    if (!hostId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const partner = await prisma.rentalHost.findUnique({
       where: { id: hostId },
@@ -102,15 +122,12 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const token = cookieStore.get('partner_token')?.value
+    const hostId = await getHostFromToken()
 
-    if (!token) {
+    if (!hostId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { payload } = await jwtVerify(token, JWT_SECRET)
-    const hostId = payload.hostId as string
     const body = await request.json()
 
     // Update partner settings

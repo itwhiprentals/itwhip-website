@@ -206,8 +206,9 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Determine redirect path based on host type
-    const redirectPath = isFleetPartner ? '/partner/dashboard' : '/host/dashboard'
+    // UNIFIED PORTAL: All hosts now redirect to /partner/dashboard
+    // The partner portal handles role-based visibility internally
+    const redirectPath = '/partner/dashboard'
 
     const response = NextResponse.json({
       success: true,
@@ -223,8 +224,8 @@ export async function POST(request: NextRequest) {
         partnerCompanyName: host.partnerCompanyName,
         partnerSlug: host.partnerSlug
       },
-      // Partner redirect info
-      isPartner: isFleetPartner,
+      // Unified portal - all hosts use partner dashboard
+      isPartner: true,  // Treat all hosts as "partners" in unified portal
       redirect: redirectPath
     })
 
