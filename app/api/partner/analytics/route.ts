@@ -13,7 +13,9 @@ const JWT_SECRET = new TextEncoder().encode(
 export async function GET(request: NextRequest) {
   try {
     const cookieStore = await cookies()
-    const token = cookieStore.get('partner_token')?.value
+    // Accept both partner_token AND hostAccessToken for unified portal
+    const token = cookieStore.get('partner_token')?.value ||
+                  cookieStore.get('hostAccessToken')?.value
 
     if (!token) {
       return NextResponse.json(

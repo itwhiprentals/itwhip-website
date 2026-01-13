@@ -187,6 +187,7 @@ export default function PartnerLandingPage() {
 
   // Tab-specific save handlers
   const saveContent = () => handleTabSave('Content', {
+    slug: data.slug,
     headline: data.headline,
     subheadline: data.subheadline,
     bio: data.bio
@@ -566,6 +567,30 @@ export default function PartnerLandingPage() {
       {/* Content Tab */}
       {activeTab === 'content' && (
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 space-y-6">
+          {/* Company Slug Field */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Company Slug (Your Landing Page URL)
+            </label>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-500 dark:text-gray-400">itwhip.com/rideshare/</span>
+              <input
+                type="text"
+                value={data.slug}
+                onChange={(e) => {
+                  // Only allow lowercase letters, numbers, and hyphens
+                  const sanitized = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '')
+                  setData(prev => ({ ...prev, slug: sanitized }))
+                }}
+                placeholder="your-company-slug"
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Minimum 3 characters. Only lowercase letters, numbers, and hyphens. Reserved words like "admin", "api", etc. are not allowed.
+            </p>
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">

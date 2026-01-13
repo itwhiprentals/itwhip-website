@@ -30,7 +30,9 @@ function getChargeType(charge: {
 
 async function getPartnerFromToken() {
   const cookieStore = await cookies()
-  const token = cookieStore.get('partner_token')?.value
+  // Accept both partner_token AND hostAccessToken for unified portal
+  const token = cookieStore.get('partner_token')?.value ||
+                cookieStore.get('hostAccessToken')?.value
 
   if (!token) return null
 
@@ -42,7 +44,8 @@ async function getPartnerFromToken() {
       where: { id: hostId }
     })
 
-    if (!partner || (partner.hostType !== 'FLEET_PARTNER' && partner.hostType !== 'PARTNER')) {
+    // Allow all host types since we've unified the portals
+    if (!partner) {
       return null
     }
 

@@ -55,15 +55,11 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Allow access for:
-    // 1. FLEET_PARTNER or PARTNER hostType (traditional partners)
-    // 2. isHostManager = true (fleet managers from signup)
-    const isTraditionalPartner = partner.hostType === 'FLEET_PARTNER' || partner.hostType === 'PARTNER'
-    const isFleetManager = partner.isHostManager === true
-
-    if (!isTraditionalPartner && !isFleetManager) {
+    // Allow access for ALL host types since we've unified the portals
+    // This includes: REAL, FLEET_PARTNER, PARTNER, and fleet managers
+    if (!partner) {
       return NextResponse.json(
-        { error: 'Not a partner or fleet manager account' },
+        { error: 'Host account not found' },
         { status: 403 }
       )
     }

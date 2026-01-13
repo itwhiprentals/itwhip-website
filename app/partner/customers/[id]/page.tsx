@@ -270,47 +270,52 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
-        <button
-          onClick={() => router.back()}
-          className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-        >
-          <IoArrowBackOutline className="w-5 h-5" />
-        </button>
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{customer.name}</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Customer since {formatDate(customer.memberSince)}</p>
+      <div className="mb-6">
+        <div className="flex items-center gap-4 mb-4">
+          <button
+            onClick={() => router.back()}
+            className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+          >
+            <IoArrowBackOutline className="w-5 h-5" />
+          </button>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white truncate">{customer.name}</h1>
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Customer since {formatDate(customer.memberSince)}</p>
+          </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {customer.reviewerProfileId && (
             <button
               onClick={() => setShowGuestProfile(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg font-medium text-sm transition-colors"
+              className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg font-medium text-xs sm:text-sm transition-colors"
             >
-              <IoPersonOutline className="w-5 h-5" />
-              View Profile
+              <IoPersonOutline className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="hidden sm:inline">View Profile</span>
+              <span className="sm:hidden">Profile</span>
             </button>
           )}
           {customer.verification.status === 'verified' ? (
-            <span className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg font-medium text-sm">
-              <IoShieldCheckmarkOutline className="w-5 h-5" />
+            <span className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg font-medium text-xs sm:text-sm">
+              <IoShieldCheckmarkOutline className="w-4 h-4 sm:w-5 sm:h-5" />
               Verified
             </span>
           ) : (
             <button
               onClick={sendVerificationEmail}
               disabled={sendingVerification}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg font-medium text-sm transition-colors"
+              className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg font-medium text-xs sm:text-sm transition-colors"
             >
               {sendingVerification ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                  Sending...
+                  <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-white" />
+                  <span className="hidden sm:inline">Sending...</span>
+                  <span className="sm:hidden">Send...</span>
                 </>
               ) : (
                 <>
-                  <IoSendOutline className="w-5 h-5" />
-                  Send Verification
+                  <IoSendOutline className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="hidden sm:inline">Send Verification</span>
+                  <span className="sm:hidden">Verify</span>
                 </>
               )}
             </button>
@@ -512,53 +517,54 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
             ) : (
               <div className="divide-y divide-gray-200 dark:divide-gray-700">
                 {bookings.map((booking) => (
-                  <div key={booking.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                    <div className="flex items-center gap-4">
+                  <div key={booking.id} className="p-3 sm:p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                    <div className="flex items-start gap-3">
                       {/* Vehicle Photo */}
-                      <div className="w-16 h-12 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden flex-shrink-0">
+                      <div className="w-12 h-9 sm:w-16 sm:h-12 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden flex-shrink-0">
                         {booking.vehiclePhoto ? (
                           <img src={booking.vehiclePhoto} alt={booking.vehicle} className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
-                            <IoCarOutline className="w-6 h-6 text-gray-400" />
+                            <IoCarOutline className="w-4 h-4 sm:w-6 sm:h-6 text-gray-400" />
                           </div>
                         )}
                       </div>
 
                       {/* Booking Info */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                        <div className="flex items-start gap-2 mb-1 flex-wrap">
+                          <span className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white truncate">
                             {booking.vehicle}
                           </span>
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(booking.status)}`}>
+                          <span className={`inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium ${getStatusColor(booking.status)}`}>
                             {getStatusIcon(booking.status)}
-                            {booking.status.replace('_', ' ')}
+                            <span className="hidden sm:inline">{booking.status.replace('_', ' ')}</span>
+                            <span className="sm:hidden">{booking.status.replace('_', ' ').split(' ')[0]}</span>
                           </span>
                         </div>
-                        <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
-                          <span>{formatDate(booking.startDate)} - {formatDate(booking.endDate)}</span>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
+                          <span className="truncate">{formatDate(booking.startDate)} - {formatDate(booking.endDate)}</span>
                           <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(booking.total)}</span>
                         </div>
                       </div>
 
                       {/* Actions */}
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                         <button
                           onClick={() => {
                             setSelectedBookingForCharge(booking.id)
                             setShowChargeModal(true)
                           }}
-                          className="p-2 text-gray-500 hover:text-orange-600 dark:text-gray-400 dark:hover:text-orange-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                          className="p-1.5 sm:p-2 text-gray-500 hover:text-orange-600 dark:text-gray-400 dark:hover:text-orange-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                           title="Add Charge"
                         >
-                          <IoReceiptOutline className="w-5 h-5" />
+                          <IoReceiptOutline className="w-4 h-4 sm:w-5 sm:h-5" />
                         </button>
                         <Link
                           href={`/partner/bookings/${booking.id}`}
-                          className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                          className="p-1.5 sm:p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                         >
-                          <IoChevronForwardOutline className="w-5 h-5" />
+                          <IoChevronForwardOutline className="w-4 h-4 sm:w-5 sm:h-5" />
                         </Link>
                       </div>
                     </div>

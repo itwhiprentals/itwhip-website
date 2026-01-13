@@ -12,7 +12,9 @@ const JWT_SECRET = new TextEncoder().encode(
 
 async function getPartnerFromToken() {
   const cookieStore = await cookies()
-  const token = cookieStore.get('partner_token')?.value
+  // Accept both partner_token AND hostAccessToken for unified portal
+  const token = cookieStore.get('partner_token')?.value ||
+                cookieStore.get('hostAccessToken')?.value
 
   if (!token) return null
 
@@ -24,7 +26,8 @@ async function getPartnerFromToken() {
       where: { id: hostId }
     })
 
-    if (!partner || (partner.hostType !== 'FLEET_PARTNER' && partner.hostType !== 'PARTNER')) {
+    // Allow all host types since we've unified the portals
+    if (!partner) {
       return null
     }
 
@@ -97,7 +100,13 @@ export async function GET(
             make: true,
             model: true,
             year: true,
-            primaryPhotoUrl: true
+            photos: {
+              select: {
+                url: true
+              },
+              orderBy: [{ isHero: 'desc' }, { order: 'asc' }],
+              take: 1
+            }
           }
         }
       },
@@ -153,7 +162,7 @@ export async function GET(
         ? `${b.car.year} ${b.car.make} ${b.car.model}`
         : 'Unknown',
       vehicleId: b.carId,
-      vehiclePhoto: b.car?.primaryPhotoUrl || null,
+      vehiclePhoto: b.car?.photos?.[0]?.url || null,
       startDate: b.startDate.toISOString(),
       endDate: b.endDate.toISOString(),
       status: b.status,

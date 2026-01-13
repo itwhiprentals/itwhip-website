@@ -20,7 +20,7 @@ const JWT_SECRET = new TextEncoder().encode(
 async function getPartner() {
   const cookieStore = await cookies()
   const token = cookieStore.get('partner_token')?.value ||
-                cookieStore.get('host_access_token')?.value
+                cookieStore.get('hostAccessToken')?.value
 
   if (!token) return null
 

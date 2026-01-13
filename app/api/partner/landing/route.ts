@@ -12,7 +12,9 @@ const JWT_SECRET = new TextEncoder().encode(
 
 async function getPartnerFromToken() {
   const cookieStore = await cookies()
-  const token = cookieStore.get('partner_token')?.value
+  // Accept both partner_token AND hostAccessToken for unified portal
+  const token = cookieStore.get('partner_token')?.value ||
+                cookieStore.get('hostAccessToken')?.value
 
   if (!token) return null
 
@@ -29,7 +31,8 @@ async function getPartnerFromToken() {
       }
     })
 
-    if (!partner || (partner.hostType !== 'FLEET_PARTNER' && partner.hostType !== 'PARTNER')) {
+    // Allow all host types since we've unified the portals
+    if (!partner) {
       return null
     }
 
@@ -47,6 +50,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Check if partner has at least one active car
+    const carCount = await prisma.rentalCar.count({
+      where: {
+        hostId: partner.id,
+        isActive: true
+      }
+    })
+
     // Parse policies JSON
     const policies = partner.partnerPolicies as {
       refundPolicy?: string
@@ -54,6 +65,12 @@ export async function GET(request: NextRequest) {
       bookingRequirements?: string
       additionalTerms?: string
     } | null
+
+    // Publishing requirements checklist
+    const hasApproval = partner.approvalStatus === 'APPROVED'
+    const hasValidSlug = !!partner.partnerSlug && partner.partnerSlug !== 'your-company-slug'
+    const hasVehicles = carCount > 0
+    const canPublish = hasApproval && hasValidSlug && hasVehicles
 
     // Map database fields to frontend expected format
     return NextResponse.json({
@@ -69,12 +86,21 @@ export async function GET(request: NextRequest) {
         supportEmail: partner.partnerSupportEmail || '',
         supportPhone: partner.partnerSupportPhone || '',
         primaryColor: partner.partnerPrimaryColor || '#f97316',
-        faqs: partner.partnerFaqs.map(faq => ({
+        faqs: partner.partnerFaqs.map((faq: any) => ({
           id: faq.id,
           question: faq.question,
           answer: faq.answer
         })),
-        isPublished: partner.approvalStatus === 'APPROVED',
+        // Only published if ALL requirements are met
+        isPublished: canPublish,
+        // Publishing checklist for frontend
+        publishingRequirements: {
+          hasApproval,
+          hasValidSlug,
+          hasVehicles,
+          canPublish,
+          vehicleCount: carCount
+        },
         // Social Media & Website
         website: partner.partnerWebsite || '',
         instagram: partner.partnerInstagram || '',
@@ -129,6 +155,69 @@ export async function PUT(request: NextRequest) {
     // Build update data - only include fields that were explicitly sent
     // This prevents partial saves from overwriting unrelated fields
     const updateData: Record<string, any> = {}
+
+    // Validate slug if provided
+    if (body.slug !== undefined) {
+      const slug = body.slug.trim()
+
+      // Prevent placeholder value
+      if (slug === 'your-company-slug' || slug === 'your-company-name') {
+        return NextResponse.json(
+          { error: 'Please enter your actual company slug, not the placeholder text.' },
+          { status: 400 }
+        )
+      }
+
+      // Format validation
+      const slugRegex = /^[a-z0-9-]+$/
+      if (!slugRegex.test(slug)) {
+        return NextResponse.json(
+          { error: 'Invalid slug format. Only lowercase letters, numbers, and hyphens allowed.' },
+          { status: 400 }
+        )
+      }
+
+      // Minimum length
+      if (slug.length < 3) {
+        return NextResponse.json(
+          { error: 'Slug must be at least 3 characters long.' },
+          { status: 400 }
+        )
+      }
+
+      // Reserved slugs
+      const reservedSlugs = [
+        'admin', 'api', 'app', 'auth', 'blog', 'contact', 'dashboard',
+        'docs', 'fleet', 'help', 'host', 'login', 'logout', 'partner',
+        'profile', 'register', 'settings', 'signup', 'support', 'terms',
+        'privacy', 'about', 'home', 'search', 'cars', 'vehicles', 'bookings',
+        'earnings', 'messages', 'notifications', 'itwhip', 'www', 'mail'
+      ]
+
+      if (reservedSlugs.includes(slug)) {
+        return NextResponse.json(
+          { error: 'This slug is reserved and cannot be used.' },
+          { status: 400 }
+        )
+      }
+
+      // Check uniqueness
+      const existingSlug = await prisma.rentalHost.findFirst({
+        where: {
+          partnerSlug: slug,
+          id: { not: partner.id }
+        }
+      })
+
+      if (existingSlug) {
+        return NextResponse.json(
+          { error: 'This slug is already taken.' },
+          { status: 400 }
+        )
+      }
+
+      updateData.partnerSlug = slug
+    }
 
     // Basic fields - only update if provided
     if (body.headline !== undefined) updateData.partnerHeroTitle = body.headline

@@ -124,7 +124,13 @@ export async function GET(request: NextRequest) {
                 make: true,
                 model: true,
                 year: true,
-                primaryPhotoUrl: true
+                photos: {
+                  select: {
+                    url: true
+                  },
+                  orderBy: [{ isHero: 'desc' }, { order: 'asc' }],
+                  take: 1
+                }
               }
             },
             renter: {
@@ -169,7 +175,7 @@ export async function GET(request: NextRequest) {
           vehicleName: booking.car
             ? `${booking.car.year} ${booking.car.make} ${booking.car.model}`
             : 'Unknown Vehicle',
-          vehiclePhoto: booking.car?.primaryPhotoUrl || null,
+          vehiclePhoto: booking.car?.photos?.[0]?.url || null,
           guestName: booking.renter?.name || booking.guestName || 'Guest',
           guestEmail: booking.renter?.email || booking.guestEmail || null,
           guestPhoto: booking.renter?.image || null,
