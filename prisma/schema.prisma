@@ -863,6 +863,9 @@ model RentalHost {
   enableRentToOwn       Boolean   @default(false) // Show Rent-to-Own tab (future)
   partnerServices       Json?                     // Custom services: [{id, name, description, platforms, priceRange}]
 
+  // Agreement Template Customization (max 3 custom clauses)
+  agreementTemplateCustom   Json?   // { customClauses: string[], lastUpdated: Date }
+
   // ===== END FLEET PARTNER FIELDS =====
 
   // ===== FLEET MANAGER & VEHICLE OWNER FIELDS =====
@@ -2824,6 +2827,21 @@ model RentalBooking {
   extras String?
   notes  String?
 
+  // ===== E-SIGNATURE / RENTAL AGREEMENT FIELDS =====
+  agreementToken        String?   @unique  // Secure token for signing link
+  agreementStatus       String?   @default("not_sent") // not_sent, sent, viewed, signed, declined
+  agreementSentAt       DateTime?
+  agreementViewedAt     DateTime?
+  agreementSignedAt     DateTime?
+  agreementSignedPdfUrl String?   // Cloudinary URL to signed PDF
+  signatureImageUrl     String?   // Raw signature image
+  signerName            String?   // Name entered when signing
+  signerEmail           String?   // Email used
+  signerIpAddress       String?   // For audit trail
+  signerUserAgent       String?   // Device info
+  agreementExpiresAt    DateTime? // Token expiry (7 days)
+  // ===== END E-SIGNATURE FIELDS =====
+
   // Relations
   car                  RentalCar             @relation(fields: [carId], references: [id])
   host                 RentalHost            @relation(fields: [hostId], references: [id])
@@ -2866,6 +2884,8 @@ model RentalBooking {
   @@index([tripCompletedBy])
   @@index([adminCompletedById])
   @@index([tripEndRequestStatus])
+  @@index([agreementToken])
+  @@index([agreementStatus])
 }
 
 // ============================================================================

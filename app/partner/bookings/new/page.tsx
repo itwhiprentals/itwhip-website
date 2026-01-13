@@ -513,32 +513,52 @@ export default function NewBookingPage() {
     setError('')
 
     try {
-      const response = await fetch('/api/partner/bookings/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          customerId: selectedCustomer.id,
-          carId: selectedVehicle.id,
-          startDate,
-          endDate,
-          pickupType: pickupType === 'partner' ? 'PARTNER_LOCATION' : pickupType.toUpperCase(),
-          pickupLocation: pickupType !== 'partner' ? pickupLocation : null,
-          notes,
-          totalPrice: calculateTotal(),
-          paymentType,
-          insuranceOption,
-          insuranceSource: insuranceOption === 'vehicle' ? 'VEHICLE' :
-                          insuranceOption === 'partner' ? 'PARTNER' :
-                          insuranceOption === 'guest' ? 'GUEST' : 'NONE'
+      // If we have a pre-booking from "Send for Review", confirm it instead of creating new
+      if (reviewSent && preBookingId) {
+        const response = await fetch('/api/partner/bookings/confirm', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            bookingId: preBookingId
+          })
         })
-      })
 
-      const data = await response.json()
+        const data = await response.json()
 
-      if (data.success) {
-        router.push(`/partner/bookings?created=${data.booking.id}`)
+        if (data.success) {
+          router.push(`/partner/bookings?confirmed=${data.booking.id}`)
+        } else {
+          setError(data.error || 'Failed to confirm booking')
+        }
       } else {
-        setError(data.error || 'Failed to create booking')
+        // Create new booking directly
+        const response = await fetch('/api/partner/bookings/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customerId: selectedCustomer.id,
+            carId: selectedVehicle.id,
+            startDate,
+            endDate,
+            pickupType: pickupType === 'partner' ? 'PARTNER_LOCATION' : pickupType.toUpperCase(),
+            pickupLocation: pickupType !== 'partner' ? pickupLocation : null,
+            notes,
+            totalPrice: calculateTotal(),
+            paymentType,
+            insuranceOption,
+            insuranceSource: insuranceOption === 'vehicle' ? 'VEHICLE' :
+                            insuranceOption === 'partner' ? 'PARTNER' :
+                            insuranceOption === 'guest' ? 'GUEST' : 'NONE'
+          })
+        })
+
+        const data = await response.json()
+
+        if (data.success) {
+          router.push(`/partner/bookings?created=${data.booking.id}`)
+        } else {
+          setError(data.error || 'Failed to create booking')
+        }
       }
     } catch (err) {
       setError('Failed to create booking')
@@ -1562,6 +1582,14 @@ export default function NewBookingPage() {
                     <p className="text-sm text-gray-500 dark:text-gray-400">{selectedCustomer?.email}</p>
                   </div>
                 </div>
+                {!reviewSent && (
+                  <button
+                    onClick={() => setCurrentStep('customer')}
+                    className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+                  >
+                    Edit
+                  </button>
+                )}
               </div>
 
               {/* Vehicle */}
@@ -1575,6 +1603,14 @@ export default function NewBookingPage() {
                     </p>
                   </div>
                 </div>
+                {!reviewSent && (
+                  <button
+                    onClick={() => setCurrentStep('vehicle')}
+                    className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+                  >
+                    Edit
+                  </button>
+                )}
               </div>
 
               {/* Dates */}
@@ -1589,6 +1625,14 @@ export default function NewBookingPage() {
                     <p className="text-sm text-gray-500 dark:text-gray-400">{availability?.tripDays} days</p>
                   </div>
                 </div>
+                {!reviewSent && (
+                  <button
+                    onClick={() => setCurrentStep('dates')}
+                    className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+                  >
+                    Edit
+                  </button>
+                )}
               </div>
 
               {/* Pickup Location */}
@@ -1619,6 +1663,14 @@ export default function NewBookingPage() {
                     )}
                   </div>
                 </div>
+                {!reviewSent && (
+                  <button
+                    onClick={() => setCurrentStep('dates')}
+                    className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+                  >
+                    Edit
+                  </button>
+                )}
               </div>
 
               {/* Current Insurance Status */}
@@ -2006,21 +2058,27 @@ export default function NewBookingPage() {
               <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
                 <div className="flex items-start gap-3">
                   <IoCheckmarkCircleOutline className="w-6 h-6 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
-                  <div>
+                  <div className="flex-1">
                     <h4 className="font-medium text-green-800 dark:text-green-300">Review Sent Successfully</h4>
                     <p className="text-sm text-green-700 dark:text-green-400 mt-1">
-                      Booking details have been sent to {selectedCustomer?.email}. A pre-booking has been created with reference <span className="font-mono font-semibold">{preBookingId?.slice(0, 8).toUpperCase()}</span>.
+                      Booking details have been sent to {selectedCustomer?.email}. Pre-booking reference: <span className="font-mono font-semibold">{preBookingId?.slice(0, 8).toUpperCase()}</span>
                     </p>
-                    <p className="text-xs text-green-600 dark:text-green-500 mt-2">
-                      The customer can review and verify the details. You can still confirm the booking directly below.
-                    </p>
+                    <div className="mt-3 pt-3 border-t border-green-200 dark:border-green-700">
+                      <p className="text-sm font-medium text-green-800 dark:text-green-300 mb-2">What happens next?</p>
+                      <ul className="text-xs text-green-700 dark:text-green-400 space-y-1">
+                        <li>• Customer reviews the booking details via email</li>
+                        <li>• They contact you to confirm or request changes</li>
+                        <li>• You can confirm the booking anytime using the button below</li>
+                        <li>• The pre-booking is saved and visible in your Bookings page</li>
+                      </ul>
+                    </div>
                   </div>
                 </div>
               </div>
             )}
 
             <div className="flex flex-col gap-3">
-              {/* Send for Review Button - only show if not sent yet */}
+              {/* Pre-review: Send for Review Button */}
               {!reviewSent && (
                 <button
                   onClick={sendBookingReview}
@@ -2041,7 +2099,7 @@ export default function NewBookingPage() {
                 </button>
               )}
 
-              {/* Divider with "or" */}
+              {/* Divider with "or" - only before review sent */}
               {!reviewSent && (
                 <div className="flex items-center gap-3">
                   <div className="flex-1 border-t border-gray-200 dark:border-gray-700" />
@@ -2050,38 +2108,98 @@ export default function NewBookingPage() {
                 </div>
               )}
 
-              {/* Back and Create Booking buttons */}
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setCurrentStep('dates')}
-                  className="px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium"
-                >
-                  Back
-                </button>
-                <button
-                  onClick={createBooking}
-                  disabled={loading || sendingReview}
-                  className="flex-1 px-4 py-3 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg font-medium flex items-center justify-center gap-2"
-                >
-                  {loading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
-                      Creating...
-                    </>
-                  ) : (
-                    <>
-                      <IoCheckmarkOutline className="w-5 h-5" />
-                      {reviewSent ? 'Confirm Booking Now' : 'Create Booking Directly'}
-                    </>
-                  )}
-                </button>
-              </div>
+              {/* Post-review: Action buttons */}
+              {reviewSent ? (
+                <div className="space-y-3">
+                  {/* Primary: Confirm Booking Now */}
+                  <button
+                    onClick={createBooking}
+                    disabled={loading}
+                    className="w-full px-4 py-3 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg font-medium flex items-center justify-center gap-2"
+                  >
+                    {loading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
+                        Confirming...
+                      </>
+                    ) : (
+                      <>
+                        <IoCheckmarkOutline className="w-5 h-5" />
+                        Confirm Booking Now
+                      </>
+                    )}
+                  </button>
 
-              {/* Help text */}
-              {!reviewSent && (
-                <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                  Send for review lets the customer verify details before you finalize the booking
-                </p>
+                  {/* Secondary actions */}
+                  <div className="flex gap-3">
+                    <Link
+                      href="/partner/bookings"
+                      className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium text-center"
+                    >
+                      View All Bookings
+                    </Link>
+                    <button
+                      onClick={() => {
+                        // Reset form for new booking
+                        setSelectedCustomer(null)
+                        setSelectedVehicle(null)
+                        setStartDate('')
+                        setEndDate('')
+                        setPickupType('partner')
+                        setPickupLocation('')
+                        setSelectedAirport('')
+                        setNotes('')
+                        setPaymentType('offline')
+                        setInsuranceOption('guest')
+                        setReviewSent(false)
+                        setPreBookingId(null)
+                        setCurrentStep('customer')
+                      }}
+                      className="flex-1 px-4 py-3 border border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 font-medium flex items-center justify-center gap-2"
+                    >
+                      <IoAddOutline className="w-5 h-5" />
+                      New Booking
+                    </button>
+                  </div>
+
+                  <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                    The pre-booking is already saved. Confirm when the customer is ready.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {/* Back and Create Booking buttons */}
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setCurrentStep('dates')}
+                      className="px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium"
+                    >
+                      Back
+                    </button>
+                    <button
+                      onClick={createBooking}
+                      disabled={loading || sendingReview}
+                      className="flex-1 px-4 py-3 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg font-medium flex items-center justify-center gap-2"
+                    >
+                      {loading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
+                          Creating...
+                        </>
+                      ) : (
+                        <>
+                          <IoCheckmarkOutline className="w-5 h-5" />
+                          Create Booking Directly
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Help text */}
+                  <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                    Send for review lets the customer verify details before you finalize the booking
+                  </p>
+                </>
               )}
             </div>
           </div>

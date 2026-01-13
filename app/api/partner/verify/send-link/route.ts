@@ -256,12 +256,12 @@ export async function POST(request: NextRequest) {
 
             <div style="background: #f9fafb; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none;">
               <p style="color: #9ca3af; font-size: 12px; margin: 0;">
-                Powered by <a href="https://itwhip.com" style="color: #f97316;">iTWhip</a> - The trusted car rental marketplace
+                Powered by <a href="https://itwhip.com" style="color: #f97316;">ItWhip</a> - The trusted car rental marketplace
               </p>
             </div>
           </div>
         `,
-        text: `Hi ${name},\n\n${partnerName} has requested identity verification for your ${purposeText}.\n\nPlease complete your verification by visiting this link:\n${verificationSession.url}\n\nYou'll need your driver's license and about 2 minutes to complete this process.\n\nIf you didn't request this verification, please ignore this email.\n\nPowered by iTWhip`
+        text: `Hi ${name},\n\n${partnerName} has requested identity verification for your ${purposeText}.\n\nPlease complete your verification by visiting this link:\n${verificationSession.url}\n\nYou'll need your driver's license and about 2 minutes to complete this process.\n\nIf you didn't request this verification, please ignore this email.\n\nPowered by ItWhip`
       })
       emailSent = true
       console.log(`[Partner Verify] Email sent to ${email}`)
