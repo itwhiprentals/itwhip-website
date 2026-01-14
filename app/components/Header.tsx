@@ -96,6 +96,12 @@ function HeaderInner({
   const guardMode = searchParams?.get('guard')
   const isGuardActive = guardMode === 'host-on-guest' || guardMode === 'guest-on-host'
 
+  // ========== SIGNUP MODE DETECTION ==========
+  // When user is on complete-profile page in signup mode OR noAccount mode, don't show logged-in header
+  // This applies to orphan users (have User+Account but no app profiles) who need to complete signup
+  const isSignupMode = pathname === '/auth/complete-profile' &&
+    (searchParams?.get('mode') === 'signup' || searchParams?.get('noAccount') === 'true')
+
   // ========== AUTH CONTEXT (Industry Best Practice) ==========
   // Use centralized auth state for instant role switching
   // No more page refreshes needed - context updates trigger re-renders
@@ -137,7 +143,7 @@ function HeaderInner({
 
   // Override isLoggedIn display when guard screen is active
   // User should appear logged out until they choose an action on the guard screen
-  const showAsLoggedIn = isLoggedIn && !isGuardActive
+  const showAsLoggedIn = isLoggedIn && !isGuardActive && !isSignupMode
 
   // ✅ FIXED: Determine user type - only by actual role, not by page location
   // User must have role === 'BUSINESS' to be considered a host (have actual host profile)

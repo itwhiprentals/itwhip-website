@@ -36,9 +36,49 @@ export function DeferredPrismaAdapter(prisma: PrismaClient): Adapter {
         // Return the account object as-is (not saved to DB)
         return account as AdapterAccount
       }
-      // For existing users (returning users), use base adapter
-      console.log('[DeferredAdapter] linkAccount called for existing user - using base adapter')
-      return baseAdapter.linkAccount?.(account)
+      // For existing users (returning users), create account with generated ID
+      // (Prisma schema requires id to be provided since it has no @default)
+      console.log('[DeferredAdapter] linkAccount called for existing user - creating with generated ID')
+
+      // Check if account already exists (user logging in again)
+      const existingAccount = await prisma.account.findUnique({
+        where: {
+          provider_providerAccountId: {
+            provider: account.provider,
+            providerAccountId: account.providerAccountId,
+          },
+        },
+      })
+
+      if (existingAccount) {
+        console.log('[DeferredAdapter] Account already exists, updating tokens')
+        return prisma.account.update({
+          where: { id: existingAccount.id },
+          data: {
+            refresh_token: account.refresh_token ?? null,
+            access_token: account.access_token ?? null,
+            expires_at: account.expires_at ?? null,
+          },
+        }) as unknown as AdapterAccount
+      }
+
+      const id = `acc_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+      return prisma.account.create({
+        data: {
+          id,
+          userId: account.userId,
+          type: account.type,
+          provider: account.provider,
+          providerAccountId: account.providerAccountId,
+          refresh_token: account.refresh_token ?? null,
+          access_token: account.access_token ?? null,
+          expires_at: account.expires_at ?? null,
+          token_type: account.token_type ?? null,
+          scope: account.scope ?? null,
+          id_token: account.id_token ?? null,
+          session_state: account.session_state ?? null,
+        },
+      }) as unknown as AdapterAccount
     },
 
     // Keep getUserByEmail to check for existing users

@@ -134,8 +134,9 @@ export async function GET(request: NextRequest) {
       finalRoleHint: roleHint,
       allCookies: cookies.getAll().map(c => c.name)
     })
+    const returnToCookie = cookies.get('oauth_return_to')?.value
     const returnTo = searchParams.get('returnTo') ||
-      (cookies.get('oauth_return_to')?.value ? decodeURIComponent(cookies.get('oauth_return_to')?.value) : null)
+      (returnToCookie ? decodeURIComponent(returnToCookie) : null)
 
     // Get the authenticated session
     const session = await getServerSession(authOptions)
@@ -397,14 +398,29 @@ export async function GET(request: NextRequest) {
         return createRedirectWithCookies(`/auth/complete-profile?roleHint=host&mode=signup&guard=guest-on-host&redirectTo=/host/dashboard`)
       }
 
-      // No host profile and no guest profile - handle based on mode
-      if (mode === 'login') {
-        // LOGIN mode: User trying to login without an account
-        console.log('[OAuth Redirect] NO HOST PROFILE FOR LOGIN')
-        return createRedirectWithCookies('/host/login?error=no_account')
+      // No host profile and no guest profile - ORPHAN USER for host flow
+      // Handle same as guest orphan: redirect to complete-profile WITHOUT JWT cookies
+      if (!hostProfile && !guestProfile && userId) {
+        const noAccountFlag = mode === 'login' ? '&noAccount=true' : ''
+        console.log(`[OAuth Redirect] ORPHAN USER (no profiles) for HOST - redirecting to complete-profile WITHOUT JWT cookies (mode: ${mode})`)
+
+        // Create redirect WITHOUT JWT cookies - user should appear logged out
+        const response = NextResponse.redirect(
+          new URL(`/auth/complete-profile?roleHint=host&mode=signup${noAccountFlag}&redirectTo=/host/dashboard`, request.url)
+        )
+        // Clear OAuth cookies
+        response.cookies.delete('oauth_role_hint')
+        response.cookies.delete('oauth_mode')
+        response.cookies.delete('oauth_return_to')
+        // Also clear any existing auth cookies to ensure logged-out state
+        response.cookies.delete('accessToken')
+        response.cookies.delete('refreshToken')
+        response.cookies.delete('hostAccessToken')
+        response.cookies.delete('hostRefreshToken')
+        return response
       }
 
-      // New host signup - redirect to complete-profile for phone and vehicle info
+      // New host signup (has guest profile but no host profile) - redirect to complete-profile
       if (!hostProfile && userId) {
         console.log('[OAuth Redirect] No host profile, redirecting to complete profile')
         return createRedirectWithCookies(`/auth/complete-profile?roleHint=host&mode=signup&redirectTo=/host/dashboard`)
@@ -504,35 +520,25 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // No partner profile found
-      if (mode === 'login') {
-        // LOGIN mode: User trying to login without partner account
-        console.log('[OAuth Redirect] NO PARTNER PROFILE FOR LOGIN')
-        const response = NextResponse.redirect(new URL('/partner/login?error=no_account', request.url))
-        response.cookies.delete('oauth_role_hint')
-        response.cookies.delete('oauth_mode')
-        response.cookies.delete('oauth_return_to')
-        return response
-      }
+      // No partner profile found - ORPHAN USER for partner flow
+      // Redirect to complete-profile WITHOUT JWT cookies (same as guest/host)
+      // Shows "No Partner Account Found" message with options to apply or cancel
+      const noAccountFlag = mode === 'login' ? '&noAccount=true' : ''
+      console.log(`[OAuth Redirect] ORPHAN USER (no partner profile) - redirecting to complete-profile WITHOUT JWT cookies (mode: ${mode})`)
 
-      // SIGNUP mode: Create new partner profile
-      // Redirect to partner signup to complete registration
-      let inviteToken: string | null = null
-      if (returnTo && returnTo.includes('token=')) {
-        try {
-          inviteToken = new URL(returnTo, request.url).searchParams.get('token')
-        } catch {
-          // Invalid URL, ignore
-        }
-      }
-      const signupUrl = inviteToken
-        ? `/partners/apply/start?oauth=true&token=${inviteToken}`
-        : '/partners/apply/start?oauth=true'
-      console.log('[OAuth Redirect] No partner profile, redirecting to partner signup')
-      const response = NextResponse.redirect(new URL(signupUrl, request.url))
+      // Create redirect WITHOUT JWT cookies - user should appear logged out
+      const response = NextResponse.redirect(
+        new URL(`/auth/complete-profile?roleHint=partner&mode=signup${noAccountFlag}&redirectTo=/partner/dashboard`, request.url)
+      )
+      // Clear all OAuth and auth cookies to ensure logged-out state
       response.cookies.delete('oauth_role_hint')
       response.cookies.delete('oauth_mode')
       response.cookies.delete('oauth_return_to')
+      response.cookies.delete('accessToken')
+      response.cookies.delete('refreshToken')
+      response.cookies.delete('hostAccessToken')
+      response.cookies.delete('hostRefreshToken')
+      response.cookies.delete('partner_token')
       return response
     }
 
@@ -547,10 +553,26 @@ export async function GET(request: NextRequest) {
           return createRedirectWithCookies(`/auth/complete-profile?roleHint=guest&mode=${mode}&guard=host-on-guest&redirectTo=${encodeURIComponent(redirectUrl)}`)
         }
 
-        // Non-host user without guest profile - redirect to complete-profile to CREATE it
+        // User has User+Account but NO profiles (orphan user)
+        // Redirect to complete-profile WITHOUT setting JWT cookies
+        // User should appear LOGGED OUT until they complete signup
+        // NO auto-account creation - user must submit form to create account
         const redirectUrl = returnTo || '/dashboard'
-        console.log('[OAuth Redirect] No guest profile, redirecting to complete profile to create one')
-        return createRedirectWithCookies(`/auth/complete-profile?roleHint=guest&mode=signup&redirectTo=${encodeURIComponent(redirectUrl)}`)
+        const noAccountFlag = mode === 'login' ? '&noAccount=true' : ''
+        console.log(`[OAuth Redirect] ORPHAN USER (no profiles) - redirecting to complete-profile WITHOUT JWT cookies (mode: ${mode})`)
+
+        // Create redirect WITHOUT JWT cookies - user should appear logged out
+        const response = NextResponse.redirect(
+          new URL(`/auth/complete-profile?roleHint=guest&mode=signup${noAccountFlag}&redirectTo=${encodeURIComponent(redirectUrl)}`, request.url)
+        )
+        // Clear OAuth cookies
+        response.cookies.delete('oauth_role_hint')
+        response.cookies.delete('oauth_mode')
+        response.cookies.delete('oauth_return_to')
+        // Also clear any existing auth cookies to ensure logged-out state
+        response.cookies.delete('accessToken')
+        response.cookies.delete('refreshToken')
+        return response
       }
 
       // Phone is OPTIONAL for guests - allow access regardless of phone status

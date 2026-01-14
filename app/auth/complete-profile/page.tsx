@@ -35,6 +35,9 @@ function CompleteProfileContent() {
   const redirectTo = searchParams.get('redirectTo') || '/dashboard'
   const roleHint = searchParams.get('roleHint') || 'guest'
   const mode = searchParams.get('mode') || 'signup'
+  // noAccount flag is set when user tried to LOGIN but has no profile
+  // Shows "No account found" message instead of "Almost Done!"
+  const noAccount = searchParams.get('noAccount') === 'true'
   // Guard param is set by oauth-redirect to indicate cross-role scenarios
   // Use this SYNCHRONOUSLY to prevent race conditions with async state
   const guard = searchParams.get('guard')
@@ -92,13 +95,17 @@ function CompleteProfileContent() {
   // Determine if this is a new user (pending) or existing user
   const isPendingUser = pendingOAuth && !isProfileComplete
 
-  // For login mode with pending user, this means "no account found"
-  const isLoginModeNoAccount = mode === 'login' && isPendingUser
+  // For login mode with pending user OR orphan user (noAccount flag), this means "no account found"
+  // Show "No Account Found" message and guide them to create account
+  const isLoginModeNoAccount = (mode === 'login' && isPendingUser) || noAccount
 
   // Track if existing HOST user is trying to access guest without guest profile
   const [isHostWithoutGuestProfile, setIsHostWithoutGuestProfile] = useState(false)
   // Track if existing GUEST user is trying to access host without host profile
   const [isGuestWithoutHostProfile, setIsGuestWithoutHostProfile] = useState(false)
+  // Track if user is an "orphan" - has User+Account but NO app profiles (ReviewerProfile/RentalHost)
+  // These users should be allowed to complete signup, not redirected
+  const [isOrphanUser, setIsOrphanUser] = useState(false)
   // Track if user is switching accounts (to prevent redirects during signOut)
   // CRITICAL: Use BOTH useState and useRef - ref is synchronous and prevents race conditions
   const [isSwitchingAccount, setIsSwitchingAccount] = useState(false)
@@ -123,11 +130,24 @@ function CompleteProfileContent() {
     async function checkGuestProfile() {
       try {
         const response = await fetch('/api/guest/profile')
-        if (response.status === 404) {
-          // HOST user trying to access GUEST without profile
-          // BLOCK this - they must use account linking flow
-          console.log('[Complete Profile] ⚠️ HOST user trying to access GUEST - blocking (must use account linking)')
-          setIsHostWithoutGuestProfile(true)
+        // Handle 404 (no profile) OR 401 (no JWT token = orphan user)
+        if (response.status === 404 || response.status === 401) {
+          // No guest profile - but we need to check if they're actually a HOST first
+          // Only block if they HAVE a host profile (cross-role scenario)
+          // If they have NO profiles at all (orphan user), allow them to create a guest profile
+          const hostResponse = await fetch('/api/host/profile')
+          if (hostResponse.ok) {
+            // User IS a host without guest profile - BLOCK this
+            // They must use account linking flow from host dashboard
+            console.log('[Complete Profile] ⚠️ HOST user trying to access GUEST - blocking (must use account linking)')
+            setIsHostWithoutGuestProfile(true)
+          } else {
+            // User has NO profiles (orphan user with User+Account but no app profiles)
+            // 401 means no JWT token, 404 means no profile - both mean orphan user
+            // Allow them to create a guest profile - this is a normal signup scenario
+            console.log('[Complete Profile] Orphan user (no profiles, status: ' + response.status + ') - allowing guest signup')
+            setIsOrphanUser(true)
+          }
         }
       } catch (error) {
         console.error('[Complete Profile] Error checking guest profile:', error)
@@ -192,6 +212,12 @@ function CompleteProfileContent() {
       return
     }
 
+    // CRITICAL: If noAccount flag is set, this is an orphan user trying to create account - NEVER redirect
+    if (noAccount) {
+      console.log('[Complete Profile] noAccount flag set - blocking redirect, showing "No Account Found" UI')
+      return
+    }
+
     if (status === 'authenticated' && isProfileComplete && !isPendingUser && !checkingProfile) {
       // If HOST user trying to access GUEST without profile, don't redirect - show blocking message
       if (isHostWithoutGuestProfile) {
@@ -203,10 +229,16 @@ function CompleteProfileContent() {
         console.log('[Complete Profile] Showing blocking message for GUEST without HOST profile')
         return
       }
+      // If user is an orphan (has User+Account but NO app profiles), don't redirect - show signup form
+      if (isOrphanUser) {
+        console.log('[Complete Profile] Orphan user detected - showing signup form instead of redirect')
+        return
+      }
       // User already has complete profile, redirect to dashboard
       router.push(redirectTo)
     }
-  }, [status, isProfileComplete, isPendingUser, router, redirectTo, isHostWithoutGuestProfile, isGuestWithoutHostProfile, checkingProfile, isSwitchingAccount, isGuestToHostUpgrade, isHostToGuestBlocked])
+  }, [status, isProfileComplete, isPendingUser, router, redirectTo, isHostWithoutGuestProfile, isGuestWithoutHostProfile, isOrphanUser, checkingProfile, isSwitchingAccount, isGuestToHostUpgrade, isHostToGuestBlocked, noAccount])
+
 
   // Format phone number as user types
   const formatPhoneNumber = (value: string) => {
@@ -973,6 +1005,91 @@ function CompleteProfileContent() {
             <p className="mt-6 text-center text-xs text-gray-500">
               Your phone number is kept private and only used for booking-related communications.
             </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ========================================================================
+  // BLOCKING STATE: PARTNER login with no account - show "No Partner Account Found"
+  // They must apply via the partner signup flow
+  // ========================================================================
+  if (roleHint === 'partner' && noAccount) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+        <Header />
+        <div className="flex items-center justify-center px-4 py-16 pt-24">
+          <div className="w-full max-w-md">
+            <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-xl p-8 border border-gray-700">
+              {/* Warning Icon */}
+              <div className="flex justify-center mb-6">
+                <div className="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center">
+                  <IoAlertCircleOutline className="w-10 h-10 text-yellow-500" />
+                </div>
+              </div>
+
+              {/* Message */}
+              <div className="text-center mb-8">
+                <h1 className="text-2xl font-bold text-white mb-2">
+                  No Partner Account Found
+                </h1>
+                <p className="text-gray-400 mb-4">
+                  No partner account exists with <span className="text-white font-medium">{userEmail}</span>.
+                </p>
+                <p className="text-gray-400 text-sm">
+                  To become a partner and access the Partner Dashboard, you need to apply first.
+                </p>
+              </div>
+
+              {/* User Info */}
+              <div className="bg-gray-700/50 rounded-lg p-4 mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-600 flex items-center justify-center flex-shrink-0">
+                    {userImage ? (
+                      <img
+                        src={userImage}
+                        alt="Profile"
+                        className="w-12 h-12 object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none'
+                          e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                        }}
+                      />
+                    ) : null}
+                    <div className={`flex items-center justify-center w-full h-full ${userImage ? 'hidden' : ''}`}>
+                      <IoPersonOutline className="w-6 h-6 text-gray-400" />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-white font-medium">{userName}</p>
+                    <p className="text-gray-400 text-sm">{userEmail}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="space-y-3">
+                <button
+                  onClick={() => router.push('/get-started/business')}
+                  className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-lg transition-all duration-200"
+                >
+                  Apply to Become a Partner
+                </button>
+                <button
+                  onClick={() => router.push('/')}
+                  className="w-full py-3 px-4 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-all duration-200"
+                >
+                  Cancel
+                </button>
+                <a
+                  href="/auth/login?switching=true"
+                  className="block w-full py-2 text-sm text-gray-400 hover:text-white transition-colors text-center"
+                >
+                  Use a Different Account
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       </div>
