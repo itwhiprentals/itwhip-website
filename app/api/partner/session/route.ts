@@ -162,10 +162,10 @@ export async function GET(request: NextRequest) {
     })
 
     // Get managed vehicle count (for fleet managers)
-    const managedCount = partner.isHostManager ? await prisma.rentalCar.count({
+    // Query through VehicleManagement table where this partner is the manager
+    const managedCount = partner.isHostManager ? await prisma.vehicleManagement.count({
       where: {
-        managedByHostId: partner.id,
-        hostId: { not: partner.id }
+        managerId: partner.id
       }
     }) : 0
 

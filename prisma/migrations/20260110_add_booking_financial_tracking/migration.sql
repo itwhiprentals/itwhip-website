@@ -1,6 +1,0 @@
--- Add financial tracking fields to RentalBooking for Credits, Bonus & Deposit Wallet integration
-ALTER TABLE "RentalBooking" ADD COLUMN IF NOT EXISTS "creditsApplied" DOUBLE PRECISION NOT NULL DEFAULT 0;
-ALTER TABLE "RentalBooking" ADD COLUMN IF NOT EXISTS "bonusApplied" DOUBLE PRECISION NOT NULL DEFAULT 0;
-ALTER TABLE "RentalBooking" ADD COLUMN IF NOT EXISTS "depositFromWallet" DOUBLE PRECISION NOT NULL DEFAULT 0;
-ALTER TABLE "RentalBooking" ADD COLUMN IF NOT EXISTS "depositFromCard" DOUBLE PRECISION NOT NULL DEFAULT 0;
-ALTER TABLE "RentalBooking" ADD COLUMN IF NOT EXISTS "chargeAmount" DOUBLE PRECISION;

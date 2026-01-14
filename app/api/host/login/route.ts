@@ -418,34 +418,33 @@ export async function DELETE(request: NextRequest) {
       })
     }
 
-    const response = NextResponse.json({ 
+    const response = NextResponse.json({
       success: true,
-      message: 'Logged out successfully' 
+      message: 'Logged out successfully'
     })
 
-    // Clear all cookies
-    response.cookies.set('hostAccessToken', '', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 0,
-      path: '/'
-    })
+    // Clear ALL auth-related cookies (unified portal)
+    const cookiesToClear = [
+      'hostAccessToken',
+      'hostRefreshToken',
+      'accessToken',
+      'refreshToken',
+      'partner_token',
+      'guestAccessToken',
+      'guestRefreshToken'
+    ]
 
-    response.cookies.set('hostRefreshToken', '', {
+    const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: 'lax' as const,
       maxAge: 0,
       path: '/'
-    })
+    }
 
-    response.cookies.set('accessToken', '', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 0,
-      path: '/'
+    // Clear each cookie
+    cookiesToClear.forEach(cookieName => {
+      response.cookies.set(cookieName, '', cookieOptions)
     })
 
     return response

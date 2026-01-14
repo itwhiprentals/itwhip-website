@@ -8,6 +8,8 @@ import { useState, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
+import { AuthProvider } from '@/app/contexts/AuthContext'
+import RoleSwitcher from '@/app/components/RoleSwitcher'
 import {
   IoGridOutline,
   IoCarOutline,
@@ -224,7 +226,8 @@ export default function PartnerLayout({
   const roleLabel = partner ? getRoleLabel(partner.role) : 'Partner'
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+    <AuthProvider>
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div
@@ -395,6 +398,9 @@ export default function PartnerLayout({
                 <IoNotificationsOutline className="w-6 h-6" />
               </Link>
 
+              {/* Role Switcher - For dual-role users (host + guest) */}
+              <RoleSwitcher />
+
               {/* Profile Menu */}
               <div className="relative">
                 <button
@@ -454,5 +460,6 @@ export default function PartnerLayout({
         </main>
       </div>
     </div>
+    </AuthProvider>
   )
 }

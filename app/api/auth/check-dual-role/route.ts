@@ -10,17 +10,19 @@ const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key'
 
 export async function GET(request: NextRequest) {
   try {
-    // Get tokens from cookies - check both host and guest tokens
+    // Get tokens from cookies - check host, partner, and guest tokens (unified portal)
     const hostAccessToken = request.cookies.get('hostAccessToken')?.value
+    const partnerToken = request.cookies.get('partner_token')?.value
     const guestAccessToken = request.cookies.get('accessToken')?.value
 
     // Debug: Log cookie values
     console.log('[Dual-Role Check] Cookie debug:', {
       hostAccessToken: hostAccessToken ? `${hostAccessToken.substring(0, 30)}... (${hostAccessToken.length} chars)` : 'EMPTY',
+      partnerToken: partnerToken ? `${partnerToken.substring(0, 30)}... (${partnerToken.length} chars)` : 'EMPTY',
       guestAccessToken: guestAccessToken ? `${guestAccessToken.substring(0, 30)}... (${guestAccessToken.length} chars)` : 'EMPTY'
     })
 
-    // Try to get userId from either token
+    // Try to get userId from any token
     let userId: string | null = null
     let currentRole: 'host' | 'guest' | null = null
 
@@ -31,8 +33,20 @@ export async function GET(request: NextRequest) {
         userId = decoded.userId
         currentRole = 'host'
       } catch (err) {
+        // Token invalid or expired, try other tokens
+        console.log('[Dual-Role Check] hostAccessToken invalid, trying other tokens')
+      }
+    }
+
+    // Try partner token if no userId yet (unified portal)
+    if (!userId && partnerToken && partnerToken.length > 10) {
+      try {
+        const decoded = verify(partnerToken, JWT_SECRET) as any
+        userId = decoded.userId
+        currentRole = 'host' // Partner portal is for hosts
+      } catch (err) {
         // Token invalid or expired, try guest token
-        console.log('[Dual-Role Check] hostAccessToken invalid, trying guest token')
+        console.log('[Dual-Role Check] partner_token invalid, trying guest token')
       }
     }
 

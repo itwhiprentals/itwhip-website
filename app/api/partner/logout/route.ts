@@ -8,13 +8,28 @@ export async function POST(request: NextRequest) {
   try {
     const cookieStore = await cookies()
 
-    // Clear the partner token cookie
-    cookieStore.set('partner_token', '', {
+    // Clear ALL auth-related cookies for unified portal
+    const cookiesToClear = [
+      'partner_token',
+      'hostAccessToken',
+      'accessToken',
+      'guestAccessToken',
+      'refreshToken',
+      'hostRefreshToken',
+      'guestRefreshToken'
+    ]
+
+    const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: 'lax' as const,
       maxAge: 0, // Expire immediately
       path: '/'
+    }
+
+    // Clear each cookie
+    cookiesToClear.forEach(cookieName => {
+      cookieStore.set(cookieName, '', cookieOptions)
     })
 
     return NextResponse.json({

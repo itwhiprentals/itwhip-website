@@ -414,17 +414,17 @@ export async function GET(request: NextRequest) {
     }
 
     // ========================================================================
-    // PARTNER ROLE HANDLING
+    // PARTNER ROLE HANDLING (UNIFIED PORTAL - accepts all host types)
     // ========================================================================
     if (roleHint === 'partner') {
-      // Check if user has partner profile (hostType = PARTNER or FLEET_PARTNER)
+      // Check if user has ANY host profile (unified portal accepts all host types)
       const partnerProfile = await prisma.rentalHost.findFirst({
         where: {
           OR: [
             { userId: userId },
             { email: email }
-          ],
-          hostType: { in: ['PARTNER', 'FLEET_PARTNER'] }
+          ]
+          // No hostType filter - unified portal accepts REAL, PARTNER, FLEET_PARTNER, etc.
         },
         select: {
           id: true,
