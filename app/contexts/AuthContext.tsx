@@ -55,9 +55,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isSwitchingRole: false
   })
 
+  // ========== RACE CONDITION GUARDS ==========
+  // Prevent concurrent refreshAuth calls from causing UI flashing
+  const refreshInProgressRef = useRef(false)
+  const refreshVersionRef = useRef(0) // Track which refresh is "current"
+  const initialCheckDoneRef = useRef(false)
+
   // Refresh auth state from server
   const refreshAuth = useCallback(async () => {
-    console.log('[AuthContext] Refreshing auth state...')
+    // Guard against concurrent calls - queue will be handled by version check
+    if (refreshInProgressRef.current) {
+      console.log('[AuthContext] Refresh already in progress, skipping')
+      return
+    }
+
+    refreshInProgressRef.current = true
+    const thisVersion = ++refreshVersionRef.current
+    console.log(`[AuthContext] Refreshing auth state... (v${thisVersion})`)
 
     try {
       // Check dual-role status first - this tells us which tokens exist
@@ -67,14 +81,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (!dualRoleRes.ok) {
         console.log('[AuthContext] No valid session found')
-        setState({
-          isLoggedIn: false,
-          user: null,
-          currentRole: null,
-          hasBothProfiles: false,
-          isLoading: false,
-          isSwitchingRole: false
-        })
+        // Check if this refresh is still current before updating state
+        if (thisVersion === refreshVersionRef.current) {
+          initialCheckDoneRef.current = true
+          setState({
+            isLoggedIn: false,
+            user: null,
+            currentRole: null,
+            hasBothProfiles: false,
+            isLoading: false,
+            isSwitchingRole: false
+          })
+        }
         return
       }
 
@@ -93,20 +111,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const data = await hostRes.json()
           if (data.authenticated && data.host) {
             console.log('[AuthContext] Authenticated as HOST:', data.host.email)
-            setState({
-              isLoggedIn: true,
-              user: {
-                id: data.host.id,
-                name: data.host.name,
-                email: data.host.email,
-                role: 'BUSINESS',
-                profilePhoto: data.host.profilePhoto
-              },
-              currentRole: 'host',
-              hasBothProfiles: dualRole.hasGuestProfile || false,
-              isLoading: false,
-              isSwitchingRole: false
-            })
+            if (thisVersion === refreshVersionRef.current) {
+              initialCheckDoneRef.current = true
+              setState({
+                isLoggedIn: true,
+                user: {
+                  id: data.host.id,
+                  name: data.host.name,
+                  email: data.host.email,
+                  role: 'BUSINESS',
+                  profilePhoto: data.host.profilePhoto
+                },
+                currentRole: 'host',
+                hasBothProfiles: dualRole.hasGuestProfile || false,
+                isLoading: false,
+                isSwitchingRole: false
+              })
+            }
             return
           }
         }
@@ -127,22 +148,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Note: /api/auth/verify returns { user, tokenInfo } - no "authenticated" field
           if (data.user) {
             console.log('[AuthContext] ✅ Authenticated as GUEST:', data.user.email)
-            const newState = {
-              isLoggedIn: true,
-              user: {
-                id: data.user.id,
-                name: data.user.name,
-                email: data.user.email,
-                role: 'GUEST' as const,
-                profilePhoto: data.user.profilePhoto
-              },
-              currentRole: 'guest' as const,
-              hasBothProfiles: dualRole.hasHostProfile || false,
-              isLoading: false,
-              isSwitchingRole: false
+            if (thisVersion === refreshVersionRef.current) {
+              initialCheckDoneRef.current = true
+              const newState = {
+                isLoggedIn: true,
+                user: {
+                  id: data.user.id,
+                  name: data.user.name,
+                  email: data.user.email,
+                  role: 'GUEST' as const,
+                  profilePhoto: data.user.profilePhoto
+                },
+                currentRole: 'guest' as const,
+                hasBothProfiles: dualRole.hasHostProfile || false,
+                isLoading: false,
+                isSwitchingRole: false
+              }
+              console.log('[AuthContext] Setting guest state:', newState)
+              setState(newState)
             }
-            console.log('[AuthContext] Setting guest state:', newState)
-            setState(newState)
             return
           } else {
             console.log('[AuthContext] ⚠️ Guest verify returned but no user data:', data)
@@ -161,37 +185,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const data = await adminRes.json()
         if (data.authenticated && data.user) {
           console.log('[AuthContext] Authenticated as ADMIN:', data.user.email)
-          setState({
-            isLoggedIn: true,
-            user: {
-              id: data.user.id,
-              name: data.user.name,
-              email: data.user.email,
-              role: 'ADMIN',
-              profilePhoto: data.user.profilePhoto || data.user.avatar
-            },
-            currentRole: null, // Admin doesn't have host/guest roles
-            hasBothProfiles: false,
-            isLoading: false,
-            isSwitchingRole: false
-          })
+          if (thisVersion === refreshVersionRef.current) {
+            initialCheckDoneRef.current = true
+            setState({
+              isLoggedIn: true,
+              user: {
+                id: data.user.id,
+                name: data.user.name,
+                email: data.user.email,
+                role: 'ADMIN',
+                profilePhoto: data.user.profilePhoto || data.user.avatar
+              },
+              currentRole: null, // Admin doesn't have host/guest roles
+              hasBothProfiles: false,
+              isLoading: false,
+              isSwitchingRole: false
+            })
+          }
           return
         }
       }
 
       // No valid session found
       console.log('[AuthContext] No authenticated user found')
-      setState({
-        isLoggedIn: false,
-        user: null,
-        currentRole: null,
-        hasBothProfiles: false,
-        isLoading: false,
-        isSwitchingRole: false
-      })
+      if (thisVersion === refreshVersionRef.current) {
+        initialCheckDoneRef.current = true
+        setState({
+          isLoggedIn: false,
+          user: null,
+          currentRole: null,
+          hasBothProfiles: false,
+          isLoading: false,
+          isSwitchingRole: false
+        })
+      }
     } catch (e) {
       console.error('[AuthContext] Error checking auth:', e)
-      setState(prev => ({ ...prev, isLoading: false, isSwitchingRole: false }))
+      if (thisVersion === refreshVersionRef.current) {
+        setState(prev => ({ ...prev, isLoading: false, isSwitchingRole: false }))
+      }
+    } finally {
+      // Always reset the in-progress flag when done
+      refreshInProgressRef.current = false
     }
   }, [])
 
@@ -293,23 +328,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   // Initial auth check on mount
-  // Also retry after a short delay to handle timing issues with cookie writes after OAuth redirect
+  // Only retry if user appears logged out (cookies may not be immediately available after OAuth)
   useEffect(() => {
     refreshAuth()
 
-    // Retry auth check after 500ms in case cookies weren't immediately available
-    // This handles edge cases where OAuth redirect cookies take a moment to be readable
+    // Retry auth check after 500ms ONLY if:
+    // 1. Initial check completed AND
+    // 2. User appears logged out (might be cookie timing issue after OAuth)
     const retryTimeout = setTimeout(() => {
-      console.log('[AuthContext] Running retry auth check after mount')
-      refreshAuth()
+      // Only retry if we got a logged-out result and haven't successfully authenticated
+      if (initialCheckDoneRef.current && !state.isLoggedIn) {
+        console.log('[AuthContext] Retrying auth check (initial check found no session)')
+        // Reset the flag to allow the retry
+        refreshInProgressRef.current = false
+        refreshAuth()
+      }
     }, 500)
 
     return () => clearTimeout(retryTimeout)
-  }, [refreshAuth])
+  }, [refreshAuth]) // Note: state.isLoggedIn not in deps - we only want to check once
 
   // Re-check auth when window regains focus (handles external login/logout)
+  // Debounced to prevent rapid re-checks when switching between windows
+  const lastFocusCheckRef = useRef<number>(0)
   useEffect(() => {
     const handleFocus = () => {
+      const now = Date.now()
+      // Debounce: only check if at least 5 seconds since last check
+      if (now - lastFocusCheckRef.current < 5000) {
+        console.log('[AuthContext] Skipping focus check (debounced)')
+        return
+      }
+      lastFocusCheckRef.current = now
+
+      // Reset in-progress flag in case previous check stalled
+      refreshInProgressRef.current = false
       console.log('[AuthContext] Window focused, re-checking auth')
       refreshAuth()
     }
@@ -331,6 +384,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const isProtectedPath = protectedPaths.some(p => pathname?.startsWith(p))
 
       if (isProtectedPath) {
+        // Reset in-progress flag to allow this refresh
+        refreshInProgressRef.current = false
         console.log('[AuthContext] Navigated to protected path, refreshing auth:', pathname)
         refreshAuth()
       }

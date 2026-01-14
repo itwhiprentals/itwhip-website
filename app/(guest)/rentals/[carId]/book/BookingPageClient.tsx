@@ -218,7 +218,8 @@ export default function BookingPageClient({ carId }: { carId: string }) {
   } | null>(null)
   
   // Payment form states
-  const [guestName, setGuestName] = useState('')
+  const [guestName, setGuestName] = useState('')  // Cardholder first name
+  const [guestLastName, setGuestLastName] = useState('')  // Cardholder last name (no validation required)
   const [guestEmail, setGuestEmail] = useState('')
   const [guestPhone, setGuestPhone] = useState('')
   const [cardNumber, setCardNumber] = useState('')
@@ -545,7 +546,9 @@ export default function BookingPageClient({ carId }: { carId: string }) {
               const lastName = nameParts.slice(1).join(' ') || ''
               setDriverFirstName(firstName)
               setDriverLastName(lastName)
-              setGuestName(profileData.name)
+              // Auto-fill cardholder name (first/last separately)
+              setGuestName(firstName)
+              setGuestLastName(lastName)
 
               // Validate auto-filled names - STRICT: 3+ chars, letters only (no dots/numbers)
               const validNamePattern = /^[a-zA-Z]+(['-][a-zA-Z]+)*$/
@@ -741,6 +744,28 @@ export default function BookingPageClient({ carId }: { carId: string }) {
       return {
         allowed: false,
         reason: 'This vehicle is currently unavailable for booking. It may be undergoing maintenance, involved in an insurance claim, or temporarily deactivated by the owner.'
+      }
+    }
+
+    // ✅ Check if driver info is complete (all fields valid)
+    // Uses the driverInfoComplete variable defined in VALIDATION CHECKS section
+    // This ensures all driver fields pass validation before booking can proceed
+    const isDriverInfoComplete = driverFirstName && driverLastName && driverAge && driverLicense && driverPhone && driverEmail &&
+      emailValidation.isValid && phoneValidation.isValid && firstNameValidation.isValid && lastNameValidation.isValid && ageValidation.isValid
+
+    if (!isDriverInfoComplete) {
+      return {
+        allowed: false,
+        reason: 'Please complete all Primary Driver Information fields with valid values.'
+      }
+    }
+
+    // ✅ Check if identity is verified (for non-logged-in users OR users without verification)
+    const userIsVerified = userProfile?.documentsVerified || userProfile?.stripeIdentityStatus === 'verified'
+    if (!userIsVerified && sessionStatus === 'unauthenticated') {
+      return {
+        allowed: false,
+        reason: 'Please verify your identity before completing the booking.'
       }
     }
 
@@ -1334,7 +1359,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
         // Guest information
         guestEmail: driverEmail || guestEmail || '',
         guestPhone: driverPhone || guestPhone || '',
-        guestName: guestName || `${driverFirstName} ${driverLastName}`.trim(),
+        guestName: `${guestName} ${guestLastName}`.trim() || `${driverFirstName} ${driverLastName}`.trim(),
         
         // Include reviewerProfileId if logged in
         ...(userProfile?.id && { reviewerProfileId: userProfile.id }),
@@ -2805,19 +2830,29 @@ export default function BookingPageClient({ carId }: { carId: string }) {
             )
           })()}
 
-          {/* Cardholder Name */}
+          {/* Cardholder Name - First and Last */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Cardholder Name
             </label>
-            <input
-              id="guestName"
-              type="text"
-              value={guestName}
-              onChange={(e) => setGuestName(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:text-white"
-              placeholder="Name on card"
-            />
+            <div className="grid grid-cols-2 gap-3">
+              <input
+                id="guestName"
+                type="text"
+                value={guestName}
+                onChange={(e) => setGuestName(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:text-white"
+                placeholder="First name"
+              />
+              <input
+                id="guestLastName"
+                type="text"
+                value={guestLastName}
+                onChange={(e) => setGuestLastName(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:text-white"
+                placeholder="Last name"
+              />
+            </div>
           </div>
           
           {/* Card Information */}
@@ -3250,7 +3285,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
 
         </div>
       </div>
-      
+
       {/* Sticky Floating Checkout Bar - Mobile Optimized */}
       <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 shadow-2xl z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 sm:py-3">
@@ -3336,7 +3371,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
         carDetails={car}
         bookingDetails={savedBookingDetails}
         guestDetails={{
-          name: guestName || session?.user?.name || `${driverFirstName} ${driverLastName}`.trim() || '',
+          name: `${guestName} ${guestLastName}`.trim() || session?.user?.name || `${driverFirstName} ${driverLastName}`.trim() || '',
           email: guestEmail || session?.user?.email || driverEmail || '',
           bookingCode: '',
           verificationStatus: 'PENDING'

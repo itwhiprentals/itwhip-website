@@ -177,11 +177,30 @@ export async function GET(request: NextRequest) {
     // Determine which host profile to use for approval status
     const effectiveHostProfile = hostProfile || linkedHostProfile
 
-    return NextResponse.json({
+    // CRITICAL FIX: Determine currentRole based on ACTUAL profiles, not stale tokens
+    // This prevents stale partner_token from causing guest-only users to be treated as hosts
+    let effectiveCurrentRole = currentRole
+    let clearStaleHostCookies = false
+    let clearStaleGuestCookies = false
+
+    if (currentRole === 'host' && !hasHostProfile && hasGuestProfile) {
+      // User has a stale host/partner token but NO host profile - they're actually a guest
+      console.log('[Dual-Role Check] ⚠️ Correcting currentRole: token says host but user only has guest profile')
+      effectiveCurrentRole = 'guest'
+      clearStaleHostCookies = true
+    } else if (currentRole === 'guest' && !hasGuestProfile && hasHostProfile) {
+      // User has a stale guest token but NO guest profile - they're actually a host
+      console.log('[Dual-Role Check] ⚠️ Correcting currentRole: token says guest but user only has host profile')
+      effectiveCurrentRole = 'host'
+      clearStaleGuestCookies = true
+    }
+
+    // Build response and clear stale cookies if needed
+    const response = NextResponse.json({
       hasBothRoles,
       hasHostProfile,
       hasGuestProfile,
-      currentRole,
+      currentRole: effectiveCurrentRole,
       hostApprovalStatus: effectiveHostProfile?.approvalStatus || null,
       // Include linked account info for role switching
       isLinkedAccount: !!user.legacyDualId,
@@ -190,6 +209,21 @@ export async function GET(request: NextRequest) {
       hostProfileIsLinked: !hostProfile && !!linkedHostProfile,
       guestProfileIsLinked: !guestProfile && !!linkedGuestProfile
     })
+
+    // Clear stale cookies to prevent future confusion
+    if (clearStaleHostCookies) {
+      console.log('[Dual-Role Check] Clearing stale host/partner cookies')
+      response.cookies.delete('hostAccessToken')
+      response.cookies.delete('hostRefreshToken')
+      response.cookies.delete('partner_token')
+    }
+    if (clearStaleGuestCookies) {
+      console.log('[Dual-Role Check] Clearing stale guest cookies')
+      response.cookies.delete('accessToken')
+      response.cookies.delete('refreshToken')
+    }
+
+    return response
 
   } catch (error) {
     console.error('[Check Dual Role] Error:', error)
