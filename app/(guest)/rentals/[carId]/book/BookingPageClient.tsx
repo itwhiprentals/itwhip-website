@@ -272,6 +272,17 @@ export default function BookingPageClient({ carId }: { carId: string }) {
     error: string | null
   }>({ isValid: false, error: null })
 
+  // Cardholder name validation states (same rules: 3+ chars, letters only, no dots/numbers)
+  const [cardholderFirstValidation, setCardholderFirstValidation] = useState<{
+    isValid: boolean
+    error: string | null
+  }>({ isValid: false, error: null })
+
+  const [cardholderLastValidation, setCardholderLastValidation] = useState<{
+    isValid: boolean
+    error: string | null
+  }>({ isValid: false, error: null })
+
   // DOB/Age validation state
   const [ageValidation, setAgeValidation] = useState<{
     isValid: boolean
@@ -573,6 +584,25 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                 })
               }
 
+              // Also validate cardholder names (same rules)
+              if (firstTrimmed.length >= 3 && validNamePattern.test(firstTrimmed)) {
+                setCardholderFirstValidation({ isValid: true, error: null })
+              } else if (firstTrimmed.length > 0) {
+                setCardholderFirstValidation({
+                  isValid: false,
+                  error: firstTrimmed.length < 3 ? 'Cardholder first name must be at least 3 characters' : 'Cardholder first name can only contain letters'
+                })
+              }
+
+              if (lastTrimmed.length >= 3 && validNamePattern.test(lastTrimmed)) {
+                setCardholderLastValidation({ isValid: true, error: null })
+              } else if (lastTrimmed.length > 0) {
+                setCardholderLastValidation({
+                  isValid: false,
+                  error: lastTrimmed.length < 3 ? 'Cardholder last name must be at least 3 characters' : 'Cardholder last name can only contain letters'
+                })
+              }
+
               console.log('Name auto-filled:', profileData.name)
             }
             if (profileData.email) {
@@ -748,25 +778,38 @@ export default function BookingPageClient({ carId }: { carId: string }) {
     }
 
     // ✅ Check if driver info is complete (all fields valid)
-    // Uses the driverInfoComplete variable defined in VALIDATION CHECKS section
     // This ensures all driver fields pass validation before booking can proceed
+    // No alert/reason - errors show inline under each field
     const isDriverInfoComplete = driverFirstName && driverLastName && driverAge && driverLicense && driverPhone && driverEmail &&
       emailValidation.isValid && phoneValidation.isValid && firstNameValidation.isValid && lastNameValidation.isValid && ageValidation.isValid
 
     if (!isDriverInfoComplete) {
-      return {
-        allowed: false,
-        reason: 'Please complete all Primary Driver Information fields with valid values.'
-      }
+      return { allowed: false }  // No reason - inline errors show under Primary Driver Info fields
     }
 
     // ✅ Check if identity is verified (for non-logged-in users OR users without verification)
     const userIsVerified = userProfile?.documentsVerified || userProfile?.stripeIdentityStatus === 'verified'
     if (!userIsVerified && sessionStatus === 'unauthenticated') {
-      return {
-        allowed: false,
-        reason: 'Please verify your identity before completing the booking.'
-      }
+      return { allowed: false }  // No reason - user sees Verify Identity section
+    }
+
+    // ✅ Check if cardholder name is valid (same rules: 3+ chars, letters only)
+    const isCardholderValid = guestName && guestLastName &&
+      cardholderFirstValidation.isValid && cardholderLastValidation.isValid
+
+    if (!isCardholderValid) {
+      return { allowed: false }  // No reason - inline errors show under Cardholder Name fields
+    }
+
+    // ✅ Check if payment info is complete
+    const isPaymentComplete = cardNumber.length >= 15 && cardExpiry.length === 5 && cardCVC.length >= 3 && cardZip.length === 5
+    if (!isPaymentComplete) {
+      return { allowed: false }  // No reason - user sees incomplete card fields
+    }
+
+    // ✅ Check if terms agreed
+    if (!agreedToTerms) {
+      return { allowed: false }  // No reason - user sees unchecked terms box
     }
 
     // ✅ REQUIRED: Insurance must be selected and calculated
@@ -1181,6 +1224,20 @@ export default function BookingPageClient({ carId }: { carId: string }) {
     setLastNameValidation(validation)
   }
 
+  // Handle cardholder first name change with validation
+  const handleCardholderFirstChange = (value: string) => {
+    setGuestName(value)
+    const validation = validateName(value, 'Cardholder first name')
+    setCardholderFirstValidation(validation)
+  }
+
+  // Handle cardholder last name change with validation
+  const handleCardholderLastChange = (value: string) => {
+    setGuestLastName(value)
+    const validation = validateName(value, 'Cardholder last name')
+    setCardholderLastValidation(validation)
+  }
+
   // ============================================
   // DOB/AGE VALIDATION HELPERS
   // ============================================
@@ -1272,29 +1329,33 @@ export default function BookingPageClient({ carId }: { carId: string }) {
   // ============================================
   
   const handleCheckoutClick = async () => {
-    // Check eligibility first
+    // Check eligibility first - button is already disabled if not allowed
+    // Only show alert for account-level restrictions (has reason), not field validation
     const eligibility = checkBookingEligibility()
     if (!eligibility.allowed) {
-      alert(`❌ Booking Restricted\n\n${eligibility.reason}`)
+      // Only alert if there's a specific reason (account restriction)
+      // Field validation errors show inline - no alert needed
+      if (eligibility.reason) {
+        alert(`❌ Booking Restricted\n\n${eligibility.reason}`)
+      }
       return
     }
-    
+
     // Show warning if manual approval required
     if (eligibility.reason && eligibility.reason.includes('manual approval')) {
       const proceed = confirm(`⚠️ Manual Approval Required\n\n${eligibility.reason}\n\nDo you want to proceed?`)
       if (!proceed) return
     }
-    
-    // Validation checks
+
+    // Validation checks - scroll to incomplete sections instead of alert
     if (!isIdentityVerified) {
       documentsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      alert('Please verify your identity to continue')
       return
     }
     
     if (!paymentComplete) {
       paymentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      alert('Please complete all required fields')
+      // No alert - inline errors show under each field
       return
     }
 
@@ -1727,8 +1788,9 @@ export default function BookingPageClient({ carId }: { carId: string }) {
           </div>
         )}
         
-        {/* ⚠️ ACCOUNT WARNING/RESTRICTION BANNER */}
-        {!eligibility.allowed && car.isActive && (
+        {/* ⚠️ ACCOUNT WARNING/RESTRICTION BANNER - Only show for account-level restrictions (has reason) */}
+        {/* Field validation errors show inline under each field - no banner needed for those */}
+        {!eligibility.allowed && eligibility.reason && car.isActive && (
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4 shadow-sm">
             <div className="flex items-start space-x-3">
               <IoBanOutline className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
@@ -2830,28 +2892,80 @@ export default function BookingPageClient({ carId }: { carId: string }) {
             )
           })()}
 
-          {/* Cardholder Name - First and Last */}
+          {/* Cardholder Name - First and Last with Validation */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Cardholder Name
             </label>
             <div className="grid grid-cols-2 gap-3">
-              <input
-                id="guestName"
-                type="text"
-                value={guestName}
-                onChange={(e) => setGuestName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:text-white"
-                placeholder="First name"
-              />
-              <input
-                id="guestLastName"
-                type="text"
-                value={guestLastName}
-                onChange={(e) => setGuestLastName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:text-white"
-                placeholder="Last name"
-              />
+              {/* First Name */}
+              <div>
+                <div className="relative">
+                  <input
+                    id="guestName"
+                    type="text"
+                    value={guestName}
+                    onChange={(e) => handleCardholderFirstChange(e.target.value)}
+                    className={`w-full px-3 py-2 pr-10 border rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:text-white ${
+                      guestName && cardholderFirstValidation.isValid
+                        ? 'border-green-500 dark:border-green-500'
+                        : guestName && cardholderFirstValidation.error
+                          ? 'border-red-500 dark:border-red-500'
+                          : 'border-gray-300 dark:border-gray-600'
+                    }`}
+                    placeholder="First name"
+                  />
+                  {guestName && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      {cardholderFirstValidation.isValid ? (
+                        <IoCheckmarkCircle className="w-5 h-5 text-green-500" />
+                      ) : cardholderFirstValidation.error ? (
+                        <IoCloseCircle className="w-5 h-5 text-red-500" />
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+                {guestName && cardholderFirstValidation.error && (
+                  <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                    <IoCloseCircleOutline className="w-3.5 h-3.5" />
+                    {cardholderFirstValidation.error}
+                  </p>
+                )}
+              </div>
+              {/* Last Name */}
+              <div>
+                <div className="relative">
+                  <input
+                    id="guestLastName"
+                    type="text"
+                    value={guestLastName}
+                    onChange={(e) => handleCardholderLastChange(e.target.value)}
+                    className={`w-full px-3 py-2 pr-10 border rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:text-white ${
+                      guestLastName && cardholderLastValidation.isValid
+                        ? 'border-green-500 dark:border-green-500'
+                        : guestLastName && cardholderLastValidation.error
+                          ? 'border-red-500 dark:border-red-500'
+                          : 'border-gray-300 dark:border-gray-600'
+                    }`}
+                    placeholder="Last name"
+                  />
+                  {guestLastName && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      {cardholderLastValidation.isValid ? (
+                        <IoCheckmarkCircle className="w-5 h-5 text-green-500" />
+                      ) : cardholderLastValidation.error ? (
+                        <IoCloseCircle className="w-5 h-5 text-red-500" />
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+                {guestLastName && cardholderLastValidation.error && (
+                  <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                    <IoCloseCircleOutline className="w-3.5 h-3.5" />
+                    {cardholderLastValidation.error}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
           
@@ -3354,8 +3468,6 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   <span className="hidden sm:inline">Processing...</span>
                 </span>
-              ) : !eligibility.allowed ? (
-                'Unavailable'
               ) : (
                 'Complete Booking'
               )}
