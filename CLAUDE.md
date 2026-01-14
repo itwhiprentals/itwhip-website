@@ -57,3 +57,14 @@ The app uses a dual-role authentication system:
 
 - Use author: Chris H <info@itwhip.com>
 - Do NOT use Co-Authored-By: Claude lines
+
+## After Each Deployment
+
+**IMPORTANT: Update documentation after every deployment**
+
+After pushing changes to main (deployment), update `DEVNOTES.md`:
+1. Move completed items from "In Progress" to the appropriate "Recent Fixes" section
+2. Add new items to "In Progress" if work is ongoing
+3. Keep the file organized by feature area
+
+This ensures development history is tracked and teammates can see what changed.
