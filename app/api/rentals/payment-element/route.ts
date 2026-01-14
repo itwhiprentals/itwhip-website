@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-06-20',
+  apiVersion: '2024-06-20' as Stripe.LatestApiVersion,
 })
 
 export async function POST(request: NextRequest) {
@@ -27,12 +27,14 @@ export async function POST(request: NextRequest) {
       ...(metadata && typeof metadata === 'object' ? metadata : {})
     }
 
-    // Create Payment Intent with explicit payment methods
-    // Only card, Apple Pay, Google Pay, Cash App Pay, Link - NO bank accounts (ACH takes days to clear)
+    // Create Payment Intent with ONLY these payment methods:
+    // - card (includes Apple Pay, Google Pay as card wallets)
+    // - cashapp (Cash App Pay)
+    // NO us_bank_account (ACH takes 4+ days), NO link (has promotional banners)
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount), // Ensure integer
       currency: 'usd',
-      payment_method_types: ['card', 'cashapp', 'link'],
+      payment_method_types: ['card', 'cashapp'],
       metadata: paymentMetadata,
       ...(email && { receipt_email: email }),
       description: 'ItWhip Car Rental',
