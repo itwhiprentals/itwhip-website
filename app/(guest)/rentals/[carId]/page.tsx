@@ -46,10 +46,18 @@ export async function generateMetadata({
     }
     
     const car = await response.json()
-    
+
     // Get the hero image
     const imageUrl = car.photos?.[0]?.url || 'https://itwhip.com/og-default-car.jpg'
-    const title = `${car.year} ${car.make} ${car.model} - $${car.dailyRate}/day | ItWhip`
+
+    // Build rating/trips info for title
+    const ratingText = car.rating ? `★${car.rating.toFixed(1)}` : ''
+    const tripsText = car.totalTrips ? `${car.totalTrips} trips` : ''
+    const statsText = [ratingText, tripsText].filter(Boolean).join(' · ')
+
+    const title = statsText
+      ? `Rent ${car.year} ${car.make} ${car.model} · ${statsText} · $${car.dailyRate}/day | ItWhip`
+      : `Rent ${car.year} ${car.make} ${car.model} - $${car.dailyRate}/day | ItWhip`
     const description = `Rent this ${car.year} ${car.make} ${car.model} in ${car.city}, ${car.state}. ${car.seats} seats, ${car.transmission || 'automatic'} transmission. ${car.instantBook ? 'Book instantly!' : 'Contact host to book.'}`
     
     // Generate the SEO-friendly URL for OpenGraph
