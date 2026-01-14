@@ -924,7 +924,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
         {/* Book Button */}
         <button
           onClick={handleBooking}
-          disabled={isLoading || !!dateError}
+          disabled={isLoading || !!dateError || loadingQuotes || !currentQuote}
           className="w-full py-3 px-4 bg-black hover:bg-gray-900 text-white font-semibold rounded-lg transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? (
@@ -932,8 +932,15 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
               Processing...
             </span>
+          ) : loadingQuotes ? (
+            <span className="flex items-center justify-center gap-2">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              Loading Insurance...
+            </span>
           ) : dateError ? (
             `Select at least ${minDays} days`
+          ) : !currentQuote ? (
+            'Insurance Required'
           ) : (
             'Continue to Checkout'
           )}

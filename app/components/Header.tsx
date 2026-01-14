@@ -463,12 +463,18 @@ function HeaderInner({
               {/* Show Sign In when guard is active (showAsLoggedIn is false) */}
               {/* Hide during role switch to prevent confusion */}
               {/* Show logout loading indicator when logging out */}
+              {/* Show subtle loading during initial auth check */}
               {isLoggingOut ? (
                 <div className="flex items-center space-x-2 px-3 py-1.5 bg-red-100 dark:bg-red-900/20 rounded-lg">
                   <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
                   <span className="text-sm font-medium text-red-600 dark:text-red-400">Signing out...</span>
                 </div>
-              ) : !isTransitioning && (
+              ) : isCheckingAuth ? (
+                // Show subtle loading indicator during auth check
+                <div className="p-2">
+                  <div className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
+                </div>
+              ) : !isSwitchingRole && (
                 <div>
                   {showAsLoggedIn && user ? (
                     <button

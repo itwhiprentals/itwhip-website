@@ -3,11 +3,12 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { 
+import {
   IoArrowBackOutline,
   IoShieldCheckmarkOutline,
   IoCheckmarkOutline,
   IoCheckmarkCircle,
+  IoCheckmarkCircleOutline,
   IoDocumentTextOutline,
   IoCameraOutline,
   IoCardOutline,
@@ -20,7 +21,8 @@ import {
   IoSparklesOutline,
   IoBanOutline,
   IoCloseCircleOutline,
-  IoHelpCircleOutline
+  IoHelpCircleOutline,
+  IoRibbonOutline
 } from 'react-icons/io5'
 import { format } from 'date-fns'
 import DatePicker from 'react-datepicker'
@@ -81,7 +83,8 @@ interface SavedBookingDetails {
   endTime: string
   deliveryType: string
   deliveryAddress: string
-  insuranceType: string
+  insuranceType?: string  // Legacy field name
+  insuranceTier?: string  // Current field name from BookingWidget ('MINIMUM' | 'BASIC' | 'PREMIUM' | 'LUXURY')
   addOns: {
     refuelService: boolean
     additionalDriver: boolean
@@ -256,6 +259,24 @@ export default function BookingPageClient({ carId }: { carId: string }) {
     isValid: boolean
     error: string | null
   }>({ isValid: false, error: null })
+
+  // Name validation states
+  const [firstNameValidation, setFirstNameValidation] = useState<{
+    isValid: boolean
+    error: string | null
+  }>({ isValid: false, error: null })
+
+  const [lastNameValidation, setLastNameValidation] = useState<{
+    isValid: boolean
+    error: string | null
+  }>({ isValid: false, error: null })
+
+  // DOB/Age validation state
+  const [ageValidation, setAgeValidation] = useState<{
+    isValid: boolean
+    error: string | null
+    age: number | null
+  }>({ isValid: false, error: null, age: null })
 
   // Second driver states
   const [showSecondDriver, setShowSecondDriver] = useState(false)
@@ -520,10 +541,36 @@ export default function BookingPageClient({ carId }: { carId: string }) {
             // Auto-fill form fields from profile
             if (profileData.name) {
               const nameParts = profileData.name.split(' ')
-              setDriverFirstName(nameParts[0] || '')
-              setDriverLastName(nameParts.slice(1).join(' ') || '')
+              const firstName = nameParts[0] || ''
+              const lastName = nameParts.slice(1).join(' ') || ''
+              setDriverFirstName(firstName)
+              setDriverLastName(lastName)
               setGuestName(profileData.name)
-              console.log('✅ Name auto-filled:', profileData.name)
+
+              // Validate auto-filled names - STRICT: 3+ chars, letters only (no dots/numbers)
+              const validNamePattern = /^[a-zA-Z]+(['-][a-zA-Z]+)*$/
+              const firstTrimmed = firstName.trim()
+              const lastTrimmed = lastName.trim()
+
+              if (firstTrimmed.length >= 3 && validNamePattern.test(firstTrimmed)) {
+                setFirstNameValidation({ isValid: true, error: null })
+              } else if (firstTrimmed.length > 0) {
+                setFirstNameValidation({
+                  isValid: false,
+                  error: firstTrimmed.length < 3 ? 'First name must be at least 3 characters' : 'First name can only contain letters'
+                })
+              }
+
+              if (lastTrimmed.length >= 3 && validNamePattern.test(lastTrimmed)) {
+                setLastNameValidation({ isValid: true, error: null })
+              } else if (lastTrimmed.length > 0) {
+                setLastNameValidation({
+                  isValid: false,
+                  error: lastTrimmed.length < 3 ? 'Last name must be at least 3 characters' : 'Last name can only contain letters'
+                })
+              }
+
+              console.log('Name auto-filled:', profileData.name)
             }
             if (profileData.email) {
               setDriverEmail(profileData.email)
@@ -536,14 +583,19 @@ export default function BookingPageClient({ carId }: { carId: string }) {
               console.log('✅ Email auto-filled:', profileData.email)
             }
             if (profileData.phone) {
-              setDriverPhone(profileData.phone)
-              setGuestPhone(profileData.phone)
+              // Format phone to (###)-###-#### format
+              const digits = profileData.phone.replace(/\D/g, '').slice(0, 10)
+              let formattedPhone = profileData.phone
+              if (digits.length === 10) {
+                formattedPhone = `(${digits.slice(0, 3)})-${digits.slice(3, 6)}-${digits.slice(6)}`
+              }
+              setDriverPhone(formattedPhone)
+              setGuestPhone(formattedPhone)
               // Validate pre-filled phone (should always be valid from profile)
-              const digits = profileData.phone.replace(/\D/g, '')
               if (digits.length >= 10) {
                 setPhoneValidation({ isValid: true, error: null })
               }
-              console.log('✅ Phone auto-filled:', profileData.phone)
+              console.log('Phone auto-filled:', formattedPhone)
             }
             
             // Auto-fill document URLs if verified
@@ -691,7 +743,23 @@ export default function BookingPageClient({ carId }: { carId: string }) {
         reason: 'This vehicle is currently unavailable for booking. It may be undergoing maintenance, involved in an insurance claim, or temporarily deactivated by the owner.'
       }
     }
-    
+
+    // ✅ REQUIRED: Insurance must be selected and calculated
+    // No booking can proceed without insurance - it's mandatory
+    if (savedBookingDetails) {
+      // Check both insuranceType (legacy) and insuranceTier (current) field names
+      const insuranceSelection = (savedBookingDetails.insuranceType || savedBookingDetails.insuranceTier || '')?.toLowerCase()
+      const insurancePrice = savedBookingDetails.pricing?.insurancePrice ?? 0
+
+      // Block if no insurance selected OR insurance is explicitly 'none' OR price is 0
+      if (!insuranceSelection || insuranceSelection === 'none' || insurancePrice <= 0) {
+        return {
+          allowed: false,
+          reason: 'Insurance is required for all bookings. Please go back and select an insurance option.'
+        }
+      }
+    }
+
     if (!moderationStatus) return { allowed: true }
     
     // Check if banned
@@ -772,13 +840,15 @@ export default function BookingPageClient({ carId }: { carId: string }) {
   // ============================================
   
   // Check if identity is verified (Stripe Identity or manual documents)
-  // Insurance is optional - not required for checkout
+  // Note: Booking insurance is REQUIRED (validated in checkBookingEligibility)
+  // Personal insurance card upload is OPTIONAL (for deposit discount)
   const isIdentityVerified = userProfile?.documentsVerified || userProfile?.stripeIdentityStatus === 'verified'
   
   // Check if payment form is complete
   const cardValid = cardNumber.length >= 15 && cardExpiry.length === 5 && cardCVC.length >= 3 && cardZip.length === 5
   // Email and phone must be valid, and all driver fields filled
-  const driverInfoComplete = driverFirstName && driverLastName && driverAge && driverLicense && driverPhone && driverEmail && emailValidation.isValid && phoneValidation.isValid
+  const driverInfoComplete = driverFirstName && driverLastName && driverAge && driverLicense && driverPhone && driverEmail &&
+    emailValidation.isValid && phoneValidation.isValid && firstNameValidation.isValid && lastNameValidation.isValid && ageValidation.isValid
   const paymentComplete = guestName && driverInfoComplete && cardValid && agreedToTerms
   
   // Check if can checkout
@@ -992,7 +1062,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
   // PHONE VALIDATION HELPER
   // ============================================
 
-  // Format phone number as user types: (XXX) XXX-XXXX
+  // Format phone number as user types: (###) ###-####
   const formatPhoneNumber = (value: string): string => {
     // Remove all non-digits
     const digits = value.replace(/\D/g, '')
@@ -1000,7 +1070,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
     // Limit to 10 digits
     const limited = digits.slice(0, 10)
 
-    // Format based on length
+    // Format based on length: (###) ###-####
     if (limited.length === 0) return ''
     if (limited.length <= 3) return `(${limited}`
     if (limited.length <= 6) return `(${limited.slice(0, 3)}) ${limited.slice(3)}`
@@ -1041,6 +1111,108 @@ export default function BookingPageClient({ carId }: { carId: string }) {
     setDriverPhone(formatted)
     const validation = validatePhone(formatted)
     setPhoneValidation(validation)
+  }
+
+  // ============================================
+  // NAME VALIDATION HELPERS
+  // ============================================
+
+  // Validate name - STRICT: minimum 3 characters, letters only
+  // NO dots, numbers, or special characters allowed
+  const validateName = (name: string, fieldName: string): { isValid: boolean; error: string | null } => {
+    if (!name) {
+      return { isValid: false, error: null }
+    }
+
+    // Remove extra spaces and check length
+    const trimmed = name.trim()
+
+    // Must be at least 3 characters - reject 1 or 2 letter names
+    if (trimmed.length < 3) {
+      return { isValid: false, error: `${fieldName} must be at least 3 characters` }
+    }
+
+    // STRICT: Only letters allowed, plus hyphens/apostrophes for names like O'Brien, Mary-Jane
+    // NO dots, numbers, or other special characters
+    const validNamePattern = /^[a-zA-Z]+(['-][a-zA-Z]+)*$/
+    if (!validNamePattern.test(trimmed)) {
+      return { isValid: false, error: `${fieldName} can only contain letters` }
+    }
+
+    return { isValid: true, error: null }
+  }
+
+  // Handle first name change with validation
+  const handleFirstNameChange = (value: string) => {
+    setDriverFirstName(value)
+    const validation = validateName(value, 'First name')
+    setFirstNameValidation(validation)
+  }
+
+  // Handle last name change with validation
+  const handleLastNameChange = (value: string) => {
+    setDriverLastName(value)
+    const validation = validateName(value, 'Last name')
+    setLastNameValidation(validation)
+  }
+
+  // ============================================
+  // DOB/AGE VALIDATION HELPERS
+  // ============================================
+
+  // Get minimum age requirement for the vehicle
+  const getMinimumAgeForVehicle = (): number => {
+    // Exotic/Luxury vehicles typically require 25+
+    // Standard vehicles require 21+
+    const carType = car?.carType?.toLowerCase() || ''
+    if (carType === 'exotic' || carType === 'luxury') {
+      return 25
+    }
+    return 21
+  }
+
+  // Calculate age from date of birth
+  const calculateAge = (dob: Date): number => {
+    const today = new Date()
+    let age = today.getFullYear() - dob.getFullYear()
+    const monthDiff = today.getMonth() - dob.getMonth()
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+      age--
+    }
+    return age
+  }
+
+  // Validate age meets vehicle requirements
+  const validateAge = (dob: Date | null): { isValid: boolean; error: string | null; age: number | null } => {
+    if (!dob) {
+      return { isValid: false, error: null, age: null }
+    }
+
+    const age = calculateAge(dob)
+    const minAge = getMinimumAgeForVehicle()
+
+    if (age < minAge) {
+      const carType = car?.carType?.toLowerCase() || ''
+      const vehicleDesc = (carType === 'exotic' || carType === 'luxury') ? 'exotic/luxury vehicles' : 'this vehicle'
+      return {
+        isValid: false,
+        error: `Must be ${minAge}+ to rent ${vehicleDesc}. You are ${age}.`,
+        age
+      }
+    }
+
+    if (age > 100) {
+      return { isValid: false, error: 'Please enter a valid date of birth', age: null }
+    }
+
+    return { isValid: true, error: null, age }
+  }
+
+  // Handle DOB change with validation
+  const handleDobChange = (date: Date | null) => {
+    setDriverAge(date)
+    const validation = validateAge(date)
+    setAgeValidation(validation)
   }
 
   // ============================================
@@ -1100,7 +1272,15 @@ export default function BookingPageClient({ carId }: { carId: string }) {
       alert('Please complete all required fields')
       return
     }
-    
+
+    // Double-check: Insurance is REQUIRED for all bookings
+    const insuranceSelection = (savedBookingDetails?.insuranceType || savedBookingDetails?.insuranceTier || '')?.toLowerCase()
+    const insurancePrice = savedBookingDetails?.pricing?.insurancePrice ?? 0
+    if (!insuranceSelection || insuranceSelection === 'none' || insurancePrice <= 0) {
+      alert('Insurance is required for all bookings. Please go back and select an insurance option.')
+      return
+    }
+
     setIsProcessing(true)
     
     try {
@@ -1503,8 +1683,9 @@ export default function BookingPageClient({ carId }: { carId: string }) {
             <div className="flex items-start space-x-3">
               <IoCheckmarkCircle className="w-6 h-6 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
-                <p className="font-semibold text-green-900 dark:text-green-100 mb-1">
-                  Welcome back, {userProfile.name}! ✨
+                <p className="font-semibold text-green-900 dark:text-green-100 mb-1 flex items-center gap-1.5">
+                  Welcome back, {userProfile.name}!
+                  <IoSparklesOutline className="w-4 h-4 text-amber-500" />
                 </p>
                 <ul className="space-y-1 text-xs text-green-800 dark:text-green-200">
                   <li>✓ Your documents are verified - no need to upload again!</li>
@@ -1561,8 +1742,9 @@ export default function BookingPageClient({ carId }: { carId: string }) {
             <div className="flex items-start space-x-3">
               <IoSparklesOutline className="w-6 h-6 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="font-semibold text-green-900 dark:text-green-100 mb-1">
-                  Insurance Discount Active! 🎉
+                <p className="font-semibold text-green-900 dark:text-green-100 mb-1 flex items-center gap-1.5">
+                  Insurance Discount Active!
+                  <IoRibbonOutline className="w-4 h-4 text-green-600" />
                 </p>
                 <p className="text-sm text-green-800 dark:text-green-200">
                   Your verified insurance ({userProfile.insuranceProvider}) has reduced your deposit by 50%!
@@ -1626,9 +1808,19 @@ export default function BookingPageClient({ carId }: { carId: string }) {
               <div>
                 <p className="text-sm font-medium text-gray-900 dark:text-white">Insurance Selected</p>
                 <p className="text-xs text-gray-600 dark:text-gray-400">
-                  {savedBookingDetails.insuranceType === 'premium' ? 'Premium Protection' :
-                   savedBookingDetails.insuranceType === 'standard' ? 'Standard Protection' : 'Basic Protection'}
-                  - ${savedBookingDetails.pricing.insurancePrice / numberOfDays}/day
+                  {(() => {
+                    // Handle both insuranceType (legacy) and insuranceTier (current) field names
+                    const tier = (savedBookingDetails.insuranceType || savedBookingDetails.insuranceTier || '').toUpperCase()
+                    switch(tier) {
+                      case 'LUXURY': return 'Luxury Protection'
+                      case 'PREMIUM': return 'Premium Protection'
+                      case 'BASIC':
+                      case 'STANDARD': return 'Standard Protection'
+                      case 'MINIMUM': return 'Minimum Protection'
+                      default: return 'Basic Protection'
+                    }
+                  })()}
+                  {' '}- ${savedBookingDetails.pricing.insurancePrice / numberOfDays}/day
                 </p>
               </div>
             </div>
@@ -1684,28 +1876,74 @@ export default function BookingPageClient({ carId }: { carId: string }) {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 First Name <span className="text-red-500">*</span>
               </label>
-              <input
-                type="text"
-                value={driverFirstName}
-                onChange={(e) => setDriverFirstName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white dark:bg-gray-700 dark:text-white"
-                placeholder="John"
-                required
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  value={driverFirstName}
+                  onChange={(e) => handleFirstNameChange(e.target.value)}
+                  className={`w-full px-3 py-2 pr-10 border rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white dark:bg-gray-700 dark:text-white ${
+                    driverFirstName && firstNameValidation.isValid
+                      ? 'border-green-500 dark:border-green-500'
+                      : driverFirstName && firstNameValidation.error
+                        ? 'border-red-500 dark:border-red-500'
+                        : 'border-gray-300 dark:border-gray-600'
+                  }`}
+                  placeholder="John"
+                  required
+                />
+                {driverFirstName && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    {firstNameValidation.isValid ? (
+                      <IoCheckmarkCircle className="w-5 h-5 text-green-500" />
+                    ) : firstNameValidation.error ? (
+                      <IoCloseCircle className="w-5 h-5 text-red-500" />
+                    ) : null}
+                  </div>
+                )}
+              </div>
+              {driverFirstName && firstNameValidation.error && (
+                <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                  <IoCloseCircleOutline className="w-3.5 h-3.5" />
+                  {firstNameValidation.error}
+                </p>
+              )}
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Last Name <span className="text-red-500">*</span>
               </label>
-              <input
-                type="text"
-                value={driverLastName}
-                onChange={(e) => setDriverLastName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white dark:bg-gray-700 dark:text-white"
-                placeholder="Doe"
-                required
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  value={driverLastName}
+                  onChange={(e) => handleLastNameChange(e.target.value)}
+                  className={`w-full px-3 py-2 pr-10 border rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white dark:bg-gray-700 dark:text-white ${
+                    driverLastName && lastNameValidation.isValid
+                      ? 'border-green-500 dark:border-green-500'
+                      : driverLastName && lastNameValidation.error
+                        ? 'border-red-500 dark:border-red-500'
+                        : 'border-gray-300 dark:border-gray-600'
+                  }`}
+                  placeholder="Doe"
+                  required
+                />
+                {driverLastName && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    {lastNameValidation.isValid ? (
+                      <IoCheckmarkCircle className="w-5 h-5 text-green-500" />
+                    ) : lastNameValidation.error ? (
+                      <IoCloseCircle className="w-5 h-5 text-red-500" />
+                    ) : null}
+                  </div>
+                )}
+              </div>
+              {driverLastName && lastNameValidation.error && (
+                <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                  <IoCloseCircleOutline className="w-3.5 h-3.5" />
+                  {lastNameValidation.error}
+                </p>
+              )}
             </div>
 
             <div>
@@ -1714,20 +1952,38 @@ export default function BookingPageClient({ carId }: { carId: string }) {
               </label>
               <DatePicker
                 selected={driverAge}
-                onChange={(date) => setDriverAge(date)}
+                onChange={(date) => handleDobChange(date)}
                 showYearDropdown
                 showMonthDropdown
                 scrollableYearDropdown
                 yearDropdownItemNumber={100}
                 dateFormat="MM/dd/yyyy"
                 placeholderText="Select date of birth"
-                className="w-full px-2 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-amber-500 focus:border-amber-500 cursor-pointer"
+                className={`w-full px-2 py-2 bg-white dark:bg-gray-700 border rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-amber-500 focus:border-amber-500 cursor-pointer ${
+                  driverAge && ageValidation.isValid
+                    ? 'border-green-500 dark:border-green-500'
+                    : driverAge && ageValidation.error
+                      ? 'border-red-500 dark:border-red-500'
+                      : 'border-gray-200 dark:border-gray-600'
+                }`}
                 wrapperClassName="w-full"
                 calendarClassName="!rounded-xl !border-0 !shadow-xl"
                 popperClassName="!z-50"
                 required
               />
-              <p className="text-xs text-gray-500 mt-1">Must be 21 or older</p>
+              {driverAge && ageValidation.error ? (
+                <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                  <IoCloseCircleOutline className="w-3.5 h-3.5" />
+                  {ageValidation.error}
+                </p>
+              ) : driverAge && ageValidation.isValid && ageValidation.age ? (
+                <p className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
+                  <IoCheckmarkCircleOutline className="w-3.5 h-3.5" />
+                  You are {ageValidation.age} years old
+                </p>
+              ) : (
+                <p className="text-xs text-gray-500 mt-1">Must be {getMinimumAgeForVehicle()}+ to rent this vehicle</p>
+              )}
             </div>
 
             <div>
@@ -1761,7 +2017,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                         ? 'border-red-500 dark:border-red-500'
                         : 'border-gray-300 dark:border-gray-600'
                   }`}
-                  placeholder="(602) 555-0100"
+                  placeholder="(602)-555-0100"
                   required
                 />
                 {/* Validation icon */}
@@ -2929,11 +3185,12 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                 </div>
 
                     {/* Grand Total (Trip + Deposit) - NO arrow for this row */}
+                    {/* Use amountToPay (after credits) + deposit for the actual total due */}
                     <div className="flex justify-between items-baseline pt-3 border-t dark:border-gray-700">
                       <span className="text-base font-semibold text-gray-900 dark:text-white">Total Due Today</span>
                       <div className="text-right">
                         <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                          ${formatPrice(pricing.total + adjustedDeposit)}
+                          ${formatPrice(appliedBalances.amountToPay + adjustedDeposit)}
                         </span>
                       </div>
                     </div>
@@ -3015,7 +3272,15 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                 },
                 city: carCity
               })
-              const grandTotal = pricing.total + adjustedDeposit
+              // Calculate applied balances to account for credits/bonus
+              const stickyAppliedBalances = calculateAppliedBalances(
+                pricing,
+                adjustedDeposit,
+                guestBalances,
+                0.25 // 25% max bonus
+              )
+              // Use amountToPay (after credits) + deposit for the actual total
+              const grandTotal = stickyAppliedBalances.amountToPay + adjustedDeposit
 
               return (
                 <div className="min-w-0 flex-1">
@@ -3026,7 +3291,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                     <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">total</span>
                   </div>
                   <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
-                    <span className="hidden sm:inline">${formatPrice(pricing.total)} + </span>
+                    <span className="hidden sm:inline">${formatPrice(stickyAppliedBalances.amountToPay)} + </span>
                     <span className="text-red-600 dark:text-red-400">${formatPrice(adjustedDeposit)} deposit</span>
                     <span className="text-gray-400 dark:text-gray-500 ml-1">(refundable)</span>
                   </p>

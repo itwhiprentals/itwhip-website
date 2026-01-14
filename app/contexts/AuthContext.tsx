@@ -4,7 +4,8 @@
 // Implements Google/Airbnb-style instant role switching without page refresh
 // Source: https://react.dev/learn/managing-state
 
-import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react'
+import { usePathname } from 'next/navigation'
 
 // ============================================
 // TYPES
@@ -292,8 +293,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   // Initial auth check on mount
+  // Also retry after a short delay to handle timing issues with cookie writes after OAuth redirect
   useEffect(() => {
     refreshAuth()
+
+    // Retry auth check after 500ms in case cookies weren't immediately available
+    // This handles edge cases where OAuth redirect cookies take a moment to be readable
+    const retryTimeout = setTimeout(() => {
+      console.log('[AuthContext] Running retry auth check after mount')
+      refreshAuth()
+    }, 500)
+
+    return () => clearTimeout(retryTimeout)
   }, [refreshAuth])
 
   // Re-check auth when window regains focus (handles external login/logout)
@@ -306,6 +317,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.addEventListener('focus', handleFocus)
     return () => window.removeEventListener('focus', handleFocus)
   }, [refreshAuth])
+
+  // Track pathname changes and refresh auth when navigating to protected pages
+  // This ensures auth state is up-to-date after OAuth redirects
+  const pathname = usePathname()
+  const prevPathnameRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    // Only refresh if pathname changed (not on initial mount - that's handled above)
+    if (prevPathnameRef.current !== null && prevPathnameRef.current !== pathname) {
+      // Check if navigating to a protected page that needs fresh auth
+      const protectedPaths = ['/dashboard', '/host/', '/partner/', '/admin/', '/profile', '/messages']
+      const isProtectedPath = protectedPaths.some(p => pathname?.startsWith(p))
+
+      if (isProtectedPath) {
+        console.log('[AuthContext] Navigated to protected path, refreshing auth:', pathname)
+        refreshAuth()
+      }
+    }
+
+    prevPathnameRef.current = pathname
+  }, [pathname, refreshAuth])
 
   return (
     <AuthContext.Provider value={{ ...state, refreshAuth, switchRole, logout, setUser }}>
