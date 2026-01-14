@@ -1875,7 +1875,7 @@ model RentalCar {
   RentalBooking              RentalBooking[]
   VehicleClassification      VehicleClassification?     @relation(fields: [classificationId], references: [id])
   RentalHost                 RentalHost                 @relation(fields: [hostId], references: [id])
-  RentalCarPhoto             RentalCarPhoto[]
+  photos                     RentalCarPhoto[]
   RentalReview               RentalReview[]
   VehicleCoverageOverride    VehicleCoverageOverride[]
   VehicleInsuranceOverride   VehicleInsuranceOverride[]
