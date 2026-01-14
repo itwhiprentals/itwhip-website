@@ -202,10 +202,12 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
   const [selfiePhotoUrl, setSelfiePhotoUrl] = useState('')
   const [isUploading, setIsUploading] = useState(false)
 
+  // Insurance upload expandable section (collapsed by default per Baymard best practices)
+  const [showInsuranceUpload, setShowInsuranceUpload] = useState(false)
+
   // Stripe Identity verification state
   const [isVerifyingIdentity, setIsVerifyingIdentity] = useState(false)
   const [identityError, setIdentityError] = useState<string | null>(null)
-  const [verificationEmail, setVerificationEmail] = useState('')
   const [existingAccountInfo, setExistingAccountInfo] = useState<{
     exists: boolean
     type: 'guest' | 'host' | null
@@ -222,7 +224,7 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
   const [cardCVC, setCardCVC] = useState('')
   const [cardZip, setCardZip] = useState('')
   const [agreedToTerms, setAgreedToTerms] = useState(false)
-  
+
   // Primary driver information states
   const [driverFirstName, setDriverFirstName] = useState('')
   const [driverLastName, setDriverLastName] = useState('')
@@ -242,6 +244,19 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
   const [driverLicense, setDriverLicense] = useState('')
   const [driverPhone, setDriverPhone] = useState('')
   const [driverEmail, setDriverEmail] = useState('')
+
+  // Email validation state
+  const [emailValidation, setEmailValidation] = useState<{
+    isValid: boolean
+    error: string | null
+    suggestion: string | null
+  }>({ isValid: false, error: null, suggestion: null })
+
+  // Phone validation state
+  const [phoneValidation, setPhoneValidation] = useState<{
+    isValid: boolean
+    error: string | null
+  }>({ isValid: false, error: null })
 
   // Second driver states
   const [showSecondDriver, setShowSecondDriver] = useState(false)
@@ -514,11 +529,21 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
             if (profileData.email) {
               setDriverEmail(profileData.email)
               setGuestEmail(profileData.email)
+              // Validate pre-filled email (should always be valid from profile)
+              const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+              if (emailRegex.test(profileData.email)) {
+                setEmailValidation({ isValid: true, error: null, suggestion: null })
+              }
               console.log('✅ Email auto-filled:', profileData.email)
             }
             if (profileData.phone) {
               setDriverPhone(profileData.phone)
               setGuestPhone(profileData.phone)
+              // Validate pre-filled phone (should always be valid from profile)
+              const digits = profileData.phone.replace(/\D/g, '')
+              if (digits.length >= 10) {
+                setPhoneValidation({ isValid: true, error: null })
+              }
               console.log('✅ Phone auto-filled:', profileData.phone)
             }
             
@@ -753,7 +778,8 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
   
   // Check if payment form is complete
   const cardValid = cardNumber.length >= 15 && cardExpiry.length === 5 && cardCVC.length >= 3 && cardZip.length === 5
-  const driverInfoComplete = driverFirstName && driverLastName && driverAge && driverLicense && driverPhone && driverEmail
+  // Email and phone must be valid, and all driver fields filled
+  const driverInfoComplete = driverFirstName && driverLastName && driverAge && driverLicense && driverPhone && driverEmail && emailValidation.isValid && phoneValidation.isValid
   const paymentComplete = guestName && driverInfoComplete && cardValid && agreedToTerms
   
   // Check if can checkout
@@ -866,9 +892,162 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
   }
   
   // ============================================
+  // EMAIL VALIDATION HELPER
+  // ============================================
+
+  // Common email domains for validation
+  const COMMON_EMAIL_DOMAINS = [
+    'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com',
+    'aol.com', 'mail.com', 'protonmail.com', 'live.com', 'msn.com',
+    'ymail.com', 'me.com', 'comcast.net', 'att.net', 'verizon.net',
+    'cox.net', 'sbcglobal.net', 'bellsouth.net', 'charter.net'
+  ]
+
+  // Common typos mapping
+  const DOMAIN_TYPO_CORRECTIONS: Record<string, string> = {
+    'gmai.com': 'gmail.com',
+    'gmial.com': 'gmail.com',
+    'gmil.com': 'gmail.com',
+    'gmail.co': 'gmail.com',
+    'gmal.com': 'gmail.com',
+    'gamil.com': 'gmail.com',
+    'gnail.com': 'gmail.com',
+    'yaho.com': 'yahoo.com',
+    'yahooo.com': 'yahoo.com',
+    'yahoo.co': 'yahoo.com',
+    'yhaoo.com': 'yahoo.com',
+    'yaoo.com': 'yahoo.com',
+    'hotmal.com': 'hotmail.com',
+    'hotmai.com': 'hotmail.com',
+    'hotmail.co': 'hotmail.com',
+    'hotamil.com': 'hotmail.com',
+    'outlok.com': 'outlook.com',
+    'outloo.com': 'outlook.com',
+    'outlook.co': 'outlook.com',
+    'outlookcom': 'outlook.com',
+    'iclould.com': 'icloud.com',
+    'icloud.co': 'icloud.com',
+    'icoud.com': 'icloud.com'
+  }
+
+  const validateEmail = (email: string): { isValid: boolean; error: string | null; suggestion: string | null } => {
+    if (!email) {
+      return { isValid: false, error: null, suggestion: null }
+    }
+
+    // Basic format check
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      return { isValid: false, error: 'Please enter a valid email address', suggestion: null }
+    }
+
+    const [localPart, domain] = email.toLowerCase().split('@')
+
+    // Check for minimum local part length
+    if (localPart.length < 1) {
+      return { isValid: false, error: 'Email address is too short', suggestion: null }
+    }
+
+    // Check for typos in domain
+    if (DOMAIN_TYPO_CORRECTIONS[domain]) {
+      const correctedDomain = DOMAIN_TYPO_CORRECTIONS[domain]
+      return {
+        isValid: false,
+        error: null,
+        suggestion: `Did you mean ${localPart}@${correctedDomain}?`
+      }
+    }
+
+    // Check for valid TLD
+    const tld = domain.split('.').pop()
+    if (!tld || tld.length < 2) {
+      return { isValid: false, error: 'Please enter a valid email domain', suggestion: null }
+    }
+
+    // Check for disposable email patterns (optional - basic check)
+    const disposablePatterns = ['tempmail', 'throwaway', '10minute', 'guerrilla', 'mailinator']
+    if (disposablePatterns.some(pattern => domain.includes(pattern))) {
+      return { isValid: false, error: 'Please use a permanent email address', suggestion: null }
+    }
+
+    return { isValid: true, error: null, suggestion: null }
+  }
+
+  // Handle email change with validation
+  const handleDriverEmailChange = (email: string) => {
+    setDriverEmail(email)
+    const validation = validateEmail(email)
+    setEmailValidation(validation)
+  }
+
+  // Accept email suggestion
+  const acceptEmailSuggestion = () => {
+    if (emailValidation.suggestion) {
+      const suggested = emailValidation.suggestion.replace('Did you mean ', '').replace('?', '')
+      setDriverEmail(suggested)
+      setEmailValidation({ isValid: true, error: null, suggestion: null })
+    }
+  }
+
+  // ============================================
+  // PHONE VALIDATION HELPER
+  // ============================================
+
+  // Format phone number as user types: (XXX) XXX-XXXX
+  const formatPhoneNumber = (value: string): string => {
+    // Remove all non-digits
+    const digits = value.replace(/\D/g, '')
+
+    // Limit to 10 digits
+    const limited = digits.slice(0, 10)
+
+    // Format based on length
+    if (limited.length === 0) return ''
+    if (limited.length <= 3) return `(${limited}`
+    if (limited.length <= 6) return `(${limited.slice(0, 3)}) ${limited.slice(3)}`
+    return `(${limited.slice(0, 3)}) ${limited.slice(3, 6)}-${limited.slice(6)}`
+  }
+
+  // Validate phone number
+  const validatePhone = (phone: string): { isValid: boolean; error: string | null } => {
+    if (!phone) {
+      return { isValid: false, error: null }
+    }
+
+    // Extract digits only
+    const digits = phone.replace(/\D/g, '')
+
+    // Must be exactly 10 digits for US numbers
+    if (digits.length < 10) {
+      return { isValid: false, error: 'Phone number must be 10 digits' }
+    }
+
+    // Check for invalid area codes (can't start with 0 or 1)
+    if (digits[0] === '0' || digits[0] === '1') {
+      return { isValid: false, error: 'Invalid area code' }
+    }
+
+    // Check for obviously fake numbers
+    const fakePatterns = ['0000000000', '1111111111', '1234567890', '5555555555']
+    if (fakePatterns.includes(digits)) {
+      return { isValid: false, error: 'Please enter a valid phone number' }
+    }
+
+    return { isValid: true, error: null }
+  }
+
+  // Handle phone change with formatting and validation
+  const handleDriverPhoneChange = (value: string) => {
+    const formatted = formatPhoneNumber(value)
+    setDriverPhone(formatted)
+    const validation = validatePhone(formatted)
+    setPhoneValidation(validation)
+  }
+
+  // ============================================
   // FORMAT HELPERS
   // ============================================
-  
+
   const formatCardNumber = (value: string) => {
     const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '')
     const matches = v.match(/\d{4,16}/g)
@@ -1292,7 +1471,7 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
       </div>
       
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-4 py-6 pb-32">
+      <div className="max-w-4xl mx-auto px-4 py-6 pb-24">
         
         {/* ✅ NEW: VEHICLE UNAVAILABLE BANNER - HIGHEST PRIORITY */}
         {!car.isActive && (
@@ -1405,9 +1584,9 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
             <div className="text-sm">
               <p className="font-medium text-amber-900 dark:text-amber-100 mb-2">Important Booking Information</p>
               <ul className="space-y-1 text-xs text-amber-800 dark:text-amber-200">
-                <li>• <strong>No charges until approved:</strong> Your card will be saved but not charged until we verify your documents and approve your booking</li>
-                <li>• <strong>Peer-to-peer rental:</strong> You're renting directly from a vehicle owner, not a traditional rental company</li>
-                <li>• <strong>Verification required:</strong> All documents must be verified before your trip is confirmed</li>
+                <li>• <strong>Secure identity verification:</strong> We use Stripe Identity to verify your driver's license and match your selfie for your protection</li>
+                <li>• <strong>No charges until approved:</strong> Your card is securely saved but won't be charged until the host approves your booking</li>
+                <li>• <strong>Peer-to-peer rental:</strong> You're renting directly from a verified vehicle owner through our trusted platform</li>
               </ul>
             </div>
           </div>
@@ -1570,30 +1749,106 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Phone Number <span className="text-red-500">*</span>
               </label>
-              <input
-                type="tel"
-                value={driverPhone}
-                onChange={(e) => setDriverPhone(e.target.value)}
-                disabled={!!userProfile?.phone}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-600"
-                placeholder="(602) 555-0100"
-                required
-              />
+              <div className="relative">
+                <input
+                  type="tel"
+                  value={driverPhone}
+                  onChange={(e) => handleDriverPhoneChange(e.target.value)}
+                  disabled={!!userProfile?.phone}
+                  className={`w-full px-3 py-2 pr-10 border rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-600 ${
+                    driverPhone && phoneValidation.isValid
+                      ? 'border-green-500 dark:border-green-500'
+                      : driverPhone && phoneValidation.error
+                        ? 'border-red-500 dark:border-red-500'
+                        : 'border-gray-300 dark:border-gray-600'
+                  }`}
+                  placeholder="(602) 555-0100"
+                  required
+                />
+                {/* Validation icon */}
+                {driverPhone && !userProfile?.phone && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    {phoneValidation.isValid ? (
+                      <IoCheckmarkCircle className="w-5 h-5 text-green-500" />
+                    ) : phoneValidation.error ? (
+                      <IoCloseCircle className="w-5 h-5 text-red-500" />
+                    ) : null}
+                  </div>
+                )}
+              </div>
+              {/* Phone validation feedback */}
+              {driverPhone && phoneValidation.error && (
+                <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                  <IoCloseCircleOutline className="w-3.5 h-3.5" />
+                  {phoneValidation.error}
+                </p>
+              )}
+              {driverPhone && phoneValidation.isValid && (
+                <p className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
+                  <IoCheckmarkOutline className="w-3.5 h-3.5" />
+                  Valid phone number
+                </p>
+              )}
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Email Address <span className="text-red-500">*</span>
               </label>
-              <input
-                type="email"
-                value={driverEmail}
-                onChange={(e) => setDriverEmail(e.target.value)}
-                disabled={!!userProfile?.email}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-600"
-                placeholder="john@example.com"
-                required
-              />
+              <div className="relative">
+                <input
+                  type="email"
+                  value={driverEmail}
+                  onChange={(e) => handleDriverEmailChange(e.target.value)}
+                  disabled={!!userProfile?.email}
+                  className={`w-full px-3 py-2 pr-10 border rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-600 ${
+                    driverEmail && emailValidation.isValid
+                      ? 'border-green-500 dark:border-green-500'
+                      : driverEmail && (emailValidation.error || emailValidation.suggestion)
+                        ? 'border-orange-500 dark:border-orange-500'
+                        : 'border-gray-300 dark:border-gray-600'
+                  }`}
+                  placeholder="john@example.com"
+                  required
+                />
+                {/* Validation icon */}
+                {driverEmail && !userProfile?.email && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    {emailValidation.isValid ? (
+                      <IoCheckmarkCircle className="w-5 h-5 text-green-500" />
+                    ) : emailValidation.error || emailValidation.suggestion ? (
+                      <IoWarningOutline className="w-5 h-5 text-orange-500" />
+                    ) : null}
+                  </div>
+                )}
+              </div>
+              {/* Email validation feedback */}
+              {driverEmail && emailValidation.error && (
+                <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                  <IoCloseCircleOutline className="w-3.5 h-3.5" />
+                  {emailValidation.error}
+                </p>
+              )}
+              {driverEmail && emailValidation.suggestion && (
+                <div className="flex items-center gap-2 mt-1">
+                  <p className="text-xs text-orange-600 dark:text-orange-400">
+                    {emailValidation.suggestion}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={acceptEmailSuggestion}
+                    className="text-xs text-amber-600 hover:text-amber-700 dark:text-amber-500 underline font-medium"
+                  >
+                    Yes, fix it
+                  </button>
+                </div>
+              )}
+              {driverEmail && emailValidation.isValid && (
+                <p className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
+                  <IoCheckmarkOutline className="w-3.5 h-3.5" />
+                  Valid email address
+                </p>
+              )}
             </div>
           </div>
 
@@ -1708,36 +1963,8 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
         
         {/* Identity Verification Section */}
         <div ref={documentsRef} className="bg-white dark:bg-gray-800 rounded-lg p-6 mb-4 shadow-sm border border-gray-300 dark:border-gray-600">
-          {/* Progress Indicator */}
-          <div className="flex items-center justify-between mb-6">
-            {[
-              { step: 1, label: 'Verify ID', done: userProfile?.documentsVerified || userProfile?.stripeIdentityStatus === 'verified' },
-              { step: 2, label: 'Payment', done: false },
-              { step: 3, label: 'Confirm', done: false }
-            ].map((item, idx) => (
-              <div key={item.step} className="flex items-center">
-                <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
-                  item.done
-                    ? 'bg-green-500 text-white'
-                    : item.step === 1
-                      ? 'bg-black text-white'
-                      : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
-                }`}>
-                  {item.done ? '✓' : item.step}
-                </div>
-                <span className={`ml-1 sm:ml-2 text-[10px] sm:text-xs font-medium ${
-                  item.done ? 'text-green-600' : item.step === 1 ? 'text-gray-900 dark:text-white' : 'text-gray-400'
-                }`}>
-                  {item.label}
-                </span>
-                {idx < 2 && (
-                  <div className="w-4 sm:w-16 h-0.5 mx-1 sm:mx-2 bg-gray-200 dark:bg-gray-700" />
-                )}
-              </div>
-            ))}
-          </div>
-
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-1 flex items-center gap-2">
+            <IoShieldCheckmarkOutline className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             Verify Your Identity
             {(userProfile?.documentsVerified || userProfile?.stripeIdentityStatus === 'verified') && (
               <span className="ml-2 text-sm text-green-600 dark:text-green-400 font-normal">
@@ -1748,6 +1975,50 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
             Verify once, instant bookings forever + unlock your $250 Credit and Bonus
           </p>
+
+          {/* Progress Indicator */}
+          {(() => {
+            const isIdentityVerified = userProfile?.documentsVerified || userProfile?.stripeIdentityStatus === 'verified'
+            const isPaymentComplete = cardValid && guestName
+            const isConfirmReady = agreedToTerms && isPaymentComplete && isIdentityVerified
+
+            return (
+              <div className="flex items-center justify-between mb-6">
+                {[
+                  { step: 1, label: 'Verify ID', done: isIdentityVerified },
+                  { step: 2, label: 'Payment', done: isPaymentComplete },
+                  { step: 3, label: 'Confirm', done: isConfirmReady }
+                ].map((item, idx) => (
+                  <div key={item.step} className="flex items-center">
+                    <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium transition-colors ${
+                      item.done
+                        ? 'bg-green-500 text-white'
+                        : item.step === 1
+                          ? 'bg-black text-white'
+                          : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                    }`}>
+                      {item.done ? '✓' : item.step}
+                    </div>
+                    <span className={`ml-1 sm:ml-2 text-[10px] sm:text-xs font-medium ${
+                      item.done ? 'text-green-600' : item.step === 1 ? 'text-gray-900 dark:text-white' : 'text-gray-400'
+                    }`}>
+                      {item.label}
+                    </span>
+                    {idx < 2 && (
+                      <div className={`w-4 sm:w-16 h-0.5 mx-1 sm:mx-2 transition-colors ${
+                        item.done ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-700'
+                      }`} />
+                    )}
+                    {idx === 2 && (
+                      <IoCheckmarkCircle className={`ml-1 w-4 h-4 transition-colors ${
+                        item.done ? 'text-green-500' : 'text-gray-300 dark:text-gray-600'
+                      }`} />
+                    )}
+                  </div>
+                ))}
+              </div>
+            )
+          })()}
 
           {/* 🔐 NOT LOGGED IN - VERIFY FIRST, ACCOUNT LATER */}
           {sessionStatus === 'unauthenticated' ? (
@@ -1800,129 +2071,162 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
 
               {/* Main verification card */}
               {!existingAccountInfo?.exists && (
-                <div className="p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg">
-                  {/* Benefits banner */}
-                  <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 px-3 py-2 rounded-lg mb-4">
-                    <IoSparklesOutline className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" />
-                    <span className="text-xs text-green-700 dark:text-green-300 font-medium">
-                      Get $250 Credit and Bonus when you verify!
-                    </span>
-                  </div>
-
-                  <div className="flex items-start space-x-3 mb-4">
-                    <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-                      <IoShieldCheckmarkOutline className="w-5 h-5 text-gray-400" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
-                        Quick Identity Check
-                      </p>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
-                        Takes ~2 minutes • No account required • Verify once, book forever
+                <>
+                  {/* Show message if driver info not complete */}
+                  {!driverInfoComplete ? (
+                    <div className="flex items-center gap-3 p-4 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg">
+                      <IoInformationCircleOutline className="w-6 h-6 text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Please complete the Primary Driver Information above to verify your identity.
                       </p>
                     </div>
-                  </div>
+                  ) : (
+                    <>
+                      <div className="flex items-start space-x-3 mb-4">
+                        <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
+                          <IoShieldCheckmarkOutline className="w-5 h-5 text-gray-400" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">
+                            Quick Identity Check
+                          </p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                            Takes ~2 minutes • Verify once, book forever
+                          </p>
+                        </div>
+                      </div>
 
-                  {/* Email input */}
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Email Address
-                    </label>
-                    <input
-                      type="email"
-                      value={verificationEmail}
-                      onChange={(e) => setVerificationEmail(e.target.value)}
-                      placeholder="your@email.com"
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                    />
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      We'll use this to save your verification for future bookings
-                    </p>
-                  </div>
+                      {/* Using email from Primary Driver Info */}
+                      <div className={`mb-4 p-3 rounded-lg ${
+                        emailValidation.isValid
+                          ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
+                          : emailValidation.suggestion || emailValidation.error
+                            ? 'bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800'
+                            : 'bg-gray-50 dark:bg-gray-700/50'
+                      }`}>
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            Verifying as: <span className={`font-medium ${
+                              emailValidation.isValid
+                                ? 'text-green-700 dark:text-green-300'
+                                : 'text-gray-900 dark:text-white'
+                            }`}>{driverEmail}</span>
+                          </p>
+                          {emailValidation.isValid && (
+                            <IoCheckmarkCircle className="w-4 h-4 text-green-500" />
+                          )}
+                          {emailValidation.suggestion && (
+                            <IoWarningOutline className="w-4 h-4 text-orange-500" />
+                          )}
+                        </div>
+                        {emailValidation.suggestion && (
+                          <div className="mt-2 flex items-center gap-2">
+                            <p className="text-xs text-orange-600 dark:text-orange-400">
+                              {emailValidation.suggestion}
+                            </p>
+                            <button
+                              type="button"
+                              onClick={acceptEmailSuggestion}
+                              className="text-xs text-amber-600 hover:text-amber-700 dark:text-amber-500 underline font-medium"
+                            >
+                              Fix it
+                            </button>
+                          </div>
+                        )}
+                      </div>
 
-                  {/* Verification steps */}
-                  <ul className="text-xs text-gray-500 dark:text-gray-400 mb-4 space-y-1">
-                    <li className="flex items-center gap-1.5">
-                      <span className="w-4 h-4 rounded-full border border-gray-300 dark:border-gray-500 flex items-center justify-center text-[8px]">1</span>
-                      Photo of Driver's License (front & back)
-                    </li>
-                    <li className="flex items-center gap-1.5">
-                      <span className="w-4 h-4 rounded-full border border-gray-300 dark:border-gray-500 flex items-center justify-center text-[8px]">2</span>
-                      Selfie to match your ID
-                    </li>
-                    <li className="flex items-center gap-1.5">
-                      <span className="w-4 h-4 rounded-full border border-gray-300 dark:border-gray-500 flex items-center justify-center text-[8px]">3</span>
-                      Instant verification via Stripe
-                    </li>
-                  </ul>
+                      {/* Verification steps */}
+                      <ul className="text-xs text-gray-500 dark:text-gray-400 mb-4 space-y-1">
+                        <li className="flex items-center gap-1.5">
+                          <span className="w-4 h-4 rounded-full border border-gray-300 dark:border-gray-500 flex items-center justify-center text-[8px]">1</span>
+                          Photo of Driver&apos;s License (front & back)
+                        </li>
+                        <li className="flex items-center gap-1.5">
+                          <span className="w-4 h-4 rounded-full border border-gray-300 dark:border-gray-500 flex items-center justify-center text-[8px]">2</span>
+                          Selfie to match your ID
+                        </li>
+                        <li className="flex items-center gap-1.5">
+                          <span className="w-4 h-4 rounded-full border border-gray-300 dark:border-gray-500 flex items-center justify-center text-[8px]">3</span>
+                          Instant verification via Stripe
+                        </li>
+                      </ul>
 
-                  {identityError && (
-                    <p className="text-xs text-red-600 dark:text-red-400 mb-3">
-                      {identityError}
-                    </p>
+                      {identityError && (
+                        <p className="text-xs text-red-600 dark:text-red-400 mb-3">
+                          {identityError}
+                        </p>
+                      )}
+
+                      {/* Verify button */}
+                      <button
+                        onClick={async () => {
+                          // Use the email validation system
+                          if (!driverEmail || !emailValidation.isValid) {
+                            if (emailValidation.suggestion) {
+                              setIdentityError(`Email typo detected: ${emailValidation.suggestion}`)
+                            } else if (emailValidation.error) {
+                              setIdentityError(emailValidation.error)
+                            } else {
+                              setIdentityError('Please enter a valid email in Primary Driver Information')
+                            }
+                            return
+                          }
+
+                          setIsVerifyingIdentity(true)
+                          setIdentityError(null)
+
+                          try {
+                            const response = await fetch('/api/identity/verify-guest', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                email: driverEmail,
+                                returnUrl: `${window.location.origin}/rentals/${carId}/book`,
+                                carId
+                              })
+                            })
+
+                            const data = await response.json()
+
+                            // Check if existing account was found
+                            if (data.existingAccount) {
+                              setExistingAccountInfo({
+                                exists: true,
+                                type: data.accountType,
+                                verified: data.verified || false,
+                                email: data.email
+                              })
+                              setIsVerifyingIdentity(false)
+                              return
+                            }
+
+                            if (!response.ok) {
+                              throw new Error(data.error || 'Failed to start verification')
+                            }
+
+                            // Redirect to Stripe Identity verification
+                            if (data.url) {
+                              window.location.href = data.url
+                            }
+                          } catch (err) {
+                            setIdentityError(err instanceof Error ? err.message : 'Failed to start verification')
+                            setIsVerifyingIdentity(false)
+                          }
+                        }}
+                        disabled={isVerifyingIdentity}
+                        className="w-full px-4 py-2.5 bg-black text-white text-sm rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
+                        {isVerifyingIdentity ? (
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <>
+                            <IoShieldCheckmarkOutline className="w-4 h-4" />
+                            <span>Verify My Identity</span>
+                          </>
+                        )}
+                      </button>
+                    </>
                   )}
-
-                  {/* Verify button */}
-                  <button
-                    onClick={async () => {
-                      if (!verificationEmail || !verificationEmail.includes('@')) {
-                        setIdentityError('Please enter a valid email address')
-                        return
-                      }
-
-                      setIsVerifyingIdentity(true)
-                      setIdentityError(null)
-
-                      try {
-                        const response = await fetch('/api/identity/verify-guest', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({
-                            email: verificationEmail,
-                            returnUrl: `${window.location.origin}/rentals/${carId}/book`,
-                            carId
-                          })
-                        })
-
-                        const data = await response.json()
-
-                        // Check if existing account was found
-                        if (data.existingAccount) {
-                          setExistingAccountInfo({
-                            exists: true,
-                            type: data.accountType,
-                            verified: data.verified || false,
-                            email: data.email
-                          })
-                          setIsVerifyingIdentity(false)
-                          return
-                        }
-
-                        if (!response.ok) {
-                          throw new Error(data.error || 'Failed to start verification')
-                        }
-
-                        // Redirect to Stripe Identity verification
-                        if (data.url) {
-                          window.location.href = data.url
-                        }
-                      } catch (err) {
-                        setIdentityError(err instanceof Error ? err.message : 'Failed to start verification')
-                        setIsVerifyingIdentity(false)
-                      }
-                    }}
-                    disabled={isVerifyingIdentity || !verificationEmail}
-                    className="w-full px-4 py-2.5 bg-black text-white text-sm rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    {isVerifyingIdentity ? (
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <>
-                        <IoShieldCheckmarkOutline className="w-4 h-4" />
-                        <span>Verify My Identity</span>
-                      </>
-                    )}
-                  </button>
 
                   {/* Already have account link */}
                   <p className="text-xs text-center text-gray-500 dark:text-gray-400 mt-3">
@@ -1934,7 +2238,7 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
                       Sign in
                     </button>
                   </p>
-                </div>
+                </>
               )}
             </div>
           ) : /* ✅ VERIFIED USER - SKIP DOCUMENTS */
@@ -2190,12 +2494,62 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
         </div>
         
         {/* Payment Section */}
-        <div 
+        <div
           ref={paymentRef}
-          className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-300 dark:border-gray-600"
+          className="bg-white dark:bg-gray-800 rounded-lg p-6 mt-4 shadow-sm border border-gray-300 dark:border-gray-600"
         >
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Payment Information</h2>
-          
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-1 flex items-center gap-2">
+            <IoCardOutline className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+            Payment Information
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            Enter your card details for payment and security deposit
+          </p>
+
+          {/* Progress Indicator for Step 2 */}
+          {(() => {
+            const isIdentityVerified = userProfile?.documentsVerified || userProfile?.stripeIdentityStatus === 'verified'
+            const isPaymentComplete = cardValid && guestName
+            const isConfirmReady = agreedToTerms && isPaymentComplete && isIdentityVerified
+
+            return (
+              <div className="flex items-center justify-between mb-6">
+                {[
+                  { step: 1, label: 'Verify ID', done: isIdentityVerified },
+                  { step: 2, label: 'Payment', done: isPaymentComplete },
+                  { step: 3, label: 'Confirm', done: isConfirmReady }
+                ].map((item, idx) => (
+                  <div key={item.step} className="flex items-center">
+                    <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium transition-colors ${
+                      item.done
+                        ? 'bg-green-500 text-white'
+                        : item.step === 2
+                          ? 'bg-black text-white'
+                          : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                    }`}>
+                      {item.done ? '✓' : item.step}
+                    </div>
+                    <span className={`ml-1 sm:ml-2 text-[10px] sm:text-xs font-medium ${
+                      item.done ? 'text-green-600' : item.step === 2 ? 'text-gray-900 dark:text-white' : 'text-gray-400'
+                    }`}>
+                      {item.label}
+                    </span>
+                    {idx < 2 && (
+                      <div className={`w-4 sm:w-16 h-0.5 mx-1 sm:mx-2 transition-colors ${
+                        item.done ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-700'
+                      }`} />
+                    )}
+                    {idx === 2 && (
+                      <IoCheckmarkCircle className={`ml-1 w-4 h-4 transition-colors ${
+                        item.done ? 'text-green-500' : 'text-gray-300 dark:text-gray-600'
+                      }`} />
+                    )}
+                  </div>
+                ))}
+              </div>
+            )
+          })()}
+
           {/* Cardholder Name */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -2269,7 +2623,139 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
               </span>
             </div>
           </div>
-          
+
+          {/* ========== INSURANCE CARD (OPTIONAL) - Collapsed by default per Baymard ========== */}
+          {/* Show verified state if insurance is verified */}
+          {userProfile?.insuranceVerified ? (
+            <div className="mb-6 p-4 border-2 border-green-500 bg-green-50 dark:bg-green-900/10 rounded-lg">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-green-500">
+                  <IoCheckmarkOutline className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">Insurance Verified</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    {userProfile.insuranceProvider || 'Insurance on file'}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-3 flex items-center gap-2 bg-green-100 dark:bg-green-900/30 px-3 py-2 rounded text-xs">
+                <IoCheckmarkCircle className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" />
+                <span className="text-green-700 dark:text-green-300">
+                  50% deposit discount applied! Your deposit is ${(savedBookingDetails?.pricing?.deposit || 0) / 2}
+                </span>
+              </div>
+            </div>
+          ) : insuranceUploaded ? (
+            /* Show uploaded state if insurance was uploaded this session */
+            <div className="mb-6 p-4 border-2 border-green-500 bg-green-50 dark:bg-green-900/10 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center bg-green-500">
+                    <IoCheckmarkOutline className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">Insurance Card Uploaded</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Pending verification</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <a
+                    href={insurancePhotoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                  >
+                    <IoEyeOutline className="w-4 h-4" />
+                    View
+                  </a>
+                  <input
+                    ref={insuranceInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) handleFileUpload(file, 'insurance')
+                    }}
+                    className="hidden"
+                  />
+                  <button
+                    onClick={() => insuranceInputRef.current?.click()}
+                    disabled={isUploading}
+                    className="px-3 py-1.5 bg-gray-200 text-gray-700 text-xs rounded hover:bg-gray-300 transition-colors disabled:opacity-50"
+                  >
+                    Replace
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* Collapsed by default - show expandable link */
+            <div className="mb-6">
+              {!showInsuranceUpload ? (
+                /* Collapsed state - just a link, centered on mobile */
+                <div className="flex justify-center">
+                  <button
+                    onClick={() => setShowInsuranceUpload(true)}
+                    className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline transition-colors text-center"
+                  >
+                    Have your own auto insurance? Upload to save 50% on deposit →
+                  </button>
+                </div>
+              ) : (
+                /* Expanded state - show upload UI */
+                <div className="p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-100 dark:bg-gray-700">
+                        <IoDocumentTextOutline className="w-5 h-5 text-gray-400" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          Insurance Card
+                          <span className="text-xs font-normal text-gray-500 dark:text-gray-400 ml-1">(Optional)</span>
+                        </p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">
+                          Upload for 50% deposit discount
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setShowInsuranceUpload(false)}
+                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    >
+                      <IoCloseCircleOutline className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <input
+                    ref={insuranceInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) handleFileUpload(file, 'insurance')
+                    }}
+                    className="hidden"
+                  />
+
+                  <button
+                    onClick={() => insuranceInputRef.current?.click()}
+                    disabled={isUploading}
+                    className="w-full py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:border-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    <IoCameraOutline className="w-5 h-5" />
+                    {isUploading ? 'Uploading...' : 'Click to upload insurance card'}
+                  </button>
+
+                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 text-center">
+                    JPG, PNG or PDF • Max 10MB
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* ✅ Available Balances Banner - Show if user has any balance */}
           {balancesLoaded && (guestBalances.creditBalance > 0 || guestBalances.bonusBalance > 0 || guestBalances.depositWalletBalance > 0) && (
             <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-700 rounded-lg p-4 mb-4">
@@ -2408,26 +2894,26 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
                       </div>
                     )}
 
-                {/* Security Deposit - Compact Red Box, right-aligned under amount */}
+                {/* Security Deposit - Solid color box with white text */}
                 <div className="flex justify-end mt-2 mb-3">
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg">
-                    <span className="text-sm font-medium text-red-800 dark:text-red-200">
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-500 rounded-lg">
+                    <span className="text-sm font-medium text-white">
                       + ${adjustedDeposit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} deposit
                     </span>
                     {userProfile?.insuranceVerified && (
-                      <span className="text-xs text-green-600 dark:text-green-400 font-medium">
+                      <span className="text-xs text-green-200 font-medium">
                         50% off!
                       </span>
                     )}
                     {/* (Hold) with tooltip inline */}
                     <div className="relative inline-flex items-center gap-0.5">
-                      <span className="text-xs text-red-600 dark:text-red-400 font-medium">(Hold)</span>
+                      <span className="text-xs text-white/80 font-medium">(Hold)</span>
                       <button
                         type="button"
                         onMouseEnter={() => setShowDepositTooltip(true)}
                         onMouseLeave={() => setShowDepositTooltip(false)}
                         onClick={() => setShowDepositTooltip(!showDepositTooltip)}
-                        className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 -mt-0.5"
+                        className="text-white/70 hover:text-white -mt-0.5"
                         aria-label="Learn about security deposit"
                       >
                         <IoHelpCircleOutline className="w-3.5 h-3.5" />
@@ -2459,15 +2945,15 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
           </div>
 
           {/* Terms and Conditions Agreement */}
-          <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
-            <label className="flex items-start space-x-2 cursor-pointer">
+          <div className="mt-6 p-4 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg">
+            <label className="flex items-start space-x-3 cursor-pointer">
               <input
                 type="checkbox"
                 checked={agreedToTerms}
                 onChange={(e) => setAgreedToTerms(e.target.checked)}
-                className="mt-0.5 w-4 h-4 text-amber-600 border-gray-300 rounded focus:ring-amber-500"
+                className="mt-0.5 w-5 h-5 text-amber-600 border-gray-300 rounded focus:ring-amber-500"
               />
-              <div className="text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed">
+              <div className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
                 I agree to the{' '}
                 <button
                   type="button"
@@ -2475,7 +2961,7 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
                     e.preventDefault()
                     setShowRentalAgreement(true)
                   }}
-                  className="text-amber-600 hover:text-amber-700 underline font-normal"
+                  className="text-amber-600 hover:text-amber-700 underline font-medium"
                 >
                   Rental Agreement
                 </button>
@@ -2486,7 +2972,7 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
                     e.preventDefault()
                     setShowInsuranceModal(true)
                   }}
-                  className="text-amber-600 hover:text-amber-700 underline font-normal"
+                  className="text-amber-600 hover:text-amber-700 underline font-medium"
                 >
                   Insurance Requirements
                 </button>
@@ -2497,14 +2983,15 @@ export default function BookingPage({ params }: { params: Promise<{ carId: strin
                     e.preventDefault()
                     setShowTrustSafetyModal(true)
                   }}
-                  className="text-amber-600 hover:text-amber-700 underline font-normal"
+                  className="text-amber-600 hover:text-amber-700 underline font-medium"
                 >
                   Trust & Safety
                 </button>
-                . I understand charges apply after verification.
+                {' '}policies. I understand that charges will apply after verification.
               </div>
             </label>
           </div>
+
         </div>
       </div>
       
