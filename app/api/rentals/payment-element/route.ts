@@ -28,12 +28,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Create Payment Intent with automatic payment methods (supports Apple Pay, Google Pay)
+    // Exclude US bank account (ACH) - requires days to clear, not suitable for rentals
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount), // Ensure integer
       currency: 'usd',
       automatic_payment_methods: {
         enabled: true,
       },
+      // @ts-ignore - excluded_payment_method_types is a valid parameter
+      excluded_payment_method_types: ['us_bank_account'],
       metadata: paymentMetadata,
       ...(email && { receipt_email: email }),
       description: 'ItWhip Car Rental',
