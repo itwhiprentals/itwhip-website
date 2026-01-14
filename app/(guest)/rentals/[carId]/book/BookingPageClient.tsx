@@ -2897,19 +2897,16 @@ export default function BookingPageClient({ carId }: { carId: string }) {
           {/* Show verified state if insurance is verified */}
           {userProfile?.insuranceVerified ? (
             <div className="mb-6 p-4 border-2 border-green-500 bg-green-50 dark:bg-green-900/10 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-green-500">
-                  <IoCheckmarkOutline className="w-5 h-5 text-white" />
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <IoCheckmarkCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">Insurance Verified</p>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">Insurance Verified</p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">
-                    {userProfile.insuranceProvider || 'Insurance on file'}
-                  </p>
-                </div>
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  {userProfile.insuranceProvider || 'Insurance on file'}
+                </p>
               </div>
-              <div className="mt-3 flex items-center gap-2 bg-green-100 dark:bg-green-900/30 px-3 py-2 rounded text-xs">
-                <IoCheckmarkCircle className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" />
+              <div className="mt-3 flex items-center justify-center gap-2 bg-green-100 dark:bg-green-900/30 px-3 py-2 rounded text-xs">
                 <span className="text-green-700 dark:text-green-300">
                   50% deposit discount applied! Your deposit is ${(savedBookingDetails?.pricing?.deposit || 0) / 2}
                 </span>
@@ -3188,15 +3185,15 @@ export default function BookingPageClient({ carId }: { carId: string }) {
           </div>
 
           {/* Terms and Conditions Agreement */}
-          <div className="mt-6 p-4 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg">
-            <label className="flex items-start space-x-3 cursor-pointer">
+          <div className="mt-6 p-3 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg">
+            <label className="flex items-start space-x-2 cursor-pointer">
               <input
                 type="checkbox"
                 checked={agreedToTerms}
                 onChange={(e) => setAgreedToTerms(e.target.checked)}
-                className="mt-0.5 w-5 h-5 text-amber-600 border-gray-300 rounded focus:ring-amber-500"
+                className="mt-0.5 w-4 h-4 text-amber-600 border-gray-300 rounded focus:ring-amber-500"
               />
-              <div className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+              <div className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
                 I agree to the{' '}
                 <button
                   type="button"
@@ -3204,7 +3201,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                     e.preventDefault()
                     setShowRentalAgreement(true)
                   }}
-                  className="text-amber-600 hover:text-amber-700 underline font-medium"
+                  className="text-amber-600 hover:text-amber-700 underline font-medium text-xs"
                 >
                   Rental Agreement
                 </button>
@@ -3215,7 +3212,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                     e.preventDefault()
                     setShowInsuranceModal(true)
                   }}
-                  className="text-amber-600 hover:text-amber-700 underline font-medium"
+                  className="text-amber-600 hover:text-amber-700 underline font-medium text-xs"
                 >
                   Insurance Requirements
                 </button>
@@ -3226,11 +3223,11 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                     e.preventDefault()
                     setShowTrustSafetyModal(true)
                   }}
-                  className="text-amber-600 hover:text-amber-700 underline font-medium"
+                  className="text-amber-600 hover:text-amber-700 underline font-medium text-xs"
                 >
                   Trust & Safety
                 </button>
-                {' '}policies. I understand that charges will apply after verification.
+                {' '}policies.
               </div>
             </label>
           </div>
