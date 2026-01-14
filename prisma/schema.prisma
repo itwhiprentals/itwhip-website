@@ -21,7 +21,7 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
-  User              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@index([userId])
@@ -83,7 +83,7 @@ model ActivityLog {
   oldValue   String?
   severity   String?  @default("INFO")
   userAgent  String?
-  User       User?    @relation(fields: [userId], references: [id])
+  user       User?    @relation(fields: [userId], references: [id])
 
   @@index([adminId])
   @@index([category])
@@ -145,7 +145,7 @@ model ApiKey {
   expiresAt   DateTime?
   createdAt   DateTime           @default(now())
   Hotel       Hotel?             @relation(fields: [hotelId], references: [id])
-  User        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([hotelId])
   @@index([key])
@@ -211,7 +211,7 @@ model AuditLog {
   backedUp     Boolean       @default(false)
   archivedAt   DateTime?
   timestamp    DateTime      @default(now())
-  User         User?         @relation(fields: [userId], references: [id])
+  user User?         @relation(fields: [userId], references: [id])
 
   @@index([adminEmail])
   @@index([adminId])
@@ -247,7 +247,7 @@ model BackgroundCheck {
   nextRetryAt      DateTime?
   createdAt        DateTime              @default(now())
   updatedAt        DateTime
-  RentalHost       RentalHost            @relation(fields: [hostId], references: [id])
+  host             RentalHost            @relation(fields: [hostId], references: [id])
 
   @@unique([hostId, checkType])
   @@index([checkType])
@@ -311,7 +311,7 @@ model BookingSession {
   validationErrors Int            @default(0)
   createdAt        DateTime       @default(now())
   updatedAt        DateTime
-  RentalBooking    RentalBooking? @relation(fields: [bookingId], references: [id])
+  booking          RentalBooking? @relation(fields: [bookingId], references: [id])
 
   @@index([abandoned])
   @@index([sessionId])
@@ -338,7 +338,7 @@ model ChargeAdjustment {
   failureReason     String?
   createdAt         DateTime      @default(now())
   updatedAt         DateTime
-  RentalBooking     RentalBooking @relation(fields: [bookingId], references: [id])
+  booking           RentalBooking @relation(fields: [bookingId], references: [id])
   TripCharge        TripCharge?   @relation(fields: [chargeId], references: [id])
 
   @@index([adminId])
@@ -447,8 +447,8 @@ model Claim {
   fnolSubmittedBy         String?
   filedByGuestId          String?
   filedByRole             String?
-  RentalBooking           RentalBooking      @relation(fields: [bookingId], references: [id])
-  RentalHost              RentalHost         @relation(fields: [hostId], references: [id])
+  booking                 RentalBooking      @relation(fields: [bookingId], references: [id])
+  host                    RentalHost         @relation(fields: [hostId], references: [id])
   InsurancePolicy         InsurancePolicy    @relation(fields: [policyId], references: [id])
   ClaimDamagePhoto        ClaimDamagePhoto[]
   ClaimEdit               ClaimEdit[]
@@ -489,7 +489,7 @@ model ClaimDamagePhoto {
   deletedAt  DateTime?
   deletedBy  String?
   createdAt  DateTime  @default(now())
-  Claim      Claim     @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  claim      Claim     @relation(fields: [claimId], references: [id], onDelete: Cascade)
 
   @@index([claimId])
   @@index([deletedAt])
@@ -508,7 +508,7 @@ model ClaimEdit {
   editedByType String
   reason       String?
   createdAt    DateTime @default(now())
-  Claim        Claim    @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  claim        Claim    @relation(fields: [claimId], references: [id], onDelete: Cascade)
 
   @@index([claimId])
   @@index([editedAt])
@@ -528,7 +528,7 @@ model ClaimMessage {
   isRead      Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime
-  Claim       Claim    @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  claim       Claim    @relation(fields: [claimId], references: [id], onDelete: Cascade)
 
   @@index([claimId])
   @@index([createdAt])
@@ -585,7 +585,7 @@ model DataExportLog {
   expiresAt   DateTime?
   status      String    @default("pending")
   fileSize    Int?
-  User        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([status])
   @@index([userId])
@@ -704,7 +704,7 @@ model FraudIndicator {
   details       String?
   source        String
   createdAt     DateTime      @default(now())
-  RentalBooking RentalBooking @relation(fields: [bookingId], references: [id])
+  booking       RentalBooking @relation(fields: [bookingId], references: [id])
 
   @@index([bookingId])
   @@index([indicator])
@@ -738,7 +738,7 @@ model GuestAccessToken {
   expiresAt     DateTime
   usedAt        DateTime?
   createdAt     DateTime      @default(now())
-  RentalBooking RentalBooking @relation(fields: [bookingId], references: [id])
+  booking       RentalBooking @relation(fields: [bookingId], references: [id])
 
   @@index([email])
   @@index([token])
@@ -870,7 +870,7 @@ model HostDocumentStatus {
   autoSuspendAt      DateTime?
   createdAt          DateTime             @default(now())
   updatedAt          DateTime
-  RentalHost         RentalHost           @relation(fields: [hostId], references: [id])
+  host               RentalHost           @relation(fields: [hostId], references: [id])
 
   @@unique([hostId, documentType])
   @@index([expiryDate])
@@ -935,8 +935,8 @@ model HostESGProfile {
   updatedAt               DateTime
   avgCO2PerMile           Float         @default(0)
   totalCO2Impact          Float         @default(0)
-  ESGSnapshot             ESGSnapshot[]
-  RentalHost              RentalHost    @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  snapshots               ESGSnapshot[]
+  host                    RentalHost    @relation(fields: [hostId], references: [id], onDelete: Cascade)
 
   @@index([compositeScore])
   @@index([fraudRiskLevel])
@@ -1011,7 +1011,7 @@ model HostNotification {
   actionLabel         String?
   expiresAt           DateTime?
   metadata            Json?
-  RentalHost          RentalHost         @relation(fields: [hostId], references: [id])
+  host                RentalHost         @relation(fields: [hostId], references: [id])
 
   @@index([hostId])
   @@index([priority])
@@ -1029,8 +1029,8 @@ model HostPayout {
   processedAt      DateTime?
   stripeTransferId String?
   createdAt        DateTime      @default(now())
-  RentalBooking    RentalBooking @relation(fields: [bookingId], references: [id])
-  RentalHost       RentalHost    @relation(fields: [hostId], references: [id])
+  booking          RentalBooking @relation(fields: [bookingId], references: [id])
+  host             RentalHost    @relation(fields: [hostId], references: [id])
 
   @@index([hostId])
   @@index([status])
@@ -1072,7 +1072,7 @@ model Hotel {
   HotelMetrics        HotelMetrics[]
   Revenue             Revenue[]
   Ride                Ride[]
-  User                User[]
+  user User[]
 
   @@index([certified])
   @@index([city, state])
@@ -1117,7 +1117,7 @@ model InspectionPhoto {
   url           String
   metadata      Json?
   uploadedAt    DateTime      @default(now())
-  RentalBooking RentalBooking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  booking       RentalBooking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 
   @@index([bookingId])
   @@index([type])
@@ -1161,7 +1161,7 @@ model InsurancePolicy {
   policySource      String?
   primaryParty      String?
   Claim             Claim[]
-  RentalBooking     RentalBooking     @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  booking           RentalBooking     @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   InsuranceProvider InsuranceProvider @relation(fields: [providerId], references: [id])
 
   @@index([bookingId])
@@ -1333,7 +1333,7 @@ model LoginAttempt {
   success    Boolean
   reason     String?
   timestamp  DateTime @default(now())
-  User       User?    @relation(fields: [userId], references: [id])
+  user       User?    @relation(fields: [userId], references: [id])
 
   @@index([identifier])
   @@index([ipAddress])
@@ -1351,7 +1351,7 @@ model MileageAnomaly {
   explanation      String?
   resolved         Boolean   @default(false)
   createdAt        DateTime  @default(now())
-  RentalCar        RentalCar @relation(fields: [carId], references: [id], onDelete: Cascade)
+  car              RentalCar @relation(fields: [carId], references: [id], onDelete: Cascade)
 
   @@index([carId])
   @@index([detectedAt])
@@ -1366,7 +1366,7 @@ model NotificationDismissal {
   dismissedAt      DateTime  @default(now())
   dismissCount     Int       @default(1)
   completedAt      DateTime?
-  User             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, notificationType])
   @@index([dismissedAt])
@@ -1416,8 +1416,8 @@ model PaymentMethod {
   holderName     String?
   status         String?     @default("active")
   userId         String?
-  RentalHost     RentalHost? @relation(fields: [hostId], references: [id], onDelete: Cascade)
-  User           User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  host           RentalHost? @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  user User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([hostId])
   @@index([isDefault])
@@ -1510,7 +1510,7 @@ model RefundRequest {
   createdAt        DateTime      @default(now())
   updatedAt        DateTime
   autoApproved     Boolean       @default(false)
-  RentalBooking    RentalBooking @relation(fields: [bookingId], references: [id])
+  booking          RentalBooking @relation(fields: [bookingId], references: [id])
 
   @@index([bookingId])
   @@index([createdAt])
@@ -1525,7 +1525,7 @@ model RentalAvailability {
   isAvailable Boolean   @default(true)
   customPrice Float?
   note        String?
-  RentalCar   RentalCar @relation(fields: [carId], references: [id], onDelete: Cascade)
+  car         RentalCar @relation(fields: [carId], references: [id], onDelete: Cascade)
 
   @@unique([carId, date])
   @@index([carId, date, isAvailable])
@@ -1704,8 +1704,8 @@ model RentalBooking {
   RefundRequest              RefundRequest[]
   car                        RentalCar             @relation(fields: [carId], references: [id])
   host                       RentalHost            @relation(fields: [hostId], references: [id])
-  User                       User?                 @relation(fields: [renterId], references: [id])
-  ReviewerProfile            ReviewerProfile?      @relation(fields: [reviewerProfileId], references: [id])
+  renter                     User?                 @relation(fields: [renterId], references: [id])
+  reviewerProfile            ReviewerProfile?      @relation(fields: [reviewerProfileId], references: [id])
   disputes                   RentalDispute[]
   messages                   RentalMessage[]
   RentalPayout               RentalPayout[]
@@ -1880,7 +1880,7 @@ model RentalCar {
   VehicleCoverageOverride    VehicleCoverageOverride[]
   VehicleInsuranceOverride   VehicleInsuranceOverride[]
   VehicleServiceRecord       VehicleServiceRecord[]
-  vehicle_management         vehicle_management?
+  vehicleManagement          VehicleManagement?
 
   @@index([activeClaimId])
   @@index([carType])
@@ -1929,7 +1929,7 @@ model RentalCarPhoto {
   verified       Boolean   @default(false)
   verifiedAt     DateTime?
   verifiedBy     String?
-  RentalCar      RentalCar @relation(fields: [carId], references: [id], onDelete: Cascade)
+  car            RentalCar @relation(fields: [carId], references: [id], onDelete: Cascade)
 
   @@index([carId])
   @@index([deletedAt])
@@ -1951,7 +1951,7 @@ model RentalDispute {
   resolvedAt      DateTime?
   reviewStartedAt DateTime?
   reviewedBy      String?
-  RentalBooking   RentalBooking @relation(fields: [bookingId], references: [id])
+  booking         RentalBooking @relation(fields: [bookingId], references: [id])
 
   @@index([bookingId])
   @@index([status])
@@ -2191,21 +2191,21 @@ model RentalHost {
   PaymentMethod                                                         PaymentMethod[]
   bookings                                                              RentalBooking[]
   cars                                                                  RentalCar[]
-  InsuranceProvider                                                     InsuranceProvider?           @relation(fields: [insuranceProviderId], references: [id])
-  User                                                                  User?                        @relation(fields: [userId], references: [id])
+  insuranceProvider                                                     InsuranceProvider?           @relation(fields: [insuranceProviderId], references: [id])
+  user                                                                  User?                        @relation(fields: [userId], references: [id])
   RentalPayout                                                          RentalPayout[]
   reviews                                                               RentalReview[]
   host_charges                                                          host_charges[]
-  management_invitations_management_invitations_recipientIdToRentalHost management_invitations[]     @relation("management_invitations_recipientIdToRentalHost")
-  management_invitations_management_invitations_senderIdToRentalHost    management_invitations[]     @relation("management_invitations_senderIdToRentalHost")
+  receivedInvitations                                                   ManagementInvitation[]       @relation("management_invitations_recipientIdToRentalHost")
+  sentInvitations                                                       ManagementInvitation[]       @relation("management_invitations_senderIdToRentalHost")
   partner_applications                                                  partner_applications?
   partner_commission_history                                            partner_commission_history[]
-  partner_discounts                                                     partner_discounts[]
+  partnerDiscounts                                                      partner_discounts[]
   partner_documents                                                     partner_documents[]
-  partner_faqs                                                          partner_faqs[]
+  partnerFaqs                                                           partner_faqs[]
   partner_payouts                                                       partner_payouts[]
-  vehicle_management_vehicle_management_managerIdToRentalHost           vehicle_management[]         @relation("vehicle_management_managerIdToRentalHost")
-  vehicle_management_vehicle_management_ownerIdToRentalHost             vehicle_management[]         @relation("vehicle_management_ownerIdToRentalHost")
+  managedVehicles                                                       VehicleManagement[]          @relation("vehicle_management_managerIdToRentalHost")
+  ownedVehicles                                                         VehicleManagement[]          @relation("vehicle_management_ownerIdToRentalHost")
 
   @@index([approvalStatus])
   @@index([city, state])
@@ -2249,7 +2249,7 @@ model RentalMessage {
   replyToId      String?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime
-  RentalBooking  RentalBooking @relation(fields: [bookingId], references: [id])
+  booking        RentalBooking @relation(fields: [bookingId], references: [id])
 
   @@index([bookingId])
   @@index([category])
@@ -2280,8 +2280,8 @@ model RentalPayout {
   bookingId        String?
   eligibleAt       DateTime?
   updatedAt        DateTime
-  RentalBooking    RentalBooking? @relation(fields: [bookingId], references: [id])
-  RentalHost       RentalHost     @relation(fields: [hostId], references: [id])
+  booking          RentalBooking? @relation(fields: [bookingId], references: [id])
+  host             RentalHost     @relation(fields: [hostId], references: [id])
 
   @@index([eligibleAt, status])
   @@index([hostId])
@@ -2319,10 +2319,10 @@ model RentalReview {
   viewCount          Int              @default(0)
   createdAt          DateTime         @default(now())
   updatedAt          DateTime
-  RentalBooking      RentalBooking?   @relation(fields: [bookingId], references: [id])
-  RentalCar          RentalCar        @relation(fields: [carId], references: [id])
-  RentalHost         RentalHost       @relation(fields: [hostId], references: [id])
-  ReviewerProfile    ReviewerProfile? @relation(fields: [reviewerProfileId], references: [id])
+  booking            RentalBooking?   @relation(fields: [bookingId], references: [id])
+  car                RentalCar        @relation(fields: [carId], references: [id])
+  host               RentalHost       @relation(fields: [hostId], references: [id])
+  reviewerProfile    ReviewerProfile? @relation(fields: [reviewerProfileId], references: [id])
 
   @@index([carId])
   @@index([hostId])
@@ -2493,7 +2493,7 @@ model ReviewerProfile {
   GuestProfileStatus       GuestProfileStatus?
   RentalBooking            RentalBooking[]
   RentalReview             RentalReview[]
-  User                     User?                    @relation(fields: [userId], references: [id])
+  user                     User?                    @relation(fields: [userId], references: [id])
   insurance_history        insurance_history[]
 
   @@index([accountHoldClaimId])
@@ -2604,7 +2604,7 @@ model Session {
   revokedAt    DateTime?
   createdAt    DateTime  @default(now())
   lastActivity DateTime  @default(now())
-  User         User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([refreshToken])
   @@index([token])
@@ -2713,7 +2713,7 @@ model TripCharge {
   createdAt          DateTime           @default(now())
   updatedAt          DateTime
   ChargeAdjustment   ChargeAdjustment[]
-  RentalBooking      RentalBooking      @relation(fields: [bookingId], references: [id])
+  booking            RentalBooking      @relation(fields: [bookingId], references: [id])
 
   @@index([bookingId])
   @@index([chargeStatus])
@@ -2735,7 +2735,7 @@ model TripInspectionPhoto {
   gpsLongitude   Float?
   photoTimestamp DateTime?
   createdAt      DateTime      @default(now())
-  RentalBooking  RentalBooking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  booking        RentalBooking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 
   @@index([bookingId])
   @@index([photoType])
@@ -2776,8 +2776,8 @@ model TripIssue {
   reminderSentAt      DateTime?
   createdAt           DateTime      @default(now())
   updatedAt           DateTime
-  RentalBooking       RentalBooking @relation(fields: [bookingId], references: [id])
-  Claim               Claim?        @relation(fields: [claimId], references: [id])
+  booking             RentalBooking @relation(fields: [bookingId], references: [id])
+  claim               Claim?        @relation(fields: [claimId], references: [id])
 
   @@index([escalationDeadline])
   @@index([issueType])
@@ -2828,7 +2828,7 @@ model User {
   PaymentMethod            PaymentMethod[]
   RentalBooking            RentalBooking[]
   RentalHost               RentalHost?
-  ReviewerProfile          ReviewerProfile?
+  reviewerProfile          ReviewerProfile?
   Session                  Session[]
   Hotel                    Hotel?                    @relation(fields: [hotelId], references: [id])
   UserNotificationSettings UserNotificationSettings?
@@ -2853,7 +2853,7 @@ model UserNotificationSettings {
   claimResolved    Boolean  @default(true)
   createdAt        DateTime @default(now())
   updatedAt        DateTime
-  User             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
@@ -2908,7 +2908,7 @@ model VehicleCoverageOverride {
   isActive          Boolean              @default(true)
   createdAt         DateTime             @default(now())
   updatedAt         DateTime
-  RentalCar         RentalCar            @relation(fields: [carId], references: [id])
+  car               RentalCar            @relation(fields: [carId], references: [id])
   InsuranceProvider InsuranceProvider    @relation(fields: [providerId], references: [id])
 
   @@unique([carId, providerId])
@@ -2925,7 +2925,7 @@ model VehicleInsuranceOverride {
   reason            String
   overriddenBy      String
   createdAt         DateTime          @default(now())
-  RentalCar         RentalCar         @relation(fields: [carId], references: [id])
+  car               RentalCar         @relation(fields: [carId], references: [id])
   InsuranceProvider InsuranceProvider @relation(fields: [providerId], references: [id])
 
   @@unique([carId, providerId])
@@ -2957,7 +2957,7 @@ model VehicleServiceRecord {
   updatedAt           DateTime
   addedBy             String?     @default("SYSTEM")
   addedByType         String?     @default("HOST")
-  RentalCar           RentalCar   @relation(fields: [carId], references: [id], onDelete: Cascade)
+  car                 RentalCar   @relation(fields: [carId], references: [id], onDelete: Cascade)
 
   @@index([addedByType])
   @@index([addedBy])
@@ -3000,7 +3000,7 @@ model host_charges {
   createdAt         DateTime   @default(now())
   processedAt       DateTime?
   refundedAt        DateTime?
-  RentalHost        RentalHost @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  host              RentalHost @relation(fields: [hostId], references: [id], onDelete: Cascade)
 
   @@index([chargeType])
   @@index([createdAt])
@@ -3040,34 +3040,35 @@ model insurance_history {
   @@index([verificationStatus])
 }
 
-model management_invitations {
-  id                                                        String                     @id
-  token                                                     String                     @unique
-  type                                                      ManagementInvitationType
-  senderId                                                  String
-  recipientId                                               String?
-  recipientEmail                                            String
-  vehicleIds                                                String[]
-  proposedOwnerPercent                                      Decimal                    @default(70) @db.Decimal(5, 2)
-  proposedManagerPercent                                    Decimal                    @default(30) @db.Decimal(5, 2)
-  counterOfferOwnerPercent                                  Decimal?                   @db.Decimal(5, 2)
-  counterOfferManagerPercent                                Decimal?                   @db.Decimal(5, 2)
-  negotiationRounds                                         Int                        @default(0)
-  negotiationNotes                                          String?
-  negotiationHistory                                        Json?                      @default("[]")
-  proposedCanEditListing                                    Boolean                    @default(true)
-  proposedCanAdjustPricing                                  Boolean                    @default(true)
-  proposedCanCommunicateGuests                              Boolean                    @default(true)
-  proposedCanApproveBookings                                Boolean                    @default(true)
-  proposedCanHandleIssues                                   Boolean                    @default(true)
-  status                                                    ManagementInvitationStatus @default(PENDING)
-  expiresAt                                                 DateTime
-  respondedAt                                               DateTime?
-  createdAt                                                 DateTime                   @default(now())
-  updatedAt                                                 DateTime
-  RentalHost_management_invitations_recipientIdToRentalHost RentalHost?                @relation("management_invitations_recipientIdToRentalHost", fields: [recipientId], references: [id])
-  RentalHost_management_invitations_senderIdToRentalHost    RentalHost                 @relation("management_invitations_senderIdToRentalHost", fields: [senderId], references: [id])
+model ManagementInvitation {
+  id                         String                     @id
+  token                      String                     @unique
+  type                       ManagementInvitationType
+  senderId                   String
+  recipientId                String?
+  recipientEmail             String
+  vehicleIds                 String[]
+  proposedOwnerPercent       Decimal                    @default(70) @db.Decimal(5, 2)
+  proposedManagerPercent     Decimal                    @default(30) @db.Decimal(5, 2)
+  counterOfferOwnerPercent   Decimal?                   @db.Decimal(5, 2)
+  counterOfferManagerPercent Decimal?                   @db.Decimal(5, 2)
+  negotiationRounds          Int                        @default(0)
+  negotiationNotes           String?
+  negotiationHistory         Json?                      @default("[]")
+  proposedCanEditListing     Boolean                    @default(true)
+  proposedCanAdjustPricing   Boolean                    @default(true)
+  proposedCanCommunicateGuests Boolean                  @default(true)
+  proposedCanApproveBookings Boolean                    @default(true)
+  proposedCanHandleIssues    Boolean                    @default(true)
+  status                     ManagementInvitationStatus @default(PENDING)
+  expiresAt                  DateTime
+  respondedAt                DateTime?
+  createdAt                  DateTime                   @default(now())
+  updatedAt                  DateTime
+  recipient                  RentalHost?                @relation("management_invitations_recipientIdToRentalHost", fields: [recipientId], references: [id])
+  sender                     RentalHost                 @relation("management_invitations_senderIdToRentalHost", fields: [senderId], references: [id])
 
+  @@map("management_invitations")
   @@index([recipientEmail])
   @@index([recipientId])
   @@index([senderId])
@@ -3095,7 +3096,7 @@ model partner_applications {
   reviewNotes     String?
   createdAt       DateTime                 @default(now())
   updatedAt       DateTime
-  RentalHost      RentalHost               @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  host            RentalHost               @relation(fields: [hostId], references: [id], onDelete: Cascade)
 
   @@index([status])
   @@index([submittedAt])
@@ -3109,7 +3110,7 @@ model partner_commission_history {
   reason     String?
   changedBy  String
   createdAt  DateTime   @default(now())
-  RentalHost RentalHost @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  host       RentalHost @relation(fields: [hostId], references: [id], onDelete: Cascade)
 
   @@index([createdAt])
   @@index([hostId])
@@ -3129,7 +3130,7 @@ model partner_discounts {
   isActive    Boolean    @default(true)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime
-  RentalHost  RentalHost @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  host        RentalHost @relation(fields: [hostId], references: [id], onDelete: Cascade)
 
   @@index([code])
   @@index([hostId])
@@ -3152,7 +3153,7 @@ model partner_documents {
   reminderSentAt    DateTime?
   createdAt         DateTime              @default(now())
   updatedAt         DateTime
-  RentalHost        RentalHost            @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  host              RentalHost            @relation(fields: [hostId], references: [id], onDelete: Cascade)
 
   @@index([expiresAt])
   @@index([gracePeriodEndsAt])
@@ -3168,7 +3169,7 @@ model partner_faqs {
   order      Int        @default(0)
   createdAt  DateTime   @default(now())
   updatedAt  DateTime
-  RentalHost RentalHost @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  host       RentalHost @relation(fields: [hostId], references: [id], onDelete: Cascade)
 
   @@index([hostId])
 }
@@ -3187,7 +3188,7 @@ model partner_payouts {
   paidAt           DateTime?
   failureReason    String?
   createdAt        DateTime            @default(now())
-  RentalHost       RentalHost          @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  host             RentalHost          @relation(fields: [hostId], references: [id], onDelete: Cascade)
 
   @@index([hostId])
   @@index([period])
@@ -3250,30 +3251,31 @@ model platform_settings {
   partnerDirectRefundLimit Float    @default(250)
 }
 
-model vehicle_management {
-  id                                                  String                  @id
-  vehicleId                                           String                  @unique
-  ownerId                                             String
-  managerId                                           String
-  ownerCommissionPercent                              Decimal                 @default(70) @db.Decimal(5, 2)
-  managerCommissionPercent                            Decimal                 @default(30) @db.Decimal(5, 2)
-  canEditListing                                      Boolean                 @default(true)
-  canAdjustPricing                                    Boolean                 @default(true)
-  canCommunicateGuests                                Boolean                 @default(true)
-  canApproveBookings                                  Boolean                 @default(true)
-  canHandleIssues                                     Boolean                 @default(true)
-  status                                              VehicleManagementStatus @default(ACTIVE)
-  agreementNotes                                      String?
-  agreementSignedAt                                   DateTime?
-  createdAt                                           DateTime                @default(now())
-  updatedAt                                           DateTime
-  RentalHost_vehicle_management_managerIdToRentalHost RentalHost              @relation("vehicle_management_managerIdToRentalHost", fields: [managerId], references: [id])
-  RentalHost_vehicle_management_ownerIdToRentalHost   RentalHost              @relation("vehicle_management_ownerIdToRentalHost", fields: [ownerId], references: [id])
-  RentalCar                                           RentalCar               @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+model VehicleManagement {
+  id                       String                  @id
+  vehicleId                String                  @unique
+  ownerId                  String
+  managerId                String
+  ownerCommissionPercent   Decimal                 @default(70) @db.Decimal(5, 2)
+  managerCommissionPercent Decimal                 @default(30) @db.Decimal(5, 2)
+  canEditListing           Boolean                 @default(true)
+  canAdjustPricing         Boolean                 @default(true)
+  canCommunicateGuests     Boolean                 @default(true)
+  canApproveBookings       Boolean                 @default(true)
+  canHandleIssues          Boolean                 @default(true)
+  status                   VehicleManagementStatus @default(ACTIVE)
+  agreementNotes           String?
+  agreementSignedAt        DateTime?
+  createdAt                DateTime                @default(now())
+  updatedAt                DateTime
+  manager                  RentalHost              @relation("vehicle_management_managerIdToRentalHost", fields: [managerId], references: [id])
+  owner                    RentalHost              @relation("vehicle_management_ownerIdToRentalHost", fields: [ownerId], references: [id])
+  vehicle                  RentalCar               @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
 
   @@index([managerId])
   @@index([ownerId])
   @@index([status])
+  @@map("vehicle_management")
 }
 
 enum AppealStatus {

@@ -52,3 +52,8 @@ The app uses a dual-role authentication system:
 - Follow existing patterns in the codebase
 - Prefer editing existing files over creating new ones
 - All card components must use `rounded-lg` for consistent border radius
+
+## Git Commits
+
+- Use author: Chris H <info@itwhip.com>
+- Do NOT use Co-Authored-By: Claude lines
