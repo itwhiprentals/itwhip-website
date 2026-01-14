@@ -1702,15 +1702,15 @@ model RentalBooking {
   InspectionPhoto            InspectionPhoto[]
   InsurancePolicy            InsurancePolicy?
   RefundRequest              RefundRequest[]
-  RentalCar                  RentalCar             @relation(fields: [carId], references: [id])
-  RentalHost                 RentalHost            @relation(fields: [hostId], references: [id])
+  car                        RentalCar             @relation(fields: [carId], references: [id])
+  host                       RentalHost            @relation(fields: [hostId], references: [id])
   User                       User?                 @relation(fields: [renterId], references: [id])
   ReviewerProfile            ReviewerProfile?      @relation(fields: [reviewerProfileId], references: [id])
-  RentalDispute              RentalDispute[]
-  RentalMessage              RentalMessage[]
+  disputes                   RentalDispute[]
+  messages                   RentalMessage[]
   RentalPayout               RentalPayout[]
-  RentalReview               RentalReview?
-  TripCharge                 TripCharge[]
+  review                     RentalReview?
+  tripCharges                TripCharge[]
   TripInspectionPhoto        TripInspectionPhoto[]
   TripIssue                  TripIssue?
 
@@ -1871,12 +1871,12 @@ model RentalCar {
   vehicleType                VehicleType                @default(RENTAL)
   driveType                  String?
   MileageAnomaly             MileageAnomaly[]
-  RentalAvailability         RentalAvailability[]
-  RentalBooking              RentalBooking[]
+  availability               RentalAvailability[]
+  bookings                   RentalBooking[]
   VehicleClassification      VehicleClassification?     @relation(fields: [classificationId], references: [id])
-  RentalHost                 RentalHost                 @relation(fields: [hostId], references: [id])
+  host                       RentalHost                 @relation(fields: [hostId], references: [id])
   photos                     RentalCarPhoto[]
-  RentalReview               RentalReview[]
+  reviews                    RentalReview[]
   VehicleCoverageOverride    VehicleCoverageOverride[]
   VehicleInsuranceOverride   VehicleInsuranceOverride[]
   VehicleServiceRecord       VehicleServiceRecord[]
@@ -2189,12 +2189,12 @@ model RentalHost {
   HostNotification                                                      HostNotification[]
   HostPayout                                                            HostPayout[]
   PaymentMethod                                                         PaymentMethod[]
-  RentalBooking                                                         RentalBooking[]
-  RentalCar                                                             RentalCar[]
+  bookings                                                              RentalBooking[]
+  cars                                                                  RentalCar[]
   InsuranceProvider                                                     InsuranceProvider?           @relation(fields: [insuranceProviderId], references: [id])
   User                                                                  User?                        @relation(fields: [userId], references: [id])
   RentalPayout                                                          RentalPayout[]
-  RentalReview                                                          RentalReview[]
+  reviews                                                               RentalReview[]
   host_charges                                                          host_charges[]
   management_invitations_management_invitations_recipientIdToRentalHost management_invitations[]     @relation("management_invitations_recipientIdToRentalHost")
   management_invitations_management_invitations_senderIdToRentalHost    management_invitations[]     @relation("management_invitations_senderIdToRentalHost")
