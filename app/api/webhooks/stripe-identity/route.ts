@@ -60,12 +60,64 @@ export async function POST(request: NextRequest) {
 async function handleVerificationSuccess(session: Stripe.Identity.VerificationSession) {
   console.log(`[Stripe Identity] Verification success for session: ${session.id}`)
 
-  const profileId = session.metadata?.profileId
+  let profileId = session.metadata?.profileId
+  const email = session.metadata?.email || session.provided_details?.email
   const partnerId = session.metadata?.partnerId  // For partner-sent verifications
   const sentBy = session.metadata?.sentBy  // 'partner' or undefined
 
+  // ========== AUTO-CREATE ACCOUNT IF NO PROFILE ==========
+  // If no profileId but we have email, auto-create guest account
+  if (!profileId && email) {
+    console.log(`[Stripe Identity] No profileId, attempting to create/find account for: ${email}`)
+
+    try {
+      // Check if user exists
+      let user = await prisma.user.findUnique({
+        where: { email },
+        include: { reviewerProfile: true }
+      })
+
+      if (!user) {
+        // Create new user with CLAIMED role (verified guest)
+        console.log(`[Stripe Identity] Creating new user for: ${email}`)
+        user = await prisma.user.create({
+          data: {
+            email,
+            role: 'CLAIMED',
+            emailVerified: new Date(),
+            status: 'ACTIVE'
+          },
+          include: { reviewerProfile: true }
+        })
+      }
+
+      if (!user.reviewerProfile) {
+        // Create guest profile
+        console.log(`[Stripe Identity] Creating ReviewerProfile for user: ${user.id}`)
+        const newProfile = await prisma.reviewerProfile.create({
+          data: {
+            userId: user.id,
+            email: email,
+            emailVerified: true,
+            stripeIdentitySessionId: session.id,
+            stripeIdentityStatus: 'pending',
+            memberSince: new Date()
+          }
+        })
+        profileId = newProfile.id
+      } else {
+        profileId = user.reviewerProfile.id
+      }
+
+      console.log(`[Stripe Identity] Auto-created/linked profileId: ${profileId}`)
+    } catch (err) {
+      console.error('[Stripe Identity] Error auto-creating account:', err)
+      return
+    }
+  }
+
   if (!profileId) {
-    console.error('[Stripe Identity] No profileId in session metadata')
+    console.error('[Stripe Identity] No profileId and no email in session metadata')
     return
   }
 
@@ -125,6 +177,11 @@ async function handleVerificationSuccess(session: Stripe.Identity.VerificationSe
     }
   }
 
+  // Build the verified name
+  const verifiedName = verifiedData.firstName && verifiedData.lastName
+    ? `${verifiedData.firstName} ${verifiedData.lastName}`
+    : undefined
+
   // Update the profile with verification data
   const updatedProfile = await prisma.reviewerProfile.update({
     where: { id: profileId },
@@ -138,6 +195,10 @@ async function handleVerificationSuccess(session: Stripe.Identity.VerificationSe
       stripeVerifiedIdNumber: verifiedData.idNumber,
       stripeVerifiedIdExpiry: verifiedData.idExpiry,
       stripeVerifiedAddress: verifiedData.address,
+      // Set name from ID if profile doesn't have one
+      ...(verifiedName && { name: verifiedName }),
+      // Set DOB from ID
+      ...(verifiedData.dob && { dateOfBirth: verifiedData.dob }),
       // Also update legacy fields for compatibility
       documentsVerified: true,
       documentVerifiedAt: new Date(),
@@ -227,27 +288,70 @@ async function handleRequiresInput(session: Stripe.Identity.VerificationSession)
   console.log(`[Stripe Identity] Verification requires input for session: ${session.id}`)
 
   const profileId = session.metadata?.profileId
-  if (!profileId) return
+  const email = session.metadata?.email || session.provided_details?.email
 
-  await prisma.reviewerProfile.update({
-    where: { id: profileId },
-    data: {
-      stripeIdentityStatus: 'requires_input'
+  // If we have a profileId, update it
+  if (profileId) {
+    await prisma.reviewerProfile.update({
+      where: { id: profileId },
+      data: {
+        stripeIdentityStatus: 'requires_input'
+      }
+    })
+    return
+  }
+
+  // If no profileId but have email, try to find existing profile
+  if (email) {
+    const profile = await prisma.reviewerProfile.findFirst({
+      where: { email }
+    })
+
+    if (profile) {
+      await prisma.reviewerProfile.update({
+        where: { id: profile.id },
+        data: {
+          stripeIdentityStatus: 'requires_input',
+          stripeIdentitySessionId: session.id
+        }
+      })
     }
-  })
+    // If no profile exists, that's fine - they'll create one when they continue
+  }
 }
 
 async function handleCanceled(session: Stripe.Identity.VerificationSession) {
   console.log(`[Stripe Identity] Verification canceled for session: ${session.id}`)
 
   const profileId = session.metadata?.profileId
-  if (!profileId) return
+  const email = session.metadata?.email || session.provided_details?.email
 
-  await prisma.reviewerProfile.update({
-    where: { id: profileId },
-    data: {
-      stripeIdentityStatus: 'canceled',
-      stripeIdentitySessionId: null  // Clear session so they can start fresh
+  // If we have a profileId, update it
+  if (profileId) {
+    await prisma.reviewerProfile.update({
+      where: { id: profileId },
+      data: {
+        stripeIdentityStatus: 'canceled',
+        stripeIdentitySessionId: null
+      }
+    })
+    return
+  }
+
+  // If no profileId but have email, try to find existing profile
+  if (email) {
+    const profile = await prisma.reviewerProfile.findFirst({
+      where: { email }
+    })
+
+    if (profile) {
+      await prisma.reviewerProfile.update({
+        where: { id: profile.id },
+        data: {
+          stripeIdentityStatus: 'canceled',
+          stripeIdentitySessionId: null
+        }
+      })
     }
-  })
+  }
 }

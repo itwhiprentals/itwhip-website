@@ -73,7 +73,8 @@ export default function VerificationAlert({
 
   // Determine verification state
   const isVerified = documentsVerified || stripeIdentityStatus === 'verified'
-  const isPending = stripeIdentityStatus === 'pending' || stripeIdentityStatus === 'requires_input'
+  const isProcessing = stripeIdentityStatus === 'pending' // Stripe is actively reviewing
+  const needsCompletion = stripeIdentityStatus === 'requires_input' // User started but didn't finish
   const hasPhone = !!phoneNumber
 
   // Don't render if verified
@@ -112,34 +113,77 @@ export default function VerificationAlert({
     }
   }
 
-  // Pending state - verification in progress
-  if (isPending) {
+  // User started verification but didn't complete it
+  if (needsCompletion) {
     return (
       <div
-        className="bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-lg p-3 sm:p-4 mt-4 transition-all duration-300 animate-fadeIn shadow-md"
+        className="bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-200 dark:border-orange-800 rounded-lg p-3 sm:p-4 mt-4 transition-all duration-300 animate-fadeIn shadow-md"
         role="alert"
         aria-live="polite"
       >
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div className="flex items-start flex-1 min-w-0">
-            <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400 mr-2 sm:mr-3 flex-shrink-0 mt-0.5" />
+            <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600 dark:text-orange-400 mr-2 sm:mr-3 flex-shrink-0 mt-0.5" />
             <div className="min-w-0 flex-1">
-              <p className="font-medium text-sm sm:text-base text-blue-900 dark:text-blue-100">
-                Verification In Progress
+              <p className="font-medium text-sm sm:text-base text-orange-900 dark:text-orange-100">
+                Complete Your Verification
               </p>
-              <p className="text-xs sm:text-sm mt-1 text-blue-700 dark:text-blue-300">
-                Your identity is being verified. This usually takes a few minutes. You'll be notified once complete.
+              <p className="text-xs sm:text-sm mt-1 text-orange-700 dark:text-orange-300">
+                You started the verification process but didn't finish. Please complete it to book cars and receive your $250 Credit and Bonus.
               </p>
-              <div className="mt-3 flex items-center space-x-2 text-xs text-blue-700 dark:text-blue-300">
-                <Clock className="w-4 h-4" />
-                <span>Verification typically completes within minutes</span>
+              <div className="mt-3 flex items-center space-x-2 text-xs text-orange-700 dark:text-orange-300">
+                <ExternalLink className="w-4 h-4" />
+                <span>Click "Continue" to finish where you left off</span>
               </div>
             </div>
           </div>
           <button
             onClick={handleVerifyWithStripe}
             disabled={isLoading}
-            className="px-2.5 sm:px-3 py-1.5 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition-colors whitespace-nowrap flex items-center space-x-1.5 active:scale-95 flex-shrink-0 disabled:opacity-50"
+            className="px-2.5 sm:px-3 py-1.5 sm:py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-xs font-medium transition-colors whitespace-nowrap flex items-center space-x-1.5 active:scale-95 flex-shrink-0 disabled:opacity-50"
+          >
+            {isLoading ? (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <>
+                <ExternalLink className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span>Continue</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Pending state - user started but may not have completed
+  if (isProcessing) {
+    return (
+      <div
+        className="bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-200 dark:border-orange-800 rounded-lg p-3 sm:p-4 mt-4 transition-all duration-300 animate-fadeIn shadow-md"
+        role="alert"
+        aria-live="polite"
+      >
+        <div className="flex items-start justify-between flex-wrap gap-3">
+          <div className="flex items-start flex-1 min-w-0">
+            <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600 dark:text-orange-400 mr-2 sm:mr-3 flex-shrink-0 mt-0.5" />
+            <div className="min-w-0 flex-1">
+              <p className="font-medium text-sm sm:text-base text-orange-900 dark:text-orange-100">
+                Complete Your Verification
+              </p>
+              <p className="text-xs sm:text-sm mt-1 text-orange-700 dark:text-orange-300">
+                You started the verification process but it's not complete yet. Please finish to book cars and receive your $250 Credit and Bonus.
+              </p>
+              <div className="mt-3 flex items-center space-x-2 text-xs text-orange-700 dark:text-orange-300">
+                <ExternalLink className="w-4 h-4" />
+                <span>Click "Continue" to finish where you left off</span>
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={handleVerifyWithStripe}
+            disabled={isLoading}
+            className="px-2.5 sm:px-3 py-1.5 sm:py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-xs font-medium transition-colors whitespace-nowrap flex items-center space-x-1.5 active:scale-95 flex-shrink-0 disabled:opacity-50"
           >
             {isLoading ? (
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -171,7 +215,7 @@ export default function VerificationAlert({
               Verify Your Identity
             </p>
             <p className="text-xs sm:text-sm mt-1 text-yellow-700 dark:text-yellow-300">
-              Complete identity verification to unlock all features and receive a $250 deposit bonus.
+              Complete identity verification to unlock all features and receive a $250 Credit and Bonus.
             </p>
 
             {/* Verification steps */}

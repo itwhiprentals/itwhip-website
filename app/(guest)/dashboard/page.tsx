@@ -1311,26 +1311,10 @@ export default function GuestDashboard() {
             const displayValue = stat.format ? stat.format(value as number) : value
             const StatIcon = stat.icon
 
-            // Check if this is the Deposit stat and we have card info to show
-            const isDepositStat = stat.key === 'depositWalletBalance'
-            const showCardInfo = isDepositStat && state.paymentInfo?.hasCard && state.paymentInfo?.last4
-
-            // Get card brand color class
-            const getCardBrandColor = (brand: string | null) => {
-              switch (brand?.toLowerCase()) {
-                case 'visa': return 'text-blue-600 dark:text-blue-400'
-                case 'mastercard': return 'text-red-500 dark:text-red-400'
-                case 'amex': return 'text-blue-500 dark:text-blue-400'
-                case 'discover': return 'text-orange-500 dark:text-orange-400'
-                default: return 'text-gray-600 dark:text-gray-400'
-              }
-            }
-
             return (
               <div
                 key={stat.label}
                 onClick={() => stat.clickable && handleStatClick(stat.path)}
-                title={(stat as any).tooltip || undefined}
                 style={{
                   animationDelay: `${index * 100}ms`,
                   animation: state.statsLoaded ? 'fadeInUp 0.5s ease-out forwards' : 'none'
@@ -1339,26 +1323,23 @@ export default function GuestDashboard() {
                   stat.clickable ? 'cursor-pointer hover:shadow-lg active:scale-95 transition-all' : ''
                 }`}
               >
-                <div className="flex items-center justify-between">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1">
-                      <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{stat.label}</p>
-                      {(stat as any).tooltip && (
-                        <span className="text-gray-400 dark:text-gray-500 text-[10px] cursor-help" title={(stat as any).tooltip}>ⓘ</span>
-                      )}
-                    </div>
-                    <p className={`text-xl sm:text-2xl font-bold mt-1 ${stat.textColor}`}>
+                <div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{stat.label}</p>
+                  <div className="flex items-center justify-between mt-1">
+                    <p className={`text-xl sm:text-2xl font-bold ${stat.textColor}`}>
                       {displayValue}
                     </p>
+                    {(stat as any).tooltip ? (
+                      <span
+                        className="text-gray-400 dark:text-gray-500 text-xl sm:text-2xl cursor-help flex-shrink-0 ml-2"
+                        title={(stat as any).tooltip}
+                      >
+                        ⓘ
+                      </span>
+                    ) : (
+                      <StatIcon className={`w-6 h-6 sm:w-8 sm:h-8 ${stat.iconColor} opacity-60 flex-shrink-0 ml-2`} aria-hidden="true" />
+                    )}
                   </div>
-                  {showCardInfo ? (
-                    <div className={`flex flex-col items-end ${getCardBrandColor(state.paymentInfo?.brand || null)} flex-shrink-0 ml-2`}>
-                      <span className="text-[10px] uppercase font-medium opacity-60">{state.paymentInfo?.brand}</span>
-                      <span className="text-sm font-bold">•••• {state.paymentInfo?.last4}</span>
-                    </div>
-                  ) : (
-                    <StatIcon className={`w-6 h-6 sm:w-8 sm:h-8 ${stat.iconColor} opacity-60 flex-shrink-0 ml-2`} aria-hidden="true" />
-                  )}
                 </div>
               </div>
             )

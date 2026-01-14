@@ -99,20 +99,21 @@ export async function GET(request: NextRequest) {
       : 0
 
     // Check if fully verified - requires all verification steps complete
+    // Stripe Identity verification counts as documents verified (ID + Selfie)
+    const isStripeVerified = profileData.stripeIdentityStatus === 'verified'
     const fullyVerified = !!(
       profileData.emailVerified &&
       profileData.phoneVerified &&
-      profileData.documentsVerified &&
-      profileData.driversLicenseUrl &&
-      profileData.selfieUrl
+      (profileData.documentsVerified || isStripeVerified)
     )
 
     // PENDING STATUS: TRUE if profile is incomplete (onboarding not finished)
-    // Pending until: phone is verified, driver's license uploaded, selfie uploaded
+    // Pending until: phone is verified AND (Stripe Identity verified OR manual docs uploaded)
     const hasPhone = !!(profileData.phoneNumber && profileData.phoneNumber.length >= 10)
     const hasDriversLicense = !!profileData.driversLicenseUrl
     const hasSelfie = !!profileData.selfieUrl
-    const pending = !hasPhone || !hasDriversLicense || !hasSelfie
+    const hasIdentityVerification = isStripeVerified || (hasDriversLicense && hasSelfie)
+    const pending = !hasPhone || !hasIdentityVerification
 
     // Can instant book if fully verified
     const canInstantBook = fullyVerified
@@ -146,11 +147,12 @@ export async function GET(request: NextRequest) {
       governmentIdType: profileData.governmentIdType,
       driversLicenseUrl: profileData.driversLicenseUrl,
       selfieUrl: profileData.selfieUrl,
-      documentsVerified: profileData.documentsVerified,
-      documentVerifiedAt: profileData.documentVerifiedAt,
+      // documentsVerified is true if Stripe Identity verified OR manual docs verified
+      documentsVerified: profileData.documentsVerified || isStripeVerified,
+      documentVerifiedAt: profileData.documentVerifiedAt || profileData.stripeIdentityVerifiedAt,
       fullyVerified,
       canInstantBook,
-      pending,  // TRUE if onboarding incomplete (missing phone, license, or selfie)
+      pending,  // TRUE if onboarding incomplete (missing phone OR missing identity verification)
 
       // Insurance - ✅ CORRECTED FIELD NAMES
       insuranceProvider: profileData.insuranceProvider,
@@ -177,7 +179,11 @@ export async function GET(request: NextRequest) {
       preferredCurrency: profileData.preferredCurrency,
       emailNotifications: profileData.emailNotifications,
       smsNotifications: profileData.smsNotifications,
-      pushNotifications: profileData.pushNotifications
+      pushNotifications: profileData.pushNotifications,
+
+      // Stripe Identity Verification
+      stripeIdentityStatus: profileData.stripeIdentityStatus,
+      stripeIdentityVerifiedAt: profileData.stripeIdentityVerifiedAt
     }
 
     // 🔍 DEBUG LOGGING - Remove after testing

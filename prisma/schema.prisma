@@ -160,8 +160,8 @@ model AppealNotification {
   seen            Boolean         @default(false)
   dismissedAt     DateTime?
   createdAt       DateTime        @default(now())
-  GuestAppeal     GuestAppeal     @relation(fields: [appealId], references: [id], onDelete: Cascade)
-  ReviewerProfile ReviewerProfile @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  appeal          GuestAppeal     @relation(fields: [appealId], references: [id], onDelete: Cascade)
+  guest           ReviewerProfile @relation(fields: [guestId], references: [id], onDelete: Cascade)
 
   @@index([appealId])
   @@index([guestId, seen])
@@ -757,8 +757,8 @@ model GuestAppeal {
   submittedAt        DateTime             @default(now())
   updatedAt          DateTime
   AppealNotification AppealNotification[]
-  ReviewerProfile    ReviewerProfile      @relation(fields: [guestId], references: [id])
-  GuestModeration    GuestModeration      @relation(fields: [moderationId], references: [id])
+  guest              ReviewerProfile      @relation(fields: [guestId], references: [id])
+  moderation         GuestModeration      @relation(fields: [moderationId], references: [id])
 
   @@index([guestId])
   @@index([moderationId])
@@ -2489,12 +2489,12 @@ model ReviewerProfile {
   DepositTransaction       DepositTransaction[]
   GuestAppeal              GuestAppeal[]
   GuestInsurance           GuestInsurance[]
-  GuestModeration          GuestModeration[]
+  moderationHistory        GuestModeration[]
   GuestProfileStatus       GuestProfileStatus?
   RentalBooking            RentalBooking[]
   RentalReview             RentalReview[]
   user                     User?                    @relation(fields: [userId], references: [id])
-  insurance_history        insurance_history[]
+  insuranceHistory         InsuranceHistory[]
 
   @@index([accountHoldClaimId])
   @@index([accountOnHold])
@@ -2591,7 +2591,7 @@ model SecurityEvent {
 }
 
 model Session {
-  id           String    @id
+  id           String    @id @default(cuid())
   userId       String?
   token        String    @unique
   refreshToken String?   @unique
@@ -2825,9 +2825,9 @@ model User {
   DataExportLog            DataExportLog[]
   LoginAttempt             LoginAttempt[]
   NotificationDismissal    NotificationDismissal[]
-  PaymentMethod            PaymentMethod[]
-  RentalBooking            RentalBooking[]
-  RentalHost               RentalHost?
+  paymentMethods           PaymentMethod[]
+  rentalBookings           RentalBooking[]
+  rentalHost               RentalHost?
   reviewerProfile          ReviewerProfile?
   Session                  Session[]
   Hotel                    Hotel?                    @relation(fields: [hotelId], references: [id])
@@ -3008,7 +3008,7 @@ model host_charges {
   @@index([status])
 }
 
-model insurance_history {
+model InsuranceHistory {
   id                    String          @id
   reviewerProfileId     String
   action                String
@@ -3032,12 +3032,13 @@ model insurance_history {
   userAgent             String?
   createdAt             DateTime        @default(now())
   updatedAt             DateTime
-  ReviewerProfile       ReviewerProfile @relation(fields: [reviewerProfileId], references: [id], onDelete: Cascade)
+  reviewerProfile       ReviewerProfile @relation(fields: [reviewerProfileId], references: [id], onDelete: Cascade)
 
   @@index([expiryDate])
   @@index([reviewerProfileId])
   @@index([reviewerProfileId, status])
   @@index([verificationStatus])
+  @@map("insurance_history")
 }
 
 model ManagementInvitation {
@@ -3195,7 +3196,7 @@ model partner_payouts {
   @@index([status])
 }
 
-model platform_settings {
+model PlatformSettings {
   id                       String   @id @default("global")
   defaultTaxRate           Float    @default(0.056)
   taxByState               Json?
@@ -3249,6 +3250,8 @@ model platform_settings {
   serviceFeeRate           Float    @default(0.15)
   maxBonusPercentage       Float    @default(0.25)
   partnerDirectRefundLimit Float    @default(250)
+
+  @@map("platform_settings")
 }
 
 model VehicleManagement {

@@ -213,12 +213,19 @@ export async function GET(request: NextRequest) {
     let refreshToken = ''
     let isHost = false
 
+    // Determine the effective role for the token
+    // ANONYMOUS users should be treated as CLAIMED for guest access
+    const GUEST_ALLOWED_ROLES = ['CLAIMED', 'STARTER', 'BUSINESS', 'ENTERPRISE']
+    const effectiveRole = GUEST_ALLOWED_ROLES.includes(user.role || '')
+      ? user.role
+      : 'CLAIMED'  // Default ANONYMOUS or unknown roles to CLAIMED
+
     // Start with guest tokens - will regenerate if user is a host
     const tokens = generateGuestTokens({
       id: user.id,
       email: user.email || email,
       name: user.name,
-      role: user.role || 'CLAIMED'
+      role: effectiveRole
     })
     accessToken = tokens.accessToken
     refreshToken = tokens.refreshToken
