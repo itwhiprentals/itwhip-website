@@ -1763,31 +1763,6 @@ export default function BookingPageClient({ carId }: { carId: string }) {
           </div>
         )}
         
-        {/* ✅ VERIFIED USER WELCOME BANNER */}
-        {userProfile?.documentsVerified && (
-          <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-4 shadow-sm">
-            <div className="flex items-start space-x-3">
-              <IoCheckmarkCircle className="w-6 h-6 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <p className="font-semibold text-green-900 dark:text-green-100 mb-1 flex items-center gap-1.5">
-                  Welcome back, {userProfile.name}!
-                  <IoSparklesOutline className="w-4 h-4 text-amber-500" />
-                </p>
-                <ul className="space-y-1 text-xs text-green-800 dark:text-green-200">
-                  <li>✓ Your documents are verified - no need to upload again!</li>
-                  <li>✓ Your information has been auto-filled</li>
-                  {userProfile.insuranceVerified && (
-                    <li>✓ Insurance verified - 50% deposit discount applied!</li>
-                  )}
-                  {userProfile.canInstantBook && (
-                    <li>✓ Instant booking enabled</li>
-                  )}
-                </ul>
-              </div>
-            </div>
-          </div>
-        )}
-        
         {/* ⚠️ ACCOUNT WARNING/RESTRICTION BANNER - Only show for account-level restrictions (has reason) */}
         {/* Field validation errors show inline under each field - no banner needed for those */}
         {!eligibility.allowed && eligibility.reason && car.isActive && (
@@ -1817,28 +1792,6 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                 </p>
                 <p className="text-sm text-yellow-800 dark:text-yellow-200">
                   {eligibility.reason}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {/* 💰 INSURANCE DISCOUNT BANNER */}
-        {userProfile?.insuranceVerified && car.isActive && (
-          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-4 shadow-sm">
-            <div className="flex items-start space-x-3">
-              <IoSparklesOutline className="w-6 h-6 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-semibold text-green-900 dark:text-green-100 mb-1 flex items-center gap-1.5">
-                  Insurance Discount Active!
-                  <IoRibbonOutline className="w-4 h-4 text-green-600" />
-                </p>
-                <p className="text-sm text-green-800 dark:text-green-200">
-                  Your verified insurance ({userProfile.insuranceProvider}) has reduced your deposit by 50%!
-                </p>
-                <p className="text-xs text-green-700 dark:text-green-300 mt-1">
-                  Original: ${savedBookingDetails.pricing.deposit.toLocaleString()} → 
-                  Now: ${adjustedDeposit.toLocaleString()}
                 </p>
               </div>
             </div>
@@ -2317,50 +2270,6 @@ export default function BookingPageClient({ carId }: { carId: string }) {
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
             Verify once, instant bookings forever + unlock your $250 Credit and Bonus
           </p>
-
-          {/* Progress Indicator */}
-          {(() => {
-            const isIdentityVerified = userProfile?.documentsVerified || userProfile?.stripeIdentityStatus === 'verified'
-            const isPaymentComplete = cardValid && guestName
-            const isConfirmReady = agreedToTerms && isPaymentComplete && isIdentityVerified
-
-            return (
-              <div className="flex items-center justify-between mb-6">
-                {[
-                  { step: 1, label: 'Verify ID', done: isIdentityVerified },
-                  { step: 2, label: 'Payment', done: isPaymentComplete },
-                  { step: 3, label: 'Confirm', done: isConfirmReady }
-                ].map((item, idx) => (
-                  <div key={item.step} className="flex items-center">
-                    <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium transition-colors ${
-                      item.done
-                        ? 'bg-green-500 text-white'
-                        : item.step === 1
-                          ? 'bg-black text-white'
-                          : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
-                    }`}>
-                      {item.done ? '✓' : item.step}
-                    </div>
-                    <span className={`ml-1 sm:ml-2 text-[10px] sm:text-xs font-medium ${
-                      item.done ? 'text-green-600' : item.step === 1 ? 'text-gray-900 dark:text-white' : 'text-gray-400'
-                    }`}>
-                      {item.label}
-                    </span>
-                    {idx < 2 && (
-                      <div className={`w-4 sm:w-16 h-0.5 mx-1 sm:mx-2 transition-colors ${
-                        item.done ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-700'
-                      }`} />
-                    )}
-                    {idx === 2 && (
-                      <IoCheckmarkCircle className={`ml-1 w-4 h-4 transition-colors ${
-                        item.done ? 'text-green-500' : 'text-gray-300 dark:text-gray-600'
-                      }`} />
-                    )}
-                  </div>
-                ))}
-              </div>
-            )
-          })()}
 
           {/* 🔐 NOT LOGGED IN - VERIFY FIRST, ACCOUNT LATER */}
           {sessionStatus === 'unauthenticated' ? (
@@ -2848,50 +2757,6 @@ export default function BookingPageClient({ carId }: { carId: string }) {
             Enter your card details for payment and security deposit
           </p>
 
-          {/* Progress Indicator for Step 2 */}
-          {(() => {
-            const isIdentityVerified = userProfile?.documentsVerified || userProfile?.stripeIdentityStatus === 'verified'
-            const isPaymentComplete = cardValid && guestName
-            const isConfirmReady = agreedToTerms && isPaymentComplete && isIdentityVerified
-
-            return (
-              <div className="flex items-center justify-between mb-6">
-                {[
-                  { step: 1, label: 'Verify ID', done: isIdentityVerified },
-                  { step: 2, label: 'Payment', done: isPaymentComplete },
-                  { step: 3, label: 'Confirm', done: isConfirmReady }
-                ].map((item, idx) => (
-                  <div key={item.step} className="flex items-center">
-                    <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium transition-colors ${
-                      item.done
-                        ? 'bg-green-500 text-white'
-                        : item.step === 2
-                          ? 'bg-black text-white'
-                          : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
-                    }`}>
-                      {item.done ? '✓' : item.step}
-                    </div>
-                    <span className={`ml-1 sm:ml-2 text-[10px] sm:text-xs font-medium ${
-                      item.done ? 'text-green-600' : item.step === 2 ? 'text-gray-900 dark:text-white' : 'text-gray-400'
-                    }`}>
-                      {item.label}
-                    </span>
-                    {idx < 2 && (
-                      <div className={`w-4 sm:w-16 h-0.5 mx-1 sm:mx-2 transition-colors ${
-                        item.done ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-700'
-                      }`} />
-                    )}
-                    {idx === 2 && (
-                      <IoCheckmarkCircle className={`ml-1 w-4 h-4 transition-colors ${
-                        item.done ? 'text-green-500' : 'text-gray-300 dark:text-gray-600'
-                      }`} />
-                    )}
-                  </div>
-                ))}
-              </div>
-            )
-          })()}
-
           {/* Cardholder Name - First and Last with Validation */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -3160,34 +3025,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
             </div>
           )}
 
-          {/* ✅ Available Balances Banner - Show if user has any balance */}
-          {balancesLoaded && (guestBalances.creditBalance > 0 || guestBalances.bonusBalance > 0 || guestBalances.depositWalletBalance > 0) && (
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-700 rounded-lg p-4 mb-4">
-              <div className="flex items-center gap-2 mb-2">
-                <IoSparklesOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
-                <span className="font-semibold text-green-800 dark:text-green-200">Your Available Balances</span>
-              </div>
-              <div className="grid grid-cols-3 gap-3 text-center">
-                <div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">Deposit Wallet</p>
-                  <p className="text-lg font-bold text-green-600 dark:text-green-400">${guestBalances.depositWalletBalance.toFixed(2)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">Credits</p>
-                  <p className="text-lg font-bold text-purple-600 dark:text-purple-400">${guestBalances.creditBalance.toFixed(2)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">Bonus</p>
-                  <p className="text-lg font-bold text-amber-600 dark:text-amber-400">${guestBalances.bonusBalance.toFixed(2)}</p>
-                </div>
-              </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
-                Credits & bonus are auto-applied below. Deposit wallet covers your security deposit.
-              </p>
-            </div>
-          )}
-
-          {/* Price Summary */}
+          {/* Price Summary - Credits/Bonus/Deposit Wallet applied inline below */}
           <div className="border-t dark:border-gray-700 pt-6">
             {(() => {
               // Use shared pricing utility for consistent calculations with BookingWidget
