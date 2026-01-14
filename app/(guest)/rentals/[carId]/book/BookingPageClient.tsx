@@ -1,7 +1,7 @@
 // app/(guest)/rentals/[carId]/book/BookingPageClient.tsx
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   IoArrowBackOutline,
@@ -46,6 +46,108 @@ import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatter
 import RentalAgreementModal from '@/app/(guest)/rentals/components/modals/RentalAgreementModal'
 import InsuranceRequirementsModal from '@/app/(guest)/rentals/components/modals/InsuranceRequirementsModal'
 import TrustSafetyModal from '@/app/(guest)/rentals/components/modals/TrustSafetyModal'
+
+// Stripe Payment Element for Apple Pay, Google Pay, and Card payments
+import { loadStripe } from '@stripe/stripe-js'
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
+
+// Initialize Stripe outside component to avoid recreating on each render
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
+
+// ============================================
+// PAYMENT ELEMENT WRAPPER COMPONENT
+// ============================================
+
+interface PaymentFormWrapperProps {
+  onReady: () => void
+  onComplete: (complete: boolean) => void
+  onError: (error: string | null) => void
+  confirmPaymentRef: React.MutableRefObject<(() => Promise<{ success: boolean; error?: string; paymentIntentId?: string }>) | null>
+  billingDetails?: {
+    name?: string
+    email?: string
+    phone?: string
+  }
+}
+
+function PaymentFormWrapper({ onReady, onComplete, onError, confirmPaymentRef, billingDetails }: PaymentFormWrapperProps) {
+  const stripe = useStripe()
+  const elements = useElements()
+
+  // Expose confirmPayment function to parent via ref
+  React.useEffect(() => {
+    confirmPaymentRef.current = async () => {
+      if (!stripe || !elements) {
+        return { success: false, error: 'Payment system not ready' }
+      }
+
+      try {
+        const { error, paymentIntent } = await stripe.confirmPayment({
+          elements,
+          confirmParams: {
+            return_url: `${window.location.origin}/rentals/confirmation`,
+            payment_method_data: {
+              billing_details: {
+                name: billingDetails?.name || undefined,
+                email: billingDetails?.email || undefined,
+                phone: billingDetails?.phone || undefined
+              }
+            }
+          },
+          redirect: 'if_required' // Don't redirect for card payments
+        })
+
+        if (error) {
+          console.error('[Payment Element] Payment failed:', error.message)
+          return { success: false, error: error.message }
+        }
+
+        if (paymentIntent) {
+          console.log('[Payment Element] Payment confirmed:', paymentIntent.id, paymentIntent.status)
+          return { success: true, paymentIntentId: paymentIntent.id }
+        }
+
+        return { success: false, error: 'Unknown payment error' }
+      } catch (err: any) {
+        console.error('[Payment Element] Confirm error:', err)
+        return { success: false, error: err.message || 'Payment confirmation failed' }
+      }
+    }
+
+    return () => {
+      confirmPaymentRef.current = null
+    }
+  }, [stripe, elements, confirmPaymentRef, billingDetails])
+
+  return (
+    <PaymentElement
+      onReady={() => {
+        console.log('[Payment Element] Ready')
+        onReady()
+      }}
+      onChange={(event) => {
+        onComplete(event.complete)
+        if (event.complete) {
+          onError(null)
+        }
+      }}
+      options={{
+        layout: 'tabs',
+        wallets: {
+          applePay: 'auto',
+          googlePay: 'auto'
+        },
+        defaultValues: {
+          billingDetails: {
+            name: billingDetails?.name || '',
+            email: billingDetails?.email || '',
+            phone: billingDetails?.phone || ''
+          }
+        }
+      }}
+    />
+  )
+}
 
 // ============================================
 // TYPES
@@ -187,7 +289,10 @@ export default function BookingPageClient({ carId }: { carId: string }) {
   // Refs for scroll to incomplete sections
   const documentsRef = useRef<HTMLDivElement>(null)
   const paymentRef = useRef<HTMLDivElement>(null)
-  
+
+  // Ref for Stripe Payment Element confirm function
+  const confirmPaymentRef = useRef<(() => Promise<{ success: boolean; error?: string; paymentIntentId?: string }>) | null>(null)
+
   // File input refs
   const licenseInputRef = useRef<HTMLInputElement>(null)
   const insuranceInputRef = useRef<HTMLInputElement>(null)
@@ -227,6 +332,13 @@ export default function BookingPageClient({ carId }: { carId: string }) {
   const [cardCVC, setCardCVC] = useState('')
   const [cardZip, setCardZip] = useState('')
   const [agreedToTerms, setAgreedToTerms] = useState(false)
+
+  // Stripe Payment Element states (for Apple Pay, Google Pay, Card)
+  const [clientSecret, setClientSecret] = useState<string | null>(null)
+  const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null)
+  const [isPaymentElementReady, setIsPaymentElementReady] = useState(false)
+  const [isPaymentElementComplete, setIsPaymentElementComplete] = useState(false)
+  const [paymentError, setPaymentError] = useState<string | null>(null)
 
   // Primary driver information states
   const [driverFirstName, setDriverFirstName] = useState('')
@@ -793,18 +905,9 @@ export default function BookingPageClient({ carId }: { carId: string }) {
       return { allowed: false }  // No reason - user sees Verify Identity section
     }
 
-    // ✅ Check if cardholder name is valid (same rules: 3+ chars, letters only)
-    const isCardholderValid = guestName && guestLastName &&
-      cardholderFirstValidation.isValid && cardholderLastValidation.isValid
-
-    if (!isCardholderValid) {
-      return { allowed: false }  // No reason - inline errors show under Cardholder Name fields
-    }
-
-    // ✅ Check if payment info is complete
-    const isPaymentComplete = cardNumber.length >= 15 && cardExpiry.length === 5 && cardCVC.length >= 3 && cardZip.length === 5
-    if (!isPaymentComplete) {
-      return { allowed: false }  // No reason - user sees incomplete card fields
+    // ✅ Check if payment info is complete (via Stripe Payment Element)
+    if (!isPaymentElementComplete || !isPaymentElementReady) {
+      return { allowed: false }  // No reason - user sees Payment Element
     }
 
     // ✅ Check if terms agreed
@@ -913,11 +1016,12 @@ export default function BookingPageClient({ carId }: { carId: string }) {
   const isIdentityVerified = userProfile?.documentsVerified || userProfile?.stripeIdentityStatus === 'verified'
   
   // Check if payment form is complete
-  const cardValid = cardNumber.length >= 15 && cardExpiry.length === 5 && cardCVC.length >= 3 && cardZip.length === 5
+  // Use Payment Element status instead of manual card validation
+  const cardValid = isPaymentElementComplete && isPaymentElementReady
   // Email and phone must be valid, and all driver fields filled
   const driverInfoComplete = driverFirstName && driverLastName && driverAge && driverLicense && driverPhone && driverEmail &&
     emailValidation.isValid && phoneValidation.isValid && firstNameValidation.isValid && lastNameValidation.isValid && ageValidation.isValid
-  const paymentComplete = guestName && driverInfoComplete && cardValid && agreedToTerms
+  const paymentComplete = driverInfoComplete && cardValid && agreedToTerms
   
   // Check if can checkout
   const canCheckout = isIdentityVerified && paymentComplete
@@ -972,7 +1076,61 @@ export default function BookingPageClient({ carId }: { carId: string }) {
     
     fetchCarDetails()
   }, [carId, router])
-  
+
+  // ============================================
+  // CREATE PAYMENT INTENT FOR STRIPE PAYMENT ELEMENT
+  // ============================================
+
+  useEffect(() => {
+    const createPaymentIntent = async () => {
+      // Only create if we have pricing and haven't created one yet
+      if (!savedBookingDetails?.pricing?.total || clientSecret) return
+
+      const totalInCents = Math.round(savedBookingDetails.pricing.total * 100)
+
+      // Minimum $0.50 USD required by Stripe
+      if (totalInCents < 50) {
+        console.warn('[Payment Element] Amount too low for Stripe')
+        return
+      }
+
+      try {
+        console.log('[Payment Element] Creating PaymentIntent for $', savedBookingDetails.pricing.total)
+
+        const response = await fetch('/api/rentals/payment-element', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: totalInCents,
+            email: driverEmail || guestEmail || userProfile?.email,
+            carId,
+            metadata: {
+              carId,
+              days: savedBookingDetails.pricing.days?.toString(),
+              insurance: savedBookingDetails.insuranceTier || savedBookingDetails.insuranceType
+            }
+          })
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          setClientSecret(data.clientSecret)
+          setPaymentIntentId(data.paymentIntentId)
+          console.log('[Payment Element] PaymentIntent created:', data.paymentIntentId)
+        } else {
+          const errorData = await response.json()
+          console.error('[Payment Element] Failed to create PaymentIntent:', errorData.error)
+          setPaymentError('Unable to initialize payment. Please try again.')
+        }
+      } catch (error) {
+        console.error('[Payment Element] Error creating PaymentIntent:', error)
+        setPaymentError('Payment initialization failed. Please refresh the page.')
+      }
+    }
+
+    createPaymentIntent()
+  }, [savedBookingDetails?.pricing?.total, carId, clientSecret, driverEmail, guestEmail, userProfile?.email])
+
   // ============================================
   // FILE UPLOAD HANDLER
   // ============================================
@@ -1368,8 +1526,29 @@ export default function BookingPageClient({ carId }: { carId: string }) {
     }
 
     setIsProcessing(true)
-    
+    setPaymentError(null)
+
     try {
+      // Step 1: Confirm payment with Stripe Payment Element
+      if (!confirmPaymentRef.current) {
+        alert('Payment system not ready. Please try again.')
+        setIsProcessing(false)
+        return
+      }
+
+      console.log('[Checkout] Confirming payment...')
+      const paymentResult = await confirmPaymentRef.current()
+
+      if (!paymentResult.success) {
+        console.error('[Checkout] Payment failed:', paymentResult.error)
+        setPaymentError(paymentResult.error || 'Payment failed')
+        setIsProcessing(false)
+        return
+      }
+
+      console.log('[Checkout] Payment confirmed! PaymentIntent:', paymentResult.paymentIntentId)
+
+      // Step 2: Create booking with confirmed payment
       const formatDateString = (dateStr: string) => {
         if (!dateStr) return ''
         if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) return dateStr
@@ -1416,28 +1595,31 @@ export default function BookingPageClient({ carId }: { carId: string }) {
       // Prepare booking payload
       const bookingPayload = {
         carId: savedBookingDetails?.carId || carId,
-        
-        // Guest information
+
+        // Guest information (use driver info as primary)
         guestEmail: driverEmail || guestEmail || '',
         guestPhone: driverPhone || guestPhone || '',
-        guestName: `${guestName} ${guestLastName}`.trim() || `${driverFirstName} ${driverLastName}`.trim(),
-        
+        guestName: `${driverFirstName} ${driverLastName}`.trim(),
+
         // Include reviewerProfileId if logged in
         ...(userProfile?.id && { reviewerProfileId: userProfile.id }),
-        
+
+        // Stripe Payment (confirmed via Payment Element)
+        paymentIntentId: paymentResult.paymentIntentId,
+
         // Dates and times
         startDate: formatDateString(savedBookingDetails?.startDate || ''),
         endDate: formatDateString(savedBookingDetails?.endDate || ''),
         startTime: savedBookingDetails?.startTime || '10:00',
         endTime: savedBookingDetails?.endTime || '10:00',
-        
+
         // Pickup details
         pickupType: mapPickupType(savedBookingDetails?.deliveryType || 'host'),
         pickupLocation: car?.address || 'Phoenix, AZ',
-        
+
         // Insurance
         insurance: mapInsuranceType(savedBookingDetails?.insuranceType || 'basic'),
-        
+
         // Driver info
         driverInfo: {
           licenseNumber: driverLicense || '',
@@ -1448,7 +1630,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
           insurancePhotoUrl: insurancePhotoUrl || '',
           selfiePhotoUrl: selfiePhotoUrl || ''
         },
-        
+
         // Fraud detection data
         fraudData: {
           deviceFingerprint: `web_${Date.now()}_${Math.random().toString(36).substring(7)}`,
@@ -2757,138 +2939,69 @@ export default function BookingPageClient({ carId }: { carId: string }) {
             Enter your card details for payment and security deposit
           </p>
 
-          {/* Cardholder Name - First and Last with Validation */}
+          {/* Stripe Payment Element - Supports Apple Pay, Google Pay, Cards */}
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Cardholder Name
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              {/* First Name */}
-              <div>
-                <div className="relative">
-                  <input
-                    id="guestName"
-                    type="text"
-                    value={guestName}
-                    onChange={(e) => handleCardholderFirstChange(e.target.value)}
-                    className={`w-full px-3 py-2 pr-10 border rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:text-white ${
-                      guestName && cardholderFirstValidation.isValid
-                        ? 'border-green-500 dark:border-green-500'
-                        : guestName && cardholderFirstValidation.error
-                          ? 'border-red-500 dark:border-red-500'
-                          : 'border-gray-300 dark:border-gray-600'
-                    }`}
-                    placeholder="First name"
-                  />
-                  {guestName && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                      {cardholderFirstValidation.isValid ? (
-                        <IoCheckmarkCircle className="w-5 h-5 text-green-500" />
-                      ) : cardholderFirstValidation.error ? (
-                        <IoCloseCircle className="w-5 h-5 text-red-500" />
-                      ) : null}
-                    </div>
-                  )}
-                </div>
-                {guestName && cardholderFirstValidation.error && (
-                  <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
-                    <IoCloseCircleOutline className="w-3.5 h-3.5" />
-                    {cardholderFirstValidation.error}
-                  </p>
-                )}
-              </div>
-              {/* Last Name */}
-              <div>
-                <div className="relative">
-                  <input
-                    id="guestLastName"
-                    type="text"
-                    value={guestLastName}
-                    onChange={(e) => handleCardholderLastChange(e.target.value)}
-                    className={`w-full px-3 py-2 pr-10 border rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:text-white ${
-                      guestLastName && cardholderLastValidation.isValid
-                        ? 'border-green-500 dark:border-green-500'
-                        : guestLastName && cardholderLastValidation.error
-                          ? 'border-red-500 dark:border-red-500'
-                          : 'border-gray-300 dark:border-gray-600'
-                    }`}
-                    placeholder="Last name"
-                  />
-                  {guestLastName && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                      {cardholderLastValidation.isValid ? (
-                        <IoCheckmarkCircle className="w-5 h-5 text-green-500" />
-                      ) : cardholderLastValidation.error ? (
-                        <IoCloseCircle className="w-5 h-5 text-red-500" />
-                      ) : null}
-                    </div>
-                  )}
-                </div>
-                {guestLastName && cardholderLastValidation.error && (
-                  <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
-                    <IoCloseCircleOutline className="w-3.5 h-3.5" />
-                    {cardholderLastValidation.error}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-          
-          {/* Card Information */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Card Information
-            </label>
-            
-            <div className="space-y-3">
-              <div className="relative">
-                <input
-                  type="text"
-                  value={cardNumber}
-                  onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-                  maxLength={19}
-                  className="w-full px-3 py-2 pl-10 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:text-white"
-                  placeholder="1234 5678 9012 3456"
+            {clientSecret ? (
+              <Elements
+                stripe={stripePromise}
+                options={{
+                  clientSecret,
+                  appearance: {
+                    theme: 'stripe',
+                    variables: {
+                      colorPrimary: '#f59e0b', // amber-500 to match ItWhip
+                      colorBackground: '#ffffff',
+                      colorText: '#1f2937',
+                      borderRadius: '8px',
+                      fontFamily: 'system-ui, -apple-system, sans-serif'
+                    },
+                    rules: {
+                      '.Input': {
+                        border: '1px solid #d1d5db',
+                        boxShadow: 'none'
+                      },
+                      '.Input:focus': {
+                        border: '2px solid #f59e0b',
+                        boxShadow: 'none'
+                      }
+                    }
+                  }
+                }}
+              >
+                <PaymentFormWrapper
+                  onReady={() => setIsPaymentElementReady(true)}
+                  onComplete={(complete) => setIsPaymentElementComplete(complete)}
+                  onError={(error) => setPaymentError(error)}
+                  confirmPaymentRef={confirmPaymentRef}
+                  billingDetails={{
+                    name: `${driverFirstName} ${driverLastName}`.trim() || undefined,
+                    email: driverEmail || guestEmail || userProfile?.email || undefined,
+                    phone: driverPhone || guestPhone || undefined
+                  }}
                 />
-                <IoCardOutline className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
+              </Elements>
+            ) : (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-amber-500"></div>
+                <span className="ml-3 text-sm text-gray-500">Loading payment options...</span>
               </div>
-              
-              <div className="grid grid-cols-2 gap-3">
-                <input
-                  type="text"
-                  value={cardExpiry}
-                  onChange={(e) => setCardExpiry(formatExpiry(e.target.value))}
-                  maxLength={5}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:text-white"
-                  placeholder="MM/YY"
-                />
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={cardCVC}
-                    onChange={(e) => setCardCVC(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                    maxLength={4}
-                    className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:text-white"
-                    placeholder="CVC"
-                  />
-                  <IoLockClosedOutline className="absolute right-3 top-2.5 w-4 h-4 text-gray-400" />
-                </div>
+            )}
+
+            {/* Payment Error Display */}
+            {paymentError && (
+              <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-2">
+                  <IoWarningOutline className="w-4 h-4" />
+                  {paymentError}
+                </p>
               </div>
-              
-              <input
-                type="text"
-                value={cardZip}
-                onChange={(e) => setCardZip(e.target.value.replace(/\D/g, '').slice(0, 5))}
-                maxLength={5}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:text-white"
-                placeholder="ZIP Code"
-              />
-            </div>
-            
+            )}
+
+            {/* Secure Payment Badge */}
             <div className="flex items-center justify-end gap-1 mt-3">
               <span className="text-xs text-gray-500 flex items-center gap-1">
                 <IoLockClosedOutline className="w-3 h-3" />
-                Secure & Encrypted
+                Secure & Encrypted by Stripe
               </span>
             </div>
           </div>

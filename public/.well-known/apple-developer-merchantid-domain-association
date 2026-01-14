@@ -1,0 +1,10 @@
+# This file needs to be replaced with the actual content from Stripe Dashboard
+#
+# To complete Apple Pay setup:
+# 1. Go to Stripe Dashboard → Settings → Payment Methods → Apple Pay
+# 2. Add domain: itwhip.com
+# 3. Download the verification file
+# 4. Replace this file's content with the downloaded file content
+# 5. Verify domain in Stripe Dashboard
+#
+# See: https://stripe.com/docs/apple-pay/web#domain-verification

@@ -432,9 +432,42 @@ export async function POST(request: NextRequest) {
     let stripeCustomerId: string | null = null
     let stripePaymentIntentId: string | null = null
     let stripePaymentMethodId: string | null = null
-    
-    // Create Stripe customer for bookings requiring verification
-    if (needsVerification || requiresManualReview) {
+    let paymentAlreadyConfirmed = false
+
+    // Check if a pre-confirmed PaymentIntent was provided (from Payment Element)
+    if (bookingData.paymentIntentId) {
+      try {
+        console.log('🔷 Verifying pre-confirmed PaymentIntent:', bookingData.paymentIntentId)
+        const existingPaymentIntent = await stripe.paymentIntents.retrieve(bookingData.paymentIntentId)
+
+        // Check if payment is in a valid state
+        if (existingPaymentIntent.status === 'succeeded') {
+          console.log('🔷 Payment already succeeded:', existingPaymentIntent.id)
+          stripePaymentIntentId = existingPaymentIntent.id
+          stripeCustomerId = existingPaymentIntent.customer as string || null
+          paymentAlreadyConfirmed = true
+        } else if (existingPaymentIntent.status === 'requires_capture') {
+          console.log('🔷 Payment authorized, requires capture:', existingPaymentIntent.id)
+          stripePaymentIntentId = existingPaymentIntent.id
+          stripeCustomerId = existingPaymentIntent.customer as string || null
+          paymentAlreadyConfirmed = true
+        } else if (existingPaymentIntent.status === 'processing') {
+          console.log('🔷 Payment processing:', existingPaymentIntent.id)
+          stripePaymentIntentId = existingPaymentIntent.id
+          stripeCustomerId = existingPaymentIntent.customer as string || null
+          paymentAlreadyConfirmed = true
+        } else {
+          console.warn('🔷 PaymentIntent in unexpected state:', existingPaymentIntent.status)
+          // Will create new payment below if needed
+        }
+      } catch (error) {
+        console.error('🔷 Error retrieving PaymentIntent:', error)
+        // Will create new payment below if needed
+      }
+    }
+
+    // Create Stripe customer for bookings requiring verification (only if payment not already confirmed)
+    if ((needsVerification || requiresManualReview) && !paymentAlreadyConfirmed) {
       try {
         console.log('🔷 Creating Stripe TEST customer...')
         
@@ -565,7 +598,8 @@ export async function POST(request: NextRequest) {
 
           // Status based on verification requirements AND fraud risk
           status: (needsVerification || requiresManualReview) ? RentalBookingStatus.PENDING : RentalBookingStatus.CONFIRMED,
-          paymentStatus: (needsVerification || requiresManualReview) ? 'PENDING' : 'PAID',
+          // Payment is PAID if already confirmed via Payment Element, otherwise based on verification
+          paymentStatus: paymentAlreadyConfirmed ? 'PAID' : ((needsVerification || requiresManualReview) ? 'PENDING' : 'PAID'),
           paymentIntentId: stripePaymentIntentId || bookingData.paymentIntentId,
           
           // ========== STRIPE FIELDS ==========
