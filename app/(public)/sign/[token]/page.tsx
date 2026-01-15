@@ -5,66 +5,6 @@ import { useParams } from 'next/navigation'
 import SignatureCanvas from 'react-signature-canvas'
 import Image from 'next/image'
 
-// Standard ItWhip rental agreement terms
-const STANDARD_TERMS = [
-  {
-    title: '1. RENTAL PERIOD',
-    content: 'The Renter agrees to rent the vehicle for the period specified above. Any extension of the rental period must be approved in advance by the Owner and may be subject to additional charges.'
-  },
-  {
-    title: '2. RENTAL CHARGES',
-    content: 'The Renter agrees to pay all rental charges as specified above, including but not limited to: daily rate, security deposit, delivery fees, and applicable taxes. Payment is due upon booking confirmation.'
-  },
-  {
-    title: '3. SECURITY DEPOSIT',
-    content: 'A security deposit will be held to cover potential damages, excess mileage, fuel costs, or other charges. The deposit will be refunded within 7 business days after the vehicle is returned, less any applicable deductions.'
-  },
-  {
-    title: '4. MILEAGE POLICY',
-    content: 'Mileage allowance is as agreed with the rental provider. Any excess mileage will be charged at the agreed-upon overage rate. Mileage readings at pickup and return will be documented.'
-  },
-  {
-    title: '5. FUEL POLICY',
-    content: 'The vehicle should be returned with the same fuel level as when picked up. If the vehicle is returned with less fuel, the Renter will be charged for refueling plus a service fee.'
-  },
-  {
-    title: '6. INSURANCE REQUIREMENTS',
-    content: 'The Renter must maintain valid auto insurance coverage during the rental period. The Renter agrees to provide proof of insurance upon request and assumes responsibility for any damage not covered by insurance.'
-  },
-  {
-    title: '7. VEHICLE USE RESTRICTIONS',
-    content: 'The vehicle may only be driven by authorized drivers listed on this agreement. The vehicle shall NOT be used for: racing, towing, off-road driving, transporting hazardous materials, illegal purposes, or subletting to third parties.'
-  },
-  {
-    title: '8. DAMAGE LIABILITY',
-    content: 'The Renter is responsible for any damage to the vehicle during the rental period, regardless of fault. The Renter agrees to report any accidents, damage, or mechanical issues immediately to the Owner.'
-  },
-  {
-    title: '9. LATE RETURN',
-    content: 'If the vehicle is returned late without prior approval, the Renter will be charged a late fee as specified by the Owner, which may include additional daily charges and penalties.'
-  },
-  {
-    title: '10. VEHICLE CONDITION',
-    content: 'The Renter acknowledges receiving the vehicle in good working condition and agrees to return it in the same condition, ordinary wear and tear excepted. A vehicle inspection will be conducted at pickup and return.'
-  },
-  {
-    title: '11. ROADSIDE ASSISTANCE',
-    content: 'In the event of a breakdown or emergency, the Renter should contact the Owner immediately. Unauthorized repairs may not be reimbursed.'
-  },
-  {
-    title: '12. GOVERNING LAW',
-    content: 'This agreement shall be governed by and construed in accordance with the laws of the State of Arizona. Any disputes arising from this agreement shall be resolved in the courts of Arizona.'
-  },
-  {
-    title: '13. DISPUTE RESOLUTION',
-    content: 'In the event of a dispute, the parties agree to first attempt resolution through the ItWhip platform\'s dispute resolution process before pursuing legal action.'
-  },
-  {
-    title: '14. ELECTRONIC SIGNATURE CONSENT',
-    content: 'By signing this agreement electronically, the Renter consents to conduct this transaction by electronic means and agrees that their electronic signature is legally binding under the Uniform Electronic Transactions Act (UETA) and the Electronic Signatures in Global and National Commerce Act (ESIGN).'
-  }
-]
-
 interface AgreementData {
   booking: {
     id: string
@@ -124,7 +64,7 @@ export default function SignAgreementPage() {
   const [hasSignature, setHasSignature] = useState(false)
 
   // Success state
-  const [signedPdfUrl, setSignedPdfUrl] = useState<string | null>(null)
+  const [signedAgreementUrl, setSignedAgreementUrl] = useState<string | null>(null)
 
   useEffect(() => {
     fetchAgreement()
@@ -142,7 +82,8 @@ export default function SignAgreementPage() {
           setError(data.message)
         } else if (data.status === 'already_signed') {
           setStatus('signed')
-          setSignedPdfUrl(data.pdfUrl)
+          // Prefer viewerUrl (ItWhip domain) over raw pdfUrl
+          setSignedAgreementUrl(data.viewerUrl || data.pdfUrl)
         } else {
           setStatus('error')
           setError(data.error || 'Failed to load agreement')
@@ -152,7 +93,8 @@ export default function SignAgreementPage() {
 
       if (data.status === 'already_signed') {
         setStatus('signed')
-        setSignedPdfUrl(data.pdfUrl)
+        // Prefer viewerUrl (ItWhip domain) over raw pdfUrl
+        setSignedAgreementUrl(data.viewerUrl || data.pdfUrl)
         return
       }
 
@@ -220,7 +162,8 @@ export default function SignAgreementPage() {
         throw new Error(data.error || 'Failed to submit signature')
       }
 
-      setSignedPdfUrl(data.pdfUrl)
+      // Prefer viewerUrl (ItWhip domain) over raw pdfUrl
+      setSignedAgreementUrl(data.viewerUrl || data.pdfUrl)
       setStatus('signed')
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to submit signature')
@@ -312,16 +255,16 @@ export default function SignAgreementPage() {
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Agreement Signed!</h1>
           <p className="text-gray-600 mb-6">
-            Thank you for signing the rental agreement. A copy has been sent to the rental provider.
+            Thank you for signing the rental agreement. A copy has been sent to your email and to the rental provider.
           </p>
-          {signedPdfUrl && (
+          {signedAgreementUrl && (
             <a
-              href={signedPdfUrl}
+              href={signedAgreementUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-block bg-orange-500 text-white px-6 py-3 rounded-lg font-medium hover:bg-orange-600 transition-colors"
             >
-              Download Signed Agreement
+              View Signed Agreement
             </a>
           )}
           <p className="text-sm text-gray-500 mt-6">
@@ -471,33 +414,201 @@ export default function SignAgreementPage() {
             </div>
           </div>
 
+          {/* Arizona Legal Compliance */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+            <div className="flex items-start">
+              <svg className="w-6 h-6 text-gray-700 mt-0.5 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+              </svg>
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 mb-2">Arizona Legal Requirements</h2>
+                <p className="text-sm text-gray-600 mb-3">
+                  This agreement complies with all applicable Arizona state laws governing vehicle rentals and peer-to-peer car sharing arrangements.
+                </p>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li>• Driver eligibility verification required per A.R.S. §28-3472</li>
+                  <li>• Security deposits handled per A.R.S. §33-1321</li>
+                  <li>• Peer-to-peer rental compliance per A.R.S. §28-9601</li>
+                  <li>• Insurance requirements per A.R.S. §20-331</li>
+                  <li>• Transaction Privilege Tax collection per A.R.S. §42-5061</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* Trip Protection Coverage */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+            <div className="flex items-start">
+              <svg className="w-6 h-6 text-gray-700 mt-0.5 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+              <div className="flex-1">
+                <h2 className="text-lg font-semibold text-gray-900 mb-2">Trip Protection Coverage</h2>
+                <p className="text-sm text-gray-600 mb-4">
+                  This rental includes comprehensive trip protection coverage. In the event of an accident or damage, you are protected with the following coverage limits:
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <p className="text-sm font-medium text-gray-900">Liability Coverage</p>
+                    <p className="text-sm text-gray-600">$750,000 maximum</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <p className="text-sm font-medium text-gray-900">Your Deductible</p>
+                    <p className="text-sm text-gray-600">As specified above</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <p className="text-sm font-medium text-gray-900">Personal Effects</p>
+                    <p className="text-sm text-gray-600">$500 maximum</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <p className="text-sm font-medium text-gray-900">Loss of Use</p>
+                    <p className="text-sm text-gray-600">Covered</p>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 mt-3">
+                  Coverage excludes intentional damage, driving under influence, unauthorized use, and commercial activities.
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Terms and Conditions */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Terms and Conditions</h2>
 
-            <div className="max-h-96 overflow-y-auto pr-2 space-y-4">
-              {STANDARD_TERMS.map((term, index) => (
-                <div key={index}>
-                  <h3 className="font-medium text-gray-900 mb-1">{term.title}</h3>
-                  <p className="text-sm text-gray-600">{term.content}</p>
+            <div className="max-h-[500px] overflow-y-auto pr-2 space-y-6">
+              {/* Section 1: Driver Eligibility */}
+              <section>
+                <h3 className="text-sm font-semibold text-gray-900 mb-2">1. Driver Eligibility & Requirements</h3>
+                <p className="text-sm text-gray-600 mb-2">
+                  The renter must be at least 21 years of age and possess a valid driver's license that has been active for a minimum of one year. International renters must provide a valid passport and international driving permit if their license is not in English.
+                </p>
+              </section>
+
+              {/* Section 2: Authorized Use */}
+              <section>
+                <h3 className="text-sm font-semibold text-gray-900 mb-2">2. Authorized Use & Restrictions</h3>
+                <p className="text-sm text-gray-600 mb-2">
+                  The vehicle may only be operated on properly maintained roads and highways. The following uses are strictly prohibited:
+                </p>
+                <ul className="text-sm text-gray-600 space-y-1 ml-4">
+                  <li>• Racing, speed testing, or any type of competition</li>
+                  <li>• Towing or pushing any vehicle or trailer</li>
+                  <li>• Off-road driving or driving on unpaved surfaces</li>
+                  <li>• Commercial use including rideshare or delivery services</li>
+                  <li>• Transporting hazardous materials or illegal substances</li>
+                  <li>• Driving outside Arizona without written permission</li>
+                </ul>
+              </section>
+
+              {/* Section 3: Renter Responsibilities */}
+              <section>
+                <h3 className="text-sm font-semibold text-gray-900 mb-2">3. Renter Responsibilities</h3>
+                <ul className="text-sm text-gray-600 space-y-1 ml-4">
+                  <li>• Return the vehicle with the same fuel level as at pickup</li>
+                  <li>• Maintain the vehicle in the same condition as received</li>
+                  <li>• Lock the vehicle when unattended and safeguard keys</li>
+                  <li>• Report any mechanical issues or damage immediately</li>
+                  <li>• No smoking or vaping in the vehicle ($250 cleaning fee)</li>
+                  <li>• No pets without prior approval ($100 cleaning fee)</li>
+                  <li>• Pay all tolls, parking fees, and traffic violations</li>
+                </ul>
+              </section>
+
+              {/* Section 4: Accident & Emergency */}
+              <section>
+                <h3 className="text-sm font-semibold text-gray-900 mb-2">4. Accident & Emergency Procedures</h3>
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <p className="text-sm text-gray-700 font-medium mb-2">In case of accident or emergency:</p>
+                  <ol className="text-sm text-gray-600 space-y-1 list-decimal ml-4">
+                    <li>Ensure safety of all parties and call 911 if needed</li>
+                    <li>Contact local police and obtain report number</li>
+                    <li>Document scene with photos of all damage</li>
+                    <li>Exchange information with all parties involved</li>
+                    <li>Report to owner and ItWhip support immediately</li>
+                    <li>Do not admit fault to anyone except police</li>
+                  </ol>
                 </div>
-              ))}
+              </section>
+
+              {/* Section 5: Cancellation Policy */}
+              <section>
+                <h3 className="text-sm font-semibold text-gray-900 mb-2">5. Cancellation Policy</h3>
+                <div className="grid grid-cols-4 gap-2 mb-2">
+                  <div className="text-center p-2 bg-gray-50 rounded border border-gray-200">
+                    <div className="text-sm font-semibold text-gray-900">72+ hrs</div>
+                    <div className="text-xs text-gray-600">100% refund</div>
+                  </div>
+                  <div className="text-center p-2 bg-gray-50 rounded border border-gray-200">
+                    <div className="text-sm font-semibold text-gray-900">24-72 hrs</div>
+                    <div className="text-xs text-gray-600">75% refund</div>
+                  </div>
+                  <div className="text-center p-2 bg-gray-50 rounded border border-gray-200">
+                    <div className="text-sm font-semibold text-gray-900">12-24 hrs</div>
+                    <div className="text-xs text-gray-600">50% refund</div>
+                  </div>
+                  <div className="text-center p-2 bg-gray-50 rounded border border-gray-200">
+                    <div className="text-sm font-semibold text-gray-900">&lt;12 hrs</div>
+                    <div className="text-xs text-gray-600">No refund</div>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500">Service fees are non-refundable. No-shows forfeit entire payment.</p>
+              </section>
+
+              {/* Section 6: Security Deposit */}
+              <section>
+                <h3 className="text-sm font-semibold text-gray-900 mb-2">6. Security Deposit Return Process</h3>
+                <p className="text-sm text-gray-600 mb-2">
+                  Your security deposit is fully refundable when you meet these conditions:
+                </p>
+                <ul className="text-sm text-gray-600 space-y-1 ml-4">
+                  <li>• <strong>On-Time Return:</strong> Within 30-minute grace period</li>
+                  <li>• <strong>Fuel Level:</strong> Match the level at pickup</li>
+                  <li>• <strong>Vehicle Condition:</strong> Normal wear accepted</li>
+                  <li>• <strong>Interior:</strong> No smoking odor, excessive dirt, or stains</li>
+                  <li>• <strong>Mileage:</strong> Stay within agreed mileage allowance</li>
+                </ul>
+                <div className="bg-amber-50 rounded-lg p-3 mt-3 border border-amber-200">
+                  <p className="text-sm text-amber-800">
+                    <strong>Timeline (Per A.R.S. §33-1321):</strong> Deposit released within 7-14 business days to original payment method.
+                  </p>
+                </div>
+              </section>
+
+              {/* Section 7: Platform Facilitator */}
+              <section>
+                <h3 className="text-sm font-semibold text-gray-900 mb-2">7. Platform Facilitator Disclosure</h3>
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <p className="text-sm text-gray-600 mb-2">
+                    <strong>Important:</strong> This rental agreement is entered into directly between the vehicle owner and the renter. ItWhip Technologies, Inc. operates solely as a marketplace facilitator under Arizona law (A.R.S. §42-5001) and is not a party to this rental contract.
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    The platform provides technology services including payment processing, messaging, and trip coordination. Any disputes regarding vehicle condition, availability, or rental terms are between host and guest.
+                  </p>
+                </div>
+              </section>
+
+              {/* Section 8: Electronic Signature */}
+              <section>
+                <h3 className="text-sm font-semibold text-gray-900 mb-2">8. Electronic Signature Consent</h3>
+                <p className="text-sm text-gray-600">
+                  By signing this agreement electronically, the Renter consents to conduct this transaction by electronic means and agrees that their electronic signature is legally binding under the Uniform Electronic Transactions Act (UETA) and the Electronic Signatures in Global and National Commerce Act (ESIGN).
+                </p>
+              </section>
 
               {/* Custom Clauses */}
               {agreementData.customClauses.length > 0 && (
-                <>
-                  <div className="pt-4 mt-4 border-t border-gray-200">
-                    <h3 className="font-medium text-gray-900 mb-3">Additional Terms (Provider-Specific)</h3>
-                    {agreementData.customClauses.map((clause, index) => (
-                      <div key={index} className="mb-4">
-                        <h4 className="font-medium text-gray-900 mb-1">
-                          {15 + index}. ADDITIONAL CLAUSE
-                        </h4>
-                        <p className="text-sm text-gray-600">{clause}</p>
-                      </div>
-                    ))}
-                  </div>
-                </>
+                <section className="pt-4 border-t border-gray-200">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3">Additional Terms (Provider-Specific)</h3>
+                  {agreementData.customClauses.map((clause, index) => (
+                    <div key={index} className="mb-4 bg-orange-50 rounded-lg p-4 border border-orange-200">
+                      <h4 className="text-sm font-medium text-gray-900 mb-1">
+                        Additional Clause {index + 1}
+                      </h4>
+                      <p className="text-sm text-gray-600">{clause}</p>
+                    </div>
+                  ))}
+                </section>
               )}
             </div>
           </div>

@@ -6,6 +6,12 @@ import { cookies } from 'next/headers'
 import { jwtVerify } from 'jose'
 import { prisma } from '@/app/lib/database/prisma'
 import { sendEmail } from '@/app/lib/email/sender'
+import crypto from 'crypto'
+
+// Generate a cuid-like ID
+function generateId(): string {
+  return 'c' + crypto.randomBytes(12).toString('hex').slice(0, 24)
+}
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'your-secret-key'
@@ -134,8 +140,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Create pre-booking with PENDING status
+    const bookingId = generateId()
+    const bookingCode = `BK-${generateId().slice(0, 8).toUpperCase()}`
+
     const booking = await prisma.rentalBooking.create({
       data: {
+        id: bookingId,
+        bookingCode: bookingCode,
         car: { connect: { id: carId } },
         host: { connect: { id: partner.id } },
         renter: { connect: { id: customerId } },
@@ -160,7 +171,8 @@ export async function POST(request: NextRequest) {
         pickupType: pickupType === 'partner' ? 'PARTNER_LOCATION' :
                    pickupType === 'airport' ? 'AIRPORT' : 'DELIVERY',
         pickupLocation: fullPickupLocation || 'Partner Location',
-        notes: notes ? `${notes}\n\n[Partner Manual Booking - Sent for customer review]` : '[Partner Manual Booking - Sent for customer review]'
+        notes: notes ? `${notes}\n\n[Partner Manual Booking - Sent for customer review]` : '[Partner Manual Booking - Sent for customer review]',
+        updatedAt: new Date()
       }
     })
 

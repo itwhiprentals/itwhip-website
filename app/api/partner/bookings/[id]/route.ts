@@ -5,6 +5,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { jwtVerify } from 'jose'
 import { prisma } from '@/app/lib/database/prisma'
+import { sendEmail } from '@/app/lib/email/send-email'
+import { getBookingCancelledTemplate } from '@/app/lib/email/templates/booking-cancelled'
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'your-secret-key'
@@ -459,11 +461,19 @@ export async function DELETE(
 
     const { id: bookingId } = await params
 
-    // Verify booking belongs to partner
+    // Verify booking belongs to partner and get car details for email
     const booking = await prisma.rentalBooking.findFirst({
       where: {
         id: bookingId,
         hostId: partner.id
+      },
+      include: {
+        car: {
+          select: {
+            make: true,
+            model: true
+          }
+        }
       }
     })
 
@@ -479,20 +489,69 @@ export async function DELETE(
       )
     }
 
+    // Store original status before updating
+    const wasConfirmed = booking.status === 'CONFIRMED'
+
     // Update to cancelled status
     await prisma.rentalBooking.update({
       where: { id: bookingId },
       data: {
         status: 'CANCELLED',
+        cancelledAt: new Date(),
+        cancelledBy: 'HOST',
         notes: `${booking.notes || ''}\n\n[Cancelled by partner on ${new Date().toISOString()}]`
       }
     })
 
     console.log(`[Cancel Booking] Booking ${bookingId} cancelled by partner ${partner.id}`)
 
+    // Send cancellation email ONLY if booking was CONFIRMED (not PENDING/Reserved)
+    // PENDING bookings will naturally expire - no notification needed
+    let emailSent = false
+    if (wasConfirmed && booking.guestEmail) {
+      try {
+        const formatDate = (date: Date) => {
+          return date.toLocaleDateString('en-US', {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric'
+          })
+        }
+
+        const emailData = {
+          to: booking.guestEmail,
+          guestName: booking.guestName || 'Valued Customer',
+          bookingCode: booking.bookingCode,
+          carMake: booking.car?.make || 'Vehicle',
+          carModel: booking.car?.model || '',
+          startDate: formatDate(booking.startDate),
+          cancellationReason: 'Cancelled by rental provider',
+          // If payment was processed, show refund info
+          refundAmount: booking.paymentStatus === 'PAID' ? booking.totalAmount.toFixed(2) : undefined,
+          refundTimeframe: booking.paymentStatus === 'PAID' ? '5-7 business days' : undefined
+        }
+
+        const template = getBookingCancelledTemplate(emailData)
+        await sendEmail({
+          to: booking.guestEmail,
+          subject: template.subject,
+          html: template.html,
+          text: template.text
+        })
+        emailSent = true
+        console.log(`[Cancel Booking] Cancellation email sent to ${booking.guestEmail}`)
+      } catch (emailError) {
+        console.error('[Cancel Booking] Failed to send cancellation email:', emailError)
+        // Don't fail the request if email fails
+      }
+    }
+
     return NextResponse.json({
       success: true,
-      message: 'Booking cancelled successfully'
+      message: 'Booking cancelled successfully',
+      emailSent,
+      wasConfirmed
     })
 
   } catch (error) {

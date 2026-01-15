@@ -2,6 +2,7 @@
 // Submit signature and finalize the rental agreement
 
 import { NextRequest, NextResponse } from 'next/server'
+import crypto from 'crypto'
 import { prisma } from '@/app/lib/database/prisma'
 import { v2 as cloudinary } from 'cloudinary'
 import { sendEmail } from '@/app/lib/email/send-email'
@@ -11,6 +12,11 @@ import {
   extractClientInfo
 } from '@/app/lib/agreements/tokens'
 import { generateAgreementPDF } from '@/app/lib/agreements/generator'
+
+// Generate a cuid-like ID
+function generateId(): string {
+  return 'c' + crypto.randomBytes(12).toString('hex').slice(0, 24)
+}
 
 // Configure Cloudinary
 cloudinary.config({
@@ -200,13 +206,15 @@ export async function POST(
       const pdfBuffer = Buffer.from(base64Content, 'base64')
 
       // Upload using upload_stream for binary data
+      // Use access_mode: 'public' to ensure the PDF is accessible without authentication
       const uploadResult = await new Promise<{ secure_url: string }>((resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
           {
             folder: `agreements/${booking.host?.id || 'general'}`,
             resource_type: 'raw',
             public_id: `agreement-${booking.bookingCode}-signed`,
-            format: 'pdf'
+            format: 'pdf',
+            access_mode: 'public'
           },
           (error, result) => {
             if (error) reject(error)
@@ -253,14 +261,28 @@ export async function POST(
       }
     })
 
+    // Build viewer URL for the signed agreement (on ItWhip domain)
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://itwhip.com'
+    const viewerUrl = `${baseUrl}/agreements/view/${booking.id}`
+
+    const vehicleName = booking.car
+      ? `${booking.car.year} ${booking.car.make} ${booking.car.model}`
+      : 'Vehicle'
+
+    const formatSignedDate = signedAt.toLocaleString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      timeZoneName: 'short'
+    })
+
     // Send confirmation email to partner
     try {
       const partnerEmail = booking.host?.partnerSupportEmail || booking.host?.email
       if (partnerEmail) {
-        const vehicleName = booking.car
-          ? `${booking.car.year} ${booking.car.make} ${booking.car.model}`
-          : 'Vehicle'
-
         await sendEmail({
           to: partnerEmail,
           subject: `Agreement Signed - ${signerName.trim()}`,
@@ -283,29 +305,19 @@ export async function POST(
                     <strong>Vehicle:</strong> ${vehicleName}
                   </p>
                   <p style="color: #111827; font-size: 14px; margin: 0 0 10px 0;">
-                    <strong>Signed:</strong> ${signedAt.toLocaleString('en-US', {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: 'numeric',
-                      minute: '2-digit',
-                      timeZoneName: 'short'
-                    })}
+                    <strong>Signed:</strong> ${formatSignedDate}
                   </p>
                   <p style="color: #6b7280; font-size: 12px; margin: 0;">
                     IP: ${ipAddress}
                   </p>
                 </div>
 
-                ${signedPdfUrl ? `
                 <div style="text-align: center; margin: 20px 0;">
-                  <a href="${signedPdfUrl}"
+                  <a href="${viewerUrl}"
                      style="display: inline-block; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold;">
-                    Download Signed Agreement
+                    View Signed Agreement
                   </a>
                 </div>
-                ` : ''}
 
                 <p style="color: #9ca3af; font-size: 12px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
                   This is an automated notification from ItWhip.
@@ -313,17 +325,106 @@ export async function POST(
               </div>
             </div>
           `,
-          text: `Agreement Signed!\n\n${signerName.trim()} has signed the rental agreement.\n\nBooking: #${booking.bookingCode}\nVehicle: ${vehicleName}\nSigned: ${signedAt.toISOString()}\nIP: ${ipAddress}\n\n${signedPdfUrl ? `Download: ${signedPdfUrl}` : ''}`
+          text: `Agreement Signed!\n\n${signerName.trim()} has signed the rental agreement.\n\nBooking: #${booking.bookingCode}\nVehicle: ${vehicleName}\nSigned: ${signedAt.toISOString()}\nIP: ${ipAddress}\n\nView Agreement: ${viewerUrl}`
         })
       }
     } catch (emailError) {
       console.error('[Agreement Sign] Partner notification error:', emailError)
     }
 
+    // Send copy of signed agreement to guest
+    try {
+      const guestEmail = booking.renter?.email || booking.guestEmail || booking.signerEmail
+      if (guestEmail) {
+        const hostName = booking.host?.partnerCompanyName || booking.host?.name || 'your rental provider'
+
+        await sendEmail({
+          to: guestEmail,
+          subject: `Your Signed Rental Agreement - ${vehicleName}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <div style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+                <h1 style="color: white; margin: 0; font-size: 24px;">Agreement Confirmed</h1>
+                <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0 0; font-size: 14px;">Your signed rental agreement</p>
+              </div>
+
+              <div style="background: #fff; padding: 30px; border: 1px solid #e5e7eb; border-top: none;">
+                <p style="color: #374151; font-size: 16px; margin-bottom: 20px;">
+                  Hi ${signerName.trim()},
+                </p>
+
+                <p style="color: #374151; font-size: 14px; margin-bottom: 20px;">
+                  Thank you for signing the rental agreement. Please keep this email for your records.
+                  A copy of your signed agreement is available below.
+                </p>
+
+                <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                  <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                    <span style="background: #22c55e; width: 24px; height: 24px; border-radius: 50%; display: inline-block; text-align: center; line-height: 24px; color: white; font-size: 14px; margin-right: 10px;">✓</span>
+                    <strong style="color: #166534;">Agreement Successfully Signed</strong>
+                  </div>
+                  <p style="color: #166534; font-size: 13px; margin: 0;">
+                    Signed on ${formatSignedDate}
+                  </p>
+                </div>
+
+                <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                  <p style="color: #111827; font-size: 14px; margin: 0 0 10px 0;">
+                    <strong>Booking Code:</strong> #${booking.bookingCode}
+                  </p>
+                  <p style="color: #111827; font-size: 14px; margin: 0 0 10px 0;">
+                    <strong>Vehicle:</strong> ${vehicleName}
+                  </p>
+                  <p style="color: #111827; font-size: 14px; margin: 0 0 10px 0;">
+                    <strong>Rental Provider:</strong> ${hostName}
+                  </p>
+                  <p style="color: #111827; font-size: 14px; margin: 0;">
+                    <strong>Pickup:</strong> ${booking.pickupLocation}
+                  </p>
+                </div>
+
+                <div style="text-align: center; margin: 25px 0;">
+                  <a href="${viewerUrl}"
+                     style="display: inline-block; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 15px;">
+                    View Your Signed Agreement
+                  </a>
+                </div>
+
+                ${signedPdfUrl ? `
+                <p style="text-align: center; margin-top: 15px;">
+                  <a href="${signedPdfUrl}" style="color: #f97316; text-decoration: underline; font-size: 13px;">
+                    Or download the PDF directly
+                  </a>
+                </p>
+                ` : ''}
+
+                <div style="background: #fef3c7; border: 1px solid #fcd34d; padding: 15px; border-radius: 8px; margin-top: 25px;">
+                  <p style="color: #92400e; font-size: 13px; margin: 0;">
+                    <strong>Important:</strong> Please review the terms and conditions in your agreement.
+                    Contact ${hostName} if you have any questions before your rental begins.
+                  </p>
+                </div>
+
+                <p style="color: #9ca3af; font-size: 12px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center;">
+                  This is your official copy of the signed rental agreement.<br>
+                  Powered by ItWhip - The trusted car rental marketplace
+                </p>
+              </div>
+            </div>
+          `,
+          text: `Agreement Confirmed\n\nHi ${signerName.trim()},\n\nThank you for signing the rental agreement. Please keep this email for your records.\n\nBooking Code: #${booking.bookingCode}\nVehicle: ${vehicleName}\nRental Provider: ${hostName}\nSigned: ${formatSignedDate}\n\nView your signed agreement: ${viewerUrl}\n\n${signedPdfUrl ? `Download PDF: ${signedPdfUrl}` : ''}\n\nPlease review the terms and conditions in your agreement. Contact ${hostName} if you have any questions.\n\nPowered by ItWhip - The trusted car rental marketplace`
+        })
+        console.log(`[Agreement Sign] Guest confirmation email sent to ${guestEmail}`)
+      }
+    } catch (guestEmailError) {
+      console.error('[Agreement Sign] Guest notification error:', guestEmailError)
+    }
+
     // Log activity
     try {
       await prisma.activityLog.create({
         data: {
+          id: generateId(),
           action: 'AGREEMENT_SIGNED',
           entityType: 'BOOKING',
           entityId: booking.id,
@@ -345,7 +446,9 @@ export async function POST(
       success: true,
       message: 'Agreement signed successfully',
       signedAt: signedAt.toISOString(),
-      pdfUrl: signedPdfUrl
+      pdfUrl: signedPdfUrl,
+      viewerUrl,
+      bookingId: booking.id
     })
 
   } catch (error) {

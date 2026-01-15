@@ -452,42 +452,43 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
         </div>
       )}
 
-      {/* Header */}
+      {/* Header - Mobile Optimized */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+          {/* Top row - Back button, title, status */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
               <Link
                 href="/partner/bookings"
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                className="p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex-shrink-0"
               >
                 <IoArrowBackOutline className="w-5 h-5 text-gray-600 dark:text-gray-300" />
               </Link>
-              <div>
-                <div className="flex items-center gap-3">
-                  <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                  <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">
                     Booking Details
                   </h1>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(booking.status)}`}>
+                  <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap ${getStatusColor(booking.status)}`}>
                     {booking.status}
                   </span>
                 </div>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-sm text-gray-500 dark:text-gray-400 font-mono">
+                <div className="flex items-center gap-2 mt-0.5 sm:mt-1">
+                  <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-mono">
                     {booking.id.slice(0, 8).toUpperCase()}
                   </span>
                   <button
                     onClick={() => copyToClipboard(booking.id)}
                     className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                   >
-                    <IoCopyOutline className="w-4 h-4" />
+                    <IoCopyOutline className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* Quick Actions */}
-            <div className="flex items-center gap-2">
+            {/* Quick Actions - Hidden on mobile, shown inline on desktop */}
+            <div className="hidden sm:flex items-center gap-2">
               {booking.status === 'PENDING' && (
                 <button
                   onClick={confirmBooking}
@@ -517,6 +518,60 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                 </button>
               )}
             </div>
+          </div>
+
+          {/* Reservation Expiry Notice - For PENDING bookings */}
+          {booking.status === 'PENDING' && (
+            <div className="mt-2 sm:mt-3 flex items-center gap-2 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-lg px-3 py-2">
+              <IoTimeOutline className="w-4 h-4 flex-shrink-0" />
+              <span className="text-xs sm:text-sm">
+                <strong>Reservation expires:</strong>{' '}
+                {(() => {
+                  const createdAt = new Date(booking.createdAt)
+                  const expiresAt = new Date(createdAt.getTime() + 24 * 60 * 60 * 1000) // 24 hours
+                  const now = new Date()
+                  const hoursLeft = Math.max(0, Math.floor((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60)))
+                  const minutesLeft = Math.max(0, Math.floor(((expiresAt.getTime() - now.getTime()) % (1000 * 60 * 60)) / (1000 * 60)))
+
+                  if (hoursLeft <= 0 && minutesLeft <= 0) {
+                    return <span className="text-red-600 dark:text-red-400">Expired - confirm or it will be auto-cancelled</span>
+                  }
+                  return `${hoursLeft}h ${minutesLeft}m remaining to confirm`
+                })()}
+              </span>
+            </div>
+          )}
+
+          {/* Mobile Quick Actions - Full width buttons on mobile */}
+          <div className="sm:hidden mt-3 flex gap-2">
+            {booking.status === 'PENDING' && (
+              <button
+                onClick={confirmBooking}
+                disabled={confirming}
+                className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg font-medium flex items-center justify-center gap-2 text-sm"
+              >
+                {confirming ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                ) : (
+                  <IoCheckmarkOutline className="w-4 h-4" />
+                )}
+                Confirm
+              </button>
+            )}
+            {(booking.status === 'PENDING' || booking.status === 'CONFIRMED') && (
+              <button
+                onClick={cancelBooking}
+                disabled={cancelling}
+                className={`${booking.status === 'PENDING' ? '' : 'flex-1'} px-3 py-2 border border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 rounded-lg font-medium hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center justify-center gap-2 text-sm`}
+              >
+                {cancelling ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500" />
+                ) : (
+                  <IoCloseOutline className="w-4 h-4" />
+                )}
+                Cancel
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -1360,6 +1415,20 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               <button className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg flex items-center gap-2">
                 <IoCallOutline className="w-4 h-4" />
                 Send SMS
+              </button>
+              <button
+                onClick={sendAgreement}
+                disabled={sendingAgreement}
+                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white text-sm rounded-lg flex items-center gap-2"
+              >
+                {sendingAgreement ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                ) : (
+                  <IoDocumentTextOutline className="w-4 h-4" />
+                )}
+                {booking.agreementStatus === 'sent' || booking.agreementStatus === 'viewed' || booking.agreementStatus === 'signed'
+                  ? 'Resend Agreement'
+                  : 'Send Agreement'}
               </button>
               <button className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2">
                 <IoDocumentTextOutline className="w-4 h-4" />

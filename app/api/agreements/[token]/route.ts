@@ -75,12 +75,14 @@ export async function GET(
 
     // Check if already signed
     if (booking.agreementStatus === 'signed') {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://itwhip.com'
       return NextResponse.json({
         status: 'already_signed',
         message: 'This agreement has already been signed',
         signedAt: booking.agreementSignedAt?.toISOString(),
         signerName: booking.signerName,
-        pdfUrl: booking.agreementSignedPdfUrl
+        pdfUrl: booking.agreementSignedPdfUrl,
+        viewerUrl: `${baseUrl}/agreements/view/${booking.id}`
       })
     }
 

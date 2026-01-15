@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { jwtVerify } from 'jose'
+import crypto from 'crypto'
 import { prisma } from '@/app/lib/database/prisma'
 import { sendEmail } from '@/app/lib/email/send-email'
 import {
@@ -11,6 +12,11 @@ import {
   getTokenExpiryDate,
   generateSigningUrl
 } from '@/app/lib/agreements/tokens'
+
+// Generate a cuid-like ID
+function generateId(): string {
+  return 'c' + crypto.randomBytes(12).toString('hex').slice(0, 24)
+}
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'fallback-secret-key'
@@ -239,6 +245,7 @@ export async function POST(request: NextRequest) {
     try {
       await prisma.activityLog.create({
         data: {
+          id: generateId(),
           action: 'AGREEMENT_SENT',
           entityType: 'BOOKING',
           entityId: bookingId,
