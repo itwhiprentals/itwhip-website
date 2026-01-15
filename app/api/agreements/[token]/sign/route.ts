@@ -196,38 +196,40 @@ export async function POST(
     // Upload signed PDF to Cloudinary
     let signedPdfUrl: string | null = null
     try {
-      // Extract base64 content from data URL (remove the data:application/pdf;... prefix)
-      const base64Content = pdfDataUrl.split(',')[1]
-      if (!base64Content) {
-        throw new Error('Invalid PDF data URL')
+      // PDFs can be uploaded as 'image' type in Cloudinary for full support
+      // Use folder + public_id structure, and format: 'pdf' to ensure correct handling
+      const folder = `agreements/${booking.host?.id || 'general'}`
+      const publicId = `agreement-${booking.bookingCode}-signed`
+
+      // Fix jsPDF data URL format - remove the filename parameter that Cloudinary doesn't understand
+      // jsPDF outputs: data:application/pdf;filename=generated.pdf;base64,...
+      // Cloudinary expects: data:application/pdf;base64,...
+      let cleanDataUrl = pdfDataUrl
+      if (pdfDataUrl.includes(';filename=')) {
+        cleanDataUrl = pdfDataUrl.replace(/;filename=[^;]+/, '')
       }
 
-      // Convert base64 to buffer
-      const pdfBuffer = Buffer.from(base64Content, 'base64')
+      console.log('[Agreement Sign] Uploading PDF to Cloudinary...')
+      console.log('[Agreement Sign] Folder:', folder, 'Public ID:', publicId)
+      console.log('[Agreement Sign] Data URL length:', cleanDataUrl.length)
+      console.log('[Agreement Sign] Data URL prefix:', cleanDataUrl.substring(0, 50))
 
-      // Upload using upload_stream for binary data
-      // Use access_mode: 'public' to ensure the PDF is accessible without authentication
-      const uploadResult = await new Promise<{ secure_url: string }>((resolve, reject) => {
-        const uploadStream = cloudinary.uploader.upload_stream(
-          {
-            folder: `agreements/${booking.host?.id || 'general'}`,
-            resource_type: 'raw',
-            public_id: `agreement-${booking.bookingCode}-signed`,
-            format: 'pdf',
-            access_mode: 'public'
-          },
-          (error, result) => {
-            if (error) reject(error)
-            else if (result) resolve(result)
-            else reject(new Error('No result from upload'))
-          }
-        )
-        uploadStream.end(pdfBuffer)
+      const uploadResult = await cloudinary.uploader.upload(cleanDataUrl, {
+        resource_type: 'image',
+        folder: folder,
+        public_id: publicId,
+        format: 'pdf',
+        overwrite: true,
+        access_mode: 'public'
       })
 
       signedPdfUrl = uploadResult.secure_url
-    } catch (uploadError) {
-      console.error('[Agreement Sign] PDF upload error:', uploadError)
+      console.log('[Agreement Sign] PDF uploaded successfully:', signedPdfUrl)
+      console.log('[Agreement Sign] Upload result:', JSON.stringify(uploadResult, null, 2))
+    } catch (uploadError: unknown) {
+      const error = uploadError as Error & { http_code?: number; message?: string }
+      console.error('[Agreement Sign] PDF upload error:', error.message || uploadError)
+      console.error('[Agreement Sign] Error details:', JSON.stringify(uploadError, null, 2))
       // Continue without PDF - the signature is still valid
     }
 

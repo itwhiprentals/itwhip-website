@@ -47,7 +47,8 @@ export async function GET(
     }
 
     // Extract public_id from the URL
-    // URL format: https://res.cloudinary.com/cloud_name/raw/upload/v123/folder/filename.pdf
+    // URL format: https://res.cloudinary.com/cloud_name/image/upload/v123/folder/filename.pdf
+    // or: https://res.cloudinary.com/cloud_name/raw/upload/v123/folder/filename.pdf
     const urlParts = booking.agreementSignedPdfUrl.split('/upload/')
     if (urlParts.length < 2) {
       console.error('[PDF Proxy] Invalid Cloudinary URL format')
@@ -57,6 +58,11 @@ export async function GET(
       )
     }
 
+    // Detect resource type from URL (image or raw)
+    const isImageType = booking.agreementSignedPdfUrl.includes('/image/upload/')
+    const resourceType = isImageType ? 'image' : 'raw'
+    console.log('[PDF Proxy] Detected resource type:', resourceType)
+
     // Remove version and get public_id with extension
     const pathAfterUpload = urlParts[1]
     const pathWithoutVersion = pathAfterUpload.replace(/^v\d+\//, '')
@@ -64,132 +70,76 @@ export async function GET(
     const publicId = pathWithoutVersion.replace(/\.pdf$/, '')
 
     console.log('[PDF Proxy] Attempting to fetch PDF for:', publicId)
+    console.log('[PDF Proxy] Original URL:', booking.agreementSignedPdfUrl)
 
     // Try multiple methods to get the PDF
-
-    // Method 1: Generate a private download URL using Cloudinary API
     let pdfResponse: Response | null = null
 
-    try {
-      // Get resource info and create authenticated URL
-      const timestamp = Math.floor(Date.now() / 1000)
-      const signature = cloudinary.utils.api_sign_request(
-        { public_id: publicId, timestamp, resource_type: 'raw' },
-        process.env.CLOUDINARY_API_SECRET!
-      )
+    // Method 1: Try the original URL directly (simplest approach)
+    console.log('[PDF Proxy] Method 1: Trying original URL directly')
+    pdfResponse = await fetch(booking.agreementSignedPdfUrl)
 
-      // Build authenticated URL with signature
-      const authUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/s--${signature}--/${publicId}.pdf`
-      console.log('[PDF Proxy] Trying authenticated URL')
-      pdfResponse = await fetch(authUrl)
-    } catch (e) {
-      console.log('[PDF Proxy] Method 1 failed:', e)
+    if (pdfResponse?.ok) {
+      console.log('[PDF Proxy] Method 1 succeeded!')
     }
 
-    // Method 2: Try signed URL with different parameters
+    // Method 2: Try with Cloudinary URL generator
     if (!pdfResponse?.ok) {
+      console.log('[PDF Proxy] Method 2: Trying Cloudinary URL generator')
+      const generatedUrl = cloudinary.url(publicId, {
+        resource_type: resourceType,
+        type: 'upload',
+        secure: true,
+        format: 'pdf'
+      })
+      console.log('[PDF Proxy] Generated URL:', generatedUrl)
+      pdfResponse = await fetch(generatedUrl)
+    }
+
+    // Method 3: Try with signed URL
+    if (!pdfResponse?.ok) {
+      console.log('[PDF Proxy] Method 3: Trying signed URL')
       const signedUrl = cloudinary.url(publicId, {
-        resource_type: 'raw',
+        resource_type: resourceType,
         type: 'upload',
         sign_url: true,
         secure: true,
-        format: 'pdf',
-        expires_at: Math.floor(Date.now() / 1000) + 3600
+        format: 'pdf'
       })
-      console.log('[PDF Proxy] Trying signed URL')
+      console.log('[PDF Proxy] Signed URL:', signedUrl)
       pdfResponse = await fetch(signedUrl)
     }
 
-    // Method 3: Try the original URL directly
+    // Method 4: Try Admin API to get resource info
     if (!pdfResponse?.ok) {
-      console.log('[PDF Proxy] Trying original URL')
-      pdfResponse = await fetch(booking.agreementSignedPdfUrl)
-    }
-
-    // Method 4: Use Cloudinary download URL format
-    if (!pdfResponse?.ok) {
-      const downloadUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/fl_attachment/${publicId}.pdf`
-      console.log('[PDF Proxy] Trying download URL format')
-      pdfResponse = await fetch(downloadUrl)
-    }
-
-    // Method 5: Use Cloudinary Admin API to get the resource - try different types
-    if (!pdfResponse?.ok) {
-      console.log('[PDF Proxy] Trying Admin API method')
-
-      // Try with 'upload' type first, then 'authenticated', then 'private'
-      const typesToTry = ['upload', 'authenticated', 'private']
-
-      for (const resourceType of typesToTry) {
-        try {
-          console.log(`[PDF Proxy] Admin API trying type: ${resourceType}`)
-          const resource = await cloudinary.api.resource(publicId, {
-            resource_type: 'raw',
-            type: resourceType
-          })
-          if (resource.secure_url) {
-            console.log(`[PDF Proxy] Found resource with type ${resourceType}, secure_url:`, resource.secure_url)
-            pdfResponse = await fetch(resource.secure_url)
-            if (pdfResponse?.ok) break
-          }
-        } catch (err) {
-          console.log(`[PDF Proxy] Admin API type ${resourceType} failed`)
-        }
-      }
-    }
-
-    // Method 6: Try with explicit version from original URL
-    if (!pdfResponse?.ok) {
-      // Extract version from original URL
-      const versionMatch = pathAfterUpload.match(/^(v\d+)\//)
-      if (versionMatch) {
-        const versionUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/${versionMatch[1]}/${publicId}.pdf`
-        console.log('[PDF Proxy] Trying with explicit version')
-        pdfResponse = await fetch(versionUrl)
-      }
-    }
-
-    // Method 7: Try using private_download_url API
-    if (!pdfResponse?.ok) {
-      console.log('[PDF Proxy] Trying private_download_url')
+      console.log('[PDF Proxy] Method 4: Trying Admin API')
       try {
-        const downloadUrl = cloudinary.utils.private_download_url(publicId, 'pdf', {
-          resource_type: 'raw',
-          expires_at: Math.floor(Date.now() / 1000) + 3600
+        const resource = await cloudinary.api.resource(publicId, {
+          resource_type: resourceType,
+          type: 'upload'
         })
-        console.log('[PDF Proxy] Private download URL:', downloadUrl)
-        pdfResponse = await fetch(downloadUrl)
-      } catch (e) {
-        console.log('[PDF Proxy] private_download_url failed:', e)
+        if (resource.secure_url) {
+          console.log('[PDF Proxy] Found via Admin API:', resource.secure_url)
+          pdfResponse = await fetch(resource.secure_url)
+        }
+      } catch (err) {
+        console.log('[PDF Proxy] Admin API failed:', err)
       }
     }
 
-    // Method 8: Try generating URL with all proper parameters manually
+    // Method 5: Try the other resource type (in case it was uploaded differently)
     if (!pdfResponse?.ok) {
-      console.log('[PDF Proxy] Trying manual signed URL generation')
-      try {
-        const timestamp = Math.floor(Date.now() / 1000)
-        const expires = timestamp + 3600
+      const altResourceType = resourceType === 'image' ? 'raw' : 'image'
+      console.log('[PDF Proxy] Method 5: Trying alternate resource type:', altResourceType)
 
-        // Generate signature for download
-        const signatureParams = {
-          expires_at: expires,
-          public_id: publicId,
-          timestamp: timestamp
-        }
-
-        const signature = cloudinary.utils.api_sign_request(
-          signatureParams,
-          process.env.CLOUDINARY_API_SECRET!
-        )
-
-        // Build URL with signature
-        const signedDownloadUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/s--${signature}--/fl_attachment/${publicId}.pdf?_s=${signature}&_a=${process.env.CLOUDINARY_API_KEY}`
-        console.log('[PDF Proxy] Manual signed URL')
-        pdfResponse = await fetch(signedDownloadUrl)
-      } catch (e) {
-        console.log('[PDF Proxy] Manual signing failed:', e)
-      }
+      const altUrl = cloudinary.url(publicId, {
+        resource_type: altResourceType,
+        type: 'upload',
+        secure: true,
+        format: 'pdf'
+      })
+      console.log('[PDF Proxy] Alternate URL:', altUrl)
+      pdfResponse = await fetch(altUrl)
     }
 
     if (!pdfResponse?.ok) {
