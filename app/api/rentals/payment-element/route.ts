@@ -27,14 +27,13 @@ export async function POST(request: NextRequest) {
       ...(metadata && typeof metadata === 'object' ? metadata : {})
     }
 
-    // Create Payment Intent with ONLY these payment methods:
-    // - card (includes Apple Pay, Google Pay as card wallets)
-    // - cashapp (Cash App Pay)
-    // NO us_bank_account (ACH takes 4+ days), NO link (has promotional banners)
+    // Create Payment Intent - payment methods controlled via Stripe Dashboard
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(amount), // Ensure integer
+      amount: Math.round(amount),
       currency: 'usd',
-      payment_method_types: ['card', 'cashapp'],
+      automatic_payment_methods: {
+        enabled: true,
+      },
       metadata: paymentMetadata,
       ...(email && { receipt_email: email }),
       description: 'ItWhip Car Rental',
