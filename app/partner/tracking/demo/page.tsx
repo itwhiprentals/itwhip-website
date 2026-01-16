@@ -597,10 +597,13 @@ export default function TrackingDemoPage() {
                   />
                   <div>
                     <h1 className="text-base sm:text-lg font-bold flex items-center gap-2">
-                      <span className="hidden xs:inline">ItWhip</span> Tracking Demo
-                      <span className="px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs bg-white/20 rounded-lg hidden sm:inline">INTERACTIVE</span>
+                      <span className="text-amber-200">ItWhip+</span><sup className="text-[10px] text-amber-300">™</sup>
+                      <span className="text-white/90">in Action</span>
+                      <span className="px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs bg-amber-500/30 border border-amber-400/50 rounded-lg hidden sm:inline">LIVE DEMO</span>
                     </h1>
-                    <p className="text-xs sm:text-sm text-white/80 hidden sm:block">Experience the full tracking dashboard</p>
+                    <p className="text-xs sm:text-sm text-white/80 hidden sm:block">
+                      <span className="text-amber-200">OBD</span> + <span className="text-amber-200">API</span> = Unified Dashboard • $4.99/mo
+                    </p>
                   </div>
                 </div>
               </div>
@@ -613,7 +616,7 @@ export default function TrackingDemoPage() {
             {/* Right side - Desktop only location + Live indicator */}
             <div className="hidden sm:flex items-center gap-4">
               <div className="text-right">
-                <p className="text-xs text-white/60">Demo Fleet</p>
+                <p className="text-xs text-white/60">ItWhip+ Demo Fleet</p>
                 <p className="text-sm font-semibold">Phoenix, Arizona</p>
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 bg-white/20 rounded-lg">
@@ -626,21 +629,39 @@ export default function TrackingDemoPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-        {/* Provider Features Showcase - Now clickable! */}
-        <div className="mb-4 sm:mb-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-4 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3 sm:mb-4">
-            <h2 className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wide">
-              Available Features by Provider
+        {/* ItWhip+ Feature Suite */}
+        <div className="mb-4 sm:mb-6 bg-white dark:bg-gray-800 rounded-lg border-2 border-amber-200 dark:border-amber-500/30 p-3 sm:p-4 shadow-sm">
+          {/* Header Row - Always horizontal, title left, badges right */}
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <h2 className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wide flex items-center gap-1">
+              <span className="text-amber-600 dark:text-amber-400">ItWhip+</span><sup className="text-[8px] text-amber-500">™</sup>
+              <span className="hidden xs:inline">Feature Suite</span>
             </h2>
-            <span className="text-xs text-gray-500 dark:text-gray-400">Tap any feature to see it in action</span>
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+              <span className="px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-medium bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 rounded border border-amber-300 dark:border-amber-500/30 whitespace-nowrap">
+                🔌 OBD + 🌐 API
+              </span>
+              <span className="text-[10px] sm:text-xs text-amber-600 dark:text-amber-400 font-bold whitespace-nowrap">$4.99/mo</span>
+            </div>
           </div>
+          {/* Subtitle Row */}
+          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mb-3 sm:mb-4">
+            8 features unified • <span className="text-amber-600 dark:text-amber-400 font-medium">Mileage Forensics™</span> exclusive to ItWhip+
+          </p>
           <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-8 gap-1.5 sm:gap-2">
             {PROVIDER_FEATURES.map((feature) => (
               <button
                 key={feature.id}
                 onClick={() => openFeatureDemo(feature.id)}
-                className={`p-2 sm:p-3 bg-gradient-to-br ${getFeatureColor(feature.color)} rounded-lg text-center transition-all hover:scale-105 hover:shadow-lg group cursor-pointer`}
+                className={`p-2 sm:p-3 bg-gradient-to-br ${getFeatureColor(feature.color)} rounded-lg text-center transition-all hover:scale-105 hover:shadow-lg group cursor-pointer relative ${
+                  feature.id === 'mileage' ? 'ring-2 ring-amber-400 ring-offset-1 ring-offset-white dark:ring-offset-gray-800' : ''
+                }`}
               >
+                {feature.id === 'mileage' && (
+                  <span className="absolute -top-1 -right-1 px-1 py-0.5 bg-amber-500 text-white text-[8px] font-bold rounded shadow-sm">
+                    EXCLUSIVE
+                  </span>
+                )}
                 <feature.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white mx-auto mb-0.5 sm:mb-1 group-hover:scale-110 transition-transform" />
                 <p className="text-[10px] sm:text-xs text-white font-medium leading-tight">{feature.label}</p>
               </button>
@@ -654,8 +675,9 @@ export default function TrackingDemoPage() {
           <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm flex flex-col min-h-[400px] sm:min-h-[500px] lg:h-full">
             <div className="p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between flex-shrink-0">
               <h2 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2 text-sm sm:text-base">
-                <IoMapOutline className="w-4 h-4 sm:w-5 sm:h-5 text-orange-500" />
-                Live Fleet Map
+                <IoMapOutline className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500" />
+                <span className="text-amber-600 dark:text-amber-400">ItWhip+</span>
+                <span>Fleet Map</span>
               </h2>
               <div className="flex items-center gap-2 sm:gap-3">
                 <button
@@ -699,7 +721,9 @@ export default function TrackingDemoPage() {
           <div className="space-y-4">
             {/* Fleet Stats */}
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-4 shadow-sm">
-              <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">Fleet Status</h3>
+              <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3 flex items-center gap-2">
+                <span className="text-amber-600 dark:text-amber-400">ItWhip+</span> Fleet Status
+              </h3>
               <div className="grid grid-cols-4 lg:grid-cols-2 gap-2 sm:gap-3">
                 <div className="text-center p-2 sm:p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                   <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{vehicles.length}</p>
@@ -720,29 +744,35 @@ export default function TrackingDemoPage() {
               </div>
             </div>
 
-            {/* Alerts - Live Feed */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-4 shadow-sm">
-              {/* Header with provider support */}
+            {/* Alerts - Live Feed - ItWhip+ Unified */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-amber-200 dark:border-amber-500/30 p-3 sm:p-4 shadow-sm">
+              {/* Header with ItWhip+ branding */}
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
                   </span>
-                  <h3 className="text-xs font-semibold text-gray-700 dark:text-white uppercase tracking-wide">Live Alerts</h3>
+                  <h3 className="text-xs font-semibold text-gray-700 dark:text-white uppercase tracking-wide">
+                    ItWhip+ Alerts
+                  </h3>
+                  <span className="px-1.5 py-0.5 text-[8px] font-bold bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded">
+                    UNIFIED
+                  </span>
                 </div>
-                <span className="px-2 py-0.5 text-xs font-bold bg-red-500 text-white rounded-full">
+                <span className="px-2 py-0.5 text-xs font-bold bg-amber-500 text-white rounded-full">
                   {alerts.length}
                 </span>
               </div>
-              {/* Provider support row */}
-              <div className="flex items-center gap-1 mb-3 pb-2 border-b border-gray-100 dark:border-gray-700">
-                <span className="text-[9px] text-gray-500 dark:text-gray-400">Supported by:</span>
-                {LIVE_ALERT_PROVIDERS.map(provider => (
-                  <span key={provider} className="px-1.5 py-0.5 text-[8px] font-medium rounded border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50">
-                    {provider}
+              {/* Provider aggregation row */}
+              <div className="flex items-center gap-1 mb-3 pb-2 border-b border-amber-100 dark:border-amber-500/20">
+                <span className="text-[9px] text-gray-500 dark:text-gray-400">Aggregating from:</span>
+                {LIVE_ALERT_PROVIDERS.slice(0, 2).map(provider => (
+                  <span key={provider} className="px-1.5 py-0.5 text-[8px] font-medium rounded border-2 border-amber-300 dark:border-amber-500/50 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10">
+                    {provider === 'Bouncie' ? '🔌 Bouncie' : '🌐 Smartcar'}
                   </span>
                 ))}
+                <span className="text-[8px] text-gray-400">+{LIVE_ALERT_PROVIDERS.length - 2}</span>
               </div>
               <div className="space-y-1 max-h-64 overflow-y-auto">
                 {alerts.slice(0, 8).map((alert, index) => (
@@ -828,7 +858,9 @@ export default function TrackingDemoPage() {
 
             {/* Quick Actions */}
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-4 shadow-sm">
-              <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">Quick Actions</h3>
+              <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3 flex items-center gap-2">
+                <span className="text-amber-600 dark:text-amber-400">ItWhip+</span> Actions
+              </h3>
               <div className="space-y-2">
                 <button className="w-full flex items-center gap-3 p-2.5 sm:p-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left">
                   <IoDownloadOutline className="w-5 h-5 text-gray-400 dark:text-gray-500" />
@@ -850,8 +882,11 @@ export default function TrackingDemoPage() {
         {/* Vehicle List with Remote Controls */}
         <div className="mt-4 sm:mt-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
           <div className="p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <h2 className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base">Vehicle Status & Remote Control</h2>
-            <span className="text-xs text-gray-500 dark:text-gray-400">Tap a vehicle to access remote commands</span>
+            <h2 className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base flex items-center gap-2">
+              <span className="text-amber-600 dark:text-amber-400">ItWhip+</span>
+              <span>Vehicle Control</span>
+            </h2>
+            <span className="text-xs text-gray-500 dark:text-gray-400">Unified remote commands via OBD + API</span>
           </div>
 
           <div className="divide-y divide-gray-200 dark:divide-gray-700">

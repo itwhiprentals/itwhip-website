@@ -117,6 +117,35 @@ export default function KillSwitchDemo() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
+      {/* Hardware Requirement Notice */}
+      <div className="bg-red-500/10 border-2 border-red-500/50 rounded-lg p-3 sm:p-4">
+        <div className="flex items-start gap-3">
+          <IoWarningOutline className="w-5 h-5 sm:w-6 sm:h-6 text-red-400 flex-shrink-0 mt-0.5" />
+          <div>
+            <h4 className="text-sm sm:text-base font-bold text-red-400 mb-1">
+              Requires MooveTrax Hardware
+            </h4>
+            <p className="text-xs sm:text-sm text-gray-300 mb-2">
+              Kill switch functionality is <strong>NOT available</strong> through ItWhip+ or Bouncie + Smartcar.
+              This feature requires dedicated MooveTrax hardware installation.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <a
+                href="https://moovetrax.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded transition-colors"
+              >
+                Get MooveTrax →
+              </a>
+              <span className="inline-flex items-center px-2 py-1 bg-gray-700 text-gray-300 text-xs rounded">
+                ~$12/mo + hardware
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Main Status Display */}
       <div className="bg-gray-800 rounded-lg p-4 sm:p-6">
         <div className="flex flex-col items-center">

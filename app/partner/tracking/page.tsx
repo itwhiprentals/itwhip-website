@@ -169,19 +169,19 @@ export default function TrackingPage() {
             {/* Recommended Setup Card - Provider Card Style */}
             <div className="bg-white dark:bg-gray-800 rounded-lg border-2 border-purple-200 dark:border-purple-800 p-5 transition-all hover:shadow-lg hover:border-purple-300 dark:hover:border-purple-600">
               {/* Card Header */}
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center">
-                    <IoStar className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white">Recommended Setup</h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">~$15/mo per vehicle</p>
-                  </div>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                  <IoStar className="w-5 h-5 text-white" />
                 </div>
-                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-xs font-medium">
-                  <IoTrendingUpOutline className="w-3.5 h-3.5" />
-                  44% less than FleetBold
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-gray-900 dark:text-white">Recommended Setup</h3>
+                    <span className="flex items-center gap-1 px-2 py-0.5 bg-green-600 text-white text-xs font-medium rounded border border-white/50 whitespace-nowrap">
+                      <IoTrendingUpOutline className="w-3 h-3" />
+                      44% less than FleetBold
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">~$15/mo per vehicle</p>
                 </div>
               </div>
 
@@ -225,50 +225,49 @@ export default function TrackingPage() {
             </div>
 
             {/* Mileage Forensics™ Feature Section */}
-            <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-gray-800 dark:to-gray-800 rounded-lg p-6 md:p-8 border border-amber-200 dark:border-gray-700">
-              <div className="flex flex-col md:flex-row gap-6">
-                {/* Icon */}
-                <div className="flex-shrink-0">
-                  <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center">
-                    <IoSpeedometerOutline className="w-8 h-8 text-white" />
-                  </div>
+            <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-gray-800 dark:to-gray-800 rounded-lg p-5 border border-amber-200 dark:border-gray-700">
+              {/* Header with Icon + Title */}
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center">
+                  <IoSpeedometerOutline className="w-5 h-5 text-white" />
                 </div>
-
-                {/* Content */}
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-gray-900 dark:text-white">
                       {MILEAGE_FORENSICS.name}
                     </h3>
-                    <span className="px-2 py-0.5 bg-amber-500 text-white text-xs font-semibold rounded">
+                    <span className="px-2 py-0.5 bg-amber-500 text-white text-xs font-semibold rounded border border-white/50">
                       EXCLUSIVE
                     </span>
                   </div>
-                  <p className="text-gray-600 dark:text-gray-400 mb-4">
-                    {MILEAGE_FORENSICS.description}
-                  </p>
-
-                  {/* How it works */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                    {MILEAGE_FORENSICS.howItWorks.map((step, idx) => (
-                      <div key={idx} className="flex items-start gap-2 text-sm">
-                        <span className="flex-shrink-0 w-5 h-5 bg-amber-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
-                          {idx + 1}
-                        </span>
-                        <span className="text-gray-700 dark:text-gray-300">{step}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Benefits */}
-                  <div className="flex flex-wrap gap-2">
-                    {MILEAGE_FORENSICS.benefits.slice(0, 4).map((benefit, idx) => (
-                      <span key={idx} className="px-2.5 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs rounded-lg border border-amber-200 dark:border-gray-600">
-                        {benefit}
-                      </span>
-                    ))}
-                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">ItWhip+ Feature</p>
                 </div>
+              </div>
+
+              {/* Description */}
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                {MILEAGE_FORENSICS.description}
+              </p>
+
+              {/* How it works */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
+                {MILEAGE_FORENSICS.howItWorks.map((step, idx) => (
+                  <div key={idx} className="flex items-start gap-2 text-xs">
+                    <span className="flex-shrink-0 w-4 h-4 bg-amber-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold">
+                      {idx + 1}
+                    </span>
+                    <span className="text-gray-700 dark:text-gray-300">{step}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Benefits */}
+              <div className="flex flex-wrap gap-2">
+                {MILEAGE_FORENSICS.benefits.slice(0, 4).map((benefit, idx) => (
+                  <span key={idx} className="px-2 py-0.5 bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs rounded border border-amber-200 dark:border-gray-600">
+                    {benefit}
+                  </span>
+                ))}
               </div>
             </div>
 
@@ -307,10 +306,17 @@ export default function TrackingPage() {
                       } rounded-lg flex items-center justify-center text-white font-bold`}>
                         {provider.name.charAt(0)}
                       </div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900 dark:text-white">
-                          {provider.name}
-                        </h3>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-gray-900 dark:text-white">
+                            {provider.name}
+                          </h3>
+                          {provider.hasApiIntegration === false && (
+                            <span className="px-2 py-0.5 bg-red-600 text-white text-xs font-medium rounded border border-white/50 whitespace-nowrap">
+                              No ItWhip+ integration
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-gray-500 dark:text-gray-400">{provider.monthlyPrice}</p>
                       </div>
                     </div>
@@ -386,7 +392,7 @@ export default function TrackingPage() {
                 </div>
                 <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
                   <IoCheckmarkCircleOutline className="w-3.5 h-3.5 text-orange-500 flex-shrink-0" />
-                  <span>Geofencing • Speed Alerts • Kill Switch • Horn/Lights</span>
+                  <span>Geofencing • Speed Alerts • Horn/Lights • Mileage Forensics™</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
                   <IoCheckmarkCircleOutline className="w-3.5 h-3.5 text-orange-500 flex-shrink-0" />

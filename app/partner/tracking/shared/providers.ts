@@ -9,7 +9,6 @@ import {
   IoSnowOutline,
   IoEllipseOutline,
   IoSpeedometerOutline,
-  IoFlashOffOutline,
   IoVolumeHighOutline
 } from 'react-icons/io5'
 
@@ -59,8 +58,8 @@ export const PROVIDER_FEATURES: ProviderFeature[] = [
   {
     id: 'precool',
     icon: IoSnowOutline,
-    label: 'Pre-Cool (MaxAC)',
-    description: 'Cool car before guest pickup',
+    label: 'MaxAC™',
+    description: 'Climate preconditioning before pickup',
     providers: ['Smartcar'],
     color: 'cyan'
   },
@@ -68,8 +67,8 @@ export const PROVIDER_FEATURES: ProviderFeature[] = [
     id: 'geofence',
     icon: IoEllipseOutline,
     label: 'Geofencing',
-    description: 'Alerts when car leaves area',
-    providers: ['Bouncie', 'Smartcar', 'Zubie', 'MooveTrax', 'Trackimo'],
+    description: 'Enhanced boundary alerts via ItWhip+',
+    providers: ['Bouncie', 'Smartcar', 'Zubie', 'MooveTrax', 'Trackimo', 'ItWhip+'],
     color: 'yellow'
   },
   {
@@ -80,14 +79,9 @@ export const PROVIDER_FEATURES: ProviderFeature[] = [
     providers: ['Bouncie', 'Zubie', 'MooveTrax', 'Trackimo'],
     color: 'red'
   },
-  {
-    id: 'killswitch',
-    icon: IoFlashOffOutline,
-    label: 'Kill Switch',
-    description: 'Disable vehicle remotely',
-    providers: ['MooveTrax'],
-    color: 'red'
-  },
+  // NOTE: Kill Switch removed from feature showcase - it's NOT available via ItWhip+
+  // Hosts who need kill switch should use MooveTrax directly (listed in "Other Provider Options")
+  // The feature still exists in provider capabilities data for reference
   {
     id: 'honk',
     icon: IoVolumeHighOutline,
@@ -217,8 +211,9 @@ export const PROVIDER_CAPABILITIES: ProviderCapability[] = [
     name: 'MooveTrax',
     monthlyPrice: '$12/mo',
     website: 'https://moovetrax.com',
-    description: 'Advanced GPS tracker with kill switch capability and worldwide coverage.',
+    description: 'Advanced GPS tracker with kill switch. No ItWhip+ integration - use MooveTrax app separately.',
     deviceType: 'hybrid',
+    hasApiIntegration: false, // No public API - standalone only
     features: {
       gps: true,
       lock: true,
@@ -237,6 +232,7 @@ export const PROVIDER_CAPABILITIES: ProviderCapability[] = [
       'Remote lock/unlock and horn'
     ],
     limitations: [
+      'No ItWhip+ integration - use MooveTrax app',
       'Requires professional installation for kill switch',
       'No climate control',
       'Hardware relay installation needed'
@@ -292,7 +288,7 @@ export const ITWHIP_PLUS: ITWhipPlusConfig = {
   name: 'ItWhip+',
   monthlyPrice: '$4.99/mo',
   description: 'Unified dashboard with Mileage Forensics™ cross-verification.',
-  valueProposition: 'Get ALL features regardless of which tracking provider you use.',
+  valueProposition: 'Combines Bouncie + Smartcar into one powerful dashboard.',
   features: {
     gps: true,
     lock: true,
@@ -300,14 +296,14 @@ export const ITWHIP_PLUS: ITWhipPlusConfig = {
     precool: true,
     geofence: true,
     speed: true,
-    killswitch: true,
+    killswitch: false, // Requires MooveTrax hardware - not available via ItWhip+
     honk: true,
     mileage: true // Exclusive to ItWhip+
   },
   benefits: [
     'Mileage Forensics™ - Cross-verify OBD odometer vs GPS trips',
-    'Unified dashboard for all vehicles',
-    'Fill feature gaps from any provider',
+    'Unified dashboard for Bouncie + Smartcar',
+    'All 8 core features from two providers',
     'Smart alerts aggregated from all sources',
     'Trip reports for insurance & disputes'
   ]

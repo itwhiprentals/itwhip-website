@@ -78,9 +78,23 @@ export default function FeatureDemoModal({
               <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
             <div className="min-w-0">
-              <h3 id="modal-title" className="text-base sm:text-lg font-bold text-white truncate">
-                {feature.label}
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 id="modal-title" className="text-base sm:text-lg font-bold text-white truncate">
+                  {feature.label}
+                </h3>
+                {/* ItWhip+ exclusive badge for mileage feature */}
+                {feature.id === 'mileage' && (
+                  <span className="px-1.5 py-0.5 text-[8px] font-bold bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded">
+                    EXCLUSIVE
+                  </span>
+                )}
+                {/* Hardware required badge for kill switch */}
+                {feature.id === 'killswitch' && (
+                  <span className="px-1.5 py-0.5 text-[8px] font-bold bg-red-600 text-white rounded">
+                    REQUIRES MOOVETRAX
+                  </span>
+                )}
+              </div>
               <p className="text-xs sm:text-sm text-gray-400 truncate">
                 {feature.description}
               </p>

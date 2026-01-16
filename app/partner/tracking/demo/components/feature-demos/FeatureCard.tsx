@@ -84,9 +84,22 @@ export default function FeatureCard({
       </div>
 
       {/* Label */}
-      <h4 className="font-semibold text-sm sm:text-base text-gray-900 dark:text-white mb-1">
-        {feature.label}
-      </h4>
+      <div className="flex items-center gap-1.5 mb-1">
+        <h4 className="font-semibold text-sm sm:text-base text-gray-900 dark:text-white">
+          {feature.label}
+        </h4>
+        {/* Special badges */}
+        {feature.id === 'mileage' && (
+          <span className="px-1 py-0.5 text-[7px] sm:text-[8px] font-bold bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded">
+            EXCLUSIVE
+          </span>
+        )}
+        {feature.id === 'killswitch' && (
+          <span className="px-1 py-0.5 text-[7px] sm:text-[8px] font-bold bg-red-600 text-white rounded">
+            HARDWARE
+          </span>
+        )}
+      </div>
 
       {/* Description */}
       <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
