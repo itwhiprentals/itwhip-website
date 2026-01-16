@@ -10,8 +10,8 @@ interface MapLegendProps {
 
 export default function MapLegend({ isExpanded = true, onToggle }: MapLegendProps) {
   return (
-    // Position: bottom-right on mobile (avoid controls), bottom-left on desktop
-    <div className="absolute bottom-2 right-2 sm:bottom-4 sm:left-4 sm:right-auto z-10">
+    // Position: bottom-right on mobile, centered on desktop (avoid Mapbox logo)
+    <div className="absolute bottom-2 right-2 sm:bottom-4 sm:left-1/2 sm:-translate-x-1/2 sm:right-auto z-10">
       <div className={`bg-gray-900/95 backdrop-blur-sm rounded-lg border border-gray-700 shadow-xl transition-all duration-300 ${
         isExpanded ? 'w-36 sm:w-44' : 'w-auto'
       }`}>
