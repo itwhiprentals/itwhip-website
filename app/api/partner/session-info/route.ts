@@ -6,37 +6,47 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/lib/auth/next-auth-config'
 import { prisma } from '@/app/lib/database/prisma'
 import { cookies } from 'next/headers'
+import { jwtVerify } from 'jose'
+
+const JWT_SECRET = new TextEncoder().encode(
+  process.env.JWT_SECRET || 'your-secret-key-here'
+)
 
 export async function GET(request: NextRequest) {
   try {
     // Get session
     const session = await getServerSession(authOptions)
 
-    // Try to get host from token
+    // Try to get host from token - check all possible cookie names
     const cookieStore = await cookies()
-    const hostToken = cookieStore.get('host_access_token')?.value
+    const hostToken = cookieStore.get('partner_token')?.value ||
+                      cookieStore.get('hostAccessToken')?.value ||
+                      cookieStore.get('accessToken')?.value
 
     let hostId: string | null = null
     let host: any = null
 
     if (hostToken) {
-      // Verify host token
-      const hostSession = await prisma.hostSession.findFirst({
-        where: {
-          token: hostToken,
-          expiresAt: { gt: new Date() }
-        },
-        include: {
-          host: {
+      // Verify JWT token
+      try {
+        const verified = await jwtVerify(hostToken, JWT_SECRET)
+        const payload = verified.payload
+        hostId = payload.hostId as string
+
+        if (hostId) {
+          // Fetch host data directly
+          host = await prisma.rentalHost.findUnique({
+            where: { id: hostId },
             select: {
               id: true,
               name: true,
               email: true,
               partnerCompanyName: true,
+              partnerLogo: true,
+              hostManagerLogo: true,
               hostType: true,
               profilePhoto: true,
               createdAt: true,
-              lastLoginAt: true,
               emailVerified: true,
               phoneVerified: true,
               identityVerified: true,
@@ -45,13 +55,10 @@ export async function GET(request: NextRequest) {
               stripeCustomerId: true,
               active: true
             }
-          }
+          })
         }
-      })
-
-      if (hostSession?.host) {
-        hostId = hostSession.host.id
-        host = hostSession.host
+      } catch (jwtError) {
+        console.error('[Session Info] JWT verification failed:', jwtError)
       }
     }
 
@@ -101,13 +108,10 @@ export async function GET(request: NextRequest) {
       }
     }) : []
 
-    // Get active sessions count
-    const activeSessions = hostId ? await prisma.hostSession.count({
-      where: {
-        hostId,
-        expiresAt: { gt: new Date() }
-      }
-    }) : 1
+    // Get active sessions count - count from Session model or default to 1 (current session)
+    // Note: Session model uses userId which may be different from hostId
+    // For now, we'll count active sessions where the user is logged in
+    let activeSessions = 1 // Default to 1 for current active session
 
     // Get API keys if any (for partners with API access)
     // Note: ApiKey model uses userId, not hostId - we'll show empty for now
@@ -124,6 +128,9 @@ export async function GET(request: NextRequest) {
     if (host?.identityVerified) securityScore += 25
     if (hasStripeConnected) securityScore += 25
 
+    // Get last login from recent activity
+    const lastLoginActivity = recentLogins.find(log => log.action === 'LOGIN' || log.action === 'SESSION_START')
+
     // Format response
     const userInfo = host ? {
       id: host.id,
@@ -131,9 +138,11 @@ export async function GET(request: NextRequest) {
       email: host.email,
       companyName: host.partnerCompanyName,
       hostType: host.hostType,
-      profilePhoto: host.profilePhoto,
+      // Use the best available photo: partnerLogo > hostManagerLogo > profilePhoto
+      profilePhoto: host.partnerLogo || host.hostManagerLogo || host.profilePhoto,
       memberSince: host.createdAt,
-      lastLogin: host.lastLoginAt,
+      // Use most recent login from activity log, or current time if no record
+      lastLogin: lastLoginActivity?.createdAt || new Date(),
       isActive: host.active
     } : {
       id: session?.user?.id,
@@ -143,7 +152,7 @@ export async function GET(request: NextRequest) {
       hostType: null,
       profilePhoto: session?.user?.image,
       memberSince: null,
-      lastLogin: null,
+      lastLogin: new Date(),
       isActive: true
     }
 

@@ -123,11 +123,25 @@ interface FleetVehicle {
   photo: string | null
 }
 
-export default function TrackingSecurityCard() {
+interface TrackingSecurityCardProps {
+  externalTab?: 'tracking' | 'session' | 'security' | 'api' | 'audit'
+  hideHeader?: boolean
+  hideTabNavigation?: boolean
+}
+
+export default function TrackingSecurityCard({
+  externalTab,
+  hideHeader = false,
+  hideTabNavigation = false
+}: TrackingSecurityCardProps = {}) {
   const [data, setData] = useState<SessionInfo | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'tracking' | 'session' | 'security' | 'api' | 'audit'>('tracking')
+  const [internalTab, setInternalTab] = useState<'tracking' | 'session' | 'security' | 'api' | 'audit'>('tracking')
+
+  // Use external tab if provided, otherwise use internal state
+  const activeTab = externalTab ?? internalTab
+  const setActiveTab = externalTab ? () => {} : setInternalTab
 
   // Demo mode state
   const [isDemoMode, setIsDemoMode] = useState(false)
@@ -275,18 +289,53 @@ export default function TrackingSecurityCard() {
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div className="animate-pulse">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
-            <div>
-              <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
-              <div className="h-3 w-24 bg-gray-200 dark:bg-gray-700 rounded"></div>
+          {/* Header skeleton - only show if header is not hidden */}
+          {!hideHeader && (
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gray-200 dark:bg-gray-600 rounded-full" />
+                <div className="flex-1">
+                  <div className="h-4 w-32 bg-gray-200 dark:bg-gray-600 rounded mb-2" />
+                  <div className="h-3 w-48 bg-gray-200 dark:bg-gray-600 rounded" />
+                </div>
+              </div>
             </div>
-          </div>
-          <div className="space-y-3">
-            <div className="h-3 w-full bg-gray-200 dark:bg-gray-700 rounded"></div>
-            <div className="h-3 w-3/4 bg-gray-200 dark:bg-gray-700 rounded"></div>
+          )}
+
+          {/* Tab navigation skeleton - only show if tabs are not hidden */}
+          {!hideTabNavigation && (
+            <div className="flex gap-1 p-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-8 bg-gray-200 dark:bg-gray-600 rounded-lg w-20" />
+              ))}
+            </div>
+          )}
+
+          {/* Content skeleton */}
+          <div className="p-6 space-y-4">
+            {/* Stats row */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <div className="h-6 bg-gray-200 dark:bg-gray-600 rounded w-12 mx-auto mb-2" />
+                  <div className="h-3 bg-gray-200 dark:bg-gray-600 rounded w-16 mx-auto" />
+                </div>
+              ))}
+            </div>
+            {/* Content rows */}
+            <div className="space-y-3">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <div className="w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded-lg" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-32" />
+                    <div className="h-3 bg-gray-200 dark:bg-gray-600 rounded w-48" />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -312,42 +361,45 @@ export default function TrackingSecurityCard() {
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-      {/* Header with User Info */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {data.user.profilePhoto ? (
-              <Image
-                src={data.user.profilePhoto}
-                alt={data.user.name}
-                width={48}
-                height={48}
-                className="rounded-full"
-              />
-            ) : (
-              <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center">
-                <IoPersonOutline className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+      {/* Header with User Info - conditionally shown */}
+      {!hideHeader && (
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {data.user.profilePhoto ? (
+                <Image
+                  src={data.user.profilePhoto}
+                  alt={data.user.name}
+                  width={48}
+                  height={48}
+                  className="rounded-full"
+                />
+              ) : (
+                <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center">
+                  <IoPersonOutline className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+                </div>
+              )}
+              <div>
+                <p className="font-semibold text-gray-900 dark:text-white">
+                  {data.user.name}
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {data.user.email}
+                </p>
               </div>
-            )}
-            <div>
-              <p className="font-semibold text-gray-900 dark:text-white">
-                {data.user.name}
-              </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {data.user.email}
-              </p>
             </div>
+            <button
+              onClick={fetchSessionInfo}
+              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            >
+              <IoRefreshOutline className="w-4 h-4" />
+            </button>
           </div>
-          <button
-            onClick={fetchSessionInfo}
-            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-          >
-            <IoRefreshOutline className="w-4 h-4" />
-          </button>
         </div>
-      </div>
+      )}
 
-      {/* Tabs */}
+      {/* Tabs - conditionally shown */}
+      {!hideTabNavigation && (
       <div className="flex border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
         <button
           onClick={() => setActiveTab('tracking')}
@@ -405,6 +457,7 @@ export default function TrackingSecurityCard() {
           Audit
         </button>
       </div>
+      )}
 
       {/* Content */}
       <div className="p-4">

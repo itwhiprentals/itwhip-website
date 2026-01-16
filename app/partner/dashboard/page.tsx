@@ -44,6 +44,11 @@ import TrackingSecurityCard from './components/TrackingSecurityCard'
 import IdentityVerificationCard from './components/IdentityVerificationCard'
 import ESGScoreCard from './components/ESGScoreCard'
 
+// New dashboard restructure components
+import UserInfoCard from './components/UserInfoCard'
+import DashboardNavigation, { DashboardSection } from './components/DashboardNavigation'
+import DashboardContent from './components/DashboardContent'
+
 interface DashboardStats {
   fleetSize: number
   activeVehicles: number
@@ -142,8 +147,22 @@ export default function PartnerDashboardPage() {
   const [managedVehicles, setManagedVehicles] = useState<ManagedVehicleOwnerView[]>([])
   const [invitationsTab, setInvitationsTab] = useState<'sent' | 'received'>('sent')
 
+  // Dashboard restructure state
+  const [activeSection, setActiveSection] = useState<DashboardSection>('tracking')
+  const [userInfo, setUserInfo] = useState<{
+    name: string
+    email: string
+    companyName: string | null
+    profilePhoto: string | null
+    hostType: string | null
+    memberSince: string | null
+    lastLogin: string | null
+  } | null>(null)
+  const [userInfoLoading, setUserInfoLoading] = useState(true)
+
   useEffect(() => {
     checkAccountType()
+    fetchUserInfo()
   }, [])
 
   useEffect(() => {
@@ -184,6 +203,33 @@ export default function PartnerDashboardPage() {
       }
     } catch (error) {
       console.error('Failed to check account type:', error)
+    }
+  }
+
+  const fetchUserInfo = async () => {
+    try {
+      setUserInfoLoading(true)
+      const response = await fetch('/api/partner/session-info', {
+        credentials: 'include'
+      })
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.user) {
+          setUserInfo({
+            name: data.user.name,
+            email: data.user.email,
+            companyName: data.user.companyName,
+            profilePhoto: data.user.profilePhoto,
+            hostType: data.user.hostType,
+            memberSince: data.user.memberSince,
+            lastLogin: data.user.lastLogin
+          })
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch user info:', error)
+    } finally {
+      setUserInfoLoading(false)
     }
   }
 
@@ -765,29 +811,30 @@ export default function PartnerDashboardPage() {
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">
-            Welcome back! Here's your fleet overview.
-          </p>
-        </div>
-        <button
-          onClick={fetchDashboardData}
-          disabled={refreshing}
-          className="flex items-center gap-2 px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-        >
-          <IoRefreshOutline className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
-          <span className="hidden sm:inline">Refresh</span>
-        </button>
+      {/* NEW: Dashboard Top Section - User Info, Navigation, Dynamic Content */}
+      <div className="space-y-3">
+        {/* Card 1 - User/Company Information */}
+        <UserInfoCard user={userInfo} loading={userInfoLoading} />
+
+        {/* Section 2 - Navigation Badges */}
+        <DashboardNavigation
+          activeSection={activeSection}
+          onSectionChange={setActiveSection}
+        />
+
+        {/* Card 3 - Dynamic Content (based on selected navigation) */}
+        <DashboardContent
+          activeSection={activeSection}
+          stats={stats}
+          invitationsTab={invitationsTab}
+          onInvitationsTabChange={setInvitationsTab}
+          vehicleStatus={vehicleStatus}
+          recentBookings={recentBookings}
+          loading={loading}
+        />
       </div>
 
-      {/* Session & Security + ESG Cards - Top of Dashboard */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <TrackingSecurityCard />
-        <ESGScoreCard />
-      </div>
+      {/* === EXISTING DASHBOARD CONTENT BELOW === */}
 
       {/* Main Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

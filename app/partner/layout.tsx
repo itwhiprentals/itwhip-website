@@ -248,16 +248,18 @@ export default function PartnerLayout({
         <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3">
             {(partner?.partnerLogo || partner?.hostManagerLogo || partner?.profilePhoto) ? (
-              <Image
-                src={partner.partnerLogo || partner.hostManagerLogo || partner.profilePhoto || ''}
-                alt=""
-                width={40}
-                height={40}
-                className="rounded-lg object-cover"
-              />
+              <div className="relative w-10 h-10 rounded-full overflow-hidden bg-white">
+                <Image
+                  src={partner.partnerLogo || partner.hostManagerLogo || partner.profilePhoto || ''}
+                  alt=""
+                  fill
+                  className="object-contain"
+                  style={{ transform: 'scale(1.15) translateY(0.5px)', transformOrigin: 'center center' }}
+                />
+              </div>
             ) : (
-              <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
-                <IoBusinessOutline className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+              <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center">
+                <IoBusinessOutline className="w-5 h-5 text-white" />
               </div>
             )}
             <div className="flex-1 min-w-0">

@@ -306,24 +306,24 @@ function HeaderInner({
                 }
                 className="flex items-center mr-4 group"
               >
-                <div className="flex flex-col items-center">
-                  <div className="relative top-1 left-0">
+                <div className="flex flex-col items-center -ml-2">
+                  <div className="relative top-[0.2px] w-10 h-10 rounded-full overflow-hidden bg-white dark:bg-gray-800">
                     {/* Light mode logo */}
                     <Image
                       src="/logo.png"
                       alt="ItWhip"
-                      width={192}
-                      height={192}
-                      className="h-10 w-10 group-hover:opacity-80 transition-opacity dark:hidden"
+                      fill
+                      className="object-contain group-hover:opacity-80 transition-opacity dark:hidden"
+                      style={{ transform: 'scale(1.15) translateY(0.5px)', transformOrigin: 'center center' }}
                       priority
                     />
                     {/* Dark mode logo */}
                     <Image
                       src="/logo-white.png"
                       alt="ItWhip"
-                      width={192}
-                      height={192}
-                      className="h-10 w-10 group-hover:opacity-80 transition-opacity hidden dark:block"
+                      fill
+                      className="object-contain group-hover:opacity-80 transition-opacity hidden dark:block"
+                      style={{ transform: 'scale(1.15) translateY(0.5px)', transformOrigin: 'center center' }}
                       priority
                     />
                   </div>
@@ -484,12 +484,15 @@ function HeaderInner({
                     >
                       <div className="relative">
                         {profilePhotoUrl && !profileImageError ? (
-                          <img
-                            src={profilePhotoUrl}
-                            alt={user.name || 'Profile'}
-                            className="w-7 h-7 rounded-full object-cover border-2 border-green-500 shadow-sm"
-                            onError={() => setProfileImageError(true)}
-                          />
+                          <div className="w-7 h-7 rounded-full overflow-hidden bg-white border-2 border-green-500 shadow-sm">
+                            <img
+                              src={profilePhotoUrl}
+                              alt={user.name || 'Profile'}
+                              className="w-full h-full object-contain"
+                              style={{ transform: 'scale(1.15) translateY(0.5px)', transformOrigin: 'center center' }}
+                              onError={() => setProfileImageError(true)}
+                            />
+                          </div>
                         ) : (
                           <div className={`w-7 h-7 ${
                             isAdmin ? 'bg-gradient-to-br from-red-500 to-red-600' :

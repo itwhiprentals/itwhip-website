@@ -26,22 +26,22 @@ export default function Footer() {
           <div className="col-span-2 md:col-span-1">
             {/* Logo and Branding */}
             <div className="flex flex-col items-start mb-4">
-              <div className="relative ml-3 mt-1">
+              <div className="relative ml-3 mt-1 w-10 h-10 rounded-full overflow-hidden bg-white dark:bg-gray-800">
                 {/* Light mode logo */}
                 <Image
                   src="/logo.png"
                   alt="ItWhip"
-                  width={192}
-                  height={192}
-                  className="h-10 w-10 dark:hidden"
+                  fill
+                  className="object-contain dark:hidden"
+                  style={{ transform: 'scale(1.15) translateY(0.5px)', transformOrigin: 'center center' }}
                 />
                 {/* Dark mode logo */}
                 <Image
                   src="/logo-white.png"
                   alt="ItWhip"
-                  width={192}
-                  height={192}
-                  className="h-10 w-10 hidden dark:block"
+                  fill
+                  className="object-contain hidden dark:block"
+                  style={{ transform: 'scale(1.15) translateY(0.5px)', transformOrigin: 'center center' }}
                 />
               </div>
               <span className="text-[8px] text-gray-700 dark:text-gray-300 tracking-widest uppercase font-medium mt-0.5">
