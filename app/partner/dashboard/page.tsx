@@ -40,7 +40,7 @@ import QuickActions from './components/QuickActions'
 import InvitationsStatsCard from './components/InvitationsStatsCard'
 import InvitationsList from './components/InvitationsList'
 import ManagedCarsSection from './components/ManagedCarsSection'
-import SessionSecurityCard from './components/SessionSecurityCard'
+import TrackingSecurityCard from './components/TrackingSecurityCard'
 import IdentityVerificationCard from './components/IdentityVerificationCard'
 import ESGScoreCard from './components/ESGScoreCard'
 
@@ -785,7 +785,7 @@ export default function PartnerDashboardPage() {
 
       {/* Session & Security + ESG Cards - Top of Dashboard */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <SessionSecurityCard />
+        <TrackingSecurityCard />
         <ESGScoreCard />
       </div>
 

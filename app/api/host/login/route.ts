@@ -255,6 +255,23 @@ export async function POST(request: NextRequest) {
       path: '/'
     })
 
+    // Clear guest cookies to prevent dual-role confusion
+    // When host logs in, clear guest-specific cookies
+    response.cookies.set('guestAccessToken', '', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 0,
+      path: '/'
+    })
+    response.cookies.set('guestRefreshToken', '', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 0,
+      path: '/'
+    })
+
     return response
 
   } catch (error) {

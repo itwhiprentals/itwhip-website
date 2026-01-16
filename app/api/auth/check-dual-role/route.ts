@@ -1,102 +1,194 @@
 // app/api/auth/check-dual-role/route.ts
-// API endpoint to check if authenticated user has both host and guest profiles
-// Also checks linked accounts via legacyDualId
+// MILITARY GRADE: Check if authenticated user has both host and guest profiles
+// Aggressively clears stale/mismatched cookies to prevent role confusion
 
 import { NextRequest, NextResponse } from 'next/server'
-import { verify } from 'jsonwebtoken'
+import { verify, JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken'
 import { prisma } from '@/app/lib/database/prisma'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key'
 
+interface DecodedToken {
+  userId: string
+  email?: string
+  hostId?: string
+  [key: string]: unknown
+}
+
+// Helper to safely decode a token
+function safeDecodeToken(token: string | undefined, name: string): { userId: string | null, valid: boolean, expired: boolean } {
+  if (!token || token.length < 10) {
+    return { userId: null, valid: false, expired: false }
+  }
+
+  try {
+    const decoded = verify(token, JWT_SECRET) as DecodedToken
+    // Partner tokens use hostId, guest tokens use userId
+    const userId = decoded.userId || decoded.hostId || null
+    return { userId, valid: true, expired: false }
+  } catch (err) {
+    if (err instanceof TokenExpiredError) {
+      return { userId: null, valid: false, expired: true }
+    }
+    if (err instanceof JsonWebTokenError) {
+      console.log(`[Dual-Role Check] ${name} JWT invalid:`, err.message)
+    }
+    return { userId: null, valid: false, expired: false }
+  }
+}
+
+// Helper to clear a cookie properly (maxAge: 0 is more reliable than delete)
+function clearCookie(response: NextResponse, name: string) {
+  response.cookies.set(name, '', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 0,
+    path: '/'
+  })
+}
+
 export async function GET(request: NextRequest) {
   try {
-    // Get tokens from cookies - check host, partner, and guest tokens (unified portal)
+    // Get ALL auth-related tokens
     const hostAccessToken = request.cookies.get('hostAccessToken')?.value
+    const hostRefreshToken = request.cookies.get('hostRefreshToken')?.value
     const partnerToken = request.cookies.get('partner_token')?.value
     const guestAccessToken = request.cookies.get('accessToken')?.value
+    const guestRefreshToken = request.cookies.get('refreshToken')?.value
 
-    // Debug: Log cookie values
+    // Debug log
     console.log('[Dual-Role Check] Cookie debug:', {
       hostAccessToken: hostAccessToken ? `${hostAccessToken.substring(0, 30)}... (${hostAccessToken.length} chars)` : 'EMPTY',
       partnerToken: partnerToken ? `${partnerToken.substring(0, 30)}... (${partnerToken.length} chars)` : 'EMPTY',
       guestAccessToken: guestAccessToken ? `${guestAccessToken.substring(0, 30)}... (${guestAccessToken.length} chars)` : 'EMPTY'
     })
 
-    // Try to get userId from any token
-    let userId: string | null = null
+    // MILITARY GRADE: Decode ALL tokens and track their userIds
+    const hostToken = safeDecodeToken(hostAccessToken, 'hostAccessToken')
+    const partnerTok = safeDecodeToken(partnerToken, 'partner_token')
+    const guestToken = safeDecodeToken(guestAccessToken, 'accessToken')
+
+    // Collect all valid userIds
+    const tokenUserIds: { source: string, userId: string }[] = []
+    if (hostToken.valid && hostToken.userId) {
+      tokenUserIds.push({ source: 'host', userId: hostToken.userId })
+    }
+    if (partnerTok.valid && partnerTok.userId) {
+      tokenUserIds.push({ source: 'partner', userId: partnerTok.userId })
+    }
+    if (guestToken.valid && guestToken.userId) {
+      tokenUserIds.push({ source: 'guest', userId: guestToken.userId })
+    }
+
+    // Track what needs clearing
+    const cookiesToClear: string[] = []
+
+    // Clear any expired tokens immediately
+    if (hostToken.expired) {
+      cookiesToClear.push('hostAccessToken', 'hostRefreshToken')
+      console.log('[Dual-Role Check] 🧹 Clearing expired hostAccessToken')
+    }
+    if (partnerTok.expired) {
+      cookiesToClear.push('partner_token')
+      console.log('[Dual-Role Check] 🧹 Clearing expired partner_token')
+    }
+    if (guestToken.expired) {
+      cookiesToClear.push('accessToken', 'refreshToken')
+      console.log('[Dual-Role Check] 🧹 Clearing expired accessToken')
+    }
+
+    // If no valid tokens, return unauthorized
+    if (tokenUserIds.length === 0) {
+      const response = NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+      // Clear all auth cookies on the way out
+      clearCookie(response, 'hostAccessToken')
+      clearCookie(response, 'hostRefreshToken')
+      clearCookie(response, 'partner_token')
+      clearCookie(response, 'accessToken')
+      clearCookie(response, 'refreshToken')
+      return response
+    }
+
+    // CRITICAL: Check if all valid tokens belong to the SAME user
+    const uniqueUserIds = [...new Set(tokenUserIds.map(t => t.userId))]
+
+    if (uniqueUserIds.length > 1) {
+      // 🚨 SECURITY ISSUE: Tokens from DIFFERENT users detected!
+      console.error('[Dual-Role Check] 🚨 SECURITY: Multiple userIds in cookies!', {
+        tokens: tokenUserIds,
+        uniqueUserIds
+      })
+
+      // Strategy: Keep the GUEST token (most common case), clear host/partner tokens
+      // This prevents partner cookies from hijacking guest sessions
+      const guestUserId = guestToken.valid && guestToken.userId ? guestToken.userId : null
+
+      if (guestUserId) {
+        // Clear non-guest tokens that don't match
+        if (hostToken.userId && hostToken.userId !== guestUserId) {
+          cookiesToClear.push('hostAccessToken', 'hostRefreshToken')
+          console.log('[Dual-Role Check] 🧹 Clearing mismatched hostAccessToken (different user)')
+        }
+        if (partnerTok.userId && partnerTok.userId !== guestUserId) {
+          cookiesToClear.push('partner_token')
+          console.log('[Dual-Role Check] 🧹 Clearing mismatched partner_token (different user)')
+        }
+      } else {
+        // No guest token, keep host/partner
+        const hostUserId = hostToken.userId || partnerTok.userId
+        if (guestToken.valid && guestToken.userId && guestToken.userId !== hostUserId) {
+          cookiesToClear.push('accessToken', 'refreshToken')
+          console.log('[Dual-Role Check] 🧹 Clearing mismatched accessToken (different user)')
+        }
+      }
+    }
+
+    // Determine the primary userId (after filtering out mismatched tokens)
+    const primaryUserId = guestToken.valid && guestToken.userId
+      ? guestToken.userId
+      : (hostToken.userId || partnerTok.userId)!
+
+    // Determine current role based on which valid token we're using
     let currentRole: 'host' | 'guest' | null = null
-
-    // Try host token first - but only if it's not empty (cleared by role switch)
-    if (hostAccessToken && hostAccessToken.length > 10) {
-      try {
-        const decoded = verify(hostAccessToken, JWT_SECRET) as any
-        userId = decoded.userId
-        currentRole = 'host'
-      } catch (err) {
-        // Token invalid or expired, try other tokens
-        console.log('[Dual-Role Check] hostAccessToken invalid, trying other tokens')
-      }
-    }
-
-    // Try partner token if no userId yet (unified portal)
-    if (!userId && partnerToken && partnerToken.length > 10) {
-      try {
-        const decoded = verify(partnerToken, JWT_SECRET) as any
-        userId = decoded.userId
-        currentRole = 'host' // Partner portal is for hosts
-      } catch (err) {
-        // Token invalid or expired, try guest token
-        console.log('[Dual-Role Check] partner_token invalid, trying guest token')
-      }
-    }
-
-    // Try guest token if no userId yet
-    if (!userId && guestAccessToken) {
-      try {
-        const decoded = verify(guestAccessToken, JWT_SECRET) as any
-        userId = decoded.userId
-        currentRole = 'guest'
-      } catch (err) {
-        // Token invalid or expired
-        console.log('[Dual-Role Check] accessToken also invalid')
-      }
-    }
-
-    // If no valid token, return unauthorized
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Not authenticated' },
-        { status: 401 }
-      )
+    if (guestToken.valid && guestToken.userId === primaryUserId) {
+      currentRole = 'guest'
+    } else if ((hostToken.valid && hostToken.userId === primaryUserId) ||
+               (partnerTok.valid && partnerTok.userId === primaryUserId)) {
+      currentRole = 'host'
     }
 
     // Get user data including legacyDualId
     const user = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: primaryUserId },
       select: { email: true, legacyDualId: true }
     })
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      )
+      console.error('[Dual-Role Check] User not found for userId:', primaryUserId)
+      // Clear all cookies - user doesn't exist
+      const response = NextResponse.json({ error: 'User not found' }, { status: 404 })
+      clearCookie(response, 'hostAccessToken')
+      clearCookie(response, 'hostRefreshToken')
+      clearCookie(response, 'partner_token')
+      clearCookie(response, 'accessToken')
+      clearCookie(response, 'refreshToken')
+      return response
     }
 
     // SECURITY: STRICT query - only match by userId (no email fallback)
     const [hostProfile, guestProfile] = await Promise.all([
       prisma.rentalHost.findFirst({
-        where: { userId: userId },  // Only match by userId for security
+        where: { userId: primaryUserId },
         select: {
           id: true,
           approvalStatus: true,
           userId: true,
           email: true
-          // fullyVerified removed - only exists on ReviewerProfile, not RentalHost
         }
       }),
       prisma.reviewerProfile.findFirst({
-        where: { userId: userId },  // Only match by userId for security
+        where: { userId: primaryUserId },
         select: {
           id: true,
           userId: true,
@@ -112,61 +204,32 @@ export async function GET(request: NextRequest) {
     let linkedUserId: string | null = null
 
     if (user.legacyDualId) {
-      // Find the linked user (different user with same legacyDualId)
       const linkedUser = await prisma.user.findFirst({
         where: {
           legacyDualId: user.legacyDualId,
-          id: { not: userId }
+          id: { not: primaryUserId }
         },
         select: { id: true, email: true }
       })
 
       if (linkedUser) {
         linkedUserId = linkedUser.id
-        console.log(`[Dual-Role Check] Found linked user: ${linkedUser.email} (${linkedUser.id})`)
+        console.log(`[Dual-Role Check] Found linked user: ${linkedUser.email}`)
 
-        // Check linked user's profiles
         const [linkedHost, linkedGuest] = await Promise.all([
           prisma.rentalHost.findFirst({
             where: { userId: linkedUser.id },
-            select: {
-              id: true,
-              approvalStatus: true,
-              userId: true,
-              email: true
-            }
+            select: { id: true, approvalStatus: true, userId: true, email: true }
           }),
           prisma.reviewerProfile.findFirst({
             where: { userId: linkedUser.id },
-            select: {
-              id: true,
-              userId: true,
-              email: true,
-              fullyVerified: true
-            }
+            select: { id: true, userId: true, email: true, fullyVerified: true }
           })
         ])
 
         linkedHostProfile = linkedHost
         linkedGuestProfile = linkedGuest
       }
-    }
-
-    // Log if profiles exist with mismatched userId (data integrity issue)
-    if (hostProfile && hostProfile.userId !== userId) {
-      console.error('[Dual-Role Check] ⚠️ Host profile userId mismatch', {
-        authenticatedUserId: userId,
-        hostProfileUserId: hostProfile.userId,
-        email: user.email
-      })
-    }
-
-    if (guestProfile && guestProfile.userId !== userId) {
-      console.error('[Dual-Role Check] ⚠️ Guest profile userId mismatch', {
-        authenticatedUserId: userId,
-        guestProfileUserId: guestProfile.userId,
-        email: user.email
-      })
     }
 
     // User has profile if they have it directly OR via linked account
@@ -177,50 +240,44 @@ export async function GET(request: NextRequest) {
     // Determine which host profile to use for approval status
     const effectiveHostProfile = hostProfile || linkedHostProfile
 
-    // CRITICAL FIX: Determine currentRole based on ACTUAL profiles, not stale tokens
-    // This prevents stale partner_token from causing guest-only users to be treated as hosts
-    let effectiveCurrentRole = currentRole
-    let clearStaleHostCookies = false
-    let clearStaleGuestCookies = false
-
-    if (currentRole === 'host' && !hasHostProfile && hasGuestProfile) {
-      // User has a stale host/partner token but NO host profile - they're actually a guest
-      console.log('[Dual-Role Check] ⚠️ Correcting currentRole: token says host but user only has guest profile')
-      effectiveCurrentRole = 'guest'
-      clearStaleHostCookies = true
-    } else if (currentRole === 'guest' && !hasGuestProfile && hasHostProfile) {
-      // User has a stale guest token but NO guest profile - they're actually a host
-      console.log('[Dual-Role Check] ⚠️ Correcting currentRole: token says guest but user only has host profile')
-      effectiveCurrentRole = 'host'
-      clearStaleGuestCookies = true
+    // ADDITIONAL CHECK: If tokens claim a role the user doesn't have, clear them
+    if (currentRole === 'host' && !hasHostProfile) {
+      console.log('[Dual-Role Check] 🧹 User has host tokens but NO host profile - clearing host cookies')
+      cookiesToClear.push('hostAccessToken', 'hostRefreshToken', 'partner_token')
+      currentRole = hasGuestProfile ? 'guest' : null
+    }
+    if (currentRole === 'guest' && !hasGuestProfile) {
+      console.log('[Dual-Role Check] 🧹 User has guest tokens but NO guest profile - clearing guest cookies')
+      cookiesToClear.push('accessToken', 'refreshToken')
+      currentRole = hasHostProfile ? 'host' : null
     }
 
-    // Build response and clear stale cookies if needed
+    // Build response
     const response = NextResponse.json({
       hasBothRoles,
       hasHostProfile,
       hasGuestProfile,
-      currentRole: effectiveCurrentRole,
+      currentRole,
       hostApprovalStatus: effectiveHostProfile?.approvalStatus || null,
-      // Include linked account info for role switching
       isLinkedAccount: !!user.legacyDualId,
-      linkedUserId: linkedUserId,
-      // Indicate which profiles are from linked account
+      linkedUserId,
       hostProfileIsLinked: !hostProfile && !!linkedHostProfile,
-      guestProfileIsLinked: !guestProfile && !!linkedGuestProfile
+      guestProfileIsLinked: !guestProfile && !!linkedGuestProfile,
+      // Debug info for troubleshooting
+      _debug: {
+        primaryUserId,
+        cookiesCleared: cookiesToClear.length > 0 ? cookiesToClear : 'none'
+      }
     })
 
-    // Clear stale cookies to prevent future confusion
-    if (clearStaleHostCookies) {
-      console.log('[Dual-Role Check] Clearing stale host/partner cookies')
-      response.cookies.delete('hostAccessToken')
-      response.cookies.delete('hostRefreshToken')
-      response.cookies.delete('partner_token')
+    // Clear all flagged cookies
+    const uniqueCookiesToClear = [...new Set(cookiesToClear)]
+    for (const cookieName of uniqueCookiesToClear) {
+      clearCookie(response, cookieName)
     }
-    if (clearStaleGuestCookies) {
-      console.log('[Dual-Role Check] Clearing stale guest cookies')
-      response.cookies.delete('accessToken')
-      response.cookies.delete('refreshToken')
+
+    if (uniqueCookiesToClear.length > 0) {
+      console.log('[Dual-Role Check] ✅ Cleared stale cookies:', uniqueCookiesToClear)
     }
 
     return response

@@ -280,6 +280,16 @@ export async function GET(request: NextRequest) {
       response.cookies.delete('oauth_mode')
       response.cookies.delete('oauth_return_to')
 
+      // Clear cross-role cookies to prevent dual-role confusion
+      // When guest/host logs in via OAuth, clear partner cookies
+      response.cookies.set('partner_token', '', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 0,
+        path: '/'
+      })
+
       return response
     }
 
@@ -480,6 +490,11 @@ export async function GET(request: NextRequest) {
             maxAge: 7 * 24 * 60 * 60, // 7 days
             path: '/'
           })
+          // Clear guest cookies to prevent dual-role confusion
+          response.cookies.set('accessToken', '', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 0, path: '/' })
+          response.cookies.set('refreshToken', '', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 0, path: '/' })
+          response.cookies.set('guestAccessToken', '', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 0, path: '/' })
+          response.cookies.set('guestRefreshToken', '', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 0, path: '/' })
           response.cookies.delete('oauth_role_hint')
           response.cookies.delete('oauth_mode')
           response.cookies.delete('oauth_return_to')
@@ -504,6 +519,11 @@ export async function GET(request: NextRequest) {
             maxAge: 7 * 24 * 60 * 60,
             path: '/'
           })
+          // Clear guest cookies to prevent dual-role confusion
+          response.cookies.set('accessToken', '', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 0, path: '/' })
+          response.cookies.set('refreshToken', '', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 0, path: '/' })
+          response.cookies.set('guestAccessToken', '', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 0, path: '/' })
+          response.cookies.set('guestRefreshToken', '', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 0, path: '/' })
           response.cookies.delete('oauth_role_hint')
           response.cookies.delete('oauth_mode')
           response.cookies.delete('oauth_return_to')

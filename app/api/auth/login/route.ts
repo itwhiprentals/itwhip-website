@@ -326,6 +326,23 @@ export async function POST(request: NextRequest) {
       path: '/'
     })
 
+    // ✅ STEP 10.5: Clear any stale partner/host cookies to prevent dual-role confusion
+    // When guest logs in, clear partner cookies so header doesn't show wrong role
+    response.cookies.set('partner_token', '', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 0, // Expire immediately
+      path: '/'
+    })
+    response.cookies.set('host_access_token', '', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 0, // Expire immediately
+      path: '/'
+    })
+
     // ✅ STEP 11: Add rate limit headers to response
     response.headers.set('X-RateLimit-Limit', limit.toString())
     response.headers.set('X-RateLimit-Remaining', remaining.toString())
