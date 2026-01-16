@@ -168,7 +168,7 @@ export default function ProviderSelector({
           </div>
           {coverageInfo.percentage < 100 && (
             <p className="text-[10px] text-gray-600 mt-1.5">
-              Add <span className="text-amber-400 font-medium">ItWhip+</span> to unlock all 8 features
+              Add <span className="text-amber-400 font-medium">ItWhip+</span> to unlock all 8 features — <span className="text-green-400">Free!</span>
             </p>
           )}
         </div>

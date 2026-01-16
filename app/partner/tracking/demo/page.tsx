@@ -602,7 +602,7 @@ export default function TrackingDemoPage() {
                       <span className="px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs bg-amber-500/30 border border-amber-400/50 rounded-lg hidden sm:inline">LIVE DEMO</span>
                     </h1>
                     <p className="text-xs sm:text-sm text-white/80 hidden sm:block">
-                      <span className="text-amber-200">OBD</span> + <span className="text-amber-200">API</span> = Unified Dashboard • $4.99/mo
+                      <span className="text-amber-200">OBD</span> + <span className="text-amber-200">API</span> = Unified Dashboard • <span className="text-green-400">Free</span>
                     </p>
                   </div>
                 </div>
@@ -641,7 +641,7 @@ export default function TrackingDemoPage() {
               <span className="px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-medium bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 rounded border border-amber-300 dark:border-amber-500/30 whitespace-nowrap">
                 🔌 OBD + 🌐 API
               </span>
-              <span className="text-[10px] sm:text-xs text-amber-600 dark:text-amber-400 font-bold whitespace-nowrap">$4.99/mo</span>
+              <span className="text-[10px] sm:text-xs text-green-600 dark:text-green-400 font-bold whitespace-nowrap">Free</span>
             </div>
           </div>
           {/* Subtitle Row */}

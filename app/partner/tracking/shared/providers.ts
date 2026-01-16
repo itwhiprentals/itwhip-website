@@ -282,13 +282,13 @@ export const PROVIDER_CAPABILITIES: ProviderCapability[] = [
 
 /**
  * ItWhip+ service - fills gaps between providers
- * Pricing undercuts FleetBold ($8.99) by 44%
+ * FREE for all hosts to drive adoption and platform stickiness
  */
 export const ITWHIP_PLUS: ITWhipPlusConfig = {
   name: 'ItWhip+',
-  monthlyPrice: '$4.99/mo',
+  monthlyPrice: 'Free',
   description: 'Unified dashboard with Mileage Forensics™ cross-verification.',
-  valueProposition: 'Combines Bouncie + Smartcar into one powerful dashboard.',
+  valueProposition: 'Combines Bouncie + Smartcar into one powerful dashboard. Free for all hosts!',
   features: {
     gps: true,
     lock: true,
@@ -502,7 +502,7 @@ export function getSecondaryProviders(): ProviderCapability[] {
 
 /**
  * Calculate total monthly cost for the recommended setup
- * Bouncie device ($8) + Smartcar API ($1.99) + ItWhip+ ($4.99) = ~$15/mo
+ * Bouncie device ($8) + Smartcar API ($1.99) + ItWhip+ (Free) = ~$10/mo
  */
 export function getRecommendedSetupCost(): {
   bouncieCost: string
@@ -516,9 +516,9 @@ export function getRecommendedSetupCost(): {
     bouncieCost: '$8/mo',
     smartcarCost: '$1.99/mo',
     itwhipPlusCost: ITWHIP_PLUS.monthlyPrice,
-    totalCost: '~$15/mo',
+    totalCost: '~$10/mo',
     competitorPrice: '$8.99/mo (FleetBold)',
-    savingsPercent: 44 // ItWhip+ undercuts FleetBold by 44%
+    savingsPercent: 100 // ItWhip+ is FREE - better value than any competitor
   }
 }
 

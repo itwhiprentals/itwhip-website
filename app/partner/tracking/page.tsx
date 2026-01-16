@@ -202,7 +202,7 @@ export default function TrackingPage() {
                 </div>
                 <div className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-300">
                   <IoCheckmarkCircleOutline className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
-                  <span><strong className="text-gray-900 dark:text-white">ItWhip+ ($4.99/mo):</strong> Mileage Forensics™, Unified Dashboard</span>
+                  <span><strong className="text-gray-900 dark:text-white">ItWhip+ <span className="text-green-600 dark:text-green-400">(Free)</span>:</strong> Mileage Forensics™, Unified Dashboard</span>
                 </div>
               </div>
 

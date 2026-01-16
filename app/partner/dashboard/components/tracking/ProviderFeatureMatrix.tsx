@@ -175,7 +175,7 @@ export default function ProviderFeatureMatrix({
                   text-[10px] text-amber-300 whitespace-nowrap z-10
                   pointer-events-none
                 ">
-                  Requires ItWhip+ ({ITWHIP_PLUS.monthlyPrice})
+                  {ITWHIP_PLUS.monthlyPrice === 'Free' ? 'Free with ItWhip+' : `Requires ItWhip+ (${ITWHIP_PLUS.monthlyPrice})`}
                 </div>
               )}
             </button>
@@ -195,8 +195,10 @@ export default function ProviderFeatureMatrix({
                 Unlock All Features with ItWhip+
               </h4>
               <p className="text-xs text-gray-400 mt-0.5">
-                Fill the gaps from any provider for just{' '}
-                <span className="text-amber-400 font-medium">{ITWHIP_PLUS.monthlyPrice}</span>
+                {ITWHIP_PLUS.monthlyPrice === 'Free'
+                  ? <>Fill the gaps from any provider — <span className="text-green-400 font-medium">Free for all hosts!</span></>
+                  : <>Fill the gaps from any provider for just{' '}<span className="text-amber-400 font-medium">{ITWHIP_PLUS.monthlyPrice}</span></>
+                }
               </p>
               <ul className="mt-2 flex flex-wrap gap-1.5">
                 {featureStatuses

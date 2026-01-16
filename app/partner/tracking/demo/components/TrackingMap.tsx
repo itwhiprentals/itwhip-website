@@ -381,13 +381,13 @@ export default function TrackingMap({
         el.innerHTML = `
           <div class="relative group">
             <!-- Direction arrow -->
-            <div class="vehicle-direction-arrow absolute -top-3 left-1/2 -translate-x-1/2 transition-transform" style="transform: rotate(${heading}deg)">
-              <svg class="w-4 h-4 text-white drop-shadow-lg" viewBox="0 0 24 24" fill="currentColor">
+            <div class="vehicle-direction-arrow absolute -top-2 left-1/2 -translate-x-1/2 transition-transform" style="transform: rotate(${heading}deg)">
+              <svg class="w-3 h-3 text-white drop-shadow-lg" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2l-4 8h8l-4-8z"/>
               </svg>
             </div>
             <!-- Main marker -->
-            <div class="w-14 h-14 rounded-xl flex items-center justify-center shadow-2xl transform transition-all hover:scale-110 border-2 ${
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center shadow-lg transform transition-all hover:scale-110 border ${
               vehicle.isDisabled
                 ? 'bg-gradient-to-br from-red-600 to-red-800 border-red-400'
                 : vehicle.status === 'moving'
@@ -396,31 +396,31 @@ export default function TrackingMap({
                 ? 'bg-gradient-to-br from-green-500 to-green-700 border-green-300'
                 : 'bg-gradient-to-br from-yellow-500 to-yellow-700 border-yellow-300'
             } ${vehicle.status === 'moving' && !vehicle.isDisabled ? 'animate-pulse' : ''}">
-              <svg class="w-7 h-7 text-white drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
+              <svg class="w-4 h-4 text-white drop-shadow" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/>
               </svg>
             </div>
             <!-- Speed badge -->
             ${vehicle.status === 'moving' && !vehicle.isDisabled ? `
-              <div class="absolute -top-1 -right-1 min-w-[24px] h-6 bg-white rounded-full flex items-center justify-center shadow-lg border-2 ${
+              <div class="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-white rounded-full flex items-center justify-center shadow border ${
                 vehicle.speed > 80 ? 'border-red-500' : vehicle.speed > 65 ? 'border-yellow-500' : 'border-blue-500'
               }">
-                <span class="text-[10px] font-bold ${
+                <span class="text-[8px] font-bold ${
                   vehicle.speed > 80 ? 'text-red-600' : vehicle.speed > 65 ? 'text-yellow-600' : 'text-blue-600'
-                } px-1">${vehicle.speed}</span>
+                } px-0.5">${vehicle.speed}</span>
               </div>
             ` : ''}
             <!-- Disabled badge -->
             ${vehicle.isDisabled ? `
-              <div class="absolute -top-1 -right-1 w-6 h-6 bg-red-600 rounded-full flex items-center justify-center border-2 border-white shadow-lg">
-                <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3">
+              <div class="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-600 rounded-full flex items-center justify-center border border-white shadow">
+                <svg class="w-2 h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </div>
             ` : ''}
             <!-- Label -->
-            <div class="absolute -bottom-8 left-1/2 transform -translate-x-1/2 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
-              <span class="text-[10px] font-bold text-white bg-gray-900/95 px-2 py-1 rounded-lg shadow-xl backdrop-blur border border-gray-700">
+            <div class="absolute -bottom-5 left-1/2 transform -translate-x-1/2 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
+              <span class="text-[8px] font-bold text-white bg-gray-900/95 px-1.5 py-0.5 rounded shadow-lg backdrop-blur border border-gray-700">
                 ${vehicle.make} ${vehicle.model}
               </span>
             </div>
