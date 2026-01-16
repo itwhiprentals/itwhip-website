@@ -12,7 +12,7 @@ export function getManagementInvitationTemplate(data: ManagementInvitationData):
 
   const subject = isOwnerInvitingManager
     ? `${data.senderName} wants you to manage their vehicle${data.vehicles && data.vehicles.length > 1 ? 's' : ''}`
-    : `${data.senderName} wants to manage your vehicles on ITWhip`
+    : `${data.senderName} wants to manage your vehicles on ItWhip`
 
   const roleDescription = isOwnerInvitingManager
     ? 'manage their vehicle' + (data.vehicles && data.vehicles.length > 1 ? 's' : '')
@@ -239,8 +239,8 @@ export function getManagementInvitationTemplate(data: ManagementInvitationData):
 
             <p style="font-size: 14px; color: #4b5563; margin-bottom: 20px;">
               ${isOwnerInvitingManager
-                ? `${data.senderName} has invited you to manage their vehicle${data.vehicles && data.vehicles.length > 1 ? 's' : ''} on ITWhip. Review the proposed terms below.`
-                : `${data.senderName} operates a fleet on ITWhip and would like you to add your vehicle${data.vehicles && data.vehicles.length > 1 ? 's' : ''} to their managed fleet.`
+                ? `${data.senderName} has invited you to manage their vehicle${data.vehicles && data.vehicles.length > 1 ? 's' : ''} on ItWhip. Review the proposed terms below.`
+                : `${data.senderName} operates a fleet on ItWhip and would like you to add your vehicle${data.vehicles && data.vehicles.length > 1 ? 's' : ''} to their managed fleet.`
               }
             </p>
 
@@ -340,8 +340,8 @@ Fleet Management Invitation
 Hi ${data.recipientName || 'there'},
 
 ${isOwnerInvitingManager
-  ? `${data.senderName} has invited you to manage their vehicle${data.vehicles && data.vehicles.length > 1 ? 's' : ''} on ITWhip.`
-  : `${data.senderName} operates a fleet on ITWhip and would like you to add your vehicle${data.vehicles && data.vehicles.length > 1 ? 's' : ''} to their managed fleet.`
+  ? `${data.senderName} has invited you to manage their vehicle${data.vehicles && data.vehicles.length > 1 ? 's' : ''} on ItWhip.`
+  : `${data.senderName} operates a fleet on ItWhip and would like you to add your vehicle${data.vehicles && data.vehicles.length > 1 ? 's' : ''} to their managed fleet.`
 }
 
 FROM: ${data.senderName} (${data.senderEmail})

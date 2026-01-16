@@ -22,6 +22,7 @@ export {
   SpeedAlertDemo,
   KillSwitchDemo,
   HonkDemo,
+  MileageForensicsDemo,
   ProviderBadges
 } from './feature-demos'
 

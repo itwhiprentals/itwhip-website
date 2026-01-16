@@ -166,7 +166,7 @@ export default function ProviderFeatureMatrix({
                 )}
               </div>
 
-              {/* Hover tooltip for ITWhip+ features */}
+              {/* Hover tooltip for ItWhip+ features */}
               {feature.status === 'itwhip-plus' && (
                 <div className="
                   absolute -top-8 left-1/2 -translate-x-1/2
@@ -175,7 +175,7 @@ export default function ProviderFeatureMatrix({
                   text-[10px] text-amber-300 whitespace-nowrap z-10
                   pointer-events-none
                 ">
-                  Requires ITWhip+ ({ITWHIP_PLUS.monthlyPrice})
+                  Requires ItWhip+ ({ITWHIP_PLUS.monthlyPrice})
                 </div>
               )}
             </button>
@@ -183,7 +183,7 @@ export default function ProviderFeatureMatrix({
         })}
       </div>
 
-      {/* ITWhip+ Upsell Banner */}
+      {/* ItWhip+ Upsell Banner */}
       {showITWhipPlus && itwhipPlusCount > 0 && (
         <div className="mt-3 p-3 bg-gradient-to-r from-amber-500/10 to-orange-500/10 rounded-lg border border-amber-500/20">
           <div className="flex items-start gap-3">
@@ -192,7 +192,7 @@ export default function ProviderFeatureMatrix({
             </div>
             <div className="flex-1 min-w-0">
               <h4 className="text-sm font-semibold text-amber-200">
-                Unlock All Features with ITWhip+
+                Unlock All Features with ItWhip+
               </h4>
               <p className="text-xs text-gray-400 mt-0.5">
                 Fill the gaps from any provider for just{' '}

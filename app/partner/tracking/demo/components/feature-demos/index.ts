@@ -14,6 +14,7 @@ export { default as GeofenceDemo } from './GeofenceDemo'
 export { default as SpeedAlertDemo } from './SpeedAlertDemo'
 export { default as KillSwitchDemo } from './KillSwitchDemo'
 export { default as HonkDemo } from './HonkDemo'
+export { default as MileageForensicsDemo } from './MileageForensicsDemo'
 
 // Shared utilities
 export { default as ProviderBadges } from './shared/ProviderBadges'

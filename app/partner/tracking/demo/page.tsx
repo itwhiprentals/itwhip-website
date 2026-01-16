@@ -17,7 +17,8 @@ import {
   GeofenceDemo,
   SpeedAlertDemo,
   KillSwitchDemo,
-  HonkDemo
+  HonkDemo,
+  MileageForensicsDemo
 } from './components'
 import {
   IoAlertCircleOutline,
@@ -565,6 +566,7 @@ export default function TrackingDemoPage() {
         {activeFeatureDemo === 'speed' && <SpeedAlertDemo />}
         {activeFeatureDemo === 'killswitch' && <KillSwitchDemo />}
         {activeFeatureDemo === 'honk' && <HonkDemo />}
+        {activeFeatureDemo === 'mileage' && <MileageForensicsDemo />}
       </FeatureDemoModal>
 
       {/* Demo Header - Mobile Optimized */}

@@ -6,13 +6,9 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import {
   IoLocationOutline,
   IoCarSportOutline,
-  IoShieldCheckmarkOutline,
-  IoSpeedometerOutline,
-  IoAlertCircleOutline,
   IoCheckmarkCircleOutline,
   IoChevronForwardOutline,
   IoRefreshOutline,
@@ -25,91 +21,18 @@ import {
   IoMapOutline,
   IoStatsChartOutline,
   IoLinkOutline,
-  IoWarningOutline,
-  IoCloseOutline,
   IoPlayOutline,
   IoBatteryFullOutline,
-  IoLockClosedOutline,
-  IoPowerOutline,
-  IoSnowOutline,
-  IoEllipseOutline,
-  IoFlashOffOutline,
-  IoVolumeHighOutline
+  IoSpeedometerOutline,
+  IoTrendingUpOutline,
+  IoStar
 } from 'react-icons/io5'
 
-// Provider data with real logo URLs
-const TRACKING_PROVIDERS = [
-  {
-    id: 'bouncie',
-    name: 'Bouncie',
-    logoUrl: 'https://www.bouncie.com/cdn/shop/files/bouncie-logo-blue.png',
-    description: 'OBD-II GPS Tracker',
-    price: '$8/month per device',
-    features: ['Real-time GPS', 'Trip history', 'Geofencing', 'Speed alerts', 'Vehicle health'],
-    limitations: ['Easy to unplug'],
-    connectType: 'device',
-    websiteUrl: 'https://bouncie.com',
-    color: 'blue'
-  },
-  {
-    id: 'smartcar',
-    name: 'Smartcar',
-    logoUrl: 'https://assets-global.website-files.com/5e83a55a4f1bd40be93ac74f/5e83a55a4f1bd434b23ac7e2_smartcar-logo.svg',
-    description: 'Connected Car API',
-    price: 'Free tier available',
-    features: ['No hardware needed', '40+ car brands', 'Lock/unlock', 'Remote start', 'Pre-cool via API'],
-    limitations: ['Vehicle must support'],
-    connectType: 'oauth',
-    websiteUrl: 'https://smartcar.com',
-    color: 'purple'
-  },
-  {
-    id: 'zubie',
-    name: 'Zubie',
-    logoUrl: 'https://zubie.com/wp-content/uploads/2023/01/zubie-logo-white-1.png',
-    description: 'Fleet Management',
-    price: 'Fleet pricing',
-    features: ['Real-time GPS', 'Driver scoring', 'Maintenance alerts', 'Fuel tracking'],
-    limitations: ['OBD-II required'],
-    connectType: 'device',
-    websiteUrl: 'https://zubie.com',
-    color: 'green'
-  },
-  {
-    id: 'moovetrax',
-    name: 'MooveTrax',
-    logoUrl: null,
-    description: 'Remote Vehicle Control',
-    price: 'Contact for pricing',
-    features: ['Kill switch', 'Remote start', 'Keyless entry', 'Real-time GPS', 'Hardwired install'],
-    limitations: ['Professional install'],
-    connectType: 'device',
-    websiteUrl: 'https://moovetrax.com',
-    color: 'cyan'
-  },
-  {
-    id: 'trackimo',
-    name: 'Trackimo',
-    logoUrl: 'https://trackimo.com/wp-content/uploads/2020/01/trackimo-logo.png',
-    description: 'Portable GPS Tracker',
-    price: '$10/month',
-    features: ['Portable device', 'Long battery', 'Geofencing', 'SOS button', 'Worldwide'],
-    limitations: ['Battery dependent'],
-    connectType: 'device',
-    websiteUrl: 'https://trackimo.com',
-    color: 'red'
-  }
-]
-
-// Features showcase for demo section
-const DEMO_FEATURES = [
-  { icon: IoLocationOutline, label: 'Live GPS', color: 'text-blue-400' },
-  { icon: IoLockClosedOutline, label: 'Lock/Unlock', color: 'text-green-400' },
-  { icon: IoPowerOutline, label: 'Remote Start', color: 'text-purple-400' },
-  { icon: IoSnowOutline, label: 'Pre-Cool', color: 'text-cyan-400' },
-  { icon: IoEllipseOutline, label: 'Geofencing', color: 'text-yellow-400' },
-  { icon: IoFlashOffOutline, label: 'Kill Switch', color: 'text-red-400' }
-]
+// Import provider data from shared module
+import {
+  MILEAGE_FORENSICS,
+  getSecondaryProviders
+} from './shared/providers'
 
 interface ConnectedProvider {
   id: string
@@ -243,46 +166,108 @@ export default function TrackingPage() {
         {!hasTracking ? (
           // No Provider Connected - Onboarding View
           <div className="space-y-8">
-            {/* Value Proposition */}
-            <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-gray-800 dark:to-gray-800 rounded-lg p-8 border border-orange-100 dark:border-gray-700">
-              <div className="text-center mb-8">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                  Why Track Your Vehicles?
-                </h2>
-                <p className="text-gray-600 dark:text-gray-400">
-                  GPS tracking powers ItWhip&apos;s Mileage Forensics™ and MaxAC™ systems
-                </p>
+            {/* Recommended Setup Card - Provider Card Style */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg border-2 border-purple-200 dark:border-purple-800 p-5 transition-all hover:shadow-lg hover:border-purple-300 dark:hover:border-purple-600">
+              {/* Card Header */}
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                    <IoStar className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">Recommended Setup</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">~$15/mo per vehicle</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-xs font-medium">
+                  <IoTrendingUpOutline className="w-3.5 h-3.5" />
+                  44% less than FleetBold
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white dark:bg-gray-700 rounded-lg p-6 text-center shadow-sm">
-                  <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center mx-auto mb-4">
-                    <IoShieldCheckmarkOutline className="w-6 h-6 text-red-600 dark:text-red-400" />
+              {/* Description */}
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Get complete fleet protection with Bouncie + Smartcar combination. All 8 features covered plus Mileage Forensics™.
+              </p>
+
+              {/* Features Grid */}
+              <div className="space-y-2 mb-4">
+                <div className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-300">
+                  <IoCheckmarkCircleOutline className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  <span><strong className="text-gray-900 dark:text-white">Bouncie ($8/mo):</strong> GPS, Speed Alerts, Geofencing, OBD Diagnostics</span>
+                </div>
+                <div className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-300">
+                  <IoCheckmarkCircleOutline className="w-4 h-4 text-purple-500 flex-shrink-0 mt-0.5" />
+                  <span><strong className="text-gray-900 dark:text-white">Smartcar ($1.99/mo):</strong> Lock/Unlock, Remote Start, Climate Control</span>
+                </div>
+                <div className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-300">
+                  <IoCheckmarkCircleOutline className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
+                  <span><strong className="text-gray-900 dark:text-white">ItWhip+ ($4.99/mo):</strong> Mileage Forensics™, Unified Dashboard</span>
+                </div>
+              </div>
+
+              {/* CTAs */}
+              <div className="flex gap-2">
+                <a
+                  href="https://bouncie.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 flex items-center justify-center gap-2 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors"
+                >
+                  Get Started
+                  <IoChevronForwardOutline className="w-4 h-4" />
+                </a>
+                <button className="flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                  <IoLinkOutline className="w-4 h-4" />
+                  Connect
+                </button>
+              </div>
+            </div>
+
+            {/* Mileage Forensics™ Feature Section */}
+            <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-gray-800 dark:to-gray-800 rounded-lg p-6 md:p-8 border border-amber-200 dark:border-gray-700">
+              <div className="flex flex-col md:flex-row gap-6">
+                {/* Icon */}
+                <div className="flex-shrink-0">
+                  <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center">
+                    <IoSpeedometerOutline className="w-8 h-8 text-white" />
                   </div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Theft Protection</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Instant alerts if your car leaves a geofence or gets tampered with
-                  </p>
                 </div>
 
-                <div className="bg-white dark:bg-gray-700 rounded-lg p-6 text-center shadow-sm">
-                  <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mx-auto mb-4">
-                    <IoSpeedometerOutline className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                {/* Content */}
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                      {MILEAGE_FORENSICS.name}
+                    </h3>
+                    <span className="px-2 py-0.5 bg-amber-500 text-white text-xs font-semibold rounded">
+                      EXCLUSIVE
+                    </span>
                   </div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Mileage Forensics™</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Auto-detect usage gaps for insurance compliance and tax reporting
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">
+                    {MILEAGE_FORENSICS.description}
                   </p>
-                </div>
 
-                <div className="bg-white dark:bg-gray-700 rounded-lg p-6 text-center shadow-sm">
-                  <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center mx-auto mb-4">
-                    <IoDownloadOutline className="w-6 h-6 text-green-600 dark:text-green-400" />
+                  {/* How it works */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                    {MILEAGE_FORENSICS.howItWorks.map((step, idx) => (
+                      <div key={idx} className="flex items-start gap-2 text-sm">
+                        <span className="flex-shrink-0 w-5 h-5 bg-amber-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                          {idx + 1}
+                        </span>
+                        <span className="text-gray-700 dark:text-gray-300">{step}</span>
+                      </div>
+                    ))}
                   </div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Dispute Evidence</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    One-click export of trip logs, speed data, and route history
-                  </p>
+
+                  {/* Benefits */}
+                  <div className="flex flex-wrap gap-2">
+                    {MILEAGE_FORENSICS.benefits.slice(0, 4).map((benefit, idx) => (
+                      <span key={idx} className="px-2.5 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs rounded-lg border border-amber-200 dark:border-gray-600">
+                        {benefit}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -298,101 +283,62 @@ export default function TrackingPage() {
               </div>
             </div>
 
-            {/* Provider Selection */}
+            {/* Other Provider Options */}
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center">
-                Choose Your Tracking Provider
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 text-center">
+                Other Provider Options
               </h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-4">
+                Alternative tracking solutions if you prefer a single provider
+              </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {TRACKING_PROVIDERS.map(provider => (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {getSecondaryProviders().map(provider => (
                   <div
                     key={provider.id}
-                    className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 transition-all hover:shadow-lg hover:border-gray-300 dark:hover:border-gray-600"
+                    className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5 transition-all hover:shadow-lg hover:border-gray-300 dark:hover:border-gray-600"
                   >
-                    {/* Provider Header with Logo */}
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        {provider.logoUrl ? (
-                          <div className={`w-12 h-12 ${getProviderBgColor(provider.color)} rounded-lg flex items-center justify-center p-2`}>
-                            <img
-                              src={provider.logoUrl}
-                              alt={provider.name}
-                              className="w-full h-full object-contain filter brightness-0 invert"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).style.display = 'none'
-                                ;(e.target as HTMLImageElement).parentElement!.innerHTML = `<span class="text-white font-bold text-lg">${provider.name.charAt(0)}</span>`
-                              }}
-                            />
-                          </div>
-                        ) : (
-                          <div className={`w-12 h-12 ${getProviderBgColor(provider.color)} rounded-lg flex items-center justify-center text-white font-bold text-lg`}>
-                            {provider.name.charAt(0)}
-                          </div>
-                        )}
-                        <div>
-                          <h3 className="font-semibold text-gray-900 dark:text-white">
-                            {provider.name}
-                          </h3>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">{provider.description}</p>
-                        </div>
+                    {/* Provider Header */}
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className={`w-10 h-10 bg-gradient-to-br ${
+                        provider.id === 'zubie' ? 'from-green-500 to-green-600' :
+                        provider.id === 'moovetrax' ? 'from-cyan-500 to-cyan-600' :
+                        'from-red-500 to-red-600'
+                      } rounded-lg flex items-center justify-center text-white font-bold`}>
+                        {provider.name.charAt(0)}
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900 dark:text-white">
+                          {provider.name}
+                        </h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{provider.monthlyPrice}</p>
                       </div>
                     </div>
 
-                    {/* Price */}
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-4">
-                      {provider.price}
+                    {/* Description */}
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                      {provider.description}
                     </p>
 
-                    {/* Features */}
-                    <div className="space-y-1.5 mb-4">
-                      {provider.features.slice(0, 4).map((feature, idx) => (
-                        <div key={idx} className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                          <IoCheckmarkCircleOutline className="w-4 h-4 text-green-500 flex-shrink-0" />
-                          <span>{feature}</span>
-                        </div>
-                      ))}
-                      {provider.limitations.slice(0, 1).map((limitation, idx) => (
-                        <div key={idx} className="flex items-center gap-2 text-sm text-gray-400 dark:text-gray-500">
-                          <IoCloseOutline className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                          <span>{limitation}</span>
+                    {/* Key Features */}
+                    <div className="space-y-1 mb-3">
+                      {provider.strengths.slice(0, 3).map((strength, idx) => (
+                        <div key={idx} className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
+                          <IoCheckmarkCircleOutline className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
+                          <span>{strength}</span>
                         </div>
                       ))}
                     </div>
 
                     {/* CTA */}
-                    {provider.connectType === 'oauth' ? (
-                      <button className="w-full py-2.5 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors">
-                        Connect Account
-                      </button>
-                    ) : provider.websiteUrl ? (
-                      <a
-                        href={provider.websiteUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block w-full py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white text-sm font-medium rounded-lg transition-colors text-center"
-                      >
-                        Visit {provider.name}
-                      </a>
-                    ) : (
-                      <button className="w-full py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white text-sm font-medium rounded-lg transition-colors">
-                        Learn More
-                      </button>
-                    )}
-
-                    {/* Provider website link */}
-                    {provider.websiteUrl && (
-                      <p className="mt-2 text-center">
-                        <a
-                          href={provider.websiteUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                        >
-                          {provider.websiteUrl.replace('https://', '')}
-                        </a>
-                      </p>
-                    )}
+                    <a
+                      href={provider.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block w-full py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white text-sm font-medium rounded-lg transition-colors text-center"
+                    >
+                      Learn More
+                    </a>
                   </div>
                 ))}
               </div>
@@ -409,83 +355,52 @@ export default function TrackingPage() {
               </button>
             </div>
 
-            {/* Demo Section - Separate from providers */}
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
-              </div>
-              <div className="relative flex justify-center">
-                <span className="bg-gray-50 dark:bg-gray-900 px-4 text-sm text-gray-500 dark:text-gray-400">
-                  or try our interactive demo
+            {/* Interactive Demo Card - Provider Card Style */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg border-2 border-orange-200 dark:border-orange-800 p-5 transition-all hover:shadow-lg hover:border-orange-300 dark:hover:border-orange-600">
+              {/* Card Header */}
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-600 rounded-lg flex items-center justify-center">
+                    <IoPlayOutline className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">Interactive Demo</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">No signup required</p>
+                  </div>
+                </div>
+                <span className="px-2.5 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded-full text-xs font-medium">
+                  Try Free
                 </span>
               </div>
-            </div>
 
-            {/* Interactive Demo Card */}
-            <div className="bg-gradient-to-br from-orange-500 to-amber-600 rounded-lg p-8 text-white overflow-hidden relative">
-              {/* Background pattern */}
-              <div className="absolute inset-0 opacity-10">
-                <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-                  <defs>
-                    <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
-                      <path d="M 10 0 L 0 0 0 10" fill="none" stroke="white" strokeWidth="0.5"/>
-                    </pattern>
-                  </defs>
-                  <rect width="100" height="100" fill="url(#grid)" />
-                </svg>
-              </div>
+              {/* Description */}
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                See what hosts experience with a fully connected fleet. Live map, remote commands, and real-time alerts.
+              </p>
 
-              <div className="relative flex flex-col lg:flex-row items-start gap-6">
-                <div className="flex-shrink-0">
-                  <div className="w-20 h-20 bg-white/20 backdrop-blur rounded-lg flex items-center justify-center">
-                    <Image
-                      src="/logo.png"
-                      alt="ItWhip"
-                      width={48}
-                      height={48}
-                      className="object-contain"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none'
-                      }}
-                    />
-                  </div>
+              {/* Features List */}
+              <div className="space-y-1 mb-4">
+                <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
+                  <IoCheckmarkCircleOutline className="w-3.5 h-3.5 text-orange-500 flex-shrink-0" />
+                  <span>Live GPS • Lock/Unlock • Remote Start • Pre-Cool</span>
                 </div>
-
-                <div className="flex-1">
-                  <h3 className="text-xl font-bold mb-2">
-                    Try the ItWhip Tracking Demo
-                  </h3>
-                  <p className="text-white/80 mb-4 max-w-2xl">
-                    See what hosts experience with a fully connected fleet. Interactive Mapbox map with live vehicle animations,
-                    remote commands, real-time alerts, and all the features your tracking provider offers - unified in one dashboard.
-                  </p>
-
-                  {/* Feature badges */}
-                  <div className="flex flex-wrap gap-2 mb-6">
-                    {DEMO_FEATURES.map((feature, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur rounded-lg text-sm"
-                      >
-                        <feature.icon className={`w-4 h-4 ${feature.color}`} />
-                        <span>{feature.label}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  <Link
-                    href="/partner/tracking/demo"
-                    className="inline-flex items-center gap-2 px-8 py-3 bg-white text-orange-600 font-semibold rounded-lg hover:bg-orange-50 transition-colors shadow-lg"
-                  >
-                    <IoPlayOutline className="w-5 h-5" />
-                    Launch Interactive Demo
-                  </Link>
-
-                  <p className="mt-4 text-sm text-white/60">
-                    No signup required • Live map with Phoenix demo fleet
-                  </p>
+                <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
+                  <IoCheckmarkCircleOutline className="w-3.5 h-3.5 text-orange-500 flex-shrink-0" />
+                  <span>Geofencing • Speed Alerts • Kill Switch • Horn/Lights</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
+                  <IoCheckmarkCircleOutline className="w-3.5 h-3.5 text-orange-500 flex-shrink-0" />
+                  <span>Interactive Mapbox map with Phoenix demo fleet</span>
                 </div>
               </div>
+
+              {/* CTA */}
+              <Link
+                href="/partner/tracking/demo"
+                className="block w-full py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors text-center"
+              >
+                Launch Demo
+              </Link>
             </div>
           </div>
         ) : (

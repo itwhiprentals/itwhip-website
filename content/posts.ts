@@ -2507,7 +2507,7 @@ export interface BlogPost {
         <tr>
           <th>Requirement</th>
           <th>Traditional Rentals</th>
-          <th>Peer-to-Peer (ITWhip)</th>
+          <th>Peer-to-Peer (ItWhip)</th>
         </tr>
       </thead>
       <tbody>
@@ -2628,7 +2628,7 @@ export interface BlogPost {
     <p>A $50/day SUV split 4 ways = $12.50 per person. Cheaper than everyone taking Ubers.</p>
 
     <h3>2. Use Your Student Email</h3>
-    <p>Some rental companies offer student discounts. ITWhip hosts often offer special rates to ASU students - just ask in the message.</p>
+    <p>Some rental companies offer student discounts. ItWhip hosts often offer special rates to ASU students - just ask in the message.</p>
 
     <h3>3. Book Weekday to Weekday</h3>
     <p>Picking up Thursday instead of Friday and returning Monday instead of Sunday often saves 30%+.</p>
@@ -2659,7 +2659,7 @@ export interface BlogPost {
     <h2>Insurance Considerations</h2>
 
     <h3>If You're Under 25</h3>
-    <p>Traditional rental companies charge $25-35/day extra for young drivers. ITWhip includes insurance in the rental price with no young driver surcharge for renters 21+.</p>
+    <p>Traditional rental companies charge $25-35/day extra for young drivers. ItWhip includes insurance in the rental price with no young driver surcharge for renters 21+.</p>
 
     <h3>Parent's Insurance</h3>
     <p>If you're on your parents' car insurance, it may cover rentals. Check the policy before paying for additional coverage.</p>
@@ -2689,7 +2689,7 @@ export interface BlogPost {
       </thead>
       <tbody>
         <tr>
-          <td>ITWhip (P2P)</td>
+          <td>ItWhip (P2P)</td>
           <td>$35-60/day</td>
           <td>Students, flexible pickup</td>
         </tr>
@@ -2715,7 +2715,7 @@ export interface BlogPost {
 
     <p>For ASU students and visiting parents, the key is planning ahead around major campus events. Prices can triple during graduation week compared to a random Tuesday in February.</p>
 
-    <p>Peer-to-peer rentals like ITWhip work especially well for students because:</p>
+    <p>Peer-to-peer rentals like ItWhip work especially well for students because:</p>
     <ul>
       <li>No young driver fees</li>
       <li>Debit cards accepted</li>

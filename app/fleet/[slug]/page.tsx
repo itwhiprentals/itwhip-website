@@ -159,14 +159,14 @@ export async function generateMetadata({ params }: PageProps) {
 
   if (!data) {
     return {
-      title: 'Fleet Not Found | ITWhip',
+      title: 'Fleet Not Found | ItWhip',
       description: 'This fleet page could not be found.'
     }
   }
 
   return {
-    title: `${data.manager.name}'s Fleet | ITWhip`,
-    description: data.manager.bio || `Browse ${data.stats.totalVehicles} vehicles from ${data.manager.name}'s fleet on ITWhip.`
+    title: `${data.manager.name}'s Fleet | ItWhip`,
+    description: data.manager.bio || `Browse ${data.stats.totalVehicles} vehicles from ${data.manager.name}'s fleet on ItWhip.`
   }
 }
 

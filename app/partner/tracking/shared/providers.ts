@@ -95,6 +95,14 @@ export const PROVIDER_FEATURES: ProviderFeature[] = [
     description: 'Locate car in parking lot',
     providers: ['Smartcar', 'MooveTrax'],
     color: 'yellow'
+  },
+  {
+    id: 'mileage',
+    icon: IoSpeedometerOutline,
+    label: 'Mileage Forensics™',
+    description: 'Cross-verify OBD vs GPS mileage',
+    providers: ['ItWhip+'],
+    color: 'orange'
   }
 ]
 
@@ -112,8 +120,11 @@ export const PROVIDER_CAPABILITIES: ProviderCapability[] = [
     name: 'Bouncie',
     monthlyPrice: '$8/mo',
     website: 'https://bouncie.com',
+    apiDocsUrl: 'https://docs.bouncie.dev',
     description: 'Popular OBD-II GPS tracker with 15-second updates and comprehensive trip history.',
     deviceType: 'obd',
+    isPrimary: true,
+    apiCost: 'FREE', // Bouncie API is free via OAuth2
     features: {
       gps: true,
       lock: false,
@@ -129,7 +140,7 @@ export const PROVIDER_CAPABILITIES: ProviderCapability[] = [
       'Comprehensive trip history and replay',
       'Unlimited geo-zones',
       'DTC code reading',
-      'Low monthly cost'
+      'FREE API for ItWhip integration'
     ],
     limitations: [
       'No remote vehicle control',
@@ -140,11 +151,14 @@ export const PROVIDER_CAPABILITIES: ProviderCapability[] = [
   {
     id: 'smartcar',
     name: 'Smartcar',
-    monthlyPrice: 'API',
-    pricingNote: 'Volume-based pricing',
+    monthlyPrice: '$1.99/mo',
+    pricingNote: 'per vehicle',
     website: 'https://smartcar.com',
+    apiDocsUrl: 'https://smartcar.com/docs',
     description: 'API platform connecting to 39+ car brands through existing vehicle telematics.',
     deviceType: 'api',
+    isPrimary: true,
+    apiCost: '$1.99/vehicle/mo', // Build tier pricing
     features: {
       gps: true,
       lock: true,
@@ -164,9 +178,8 @@ export const PROVIDER_CAPABILITIES: ProviderCapability[] = [
     ],
     limitations: [
       'Requires compatible vehicle (2015+)',
-      'No speed alerts',
-      'Vehicle must have active data plan',
-      'API pricing can vary'
+      'No speed alerts (no OBD connection)',
+      'Vehicle must have active data plan'
     ]
   },
   {
@@ -234,8 +247,11 @@ export const PROVIDER_CAPABILITIES: ProviderCapability[] = [
     name: 'Trackimo',
     monthlyPrice: '$10/mo',
     website: 'https://trackimo.com',
-    description: 'Portable GPS tracker with multiple locating technologies.',
+    description: 'Portable GPS tracker with multiple locating technologies. No ItWhip integration - use Trackimo app separately.',
     deviceType: 'gps-tracker',
+    hasApiIntegration: false, // No API available - standalone only
+    affiliateUrl: 'https://trackimo.com/become-affiliate/',
+    affiliateCommission: '20%', // 7-day cookie via Affiliatly.com
     features: {
       gps: true,
       lock: false,
@@ -251,9 +267,12 @@ export const PROVIDER_CAPABILITIES: ProviderCapability[] = [
       'Portable - can be hidden anywhere',
       'Customizable speed thresholds',
       'Multi-channel alerts (SMS, email, push)',
-      'Works without OBD port'
+      'Works without OBD port',
+      'Bulk pricing available at tracki.com'
     ],
     limitations: [
+      'No ItWhip integration - use Trackimo app separately',
+      'No API available for dashboard unification',
       'No remote vehicle control',
       'Battery or wired power required',
       'No engine data access'
@@ -262,16 +281,17 @@ export const PROVIDER_CAPABILITIES: ProviderCapability[] = [
 ]
 
 // ============================================================================
-// ITWhip+ Configuration
+// ItWhip+ Configuration
 // ============================================================================
 
 /**
- * ITWhip+ service - fills gaps between providers
+ * ItWhip+ service - fills gaps between providers
+ * Pricing undercuts FleetBold ($8.99) by 44%
  */
 export const ITWHIP_PLUS: ITWhipPlusConfig = {
-  name: 'ITWhip+',
-  monthlyPrice: '$9.99/mo',
-  description: 'Extends any provider with missing features through smart aggregation.',
+  name: 'ItWhip+',
+  monthlyPrice: '$4.99/mo',
+  description: 'Unified dashboard with Mileage Forensics™ cross-verification.',
   valueProposition: 'Get ALL features regardless of which tracking provider you use.',
   features: {
     gps: true,
@@ -281,14 +301,15 @@ export const ITWHIP_PLUS: ITWhipPlusConfig = {
     geofence: true,
     speed: true,
     killswitch: true,
-    honk: true
+    honk: true,
+    mileage: true // Exclusive to ItWhip+
   },
   benefits: [
-    'Fill feature gaps from any provider',
+    'Mileage Forensics™ - Cross-verify OBD odometer vs GPS trips',
     'Unified dashboard for all vehicles',
-    'Mix providers across your fleet',
-    'Smart alerts across all vehicles',
-    'Premium support'
+    'Fill feature gaps from any provider',
+    'Smart alerts aggregated from all sources',
+    'Trip reports for insurance & disputes'
   ]
 }
 
@@ -378,7 +399,8 @@ export function getCombinedFeatures(selectedProviders: ProviderId[]): FeatureAva
     geofence: false,
     speed: false,
     killswitch: false,
-    honk: false
+    honk: false,
+    mileage: false // ItWhip+ exclusive - requires both Bouncie + Smartcar
   }
 
   for (const providerId of selectedProviders) {
@@ -392,11 +414,16 @@ export function getCombinedFeatures(selectedProviders: ProviderId[]): FeatureAva
     }
   }
 
+  // Mileage Forensics™ is enabled when both Bouncie and Smartcar are connected
+  if (selectedProviders.includes('bouncie') && selectedProviders.includes('smartcar')) {
+    combined.mileage = true
+  }
+
   return combined
 }
 
 /**
- * Get features that ITWhip+ would add on top of selected providers
+ * Get features that ItWhip+ would add on top of selected providers
  */
 export function getITWhipPlusAddedFeatures(
   selectedProviders: ProviderId[]
@@ -431,12 +458,12 @@ export function getFeatureCoverage(selectedProviders: ProviderId[]): number {
 }
 
 /**
- * Get feature coverage with ITWhip+ included
+ * Get feature coverage with ItWhip+ included
  */
 export function getFeatureCoverageWithITWhipPlus(
   selectedProviders: ProviderId[]
 ): number {
-  // ITWhip+ provides all features
+  // ItWhip+ provides all features
   return 100
 }
 
@@ -461,6 +488,71 @@ export function formatProviderPrice(provider: ProviderCapability): string {
     return `${provider.monthlyPrice} (${provider.pricingNote})`
   }
   return provider.monthlyPrice
+}
+
+/**
+ * Get primary/recommended providers (Bouncie + Smartcar)
+ */
+export function getPrimaryProviders(): ProviderCapability[] {
+  return PROVIDER_CAPABILITIES.filter(p => p.isPrimary)
+}
+
+/**
+ * Get secondary/alternative providers
+ */
+export function getSecondaryProviders(): ProviderCapability[] {
+  return PROVIDER_CAPABILITIES.filter(p => !p.isPrimary)
+}
+
+/**
+ * Calculate total monthly cost for the recommended setup
+ * Bouncie device ($8) + Smartcar API ($1.99) + ItWhip+ ($4.99) = ~$15/mo
+ */
+export function getRecommendedSetupCost(): {
+  bouncieCost: string
+  smartcarCost: string
+  itwhipPlusCost: string
+  totalCost: string
+  competitorPrice: string
+  savingsPercent: number
+} {
+  return {
+    bouncieCost: '$8/mo',
+    smartcarCost: '$1.99/mo',
+    itwhipPlusCost: ITWHIP_PLUS.monthlyPrice,
+    totalCost: '~$15/mo',
+    competitorPrice: '$8.99/mo (FleetBold)',
+    savingsPercent: 44 // ItWhip+ undercuts FleetBold by 44%
+  }
+}
+
+// ============================================================================
+// Mileage Forensics™ Configuration
+// ============================================================================
+
+/**
+ * Mileage Forensics™ - ItWhip's unique cross-verification feature
+ * Cross-verifies OBD odometer readings with GPS trip distances
+ */
+export const MILEAGE_FORENSICS = {
+  name: 'Mileage Forensics™',
+  tagline: 'Cross-verify OBD odometer vs GPS trips',
+  description: 'Automatically detects discrepancies between reported odometer readings and actual GPS-tracked trip distances. Catches tampering, unreported trips, and billing disputes before they become problems.',
+  benefits: [
+    'Detect odometer tampering or rollback',
+    'Identify unreported personal trips',
+    'Auto-generate dispute evidence',
+    'Insurance claim documentation',
+    'Guest usage verification'
+  ],
+  requiresProviders: ['bouncie', 'smartcar'] as ProviderId[], // Works best with both
+  howItWorks: [
+    'Bouncie OBD reads actual odometer from vehicle ECU',
+    'Smartcar/GPS tracks trip distances independently',
+    'ItWhip+ compares both sources in real-time',
+    'Discrepancies flagged with detailed reports'
+  ],
+  accuracyNote: 'GPS distance may vary ±2% from odometer due to tire wear, calibration, and signal quality. Significant discrepancies (>5%) trigger alerts.'
 }
 
 // ============================================================================

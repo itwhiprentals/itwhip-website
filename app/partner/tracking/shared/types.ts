@@ -86,6 +86,7 @@ export type FeatureId =
   | 'speed'
   | 'killswitch'
   | 'honk'
+  | 'mileage' // ItWhip+ exclusive: Mileage Forensics™
 
 /**
  * Feature definition for showcase cards
@@ -111,6 +112,7 @@ export interface FeatureAvailability {
   speed: boolean
   killswitch: boolean
   honk: boolean
+  mileage?: boolean // ItWhip+ exclusive: Mileage Forensics™
 }
 
 // ============================================================================
@@ -132,15 +134,21 @@ export interface ProviderCapability {
   monthlyPrice: string
   pricingNote?: string
   website: string
+  apiDocsUrl?: string
   description: string
   features: FeatureAvailability
   deviceType: 'obd' | 'api' | 'gps-tracker' | 'hybrid'
+  isPrimary?: boolean // Bouncie + Smartcar recommended combo
+  apiCost?: string // Cost to ItWhip for API access
+  affiliateUrl?: string // Affiliate program URL for commission tracking
+  affiliateCommission?: string // Commission rate (e.g., "20%")
+  hasApiIntegration?: boolean // Whether ItWhip can integrate via API
   strengths: string[]
   limitations: string[]
 }
 
 /**
- * ITWhip+ service definition
+ * ItWhip+ service definition
  */
 export interface ITWhipPlusConfig {
   name: string

@@ -271,11 +271,11 @@ export function getInvitationDeclinedTemplate(data: InvitationDeclinedData): Ema
               <h3>What You Can Do</h3>
               <ul>
                 ${isOwnerInvitingManager ? `
-                  <li>Look for other fleet managers on ITWhip</li>
+                  <li>Look for other fleet managers on ItWhip</li>
                   <li>Consider adjusting your commission terms for future invitations</li>
                   <li>Manage your vehicles yourself using the host dashboard</li>
                 ` : `
-                  <li>Reach out to other vehicle owners on ITWhip</li>
+                  <li>Reach out to other vehicle owners on ItWhip</li>
                   <li>Consider adjusting your proposed terms</li>
                   <li>Build your fleet profile to attract more owners</li>
                 `}
@@ -316,10 +316,10 @@ ${data.declineReason ? `REASON PROVIDED:\n${data.declineReason}\n` : ''}
 ${data.vehicles && data.vehicles.length > 0 ? `VEHICLES:\n${vehiclesList}\n` : ''}
 WHAT YOU CAN DO:
 ${isOwnerInvitingManager
-  ? `- Look for other fleet managers on ITWhip
+  ? `- Look for other fleet managers on ItWhip
 - Consider adjusting your commission terms for future invitations
 - Manage your vehicles yourself using the host dashboard`
-  : `- Reach out to other vehicle owners on ITWhip
+  : `- Reach out to other vehicle owners on ItWhip
 - Consider adjusting your proposed terms
 - Build your fleet profile to attract more owners`
 }

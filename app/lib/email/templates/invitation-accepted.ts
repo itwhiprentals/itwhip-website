@@ -278,8 +278,8 @@ export function getInvitationAcceptedTemplate(data: InvitationAcceptedData): Ema
 
             <p style="font-size: 14px; color: #4b5563; margin-bottom: 20px;">
               Great news! ${isOwner
-                ? `${data.otherPartyName} will now manage your vehicle${data.vehicles.length > 1 ? 's' : ''} on ITWhip.`
-                : `You are now managing ${data.otherPartyName}'s vehicle${data.vehicles.length > 1 ? 's' : ''} on ITWhip.`
+                ? `${data.otherPartyName} will now manage your vehicle${data.vehicles.length > 1 ? 's' : ''} on ItWhip.`
+                : `You are now managing ${data.otherPartyName}'s vehicle${data.vehicles.length > 1 ? 's' : ''} on ItWhip.`
               }
             </p>
 
@@ -381,8 +381,8 @@ Fleet Agreement Confirmed
 Hi ${data.recipientName},
 
 Great news! ${isOwner
-  ? `${data.otherPartyName} will now manage your vehicle${data.vehicles.length > 1 ? 's' : ''} on ITWhip.`
-  : `You are now managing ${data.otherPartyName}'s vehicle${data.vehicles.length > 1 ? 's' : ''} on ITWhip.`
+  ? `${data.otherPartyName} will now manage your vehicle${data.vehicles.length > 1 ? 's' : ''} on ItWhip.`
+  : `You are now managing ${data.otherPartyName}'s vehicle${data.vehicles.length > 1 ? 's' : ''} on ItWhip.`
 }
 
 PARTNER: ${data.otherPartyName} (${data.otherPartyEmail})
