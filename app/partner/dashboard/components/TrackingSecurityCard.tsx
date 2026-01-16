@@ -26,8 +26,13 @@ import {
   IoLocationOutline,
   IoCarSportOutline,
   IoNavigateOutline,
-  IoAlertCircleOutline
+  IoAlertCircleOutline,
+  IoSparkles,
+  IoPlayCircleOutline
 } from 'react-icons/io5'
+
+// Demo mode component
+import { TrackingDemoMode } from './tracking'
 
 interface SessionInfo {
   user: {
@@ -108,11 +113,26 @@ interface TrackedVehicle {
   provider: string
 }
 
+// Fleet vehicle interface for demo mode
+interface FleetVehicle {
+  id: string
+  make: string
+  model: string
+  year: number
+  licensePlate: string
+  photo: string | null
+}
+
 export default function TrackingSecurityCard() {
   const [data, setData] = useState<SessionInfo | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'tracking' | 'session' | 'security' | 'api' | 'audit'>('tracking')
+
+  // Demo mode state
+  const [isDemoMode, setIsDemoMode] = useState(false)
+  const [fleetVehicles, setFleetVehicles] = useState<FleetVehicle[]>([])
+  const [fleetLoading, setFleetLoading] = useState(false)
 
   // Mock tracking data - will be replaced with real API
   const [trackingProviders] = useState<TrackingProvider[]>([])
@@ -150,6 +170,66 @@ export default function TrackingSecurityCard() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Fetch fleet vehicles for demo mode
+  const fetchFleetVehicles = async () => {
+    try {
+      setFleetLoading(true)
+      const response = await fetch('/api/partner/fleet', {
+        credentials: 'include'
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success && result.vehicles) {
+          setFleetVehicles(result.vehicles.map((v: {
+            id: string
+            make: string
+            model: string
+            year: number
+            licensePlate: string
+            photos: { url: string }[]
+          }) => ({
+            id: v.id,
+            make: v.make,
+            model: v.model,
+            year: v.year,
+            licensePlate: v.licensePlate,
+            photo: v.photos?.[0]?.url || null
+          })))
+        }
+      }
+    } catch (err) {
+      console.error('Fleet fetch error:', err)
+      // Use demo vehicles if fetch fails
+      setFleetVehicles([
+        { id: 'demo-1', make: 'Tesla', model: 'Model 3', year: 2024, licensePlate: '8ABC123', photo: null },
+        { id: 'demo-2', make: 'BMW', model: 'X5', year: 2023, licensePlate: '7XYZ789', photo: null },
+        { id: 'demo-3', make: 'Honda', model: 'Accord', year: 2022, licensePlate: '5DEF456', photo: null }
+      ])
+    } finally {
+      setFleetLoading(false)
+    }
+  }
+
+  // Handle entering demo mode
+  const handleEnterDemoMode = async () => {
+    if (fleetVehicles.length === 0) {
+      await fetchFleetVehicles()
+    }
+    setIsDemoMode(true)
+  }
+
+  // Handle exiting demo mode
+  const handleExitDemoMode = () => {
+    setIsDemoMode(false)
+  }
+
+  // Handle connect button click
+  const handleConnectClick = () => {
+    setIsDemoMode(false)
+    // Navigation handled by Link component
   }
 
   const formatDate = (dateString: string | null) => {
@@ -331,7 +411,18 @@ export default function TrackingSecurityCard() {
         {/* Tracking Tab */}
         {activeTab === 'tracking' && (
           <div className="space-y-4">
-            {!hasTracking ? (
+            {/* Demo Mode Active */}
+            {isDemoMode ? (
+              <TrackingDemoMode
+                vehicles={fleetVehicles.length > 0 ? fleetVehicles : [
+                  { id: 'demo-1', make: 'Tesla', model: 'Model 3', year: 2024, licensePlate: '8ABC123', photo: null },
+                  { id: 'demo-2', make: 'BMW', model: 'X5', year: 2023, licensePlate: '7XYZ789', photo: null },
+                  { id: 'demo-3', make: 'Honda', model: 'Accord', year: 2022, licensePlate: '5DEF456', photo: null }
+                ]}
+                onExit={handleExitDemoMode}
+                onConnect={handleConnectClick}
+              />
+            ) : !hasTracking ? (
               // No Provider Connected State
               <div className="text-center py-4">
                 <div className="w-14 h-14 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -350,8 +441,8 @@ export default function TrackingSecurityCard() {
                   <span>0 of {totalVehicles} vehicles tracked</span>
                 </div>
 
-                {/* CTA Button */}
-                <div>
+                {/* CTA Buttons - Connect + Try Demo */}
+                <div className="flex items-center justify-center gap-3">
                   <Link
                     href="/partner/tracking"
                     className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors"
@@ -359,6 +450,14 @@ export default function TrackingSecurityCard() {
                     <IoLocationOutline className="w-4 h-4" />
                     Connect a Provider
                   </Link>
+                  <button
+                    onClick={handleEnterDemoMode}
+                    disabled={fleetLoading}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white text-sm font-medium rounded-lg transition-all shadow-lg shadow-purple-500/20 hover:shadow-purple-500/30"
+                  >
+                    <IoSparkles className="w-4 h-4" />
+                    {fleetLoading ? 'Loading...' : 'Try Demo'}
+                  </button>
                 </div>
 
                 {/* Provider Hints */}

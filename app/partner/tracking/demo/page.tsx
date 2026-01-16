@@ -20,10 +20,8 @@ import {
   HonkDemo
 } from './components'
 import {
-  IoLocationOutline,
   IoCarSportOutline,
   IoShieldCheckmarkOutline,
-  IoSpeedometerOutline,
   IoAlertCircleOutline,
   IoCheckmarkCircleOutline,
   IoChevronForwardOutline,
@@ -41,12 +39,7 @@ import {
   IoCloseOutline,
   IoPlayOutline,
   IoBatteryFullOutline,
-  IoLockClosedOutline,
   IoLockOpenOutline,
-  IoPowerOutline,
-  IoEllipseOutline,
-  IoVolumeHighOutline,
-  IoSnowOutline,
   IoSunnyOutline,
   IoLocateOutline,
   IoNotificationsOutline,
@@ -54,7 +47,6 @@ import {
   IoArrowBackOutline,
   IoCarOutline,
   IoEyeOutline,
-  IoFlashOffOutline,
   IoStopCircleOutline,
   IoRadioButtonOnOutline,
   IoHandLeftOutline,
@@ -63,42 +55,19 @@ import {
   IoMailOutline
 } from 'react-icons/io5'
 
+// Import shared types and data
+import type { DemoVehicle, FeatureId } from '../shared/types'
+import {
+  PROVIDER_FEATURES,
+  PHOENIX_LOCATIONS,
+  ALERT_PROVIDER_SUPPORT,
+  LIVE_ALERT_PROVIDERS
+} from '../shared/providers'
 
-// Phoenix area coordinates
-const PHOENIX_CENTER = { lat: 33.4484, lng: -112.0740 }
-const SCOTTSDALE = { lat: 33.4942, lng: -111.9261 }
-const SKY_HARBOR = { lat: 33.4373, lng: -112.0078 }
-
-// Demo vehicles with realistic Phoenix data
-interface DemoVehicle {
-  id: string
-  make: string
-  model: string
-  year: number
-  licensePlate: string
-  vin: string
-  status: 'moving' | 'parked' | 'offline' | 'disabled'
-  location: string
-  coordinates: { lat: number; lng: number }
-  speed: number
-  heading: string | null
-  lastUpdate: string
-  provider: string
-  guest: { name: string; phone: string } | null
-  tripStarted: string | null
-  tripEndsAt: string | null
-  fuelLevel: number
-  batteryLevel: number | null
-  odometer: number
-  isElectric: boolean
-  isLocked: boolean
-  engineRunning: boolean
-  acOn: boolean
-  interiorTemp: number
-  exteriorTemp: number
-  route: Array<{ lat: number; lng: number }>
-  isDisabled: boolean
-}
+// Phoenix area coordinates (from shared)
+const PHOENIX_CENTER = PHOENIX_LOCATIONS.PHOENIX_CENTER
+const SCOTTSDALE = PHOENIX_LOCATIONS.SCOTTSDALE
+const SKY_HARBOR = PHOENIX_LOCATIONS.SKY_HARBOR
 
 const DEMO_VEHICLES: DemoVehicle[] = [
   {
@@ -221,35 +190,8 @@ const DEMO_GEOFENCES = [
   { id: 'home-base', name: 'Home Base', center: SCOTTSDALE, radius: 2, color: '#f97316' }
 ]
 
-// Feature demo type
-type FeatureDemo = 'gps' | 'lock' | 'start' | 'precool' | 'geofence' | 'speed' | 'killswitch' | 'honk' | null
-
-// Alert type to provider mapping - which providers support each alert type
-const ALERT_PROVIDER_SUPPORT: Record<string, { providers: string[]; description: string }> = {
-  speed: {
-    providers: ['Bouncie', 'Zubie', 'Trackimo'],
-    description: 'Real-time speed monitoring with customizable thresholds'
-  },
-  geofence: {
-    providers: ['Bouncie', 'Smartcar', 'Zubie', 'Trackimo'],
-    description: 'Virtual boundary alerts when vehicle enters/exits zones'
-  },
-  temp: {
-    providers: ['Smartcar', 'MooveTrax'],
-    description: 'Interior temperature monitoring for climate control'
-  },
-  killswitch: {
-    providers: ['MooveTrax'],
-    description: 'Remote vehicle disable for theft prevention'
-  },
-  info: {
-    providers: ['Bouncie', 'Smartcar', 'Zubie', 'MooveTrax', 'Trackimo'],
-    description: 'General vehicle status notifications'
-  }
-}
-
-// Live alerts overall - all providers that support real-time alerts
-const LIVE_ALERT_PROVIDERS = ['Bouncie', 'Smartcar', 'Zubie', 'MooveTrax', 'Trackimo']
+// Feature demo type (uses FeatureId from shared types)
+type FeatureDemo = FeatureId | null
 
 // Demo renter data
 const DEMO_RENTERS = {
@@ -276,18 +218,6 @@ const DEMO_RENTERS = {
     daysRemaining: 2
   }
 }
-
-// Provider features showcase
-const PROVIDER_FEATURES = [
-  { id: 'gps' as FeatureDemo, icon: IoLocationOutline, label: 'Real-time GPS', description: 'Live location updates every 10 seconds', providers: ['Bouncie', 'Smartcar', 'Zubie', 'MooveTrax', 'Trackimo'], color: 'blue' },
-  { id: 'lock' as FeatureDemo, icon: IoLockClosedOutline, label: 'Lock/Unlock', description: 'Remote door lock control', providers: ['Smartcar', 'MooveTrax'], color: 'green' },
-  { id: 'start' as FeatureDemo, icon: IoPowerOutline, label: 'Remote Start', description: 'Start engine remotely', providers: ['Smartcar', 'MooveTrax'], color: 'purple' },
-  { id: 'precool' as FeatureDemo, icon: IoSnowOutline, label: 'Pre-Cool (MaxAC™)', description: 'Cool car before guest pickup', providers: ['Smartcar'], color: 'cyan' },
-  { id: 'geofence' as FeatureDemo, icon: IoEllipseOutline, label: 'Geofencing', description: 'Alerts when car leaves area', providers: ['Bouncie', 'Smartcar', 'Zubie', 'Trackimo'], color: 'yellow' },
-  { id: 'speed' as FeatureDemo, icon: IoSpeedometerOutline, label: 'Speed Alerts', description: 'Notifications for speeding', providers: ['Bouncie', 'Zubie', 'Trackimo'], color: 'red' },
-  { id: 'killswitch' as FeatureDemo, icon: IoFlashOffOutline, label: 'Kill Switch', description: 'Disable vehicle remotely', providers: ['MooveTrax'], color: 'red' },
-  { id: 'honk' as FeatureDemo, icon: IoVolumeHighOutline, label: 'Honk Horn', description: 'Locate car in parking lot', providers: ['Smartcar', 'MooveTrax'], color: 'yellow' }
-]
 
 export default function TrackingDemoPage() {
   const [vehicles, setVehicles] = useState<DemoVehicle[]>(DEMO_VEHICLES)
