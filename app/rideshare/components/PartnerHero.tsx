@@ -104,16 +104,16 @@ export default function PartnerHero({
 
   return (
     <div className="relative">
-      {/* Hero Image Section - FULL WIDTH, displays at natural aspect ratio */}
-      <div className="relative w-full">
+      {/* Hero Image Section - Constrained height on all screen sizes */}
+      <div className="relative w-full h-[250px] sm:h-[300px] md:h-[450px] lg:h-[500px]">
         {heroImage ? (
           <img
             src={heroImage}
             alt={`${companyName} hero`}
-            className="w-full h-auto"
+            className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-[300px] sm:h-[350px] md:h-[400px] bg-gradient-to-br from-orange-600 via-orange-500 to-amber-500" />
+          <div className="w-full h-full bg-gradient-to-br from-orange-600 via-orange-500 to-amber-500" />
         )}
 
         {/* Dark overlay */}
@@ -130,14 +130,14 @@ export default function PartnerHero({
         <div className="absolute left-1/2 -translate-x-1/2 -bottom-[75px] z-20">
           <div className="relative">
             {/* White background ensures all logos visible in both light/dark modes */}
-            <div className="w-[150px] h-[150px] rounded-full overflow-hidden shadow-2xl ring-1 ring-white/50 bg-white">
+            <div className="relative w-[150px] h-[150px] rounded-full overflow-hidden shadow-2xl ring-1 ring-white/50 bg-white">
               {logo ? (
                 <Image
                   src={logo}
                   alt={companyName}
-                  width={150}
-                  height={150}
-                  className="object-cover w-full h-full scale-110"
+                  fill
+                  className="object-contain"
+                  style={{ transform: 'scale(1.15) translateY(1.5px)', transformOrigin: 'center center' }}
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
