@@ -658,11 +658,11 @@ export default async function CarMakePage({
             }
           }
         },
-        ...(car.rating ? {
+        ...(car.rating && car.totalTrips > 0 ? {
           aggregateRating: {
             '@type': 'AggregateRating',
             ratingValue: car.rating,
-            reviewCount: car.totalTrips || 1
+            reviewCount: car.totalTrips
           }
         } : {})
       }

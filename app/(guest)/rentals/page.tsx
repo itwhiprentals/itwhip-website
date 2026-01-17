@@ -279,7 +279,7 @@ export default async function RentalsPage({
           shippingDetails: SHIPPING_DETAILS,
           hasMerchantReturnPolicy: MERCHANT_RETURN_POLICY
         },
-        ...(car.rating && {
+        ...(car.rating && car.totalTrips > 0 ? {
           aggregateRating: {
             '@type': 'AggregateRating',
             ratingValue: car.rating.toFixed(1),
@@ -287,7 +287,7 @@ export default async function RentalsPage({
             worstRating: '1',
             ratingCount: car.totalTrips.toString()
           }
-        })
+        } : {})
       }
     }))
   }

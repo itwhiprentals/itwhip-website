@@ -611,11 +611,13 @@ export default async function AirportPage({
                 }
               }
             },
-            aggregateRating: car.rating ? {
-              '@type': 'AggregateRating',
-              ratingValue: car.rating,
-              reviewCount: car.totalTrips || 1
-            } : undefined
+            ...(car.rating && car.totalTrips > 0 ? {
+              aggregateRating: {
+                '@type': 'AggregateRating',
+                ratingValue: car.rating,
+                reviewCount: car.totalTrips
+              }
+            } : {})
           }
         }))
       },
