@@ -204,33 +204,20 @@ export default function PartnerRevenuePage() {
     )
   }
 
-  // Use mock data if API returns nothing
-  const revenueData = data || {
-    grossRevenue: 45000,
-    commission: 9000,
-    netRevenue: 36000,
-    commissionRate: 0.20,
-    totalBookings: 45,
-    avgBookingValue: 1000,
-    monthlyData: [
-      { month: 'Jul', gross: 6000, net: 4800, commission: 1200, bookings: 6 },
-      { month: 'Aug', gross: 7500, net: 6000, commission: 1500, bookings: 8 },
-      { month: 'Sep', gross: 8200, net: 6560, commission: 1640, bookings: 9 },
-      { month: 'Oct', gross: 7800, net: 6240, commission: 1560, bookings: 7 },
-      { month: 'Nov', gross: 8500, net: 6800, commission: 1700, bookings: 8 },
-      { month: 'Dec', gross: 7000, net: 5600, commission: 1400, bookings: 7 }
-    ],
-    topVehicles: [
-      { id: '1', name: '2023 Tesla Model 3', revenue: 12000, bookings: 15 },
-      { id: '2', name: '2022 Toyota Camry', revenue: 9500, bookings: 12 },
-      { id: '3', name: '2023 Honda Accord', revenue: 8000, bookings: 10 }
-    ],
-    recentPayouts: [
-      { id: '1', period: 'December 2024', amount: 5600, status: 'completed' as const, paidAt: '2024-12-15' },
-      { id: '2', period: 'November 2024', amount: 6800, status: 'completed' as const, paidAt: '2024-11-15' },
-      { id: '3', period: 'October 2024', amount: 6240, status: 'completed' as const, paidAt: '2024-10-15' }
-    ]
+  // Use real data or show zeros - never show mock data
+  const revenueData: RevenueData = data || {
+    grossRevenue: 0,
+    commission: 0,
+    netRevenue: 0,
+    commissionRate: 0.25,
+    totalBookings: 0,
+    avgBookingValue: 0,
+    monthlyData: [],
+    topVehicles: [],
+    recentPayouts: []
   }
+
+  const hasRevenue = revenueData.totalBookings > 0
 
   return (
     <div className="p-6 space-y-6">
@@ -465,36 +452,46 @@ export default function PartnerRevenuePage() {
 
           {/* Simple Bar Chart */}
           <div className="space-y-4">
-            {revenueData.monthlyData.map((month) => {
-              const value = showGross ? month.gross : month.net
-              const maxValue = Math.max(...revenueData.monthlyData.map(m => showGross ? m.gross : m.net))
-              const percentage = (value / maxValue) * 100
+            {revenueData.monthlyData.length === 0 ? (
+              <div className="text-center py-8">
+                <IoTrendingUpOutline className="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                <p className="text-gray-500 dark:text-gray-400">No revenue data yet</p>
+                <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+                  Complete bookings to see your monthly revenue
+                </p>
+              </div>
+            ) : (
+              revenueData.monthlyData.map((month) => {
+                const value = showGross ? month.gross : month.net
+                const maxValue = Math.max(...revenueData.monthlyData.map(m => showGross ? m.gross : m.net))
+                const percentage = maxValue > 0 ? (value / maxValue) * 100 : 0
 
-              return (
-                <div key={month.month} className="space-y-1">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">{month.month}</span>
-                    <span className="font-medium text-gray-900 dark:text-white">
-                      {formatCurrency(value)}
-                    </span>
-                  </div>
-                  <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full transition-all ${showGross ? 'bg-blue-500' : 'bg-green-500'}`}
-                      style={{ width: `${percentage}%` }}
-                    />
-                  </div>
-                  {showGross && (
-                    <div className="h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden mt-1">
+                return (
+                  <div key={month.month} className="space-y-1">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600 dark:text-gray-400">{month.month}</span>
+                      <span className="font-medium text-gray-900 dark:text-white">
+                        {formatCurrency(value)}
+                      </span>
+                    </div>
+                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-orange-500"
-                        style={{ width: `${(month.commission / month.gross) * 100}%` }}
+                        className={`h-full transition-all ${showGross ? 'bg-blue-500' : 'bg-green-500'}`}
+                        style={{ width: `${percentage}%` }}
                       />
                     </div>
-                  )}
-                </div>
-              )
-            })}
+                    {showGross && month.gross > 0 && (
+                      <div className="h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden mt-1">
+                        <div
+                          className="h-full bg-orange-500"
+                          style={{ width: `${(month.commission / month.gross) * 100}%` }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )
+              })
+            )}
           </div>
 
           {showGross && (
@@ -515,31 +512,41 @@ export default function PartnerRevenuePage() {
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Top Vehicles</h2>
 
-          <div className="space-y-4">
-            {revenueData.topVehicles.map((vehicle, index) => (
-              <div
-                key={vehicle.id}
-                className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
-              >
-                <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center text-orange-600 dark:text-orange-400 font-bold text-sm">
-                  #{index + 1}
+          {revenueData.topVehicles.length === 0 ? (
+            <div className="text-center py-8">
+              <IoCarOutline className="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+              <p className="text-gray-500 dark:text-gray-400">No vehicle data yet</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+                Complete bookings to see top performing vehicles
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {revenueData.topVehicles.map((vehicle, index) => (
+                <div
+                  key={vehicle.id}
+                  className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                >
+                  <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center text-orange-600 dark:text-orange-400 font-bold text-sm">
+                    #{index + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                      {vehicle.name}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {vehicle.bookings} bookings
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                      {formatCurrency(vehicle.revenue)}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                    {vehicle.name}
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {vehicle.bookings} bookings
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                    {formatCurrency(vehicle.revenue)}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

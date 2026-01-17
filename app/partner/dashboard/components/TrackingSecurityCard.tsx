@@ -17,6 +17,8 @@ import {
   IoCheckmarkCircleOutline,
   IoCloseCircleOutline,
   IoChevronForwardOutline,
+  IoChevronDownOutline,
+  IoChevronUpOutline,
   IoRefreshOutline,
   IoLockClosedOutline,
   IoServerOutline,
@@ -127,36 +129,55 @@ interface TrackingSecurityCardProps {
   externalTab?: 'tracking' | 'session' | 'security' | 'api' | 'audit'
   hideHeader?: boolean
   hideTabNavigation?: boolean
+  collapsible?: boolean
+  defaultCollapsed?: boolean
 }
 
 export default function TrackingSecurityCard({
   externalTab,
   hideHeader = false,
-  hideTabNavigation = false
+  hideTabNavigation = false,
+  collapsible = true,
+  defaultCollapsed = false
 }: TrackingSecurityCardProps = {}) {
   const [data, setData] = useState<SessionInfo | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [internalTab, setInternalTab] = useState<'tracking' | 'session' | 'security' | 'api' | 'audit'>('tracking')
+  const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed)
 
   // Use external tab if provided, otherwise use internal state
   const activeTab = externalTab ?? internalTab
   const setActiveTab = externalTab ? () => {} : setInternalTab
 
-  // Demo mode state
-  const [isDemoMode, setIsDemoMode] = useState(false)
+  // Demo mode state - persistent via localStorage
+  const [isDemoMode, setIsDemoMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('tracking_demo_mode') === 'true'
+    }
+    return false
+  })
   const [fleetVehicles, setFleetVehicles] = useState<FleetVehicle[]>([])
   const [fleetLoading, setFleetLoading] = useState(false)
+  const [totalVehicles, setTotalVehicles] = useState(0) // Dynamic from API
 
   // Mock tracking data - will be replaced with real API
   const [trackingProviders] = useState<TrackingProvider[]>([])
   const [trackedVehicles] = useState<TrackedVehicle[]>([])
-  const [totalVehicles] = useState(3) // From fleet count
 
   const hasTracking = trackingProviders.some(p => p.connected)
 
+  // Persist demo mode to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('tracking_demo_mode', isDemoMode.toString())
+    }
+  }, [isDemoMode])
+
   useEffect(() => {
     fetchSessionInfo()
+    // Also fetch fleet data on mount for vehicle count
+    fetchFleetVehicles()
   }, [])
 
   const fetchSessionInfo = async () => {
@@ -186,7 +207,7 @@ export default function TrackingSecurityCard({
     }
   }
 
-  // Fetch fleet vehicles for demo mode
+  // Fetch fleet vehicles for demo mode and vehicle count
   const fetchFleetVehicles = async () => {
     try {
       setFleetLoading(true)
@@ -197,7 +218,7 @@ export default function TrackingSecurityCard({
       if (response.ok) {
         const result = await response.json()
         if (result.success && result.vehicles) {
-          setFleetVehicles(result.vehicles.map((v: {
+          const vehicles = result.vehicles.map((v: {
             id: string
             make: string
             model: string
@@ -211,17 +232,20 @@ export default function TrackingSecurityCard({
             year: v.year,
             licensePlate: v.licensePlate,
             photo: v.photos?.[0]?.url || null
-          })))
+          }))
+          setFleetVehicles(vehicles)
+          setTotalVehicles(vehicles.length)
+        } else {
+          setTotalVehicles(0)
         }
+      } else {
+        setTotalVehicles(0)
       }
     } catch (err) {
       console.error('Fleet fetch error:', err)
-      // Use demo vehicles if fetch fails
-      setFleetVehicles([
-        { id: 'demo-1', make: 'Tesla', model: 'Model 3', year: 2024, licensePlate: '8ABC123', photo: null },
-        { id: 'demo-2', make: 'BMW', model: 'X5', year: 2023, licensePlate: '7XYZ789', photo: null },
-        { id: 'demo-3', make: 'Honda', model: 'Accord', year: 2022, licensePlate: '5DEF456', photo: null }
-      ])
+      // No vehicles available - don't use demo vehicles for count
+      setFleetVehicles([])
+      setTotalVehicles(0)
     } finally {
       setFleetLoading(false)
     }
@@ -388,19 +412,34 @@ export default function TrackingSecurityCard({
                 </p>
               </div>
             </div>
-            <button
-              onClick={fetchSessionInfo}
-              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            >
-              <IoRefreshOutline className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={fetchSessionInfo}
+                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                <IoRefreshOutline className="w-4 h-4" />
+              </button>
+              {collapsible && (
+                <button
+                  onClick={() => setIsCollapsed(!isCollapsed)}
+                  className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  title={isCollapsed ? 'Expand' : 'Collapse'}
+                >
+                  {isCollapsed ? (
+                    <IoChevronDownOutline className="w-4 h-4" />
+                  ) : (
+                    <IoChevronUpOutline className="w-4 h-4" />
+                  )}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
 
       {/* Tabs - conditionally shown */}
-      {!hideTabNavigation && (
-      <div className="flex border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
+      {!hideTabNavigation && !isCollapsed && (
+        <div className="flex border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
         <button
           onClick={() => setActiveTab('tracking')}
           className={`flex-1 min-w-0 px-3 py-2.5 text-sm font-medium transition-colors whitespace-nowrap ${
@@ -459,7 +498,8 @@ export default function TrackingSecurityCard({
       </div>
       )}
 
-      {/* Content */}
+      {/* Content - hide when collapsed */}
+      {!isCollapsed && (
       <div className="p-4">
         {/* Tracking Tab */}
         {activeTab === 'tracking' && (
@@ -482,52 +522,93 @@ export default function TrackingSecurityCard({
                   <IoLocationOutline className="w-7 h-7 text-orange-600 dark:text-orange-400" />
                 </div>
                 <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">
-                  No Tracking Connected
+                  {totalVehicles === 0 ? 'Add Vehicles to Track' : 'No Tracking Connected'}
                 </h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 max-w-xs mx-auto">
-                  Track your vehicles in real-time, get theft alerts, and generate dispute evidence.
+                  {totalVehicles === 0
+                    ? 'List your first vehicle or invite hosts to start tracking your fleet.'
+                    : 'Track your vehicles in real-time, get theft alerts, and generate dispute evidence.'
+                  }
                 </p>
 
                 {/* Fleet Status */}
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 rounded-full text-sm text-gray-600 dark:text-gray-300 mb-4">
                   <IoCarSportOutline className="w-4 h-4" />
-                  <span>0 of {totalVehicles} vehicles tracked</span>
+                  <span>
+                    {totalVehicles === 0
+                      ? 'No vehicles in fleet'
+                      : `0 of ${totalVehicles} vehicle${totalVehicles !== 1 ? 's' : ''} tracked`
+                    }
+                  </span>
                 </div>
 
-                {/* CTA Buttons - Connect + Try Demo */}
-                <div className="flex items-center justify-center gap-3">
-                  <Link
-                    href="/partner/tracking"
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors"
-                  >
-                    <IoLocationOutline className="w-4 h-4" />
-                    Connect a Provider
-                  </Link>
+                {/* CTA Buttons - Different based on whether user has vehicles */}
+                <div className="flex items-center justify-center gap-3 flex-wrap">
+                  {totalVehicles === 0 ? (
+                    <>
+                      <Link
+                        href="/partner/fleet/add"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors"
+                      >
+                        <IoCarSportOutline className="w-4 h-4" />
+                        List a Vehicle
+                      </Link>
+                      <Link
+                        href="/partner/invitations"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg transition-colors"
+                      >
+                        Send Invitations
+                      </Link>
+                    </>
+                  ) : (
+                    <>
+                      <Link
+                        href="/partner/tracking"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors"
+                      >
+                        <IoLocationOutline className="w-4 h-4" />
+                        Connect a Provider
+                      </Link>
+                      <button
+                        onClick={handleEnterDemoMode}
+                        disabled={fleetLoading}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white text-sm font-medium rounded-lg transition-all shadow-lg shadow-purple-500/20 hover:shadow-purple-500/30"
+                      >
+                        <IoSparkles className="w-4 h-4" />
+                        {fleetLoading ? 'Loading...' : 'Try Demo'}
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                {/* Try Demo link when no vehicles */}
+                {totalVehicles === 0 && (
                   <button
                     onClick={handleEnterDemoMode}
                     disabled={fleetLoading}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white text-sm font-medium rounded-lg transition-all shadow-lg shadow-purple-500/20 hover:shadow-purple-500/30"
+                    className="mt-3 text-sm text-purple-600 dark:text-purple-400 hover:underline"
                   >
-                    <IoSparkles className="w-4 h-4" />
-                    {fleetLoading ? 'Loading...' : 'Try Demo'}
+                    {fleetLoading ? 'Loading...' : '✨ Try the tracking demo'}
                   </button>
-                </div>
+                )}
 
-                {/* Provider Hints */}
-                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">Popular providers</p>
-                  <div className="flex items-center justify-center gap-2 flex-wrap">
-                    <span className="px-2 py-1 bg-gray-50 dark:bg-gray-700 text-xs text-gray-600 dark:text-gray-400 rounded">
-                      Bouncie $8/mo
-                    </span>
-                    <span className="px-2 py-1 bg-gray-50 dark:bg-gray-700 text-xs text-gray-600 dark:text-gray-400 rounded">
-                      Smartcar API
-                    </span>
-                    <span className="px-2 py-1 bg-gray-50 dark:bg-gray-700 text-xs text-gray-600 dark:text-gray-400 rounded">
-                      Zubie Fleet
-                    </span>
+                {/* Provider Hints - only show when user has vehicles */}
+                {totalVehicles > 0 && (
+                  <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">Popular providers</p>
+                    <div className="flex items-center justify-center gap-2 flex-wrap">
+                      <span className="px-2 py-1 bg-gray-50 dark:bg-gray-700 text-xs text-gray-600 dark:text-gray-400 rounded">
+                        Bouncie $8/mo
+                      </span>
+                      <span className="px-2 py-1 bg-gray-50 dark:bg-gray-700 text-xs text-gray-600 dark:text-gray-400 rounded">
+                        Smartcar API
+                      </span>
+                      <span className="px-2 py-1 bg-gray-50 dark:bg-gray-700 text-xs text-gray-600 dark:text-gray-400 rounded">
+                        Zubie Fleet
+                      </span>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             ) : (
               // Provider Connected State
@@ -959,17 +1040,20 @@ export default function TrackingSecurityCard({
           </div>
         )}
       </div>
+      )}
 
-      {/* Footer */}
-      <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30">
-        <Link
-          href={activeTab === 'tracking' ? '/partner/tracking' : '/partner/settings'}
-          className="flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
-        >
-          {activeTab === 'tracking' ? 'Vehicle Tracking' : 'Account Settings'}
-          <IoChevronForwardOutline className="w-4 h-4" />
-        </Link>
-      </div>
+      {/* Footer - also hide when collapsed */}
+      {!isCollapsed && (
+        <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30">
+          <Link
+            href={activeTab === 'tracking' ? '/partner/tracking' : '/partner/settings'}
+            className="flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+          >
+            {activeTab === 'tracking' ? 'Vehicle Tracking' : 'Account Settings'}
+            <IoChevronForwardOutline className="w-4 h-4" />
+          </Link>
+        </div>
+      )}
     </div>
   )
 }

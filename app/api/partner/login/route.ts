@@ -108,6 +108,32 @@ export async function POST(request: NextRequest) {
       path: '/'
     })
 
+    // Get request info for activity logging
+    const userAgent = request.headers.get('user-agent') || 'Unknown'
+    const forwardedFor = request.headers.get('x-forwarded-for')
+    const ip = forwardedFor?.split(',')[0]?.trim() || 'Unknown'
+
+    // Record login activity for tracking last login
+    try {
+      await prisma.activityLog.create({
+        data: {
+          action: 'LOGIN',
+          entityType: 'RentalHost',
+          entityId: host.id,
+          category: 'AUTH',
+          ipAddress: ip,
+          userAgent: userAgent,
+          newValue: JSON.stringify({
+            hostType: host.hostType,
+            companyName: host.partnerCompanyName
+          })
+        }
+      })
+    } catch (logError) {
+      // Don't fail login if activity logging fails
+      console.error('[Partner Login] Activity log error:', logError)
+    }
+
     console.log(`[Partner Login] Partner logged in:`, {
       hostId: host.id,
       email: host.email,

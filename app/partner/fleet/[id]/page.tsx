@@ -535,7 +535,7 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
                 <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4">Share & Preview</h2>
                 <div className="space-y-3">
                   <Link
-                    href={`/cars/${vehicle.id}`}
+                    href={`/rentals/${vehicle.id}`}
                     target="_blank"
                     className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors"
                   >
@@ -544,7 +544,7 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
                   </Link>
                   <button
                     onClick={() => {
-                      const url = `${window.location.origin}/cars/${vehicle.id}`
+                      const url = `${window.location.origin}/rentals/${vehicle.id}`
                       navigator.clipboard.writeText(url)
                       alert('Link copied to clipboard!')
                     }}
@@ -555,7 +555,7 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
                   </button>
                   <button
                     onClick={() => {
-                      const url = `${window.location.origin}/cars/${vehicle.id}`
+                      const url = `${window.location.origin}/rentals/${vehicle.id}`
                       if (navigator.share) {
                         navigator.share({ title: `${vehicle.year} ${formatVehicleName(vehicle.make)} ${formatVehicleName(vehicle.model)}`, url })
                       } else {

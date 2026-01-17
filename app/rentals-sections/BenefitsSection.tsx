@@ -1,4 +1,5 @@
 // app/rentals-sections/BenefitsSection.tsx
+// Why Rent with ItWhip - horizontal scroll on mobile
 'use client'
 
 import {
@@ -51,45 +52,42 @@ const benefits = [
 
 export default function BenefitsSection() {
   return (
-    <section className="py-8 bg-gray-50 dark:bg-gray-900">
+    <section className="py-6 bg-gray-50 dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-6">
-          <span className="text-amber-700 dark:text-amber-400 text-xs sm:text-sm font-semibold uppercase tracking-wider">
+        <div className="text-center mb-4">
+          <span className="text-amber-700 dark:text-amber-400 text-xs font-semibold uppercase tracking-wider">
             Phoenix • Scottsdale • Tempe • Mesa • Chandler
           </span>
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mt-2 mb-2 sm:mb-4">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mt-1 mb-1">
             Why Rent with ItWhip
           </h2>
-          <p className="text-base sm:text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto px-4">
-            Peer-to-peer car rentals and rideshare vehicles with built-in protection
+          <p className="text-sm text-gray-600 dark:text-gray-400 max-w-xl mx-auto">
+            Peer-to-peer car rentals with built-in protection
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
+        {/* Horizontal scroll on mobile, grid on desktop */}
+        <div className="flex lg:grid lg:grid-cols-6 gap-3 overflow-x-auto pb-3 lg:pb-0 snap-x snap-mandatory scrollbar-hide -mx-4 px-4 lg:mx-0 lg:px-0 lg:overflow-visible">
           {benefits.map((benefit) => {
             const Icon = benefit.icon
             return (
               <div
                 key={benefit.title}
-                className="group bg-white dark:bg-gray-800 rounded-lg p-5 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer"
+                className="snap-center flex-shrink-0 w-[160px] sm:w-[180px] lg:w-auto bg-white dark:bg-gray-800 rounded-lg p-3 shadow hover:shadow-md transition-shadow"
               >
-                <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0 w-11 h-11 bg-gradient-to-br from-amber-400 to-amber-600 rounded-lg flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
-                    <Icon className="w-5 h-5" />
+                <div className="flex flex-col items-center text-center">
+                  <div className="w-9 h-9 bg-gradient-to-br from-amber-400 to-amber-600 rounded-lg flex items-center justify-center text-white mb-2">
+                    <Icon className="w-4 h-4" />
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <h3 className="text-sm font-bold text-gray-900 dark:text-white">
-                        {benefit.title}
-                      </h3>
-                      <span className="text-xs font-medium text-amber-700 dark:text-amber-400">
-                        {benefit.stat}
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">
-                      {benefit.description}
-                    </p>
-                  </div>
+                  <h3 className="text-xs font-bold text-gray-900 dark:text-white mb-0.5">
+                    {benefit.title}
+                  </h3>
+                  <span className="text-[10px] font-medium text-amber-700 dark:text-amber-400 mb-1">
+                    {benefit.stat}
+                  </span>
+                  <p className="text-[10px] text-gray-600 dark:text-gray-400 line-clamp-2">
+                    {benefit.description}
+                  </p>
                 </div>
               </div>
             )

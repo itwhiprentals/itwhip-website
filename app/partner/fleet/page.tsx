@@ -42,7 +42,7 @@ interface Vehicle {
   vehicleType: 'RENTAL' | 'RIDESHARE'
 }
 
-type FilterStatus = 'all' | 'available' | 'booked' | 'maintenance' | 'inactive'
+type FilterStatus = 'all' | 'available' | 'booked' | 'maintenance' | 'inactive' | 'active'
 
 export default function PartnerFleetPage() {
   const router = useRouter()
@@ -111,16 +111,27 @@ export default function PartnerFleetPage() {
       `${vehicle.year} ${vehicle.make} ${vehicle.model}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
       vehicle.licensePlate.toLowerCase().includes(searchTerm.toLowerCase())
 
-    const matchesStatus =
-      statusFilter === 'all' ||
-      (statusFilter === 'inactive' && !vehicle.isActive) ||
-      (statusFilter !== 'inactive' && vehicle.isActive && vehicle.status === statusFilter)
+    let matchesStatus = false
+    switch (statusFilter) {
+      case 'all':
+        matchesStatus = true
+        break
+      case 'active':
+        matchesStatus = vehicle.isActive
+        break
+      case 'inactive':
+        matchesStatus = !vehicle.isActive
+        break
+      default:
+        matchesStatus = vehicle.isActive && vehicle.status === statusFilter
+    }
 
     return matchesSearch && matchesStatus
   })
 
   const stats = {
     total: vehicles.length,
+    active: vehicles.filter(v => v.isActive).length,
     available: vehicles.filter(v => v.isActive && v.status === 'available').length,
     booked: vehicles.filter(v => v.isActive && v.status === 'booked').length,
     maintenance: vehicles.filter(v => v.isActive && v.status === 'maintenance').length,
@@ -217,61 +228,72 @@ export default function PartnerFleetPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
         <button
           onClick={() => setStatusFilter('all')}
-          className={`p-4 rounded-lg border transition-colors ${
+          className={`p-3 sm:p-4 rounded-lg border transition-colors ${
             statusFilter === 'all'
               ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20'
               : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300'
           }`}
         >
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Total</p>
+          <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
+          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Total</p>
+        </button>
+        <button
+          onClick={() => setStatusFilter('active')}
+          className={`p-3 sm:p-4 rounded-lg border transition-colors ${
+            statusFilter === 'active'
+              ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
+              : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300'
+          }`}
+        >
+          <p className="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400">{stats.active}</p>
+          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Active</p>
         </button>
         <button
           onClick={() => setStatusFilter('available')}
-          className={`p-4 rounded-lg border transition-colors ${
+          className={`p-3 sm:p-4 rounded-lg border transition-colors ${
             statusFilter === 'available'
               ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
               : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300'
           }`}
         >
-          <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.available}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Available</p>
+          <p className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400">{stats.available}</p>
+          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Available</p>
         </button>
         <button
           onClick={() => setStatusFilter('booked')}
-          className={`p-4 rounded-lg border transition-colors ${
+          className={`p-3 sm:p-4 rounded-lg border transition-colors ${
             statusFilter === 'booked'
               ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
               : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300'
           }`}
         >
-          <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.booked}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Booked</p>
+          <p className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.booked}</p>
+          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Booked</p>
         </button>
         <button
           onClick={() => setStatusFilter('maintenance')}
-          className={`p-4 rounded-lg border transition-colors ${
+          className={`p-3 sm:p-4 rounded-lg border transition-colors ${
             statusFilter === 'maintenance'
               ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20'
               : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300'
           }`}
         >
-          <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{stats.maintenance}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Maintenance</p>
+          <p className="text-xl sm:text-2xl font-bold text-orange-600 dark:text-orange-400">{stats.maintenance}</p>
+          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Maintenance</p>
         </button>
         <button
           onClick={() => setStatusFilter('inactive')}
-          className={`p-4 rounded-lg border transition-colors ${
+          className={`p-3 sm:p-4 rounded-lg border transition-colors ${
             statusFilter === 'inactive'
               ? 'border-gray-500 bg-gray-50 dark:bg-gray-700'
               : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300'
           }`}
         >
-          <p className="text-2xl font-bold text-gray-600 dark:text-gray-400">{stats.inactive}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Inactive</p>
+          <p className="text-xl sm:text-2xl font-bold text-gray-600 dark:text-gray-400">{stats.inactive}</p>
+          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Inactive</p>
         </button>
       </div>
 

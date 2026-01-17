@@ -86,6 +86,10 @@ export async function GET(request: NextRequest) {
         commissionRate,
         fleetSize: vehicleCount
       },
+      host: {
+        requireDeposit: partner.requireDeposit ?? true,
+        depositAmount: partner.depositAmount ?? 500
+      },
       settings: {
         email: partner.email,
         firstName: partner.user?.name?.split(' ')[0] || '',
@@ -130,18 +134,28 @@ export async function PUT(request: NextRequest) {
 
     const body = await request.json()
 
-    // Update partner settings
-    await prisma.rentalHost.update({
-      where: { id: hostId },
-      data: {
-        partnerCompanyName: body.companyName,
-        phone: body.phone,
-        address: body.address,
-        city: body.city,
-        state: body.state,
-        zipCode: body.zipCode
-      }
-    })
+    // Build update data dynamically based on what's provided
+    const updateData: Record<string, any> = {}
+
+    // Profile settings
+    if (body.companyName !== undefined) updateData.partnerCompanyName = body.companyName
+    if (body.phone !== undefined) updateData.phone = body.phone
+    if (body.address !== undefined) updateData.address = body.address
+    if (body.city !== undefined) updateData.city = body.city
+    if (body.state !== undefined) updateData.state = body.state
+    if (body.zipCode !== undefined) updateData.zipCode = body.zipCode
+
+    // Deposit settings
+    if (body.requireDeposit !== undefined) updateData.requireDeposit = body.requireDeposit
+    if (body.depositAmount !== undefined) updateData.depositAmount = body.depositAmount
+
+    // Only update if there's something to update
+    if (Object.keys(updateData).length > 0) {
+      await prisma.rentalHost.update({
+        where: { id: hostId },
+        data: updateData
+      })
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

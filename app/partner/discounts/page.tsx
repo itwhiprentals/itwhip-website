@@ -15,7 +15,9 @@ import {
   IoCloseCircleOutline,
   IoTimeOutline,
   IoCopyOutline,
-  IoCheckmarkOutline
+  IoCheckmarkOutline,
+  IoWalletOutline,
+  IoSaveOutline
 } from 'react-icons/io5'
 
 interface Discount {
@@ -42,6 +44,11 @@ interface NewDiscount {
   expiresAt: string
 }
 
+interface DepositSettings {
+  requireDeposit: boolean
+  depositAmount: number
+}
+
 export default function PartnerDiscountsPage() {
   const [discounts, setDiscounts] = useState<Discount[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -60,8 +67,17 @@ export default function PartnerDiscountsPage() {
   })
   const [isSaving, setIsSaving] = useState(false)
 
+  // Deposit settings
+  const [depositSettings, setDepositSettings] = useState<DepositSettings>({
+    requireDeposit: true,
+    depositAmount: 500
+  })
+  const [isSavingDeposit, setIsSavingDeposit] = useState(false)
+  const [depositSaved, setDepositSaved] = useState(false)
+
   useEffect(() => {
     fetchDiscounts()
+    fetchDepositSettings()
   }, [])
 
   const fetchDiscounts = async () => {
@@ -75,6 +91,44 @@ export default function PartnerDiscountsPage() {
       console.error('Failed to fetch discounts:', error)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const fetchDepositSettings = async () => {
+    try {
+      const res = await fetch('/api/partner/settings')
+      const data = await res.json()
+      if (data.success && data.host) {
+        setDepositSettings({
+          requireDeposit: data.host.requireDeposit ?? true,
+          depositAmount: data.host.depositAmount ?? 500
+        })
+      }
+    } catch (error) {
+      console.error('Failed to fetch deposit settings:', error)
+    }
+  }
+
+  const saveDepositSettings = async () => {
+    setIsSavingDeposit(true)
+    try {
+      const res = await fetch('/api/partner/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requireDeposit: depositSettings.requireDeposit,
+          depositAmount: depositSettings.depositAmount
+        })
+      })
+      const data = await res.json()
+      if (data.success) {
+        setDepositSaved(true)
+        setTimeout(() => setDepositSaved(false), 3000)
+      }
+    } catch (error) {
+      console.error('Failed to save deposit settings:', error)
+    } finally {
+      setIsSavingDeposit(false)
     }
   }
 
@@ -250,6 +304,73 @@ export default function PartnerDiscountsPage() {
           <IoAddCircleOutline className="w-5 h-5" />
           Create Discount
         </button>
+      </div>
+
+      {/* Global Deposit Settings */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+              <IoWalletOutline className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900 dark:text-white">Global Deposit Settings</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                Set a default security deposit for all your vehicles
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={depositSettings.requireDeposit}
+                onChange={(e) => setDepositSettings(prev => ({ ...prev, requireDeposit: e.target.checked }))}
+                className="w-4 h-4 text-orange-600 rounded focus:ring-orange-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700"
+              />
+              <span className="text-sm text-gray-700 dark:text-gray-300">Require deposit</span>
+            </label>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-500 dark:text-gray-400">$</span>
+              <input
+                type="number"
+                min="0"
+                step="50"
+                value={depositSettings.depositAmount}
+                onChange={(e) => setDepositSettings(prev => ({ ...prev, depositAmount: parseFloat(e.target.value) || 0 }))}
+                disabled={!depositSettings.requireDeposit}
+                className="w-24 px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+            </div>
+            <button
+              onClick={saveDepositSettings}
+              disabled={isSavingDeposit}
+              className="inline-flex items-center gap-2 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg text-sm font-medium transition-colors"
+            >
+              {isSavingDeposit ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                  Saving...
+                </>
+              ) : depositSaved ? (
+                <>
+                  <IoCheckmarkOutline className="w-4 h-4" />
+                  Saved!
+                </>
+              ) : (
+                <>
+                  <IoSaveOutline className="w-4 h-4" />
+                  Save
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+        {!depositSettings.requireDeposit && (
+          <p className="mt-3 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-lg px-3 py-2">
+            Deposits are recommended to protect against damage and no-shows. Disabling may increase your risk.
+          </p>
+        )}
       </div>
 
       {/* Search */}

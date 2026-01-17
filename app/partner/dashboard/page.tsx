@@ -46,6 +46,7 @@ import ESGScoreCard from './components/ESGScoreCard'
 
 // New dashboard restructure components
 import UserInfoCard from './components/UserInfoCard'
+import ActiveBookingCard from './components/ActiveBookingCard'
 import DashboardNavigation, { DashboardSection } from './components/DashboardNavigation'
 import DashboardContent from './components/DashboardContent'
 
@@ -157,6 +158,7 @@ export default function PartnerDashboardPage() {
     hostType: string | null
     memberSince: string | null
     lastLogin: string | null
+    isActive?: boolean
   } | null>(null)
   const [userInfoLoading, setUserInfoLoading] = useState(true)
 
@@ -222,7 +224,8 @@ export default function PartnerDashboardPage() {
             profilePhoto: data.user.profilePhoto,
             hostType: data.user.hostType,
             memberSince: data.user.memberSince,
-            lastLogin: data.user.lastLogin
+            lastLogin: data.user.lastLogin,
+            isActive: data.user.isActive
           })
         }
       }
@@ -811,6 +814,23 @@ export default function PartnerDashboardPage() {
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
+      {/* Dashboard Header - Title and Welcome */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+            Dashboard
+          </h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Welcome back{userInfo?.name ? `, ${userInfo.name.split(' ')[0]}` : ''}! Here&apos;s your fleet overview.
+          </p>
+        </div>
+        <div className="hidden sm:flex items-center gap-2">
+          <span className="text-xs text-gray-400 dark:text-gray-500">
+            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+          </span>
+        </div>
+      </div>
+
       {/* NEW: Dashboard Top Section - User Info, Navigation, Dynamic Content */}
       <div className="space-y-3">
         {/* Card 1 - User/Company Information */}
@@ -832,6 +852,9 @@ export default function PartnerDashboardPage() {
           recentBookings={recentBookings}
           loading={loading}
         />
+
+        {/* Card 4 - Active Bookings */}
+        <ActiveBookingCard />
       </div>
 
       {/* === EXISTING DASHBOARD CONTENT BELOW === */}

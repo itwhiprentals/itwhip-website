@@ -8,13 +8,11 @@ import Link from 'next/link'
 import HeroSection from '@/app/rentals-sections/HeroSection'
 import QuickActionsBar from '@/app/rentals-sections/QuickActionsBar'
 import BrowseByTypeSection from '@/app/rentals-sections/BrowseByTypeSection'
-import BenefitsSection from '@/app/rentals-sections/BenefitsSection'
 import Footer from '@/app/components/Footer'
 import Header from '@/app/components/Header'
 import CompactCarCard from '@/app/components/cards/CompactCarCard'
-import MileageForensicsSection from '@/app/components/sections/MileageForensicsSection'
 import InsuranceTiersSection from '@/app/components/sections/InsuranceTiersSection'
-import MaxACSection from '@/app/components/sections/MaxACSection'
+import TrackingSection from '@/app/components/sections/TrackingSection'
 import ArizonaEventsSection from '@/app/components/sections/ArizonaEventsSection'
 import { useUserLocation } from '@/app/hooks/useUserLocation'
 import { IoArrowForwardOutline, IoLeafOutline, IoLocationOutline, IoCarSportOutline, IoMapOutline } from 'react-icons/io5'
@@ -256,10 +254,20 @@ export default function HomeClient({ initialEsgCars, initialCityCars }: HomeClie
         </section>
 
         {/* Section Components - P2P Focused */}
-        <BenefitsSection />
         <InsuranceTiersSection />
-        <MileageForensicsSection />
-        <MaxACSection />
+
+        {/* Separator */}
+        <div className="max-w-5xl mx-auto px-8">
+          <div className="border-t border-gray-200 dark:border-gray-700" />
+        </div>
+
+        <TrackingSection />
+
+        {/* Separator */}
+        <div className="max-w-5xl mx-auto px-8">
+          <div className="border-t border-gray-200 dark:border-gray-700" />
+        </div>
+
         <ArizonaEventsSection />
       </div>
 

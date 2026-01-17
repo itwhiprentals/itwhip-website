@@ -3,12 +3,16 @@
 
 'use client'
 
+import { useRef } from 'react'
 import Image from 'next/image'
 import {
   IoPersonOutline,
   IoCalendarOutline,
   IoTimeOutline,
-  IoBriefcaseOutline
+  IoBriefcaseOutline,
+  IoCheckmarkCircle,
+  IoBanOutline,
+  IoCameraOutline
 } from 'react-icons/io5'
 
 interface UserInfoCardProps {
@@ -20,8 +24,10 @@ interface UserInfoCardProps {
     hostType: string | null
     memberSince: string | null
     lastLogin: string | null
+    isActive?: boolean
   } | null
   loading?: boolean
+  onPhotoChange?: (file: File) => void
 }
 
 function formatDate(dateString: string | null): string {
@@ -63,7 +69,22 @@ function getHostTypeLabel(hostType: string | null): string {
   }
 }
 
-export default function UserInfoCard({ user, loading }: UserInfoCardProps) {
+export default function UserInfoCard({ user, loading, onPhotoChange }: UserInfoCardProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handlePhotoClick = () => {
+    if (onPhotoChange) {
+      fileInputRef.current?.click()
+    }
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file && onPhotoChange) {
+      onPhotoChange(file)
+    }
+  }
+
   if (loading) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-5">
@@ -96,35 +117,61 @@ export default function UserInfoCard({ user, loading }: UserInfoCardProps) {
   }
 
   const displayName = user.companyName || user.name || 'Fleet Manager'
+  const isActive = user.isActive !== false // Default to active if not specified
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-5">
       <div className="flex items-start gap-4">
-        {/* Profile Photo / Logo */}
-        <div className="flex-shrink-0">
-          {user.profilePhoto ? (
-            <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden bg-white">
-              <Image
-                src={user.profilePhoto}
-                alt={displayName}
-                fill
-                className="object-contain"
-                style={{ transform: 'scale(1.15) translateY(0.5px)', transformOrigin: 'center center' }}
-              />
-            </div>
-          ) : (
-            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
-              <IoPersonOutline className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
-            </div>
-          )}
+        {/* Profile Photo / Logo - Clickable for edit */}
+        <div className="flex-shrink-0 relative group">
+          {/* Hidden file input */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept="image/*"
+            className="hidden"
+          />
+
+          <button
+            onClick={handlePhotoClick}
+            className={`relative block ${onPhotoChange ? 'cursor-pointer' : 'cursor-default'}`}
+            disabled={!onPhotoChange}
+          >
+            {user.profilePhoto ? (
+              <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden bg-white">
+                <Image
+                  src={user.profilePhoto}
+                  alt={displayName}
+                  fill
+                  className="object-contain"
+                  style={{ transform: 'scale(1.15) translateY(0.5px)', transformOrigin: 'center center' }}
+                />
+              </div>
+            ) : (
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
+                <IoPersonOutline className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
+              </div>
+            )}
+
+            {/* Edit overlay on hover */}
+            {onPhotoChange && (
+              <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <IoCameraOutline className="w-5 h-5 text-white" />
+              </div>
+            )}
+          </button>
         </div>
 
         {/* User Info */}
         <div className="flex-1 min-w-0">
-          {/* Name/Company on first line */}
-          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white truncate">
-            {displayName}
-          </h2>
+          {/* Name/Company with status badge */}
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white truncate">
+              {displayName}
+            </h2>
+            {/* Status Badge - positioned at top right on mobile, inline on desktop */}
+          </div>
 
           {/* Role/Type on second line with badge */}
           <div className="flex items-center gap-2 mt-0.5">
@@ -149,6 +196,21 @@ export default function UserInfoCard({ user, loading }: UserInfoCardProps) {
               <span>Last login {formatRelativeTime(user.lastLogin)}</span>
             </div>
           </div>
+        </div>
+
+        {/* Status Badge - Top Right Corner */}
+        <div className="flex-shrink-0">
+          {isActive ? (
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+              <IoCheckmarkCircle className="w-3.5 h-3.5" />
+              Active
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
+              <IoBanOutline className="w-3.5 h-3.5" />
+              Suspended
+            </span>
+          )}
         </div>
       </div>
     </div>

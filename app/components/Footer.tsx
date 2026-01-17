@@ -260,6 +260,11 @@ export default function Footer() {
             </h4>
             <ul className="space-y-1.5">
               <li>
+                <Link href="/tracking" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Fleet Tracking
+                </Link>
+              </li>
+              <li>
                 <Link href="/mileage-forensics" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
                   Mileage Forensics™
                 </Link>

@@ -197,6 +197,26 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    // Also log to activity log for last login tracking
+    try {
+      await prisma.activityLog.create({
+        data: {
+          action: 'LOGIN',
+          entityType: 'RentalHost',
+          entityId: host.id,
+          category: 'AUTH',
+          ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
+          userAgent: request.headers.get('user-agent') || 'unknown',
+          newValue: JSON.stringify({
+            hostType: host.hostType,
+            companyName: host.partnerCompanyName
+          })
+        }
+      })
+    } catch (logError) {
+      console.error('[Host Login] Activity log error:', logError)
+    }
+
     // Update last active
     await prisma.user.update({
       where: { id: host.user.id },  // lowercase 'user'
