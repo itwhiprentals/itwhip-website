@@ -120,6 +120,12 @@ export async function GET(
       monthlyRate: vehicle.monthlyRate,
       deliveryFee: vehicle.deliveryFee,
 
+      // Discount and deposit
+      discountPercent: vehicle.discountPercent ?? 0,
+      customDepositAmount: vehicle.customDepositAmount,
+      weeklyDiscount: vehicle.weeklyDiscount ?? 0.15,
+      monthlyDiscount: vehicle.monthlyDiscount ?? 0.30,
+
       // Delivery options
       airportPickup: vehicle.airportPickup,
       hotelDelivery: vehicle.hotelDelivery,
@@ -251,6 +257,12 @@ export async function PUT(
       monthlyRate,
       deliveryFee,
 
+      // Discount and deposit
+      discountPercent,
+      customDepositAmount,
+      weeklyDiscount,
+      monthlyDiscount,
+
       // Delivery options
       airportPickup,
       hotelDelivery,
@@ -310,6 +322,12 @@ export async function PUT(
     if (weeklyRate !== undefined) updateData.weeklyRate = parseFloat(weeklyRate) || null
     if (monthlyRate !== undefined) updateData.monthlyRate = parseFloat(monthlyRate) || null
     if (deliveryFee !== undefined) updateData.deliveryFee = parseFloat(deliveryFee)
+
+    // Discount and deposit
+    if (discountPercent !== undefined) updateData.discountPercent = parseFloat(discountPercent) || 0
+    if (customDepositAmount !== undefined) updateData.customDepositAmount = customDepositAmount ? parseFloat(customDepositAmount) : null
+    if (weeklyDiscount !== undefined) updateData.weeklyDiscount = parseFloat(weeklyDiscount) || 0.15
+    if (monthlyDiscount !== undefined) updateData.monthlyDiscount = parseFloat(monthlyDiscount) || 0.30
 
     // Delivery options
     if (airportPickup !== undefined) updateData.airportPickup = !!airportPickup

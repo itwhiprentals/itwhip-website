@@ -75,7 +75,12 @@ export async function GET(request: NextRequest) {
             id: true,
             make: true,
             model: true,
-            year: true
+            year: true,
+            licensePlate: true,
+            photos: {
+              take: 1,
+              orderBy: { order: 'asc' }
+            }
           }
         }
       },
@@ -96,6 +101,20 @@ export async function GET(request: NextRequest) {
           ? `${booking.car.year} ${booking.car.make} ${booking.car.model}`
           : 'Unknown Vehicle',
         vehicleId: booking.carId,
+        // Include car object for dashboard cards
+        car: booking.car ? {
+          id: booking.car.id,
+          make: booking.car.make,
+          model: booking.car.model,
+          year: booking.car.year,
+          licensePlate: booking.car.licensePlate,
+          photos: booking.car.photos
+        } : null,
+        // Include guest object for dashboard cards
+        guest: booking.renter ? {
+          name: booking.renter.name,
+          phone: booking.renter.phone
+        } : null,
         startDate: booking.startDate.toISOString(),
         endDate: booking.endDate.toISOString(),
         status: mapBookingStatus(booking.status),
@@ -136,15 +155,23 @@ function mapBookingStatus(status: string): 'confirmed' | 'pending' | 'active' | 
       return 'confirmed'
     case 'PENDING':
     case 'PENDING_APPROVAL':
+    case 'AWAITING_PAYMENT':
       return 'pending'
+    // Car rental active states - guest has the vehicle
+    case 'PICKED_UP':
+    case 'CHECKED_IN':
     case 'IN_PROGRESS':
     case 'ACTIVE':
       return 'active'
+    // Car rental completed states - vehicle returned
+    case 'RETURNED':
+    case 'CHECKED_OUT':
     case 'COMPLETED':
     case 'FINISHED':
       return 'completed'
     case 'CANCELLED':
     case 'REJECTED':
+    case 'NO_SHOW':
       return 'cancelled'
     default:
       return 'pending'

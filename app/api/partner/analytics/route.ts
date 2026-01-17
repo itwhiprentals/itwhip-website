@@ -95,9 +95,19 @@ export async function GET(request: NextRequest) {
 
     // Calculate overview stats
     const completedBookings = bookings.filter(b => b.status === 'COMPLETED')
+    const confirmedBookings = bookings.filter(b => ['CONFIRMED', 'ACTIVE'].includes(b.status))
+    const pendingBookings = bookings.filter(b => b.status === 'PENDING')
+
     const totalRevenue = completedBookings.reduce((sum, b) => sum + b.totalAmount, 0)
+    const upcomingRevenue = confirmedBookings.reduce((sum, b) => sum + b.totalAmount, 0)
+    const pendingRevenue = pendingBookings.reduce((sum, b) => sum + b.totalAmount, 0)
+
     const totalBookings = bookings.length
-    const avgBookingValue = totalBookings > 0 ? totalRevenue / completedBookings.length : 0
+    // Calculate avg from all bookings (not just completed) to show meaningful values
+    const allBookingAmounts = bookings.filter(b => b.totalAmount > 0)
+    const avgBookingValue = allBookingAmounts.length > 0
+      ? allBookingAmounts.reduce((sum, b) => sum + b.totalAmount, 0) / allBookingAmounts.length
+      : 0
 
     // Calculate average trip duration
     const tripDurations = completedBookings.map(b => {
@@ -205,6 +215,10 @@ export async function GET(request: NextRequest) {
       data: {
         overview: {
           totalRevenue,
+          upcomingRevenue,
+          pendingRevenue,
+          upcomingBookingsCount: confirmedBookings.length,
+          pendingBookingsCount: pendingBookings.length,
           totalBookings,
           avgBookingValue: avgBookingValue || 0,
           avgTripDuration,

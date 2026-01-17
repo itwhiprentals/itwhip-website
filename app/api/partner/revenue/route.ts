@@ -79,6 +79,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get completed bookings in period
+    // COMPLETED is the only "finished" status in RentalBookingStatus enum
     const bookings = await prisma.rentalBooking.findMany({
       where: {
         carId: { in: vehicleIds },
@@ -101,6 +102,38 @@ export async function GET(request: NextRequest) {
     const grossRevenue = bookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0)
     const commission = grossRevenue * commissionRate
     const netRevenue = grossRevenue - commission
+
+    // Get upcoming/confirmed bookings (revenue that's expected but not yet earned)
+    const upcomingBookings = await prisma.rentalBooking.findMany({
+      where: {
+        carId: { in: vehicleIds },
+        status: { in: ['CONFIRMED', 'ACTIVE'] }
+      },
+      include: {
+        car: {
+          select: { make: true, model: true, year: true }
+        }
+      }
+    })
+    const upcomingGrossRevenue = upcomingBookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0)
+    const upcomingCommission = upcomingGrossRevenue * commissionRate
+    const upcomingNetRevenue = upcomingGrossRevenue - upcomingCommission
+
+    // Get pending bookings (awaiting confirmation)
+    const pendingBookings = await prisma.rentalBooking.findMany({
+      where: {
+        carId: { in: vehicleIds },
+        status: 'PENDING'
+      }
+    })
+    const pendingGrossRevenue = pendingBookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0)
+
+    // Calculate cash vs Stripe breakdown
+    const stripeBookings = bookings.filter(b => b.stripeChargeId || b.paymentIntentId)
+    const cashBookings = bookings.filter(b => !b.stripeChargeId && !b.paymentIntentId)
+
+    const stripeRevenue = stripeBookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0)
+    const cashRevenue = cashBookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0)
 
     // Get last 6 months of data
     const monthlyData = []
@@ -167,8 +200,8 @@ export async function GET(request: NextRequest) {
       })
     )
 
-    // Get payout history
-    const payouts = await prisma.partnerPayout.findMany({
+    // Get payout history from partner_payouts table
+    const payouts = await prisma.partner_payouts.findMany({
       where: { hostId: partner.id },
       orderBy: { createdAt: 'desc' },
       take: 10
@@ -178,8 +211,11 @@ export async function GET(request: NextRequest) {
       id: p.id,
       period: p.period,
       amount: p.netAmount,
+      grossRevenue: p.grossRevenue,
+      commission: p.commission,
       status: p.status.toLowerCase(),
-      paidAt: p.paidAt?.toISOString() || null
+      paidAt: p.paidAt?.toISOString() || null,
+      stripePayoutId: p.stripePayoutId
     }))
 
     // Get tier info
@@ -191,12 +227,26 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
+        // Completed revenue (actual earned)
         grossRevenue,
         commission,
         netRevenue,
         commissionRate,
         totalBookings: bookings.length,
         avgBookingValue,
+        // Upcoming revenue (confirmed/active bookings)
+        upcomingGrossRevenue,
+        upcomingNetRevenue,
+        upcomingCommission,
+        upcomingBookingsCount: upcomingBookings.length,
+        // Pending revenue (awaiting confirmation)
+        pendingGrossRevenue,
+        pendingBookingsCount: pendingBookings.length,
+        // Cash vs Stripe breakdown
+        stripeRevenue,
+        cashRevenue,
+        stripeBookingsCount: stripeBookings.length,
+        cashBookingsCount: cashBookings.length,
         monthlyData,
         topVehicles,
         recentPayouts,

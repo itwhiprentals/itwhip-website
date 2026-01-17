@@ -306,8 +306,11 @@ export async function POST(request: NextRequest) {
 // GET - Verify host session
 export async function GET(request: NextRequest) {
   try {
+    // Check all possible auth cookies (hostAccessToken, accessToken, partner_token)
+    // OAuth login sets partner_token, traditional login sets hostAccessToken
     const accessToken = request.cookies.get('hostAccessToken')?.value ||
-                       request.cookies.get('accessToken')?.value
+                       request.cookies.get('accessToken')?.value ||
+                       request.cookies.get('partner_token')?.value
 
     if (!accessToken) {
       return NextResponse.json(
@@ -440,8 +443,10 @@ export async function GET(request: NextRequest) {
 // DELETE - Host logout
 export async function DELETE(request: NextRequest) {
   try {
-    const accessToken = request.cookies.get('hostAccessToken')?.value || 
-                       request.cookies.get('accessToken')?.value
+    // Check all possible auth cookies for session cleanup
+    const accessToken = request.cookies.get('hostAccessToken')?.value ||
+                       request.cookies.get('accessToken')?.value ||
+                       request.cookies.get('partner_token')?.value
 
     if (accessToken) {
       // Delete session from database

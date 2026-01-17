@@ -20,6 +20,10 @@ import {
 interface AnalyticsData {
   overview: {
     totalRevenue: number
+    upcomingRevenue: number
+    pendingRevenue: number
+    upcomingBookingsCount: number
+    pendingBookingsCount: number
     totalBookings: number
     avgBookingValue: number
     avgTripDuration: number
@@ -87,6 +91,10 @@ export default function PartnerAnalyticsPage() {
       setData({
         overview: {
           totalRevenue: 0,
+          upcomingRevenue: 0,
+          pendingRevenue: 0,
+          upcomingBookingsCount: 0,
+          pendingBookingsCount: 0,
           totalBookings: 0,
           avgBookingValue: 0,
           avgTripDuration: 0,
@@ -245,6 +253,32 @@ export default function PartnerAnalyticsPage() {
         />
       </div>
 
+      {/* Pipeline Stats - Upcoming and Pending Revenue */}
+      {((data?.overview.upcomingBookingsCount || 0) > 0 || (data?.overview.pendingBookingsCount || 0) > 0) && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <StatCard
+            title="In Progress"
+            value={formatCurrency(data?.overview.upcomingRevenue || 0)}
+            subtitle={`${data?.overview.upcomingBookingsCount || 0} active trip${(data?.overview.upcomingBookingsCount || 0) !== 1 ? 's' : ''}`}
+            icon={IoCarOutline}
+            iconBg="bg-blue-100 dark:bg-blue-900/30"
+            iconColor="text-blue-600 dark:text-blue-400"
+            badge="Active"
+            badgeColor="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
+          />
+          <StatCard
+            title="Awaiting Approval"
+            value={formatCurrency(data?.overview.pendingRevenue || 0)}
+            subtitle={`${data?.overview.pendingBookingsCount || 0} request${(data?.overview.pendingBookingsCount || 0) !== 1 ? 's' : ''} pending`}
+            icon={IoTimeOutline}
+            iconBg="bg-amber-100 dark:bg-amber-900/30"
+            iconColor="text-amber-600 dark:text-amber-400"
+            badge="Pending"
+            badgeColor="bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
+          />
+        </div>
+      )}
+
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Revenue Chart */}
@@ -380,16 +414,22 @@ function StatCard({
   title,
   value,
   change,
+  subtitle,
   icon: Icon,
   iconBg,
-  iconColor
+  iconColor,
+  badge,
+  badgeColor
 }: {
   title: string
   value: string
   change?: number
+  subtitle?: string
   icon: any
   iconBg: string
   iconColor: string
+  badge?: string
+  badgeColor?: string
 }) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
@@ -407,10 +447,18 @@ function StatCard({
             {Math.abs(change).toFixed(1)}%
           </div>
         )}
+        {badge && badgeColor && (
+          <span className={`px-2 py-1 text-xs font-medium rounded-lg ${badgeColor}`}>
+            {badge}
+          </span>
+        )}
       </div>
       <div className="mt-3">
         <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
         <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{title}</p>
+        {subtitle && (
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{subtitle}</p>
+        )}
       </div>
     </div>
   )

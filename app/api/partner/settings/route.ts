@@ -88,7 +88,8 @@ export async function GET(request: NextRequest) {
       },
       host: {
         requireDeposit: partner.requireDeposit ?? true,
-        depositAmount: partner.depositAmount ?? 500
+        depositAmount: partner.depositAmount ?? 500,
+        globalDiscountPercent: partner.globalDiscountPercent ?? 0
       },
       settings: {
         email: partner.email,
@@ -148,6 +149,7 @@ export async function PUT(request: NextRequest) {
     // Deposit settings
     if (body.requireDeposit !== undefined) updateData.requireDeposit = body.requireDeposit
     if (body.depositAmount !== undefined) updateData.depositAmount = body.depositAmount
+    if (body.globalDiscountPercent !== undefined) updateData.globalDiscountPercent = body.globalDiscountPercent
 
     // Only update if there's something to update
     if (Object.keys(updateData).length > 0) {

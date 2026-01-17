@@ -113,6 +113,7 @@ export async function GET(request: NextRequest) {
         vehicleType: vehicle.vehicleType || 'RENTAL',
         minTripDuration: vehicle.minTripDuration || 1,
         photo: vehicle.photos?.[0]?.url || null,
+        photos: vehicle.photos || [],
         totalTrips: vehicle.totalTrips || 0,
         totalRevenue: revenueMap.get(vehicle.id) || 0,
         rating: vehicle.rating || 5.0,
@@ -122,7 +123,13 @@ export async function GET(request: NextRequest) {
         // Insurance fields
         insuranceEligible: vehicle.insuranceEligible,
         insuranceExpiryDate: vehicle.insuranceExpiryDate?.toISOString() || null,
-        insuranceNotes: vehicle.insuranceNotes || null
+        insuranceNotes: vehicle.insuranceNotes || null,
+        // Discount and deposit fields
+        discountPercent: vehicle.discountPercent ?? 0,
+        customDepositAmount: vehicle.customDepositAmount ?? null,
+        estimatedValue: vehicle.estimatedValue ? Number(vehicle.estimatedValue) : null,
+        weeklyDiscount: vehicle.weeklyDiscount ?? 0.15,
+        monthlyDiscount: vehicle.monthlyDiscount ?? 0.30
       }
     })
 

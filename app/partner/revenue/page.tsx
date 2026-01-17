@@ -32,6 +32,19 @@ interface RevenueData {
   commissionRate: number
   totalBookings: number
   avgBookingValue: number
+  // Upcoming revenue (confirmed/active bookings)
+  upcomingGrossRevenue: number
+  upcomingNetRevenue: number
+  upcomingCommission: number
+  upcomingBookingsCount: number
+  // Pending revenue (awaiting confirmation)
+  pendingGrossRevenue: number
+  pendingBookingsCount: number
+  // Cash vs Stripe breakdown
+  stripeRevenue: number
+  cashRevenue: number
+  stripeBookingsCount: number
+  cashBookingsCount: number
   monthlyData: MonthlyRevenue[]
   topVehicles: VehicleRevenue[]
   recentPayouts: Payout[]
@@ -212,6 +225,16 @@ export default function PartnerRevenuePage() {
     commissionRate: 0.25,
     totalBookings: 0,
     avgBookingValue: 0,
+    upcomingGrossRevenue: 0,
+    upcomingNetRevenue: 0,
+    upcomingCommission: 0,
+    upcomingBookingsCount: 0,
+    pendingGrossRevenue: 0,
+    pendingBookingsCount: 0,
+    stripeRevenue: 0,
+    cashRevenue: 0,
+    stripeBookingsCount: 0,
+    cashBookingsCount: 0,
     monthlyData: [],
     topVehicles: [],
     recentPayouts: []
@@ -420,6 +443,87 @@ export default function PartnerRevenuePage() {
           </p>
         </div>
       </div>
+
+      {/* Pipeline Overview - Upcoming & Pending + Payment Methods */}
+      {(revenueData.upcomingBookingsCount > 0 || revenueData.pendingBookingsCount > 0 || revenueData.stripeBookingsCount > 0 || revenueData.cashBookingsCount > 0) && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Confirmed/Active Trips */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                <IoCarOutline className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              </div>
+              <span className="px-2 py-1 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-lg">
+                Active
+              </span>
+            </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400">In Progress</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+              {formatCurrency(revenueData.upcomingNetRevenue || 0)}
+            </p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              {revenueData.upcomingBookingsCount} active trip{revenueData.upcomingBookingsCount !== 1 ? 's' : ''}
+            </p>
+          </div>
+
+          {/* Pending Requests */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-lg flex items-center justify-center">
+                <IoReceiptOutline className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+              </div>
+              <span className="px-2 py-1 text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-lg">
+                Pending
+              </span>
+            </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Awaiting Approval</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+              {formatCurrency(revenueData.pendingGrossRevenue || 0)}
+            </p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              {revenueData.pendingBookingsCount} request{revenueData.pendingBookingsCount !== 1 ? 's' : ''} pending
+            </p>
+          </div>
+
+          {/* Stripe Payments */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center">
+                <IoCardOutline className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <span className="px-2 py-1 text-xs font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 rounded-lg">
+                Online
+              </span>
+            </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Stripe Payments</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+              {formatCurrency(revenueData.stripeRevenue || 0)}
+            </p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              {revenueData.stripeBookingsCount || 0} booking{(revenueData.stripeBookingsCount || 0) !== 1 ? 's' : ''}
+            </p>
+          </div>
+
+          {/* Cash Payments */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg flex items-center justify-center">
+                <IoWalletOutline className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <span className="px-2 py-1 text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-lg">
+                Cash
+              </span>
+            </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Manual Payments</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+              {formatCurrency(revenueData.cashRevenue || 0)}
+            </p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              {revenueData.cashBookingsCount || 0} booking{(revenueData.cashBookingsCount || 0) !== 1 ? 's' : ''}
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Monthly Revenue Chart */}

@@ -285,7 +285,9 @@ export async function middleware(request: NextRequest) {
 
   // HANDLE HOST LOGIN ROUTE
   if (hostAuthRoutes.some(route => pathname.startsWith(route))) {
-    const platformToken = request.cookies.get('hostAccessToken')?.value || 
+    // Check all auth cookies - OAuth sets partner_token
+    const platformToken = request.cookies.get('hostAccessToken')?.value ||
+                         request.cookies.get('partner_token')?.value ||
                          request.cookies.get('accessToken')?.value
     
     if (platformToken) {
@@ -402,13 +404,15 @@ export async function middleware(request: NextRequest) {
   }
 
   // HANDLE HOST API ROUTES
-  if (pathname.startsWith('/api/host/') && 
-      !pathname.startsWith('/api/host/login') && 
-      !pathname.startsWith('/api/host/signup') && 
+  if (pathname.startsWith('/api/host/') &&
+      !pathname.startsWith('/api/host/login') &&
+      !pathname.startsWith('/api/host/signup') &&
       !pathname.startsWith('/api/host/verify') &&
       !pathname.startsWith('/api/host/forgot-password') &&
       !pathname.startsWith('/api/host/reset-password')) {
-    const hostToken = request.cookies.get('hostAccessToken')?.value || 
+    // Check all possible auth cookies - OAuth sets partner_token
+    const hostToken = request.cookies.get('hostAccessToken')?.value ||
+                     request.cookies.get('partner_token')?.value ||
                      request.cookies.get('accessToken')?.value
     
     if (!hostToken) {

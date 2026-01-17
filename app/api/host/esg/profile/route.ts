@@ -12,12 +12,13 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 export async function GET(request: NextRequest) {
   try {
-    // Get JWT token from cookies
+    // Get JWT token from cookies - check all auth cookie types
     const cookieStore = await cookies();
     const hostAccessToken = cookieStore.get('hostAccessToken');
     const accessToken = cookieStore.get('accessToken');
+    const partnerToken = cookieStore.get('partner_token');
 
-    const token = hostAccessToken?.value || accessToken?.value;
+    const token = hostAccessToken?.value || accessToken?.value || partnerToken?.value;
 
     if (!token) {
       return NextResponse.json(

@@ -62,16 +62,17 @@ export default function ActiveBookingCard({
   const fetchActiveBookings = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/partner/bookings?status=ACTIVE,IN_PROGRESS,PICKED_UP', {
+      // API returns mapped lowercase statuses: confirmed, active, pending, completed, cancelled
+      const response = await fetch('/api/partner/bookings', {
         credentials: 'include'
       })
 
       if (response.ok) {
         const data = await response.json()
         if (data.success && data.bookings) {
-          // Map the API response to our interface
+          // Filter for active bookings (confirmed = upcoming, active = checked in)
           const activeBookings = data.bookings
-            .filter((b: any) => ['ACTIVE', 'IN_PROGRESS', 'PICKED_UP', 'CONFIRMED'].includes(b.status))
+            .filter((b: any) => ['confirmed', 'active', 'pending'].includes(b.status))
             .slice(0, 3) // Show max 3 active bookings
             .map((b: any) => ({
               id: b.id,
@@ -118,10 +119,10 @@ export default function ActiveBookingCard({
 
   const getStatusBadge = (status: string) => {
     const statusMap: Record<string, { label: string; className: string }> = {
-      ACTIVE: { label: 'Active', className: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' },
-      IN_PROGRESS: { label: 'In Progress', className: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' },
-      PICKED_UP: { label: 'Picked Up', className: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400' },
-      CONFIRMED: { label: 'Confirmed', className: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' }
+      pending: { label: 'Pending', className: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' },
+      confirmed: { label: 'Confirmed', className: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' },
+      active: { label: 'In Progress', className: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' },
+      completed: { label: 'Completed', className: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300' }
     }
     return statusMap[status] || { label: status, className: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300' }
   }
