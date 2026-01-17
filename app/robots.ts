@@ -8,12 +8,35 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: '*',
-        allow: '/',
+        allow: [
+          '/',
+          // Allow public host acquisition pages
+          '/host/signup',
+          '/host/requirements',
+          '/host/fleet-owners',
+          '/host/insurance-options',
+          '/host/tax-benefits',
+          '/host/payouts',
+          '/host/login',
+        ],
         disallow: [
           '/api/',
           '/admin/',
           '/fleet/',
-          '/host/',
+          // Block private host dashboard pages (but allow public acquisition pages above)
+          '/host/dashboard/',
+          '/host/bookings/',
+          '/host/calendar/',
+          '/host/cars/',
+          '/host/claims/',
+          '/host/earnings/',
+          '/host/messages/',
+          '/host/profile/',
+          '/host/settings/',
+          '/host/trips/',
+          '/host/reviews/',
+          '/host/forgot-password/',
+          '/host/reset-password/',
           '/partner/',
           '/portal/',
           '/dashboard/',

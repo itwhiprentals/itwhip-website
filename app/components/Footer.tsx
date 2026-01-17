@@ -360,7 +360,29 @@ export default function Footer() {
             </ul>
           </div>
         </div>
-        
+
+        {/* Popular Cities - SEO internal linking */}
+        <div className="border-t border-gray-200 dark:border-gray-800 pt-6 pb-2">
+          <div className="flex flex-wrap items-center justify-center gap-x-1 gap-y-1 text-xs text-gray-600 dark:text-gray-400">
+            <span className="font-medium text-gray-700 dark:text-gray-300 mr-1">Popular Cities:</span>
+            <Link href="/rentals/cities/phoenix" className="hover:text-gray-900 dark:hover:text-white transition-colors">Phoenix</Link>
+            <span className="text-gray-400">·</span>
+            <Link href="/rentals/cities/scottsdale" className="hover:text-gray-900 dark:hover:text-white transition-colors">Scottsdale</Link>
+            <span className="text-gray-400">·</span>
+            <Link href="/rentals/cities/tempe" className="hover:text-gray-900 dark:hover:text-white transition-colors">Tempe</Link>
+            <span className="text-gray-400">·</span>
+            <Link href="/rentals/cities/mesa" className="hover:text-gray-900 dark:hover:text-white transition-colors">Mesa</Link>
+            <span className="text-gray-400">·</span>
+            <Link href="/rentals/cities/chandler" className="hover:text-gray-900 dark:hover:text-white transition-colors">Chandler</Link>
+            <span className="text-gray-400">·</span>
+            <Link href="/rentals/cities/gilbert" className="hover:text-gray-900 dark:hover:text-white transition-colors">Gilbert</Link>
+            <span className="text-gray-400">·</span>
+            <Link href="/rentals/cities/glendale" className="hover:text-gray-900 dark:hover:text-white transition-colors">Glendale</Link>
+            <span className="text-gray-400">·</span>
+            <Link href="/rentals/cities/peoria" className="hover:text-gray-900 dark:hover:text-white transition-colors">Peoria</Link>
+          </div>
+        </div>
+
         {/* App Download Section with Countdown */}
         <div className="border-t border-gray-200 dark:border-gray-800 pt-8 mb-8">
           <div className="flex flex-col items-center text-center">

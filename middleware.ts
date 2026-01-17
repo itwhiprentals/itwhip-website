@@ -134,6 +134,7 @@ const publicRoutes = [
   '/host/tax-benefits',
   '/host/payouts',
   '/host/insurance-options',
+  '/host/requirements',  // State-specific requirements (e.g., /host/requirements/arizona)
 ]
 
 // Helper function to verify guest/platform token
@@ -311,7 +312,8 @@ export async function middleware(request: NextRequest) {
       !pathname.startsWith('/host/fleet-owners') &&
       !pathname.startsWith('/host/tax-benefits') &&
       !pathname.startsWith('/host/payouts') &&
-      !pathname.startsWith('/host/insurance-options')) {
+      !pathname.startsWith('/host/insurance-options') &&
+      !pathname.startsWith('/host/requirements')) {
 
     const hostToken = request.cookies.get('hostAccessToken')?.value ||
                      request.cookies.get('partner_token')?.value ||

@@ -36,6 +36,8 @@ const nextConfig = {
       // ============================================
       { source: '/driver-portal', destination: '/drive', permanent: true },
       { source: '/driver-agreement', destination: '/terms', permanent: true },
+      { source: '/cars', destination: '/rentals', permanent: true },
+      { source: '/cars/:path*', destination: '/rentals', permanent: true },
 
       // ============================================
       // LEGACY B2B PAGES - Redirect to P2P equivalents
