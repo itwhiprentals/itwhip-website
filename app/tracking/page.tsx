@@ -1,364 +1,353 @@
 // app/tracking/page.tsx
-// PUBLIC Fleet Tracking page - showcases ItWhip+ tracking features without authentication
-// This is the guest-facing version; partner dashboard version is at /partner/tracking
+// PUBLIC Vehicle Tracking Information Page
+// Shows tracking providers, features, and demo link
 
-import { Metadata } from 'next'
 import Link from 'next/link'
-import Image from 'next/image'
 import {
   IoLocationOutline,
-  IoLockClosedOutline,
-  IoPowerOutline,
-  IoSnowOutline,
-  IoEllipseOutline,
-  IoSpeedometerOutline,
-  IoFlashOffOutline,
-  IoVolumeHighOutline,
-  IoStatsChartOutline,
   IoCarSportOutline,
-  IoShieldCheckmarkOutline,
-  IoArrowForwardOutline,
+  IoCheckmarkCircleOutline,
+  IoChevronForwardOutline,
+  IoLinkOutline,
   IoPlayOutline,
-  IoCheckmarkOutline
+  IoSpeedometerOutline,
+  IoTrendingUpOutline,
+  IoStar
 } from 'react-icons/io5'
+import Header from '@/app/components/Header'
+import Footer from '@/app/components/Footer'
 
-export const metadata: Metadata = {
-  title: 'Fleet Tracking | ItWhip+ Vehicle Management',
-  description: 'Track your rental fleet in real-time with ItWhip+. GPS tracking, remote lock/unlock, geofencing, speed alerts, and more. Protect your vehicles and maximize your rental business.',
-  openGraph: {
-    title: 'Fleet Tracking | ItWhip+ Vehicle Management',
-    description: 'Track your rental fleet in real-time with ItWhip+. GPS tracking, remote lock/unlock, geofencing, speed alerts, and more.',
-    url: 'https://itwhip.com/tracking',
-    type: 'website'
-  },
-  alternates: {
-    canonical: 'https://itwhip.com/tracking',
-  },
+// Mileage Forensics feature data
+const MILEAGE_FORENSICS = {
+  name: 'Mileage Forensics™',
+  description: 'Automatically detects discrepancies between reported odometer readings and actual GPS-tracked trip distances. Catches tampering, unreported trips, and billing disputes before they become problems.',
+  howItWorks: [
+    'Bouncie OBD reads actual odometer from vehicle ECU',
+    'Smartcar/GPS tracks trip distances independently',
+    'ItWhip+ compares both sources in real-time',
+    'Discrepancies flagged with detailed reports'
+  ],
+  benefits: [
+    'Detect odometer tampering or rollback',
+    'Identify unreported personal trips',
+    'Auto-generate dispute evidence',
+    'Insurance claim documentation'
+  ]
 }
 
-const FEATURES = [
+// Secondary provider options
+const SECONDARY_PROVIDERS = [
   {
-    id: 'gps',
-    icon: IoLocationOutline,
-    label: 'GPS Tracking',
-    description: 'Real-time location updates every second during trips',
-    color: 'from-blue-500 to-blue-600'
+    id: 'zubie',
+    name: 'Zubie',
+    monthlyPrice: '$15/mo',
+    description: 'Fleet-focused OBD-II tracker with driver scoring and maintenance alerts.',
+    hasApiIntegration: true,
+    strengths: [
+      'Always-on tracking with detailed maps',
+      'Driver behavior scoring',
+      'Instant alerts for speeding/harsh driving'
+    ],
+    website: 'https://zubie.com'
   },
   {
-    id: 'lock',
-    icon: IoLockClosedOutline,
-    label: 'Remote Lock',
-    description: 'Lock or unlock vehicle doors from anywhere',
-    color: 'from-green-500 to-green-600'
+    id: 'moovetrax',
+    name: 'MooveTrax',
+    monthlyPrice: '$12/mo',
+    description: 'Advanced GPS tracker with kill switch. No ItWhip+ integration - use MooveTrax app separately.',
+    hasApiIntegration: false,
+    strengths: [
+      'Kill switch / starter interrupt',
+      'Bluetooth proximity auto-lock',
+      'Tamper detection'
+    ],
+    website: 'https://moovetrax.com'
   },
   {
-    id: 'start',
-    icon: IoPowerOutline,
-    label: 'Remote Start',
-    description: 'Start the engine remotely for guest convenience',
-    color: 'from-purple-500 to-purple-600'
-  },
-  {
-    id: 'precool',
-    icon: IoSnowOutline,
-    label: 'Pre-Cool',
-    description: 'Pre-condition cabin temperature before pickup',
-    color: 'from-cyan-500 to-cyan-600'
-  },
-  {
-    id: 'geofence',
-    icon: IoEllipseOutline,
-    label: 'Geofencing',
-    description: 'Set boundaries and get alerts when crossed',
-    color: 'from-yellow-500 to-yellow-600'
-  },
-  {
-    id: 'speed',
-    icon: IoSpeedometerOutline,
-    label: 'Speed Alerts',
-    description: 'Monitor speed and get notifications for violations',
-    color: 'from-red-500 to-red-600'
-  },
-  {
-    id: 'killswitch',
-    icon: IoFlashOffOutline,
-    label: 'Kill Switch',
-    description: 'Disable starter remotely for theft prevention',
-    color: 'from-gray-600 to-gray-700'
-  },
-  {
-    id: 'honk',
-    icon: IoVolumeHighOutline,
-    label: 'Horn & Lights',
-    description: 'Locate vehicle in parking lots easily',
-    color: 'from-orange-500 to-orange-600'
-  },
-  {
-    id: 'mileage',
-    icon: IoStatsChartOutline,
-    label: 'Mileage Forensics',
-    description: 'Cross-verify OBD odometer vs GPS distance',
-    color: 'from-amber-500 to-amber-600',
-    exclusive: true
+    id: 'trackimo',
+    name: 'Trackimo',
+    monthlyPrice: '$10/mo',
+    description: 'Portable GPS tracker with multiple locating technologies. No ItWhip integration - use Trackimo app separately.',
+    hasApiIntegration: false,
+    strengths: [
+      'GPS + Wi-Fi + Bluetooth + GSM triangulation',
+      'Portable - can be hidden anywhere',
+      'Customizable speed thresholds'
+    ],
+    website: 'https://trackimo.com'
   }
 ]
 
-const BENEFITS = [
-  {
-    title: 'Protect Your Investment',
-    description: 'Know where your vehicles are 24/7. Get instant alerts for unauthorized use, speeding, or boundary violations.',
-    icon: IoShieldCheckmarkOutline
-  },
-  {
-    title: 'Improve Guest Experience',
-    description: 'Remote unlock for guests who lock keys inside. Pre-cool vehicles on hot Arizona days before pickup.',
-    icon: IoCarSportOutline
-  },
-  {
-    title: 'Reduce Disputes',
-    description: 'Mileage Forensics cross-verifies GPS trips with OBD odometer readings. Catch discrepancies automatically.',
-    icon: IoStatsChartOutline
-  }
-]
-
-export default function PublicTrackingPage() {
+export default function TrackingPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-br from-orange-600 via-amber-600 to-orange-700 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
-          <div className="text-center max-w-3xl mx-auto">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <Image
-                src="/logo-white.png"
-                alt="ItWhip"
-                width={48}
-                height={48}
-                className="rounded-xl"
-              />
-              <div className="text-left">
-                <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
-                  <span className="text-amber-200">ItWhip+</span>
-                  <sup className="text-sm text-amber-300">™</sup>
-                </h1>
-                <p className="text-sm text-white/80">Fleet Tracking</p>
-              </div>
-            </div>
+      <Header />
 
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
-              Track Your Fleet in Real-Time
-            </h2>
-            <p className="text-lg sm:text-xl text-white/90 mb-8">
-              GPS tracking, remote controls, and smart alerts — all in one unified dashboard.
-              Powered by OBD hardware + connected car APIs.
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link
-                href="/partner/tracking/demo"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-white text-orange-600 font-semibold rounded-lg hover:bg-orange-50 transition-colors shadow-lg"
-              >
-                <IoPlayOutline className="w-5 h-5" />
-                Try Live Demo
-              </Link>
-              <Link
-                href="/partner/tracking"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-orange-500/30 text-white font-semibold rounded-lg hover:bg-orange-500/40 transition-colors border border-white/30"
-              >
-                Host Dashboard
-                <IoArrowForwardOutline className="w-5 h-5" />
-              </Link>
-            </div>
-
-            <p className="mt-6 text-sm text-amber-200">
-              <span className="font-semibold text-green-400">Free</span> for all ItWhip hosts • No monthly fees
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Features Grid */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-        <div className="text-center mb-10">
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
-            Complete Fleet Control
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            9 powerful features unified in one dashboard. Combine OBD-II hardware (Bouncie) with connected car APIs (Smartcar) for complete coverage.
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8">
+        {/* Page Header */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <IoLocationOutline className="w-7 h-7 text-orange-600" />
+            Vehicle Tracking
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
+            Track your fleet in real-time, prevent theft, and resolve disputes faster
           </p>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-          {FEATURES.map((feature) => (
-            <div
-              key={feature.id}
-              className={`relative p-4 sm:p-5 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all group ${
-                feature.exclusive ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-white dark:ring-offset-gray-900' : ''
-              }`}
-            >
-              {feature.exclusive && (
-                <span className="absolute -top-2 -right-2 px-2 py-0.5 bg-amber-500 text-white text-[10px] font-bold rounded-full shadow">
-                  EXCLUSIVE
-                </span>
-              )}
-              <div className={`w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br ${feature.color} rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
-                <feature.icon className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+        <div className="space-y-8">
+          {/* Recommended Setup Card */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg border-2 border-purple-200 dark:border-purple-800 p-5 transition-all hover:shadow-lg hover:border-purple-300 dark:hover:border-purple-600">
+            {/* Card Header */}
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                <IoStar className="w-5 h-5 text-white" />
               </div>
-              <h3 className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base mb-1">
-                {feature.label}
-              </h3>
-              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-                {feature.description}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Benefits Section */}
-      <div className="bg-white dark:bg-gray-800 border-y border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-          <div className="text-center mb-10">
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
-              Why Hosts Love ItWhip+
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
-            {BENEFITS.map((benefit, index) => (
-              <div key={index} className="text-center">
-                <div className="w-16 h-16 bg-orange-100 dark:bg-orange-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <benefit.icon className="w-8 h-8 text-orange-600 dark:text-orange-400" />
+              <div className="flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="font-semibold text-gray-900 dark:text-white">Recommended Setup</h3>
+                  <span className="flex items-center gap-1 px-2 py-0.5 bg-green-600 text-white text-xs font-medium rounded border border-white/50 whitespace-nowrap">
+                    <IoTrendingUpOutline className="w-3 h-3" />
+                    44% less than FleetBold
+                  </span>
                 </div>
-                <h3 className="font-semibold text-gray-900 dark:text-white text-lg mb-2">
-                  {benefit.title}
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
-                  {benefit.description}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* How It Works */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-        <div className="text-center mb-10">
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
-            Powered by Industry Leaders
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            ItWhip+ integrates with top tracking providers to give you complete fleet visibility.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Bouncie Card */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
-                <span className="text-white font-bold text-lg">B</span>
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white">Bouncie</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">OBD-II Hardware</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">~$15/mo per vehicle</p>
               </div>
             </div>
-            <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-              <li className="flex items-center gap-2">
-                <IoCheckmarkOutline className="w-4 h-4 text-green-500" />
-                GPS tracking with 1-second updates
-              </li>
-              <li className="flex items-center gap-2">
-                <IoCheckmarkOutline className="w-4 h-4 text-green-500" />
-                Speed alerts & geofencing
-              </li>
-              <li className="flex items-center gap-2">
-                <IoCheckmarkOutline className="w-4 h-4 text-green-500" />
-                OBD diagnostics & odometer
-              </li>
-              <li className="flex items-center gap-2">
-                <IoCheckmarkOutline className="w-4 h-4 text-green-500" />
-                Works with any vehicle with OBD port
-              </li>
-            </ul>
-          </div>
 
-          {/* Smartcar Card */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center">
-                <span className="text-white font-bold text-lg">S</span>
+            {/* Description */}
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              Get complete fleet protection with Bouncie + Smartcar combination. All 8 features covered plus Mileage Forensics™.
+            </p>
+
+            {/* Features Grid */}
+            <div className="space-y-2 mb-4">
+              <div className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-300">
+                <IoCheckmarkCircleOutline className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                <span><strong className="text-gray-900 dark:text-white">Bouncie ($8/mo):</strong> GPS, Speed Alerts, Geofencing, OBD Diagnostics</span>
               </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white">Smartcar</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Connected Car API</p>
+              <div className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-300">
+                <IoCheckmarkCircleOutline className="w-4 h-4 text-purple-500 flex-shrink-0 mt-0.5" />
+                <span><strong className="text-gray-900 dark:text-white">Smartcar ($1.99/mo):</strong> Lock/Unlock, Remote Start, Climate Control</span>
+              </div>
+              <div className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-300">
+                <IoCheckmarkCircleOutline className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
+                <span><strong className="text-gray-900 dark:text-white">ItWhip+ <span className="text-green-600 dark:text-green-400">(Free)</span>:</strong> Mileage Forensics™, Unified Dashboard</span>
               </div>
             </div>
-            <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-              <li className="flex items-center gap-2">
-                <IoCheckmarkOutline className="w-4 h-4 text-green-500" />
-                Remote lock/unlock
-              </li>
-              <li className="flex items-center gap-2">
-                <IoCheckmarkOutline className="w-4 h-4 text-green-500" />
-                Climate pre-conditioning
-              </li>
-              <li className="flex items-center gap-2">
-                <IoCheckmarkOutline className="w-4 h-4 text-green-500" />
-                Horn & lights locator
-              </li>
-              <li className="flex items-center gap-2">
-                <IoCheckmarkOutline className="w-4 h-4 text-green-500" />
-                Supports 39+ car brands (2015+)
-              </li>
-            </ul>
+
+            {/* CTAs */}
+            <div className="flex gap-2">
+              <a
+                href="https://bouncie.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 flex items-center justify-center gap-2 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                Get Started
+                <IoChevronForwardOutline className="w-4 h-4" />
+              </a>
+              <Link
+                href="/host-requirements"
+                className="flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                <IoLinkOutline className="w-4 h-4" />
+                Connect
+              </Link>
+            </div>
           </div>
-        </div>
 
-        <div className="mt-8 text-center">
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-            Use both together for complete coverage — OBD for diagnostics, API for remote control.
-          </p>
-          <Link
-            href="/partner/tracking"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-lg transition-colors"
-          >
-            Get Started Free
-            <IoArrowForwardOutline className="w-5 h-5" />
-          </Link>
-        </div>
-      </div>
+          {/* Mileage Forensics Feature Section */}
+          <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-gray-800 dark:to-gray-800 rounded-lg p-5 border border-amber-200 dark:border-gray-700">
+            {/* Header with Icon + Title */}
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center">
+                <IoSpeedometerOutline className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold text-gray-900 dark:text-white">
+                    {MILEAGE_FORENSICS.name}
+                  </h3>
+                  <span className="px-2 py-0.5 bg-amber-500 text-white text-xs font-semibold rounded border border-white/50">
+                    EXCLUSIVE
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">ItWhip+ Feature</p>
+              </div>
+            </div>
 
-      {/* CTA Section */}
-      <div className="bg-gradient-to-r from-gray-900 to-gray-800 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold mb-4">
-            Ready to Protect Your Fleet?
-          </h2>
-          <p className="text-gray-300 mb-8 max-w-2xl mx-auto">
-            Join hundreds of hosts who trust ItWhip+ to keep their vehicles safe and their guests happy.
-            Start tracking in minutes.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
-              href="/partner/tracking/demo"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-white text-gray-900 font-semibold rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              <IoPlayOutline className="w-5 h-5" />
-              Try Interactive Demo
-            </Link>
+            {/* Description */}
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              {MILEAGE_FORENSICS.description}
+            </p>
+
+            {/* How it works */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
+              {MILEAGE_FORENSICS.howItWorks.map((step, idx) => (
+                <div key={idx} className="flex items-start gap-2 text-xs">
+                  <span className="flex-shrink-0 w-4 h-4 bg-amber-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold">
+                    {idx + 1}
+                  </span>
+                  <span className="text-gray-700 dark:text-gray-300">{step}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Benefits */}
+            <div className="flex flex-wrap gap-2">
+              {MILEAGE_FORENSICS.benefits.map((benefit, idx) => (
+                <span key={idx} className="px-2 py-0.5 bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs rounded border border-amber-200 dark:border-gray-600">
+                  {benefit}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Fleet Status Placeholder */}
+          <div className="flex items-center justify-center">
+            <div className="inline-flex items-center gap-3 px-5 py-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+              <IoCarSportOutline className="w-5 h-5 text-gray-400" />
+              <span className="text-gray-600 dark:text-gray-300">
+                <span className="font-semibold text-gray-900 dark:text-white">0</span> of{' '}
+                <span className="font-semibold text-gray-900 dark:text-white">3</span> vehicles tracked
+              </span>
+            </div>
+          </div>
+
+          {/* Other Provider Options */}
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 text-center">
+              Other Provider Options
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-4">
+              Alternative tracking solutions if you prefer a single provider
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {SECONDARY_PROVIDERS.map(provider => (
+                <div
+                  key={provider.id}
+                  className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5 transition-all hover:shadow-lg hover:border-gray-300 dark:hover:border-gray-600"
+                >
+                  {/* Provider Header */}
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className={`w-10 h-10 bg-gradient-to-br ${
+                      provider.id === 'zubie' ? 'from-green-500 to-green-600' :
+                      provider.id === 'moovetrax' ? 'from-cyan-500 to-cyan-600' :
+                      'from-red-500 to-red-600'
+                    } rounded-lg flex items-center justify-center text-white font-bold`}>
+                      {provider.name.charAt(0)}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-semibold text-gray-900 dark:text-white">
+                          {provider.name}
+                        </h3>
+                        {provider.hasApiIntegration === false && (
+                          <span className="px-2 py-0.5 bg-red-600 text-white text-xs font-medium rounded border border-white/50 whitespace-nowrap">
+                            No ItWhip+ integration
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{provider.monthlyPrice}</p>
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                    {provider.description}
+                  </p>
+
+                  {/* Key Features */}
+                  <div className="space-y-1 mb-3">
+                    {provider.strengths.map((strength, idx) => (
+                      <div key={idx} className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
+                        <IoCheckmarkCircleOutline className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
+                        <span>{strength}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* CTA */}
+                  <a
+                    href={provider.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white text-sm font-medium rounded-lg transition-colors text-center"
+                  >
+                    Learn More
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Already Have a Device */}
+          <div className="text-center py-6 border-t border-gray-200 dark:border-gray-700">
+            <p className="text-gray-600 dark:text-gray-400 mb-3">
+              Already have a tracking device or account?
+            </p>
             <Link
               href="/host-requirements"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-lg transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 border-2 border-orange-600 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 font-medium rounded-lg transition-colors"
             >
-              Become a Host
-              <IoArrowForwardOutline className="w-5 h-5" />
+              <IoLinkOutline className="w-5 h-5" />
+              Connect Existing Account
+            </Link>
+          </div>
+
+          {/* Interactive Demo Card */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg border-2 border-orange-200 dark:border-orange-800 p-5 transition-all hover:shadow-lg hover:border-orange-300 dark:hover:border-orange-600">
+            {/* Card Header */}
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-600 rounded-lg flex items-center justify-center">
+                  <IoPlayOutline className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-white">Interactive Demo</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">No signup required</p>
+                </div>
+              </div>
+              <span className="px-2.5 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded-full text-xs font-medium">
+                Try Free
+              </span>
+            </div>
+
+            {/* Description */}
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              See what hosts experience with a fully connected fleet. Live map, remote commands, and real-time alerts.
+            </p>
+
+            {/* Features List */}
+            <div className="space-y-1 mb-4">
+              <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
+                <IoCheckmarkCircleOutline className="w-3.5 h-3.5 text-orange-500 flex-shrink-0" />
+                <span>Live GPS • Lock/Unlock • Remote Start • Pre-Cool</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
+                <IoCheckmarkCircleOutline className="w-3.5 h-3.5 text-orange-500 flex-shrink-0" />
+                <span>Geofencing • Speed Alerts • Horn/Lights • Mileage Forensics™</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
+                <IoCheckmarkCircleOutline className="w-3.5 h-3.5 text-orange-500 flex-shrink-0" />
+                <span>Interactive Mapbox map with Phoenix demo fleet</span>
+              </div>
+            </div>
+
+            {/* CTA */}
+            <Link
+              href="/tracking/demo"
+              className="block w-full py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors text-center"
+            >
+              Launch Demo
             </Link>
           </div>
         </div>
       </div>
+
+      <Footer />
     </div>
   )
 }
