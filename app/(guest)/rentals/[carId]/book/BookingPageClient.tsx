@@ -901,14 +901,18 @@ export default function BookingPageClient({ carId }: { carId: string }) {
 
   useEffect(() => {
     const fetchBalances = async () => {
-      // Only fetch if user is logged in and profile has loaded
-      if (sessionStatus !== 'authenticated' || profileLoading || hostGuard.show) {
+      // For unauthenticated users or hosts, mark as loaded with 0 balances
+      if (sessionStatus === 'unauthenticated' || hostGuard.show) {
+        setBalancesLoaded(true)
+        return
+      }
+
+      // Wait for auth to settle
+      if (sessionStatus === 'loading' || profileLoading) {
         return
       }
 
       try {
-        console.log('💰 Fetching guest financial balances...')
-
         // Fetch balance and deposit wallet data in parallel
         const [balanceRes, depositRes] = await Promise.all([
           fetch('/api/payments/balance', { credentials: 'include' }),
@@ -923,13 +927,11 @@ export default function BookingPageClient({ carId }: { carId: string }) {
           const balanceData = await balanceRes.json()
           creditBalance = balanceData.creditBalance || 0
           bonusBalance = balanceData.bonusBalance || 0
-          console.log('✅ Credit/Bonus balances:', { creditBalance, bonusBalance })
         }
 
         if (depositRes.ok) {
           const depositData = await depositRes.json()
           depositWalletBalance = depositData.balance || 0
-          console.log('✅ Deposit wallet balance:', depositWalletBalance)
         }
 
         setGuestBalances({
@@ -939,7 +941,6 @@ export default function BookingPageClient({ carId }: { carId: string }) {
         })
         setBalancesLoaded(true)
       } catch (error) {
-        console.error('💥 Error fetching guest balances:', error)
         setBalancesLoaded(true) // Mark as loaded even on error to prevent infinite loading
       }
     }
@@ -1087,9 +1088,48 @@ export default function BookingPageClient({ carId }: { carId: string }) {
   // Personal insurance card upload is OPTIONAL (for deposit discount)
   const isIdentityVerified = userProfile?.documentsVerified || userProfile?.stripeIdentityStatus === 'verified'
   
-  // Check if this is a $0 booking (credits/discounts cover full amount)
+  // Check if this is a $0 booking (credits/discounts cover full amount + deposit)
   // Stripe requires minimum $0.50, so anything below that is effectively free
-  const isZeroPaymentBooking = (savedBookingDetails?.pricing?.total ?? -1) >= 0 && (savedBookingDetails?.pricing?.total ?? -1) < 0.50
+  // Must calculate using the same logic as PaymentIntent creation
+  const isZeroPaymentBooking = React.useMemo(() => {
+    if (!savedBookingDetails?.pricing || !balancesLoaded || !car) return false
+
+    // Calculate pricing
+    const carCity = car?.city || getCityFromAddress(car?.address || 'Phoenix, AZ')
+    const pricing = calculateBookingPricing({
+      dailyRate: savedBookingDetails.pricing.dailyRate,
+      days: savedBookingDetails.pricing.days,
+      insurancePrice: savedBookingDetails.pricing.insurancePrice,
+      deliveryFee: savedBookingDetails.pricing.deliveryFee,
+      enhancements: {
+        refuelService: savedBookingDetails.pricing.breakdown?.refuelService || 0,
+        additionalDriver: savedBookingDetails.pricing.breakdown?.additionalDriver || 0,
+        extraMiles: savedBookingDetails.pricing.breakdown?.extraMiles || 0,
+        vipConcierge: savedBookingDetails.pricing.breakdown?.vipConcierge || 0
+      },
+      city: carCity
+    })
+
+    // Calculate adjusted deposit (50% off if insurance verified)
+    let deposit = savedBookingDetails.pricing.deposit || 0
+    if (userProfile?.insuranceVerified) {
+      deposit = deposit * 0.5
+    }
+
+    // Apply credits and bonus
+    const appliedBalances = calculateAppliedBalances(
+      pricing,
+      deposit,
+      guestBalances,
+      0.25
+    )
+
+    // Grand total = rental amount after credits + deposit from card
+    const grandTotal = appliedBalances.amountToPay + appliedBalances.depositFromCard
+
+    // If grand total is < $0.50, it's a $0 booking
+    return grandTotal >= 0 && grandTotal < 0.50
+  }, [savedBookingDetails, balancesLoaded, car, guestBalances, userProfile?.insuranceVerified])
 
   // Check if payment form is complete
   // Use Payment Element status OR saved payment method selection
@@ -1181,31 +1221,66 @@ export default function BookingPageClient({ carId }: { carId: string }) {
 
   useEffect(() => {
     const createPaymentIntent = async () => {
-      // Only create if we have pricing and haven't created one yet
-      if (!savedBookingDetails?.pricing?.total || clientSecret) return
+      // Wait for all required data before creating PaymentIntent
+      if (!savedBookingDetails?.pricing?.total) return
+      if (clientSecret) return
+      if (!balancesLoaded) return
+      if (!car) return
 
-      const totalInCents = Math.round(savedBookingDetails.pricing.total * 100)
+      // Calculate the ACTUAL amount to charge (after credits/bonus + deposit)
+      const carCity = car?.city || getCityFromAddress(car?.address || 'Phoenix, AZ')
+      const pricing = calculateBookingPricing({
+        dailyRate: savedBookingDetails.pricing.dailyRate,
+        days: savedBookingDetails.pricing.days,
+        insurancePrice: savedBookingDetails.pricing.insurancePrice,
+        deliveryFee: savedBookingDetails.pricing.deliveryFee,
+        enhancements: {
+          refuelService: savedBookingDetails.pricing.breakdown?.refuelService || 0,
+          additionalDriver: savedBookingDetails.pricing.breakdown?.additionalDriver || 0,
+          extraMiles: savedBookingDetails.pricing.breakdown?.extraMiles || 0,
+          vipConcierge: savedBookingDetails.pricing.breakdown?.vipConcierge || 0
+        },
+        city: carCity
+      })
 
-      // Minimum $0.50 USD required by Stripe
-      if (totalInCents < 50) {
-        console.warn('[Payment Element] Amount too low for Stripe')
-        return
+      // Calculate adjusted deposit (50% off if insurance verified)
+      let deposit = savedBookingDetails.pricing.deposit || 0
+      if (userProfile?.insuranceVerified) {
+        deposit = deposit * 0.5
       }
 
+      // Apply credits and bonus to get actual amount to pay
+      const appliedBalances = calculateAppliedBalances(
+        pricing,
+        deposit,
+        guestBalances,
+        0.25 // 25% max bonus
+      )
+
+      // Grand total = rental amount after credits + deposit (minus any deposit wallet coverage)
+      const grandTotal = appliedBalances.amountToPay + appliedBalances.depositFromCard
+      const grandTotalCents = Math.round(grandTotal * 100)
+
+      // Minimum $0.50 USD required by Stripe
+      if (grandTotalCents < 50) return
+
       try {
-        console.log('[Payment Element] Creating PaymentIntent for $', savedBookingDetails.pricing.total)
 
         const response = await fetch('/api/rentals/payment-element', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            amount: totalInCents,
+            amount: grandTotalCents,
             email: driverEmail || guestEmail || userProfile?.email,
             carId,
             metadata: {
               carId,
               days: savedBookingDetails.pricing.days?.toString(),
-              insurance: savedBookingDetails.insuranceTier || savedBookingDetails.insuranceType
+              insurance: savedBookingDetails.insuranceTier || savedBookingDetails.insuranceType,
+              rentalAmount: appliedBalances.amountToPay.toFixed(2),
+              depositAmount: appliedBalances.depositFromCard.toFixed(2),
+              creditsApplied: appliedBalances.creditsApplied.toFixed(2),
+              bonusApplied: appliedBalances.bonusApplied.toFixed(2)
             }
           })
         })
@@ -1214,20 +1289,16 @@ export default function BookingPageClient({ carId }: { carId: string }) {
           const data = await response.json()
           setClientSecret(data.clientSecret)
           setPaymentIntentId(data.paymentIntentId)
-          console.log('[Payment Element] PaymentIntent created:', data.paymentIntentId)
         } else {
-          const errorData = await response.json()
-          console.error('[Payment Element] Failed to create PaymentIntent:', errorData.error)
           setPaymentError('Unable to initialize payment. Please try again.')
         }
       } catch (error) {
-        console.error('[Payment Element] Error creating PaymentIntent:', error)
         setPaymentError('Payment initialization failed. Please refresh the page.')
       }
     }
 
     createPaymentIntent()
-  }, [savedBookingDetails?.pricing?.total, carId, clientSecret, driverEmail, guestEmail, userProfile?.email])
+  }, [savedBookingDetails, carId, clientSecret, driverEmail, guestEmail, userProfile, balancesLoaded, guestBalances, car])
 
   // ============================================
   // FILE UPLOAD HANDLER
