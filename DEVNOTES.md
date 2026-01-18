@@ -2,6 +2,17 @@
 
 ## Recent Fixes (January 2026)
 
+### Edit Mode & UX Improvements (Jan 18)
+- [x] BottomSheet component for mobile-friendly inline editing
+- [x] Edit mode context system for landing page preview with section editors
+- [x] Section editors: Hero, Services, Policies, FAQs, Contact/Social
+- [x] DraftPage component for graceful handling of unpublished partners
+- [x] Login tracking fields: lastLoginAt, previousLoginAt on RentalHost
+- [x] WhyBookSection horizontal scroll on home page (8 benefit cards)
+- [x] Mobile menu navigation fix: use /partner/* routes directly (fixes re-login bug)
+- [x] Fix policies editor to use object structure matching database
+- [x] Show only host first name in landing page titles (not full name)
+
 ### Landing Page Preview System (Jan 17)
 - [x] Token-based preview for hosts to view unpublished landing pages
 - [x] JWT preview tokens with 1-hour expiry via `/api/partner/preview-token`
