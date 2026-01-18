@@ -16,6 +16,8 @@ import PartnerPolicies from '../components/PartnerPolicies'
 import FAQAccordion from '../components/FAQAccordion'
 import PartnerVehicleGrid from './PartnerVehicleGrid'
 import PreviewBanner from './PreviewBanner'
+import DraftPage from './DraftPage'
+import EditModeWrapper from './EditModeWrapper'
 import Footer from '@/app/components/Footer'
 import Header from '@/app/components/Header'
 
@@ -54,6 +56,21 @@ async function validatePreviewToken(token: string, expectedSlug: string): Promis
 
 // Fleet preview key for unapproved partners
 const FLEET_PREVIEW_KEY = 'phoenix-fleet-2847'
+
+// Helper: Get display name for landing page
+// Use company name as-is, or extract first name only from personal names for privacy
+function getDisplayName(companyName: string | null, personalName: string | null): string {
+  // If company name exists, use it as-is
+  if (companyName && companyName.trim()) {
+    return companyName.trim()
+  }
+  // If personal name exists, extract first name only for privacy
+  if (personalName && personalName.trim()) {
+    const firstName = personalName.trim().split(' ')[0]
+    return firstName
+  }
+  return 'Partner'
+}
 
 // Fetch reviews for a partner (by hostId)
 // Special case: ItWhip (the platform) shows ALL reviews
@@ -184,6 +201,31 @@ async function getPlatformRentalCars() {
   }
 }
 
+// Check if a partner exists by slug (regardless of approval status)
+// Used to show "draft" page instead of 404 when host exists but isn't published
+async function checkPartnerExists(slug: string) {
+  try {
+    const partner = await prisma.rentalHost.findFirst({
+      where: { partnerSlug: slug },
+      select: {
+        id: true,
+        name: true,
+        partnerCompanyName: true,
+        approvalStatus: true,
+        active: true,
+        enableRideshare: true,
+        enableRentals: true,
+        _count: {
+          select: { cars: true }
+        }
+      }
+    })
+    return partner
+  } catch {
+    return null
+  }
+}
+
 async function getPartner(slug: string, isFleetPreview: boolean = false) {
   try {
     // Build where clause based on preview mode
@@ -277,7 +319,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }
   }
 
-  const companyName = partner.partnerCompanyName || partner.name || 'Partner'
+  const companyName = getDisplayName(partner.partnerCompanyName, partner.name)
   const vehicleCount = partner.cars.length
   const prices = partner.cars.map((c: any) => c.dailyRate).filter((p: number) => p > 0)
   const minPrice = prices.length > 0 ? Math.min(...prices) : 0
@@ -322,15 +364,48 @@ export default async function PartnerLandingPage({ params, searchParams }: PageP
   const partner = await getPartner(partnerSlug, isPreviewMode)
 
   if (!partner) {
-    notFound()
+    // Partner not found with current criteria - check if they exist at all
+    const existingPartner = await checkPartnerExists(partnerSlug)
+
+    if (!existingPartner) {
+      // Partner slug doesn't exist at all
+      notFound()
+    }
+
+    // Partner exists but isn't published - show draft page
+    const missingRequirements = {
+      needsApproval: existingPartner.approvalStatus !== 'APPROVED',
+      needsActivation: !existingPartner.active,
+      needsCars: existingPartner._count.cars === 0,
+      needsService: !existingPartner.enableRideshare && !existingPartner.enableRentals
+    }
+
+    return (
+      <DraftPage
+        hostName={existingPartner.partnerCompanyName || existingPartner.name || 'Partner'}
+        missingRequirements={missingRequirements}
+      />
+    )
   }
 
   // Check if partner is not yet approved/active
   const isNotPublished = partner.approvalStatus !== 'APPROVED' || !partner.active
 
-  // If not published and no valid preview mode, show not found
+  // If not published and no valid preview mode, show draft page
   if (isNotPublished && !isPreviewMode) {
-    notFound()
+    const missingRequirements = {
+      needsApproval: partner.approvalStatus !== 'APPROVED',
+      needsActivation: !partner.active,
+      needsCars: partner.cars.length === 0,
+      needsService: !partner.enableRideshare && !partner.enableRentals
+    }
+
+    return (
+      <DraftPage
+        hostName={partner.partnerCompanyName || partner.name || 'Partner'}
+        missingRequirements={missingRequirements}
+      />
+    )
   }
 
   // Fetch platform rental cars if rentals is enabled
@@ -352,7 +427,7 @@ export default async function PartnerLandingPage({ params, searchParams }: PageP
   // Host preview mode (with edit capabilities)
   const isHostPreview = !!previewTokenPayload
 
-  const companyName = partner.partnerCompanyName || partner.name || 'Partner Fleet'
+  const companyName = getDisplayName(partner.partnerCompanyName, partner.name)
 
   // Calculate stats
   const operatingCities = [...new Set(partner.cars.map((c: any) => c.city ? `${c.city}, ${c.state}` : null).filter(Boolean))]
@@ -542,7 +617,7 @@ export default async function PartnerLandingPage({ params, searchParams }: PageP
   }
 
   return (
-    <>
+    <EditModeWrapper isEditMode={isEditMode} hostId={partner.id}>
       {/* JSON-LD */}
       <script
         type="application/ld+json"
@@ -734,6 +809,6 @@ export default async function PartnerLandingPage({ params, searchParams }: PageP
 
       {/* Footer */}
       <Footer />
-    </>
+    </EditModeWrapper>
   )
 }

@@ -53,7 +53,9 @@ export async function GET(request: NextRequest) {
               stripeAccountId: true,
               stripeConnectAccountId: true,
               stripeCustomerId: true,
-              active: true
+              active: true,
+              lastLoginAt: true,
+              previousLoginAt: true
             }
           })
         }
@@ -128,7 +130,7 @@ export async function GET(request: NextRequest) {
     if (host?.identityVerified) securityScore += 25
     if (hasStripeConnected) securityScore += 25
 
-    // Get last login from recent activity
+    // Get last login from recent activity (fallback)
     const lastLoginActivity = recentLogins.find(log => log.action === 'LOGIN' || log.action === 'SESSION_START')
 
     // Format response
@@ -141,8 +143,9 @@ export async function GET(request: NextRequest) {
       // Use the best available photo: partnerLogo > hostManagerLogo > profilePhoto
       profilePhoto: host.partnerLogo || host.hostManagerLogo || host.profilePhoto,
       memberSince: host.createdAt,
-      // Use most recent login from activity log, or current time if no record
-      lastLogin: lastLoginActivity?.createdAt || new Date(),
+      // Prefer database lastLoginAt, fallback to activity log or current time
+      lastLogin: host.lastLoginAt || lastLoginActivity?.createdAt || new Date(),
+      previousLogin: host.previousLoginAt || null,
       isActive: host.active
     } : {
       id: session?.user?.id,

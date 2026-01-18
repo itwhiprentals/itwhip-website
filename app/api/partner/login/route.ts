@@ -26,8 +26,21 @@ export async function POST(request: NextRequest) {
     // Find the host by email
     const host = await prisma.rentalHost.findUnique({
       where: { email: email.toLowerCase() },
-      include: {
-        user: true
+      select: {
+        id: true,
+        userId: true,
+        email: true,
+        name: true,
+        hostType: true,
+        approvalStatus: true,
+        partnerCompanyName: true,
+        partnerSlug: true,
+        lastLoginAt: true,  // Include lastLoginAt for tracking
+        user: {
+          select: {
+            passwordHash: true
+          }
+        }
       }
     })
 
@@ -112,6 +125,20 @@ export async function POST(request: NextRequest) {
     const userAgent = request.headers.get('user-agent') || 'Unknown'
     const forwardedFor = request.headers.get('x-forwarded-for')
     const ip = forwardedFor?.split(',')[0]?.trim() || 'Unknown'
+
+    // Update login timestamps: move current lastLoginAt to previousLoginAt, set new lastLoginAt
+    try {
+      await prisma.rentalHost.update({
+        where: { id: host.id },
+        data: {
+          previousLoginAt: host.lastLoginAt,  // Store the previous login time
+          lastLoginAt: new Date()              // Update to current time
+        }
+      })
+    } catch (updateError) {
+      // Don't fail login if update fails
+      console.error('[Partner Login] Login timestamp update error:', updateError)
+    }
 
     // Record login activity for tracking last login
     try {

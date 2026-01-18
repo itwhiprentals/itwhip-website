@@ -5,6 +5,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useEditMode } from './EditModeContext'
 import {
   IoEyeOutline,
   IoCloseOutline,
@@ -13,7 +14,9 @@ import {
   IoColorPaletteOutline,
   IoAppsOutline,
   IoDocumentTextOutline,
-  IoHelpCircleOutline
+  IoHelpCircleOutline,
+  IoPencilOutline,
+  IoShareSocialOutline
 } from 'react-icons/io5'
 
 interface PreviewBannerProps {
@@ -23,17 +26,18 @@ interface PreviewBannerProps {
   companyName: string
 }
 
-// Quick edit links to specific tabs
-const EDIT_TABS = [
-  { id: 'content', label: 'Content', icon: IoTextOutline },
-  { id: 'branding', label: 'Branding', icon: IoColorPaletteOutline },
-  { id: 'services', label: 'Services', icon: IoAppsOutline },
-  { id: 'policies', label: 'Policies', icon: IoDocumentTextOutline },
-  { id: 'faqs', label: 'FAQs', icon: IoHelpCircleOutline },
+// Quick edit sections that can be opened via bottom sheets
+const EDIT_SECTIONS = [
+  { id: 'hero' as const, label: 'Hero', icon: IoTextOutline },
+  { id: 'services' as const, label: 'Services', icon: IoAppsOutline },
+  { id: 'policies' as const, label: 'Policies', icon: IoDocumentTextOutline },
+  { id: 'faqs' as const, label: 'FAQs', icon: IoHelpCircleOutline },
+  { id: 'social' as const, label: 'Contact', icon: IoShareSocialOutline },
 ]
 
 export default function PreviewBanner({ slug, isPublished, editMode, companyName }: PreviewBannerProps) {
   const [isMinimized, setIsMinimized] = useState(false)
+  const { openSheet, isEditMode } = useEditMode()
 
   if (isMinimized) {
     return (
@@ -53,26 +57,62 @@ export default function PreviewBanner({ slug, isPublished, editMode, companyName
         <div className="flex items-center justify-between gap-3">
           {/* Left side - Preview Mode indicator */}
           <div className="flex items-center gap-2">
-            <IoEyeOutline className="w-5 h-5" />
-            <span className="font-medium">Preview Mode</span>
+            {isEditMode ? (
+              <>
+                <IoPencilOutline className="w-5 h-5" />
+                <span className="font-medium">Edit Mode</span>
+              </>
+            ) : (
+              <>
+                <IoEyeOutline className="w-5 h-5" />
+                <span className="font-medium">Preview Mode</span>
+              </>
+            )}
           </div>
 
-          {/* Center - Quick Edit Tabs */}
-          <div className="hidden md:flex items-center gap-1">
-            {EDIT_TABS.map((tab) => {
-              const Icon = tab.icon
-              return (
-                <Link
-                  key={tab.id}
-                  href={`/partner/landing?tab=${tab.id}`}
-                  className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-white/90 hover:text-white hover:bg-white/20 rounded-md transition-colors"
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  {tab.label}
-                </Link>
-              )
-            })}
-          </div>
+          {/* Center - Quick Edit Sections (only in edit mode) */}
+          {isEditMode && (
+            <div className="hidden md:flex items-center gap-1">
+              {EDIT_SECTIONS.map((section) => {
+                const Icon = section.icon
+                return (
+                  <button
+                    key={section.id}
+                    onClick={() => openSheet(section.id)}
+                    className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-white/90 hover:text-white hover:bg-white/20 rounded-md transition-colors"
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    {section.label}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+
+          {/* Center - Legacy tab links (only in preview mode without edit) */}
+          {!isEditMode && (
+            <div className="hidden md:flex items-center gap-1">
+              {[
+                { id: 'content', label: 'Content', icon: IoTextOutline },
+                { id: 'branding', label: 'Branding', icon: IoColorPaletteOutline },
+                { id: 'services', label: 'Services', icon: IoAppsOutline },
+                { id: 'policies', label: 'Policies', icon: IoDocumentTextOutline },
+                { id: 'faqs', label: 'FAQs', icon: IoHelpCircleOutline },
+              ].map((tab) => {
+                const Icon = tab.icon
+                return (
+                  <Link
+                    key={tab.id}
+                    href={`/partner/landing?tab=${tab.id}`}
+                    className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-white/90 hover:text-white hover:bg-white/20 rounded-md transition-colors"
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    {tab.label}
+                  </Link>
+                )
+              })}
+            </div>
+          )}
 
           {/* Right side - Back to Editor + Close */}
           <div className="flex items-center gap-2">
@@ -93,6 +133,25 @@ export default function PreviewBanner({ slug, isPublished, editMode, companyName
             </button>
           </div>
         </div>
+
+        {/* Mobile edit buttons (only in edit mode) */}
+        {isEditMode && (
+          <div className="md:hidden flex items-center gap-1.5 pt-2 overflow-x-auto pb-1 -mx-4 px-4">
+            {EDIT_SECTIONS.map((section) => {
+              const Icon = section.icon
+              return (
+                <button
+                  key={section.id}
+                  onClick={() => openSheet(section.id)}
+                  className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-white/20 hover:bg-white/30 rounded-full transition-colors"
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {section.label}
+                </button>
+              )
+            })}
+          </div>
+        )}
       </div>
     </div>
   )

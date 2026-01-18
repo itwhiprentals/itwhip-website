@@ -592,19 +592,16 @@ export default function TrackingSecurityCard({
                   </button>
                 )}
 
-                {/* Provider Hints - only show when user has vehicles */}
+                {/* ItWhip+ Provider Hints - only show when user has vehicles */}
                 {totalVehicles > 0 && (
                   <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">Popular providers</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">Powered by ItWhip+</p>
                     <div className="flex items-center justify-center gap-2 flex-wrap">
-                      <span className="px-2 py-1 bg-gray-50 dark:bg-gray-700 text-xs text-gray-600 dark:text-gray-400 rounded">
-                        Bouncie $8/mo
+                      <span className="px-2 py-1 bg-blue-50 dark:bg-blue-900/30 text-xs text-blue-700 dark:text-blue-400 rounded font-medium">
+                        Bouncie OBD
                       </span>
-                      <span className="px-2 py-1 bg-gray-50 dark:bg-gray-700 text-xs text-gray-600 dark:text-gray-400 rounded">
+                      <span className="px-2 py-1 bg-purple-50 dark:bg-purple-900/30 text-xs text-purple-700 dark:text-purple-400 rounded font-medium">
                         Smartcar API
-                      </span>
-                      <span className="px-2 py-1 bg-gray-50 dark:bg-gray-700 text-xs text-gray-600 dark:text-gray-400 rounded">
-                        Zubie Fleet
                       </span>
                     </div>
                   </div>

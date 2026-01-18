@@ -2188,6 +2188,8 @@ model RentalHost {
   identityVerifiedAt                                                    DateTime?
   phoneVerified                                                         Boolean                      @default(false)
   phoneVerifiedAt                                                       DateTime?
+  lastLoginAt                                                           DateTime?
+  previousLoginAt                                                       DateTime?
   agreementTemplateCustom                                               Json?
   BackgroundCheck                                                       BackgroundCheck[]
   Claim                                                                 Claim[]
