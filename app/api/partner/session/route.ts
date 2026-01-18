@@ -121,6 +121,9 @@ export async function GET(request: NextRequest) {
         hostManagerSlug: true,
         hostManagerName: true,
         hostManagerLogo: true,
+        // Service settings for publishing status
+        enableRideshare: true,
+        enableRentals: true,
         // Banking
         stripeConnectAccountId: true,
         // Verification
@@ -161,6 +164,11 @@ export async function GET(request: NextRequest) {
       where: { hostId: partner.id }
     })
 
+    // Get active vehicle count for publishing status
+    const activeVehicleCount = await prisma.rentalCar.count({
+      where: { hostId: partner.id, isActive: true }
+    })
+
     // Get managed vehicle count (for fleet managers)
     // Query through VehicleManagement table where this partner is the manager
     const managedCount = partner.isHostManager ? await prisma.vehicleManagement.count({
@@ -169,6 +177,13 @@ export async function GET(request: NextRequest) {
       }
     }) : 0
 
+    // Calculate publishing status for landing page
+    const hasApproval = partner.approvalStatus === 'APPROVED'
+    const hasValidSlug = !!partner.partnerSlug && partner.partnerSlug !== 'your-company-slug'
+    const hasActiveVehicles = activeVehicleCount > 0
+    const hasService = partner.enableRideshare || partner.enableRentals
+    const isLandingPagePublished = hasApproval && hasValidSlug && hasActiveVehicles && hasService
+
     return NextResponse.json({
       authenticated: true,
       partner: {
@@ -176,11 +191,14 @@ export async function GET(request: NextRequest) {
         // Computed fields
         role,
         vehicleCount,
+        activeVehicleCount,
         managedVehicleCount: managedCount,
         // Display name (prefer company name for partners)
         displayName: partner.partnerCompanyName || partner.hostManagerName || partner.name,
         // Public slug (prefer partner slug, then manager slug)
-        publicSlug: partner.partnerSlug || partner.hostManagerSlug || null
+        publicSlug: partner.partnerSlug || partner.hostManagerSlug || null,
+        // Landing page publishing status
+        isLandingPagePublished
       }
     })
 

@@ -70,15 +70,17 @@ export async function GET(request: NextRequest) {
     const hasApproval = partner.approvalStatus === 'APPROVED'
     const hasValidSlug = !!partner.partnerSlug && partner.partnerSlug !== 'your-company-slug'
     const hasVehicles = carCount > 0
-    const canPublish = hasApproval && hasValidSlug && hasVehicles
+    const hasService = partner.enableRideshare || partner.enableRentals
+    const canPublish = hasApproval && hasValidSlug && hasVehicles && hasService
 
     // Map database fields to frontend expected format
+    // Fall back to profilePhoto if partnerLogo is not set (unified portal support)
     return NextResponse.json({
       success: true,
       data: {
         slug: partner.partnerSlug || '',
         companyName: partner.partnerCompanyName || '',
-        logo: partner.partnerLogo || null,
+        logo: partner.partnerLogo || partner.profilePhoto || null,
         heroImage: partner.partnerHeroImage || null,
         headline: partner.partnerHeroTitle || '',
         subheadline: partner.partnerHeroSubtitle || '',
@@ -98,6 +100,7 @@ export async function GET(request: NextRequest) {
           hasApproval,
           hasValidSlug,
           hasVehicles,
+          hasService,
           canPublish,
           vehicleCount: carCount
         },

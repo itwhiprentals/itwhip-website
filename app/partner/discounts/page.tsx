@@ -550,26 +550,9 @@ export default function PartnerDiscountsPage() {
         </button>
       </div>
 
-      {/* ========== DEPOSIT MANAGEMENT WITH MODE SWITCHER ========== */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-        {/* Header */}
-        <div className="p-5 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
-              <IoWalletOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900 dark:text-white">Deposit Management</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                Choose how to configure security deposits for your fleet
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Mode Switcher */}
-        <div className="p-5 border-b border-gray-200 dark:border-gray-700">
-          <div className="grid grid-cols-2 gap-4">
+      {/* ========== DEPOSIT MANAGEMENT ========== */}
+      {/* Mode Switcher */}
+      <div className="grid grid-cols-2 gap-3">
             {/* Global Mode Button */}
             <button
               onClick={() => setViewMode('global')}
@@ -633,12 +616,11 @@ export default function PartnerDiscountsPage() {
                 {individualVehicles.length} vehicle{individualVehicles.length !== 1 ? 's' : ''}
               </span>
             </button>
-          </div>
-        </div>
+      </div>
 
-        {/* ===== GLOBAL MODE VIEW ===== */}
-        {viewMode === 'global' && (
-          <div className="p-5 space-y-6">
+      {/* ===== GLOBAL MODE VIEW ===== */}
+      {viewMode === 'global' && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5 space-y-6">
             {/* Require Deposits Toggle */}
             <div className="flex items-center justify-between">
               <div>
@@ -772,16 +754,16 @@ export default function PartnerDiscountsPage() {
 
             {/* All Vehicles - Global shown active, Individual shown grayed out */}
             <div>
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
                 <label className="text-sm font-medium text-gray-900 dark:text-white">
                   Your Fleet
                 </label>
-                <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
                   <span className="flex items-center gap-1">
-                    <IoRemoveCircleOutline className="w-3.5 h-3.5 text-red-500" /> Remove from global
+                    <IoRemoveCircleOutline className="w-3.5 h-3.5 text-red-500" /> Remove
                   </span>
                   <span className="flex items-center gap-1">
-                    <IoAddCircleOutline className="w-3.5 h-3.5 text-green-500" /> Add back to global
+                    <IoAddCircleOutline className="w-3.5 h-3.5 text-green-500" /> Add back
                   </span>
                 </div>
               </div>
@@ -793,7 +775,7 @@ export default function PartnerDiscountsPage() {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-2 max-h-80 overflow-y-auto">
+                <div className="space-y-2 max-h-[400px] overflow-y-auto">
                   {depositSettings.vehicles.map((vehicle) => {
                     const isIndividual = vehicle.vehicleDepositMode === 'individual'
 
@@ -806,92 +788,96 @@ export default function PartnerDiscountsPage() {
                     return (
                       <div
                         key={vehicle.id}
-                        className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
+                        className={`p-3 rounded-lg transition-all ${
                           isIndividual
                             ? 'bg-gray-100 dark:bg-gray-800 opacity-60'
                             : 'bg-gray-50 dark:bg-gray-700/50'
                         }`}
                       >
-                        {/* Vehicle Photo */}
-                        <div className={`w-12 h-9 rounded overflow-hidden flex-shrink-0 ${
-                          isIndividual ? 'grayscale' : ''
-                        } bg-gray-200 dark:bg-gray-600`}>
-                          {vehicle.photo ? (
-                            <Image
-                              src={vehicle.photo}
-                              alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
-                              width={48}
-                              height={36}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <IoCarOutline className="w-5 h-5 text-gray-400" />
-                            </div>
-                          )}
-                        </div>
+                        {/* Top Row: Photo + Vehicle Name + Action Button */}
+                        <div className="flex items-start gap-3">
+                          {/* Vehicle Photo */}
+                          <div className={`w-14 h-10 sm:w-12 sm:h-9 rounded overflow-hidden flex-shrink-0 ${
+                            isIndividual ? 'grayscale' : ''
+                          } bg-gray-200 dark:bg-gray-600`}>
+                            {vehicle.photo ? (
+                              <Image
+                                src={vehicle.photo}
+                                alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
+                                width={56}
+                                height={40}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <IoCarOutline className="w-5 h-5 text-gray-400" />
+                              </div>
+                            )}
+                          </div>
 
-                        {/* Vehicle Info */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <h4 className={`text-sm font-medium truncate ${
+                          {/* Vehicle Info - Full name, no truncation */}
+                          <div className="flex-1 min-w-0">
+                            <h4 className={`text-sm font-medium leading-tight ${
                               isIndividual
                                 ? 'text-gray-500 dark:text-gray-400'
                                 : 'text-gray-900 dark:text-white'
                             }`}>
                               {vehicle.year} {vehicle.make} {vehicle.model}
                             </h4>
-                            {isIndividual && (
-                              <span className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-1.5 py-0.5 rounded">
-                                Individual
-                              </span>
-                            )}
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                              ${vehicle.dailyRate}/day
+                            </p>
                           </div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            ${vehicle.dailyRate}/day
-                          </p>
-                        </div>
 
-                        {/* Deposit Amount - Shows exact amount customer will see */}
-                        <div className="text-right mr-2">
-                          {effectiveDeposit > 0 ? (
-                            <div>
-                              <span className={`text-sm font-semibold ${isIndividual ? 'text-purple-600 dark:text-purple-400' : 'text-gray-900 dark:text-white'}`}>
-                                ${effectiveDeposit}
-                              </span>
-                              {isIndividual && (
-                                <span className="ml-1.5 text-xs text-purple-500 dark:text-purple-400">(custom)</span>
-                              )}
-                              {hasMakeOverride && (
-                                <span className="ml-1.5 text-xs text-blue-600 dark:text-blue-400">({vehicle.make})</span>
-                              )}
-                            </div>
+                          {/* Action Button */}
+                          {isIndividual ? (
+                            <button
+                              onClick={() => moveToGlobal(vehicle.id)}
+                              className="p-1.5 text-green-500 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded transition-colors flex-shrink-0"
+                              title="Add back to global settings"
+                            >
+                              <IoAddCircleOutline className="w-5 h-5" />
+                            </button>
                           ) : (
-                            <span className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                              <IoWarningOutline className="w-3.5 h-3.5" />
-                              No deposit
-                            </span>
+                            <button
+                              onClick={() => moveToIndividual(vehicle.id)}
+                              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors flex-shrink-0"
+                              title="Configure individually"
+                            >
+                              <IoRemoveCircleOutline className="w-5 h-5" />
+                            </button>
                           )}
                         </div>
 
-                        {/* Toggle Button: Remove (-) or Add (+) */}
-                        {isIndividual ? (
-                          <button
-                            onClick={() => moveToGlobal(vehicle.id)}
-                            className="p-1.5 text-green-500 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded transition-colors"
-                            title="Add back to global settings"
-                          >
-                            <IoAddCircleOutline className="w-5 h-5" />
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => moveToIndividual(vehicle.id)}
-                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors"
-                            title="Configure individually"
-                          >
-                            <IoRemoveCircleOutline className="w-5 h-5" />
-                          </button>
-                        )}
+                        {/* Bottom Row: Deposit Amount + Badge */}
+                        <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                          {isIndividual && (
+                            <span className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded">
+                              Individual
+                            </span>
+                          )}
+                          {!isIndividual && <div />}
+
+                          {/* Deposit Amount */}
+                          <div className="text-right">
+                            {effectiveDeposit > 0 ? (
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-xs text-gray-500 dark:text-gray-400">Deposit:</span>
+                                <span className={`text-sm font-semibold ${isIndividual ? 'text-purple-600 dark:text-purple-400' : 'text-gray-900 dark:text-white'}`}>
+                                  ${effectiveDeposit}
+                                </span>
+                                {hasMakeOverride && (
+                                  <span className="text-xs text-blue-600 dark:text-blue-400">({vehicle.make})</span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                                <IoWarningOutline className="w-3.5 h-3.5" />
+                                No deposit
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     )
                   })}
@@ -932,14 +918,14 @@ export default function PartnerDiscountsPage() {
                     Save Global Settings
                   </>
                 )}
-              </button>
-            </div>
-          </div>
-        )}
+          </button>
+        </div>
+        </div>
+      )}
 
-        {/* ===== INDIVIDUAL MODE VIEW ===== */}
-        {viewMode === 'individual' && (
-          <div className="p-5">
+      {/* ===== INDIVIDUAL MODE VIEW ===== */}
+      {viewMode === 'individual' && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
             {individualVehicles.length === 0 ? (
               <div className="text-center py-8">
                 <IoCarOutline className="w-12 h-12 text-gray-400 mx-auto mb-3" />
@@ -972,57 +958,76 @@ export default function PartnerDiscountsPage() {
                     return (
                       <div
                         key={vehicle.id}
-                        className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                        className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
                       >
-                        {/* Vehicle Photo */}
-                        <div className="w-16 h-12 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-600 flex-shrink-0">
-                          {vehicle.photo ? (
-                            <Image
-                              src={vehicle.photo}
-                              alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
-                              width={64}
-                              height={48}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <IoCarOutline className="w-6 h-6 text-gray-400" />
-                            </div>
-                          )}
-                        </div>
+                        {/* Top Row: Photo + Vehicle Name + Back Button */}
+                        <div className="flex items-start gap-3">
+                          {/* Vehicle Photo */}
+                          <div className="w-16 h-12 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-600 flex-shrink-0">
+                            {vehicle.photo ? (
+                              <Image
+                                src={vehicle.photo}
+                                alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
+                                width={64}
+                                height={48}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <IoCarOutline className="w-6 h-6 text-gray-400" />
+                              </div>
+                            )}
+                          </div>
 
-                        {/* Vehicle Info */}
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-gray-900 dark:text-white truncate">
-                            {vehicle.year} {vehicle.make} {vehicle.model}
-                          </h4>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            ${vehicle.dailyRate}/day
-                          </p>
-                        </div>
+                          {/* Vehicle Info - Full name, no truncation */}
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium text-gray-900 dark:text-white leading-tight">
+                              {vehicle.year} {vehicle.make} {vehicle.model}
+                            </h4>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                              ${vehicle.dailyRate}/day
+                            </p>
+                          </div>
 
-                        {/* Deposit Toggle */}
-                        <div className="flex items-center gap-4">
+                          {/* Move back to Global Button */}
                           <button
-                            type="button"
-                            onClick={() => setVehicleEdits(prev => ({
-                              ...prev,
-                              [vehicle.id]: {
-                                ...edit,
-                                requireDeposit: !edit.requireDeposit
-                              }
-                            }))}
-                            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                              edit.requireDeposit ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'
-                            }`}
-                            role="switch"
-                            aria-checked={edit.requireDeposit}
+                            onClick={() => moveToGlobal(vehicle.id)}
+                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors flex-shrink-0"
+                            title="Use global settings"
                           >
-                            <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                              edit.requireDeposit ? 'translate-x-5' : 'translate-x-0'
-                            }`} />
+                            <IoArrowBackOutline className="w-4 h-4" />
                           </button>
+                        </div>
 
+                        {/* Bottom Row: Toggle + Deposit Amount */}
+                        <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                          {/* Toggle with Label */}
+                          <div className="flex items-center gap-3">
+                            <button
+                              type="button"
+                              onClick={() => setVehicleEdits(prev => ({
+                                ...prev,
+                                [vehicle.id]: {
+                                  ...edit,
+                                  requireDeposit: !edit.requireDeposit
+                                }
+                              }))}
+                              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                                edit.requireDeposit ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'
+                              }`}
+                              role="switch"
+                              aria-checked={edit.requireDeposit}
+                            >
+                              <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                edit.requireDeposit ? 'translate-x-5' : 'translate-x-0'
+                              }`} />
+                            </button>
+                            <span className="text-sm text-gray-600 dark:text-gray-400">
+                              {edit.requireDeposit ? 'Deposit on' : 'Deposit off'}
+                            </span>
+                          </div>
+
+                          {/* Deposit Amount Input or Warning */}
                           {edit.requireDeposit ? (
                             <div className="flex flex-col items-end gap-0.5">
                               <div className="flex items-center gap-1">
@@ -1040,7 +1045,7 @@ export default function PartnerDiscountsPage() {
                                       depositAmount: parseFloat(e.target.value) || null
                                     }
                                   }))}
-                                  className={`w-24 px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+                                  className={`w-24 px-2 py-1.5 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 ${
                                     !edit.depositAmount || edit.depositAmount < 25
                                       ? 'border-amber-400 dark:border-amber-500'
                                       : 'border-gray-300 dark:border-gray-600'
@@ -1060,15 +1065,6 @@ export default function PartnerDiscountsPage() {
                             </span>
                           )}
                         </div>
-
-                        {/* Move back to Global Button */}
-                        <button
-                          onClick={() => moveToGlobal(vehicle.id)}
-                          className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors"
-                          title="Use global settings"
-                        >
-                          <IoArrowBackOutline className="w-4 h-4" />
-                        </button>
                       </div>
                     )
                   })}
@@ -1101,9 +1097,8 @@ export default function PartnerDiscountsPage() {
                 </div>
               </>
             )}
-          </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* ========== PROMO CODES SECTION ========== */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">

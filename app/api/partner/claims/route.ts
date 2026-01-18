@@ -62,12 +62,12 @@ export async function GET(request: NextRequest) {
     const claims = await prisma.claim.findMany({
       where,
       include: {
-        damagePhotos: {
+        ClaimDamagePhoto: {
           where: { deletedAt: null },
           orderBy: { order: 'asc' },
           take: 1
         },
-        messages: {
+        ClaimMessage: {
           orderBy: { createdAt: 'desc' },
           take: 1
         }
@@ -124,10 +124,10 @@ export async function GET(request: NextRequest) {
         guestName: booking?.renter?.name || booking?.guestName || 'Unknown Guest',
         guestEmail: booking?.renter?.email || booking?.guestEmail || null,
         bookingId: claim.bookingId,
-        photoUrl: claim.damagePhotos[0]?.url || null,
-        photoCount: claim.damagePhotos.length,
-        hasUnreadMessages: claim.messages.some(m => !m.isRead && m.senderType !== 'HOST'),
-        lastMessageAt: claim.messages[0]?.createdAt?.toISOString() || null
+        photoUrl: claim.ClaimDamagePhoto[0]?.url || null,
+        photoCount: claim.ClaimDamagePhoto.length,
+        hasUnreadMessages: claim.ClaimMessage.some(m => !m.isRead && m.senderType !== 'HOST'),
+        lastMessageAt: claim.ClaimMessage[0]?.createdAt?.toISOString() || null
       }
     }))
 

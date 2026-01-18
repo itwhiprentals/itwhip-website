@@ -4,6 +4,7 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import { jwtVerify } from 'jose'
 import { prisma } from '@/app/lib/database/prisma'
 import PartnerHero from '../components/PartnerHero'
 import DiscountBanner from '../components/DiscountBanner'
@@ -14,12 +15,41 @@ import PartnerReviews from '../components/PartnerReviews'
 import PartnerPolicies from '../components/PartnerPolicies'
 import FAQAccordion from '../components/FAQAccordion'
 import PartnerVehicleGrid from './PartnerVehicleGrid'
+import PreviewBanner from './PreviewBanner'
 import Footer from '@/app/components/Footer'
 import Header from '@/app/components/Header'
 
+const JWT_SECRET = new TextEncoder().encode(
+  process.env.JWT_SECRET || 'your-secret-key'
+)
+
 interface PageProps {
   params: Promise<{ partnerSlug: string }>
-  searchParams: Promise<{ preview?: string; key?: string }>
+  searchParams: Promise<{ preview?: string; key?: string; preview_token?: string }>
+}
+
+interface PreviewTokenPayload {
+  type: string
+  hostId: string
+  slug: string
+  editMode?: boolean
+}
+
+// Validate preview token and return payload if valid
+async function validatePreviewToken(token: string, expectedSlug: string): Promise<PreviewTokenPayload | null> {
+  try {
+    const { payload } = await jwtVerify(token, JWT_SECRET)
+
+    // Check it's a preview token
+    if (payload.type !== 'preview') return null
+
+    // Check slug matches
+    if (payload.slug !== expectedSlug) return null
+
+    return payload as unknown as PreviewTokenPayload
+  } catch {
+    return null
+  }
 }
 
 // Fleet preview key for unapproved partners
@@ -157,9 +187,9 @@ async function getPlatformRentalCars() {
 async function getPartner(slug: string, isFleetPreview: boolean = false) {
   try {
     // Build where clause based on preview mode
+    // Allow all host types since we've unified the portals
     const whereClause: any = {
-      partnerSlug: slug,
-      hostType: { in: ['FLEET_PARTNER', 'PARTNER'] }
+      partnerSlug: slug
     }
 
     // Only require approved + active for public access (not fleet preview)
@@ -274,14 +304,32 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function PartnerLandingPage({ params, searchParams }: PageProps) {
   const { partnerSlug } = await params
-  const { preview, key } = await searchParams
+  const { preview, key, preview_token } = await searchParams
 
   // Check if fleet preview mode (allows viewing unapproved partners)
   const isFleetPreview = preview === 'true' && key === FLEET_PREVIEW_KEY
 
-  const partner = await getPartner(partnerSlug, isFleetPreview)
+  // Check for host preview token
+  let previewTokenPayload: PreviewTokenPayload | null = null
+  if (preview_token) {
+    previewTokenPayload = await validatePreviewToken(preview_token, partnerSlug)
+  }
+
+  // Allow viewing if: fleet preview OR valid host preview token
+  const isPreviewMode = isFleetPreview || !!previewTokenPayload
+  const isEditMode = previewTokenPayload?.editMode === true
+
+  const partner = await getPartner(partnerSlug, isPreviewMode)
 
   if (!partner) {
+    notFound()
+  }
+
+  // Check if partner is not yet approved/active
+  const isNotPublished = partner.approvalStatus !== 'APPROVED' || !partner.active
+
+  // If not published and no valid preview mode, show not found
+  if (isNotPublished && !isPreviewMode) {
     notFound()
   }
 
@@ -300,6 +348,9 @@ export default async function PartnerLandingPage({ params, searchParams }: PageP
 
   // Check if partner is not yet approved (only visible in preview mode)
   const isPendingApproval = partner.approvalStatus !== 'APPROVED' || !partner.active
+
+  // Host preview mode (with edit capabilities)
+  const isHostPreview = !!previewTokenPayload
 
   const companyName = partner.partnerCompanyName || partner.name || 'Partner Fleet'
 
@@ -501,8 +552,18 @@ export default async function PartnerLandingPage({ params, searchParams }: PageP
       {/* Main Site Header */}
       <Header />
 
+      {/* Host Preview Banner - Shown when host is previewing with token */}
+      {isHostPreview && (
+        <PreviewBanner
+          slug={partnerSlug}
+          isPublished={!isPendingApproval}
+          editMode={isEditMode}
+          companyName={companyName}
+        />
+      )}
+
       {/* Fleet Preview Banner - Only shown to fleet admins previewing unapproved partners */}
-      {isFleetPreview && isPendingApproval && (
+      {isFleetPreview && !isHostPreview && isPendingApproval && (
         <div className="bg-purple-600 text-white px-4 py-3 text-center">
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
             <span className="font-medium">
@@ -522,27 +583,29 @@ export default async function PartnerLandingPage({ params, searchParams }: PageP
       )}
 
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-16 sm:pt-20">
-        {/* Breadcrumb - Visible on all devices */}
-        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 sm:py-3">
-            <nav className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-              <Link href="/" className="hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
-                Home
-              </Link>
-              <span className="text-gray-300 dark:text-gray-600">/</span>
-              <Link href="/rideshare" className="hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
-                Rideshare
-              </Link>
-              <span className="text-gray-300 dark:text-gray-600">/</span>
-              <span className="text-gray-900 dark:text-white font-medium truncate max-w-[150px] sm:max-w-none">{companyName}</span>
-            </nav>
+        {/* Breadcrumb - Hidden in preview mode */}
+        {!isHostPreview && (
+          <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 sm:py-3">
+              <nav className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                <Link href="/" className="hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
+                  Home
+                </Link>
+                <span className="text-gray-300 dark:text-gray-600">/</span>
+                <Link href="/rideshare" className="hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
+                  Rideshare
+                </Link>
+                <span className="text-gray-300 dark:text-gray-600">/</span>
+                <span className="text-gray-900 dark:text-white font-medium truncate max-w-[150px] sm:max-w-none">{companyName}</span>
+              </nav>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Partner Hero - FULL WIDTH, no container */}
         <PartnerHero
             companyName={companyName}
-            logo={partner.partnerLogo}
+            logo={partner.partnerLogo || partner.profilePhoto}
             heroImage={partner.partnerHeroImage}
             bio={partner.partnerBio}
             location={partner.location}

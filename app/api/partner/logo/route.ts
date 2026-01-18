@@ -24,7 +24,9 @@ const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']
 
 async function getAuthenticatedPartner() {
   const cookieStore = await cookies()
-  const token = cookieStore.get('partner_token')?.value
+  // Accept both partner_token AND hostAccessToken for unified portal
+  const token = cookieStore.get('partner_token')?.value ||
+                cookieStore.get('hostAccessToken')?.value
 
   if (!token) {
     return null
@@ -33,13 +35,14 @@ async function getAuthenticatedPartner() {
   try {
     const verified = await jwtVerify(token, JWT_SECRET)
     const payload = verified.payload
+    const hostId = payload.hostId as string
 
-    if (!payload.isPartner) {
+    if (!hostId) {
       return null
     }
 
     const partner = await prisma.rentalHost.findUnique({
-      where: { id: payload.hostId as string },
+      where: { id: hostId },
       select: {
         id: true,
         partnerCompanyName: true,
@@ -50,7 +53,8 @@ async function getAuthenticatedPartner() {
       }
     })
 
-    if (!partner || (partner.hostType !== 'FLEET_PARTNER' && partner.hostType !== 'PARTNER')) {
+    // Allow all host types since we've unified the portals
+    if (!partner) {
       return null
     }
 

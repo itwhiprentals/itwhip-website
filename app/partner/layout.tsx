@@ -63,9 +63,12 @@ interface PartnerData {
   managesOwnCars: boolean
   isVehicleOwner: boolean
   vehicleCount: number
+  activeVehicleCount: number
   managedVehicleCount: number
   displayName: string
   publicSlug?: string
+  // Publishing status
+  isLandingPagePublished: boolean
 }
 
 interface NavItem {
@@ -381,17 +384,32 @@ export default function PartnerLayout({
 
             {/* Right side */}
             <div className="flex items-center gap-3">
-              {/* Public Profile Link */}
+              {/* Public Profile Link - Shows status based on publishing state */}
               {partner?.publicSlug && (
-                <a
-                  href={`/rideshare/${partner.publicSlug}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 rounded-lg text-sm font-medium hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors"
-                >
-                  <IoGlobeOutline className="w-4 h-4" />
-                  /rideshare/{partner.publicSlug}
-                </a>
+                partner.isLandingPagePublished ? (
+                  // Published - clickable link
+                  <a
+                    href={`/rideshare/${partner.publicSlug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-lg text-sm font-medium hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
+                  >
+                    <IoGlobeOutline className="w-4 h-4" />
+                    <span>/rideshare/{partner.publicSlug}</span>
+                    <span className="text-xs bg-green-100 dark:bg-green-900/40 px-1.5 py-0.5 rounded">Live</span>
+                  </a>
+                ) : (
+                  // Not published - disabled with tooltip
+                  <Link
+                    href="/partner/landing"
+                    className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-lg text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                    title="Complete requirements in Landing Page settings to publish"
+                  >
+                    <IoGlobeOutline className="w-4 h-4" />
+                    <span>/rideshare/{partner.publicSlug}</span>
+                    <span className="text-xs bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400 px-1.5 py-0.5 rounded">Draft</span>
+                  </Link>
+                )
               )}
 
               {/* Notifications */}

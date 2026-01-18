@@ -57,11 +57,11 @@ export async function GET(
         hostId: partner.id
       },
       include: {
-        damagePhotos: {
+        ClaimDamagePhoto: {
           where: { deletedAt: null },
           orderBy: { order: 'asc' }
         },
-        messages: {
+        ClaimMessage: {
           orderBy: { createdAt: 'asc' }
         }
       }
@@ -124,14 +124,14 @@ export async function GET(
         estimatedCost: claim.estimatedCost ? Number(claim.estimatedCost) : null,
         approvedAmount: claim.approvedAmount ? Number(claim.approvedAmount) : null,
         paidAmount: claim.paidAmount ? Number(claim.paidAmount) : null,
-        photos: claim.damagePhotos.map(p => ({
+        photos: claim.ClaimDamagePhoto.map(p => ({
           id: p.id,
           url: p.url,
           order: p.order,
           uploadedBy: p.uploadedBy,
           createdAt: p.createdAt.toISOString()
         })),
-        messages: claim.messages.map(m => ({
+        messages: claim.ClaimMessage.map(m => ({
           id: m.id,
           senderType: m.senderType,
           senderName: m.senderName,
