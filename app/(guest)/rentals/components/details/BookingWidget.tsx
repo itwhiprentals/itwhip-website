@@ -26,7 +26,7 @@ import {
 } from 'react-icons/io5'
 
 // Import shared booking pricing utility (ensures consistent calculations across all booking stages)
-import { calculateFromWidgetState, formatPrice } from '@/app/(guest)/rentals/lib/booking-pricing'
+import { calculateFromWidgetState, formatPrice, getActualDeposit, getCarClassAndDefaultDeposit } from '@/app/(guest)/rentals/lib/booking-pricing'
 
 interface BookingWidgetProps {
   car: any
@@ -52,17 +52,6 @@ interface InsuranceQuote {
     id: string
     name: string
     type: string
-  }
-}
-
-// Helper function to determine car class and deposit
-function getCarClassAndDeposit(dailyRate: number): { carClass: string; deposit: number } {
-  if (dailyRate < 150) {
-    return { carClass: 'economy', deposit: 250 }
-  } else if (dailyRate < 500) {
-    return { carClass: 'luxury', deposit: 700 }
-  } else {
-    return { carClass: 'exotic', deposit: 1000 }
   }
 }
 
@@ -194,7 +183,11 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
   // Pricing based on car
   const dailyRate = car?.dailyRate || 1495
   const vehicleValue = car?.value || dailyRate * 365 // Estimate if not provided
-  const { carClass, deposit: baseDeposit } = getCarClassAndDeposit(dailyRate)
+  // Use shared deposit calculation that respects host/vehicle deposit settings
+  const baseDeposit = getActualDeposit(car)
+  // Get car class for UI display (exotic badge, etc.) AND the rate-based default deposit
+  // We need the rate-based deposit to show "waived" amounts when host disables deposits
+  const { carClass, deposit: rateBasedDeposit } = getCarClassAndDefaultDeposit(dailyRate)
   const days = Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) || 1
   
   // Get current insurance quote
@@ -913,9 +906,21 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
                 <span className="text-2xl font-bold text-gray-900 dark:text-white">
                   ${formatPrice(pricing.total)}
                 </span>
-                <p className="text-xs text-gray-500 dark:text-gray-300 mt-1">
-                  Plus ${formatPrice(actualDeposit)} security deposit (hold)
-                </p>
+                {/* Deposit display: show strikethrough when waived, normal when required */}
+                {actualDeposit > 0 ? (
+                  <p className="text-xs text-gray-500 dark:text-gray-300 mt-1">
+                    + ${formatPrice(actualDeposit)} security deposit (hold)
+                  </p>
+                ) : rateBasedDeposit > 0 ? (
+                  <p className="text-xs mt-1 flex items-center justify-end gap-1.5">
+                    <span className="line-through text-gray-400 dark:text-gray-500">
+                      ${formatPrice(rateBasedDeposit)}
+                    </span>
+                    <span className="text-green-600 dark:text-green-400 font-medium">
+                      Deposit waived
+                    </span>
+                  </p>
+                ) : null}
               </div>
             </div>
           </div>
@@ -971,6 +976,17 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
                   <span className="text-2xl font-bold text-gray-900 dark:text-white">
                     ${formatPrice(pricing.total)}
                   </span>
+                  {/* Show deposit info in floating bar */}
+                  {actualDeposit > 0 ? (
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      + ${formatPrice(actualDeposit)} hold
+                    </span>
+                  ) : rateBasedDeposit > 0 ? (
+                    <span className="text-xs flex items-center gap-1">
+                      <span className="line-through text-gray-400">${formatPrice(rateBasedDeposit)}</span>
+                      <span className="text-green-600 dark:text-green-400 font-medium">waived</span>
+                    </span>
+                  ) : null}
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-300">{days} {days === 1 ? 'day' : 'days'} • Tax included</p>
               </div>

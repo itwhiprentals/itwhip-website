@@ -26,8 +26,9 @@ interface BookingWidgetProps {
   car: any
 }
 
-// Helper function to determine car class and deposit
-function getCarClassAndDeposit(dailyRate: number): { carClass: string; deposit: number } {
+// Helper function to determine car class and default deposit
+// Used as fallback when host/vehicle don't have explicit deposit settings
+function getCarClassAndDefaultDeposit(dailyRate: number): { carClass: string; deposit: number } {
   if (dailyRate < 150) {
     return { carClass: 'economy', deposit: 250 }
   } else if (dailyRate < 500) {
@@ -35,6 +36,72 @@ function getCarClassAndDeposit(dailyRate: number): { carClass: string; deposit: 
   } else {
     return { carClass: 'exotic', deposit: 1000 }
   }
+}
+
+// Determine actual deposit based on per-vehicle deposit mode
+// HYBRID system - each VEHICLE can be assigned to either mode:
+//
+// GLOBAL MODE (vehicle.vehicleDepositMode === 'global', default):
+//   1. If host.requireDeposit === false → no deposit (0)
+//   2. Check for make-specific override (e.g., all Toyotas = $400)
+//   3. Use host's global depositAmount
+//   4. Fallback to rate-based default
+//
+// INDIVIDUAL MODE (vehicle.vehicleDepositMode === 'individual'):
+//   1. If vehicle has noDeposit === true → no deposit (0)
+//   2. Use vehicle's customDepositAmount
+//   3. Fallback to rate-based default
+//
+function getActualDeposit(car: any): number {
+  const host = car?.host
+
+  // DEBUG: Log deposit calculation inputs
+  console.log('🔍 [Deposit Debug]', {
+    vehicleDepositMode: car?.vehicleDepositMode,
+    hostDepositAmount: host?.depositAmount,
+    hostRequireDeposit: host?.requireDeposit,
+    hostMakeDeposits: host?.makeDeposits,
+    carMake: car?.make,
+    dailyRate: car?.dailyRate,
+    hostExists: !!host
+  })
+
+  // Check per-vehicle deposit mode - "individual" uses vehicle-specific settings
+  // Default to 'global' if not set
+  const vehicleDepositMode = car?.vehicleDepositMode || 'global'
+
+  if (vehicleDepositMode === 'individual') {
+    // Individual mode: vehicle-specific settings take precedence
+    if (car?.noDeposit === true) {
+      return 0
+    }
+    if (car?.customDepositAmount !== null && car?.customDepositAmount !== undefined) {
+      return Number(car.customDepositAmount)
+    }
+    // Fallback to rate-based default
+    const { deposit } = getCarClassAndDefaultDeposit(car?.dailyRate || 0)
+    return deposit
+  }
+
+  // Global mode (default): host-level settings apply to all vehicles
+  if (host?.requireDeposit === false) {
+    return 0
+  }
+
+  // Check for make-specific override in global mode
+  const makeDeposits = host?.makeDeposits as Record<string, number> | null
+  if (makeDeposits && car?.make && makeDeposits[car.make] !== undefined) {
+    return makeDeposits[car.make]
+  }
+
+  // Use host's global deposit amount if set
+  if (host?.depositAmount !== null && host?.depositAmount !== undefined) {
+    return Number(host.depositAmount)
+  }
+
+  // Fallback to rate-based default
+  const { deposit } = getCarClassAndDefaultDeposit(car?.dailyRate || 0)
+  return deposit
 }
 
 // Helper function to get Arizona date string (no timezone conversion)
@@ -121,7 +188,9 @@ export default function BookingWidget({ car }: BookingWidgetProps) {
   
   // Pricing based on car
   const dailyRate = car?.dailyRate || 1495
-  const { carClass, deposit } = getCarClassAndDeposit(dailyRate)
+  const { carClass } = getCarClassAndDefaultDeposit(dailyRate)
+  // Use actual deposit from host/vehicle settings (with clear precedence)
+  const deposit = getActualDeposit(car)
   const days = Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) || 1
   
   const basePrice = dailyRate * days
@@ -666,9 +735,15 @@ export default function BookingWidget({ car }: BookingWidgetProps) {
                 <span className="text-2xl font-bold text-gray-900 dark:text-white">
                   ${total.toLocaleString()}
                 </span>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Plus ${deposit.toLocaleString()} security deposit (hold)
-                </p>
+                {deposit > 0 ? (
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Plus ${deposit.toLocaleString()} security deposit (hold)
+                  </p>
+                ) : (
+                  <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                    No security deposit required
+                  </p>
+                )}
               </div>
             </div>
           </div>

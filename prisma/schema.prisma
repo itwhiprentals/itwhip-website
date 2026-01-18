@@ -1767,6 +1767,8 @@ model RentalCar {
   monthlyDiscount            Float?                     @default(0.30)
   discountPercent            Float?                     @default(0)
   customDepositAmount        Float?
+  noDeposit                  Boolean                    @default(false)
+  vehicleDepositMode         String                     @default("global")
   features                   String
   address                    String
   city                       String
@@ -1996,6 +1998,8 @@ model RentalHost {
   commissionRate                                                        Float                        @default(0.25)
   dashboardAccess                                                       Boolean                      @default(false)
   depositAmount                                                         Float                        @default(500)
+  depositMode                                                           String                       @default("global")
+  makeDeposits                                                          Json?
   globalDiscountPercent                                                 Float?                       @default(0)
   documentsVerified                                                     Boolean                      @default(false)
   driversLicenseUrl                                                     String?

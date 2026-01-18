@@ -120,6 +120,11 @@ export async function GET(
         // Vehicle type (for rideshare detection)
         vehicleType: true,
 
+        // Deposit settings (for booking pricing)
+        vehicleDepositMode: true,
+        customDepositAmount: true,
+        noDeposit: true,
+
         // Host - SECURED WITH ONLY PUBLIC FIELDS + APPROVAL STATUS + PARTNER FIELDS
         host: {
           select: {
@@ -152,6 +157,11 @@ export async function GET(
             partnerSupportPhone: true,
             partnerBadges: true,
             yearEstablished: true,
+            // Deposit settings for booking pricing
+            requireDeposit: true,
+            depositAmount: true,
+            depositMode: true,
+            makeDeposits: true,
           }
         },
         

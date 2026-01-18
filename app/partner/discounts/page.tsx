@@ -1,5 +1,11 @@
 // app/partner/discounts/page.tsx
-// Partner Discount Manager - Promo codes, deposits, and vehicle pricing
+// Partner Discounts & Deposits Management
+//
+// HYBRID deposit system with MODE SWITCHER:
+// - Global Mode: All vehicles use host-level settings (can remove vehicles to individual)
+// - Individual Mode: Configure each removed vehicle separately
+//
+// Plus promo codes management
 
 'use client'
 
@@ -20,11 +26,17 @@ import {
   IoWalletOutline,
   IoSaveOutline,
   IoCarOutline,
-  IoCreateOutline,
-  IoChevronForwardOutline,
-  IoPencilOutline
+  IoGlobeOutline,
+  IoListOutline,
+  IoWarningOutline,
+  IoAddOutline,
+  IoCloseOutline,
+  IoRemoveCircleOutline,
+  IoArrowBackOutline,
+  IoSwapHorizontalOutline
 } from 'react-icons/io5'
 
+// Types
 interface Discount {
   id: string
   code: string
@@ -49,28 +61,101 @@ interface NewDiscount {
   expiresAt: string
 }
 
-interface DepositSettings {
-  requireDeposit: boolean
-  depositAmount: number
-  globalDiscountPercent: number
-}
-
-interface FleetVehicle {
+interface Vehicle {
   id: string
+  year: number
   make: string
   model: string
-  year: number
   dailyRate: number
-  discountPercent: number
-  customDepositAmount: number | null
   photo: string | null
   isActive: boolean
-  estimatedValue: number | null
+  vehicleDepositMode: 'global' | 'individual'
+  requireDeposit: boolean
+  depositAmount: number | null
+}
+
+interface DepositSettings {
+  global: {
+    requireDeposit: boolean
+    defaultAmount: number
+    makeDeposits: Record<string, number>
+  }
+  makes: string[]
+  counts: {
+    global: number
+    individual: number
+    total: number
+  }
+  vehicles: Vehicle[]
+}
+
+// Rate-based fallback deposit - MUST match BookingWidget's getCarClassAndDefaultDeposit exactly!
+// economy (<$150/day) = $250, luxury ($150-499/day) = $700, exotic ($500+/day) = $1000
+function getRateBasedDeposit(dailyRate: number): number {
+  if (dailyRate < 150) return 250      // economy
+  if (dailyRate < 500) return 700      // luxury
+  return 1000                           // exotic
+}
+
+// Calculate effective deposit exactly like BookingWidget
+// This ensures the discounts page shows the same deposit the customer sees
+function getEffectiveDeposit(
+  vehicle: Vehicle,
+  globalSettings: DepositSettings['global']
+): number {
+  // INDIVIDUAL MODE: vehicle-specific settings
+  if (vehicle.vehicleDepositMode === 'individual') {
+    if (!vehicle.requireDeposit) return 0
+    if (vehicle.depositAmount !== null && vehicle.depositAmount !== undefined) {
+      return vehicle.depositAmount
+    }
+    // Fallback to rate-based
+    return getRateBasedDeposit(vehicle.dailyRate)
+  }
+
+  // GLOBAL MODE: host-level settings
+  if (!globalSettings.requireDeposit) return 0
+
+  // Check for make-specific override
+  const makeOverride = globalSettings.makeDeposits[vehicle.make]
+  if (makeOverride !== undefined) {
+    return makeOverride
+  }
+
+  // Use global default if set
+  if (globalSettings.defaultAmount) {
+    return globalSettings.defaultAmount
+  }
+
+  // Fallback to rate-based
+  return getRateBasedDeposit(vehicle.dailyRate)
 }
 
 export default function PartnerDiscountsPage() {
+  // View mode: which section to display
+  const [viewMode, setViewMode] = useState<'global' | 'individual'>('global')
+
+  // Deposit state
+  const [depositSettings, setDepositSettings] = useState<DepositSettings>({
+    global: {
+      requireDeposit: true,
+      defaultAmount: 500,
+      makeDeposits: {}
+    },
+    makes: [],
+    counts: { global: 0, individual: 0, total: 0 },
+    vehicles: []
+  })
+  const [isSavingGlobal, setIsSavingGlobal] = useState(false)
+  const [isSavingIndividual, setIsSavingIndividual] = useState(false)
+  const [globalSaved, setGlobalSaved] = useState(false)
+  const [individualSaved, setIndividualSaved] = useState(false)
+
+  // Individual mode edits (only for vehicles in individual mode)
+  const [vehicleEdits, setVehicleEdits] = useState<Record<string, { requireDeposit: boolean; depositAmount: number | null }>>({})
+
+  // Promo codes state
   const [discounts, setDiscounts] = useState<Discount[]>([])
-  const [vehicles, setVehicles] = useState<FleetVehicle[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
@@ -86,22 +171,9 @@ export default function PartnerDiscountsPage() {
   })
   const [isSaving, setIsSaving] = useState(false)
 
-  // Settings state
-  const [depositSettings, setDepositSettings] = useState<DepositSettings>({
-    requireDeposit: true,
-    depositAmount: 500,
-    globalDiscountPercent: 0
-  })
-  const [isSavingSettings, setIsSavingSettings] = useState(false)
-  const [settingsSaved, setSettingsSaved] = useState(false)
-
-  // Per-car editing state
-  const [editingVehicleId, setEditingVehicleId] = useState<string | null>(null)
-  const [vehicleEdits, setVehicleEdits] = useState<{
-    discountPercent: number
-    customDepositAmount: string
-  }>({ discountPercent: 0, customDepositAmount: '' })
-  const [isSavingVehicle, setIsSavingVehicle] = useState(false)
+  // New make input for global mode
+  const [newMake, setNewMake] = useState('')
+  const [newMakeAmount, setNewMakeAmount] = useState('')
 
   useEffect(() => {
     fetchData()
@@ -110,44 +182,39 @@ export default function PartnerDiscountsPage() {
   const fetchData = async () => {
     setIsLoading(true)
     try {
-      // Fetch all data in parallel
-      const [discountsRes, settingsRes, fleetRes] = await Promise.all([
-        fetch('/api/partner/discounts'),
-        fetch('/api/partner/settings'),
-        fetch('/api/partner/fleet')
+      const [depositRes, discountsRes] = await Promise.all([
+        fetch('/api/partner/deposit-settings'),
+        fetch('/api/partner/discounts')
       ])
 
-      const [discountsData, settingsData, fleetData] = await Promise.all([
-        discountsRes.json(),
-        settingsRes.json(),
-        fleetRes.json()
+      const [depositData, discountsData] = await Promise.all([
+        depositRes.json(),
+        discountsRes.json()
       ])
+
+      if (depositData.success) {
+        setDepositSettings({
+          global: depositData.global,
+          makes: depositData.makes || [],
+          counts: depositData.counts || { global: 0, individual: 0, total: 0 },
+          vehicles: depositData.vehicles || []
+        })
+
+        // Initialize vehicle edits for individual mode vehicles only
+        const edits: Record<string, { requireDeposit: boolean; depositAmount: number | null }> = {}
+        depositData.vehicles?.forEach((v: Vehicle) => {
+          if (v.vehicleDepositMode === 'individual') {
+            edits[v.id] = {
+              requireDeposit: v.requireDeposit,
+              depositAmount: v.depositAmount
+            }
+          }
+        })
+        setVehicleEdits(edits)
+      }
 
       if (discountsData.success) {
         setDiscounts(discountsData.discounts)
-      }
-
-      if (settingsData.success && settingsData.host) {
-        setDepositSettings({
-          requireDeposit: settingsData.host.requireDeposit ?? true,
-          depositAmount: settingsData.host.depositAmount ?? 500,
-          globalDiscountPercent: settingsData.host.globalDiscountPercent ?? 0
-        })
-      }
-
-      if (fleetData.success && fleetData.vehicles) {
-        setVehicles(fleetData.vehicles.map((v: any) => ({
-          id: v.id,
-          make: v.make,
-          model: v.model,
-          year: v.year,
-          dailyRate: v.dailyRate,
-          discountPercent: v.discountPercent ?? 0,
-          customDepositAmount: v.customDepositAmount,
-          photo: v.photos?.[0]?.url || null,
-          isActive: v.isActive,
-          estimatedValue: v.estimatedValue
-        })))
       }
     } catch (error) {
       console.error('Failed to fetch data:', error)
@@ -156,37 +223,209 @@ export default function PartnerDiscountsPage() {
     }
   }
 
-  const saveSettings = async () => {
-    setIsSavingSettings(true)
+  // Filter vehicles by mode
+  const globalVehicles = depositSettings.vehicles.filter(v => v.vehicleDepositMode === 'global')
+  const individualVehicles = depositSettings.vehicles.filter(v => v.vehicleDepositMode === 'individual')
+
+  // Move a vehicle from Global to Individual
+  const moveToIndividual = async (vehicleId: string) => {
+    const vehicle = depositSettings.vehicles.find(v => v.id === vehicleId)
+    if (!vehicle) return
+
+    // Confirm before removing from global
+    const confirmed = window.confirm(
+      `Remove "${vehicle.year} ${vehicle.make} ${vehicle.model}" from global settings?\n\nThis vehicle will need to be configured individually in Individual Mode.`
+    )
+    if (!confirmed) return
+
+    // Initialize edit state with global defaults
+    setVehicleEdits(prev => ({
+      ...prev,
+      [vehicleId]: {
+        requireDeposit: depositSettings.global.requireDeposit,
+        depositAmount: depositSettings.global.makeDeposits[vehicle.make] ?? depositSettings.global.defaultAmount
+      }
+    }))
+
     try {
-      const res = await fetch('/api/partner/settings', {
+      const res = await fetch('/api/partner/vehicles/bulk-deposits', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          requireDeposit: depositSettings.requireDeposit,
-          depositAmount: depositSettings.depositAmount,
-          globalDiscountPercent: depositSettings.globalDiscountPercent
+          vehicles: [{
+            id: vehicleId,
+            vehicleDepositMode: 'individual',
+            requireDeposit: depositSettings.global.requireDeposit,
+            depositAmount: depositSettings.global.makeDeposits[vehicle.make] ?? depositSettings.global.defaultAmount
+          }]
         })
       })
-      const data = await res.json()
-      if (data.success) {
-        setSettingsSaved(true)
-        setTimeout(() => setSettingsSaved(false), 3000)
+
+      if (res.ok) {
+        // Refresh data
+        await fetchData()
       }
     } catch (error) {
-      console.error('Failed to save settings:', error)
-    } finally {
-      setIsSavingSettings(false)
+      console.error('Failed to move vehicle to individual:', error)
     }
   }
 
-  const handleCreate = async () => {
-    if (!newDiscount.code || !newDiscount.title || newDiscount.percentage <= 0) {
-      return
+  // Move a vehicle from Individual back to Global
+  const moveToGlobal = async (vehicleId: string) => {
+    try {
+      const res = await fetch('/api/partner/vehicles/bulk-deposits', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vehicles: [{
+            id: vehicleId,
+            vehicleDepositMode: 'global'
+          }]
+        })
+      })
+
+      if (res.ok) {
+        // Remove from edits
+        setVehicleEdits(prev => {
+          const updated = { ...prev }
+          delete updated[vehicleId]
+          return updated
+        })
+        // Refresh data
+        await fetchData()
+      }
+    } catch (error) {
+      console.error('Failed to move vehicle to global:', error)
     }
+  }
 
+  const saveGlobalSettings = async () => {
+    setIsSavingGlobal(true)
+    try {
+      // Normalize: round default amount to nearest $25, min $25
+      const normalizedGlobal = {
+        ...depositSettings.global,
+        defaultAmount: depositSettings.global.requireDeposit
+          ? Math.max(25, Math.round(depositSettings.global.defaultAmount / 25) * 25)
+          : depositSettings.global.defaultAmount,
+        // Also normalize make deposits to nearest $25
+        makeDeposits: Object.fromEntries(
+          Object.entries(depositSettings.global.makeDeposits).map(([make, amount]) => [
+            make,
+            Math.max(25, Math.round(amount / 25) * 25)
+          ])
+        )
+      }
+
+      // Update local state with normalized values
+      setDepositSettings(prev => ({ ...prev, global: normalizedGlobal }))
+
+      const res = await fetch('/api/partner/deposit-settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          global: normalizedGlobal
+        })
+      })
+
+      if (res.ok) {
+        setGlobalSaved(true)
+        setTimeout(() => setGlobalSaved(false), 3000)
+      }
+    } catch (error) {
+      console.error('Failed to save global settings:', error)
+    } finally {
+      setIsSavingGlobal(false)
+    }
+  }
+
+  const saveIndividualSettings = async () => {
+    setIsSavingIndividual(true)
+    try {
+      // Build vehicles array with their edits
+      const vehicles = individualVehicles.map(vehicle => {
+        const edit = vehicleEdits[vehicle.id] || { requireDeposit: true, depositAmount: depositSettings.global.defaultAmount }
+
+        // Validate and normalize: if deposit is required but amount is empty/invalid → disable deposit
+        const hasValidAmount = edit.depositAmount !== null &&
+                               edit.depositAmount !== undefined &&
+                               edit.depositAmount >= 25
+
+        const requireDeposit = edit.requireDeposit && hasValidAmount
+        const depositAmount = requireDeposit ? Math.round(edit.depositAmount! / 25) * 25 : null
+
+        return {
+          id: vehicle.id,
+          vehicleDepositMode: 'individual' as const,
+          requireDeposit,
+          depositAmount
+        }
+      })
+
+      if (vehicles.length > 0) {
+        const res = await fetch('/api/partner/vehicles/bulk-deposits', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vehicles })
+        })
+
+        if (res.ok) {
+          setIndividualSaved(true)
+          setTimeout(() => setIndividualSaved(false), 3000)
+          // Refresh data to get updated values
+          await fetchData()
+        }
+      } else {
+        setIndividualSaved(true)
+        setTimeout(() => setIndividualSaved(false), 3000)
+      }
+    } catch (error) {
+      console.error('Failed to save individual settings:', error)
+    } finally {
+      setIsSavingIndividual(false)
+    }
+  }
+
+  const addMakeDeposit = () => {
+    if (!newMake || !newMakeAmount) return
+    const rawAmount = parseFloat(newMakeAmount)
+    if (isNaN(rawAmount) || rawAmount < 25) return
+
+    // Round to nearest $25
+    const amount = Math.round(rawAmount / 25) * 25
+
+    setDepositSettings(prev => ({
+      ...prev,
+      global: {
+        ...prev.global,
+        makeDeposits: {
+          ...prev.global.makeDeposits,
+          [newMake]: amount
+        }
+      }
+    }))
+    setNewMake('')
+    setNewMakeAmount('')
+  }
+
+  const removeMakeDeposit = (make: string) => {
+    setDepositSettings(prev => {
+      const newMakeDeposits = { ...prev.global.makeDeposits }
+      delete newMakeDeposits[make]
+      return {
+        ...prev,
+        global: {
+          ...prev.global,
+          makeDeposits: newMakeDeposits
+        }
+      }
+    })
+  }
+
+  // Promo code functions
+  const handleCreate = async () => {
+    if (!newDiscount.code || !newDiscount.title || newDiscount.percentage <= 0) return
     setIsSaving(true)
-
     try {
       const res = await fetch('/api/partner/discounts', {
         method: 'POST',
@@ -196,9 +435,7 @@ export default function PartnerDiscountsPage() {
           maxUses: newDiscount.maxUses ? parseInt(newDiscount.maxUses) : null
         })
       })
-
       const data = await res.json()
-
       if (data.success) {
         setDiscounts(prev => [data.discount, ...prev])
         setShowModal(false)
@@ -213,16 +450,9 @@ export default function PartnerDiscountsPage() {
 
   const handleToggle = async (discountId: string, currentState: boolean) => {
     try {
-      const res = await fetch(`/api/partner/discounts/${discountId}/toggle`, {
-        method: 'POST'
-      })
-
+      const res = await fetch(`/api/partner/discounts/${discountId}/toggle`, { method: 'POST' })
       if (res.ok) {
-        setDiscounts(prev =>
-          prev.map(d =>
-            d.id === discountId ? { ...d, isActive: !currentState } : d
-          )
-        )
+        setDiscounts(prev => prev.map(d => d.id === discountId ? { ...d, isActive: !currentState } : d))
       }
     } catch (error) {
       console.error('Failed to toggle discount:', error)
@@ -231,69 +461,13 @@ export default function PartnerDiscountsPage() {
 
   const handleDelete = async (discountId: string) => {
     if (!confirm('Are you sure you want to delete this discount code?')) return
-
     try {
-      const res = await fetch(`/api/partner/discounts/${discountId}`, {
-        method: 'DELETE'
-      })
-
+      const res = await fetch(`/api/partner/discounts/${discountId}`, { method: 'DELETE' })
       if (res.ok) {
         setDiscounts(prev => prev.filter(d => d.id !== discountId))
       }
     } catch (error) {
       console.error('Failed to delete discount:', error)
-    }
-  }
-
-  const startEditingVehicle = (vehicle: FleetVehicle) => {
-    setEditingVehicleId(vehicle.id)
-    // Show the actual deposit on this vehicle (custom or global default)
-    const effectiveDeposit = vehicle.customDepositAmount ?? depositSettings.depositAmount
-    setVehicleEdits({
-      discountPercent: vehicle.discountPercent,
-      customDepositAmount: effectiveDeposit.toString()
-    })
-  }
-
-  const cancelEditingVehicle = () => {
-    setEditingVehicleId(null)
-    setVehicleEdits({ discountPercent: 0, customDepositAmount: '' })
-  }
-
-  const saveVehicleSettings = async (vehicleId: string) => {
-    setIsSavingVehicle(true)
-    try {
-      const res = await fetch(`/api/partner/fleet/${vehicleId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          discountPercent: vehicleEdits.discountPercent,
-          customDepositAmount: vehicleEdits.customDepositAmount || null
-        })
-      })
-
-      const data = await res.json()
-
-      if (data.success) {
-        setVehicles(prev =>
-          prev.map(v =>
-            v.id === vehicleId
-              ? {
-                  ...v,
-                  discountPercent: vehicleEdits.discountPercent,
-                  customDepositAmount: vehicleEdits.customDepositAmount
-                    ? parseFloat(vehicleEdits.customDepositAmount)
-                    : null
-                }
-              : v
-          )
-        )
-        setEditingVehicleId(null)
-      }
-    } catch (error) {
-      console.error('Failed to save vehicle settings:', error)
-    } finally {
-      setIsSavingVehicle(false)
     }
   }
 
@@ -330,47 +504,18 @@ export default function PartnerDiscountsPage() {
     const expiresAt = discount.expiresAt ? new Date(discount.expiresAt) : null
 
     if (!discount.isActive) {
-      return (
-        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
-          <IoCloseCircleOutline className="w-3 h-3" />
-          Inactive
-        </span>
-      )
+      return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400"><IoCloseCircleOutline className="w-3 h-3" />Inactive</span>
     }
-
     if (expiresAt && expiresAt < now) {
-      return (
-        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400">
-          <IoTimeOutline className="w-3 h-3" />
-          Expired
-        </span>
-      )
+      return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"><IoTimeOutline className="w-3 h-3" />Expired</span>
     }
-
     if (startsAt && startsAt > now) {
-      return (
-        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400">
-          <IoTimeOutline className="w-3 h-3" />
-          Scheduled
-        </span>
-      )
+      return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400"><IoTimeOutline className="w-3 h-3" />Scheduled</span>
     }
-
     if (discount.maxUses && discount.usedCount >= discount.maxUses) {
-      return (
-        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400">
-          <IoCheckmarkCircleOutline className="w-3 h-3" />
-          Maxed Out
-        </span>
-      )
+      return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400"><IoCheckmarkCircleOutline className="w-3 h-3" />Maxed Out</span>
     }
-
-    return (
-      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400">
-        <IoCheckmarkCircleOutline className="w-3 h-3" />
-        Active
-      </span>
-    )
+    return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"><IoCheckmarkCircleOutline className="w-3 h-3" />Active</span>
   }
 
   const filteredDiscounts = discounts.filter(d =>
@@ -391,9 +536,9 @@ export default function PartnerDiscountsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Discounts & Pricing</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Discounts & Deposits</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Manage promo codes, deposits, and vehicle pricing
+            Manage security deposits and promo codes for your fleet
           </p>
         </div>
         <button
@@ -405,383 +550,577 @@ export default function PartnerDiscountsPage() {
         </button>
       </div>
 
-      {/* Global Settings Section */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
-        <div className="flex items-start gap-3 mb-4">
-          <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
-            <IoWalletOutline className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-gray-900 dark:text-white">Global Settings</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-              Default deposit and discount settings for your entire fleet
-            </p>
+      {/* ========== DEPOSIT MANAGEMENT WITH MODE SWITCHER ========== */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        {/* Header */}
+        <div className="p-5 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+              <IoWalletOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900 dark:text-white">Deposit Management</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                Choose how to configure security deposits for your fleet
+              </p>
+            </div>
           </div>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6">
-          {/* Deposit Settings */}
-          <div className="space-y-3">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={depositSettings.requireDeposit}
-                onChange={(e) => setDepositSettings(prev => ({ ...prev, requireDeposit: e.target.checked }))}
-                className="w-4 h-4 text-orange-600 rounded focus:ring-orange-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700"
-              />
-              <span className="text-sm text-gray-700 dark:text-gray-300">Require deposit</span>
-            </label>
-            <div>
-              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Default Deposit Amount</label>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500 dark:text-gray-400">$</span>
-                <input
-                  type="number"
-                  min="0"
-                  step="50"
-                  value={depositSettings.depositAmount}
-                  onChange={(e) => setDepositSettings(prev => ({ ...prev, depositAmount: parseFloat(e.target.value) || 0 }))}
-                  disabled={!depositSettings.requireDeposit}
-                  className="w-28 px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Global Discount */}
-          <div className="space-y-3">
-            <label className="block text-sm text-gray-700 dark:text-gray-300">
-              Fleet-wide Discount
-            </label>
-            <div>
-              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Applies to all vehicles</label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  min="0"
-                  max="50"
-                  step="1"
-                  value={depositSettings.globalDiscountPercent}
-                  onChange={(e) => setDepositSettings(prev => ({ ...prev, globalDiscountPercent: parseFloat(e.target.value) || 0 }))}
-                  className="w-20 px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                />
-                <span className="text-sm text-gray-500 dark:text-gray-400">%</span>
-              </div>
-            </div>
-            {depositSettings.globalDiscountPercent > 0 && (
-              <p className="text-xs text-green-600 dark:text-green-400">
-                All vehicles will be {depositSettings.globalDiscountPercent}% off
-              </p>
-            )}
-          </div>
-
-          {/* Save Button */}
-          <div className="flex items-end">
+        {/* Mode Switcher */}
+        <div className="p-5 border-b border-gray-200 dark:border-gray-700">
+          <div className="grid grid-cols-2 gap-4">
+            {/* Global Mode Button */}
             <button
-              onClick={saveSettings}
-              disabled={isSavingSettings}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg text-sm font-medium transition-colors"
+              onClick={() => setViewMode('global')}
+              className={`p-4 rounded-lg border-2 text-left transition-all ${
+                viewMode === 'global'
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+              }`}
             >
-              {isSavingSettings ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                  Saving...
-                </>
-              ) : settingsSaved ? (
-                <>
-                  <IoCheckmarkOutline className="w-4 h-4" />
-                  Saved!
-                </>
-              ) : (
-                <>
-                  <IoSaveOutline className="w-4 h-4" />
-                  Save Settings
-                </>
-              )}
+              <div className="flex items-center gap-3 mb-2">
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                  viewMode === 'global'
+                    ? 'border-blue-500'
+                    : 'border-gray-400'
+                }`}>
+                  {viewMode === 'global' && (
+                    <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+                  )}
+                </div>
+                <IoGlobeOutline className={`w-5 h-5 ${viewMode === 'global' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500'}`} />
+              </div>
+              <h4 className={`font-medium ${viewMode === 'global' ? 'text-blue-900 dark:text-blue-100' : 'text-gray-900 dark:text-white'}`}>
+                Global Mode
+              </h4>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Same deposit for all vehicles
+              </p>
+              <span className="inline-block mt-2 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full">
+                {globalVehicles.length} vehicle{globalVehicles.length !== 1 ? 's' : ''}
+              </span>
+            </button>
+
+            {/* Individual Mode Button */}
+            <button
+              onClick={() => setViewMode('individual')}
+              className={`p-4 rounded-lg border-2 text-left transition-all ${
+                viewMode === 'individual'
+                  ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+              }`}
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                  viewMode === 'individual'
+                    ? 'border-purple-500'
+                    : 'border-gray-400'
+                }`}>
+                  {viewMode === 'individual' && (
+                    <div className="w-2.5 h-2.5 rounded-full bg-purple-500" />
+                  )}
+                </div>
+                <IoListOutline className={`w-5 h-5 ${viewMode === 'individual' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500'}`} />
+              </div>
+              <h4 className={`font-medium ${viewMode === 'individual' ? 'text-purple-900 dark:text-purple-100' : 'text-gray-900 dark:text-white'}`}>
+                Individual Mode
+              </h4>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Configure each vehicle separately
+              </p>
+              <span className="inline-block mt-2 text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-full">
+                {individualVehicles.length} vehicle{individualVehicles.length !== 1 ? 's' : ''}
+              </span>
             </button>
           </div>
         </div>
 
-        {!depositSettings.requireDeposit && (
-          <p className="mt-4 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-lg px-3 py-2">
-            Deposits are recommended to protect against damage and no-shows. Disabling may increase your risk.
-          </p>
-        )}
-
-        {/* Quick Apply to Single Vehicle */}
-        {vehicles.length > 0 && (
-          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-              Quick Apply to Single Vehicle
-            </h4>
-            <div className="grid sm:grid-cols-4 gap-3">
-              <div className="sm:col-span-2">
-                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Select Vehicle</label>
-                <select
-                  value={editingVehicleId || ''}
-                  onChange={(e) => {
-                    const vehicleId = e.target.value
-                    if (vehicleId) {
-                      const vehicle = vehicles.find(v => v.id === vehicleId)
-                      if (vehicle) {
-                        startEditingVehicle(vehicle)
-                      }
-                    } else {
-                      cancelEditingVehicle()
-                    }
-                  }}
-                  className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Choose a vehicle...</option>
-                  {vehicles.map(v => (
-                    <option key={v.id} value={v.id}>
-                      {v.year} {v.make} {v.model} - ${v.dailyRate}/day
-                    </option>
-                  ))}
-                </select>
+        {/* ===== GLOBAL MODE VIEW ===== */}
+        {viewMode === 'global' && (
+          <div className="p-5 space-y-6">
+            {/* Require Deposits Toggle */}
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="text-sm font-medium text-gray-900 dark:text-white">Require Deposits</label>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  Collect security deposits to protect against damage
+                </p>
               </div>
-              {editingVehicleId && (
-                <>
-                  <div>
-                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Discount %</label>
+              <button
+                type="button"
+                onClick={() => setDepositSettings(prev => ({
+                  ...prev,
+                  global: { ...prev.global, requireDeposit: !prev.global.requireDeposit }
+                }))}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                  depositSettings.global.requireDeposit ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'
+                }`}
+                role="switch"
+                aria-checked={depositSettings.global.requireDeposit}
+              >
+                <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                  depositSettings.global.requireDeposit ? 'translate-x-5' : 'translate-x-0'
+                }`} />
+              </button>
+            </div>
+
+            {depositSettings.global.requireDeposit ? (
+              <>
+                {/* Default Deposit Amount */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                    Default Deposit Amount
+                  </label>
+                  <div className="flex items-center gap-2 max-w-xs">
+                    <span className="text-gray-500 dark:text-gray-400">$</span>
                     <input
                       type="number"
-                      min="0"
-                      max="50"
-                      value={vehicleEdits.discountPercent}
-                      onChange={(e) => setVehicleEdits(prev => ({ ...prev, discountPercent: parseFloat(e.target.value) || 0 }))}
-                      className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      min="25"
+                      step="25"
+                      value={depositSettings.global.defaultAmount}
+                      onChange={(e) => setDepositSettings(prev => ({
+                        ...prev,
+                        global: { ...prev.global, defaultAmount: parseFloat(e.target.value) || 25 }
+                      }))}
+                      className="w-32 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Min $25, increments of $25
+                  </p>
+                </div>
+
+                {/* Per-Make Overrides */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                    Adjust by Make (Optional)
+                  </label>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                    Set different deposit amounts for specific makes
+                  </p>
+
+                  {/* Existing make deposits */}
+                  {Object.keys(depositSettings.global.makeDeposits).length > 0 && (
+                    <div className="space-y-2 mb-3">
+                      {Object.entries(depositSettings.global.makeDeposits).map(([make, amount]) => (
+                        <div key={make} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                          <span className="font-medium text-gray-900 dark:text-white flex-1">{make}</span>
+                          <span className="text-gray-600 dark:text-gray-300">${amount}</span>
+                          <button
+                            onClick={() => removeMakeDeposit(make)}
+                            className="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                          >
+                            <IoCloseOutline className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Add new make deposit */}
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={newMake}
+                      onChange={(e) => setNewMake(e.target.value)}
+                      className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select make...</option>
+                      {depositSettings.makes
+                        .filter(m => !depositSettings.global.makeDeposits[m])
+                        .map(make => (
+                          <option key={make} value={make}>{make}</option>
+                        ))}
+                    </select>
+                    <div className="flex items-center gap-1">
+                      <span className="text-gray-500">$</span>
+                      <input
+                        type="number"
+                        min="25"
+                        step="25"
+                        placeholder="250"
+                        value={newMakeAmount}
+                        onChange={(e) => setNewMakeAmount(e.target.value)}
+                        className="w-24 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <button
+                      onClick={addMakeDeposit}
+                      disabled={!newMake || !newMakeAmount}
+                      className="p-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg"
+                    >
+                      <IoAddOutline className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <IoWarningOutline className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                   <div>
-                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
-                      Deposit $
-                      {(() => {
-                        const selectedVehicle = vehicles.find(v => v.id === editingVehicleId)
-                        return selectedVehicle?.customDepositAmount === null ? (
-                          <span className="text-blue-500 dark:text-blue-400 ml-1">(global)</span>
+                    <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+                      No Protection
+                    </p>
+                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                      Deposits are recommended to protect against damage and no-shows.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* All Vehicles - Global shown active, Individual shown grayed out */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <label className="text-sm font-medium text-gray-900 dark:text-white">
+                  Your Fleet
+                </label>
+                <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                  <span className="flex items-center gap-1">
+                    <IoRemoveCircleOutline className="w-3.5 h-3.5 text-red-500" /> Remove from global
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <IoAddCircleOutline className="w-3.5 h-3.5 text-green-500" /> Add back to global
+                  </span>
+                </div>
+              </div>
+              {depositSettings.vehicles.length === 0 ? (
+                <div className="text-center py-6 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <IoCarOutline className="w-10 h-10 text-gray-400 mx-auto mb-2" />
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    No vehicles in your fleet
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-80 overflow-y-auto">
+                  {depositSettings.vehicles.map((vehicle) => {
+                    const isIndividual = vehicle.vehicleDepositMode === 'individual'
+
+                    // Calculate effective deposit exactly like BookingWidget
+                    const effectiveDeposit = getEffectiveDeposit(vehicle, depositSettings.global)
+
+                    // Check if this vehicle has a make-specific override (for display)
+                    const hasMakeOverride = !isIndividual && depositSettings.global.makeDeposits[vehicle.make] !== undefined
+
+                    return (
+                      <div
+                        key={vehicle.id}
+                        className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
+                          isIndividual
+                            ? 'bg-gray-100 dark:bg-gray-800 opacity-60'
+                            : 'bg-gray-50 dark:bg-gray-700/50'
+                        }`}
+                      >
+                        {/* Vehicle Photo */}
+                        <div className={`w-12 h-9 rounded overflow-hidden flex-shrink-0 ${
+                          isIndividual ? 'grayscale' : ''
+                        } bg-gray-200 dark:bg-gray-600`}>
+                          {vehicle.photo ? (
+                            <Image
+                              src={vehicle.photo}
+                              alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
+                              width={48}
+                              height={36}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <IoCarOutline className="w-5 h-5 text-gray-400" />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Vehicle Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h4 className={`text-sm font-medium truncate ${
+                              isIndividual
+                                ? 'text-gray-500 dark:text-gray-400'
+                                : 'text-gray-900 dark:text-white'
+                            }`}>
+                              {vehicle.year} {vehicle.make} {vehicle.model}
+                            </h4>
+                            {isIndividual && (
+                              <span className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-1.5 py-0.5 rounded">
+                                Individual
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            ${vehicle.dailyRate}/day
+                          </p>
+                        </div>
+
+                        {/* Deposit Amount - Shows exact amount customer will see */}
+                        <div className="text-right mr-2">
+                          {effectiveDeposit > 0 ? (
+                            <div>
+                              <span className={`text-sm font-semibold ${isIndividual ? 'text-purple-600 dark:text-purple-400' : 'text-gray-900 dark:text-white'}`}>
+                                ${effectiveDeposit}
+                              </span>
+                              {isIndividual && (
+                                <span className="ml-1.5 text-xs text-purple-500 dark:text-purple-400">(custom)</span>
+                              )}
+                              {hasMakeOverride && (
+                                <span className="ml-1.5 text-xs text-blue-600 dark:text-blue-400">({vehicle.make})</span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                              <IoWarningOutline className="w-3.5 h-3.5" />
+                              No deposit
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Toggle Button: Remove (-) or Add (+) */}
+                        {isIndividual ? (
+                          <button
+                            onClick={() => moveToGlobal(vehicle.id)}
+                            className="p-1.5 text-green-500 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded transition-colors"
+                            title="Add back to global settings"
+                          >
+                            <IoAddCircleOutline className="w-5 h-5" />
+                          </button>
                         ) : (
-                          <span className="text-green-500 dark:text-green-400 ml-1">(custom)</span>
-                        )
-                      })()}
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={vehicleEdits.customDepositAmount}
-                      onChange={(e) => setVehicleEdits(prev => ({ ...prev, customDepositAmount: e.target.value }))}
-                      className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                </>
+                          <button
+                            onClick={() => moveToIndividual(vehicle.id)}
+                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors"
+                            title="Configure individually"
+                          >
+                            <IoRemoveCircleOutline className="w-5 h-5" />
+                          </button>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
               )}
             </div>
-            {editingVehicleId && (
-              <div className="flex items-center gap-2 mt-3">
+
+            {/* Info about Individual Mode */}
+            {individualVehicles.length > 0 && (
+              <div className="p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
+                <p className="text-sm text-purple-800 dark:text-purple-300 flex items-center gap-2">
+                  <IoListOutline className="w-4 h-4 flex-shrink-0" />
+                  {individualVehicles.length} vehicle{individualVehicles.length !== 1 ? 's are' : ' is'} configured individually. Switch to Individual Mode to edit their settings.
+                </p>
+              </div>
+            )}
+
+            {/* Save Button */}
+            <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
+              <button
+                onClick={saveGlobalSettings}
+                disabled={isSavingGlobal}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                {isSavingGlobal ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                    Saving...
+                  </>
+                ) : globalSaved ? (
+                  <>
+                    <IoCheckmarkOutline className="w-4 h-4" />
+                    Saved!
+                  </>
+                ) : (
+                  <>
+                    <IoSaveOutline className="w-4 h-4" />
+                    Save Global Settings
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ===== INDIVIDUAL MODE VIEW ===== */}
+        {viewMode === 'individual' && (
+          <div className="p-5">
+            {individualVehicles.length === 0 ? (
+              <div className="text-center py-8">
+                <IoCarOutline className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-600 dark:text-gray-400 mb-2">
+                  No vehicles configured individually yet
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-500 mb-4">
+                  Remove vehicles from Global Mode to configure them here
+                </p>
                 <button
-                  onClick={() => saveVehicleSettings(editingVehicleId)}
-                  disabled={isSavingVehicle}
-                  className="px-4 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
+                  onClick={() => setViewMode('global')}
+                  className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
-                  {isSavingVehicle ? 'Saving...' : 'Apply to Vehicle'}
-                </button>
-                <button
-                  onClick={cancelEditingVehicle}
-                  className="px-4 py-1.5 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 rounded-lg text-sm transition-colors"
-                >
-                  Cancel
+                  <IoGlobeOutline className="w-4 h-4" />
+                  Go to Global Mode
                 </button>
               </div>
+            ) : (
+              <>
+                <div className="p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg mb-4">
+                  <p className="text-sm text-purple-800 dark:text-purple-300">
+                    These vehicles are configured separately from global settings. Deposits must be at least $25 in $25 increments.
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  {individualVehicles.map((vehicle) => {
+                    const edit = vehicleEdits[vehicle.id] || { requireDeposit: true, depositAmount: depositSettings.global.defaultAmount }
+
+                    return (
+                      <div
+                        key={vehicle.id}
+                        className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                      >
+                        {/* Vehicle Photo */}
+                        <div className="w-16 h-12 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-600 flex-shrink-0">
+                          {vehicle.photo ? (
+                            <Image
+                              src={vehicle.photo}
+                              alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
+                              width={64}
+                              height={48}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <IoCarOutline className="w-6 h-6 text-gray-400" />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Vehicle Info */}
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-gray-900 dark:text-white truncate">
+                            {vehicle.year} {vehicle.make} {vehicle.model}
+                          </h4>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            ${vehicle.dailyRate}/day
+                          </p>
+                        </div>
+
+                        {/* Deposit Toggle */}
+                        <div className="flex items-center gap-4">
+                          <button
+                            type="button"
+                            onClick={() => setVehicleEdits(prev => ({
+                              ...prev,
+                              [vehicle.id]: {
+                                ...edit,
+                                requireDeposit: !edit.requireDeposit
+                              }
+                            }))}
+                            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                              edit.requireDeposit ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'
+                            }`}
+                            role="switch"
+                            aria-checked={edit.requireDeposit}
+                          >
+                            <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                              edit.requireDeposit ? 'translate-x-5' : 'translate-x-0'
+                            }`} />
+                          </button>
+
+                          {edit.requireDeposit ? (
+                            <div className="flex flex-col items-end gap-0.5">
+                              <div className="flex items-center gap-1">
+                                <span className="text-gray-500 dark:text-gray-400">$</span>
+                                <input
+                                  type="number"
+                                  min="25"
+                                  step="25"
+                                  placeholder="250"
+                                  value={edit.depositAmount || ''}
+                                  onChange={(e) => setVehicleEdits(prev => ({
+                                    ...prev,
+                                    [vehicle.id]: {
+                                      ...edit,
+                                      depositAmount: parseFloat(e.target.value) || null
+                                    }
+                                  }))}
+                                  className={`w-24 px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+                                    !edit.depositAmount || edit.depositAmount < 25
+                                      ? 'border-amber-400 dark:border-amber-500'
+                                      : 'border-gray-300 dark:border-gray-600'
+                                  }`}
+                                />
+                              </div>
+                              {(!edit.depositAmount || edit.depositAmount < 25) && (
+                                <span className="text-[10px] text-amber-600 dark:text-amber-400">
+                                  Min $25
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                              <IoWarningOutline className="w-4 h-4" />
+                              No deposit
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Move back to Global Button */}
+                        <button
+                          onClick={() => moveToGlobal(vehicle.id)}
+                          className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors"
+                          title="Use global settings"
+                        >
+                          <IoArrowBackOutline className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* Save Button */}
+                <div className="flex justify-end pt-4 mt-4 border-t border-gray-200 dark:border-gray-700">
+                  <button
+                    onClick={saveIndividualSettings}
+                    disabled={isSavingIndividual}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white rounded-lg text-sm font-medium transition-colors"
+                  >
+                    {isSavingIndividual ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                        Saving...
+                      </>
+                    ) : individualSaved ? (
+                      <>
+                        <IoCheckmarkOutline className="w-4 h-4" />
+                        Saved!
+                      </>
+                    ) : (
+                      <>
+                        <IoSaveOutline className="w-4 h-4" />
+                        Save Individual Settings
+                      </>
+                    )}
+                  </button>
+                </div>
+              </>
             )}
           </div>
         )}
       </div>
 
-      {/* Vehicle Pricing Section */}
+      {/* ========== PROMO CODES SECTION ========== */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div className="p-5 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
-                <IoCarOutline className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white">Per-Vehicle Pricing</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                  Override discounts and deposits for specific vehicles
-                </p>
-              </div>
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+              <IoPricetagOutline className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900 dark:text-white">Promo Codes</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                Create promotional codes for customers
+              </p>
             </div>
           </div>
         </div>
 
-        {vehicles.length === 0 ? (
-          <div className="text-center py-12">
-            <IoCarOutline className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500 dark:text-gray-400 mb-2">No vehicles in your fleet</p>
-            <Link
-              href="/partner/fleet/add"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors mt-4"
-            >
-              <IoAddCircleOutline className="w-5 h-5" />
-              Add Your First Vehicle
-            </Link>
-          </div>
-        ) : (
-          <div className="divide-y divide-gray-200 dark:divide-gray-700">
-            {vehicles.map((vehicle) => (
-              <div key={vehicle.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                {/* Main row - Vehicle info and actions */}
-                <div className="flex items-center gap-3 sm:gap-4">
-                  {/* Vehicle Photo */}
-                  <div className="w-14 h-10 sm:w-16 sm:h-12 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0">
-                    {vehicle.photo ? (
-                      <Image
-                        src={vehicle.photo}
-                        alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
-                        width={64}
-                        height={48}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <IoCarOutline className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400" />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Vehicle Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h4 className="font-medium text-sm sm:text-base text-gray-900 dark:text-white truncate">
-                        {vehicle.year} {vehicle.make} {vehicle.model}
-                      </h4>
-                      {!vehicle.isActive && (
-                        <span className="px-1.5 py-0.5 text-[10px] sm:text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 rounded-full">
-                          Inactive
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">
-                      ${vehicle.dailyRate}/day
-                      {vehicle.discountPercent > 0 && (
-                        <span className="text-green-600 dark:text-green-400 ml-1 sm:ml-2">
-                          -{vehicle.discountPercent}%
-                        </span>
-                      )}
-                      {vehicle.customDepositAmount !== null && (
-                        <span className="text-blue-600 dark:text-blue-400 ml-1 sm:ml-2">
-                          ${vehicle.customDepositAmount} dep
-                        </span>
-                      )}
-                    </p>
-                  </div>
-
-                  {/* Desktop Edit Button - hidden on mobile when editing */}
-                  {editingVehicleId !== vehicle.id && (
-                    <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-                      <button
-                        onClick={() => startEditingVehicle(vehicle)}
-                        className="flex items-center gap-1 px-2 sm:px-3 py-1.5 text-xs sm:text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                      >
-                        <IoPencilOutline className="w-4 h-4" />
-                        <span className="hidden sm:inline">Edit Pricing</span>
-                      </button>
-                      <Link
-                        href={`/partner/fleet/${vehicle.id}/edit`}
-                        className="flex items-center gap-1 px-2 sm:px-3 py-1.5 text-xs sm:text-sm text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors"
-                      >
-                        <IoChevronForwardOutline className="w-4 h-4" />
-                      </Link>
-                    </div>
-                  )}
-                </div>
-
-                {/* Edit Form - Stacked on mobile, inline on desktop */}
-                {editingVehicleId === vehicle.id && (
-                  <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                    <div className="grid grid-cols-2 sm:flex sm:items-center gap-3 sm:gap-4">
-                      {/* Discount Input */}
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                        <label className="text-xs text-gray-500">Discount</label>
-                        <div className="flex items-center gap-1">
-                          <input
-                            type="number"
-                            min="0"
-                            max="50"
-                            value={vehicleEdits.discountPercent}
-                            onChange={(e) => setVehicleEdits(prev => ({ ...prev, discountPercent: parseFloat(e.target.value) || 0 }))}
-                            className="w-full sm:w-16 px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-sm"
-                          />
-                          <span className="text-xs text-gray-500">%</span>
-                        </div>
-                      </div>
-
-                      {/* Deposit Input */}
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                        <label className="text-xs text-gray-500">
-                          Deposit {vehicle.customDepositAmount === null ? (
-                            <span className="text-blue-500">(global)</span>
-                          ) : (
-                            <span className="text-green-500">(custom)</span>
-                          )}
-                        </label>
-                        <div className="flex items-center gap-1">
-                          <span className="text-xs text-gray-500">$</span>
-                          <input
-                            type="number"
-                            min="0"
-                            value={vehicleEdits.customDepositAmount}
-                            onChange={(e) => setVehicleEdits(prev => ({ ...prev, customDepositAmount: e.target.value }))}
-                            className="w-full sm:w-20 px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-sm"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div className="col-span-2 flex items-center justify-end gap-2 sm:ml-auto">
-                        <button
-                          onClick={cancelEditingVehicle}
-                          className="flex-1 sm:flex-none px-3 py-1.5 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 rounded text-sm"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={() => saveVehicleSettings(vehicle.id)}
-                          disabled={isSavingVehicle}
-                          className="flex-1 sm:flex-none px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded text-sm"
-                        >
-                          {isSavingVehicle ? '...' : 'Save'}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Promo Codes Section */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="p-5 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
-                <IoPricetagOutline className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white">Promo Codes</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                  Create promotional codes for customers
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Search */}
         {discounts.length > 0 && (
           <div className="p-4 border-b border-gray-200 dark:border-gray-700">
             <div className="relative">
@@ -797,7 +1136,6 @@ export default function PartnerDiscountsPage() {
           </div>
         )}
 
-        {/* Codes List */}
         {filteredDiscounts.length === 0 ? (
           <div className="text-center py-12">
             <IoPricetagOutline className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -815,13 +1153,12 @@ export default function PartnerDiscountsPage() {
             )}
           </div>
         ) : (
-          <>
-            {/* Mobile Card View */}
-            <div className="sm:hidden divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredDiscounts.map((discount) => (
-                <div key={discount.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2">
+          <div className="divide-y divide-gray-200 dark:divide-gray-700">
+            {filteredDiscounts.map((discount) => (
+              <div key={discount.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-mono text-sm font-medium text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
                         {discount.code}
                       </span>
@@ -835,166 +1172,54 @@ export default function PartnerDiscountsPage() {
                           <IoCopyOutline className="w-4 h-4" />
                         )}
                       </button>
+                      {getStatusBadge(discount)}
                     </div>
+                    <p className="mt-1 text-sm font-medium text-gray-900 dark:text-white">{discount.title}</p>
+                    {discount.description && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-1">{discount.description}</p>
+                    )}
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Used: {discount.usedCount}{discount.maxUses && ` / ${discount.maxUses}`}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
                     <span className="text-xl font-bold text-orange-600 dark:text-orange-400">
                       {discount.percentage}%
                     </span>
-                  </div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">
-                    {discount.title}
-                  </p>
-                  {discount.description && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">
-                      {discount.description}
-                    </p>
-                  )}
-                  <div className="flex items-center justify-between mt-3">
-                    <div className="flex items-center gap-3">
-                      {getStatusBadge(discount)}
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                        Used: {discount.usedCount}{discount.maxUses && ` / ${discount.maxUses}`}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => handleToggle(discount.id, discount.isActive)}
-                        className={`p-1.5 rounded-lg transition-colors ${
-                          discount.isActive
-                            ? 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30'
-                            : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                        }`}
-                      >
-                        <IoToggleOutline className="w-5 h-5" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(discount.id)}
-                        className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                      >
-                        <IoTrashOutline className="w-5 h-5" />
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => handleToggle(discount.id, discount.isActive)}
+                      className={`p-2 rounded-lg transition-colors ${
+                        discount.isActive
+                          ? 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30'
+                          : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      <IoToggleOutline className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(discount.id)}
+                      className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                    >
+                      <IoTrashOutline className="w-5 h-5" />
+                    </button>
                   </div>
                 </div>
-              ))}
-            </div>
-
-            {/* Desktop Table View */}
-            <div className="hidden sm:block overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 dark:bg-gray-900/50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Code
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Title
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Discount
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Usage
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {filteredDiscounts.map((discount) => (
-                    <tr key={discount.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-sm font-medium text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
-                            {discount.code}
-                          </span>
-                          <button
-                            onClick={() => copyCode(discount.code, discount.id)}
-                            className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                          >
-                            {copiedId === discount.id ? (
-                              <IoCheckmarkOutline className="w-4 h-4 text-green-500" />
-                            ) : (
-                              <IoCopyOutline className="w-4 h-4" />
-                            )}
-                          </button>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">
-                          {discount.title}
-                        </p>
-                        {discount.description && (
-                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-xs">
-                            {discount.description}
-                          </p>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-lg font-bold text-orange-600 dark:text-orange-400">
-                          {discount.percentage}%
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-900 dark:text-white">
-                          {discount.usedCount}
-                          {discount.maxUses && ` / ${discount.maxUses}`}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {getStatusBadge(discount)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => handleToggle(discount.id, discount.isActive)}
-                            className={`p-2 rounded-lg transition-colors ${
-                              discount.isActive
-                                ? 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30'
-                                : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                            }`}
-                            title={discount.isActive ? 'Deactivate' : 'Activate'}
-                          >
-                            <IoToggleOutline className="w-5 h-5" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(discount.id)}
-                            className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                            title="Delete"
-                          >
-                            <IoTrashOutline className="w-5 h-5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
+              </div>
+            ))}
+          </div>
         )}
       </div>
 
-      {/* Create Modal */}
+      {/* Create Promo Code Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
             <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
-                Create Promo Code
-              </h2>
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Create Promo Code</h2>
             </div>
-
-            <div className="p-4 sm:p-6 overflow-y-auto flex-1">
-
-            <div className="space-y-4">
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Code
-                </label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Code</label>
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -1012,11 +1237,8 @@ export default function PartnerDiscountsPage() {
                   </button>
                 </div>
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Title
-                </label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Title</label>
                 <input
                   type="text"
                   value={newDiscount.title}
@@ -1025,11 +1247,8 @@ export default function PartnerDiscountsPage() {
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
                 />
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Description (optional)
-                </label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description (optional)</label>
                 <textarea
                   value={newDiscount.description}
                   onChange={(e) => setNewDiscount(prev => ({ ...prev, description: e.target.value }))}
@@ -1038,12 +1257,9 @@ export default function PartnerDiscountsPage() {
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
                 />
               </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Discount %
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Discount %</label>
                   <input
                     type="number"
                     min="1"
@@ -1053,11 +1269,8 @@ export default function PartnerDiscountsPage() {
                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
                   />
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Max Uses (optional)
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Max Uses (optional)</label>
                   <input
                     type="number"
                     min="1"
@@ -1068,12 +1281,9 @@ export default function PartnerDiscountsPage() {
                   />
                 </div>
               </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Start Date (optional)
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Start Date (optional)</label>
                   <input
                     type="date"
                     value={newDiscount.startsAt}
@@ -1081,11 +1291,8 @@ export default function PartnerDiscountsPage() {
                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
                   />
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    End Date (optional)
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">End Date (optional)</label>
                   <input
                     type="date"
                     value={newDiscount.expiresAt}
@@ -1095,22 +1302,17 @@ export default function PartnerDiscountsPage() {
                 </div>
               </div>
             </div>
-            </div>
-
             <div className="p-4 sm:p-6 border-t border-gray-200 dark:border-gray-700 flex items-center justify-end gap-3 flex-shrink-0">
               <button
-                onClick={() => {
-                  setShowModal(false)
-                  resetForm()
-                }}
-                className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-sm sm:text-base"
+                onClick={() => { setShowModal(false); resetForm() }}
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleCreate}
                 disabled={isSaving || !newDiscount.code || !newDiscount.title || newDiscount.percentage <= 0}
-                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg transition-colors text-sm sm:text-base"
+                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg transition-colors"
               >
                 {isSaving ? 'Creating...' : 'Create Code'}
               </button>

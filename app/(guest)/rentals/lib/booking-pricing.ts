@@ -5,6 +5,80 @@
 import { getTaxRate } from './arizona-taxes'
 
 // ============================================================================
+// DEPOSIT CALCULATION
+// ============================================================================
+
+/**
+ * Get car class and default deposit based on daily rate
+ * Used as fallback when host/vehicle don't have explicit deposit settings
+ */
+export function getCarClassAndDefaultDeposit(dailyRate: number): { carClass: string; deposit: number } {
+  if (dailyRate < 150) {
+    return { carClass: 'economy', deposit: 250 }
+  } else if (dailyRate < 500) {
+    return { carClass: 'luxury', deposit: 700 }
+  } else {
+    return { carClass: 'exotic', deposit: 1000 }
+  }
+}
+
+/**
+ * Calculate actual deposit based on per-vehicle deposit mode
+ * HYBRID system - each VEHICLE can be assigned to either mode:
+ *
+ * GLOBAL MODE (vehicle.vehicleDepositMode === 'global', default):
+ *   1. If host.requireDeposit === false → no deposit (0)
+ *   2. Check for make-specific override (e.g., all Toyotas = $400)
+ *   3. Use host's global depositAmount
+ *   4. Fallback to rate-based default
+ *
+ * INDIVIDUAL MODE (vehicle.vehicleDepositMode === 'individual'):
+ *   1. If vehicle has noDeposit === true → no deposit (0)
+ *   2. Use vehicle's customDepositAmount
+ *   3. Fallback to rate-based default
+ */
+export function getActualDeposit(car: any): number {
+  const host = car?.host
+
+  // Check per-vehicle deposit mode - "individual" uses vehicle-specific settings
+  // Default to 'global' if not set
+  const vehicleDepositMode = car?.vehicleDepositMode || 'global'
+
+  if (vehicleDepositMode === 'individual') {
+    // Individual mode: vehicle-specific settings take precedence
+    if (car?.noDeposit === true) {
+      return 0
+    }
+    if (car?.customDepositAmount !== null && car?.customDepositAmount !== undefined) {
+      return Number(car.customDepositAmount)
+    }
+    // Fallback to rate-based default
+    const { deposit } = getCarClassAndDefaultDeposit(car?.dailyRate || 0)
+    return deposit
+  }
+
+  // Global mode (default): host-level settings apply to all vehicles
+  if (host?.requireDeposit === false) {
+    return 0
+  }
+
+  // Check for make-specific override in global mode
+  const makeDeposits = host?.makeDeposits as Record<string, number> | null
+  if (makeDeposits && car?.make && makeDeposits[car.make] !== undefined) {
+    return makeDeposits[car.make]
+  }
+
+  // Use host's global deposit amount if set
+  if (host?.depositAmount !== null && host?.depositAmount !== undefined) {
+    return Number(host.depositAmount)
+  }
+
+  // Fallback to rate-based default
+  const { deposit } = getCarClassAndDefaultDeposit(car?.dailyRate || 0)
+  return deposit
+}
+
+// ============================================================================
 // TYPES
 // ============================================================================
 
