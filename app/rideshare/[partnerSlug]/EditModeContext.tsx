@@ -26,6 +26,7 @@ interface LandingPageData {
   // Branding
   logo: string | null
   heroImage: string | null
+  heroImageFilter: boolean
   primaryColor: string
   // Services
   enableRideshare: boolean

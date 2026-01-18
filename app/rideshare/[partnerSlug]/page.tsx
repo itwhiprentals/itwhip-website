@@ -711,6 +711,7 @@ export default async function PartnerLandingPage({ params, searchParams }: PageP
             companyName={companyName}
             logo={partner.partnerLogo || partner.profilePhoto}
             heroImage={partner.partnerHeroImage}
+            heroImageFilter={partner.partnerHeroImageFilter ?? false}
             bio={partner.partnerBio}
             location={partner.location}
             supportEmail={partner.partnerSupportEmail || partner.email}

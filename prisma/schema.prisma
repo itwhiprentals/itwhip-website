@@ -2140,6 +2140,7 @@ model RentalHost {
   partnerBadges                                                         Json?
   partnerBenefits                                                       Json?
   partnerHeroImage                                                      String?
+  partnerHeroImageFilter                                                Boolean                      @default(false)
   partnerPolicies                                                       Json?
   yearEstablished                                                       Int?
   photoIdType                                                           String?

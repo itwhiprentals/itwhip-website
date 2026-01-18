@@ -5,6 +5,7 @@
 
 import { useState } from 'react'
 import { IoChevronDownOutline, IoHelpCircleOutline } from 'react-icons/io5'
+import { useEditMode } from '../[partnerSlug]/EditModeContext'
 
 interface FAQ {
   id: string
@@ -19,8 +20,14 @@ interface FAQAccordionProps {
 
 export default function FAQAccordion({ faqs, title = 'Frequently Asked Questions' }: FAQAccordionProps) {
   const [openId, setOpenId] = useState<string | null>(null)
+  const { isEditMode: contextEditMode, data: contextData } = useEditMode()
 
-  if (faqs.length === 0) return null
+  // Use context data when in edit mode for real-time updates
+  const effectiveFaqs = contextEditMode && contextData?.faqs
+    ? contextData.faqs.map((faq, index) => ({ ...faq, id: faq.id || `faq-${index}` }))
+    : faqs
+
+  if (effectiveFaqs.length === 0) return null
 
   const toggle = (id: string) => {
     setOpenId(openId === id ? null : id)
@@ -34,7 +41,7 @@ export default function FAQAccordion({ faqs, title = 'Frequently Asked Questions
       </div>
 
       <div className="space-y-3">
-        {faqs.map((faq) => {
+        {effectiveFaqs.map((faq) => {
           const isOpen = openId === faq.id
 
           return (

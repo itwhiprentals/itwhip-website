@@ -82,6 +82,7 @@ export async function GET(request: NextRequest) {
         companyName: partner.partnerCompanyName || '',
         logo: partner.partnerLogo || partner.profilePhoto || null,
         heroImage: partner.partnerHeroImage || null,
+        heroImageFilter: partner.partnerHeroImageFilter ?? false,
         headline: partner.partnerHeroTitle || '',
         subheadline: partner.partnerHeroSubtitle || '',
         bio: partner.partnerBio || '',
@@ -226,6 +227,7 @@ export async function PUT(request: NextRequest) {
     if (body.headline !== undefined) updateData.partnerHeroTitle = body.headline
     if (body.subheadline !== undefined) updateData.partnerHeroSubtitle = body.subheadline
     if (body.heroImage !== undefined) updateData.partnerHeroImage = body.heroImage
+    if (body.heroImageFilter !== undefined) updateData.partnerHeroImageFilter = body.heroImageFilter
     if (body.logo !== undefined) updateData.partnerLogo = body.logo
     if (body.bio !== undefined) updateData.partnerBio = body.bio
     if (body.supportEmail !== undefined) updateData.partnerSupportEmail = body.supportEmail

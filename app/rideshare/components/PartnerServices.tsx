@@ -11,6 +11,7 @@ import {
   IoCheckmarkCircle
 } from 'react-icons/io5'
 import { SiUber, SiLyft, SiDoordash, SiInstacart } from 'react-icons/si'
+import { useEditMode } from '../[partnerSlug]/EditModeContext'
 
 interface Service {
   id: string
@@ -72,15 +73,36 @@ const DEFAULT_SERVICES: Service[] = [
 ]
 
 export default function PartnerServices({ services, companyName = 'Our', enabledServices }: PartnerServicesProps) {
+  const { isEditMode: contextEditMode, data: contextData } = useEditMode()
+
+  // Use context data when in edit mode for real-time updates
+  const effectiveEnabledServices = {
+    rideshare: contextEditMode && contextData?.enableRideshare !== undefined
+      ? contextData.enableRideshare
+      : enabledServices?.rideshare,
+    rentals: contextEditMode && contextData?.enableRentals !== undefined
+      ? contextData.enableRentals
+      : enabledServices?.rentals,
+    sales: contextEditMode && contextData?.enableSales !== undefined
+      ? contextData.enableSales
+      : enabledServices?.sales,
+    leasing: contextEditMode && contextData?.enableLeasing !== undefined
+      ? contextData.enableLeasing
+      : enabledServices?.leasing,
+    rentToOwn: contextEditMode && contextData?.enableRentToOwn !== undefined
+      ? contextData.enableRentToOwn
+      : enabledServices?.rentToOwn
+  }
+
   // Build services list based on what's enabled
   let displayServices: Service[] = []
 
   if (services && services.length > 0) {
     // Use custom services if provided
     displayServices = services
-  } else if (enabledServices) {
+  } else if (effectiveEnabledServices) {
     // Generate services based on enabled toggles
-    if (enabledServices.rideshare) {
+    if (effectiveEnabledServices.rideshare) {
       displayServices.push({
         id: 'rideshare',
         name: 'Rideshare Rentals',
@@ -96,7 +118,7 @@ export default function PartnerServices({ services, companyName = 'Our', enabled
         priceRange: 'from $199/week'
       })
     }
-    if (enabledServices.rentals) {
+    if (effectiveEnabledServices.rentals) {
       displayServices.push({
         id: 'standard-rental',
         name: 'Standard Car Rentals',
@@ -104,7 +126,7 @@ export default function PartnerServices({ services, companyName = 'Our', enabled
         priceRange: 'from $45/day'
       })
     }
-    if (enabledServices.leasing) {
+    if (effectiveEnabledServices.leasing) {
       displayServices.push({
         id: 'leasing',
         name: 'Vehicle Leasing',
@@ -112,7 +134,7 @@ export default function PartnerServices({ services, companyName = 'Our', enabled
         priceRange: 'Contact for pricing'
       })
     }
-    if (enabledServices.rentToOwn) {
+    if (effectiveEnabledServices.rentToOwn) {
       displayServices.push({
         id: 'rent-to-own',
         name: 'Rent to Own',
@@ -120,7 +142,7 @@ export default function PartnerServices({ services, companyName = 'Our', enabled
         priceRange: 'Contact for pricing'
       })
     }
-    if (enabledServices.sales) {
+    if (effectiveEnabledServices.sales) {
       displayServices.push({
         id: 'sales',
         name: 'Vehicle Sales',

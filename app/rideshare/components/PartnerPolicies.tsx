@@ -12,6 +12,7 @@ import {
   IoDocumentTextOutline,
   IoShieldCheckmarkOutline
 } from 'react-icons/io5'
+import { useEditMode } from '../[partnerSlug]/EditModeContext'
 
 interface PartnerPolicies {
   refundPolicy?: string
@@ -38,13 +39,19 @@ const DEFAULT_POLICIES: PartnerPolicies = {
 
 export default function PartnerPolicies({ policies, companyName = 'Partner' }: PartnerPoliciesProps) {
   const [openSections, setOpenSections] = useState<string[]>(['refund'])
+  const { isEditMode: contextEditMode, data: contextData } = useEditMode()
+
+  // Use context data when in edit mode for real-time updates
+  const effectivePolicies = contextEditMode && contextData?.policies
+    ? contextData.policies
+    : policies
 
   // Use custom policies if provided, otherwise defaults
   const displayPolicies = {
-    refundPolicy: policies?.refundPolicy || DEFAULT_POLICIES.refundPolicy,
-    cancellationPolicy: policies?.cancellationPolicy || DEFAULT_POLICIES.cancellationPolicy,
-    bookingRequirements: policies?.bookingRequirements || DEFAULT_POLICIES.bookingRequirements,
-    additionalTerms: policies?.additionalTerms || DEFAULT_POLICIES.additionalTerms
+    refundPolicy: effectivePolicies?.refundPolicy || DEFAULT_POLICIES.refundPolicy,
+    cancellationPolicy: effectivePolicies?.cancellationPolicy || DEFAULT_POLICIES.cancellationPolicy,
+    bookingRequirements: effectivePolicies?.bookingRequirements || DEFAULT_POLICIES.bookingRequirements,
+    additionalTerms: effectivePolicies?.additionalTerms || DEFAULT_POLICIES.additionalTerms
   }
 
   const toggleSection = (section: string) => {

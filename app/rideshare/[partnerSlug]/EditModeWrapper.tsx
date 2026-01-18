@@ -13,6 +13,7 @@ interface LandingPageData {
   bio: string
   logo: string | null
   heroImage: string | null
+  heroImageFilter: boolean
   primaryColor: string
   enableRideshare: boolean
   enableRentals: boolean

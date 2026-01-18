@@ -5,6 +5,7 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
+import { useEditMode } from '../[partnerSlug]/EditModeContext'
 import {
   IoStar,
   IoLocationOutline,
@@ -58,6 +59,7 @@ interface PartnerHeroProps {
   companyName: string
   logo: string | null
   heroImage: string | null
+  heroImageFilter?: boolean
   bio: string | null
   location: string | null
   supportEmail?: string | null
@@ -77,6 +79,7 @@ export default function PartnerHero({
   companyName,
   logo,
   heroImage,
+  heroImageFilter = false,
   bio,
   location,
   supportEmail,
@@ -91,32 +94,78 @@ export default function PartnerHero({
   onEditHero
 }: PartnerHeroProps) {
   const [showFullBio, setShowFullBio] = useState(false)
+  const { isEditMode: contextEditMode, data: contextData } = useEditMode()
 
-  const hasSocialLinks = socialLinks && (
-    socialLinks.website ||
-    socialLinks.instagram ||
-    socialLinks.facebook ||
-    socialLinks.twitter ||
-    socialLinks.linkedin ||
-    socialLinks.tiktok ||
-    socialLinks.youtube
+  // Use context data when in edit mode for real-time updates
+  const effectiveHeroImage = contextEditMode && contextData?.heroImage !== undefined
+    ? contextData.heroImage
+    : heroImage
+  const effectiveHeroImageFilter = contextEditMode && contextData?.heroImageFilter !== undefined
+    ? contextData.heroImageFilter
+    : heroImageFilter
+  const effectiveLogo = contextEditMode && contextData?.logo !== undefined
+    ? contextData.logo
+    : logo
+  const effectiveBio = contextEditMode && contextData?.bio !== undefined
+    ? contextData.bio
+    : bio
+
+  // Contact info - use context data when in edit mode
+  const effectiveSupportEmail = contextEditMode && contextData?.supportEmail !== undefined
+    ? contextData.supportEmail
+    : supportEmail
+  const effectiveSupportPhone = contextEditMode && contextData?.supportPhone !== undefined
+    ? contextData.supportPhone
+    : supportPhone
+
+  // Visibility settings - use context data when in edit mode
+  const effectiveShowEmail = contextEditMode && contextData?.showEmail !== undefined
+    ? contextData.showEmail
+    : visibility.showEmail
+  const effectiveShowPhone = contextEditMode && contextData?.showPhone !== undefined
+    ? contextData.showPhone
+    : visibility.showPhone
+  const effectiveShowWebsite = contextEditMode && contextData?.showWebsite !== undefined
+    ? contextData.showWebsite
+    : visibility.showWebsite
+
+  // Social links - use context data when in edit mode
+  const effectiveSocialLinks = {
+    website: contextEditMode && contextData?.website !== undefined ? contextData.website : socialLinks?.website,
+    instagram: contextEditMode && contextData?.instagram !== undefined ? contextData.instagram : socialLinks?.instagram,
+    facebook: contextEditMode && contextData?.facebook !== undefined ? contextData.facebook : socialLinks?.facebook,
+    twitter: contextEditMode && contextData?.twitter !== undefined ? contextData.twitter : socialLinks?.twitter,
+    linkedin: contextEditMode && contextData?.linkedin !== undefined ? contextData.linkedin : socialLinks?.linkedin,
+    tiktok: contextEditMode && contextData?.tiktok !== undefined ? contextData.tiktok : socialLinks?.tiktok,
+    youtube: contextEditMode && contextData?.youtube !== undefined ? contextData.youtube : socialLinks?.youtube
+  }
+
+  const hasSocialLinks = (
+    effectiveSocialLinks.website ||
+    effectiveSocialLinks.instagram ||
+    effectiveSocialLinks.facebook ||
+    effectiveSocialLinks.twitter ||
+    effectiveSocialLinks.linkedin ||
+    effectiveSocialLinks.tiktok ||
+    effectiveSocialLinks.youtube
   )
 
   const maxBioLength = 200
-  const shouldTruncateBio = bio && bio.length > maxBioLength
+  const shouldTruncateBio = effectiveBio && effectiveBio.length > maxBioLength
   const displayBio = shouldTruncateBio && !showFullBio
-    ? bio.slice(0, maxBioLength) + '...'
-    : bio
+    ? effectiveBio.slice(0, maxBioLength) + '...'
+    : effectiveBio
 
   return (
     <div className="relative">
       {/* Hero Image Section - Constrained height on all screen sizes */}
       <div className="relative w-full h-[250px] sm:h-[300px] md:h-[450px] lg:h-[500px]">
-        {heroImage ? (
+        {effectiveHeroImage ? (
           <img
-            src={heroImage}
+            src={effectiveHeroImage}
             alt={`${companyName} hero`}
             className="w-full h-full object-cover"
+            style={effectiveHeroImageFilter ? { filter: 'brightness(1.05) contrast(1.08) saturate(1.15)' } : {}}
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-orange-600 via-orange-500 to-amber-500" />
@@ -124,13 +173,6 @@ export default function PartnerHero({
 
         {/* Dark overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-black/10" />
-
-        {/* Pattern overlay */}
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute inset-0" style={{
-            backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")'
-          }} />
-        </div>
 
         {/* Divider lines - edge to edge at hero bottom edge */}
         <div className="absolute left-0 right-0 bottom-0 z-10 flex items-center">
@@ -147,9 +189,9 @@ export default function PartnerHero({
           <div className="relative">
             {/* White circle border */}
             <div className="relative w-[150px] h-[150px] rounded-full overflow-hidden shadow-2xl ring-[3px] ring-white bg-white">
-              {logo ? (
+              {effectiveLogo ? (
                 <Image
-                  src={logo}
+                  src={effectiveLogo}
                   alt={companyName}
                   fill
                   className="object-contain"
@@ -202,7 +244,7 @@ export default function PartnerHero({
 
           {/* Bio - Show empty placeholder in edit mode */}
           <div className="text-center max-w-3xl mx-auto mb-4">
-            {bio ? (
+            {effectiveBio ? (
               <>
                 <div
                   className={`${isEditMode ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg p-2 -m-2 transition-colors group' : ''}`}
@@ -253,22 +295,22 @@ export default function PartnerHero({
                 <span>{location || stats.operatingCityNames?.[0]}</span>
               </span>
             )}
-            {supportEmail && visibility.showEmail !== false && (
+            {effectiveSupportEmail && effectiveShowEmail !== false && (
               <a
-                href={`mailto:${supportEmail}`}
+                href={`mailto:${effectiveSupportEmail}`}
                 className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
               >
                 <IoMailOutline className="w-4 h-4" />
-                <span>{supportEmail}</span>
+                <span>{effectiveSupportEmail}</span>
               </a>
             )}
-            {supportPhone && visibility.showPhone !== false && (
+            {effectiveSupportPhone && effectiveShowPhone !== false && (
               <a
-                href={`tel:${supportPhone}`}
+                href={`tel:${effectiveSupportPhone}`}
                 className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
               >
                 <IoCallOutline className="w-4 h-4" />
-                <span>{supportPhone}</span>
+                <span>{effectiveSupportPhone}</span>
               </a>
             )}
             {businessHours && (
@@ -288,9 +330,9 @@ export default function PartnerHero({
           {/* Social Media Links Row - Brand Colors */}
           {hasSocialLinks && (
             <div className="flex flex-wrap items-center justify-center gap-3 pb-2">
-              {socialLinks?.website && visibility.showWebsite !== false && (
+              {effectiveSocialLinks.website && effectiveShowWebsite !== false && (
                 <a
-                  href={socialLinks.website}
+                  href={effectiveSocialLinks.website}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg text-orange-600 dark:text-orange-400 hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors"
@@ -299,9 +341,9 @@ export default function PartnerHero({
                   <IoGlobeOutline className="w-4 h-4" />
                 </a>
               )}
-              {socialLinks?.instagram && (
+              {effectiveSocialLinks.instagram && (
                 <a
-                  href={socialLinks.instagram}
+                  href={effectiveSocialLinks.instagram}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="p-2 bg-pink-100 dark:bg-pink-900/30 rounded-lg text-pink-600 dark:text-pink-400 hover:bg-pink-200 dark:hover:bg-pink-900/50 transition-colors"
@@ -310,9 +352,9 @@ export default function PartnerHero({
                   <IoLogoInstagram className="w-4 h-4" />
                 </a>
               )}
-              {socialLinks?.facebook && (
+              {effectiveSocialLinks.facebook && (
                 <a
-                  href={socialLinks.facebook}
+                  href={effectiveSocialLinks.facebook}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
@@ -321,9 +363,9 @@ export default function PartnerHero({
                   <IoLogoFacebook className="w-4 h-4" />
                 </a>
               )}
-              {socialLinks?.twitter && (
+              {effectiveSocialLinks.twitter && (
                 <a
-                  href={socialLinks.twitter}
+                  href={effectiveSocialLinks.twitter}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="p-2 bg-sky-100 dark:bg-sky-900/30 rounded-lg text-sky-500 dark:text-sky-400 hover:bg-sky-200 dark:hover:bg-sky-900/50 transition-colors"
@@ -332,9 +374,9 @@ export default function PartnerHero({
                   <IoLogoTwitter className="w-4 h-4" />
                 </a>
               )}
-              {socialLinks?.linkedin && (
+              {effectiveSocialLinks.linkedin && (
                 <a
-                  href={socialLinks.linkedin}
+                  href={effectiveSocialLinks.linkedin}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg text-blue-700 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
@@ -343,9 +385,9 @@ export default function PartnerHero({
                   <IoLogoLinkedin className="w-4 h-4" />
                 </a>
               )}
-              {socialLinks?.tiktok && (
+              {effectiveSocialLinks.tiktok && (
                 <a
-                  href={socialLinks.tiktok}
+                  href={effectiveSocialLinks.tiktok}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="p-2 bg-gray-200 dark:bg-gray-700 rounded-lg text-black dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
@@ -354,9 +396,9 @@ export default function PartnerHero({
                   <IoLogoTiktok className="w-4 h-4" />
                 </a>
               )}
-              {socialLinks?.youtube && (
+              {effectiveSocialLinks.youtube && (
                 <a
-                  href={socialLinks.youtube}
+                  href={effectiveSocialLinks.youtube}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"

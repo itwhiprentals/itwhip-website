@@ -141,6 +141,7 @@ function PhotoEditor() {
   const { data, saveSection, closeSheet, isSaving } = useEditMode()
   const [previewUrl, setPreviewUrl] = useState<string | null>(data?.heroImage || null)
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(data?.logo || null)
+  const [enableFilter, setEnableFilter] = useState<boolean>(data?.heroImageFilter ?? false)
   const [isUploading, setIsUploading] = useState(false)
   const heroInputRef = useRef<HTMLInputElement>(null)
   const logoInputRef = useRef<HTMLInputElement>(null)
@@ -191,6 +192,7 @@ function PhotoEditor() {
   const handleSave = async () => {
     const success = await saveSection('photo', {
       heroImage: previewUrl,
+      heroImageFilter: enableFilter,
       logo: logoPreviewUrl
     })
     if (success) {
@@ -210,7 +212,12 @@ function PhotoEditor() {
           onClick={() => heroInputRef.current?.click()}
         >
           {previewUrl ? (
-            <img src={previewUrl} alt="Hero preview" className="w-full h-full object-cover" />
+            <img
+              src={previewUrl}
+              alt="Hero preview"
+              className="w-full h-full object-cover transition-all duration-300"
+              style={enableFilter ? { filter: 'brightness(1.05) contrast(1.08) saturate(1.15)' } : {}}
+            />
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-gray-400">
               <IoImageOutline className="w-8 h-8 mb-1" />
@@ -221,6 +228,26 @@ function PhotoEditor() {
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
               <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
             </div>
+          )}
+          {/* Filter Toggle - Only show when image exists */}
+          {previewUrl && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setEnableFilter(!enableFilter)
+              }}
+              className="absolute top-2 right-2 flex items-center gap-0.5 p-0.5 bg-black/70 rounded-full text-[9px] font-medium transition-all"
+              title={enableFilter ? 'Click to show original' : 'Click to apply filter'}
+            >
+              {/* Toggle pill */}
+              <span className={`px-2 py-1 rounded-full transition-all ${!enableFilter ? 'bg-white text-gray-800' : 'text-white/70'}`}>
+                Original
+              </span>
+              <span className={`px-2 py-1 rounded-full transition-all flex items-center gap-1 ${enableFilter ? 'bg-orange-500 text-white' : 'text-white/70'}`}>
+                <IoSparkles className="w-2.5 h-2.5" />
+                Filter
+              </span>
+            </button>
           )}
         </div>
         <input
@@ -251,10 +278,10 @@ function PhotoEditor() {
         </div>
       </div>
 
-      {/* Logo */}
+      {/* Logo / Personal Photo */}
       <div>
         <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-          Company Logo
+          Company Logo or Personal Photo
         </label>
         <div className="flex items-center gap-3">
           <div
@@ -277,7 +304,7 @@ function PhotoEditor() {
               onClick={() => logoInputRef.current?.click()}
               className="px-2.5 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-xs transition-colors"
             >
-              Change Logo
+              Change Logo/Photo
             </button>
           </div>
         </div>
@@ -1499,7 +1526,7 @@ export default function SectionEditors() {
 
   const sheetConfig: Record<Exclude<EditableSection, null>, { title: string; subtitle: string; icon: any }> = {
     hero: { title: 'Hero Section', subtitle: 'Headline, subheadline, and bio', icon: IoTextOutline },
-    photo: { title: 'Photos', subtitle: 'Hero image and company logo', icon: IoImageOutline },
+    photo: { title: 'Photos', subtitle: 'Hero image, logo, or personal photo', icon: IoImageOutline },
     benefits: { title: 'Benefits', subtitle: 'Managed automatically', icon: IoAppsOutline },
     services: { title: 'Services', subtitle: 'Choose services you offer', icon: IoAppsOutline },
     vehicles: { title: 'Vehicles', subtitle: 'Manage in Fleet section', icon: IoCarOutline },
