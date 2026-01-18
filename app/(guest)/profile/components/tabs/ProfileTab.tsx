@@ -2,8 +2,9 @@
 'use client'
 
 import { useState, useRef, useMemo } from 'react'
-import { IoSaveOutline, IoCloseOutline, IoPencilOutline, IoCameraOutline, IoAlertCircleOutline } from 'react-icons/io5'
+import { IoSaveOutline, IoCloseOutline, IoPencilOutline, IoCameraOutline, IoAlertCircleOutline, IoScanOutline } from 'react-icons/io5'
 import Image from 'next/image'
+import DriverLicenseScanner, { type DriverLicenseData } from '@/app/components/DriverLicenseScanner'
 
 interface ProfileTabProps {
   profile: {
@@ -20,6 +21,9 @@ interface ProfileTabProps {
     emergencyContactPhone?: string
     emergencyContactRelation?: string
     dateOfBirth?: string
+    driverLicenseNumber?: string
+    driverLicenseState?: string
+    driverLicenseExpiry?: string
   }
   formData: {
     firstName: string
@@ -34,6 +38,9 @@ interface ProfileTabProps {
     emergencyContactPhone: string
     emergencyContactRelation: string
     dateOfBirth: string
+    driverLicenseNumber: string
+    driverLicenseState: string
+    driverLicenseExpiry: string
   }
   editMode: boolean
   saving: boolean
@@ -99,6 +106,44 @@ export default function ProfileTab({
   onCancel,
   onFormChange
 }: ProfileTabProps) {
+  const [showLicenseScanner, setShowLicenseScanner] = useState(false)
+
+  // Handle scanned license data
+  const handleLicenseScan = (data: DriverLicenseData) => {
+    setShowLicenseScanner(false)
+
+    // Update form fields with scanned data
+    const updates: Partial<typeof formData> = {}
+
+    if (data.firstName) {
+      updates.firstName = data.firstName
+      updates.name = `${data.firstName} ${data.lastName || formData.lastName || ''}`.trim()
+    }
+    if (data.lastName) {
+      updates.lastName = data.lastName
+      updates.name = `${data.firstName || formData.firstName || ''} ${data.lastName}`.trim()
+    }
+    if (data.dateOfBirth) {
+      updates.dateOfBirth = data.dateOfBirth
+    }
+    if (data.licenseNumber) {
+      updates.driverLicenseNumber = data.licenseNumber
+    }
+    if (data.state) {
+      updates.driverLicenseState = data.state
+    }
+    if (data.expirationDate) {
+      updates.driverLicenseExpiry = data.expirationDate
+    }
+    if (data.city) {
+      updates.city = data.city
+    }
+    if (data.zipCode) {
+      updates.zipCode = data.zipCode
+    }
+
+    onFormChange(updates)
+  }
 
   // Calculate age from DOB
   const age = useMemo(() => calculateAge(formData.dateOfBirth || profile.dateOfBirth || ''), [formData.dateOfBirth, profile.dateOfBirth])
@@ -170,8 +215,98 @@ export default function ProfileTab({
         )}
       </div>
 
-      {/* Personal Information Section */}
+      {/* Driver License Section - First for easy access */}
       <div className="mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+              Driver License Information
+            </h3>
+            <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+              Required for vehicle rentals and identity verification
+            </p>
+          </div>
+          {editMode && (
+            <button
+              type="button"
+              onClick={() => setShowLicenseScanner(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors"
+            >
+              <IoScanOutline className="w-3.5 h-3.5" />
+              Scan License
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {/* Driver License Number */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              License Number
+            </label>
+            {editMode ? (
+              <input
+                type="text"
+                value={formData.driverLicenseNumber}
+                onChange={(e) => handleInputChange('driverLicenseNumber', e.target.value.toUpperCase())}
+                className="w-full px-3 py-2 text-sm border border-gray-400 dark:border-gray-500 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
+                placeholder="D12345678"
+              />
+            ) : (
+              <p className="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white shadow-sm">
+                {profile.driverLicenseNumber || 'Not set'}
+              </p>
+            )}
+          </div>
+
+          {/* Driver License State */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              Issuing State
+            </label>
+            {editMode ? (
+              <select
+                value={formData.driverLicenseState}
+                onChange={(e) => handleInputChange('driverLicenseState', e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-400 dark:border-gray-500 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
+              >
+                <option value="">Select State</option>
+                {US_STATES.map((state) => (
+                  <option key={state} value={state}>
+                    {state}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <p className="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white shadow-sm">
+                {profile.driverLicenseState || 'Not set'}
+              </p>
+            )}
+          </div>
+
+          {/* Driver License Expiry */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              Expiration Date
+            </label>
+            {editMode ? (
+              <input
+                type="date"
+                value={formData.driverLicenseExpiry}
+                onChange={(e) => handleInputChange('driverLicenseExpiry', e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-400 dark:border-gray-500 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
+              />
+            ) : (
+              <p className="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white shadow-sm">
+                {profile.driverLicenseExpiry ? new Date(profile.driverLicenseExpiry).toLocaleDateString() : 'Not set'}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Personal Information Section */}
+      <div className="mb-6 pt-4 border-t border-gray-200 dark:border-gray-700">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Basic Information</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {/* First Name */}
@@ -501,6 +636,14 @@ export default function ProfileTab({
         <p className="text-xs text-red-500 text-right mt-2">
           Please fill in all required fields before saving
         </p>
+      )}
+
+      {/* Driver License Scanner Modal */}
+      {showLicenseScanner && (
+        <DriverLicenseScanner
+          onScan={handleLicenseScan}
+          onClose={() => setShowLicenseScanner(false)}
+        />
       )}
     </div>
   )

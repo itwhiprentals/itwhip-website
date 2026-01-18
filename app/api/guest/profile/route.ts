@@ -183,7 +183,12 @@ export async function GET(request: NextRequest) {
 
       // Stripe Identity Verification
       stripeIdentityStatus: profileData.stripeIdentityStatus,
-      stripeIdentityVerifiedAt: profileData.stripeIdentityVerifiedAt
+      stripeIdentityVerifiedAt: profileData.stripeIdentityVerifiedAt,
+
+      // Driver License Info
+      driverLicenseNumber: profileData.driverLicenseNumber,
+      driverLicenseState: profileData.driverLicenseState,
+      driverLicenseExpiry: profileData.driverLicenseExpiry
     }
 
     // 🔍 DEBUG LOGGING - Remove after testing
@@ -385,6 +390,22 @@ export async function PUT(request: NextRequest) {
       changeDetails.notifications.pushChanged = true
     }
 
+    // Driver License fields
+    if (body.driverLicenseNumber !== undefined && body.driverLicenseNumber !== profile.driverLicenseNumber) {
+      changedFields.push('driverLicenseNumber')
+      changeDetails.driverLicense = { numberChanged: true }
+    }
+    if (body.driverLicenseState !== undefined && body.driverLicenseState !== profile.driverLicenseState) {
+      changedFields.push('driverLicenseState')
+      if (!changeDetails.driverLicense) changeDetails.driverLicense = {}
+      changeDetails.driverLicense.stateChanged = true
+    }
+    if (body.driverLicenseExpiry && new Date(body.driverLicenseExpiry).getTime() !== profile.driverLicenseExpiry?.getTime()) {
+      changedFields.push('driverLicenseExpiry')
+      if (!changeDetails.driverLicense) changeDetails.driverLicense = {}
+      changeDetails.driverLicense.expiryChanged = true
+    }
+
     // Update profile
     const updatedProfile = await prisma.reviewerProfile.update({
       where: { id: profile.id },
@@ -407,7 +428,12 @@ export async function PUT(request: NextRequest) {
         ...(body.preferredCurrency && { preferredCurrency: body.preferredCurrency }),
         ...(body.emailNotifications !== undefined && { emailNotifications: body.emailNotifications }),
         ...(body.smsNotifications !== undefined && { smsNotifications: body.smsNotifications }),
-        ...(body.pushNotifications !== undefined && { pushNotifications: body.pushNotifications })
+        ...(body.pushNotifications !== undefined && { pushNotifications: body.pushNotifications }),
+
+        // Driver License Info
+        ...(body.driverLicenseNumber !== undefined && { driverLicenseNumber: body.driverLicenseNumber }),
+        ...(body.driverLicenseState !== undefined && { driverLicenseState: body.driverLicenseState }),
+        ...(body.driverLicenseExpiry && { driverLicenseExpiry: new Date(body.driverLicenseExpiry) })
       }
     })
 
@@ -430,15 +456,18 @@ export async function PUT(request: NextRequest) {
         const personalInfoFields = ['name', 'phone', 'bio', 'city', 'state', 'zipCode', 'dateOfBirth']
         const emergencyFields = ['emergencyContactName', 'emergencyContactPhone', 'emergencyContactRelation']
         const preferenceFields = ['preferredLanguage', 'preferredCurrency', 'emailNotifications', 'smsNotifications', 'pushNotifications']
-        
+        const driverLicenseFields = ['driverLicenseNumber', 'driverLicenseState', 'driverLicenseExpiry']
+
         const personalChanges = changedFields.filter(f => personalInfoFields.includes(f))
         const emergencyChanges = changedFields.filter(f => emergencyFields.includes(f))
         const preferenceChanges = changedFields.filter(f => preferenceFields.includes(f))
-        
+        const driverLicenseChanges = changedFields.filter(f => driverLicenseFields.includes(f))
+
         const categories = []
         if (personalChanges.length > 0) categories.push('personal information')
         if (emergencyChanges.length > 0) categories.push('emergency contact')
         if (preferenceChanges.length > 0) categories.push('preferences')
+        if (driverLicenseChanges.length > 0) categories.push('driver license')
         
         if (categories.length > 0) {
           description = `Profile updated - ${categories.join(', ')}`
@@ -454,7 +483,8 @@ export async function PUT(request: NextRequest) {
             categories: {
               personalInfo: personalChanges.length > 0,
               emergencyContact: emergencyChanges.length > 0,
-              preferences: preferenceChanges.length > 0
+              preferences: preferenceChanges.length > 0,
+              driverLicense: driverLicenseChanges.length > 0
             },
             timestamp: new Date().toISOString()
           }

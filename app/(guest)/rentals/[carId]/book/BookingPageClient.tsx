@@ -342,6 +342,18 @@ export default function BookingPageClient({ carId }: { carId: string }) {
   const [isPaymentElementComplete, setIsPaymentElementComplete] = useState(false)
   const [paymentError, setPaymentError] = useState<string | null>(null)
 
+  // Saved payment methods state
+  const [savedPaymentMethods, setSavedPaymentMethods] = useState<{
+    id: string
+    brand: string
+    last4: string
+    expMonth: number
+    expYear: number
+    isDefault: boolean
+  }[]>([])
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('new') // 'new' or payment method ID
+  const [savedMethodsLoading, setSavedMethodsLoading] = useState(false)
+
   // Primary driver information states
   const [driverFirstName, setDriverFirstName] = useState('')
   const [driverLastName, setDriverLastName] = useState('')
@@ -744,7 +756,35 @@ export default function BookingPageClient({ carId }: { carId: string }) {
               }
               console.log('Phone auto-filled:', formattedPhone)
             }
-            
+
+            // Auto-fill Date of Birth from profile
+            if (profileData.dateOfBirth) {
+              const dob = new Date(profileData.dateOfBirth)
+              if (!isNaN(dob.getTime())) {
+                setDriverAge(dob)
+                // Calculate age for validation
+                const today = new Date()
+                let age = today.getFullYear() - dob.getFullYear()
+                const monthDiff = today.getMonth() - dob.getMonth()
+                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+                  age--
+                }
+                // Set validation (min age 21 for standard vehicles)
+                if (age >= 21 && age <= 100) {
+                  setAgeValidation({ isValid: true, error: null, age })
+                  console.log('✅ Date of birth auto-filled:', dob, '- Age:', age)
+                } else {
+                  console.log('⚠️ Date of birth auto-filled but age validation failed:', age)
+                }
+              }
+            }
+
+            // Auto-fill Driver's License Number from profile
+            if (profileData.driverLicenseNumber) {
+              setDriverLicense(profileData.driverLicenseNumber)
+              console.log('✅ Driver license auto-filled:', profileData.driverLicenseNumber)
+            }
+
             // Auto-fill document URLs if verified
             if (profileData.documentsVerified) {
               console.log('✅ Documents are verified!')
@@ -765,6 +805,35 @@ export default function BookingPageClient({ carId }: { carId: string }) {
               }
             } else {
               console.log('⚠️ Documents NOT verified')
+            }
+
+            // Fetch saved payment methods for authenticated users
+            try {
+              setSavedMethodsLoading(true)
+              const paymentMethodsRes = await fetch('/api/payments/methods', {
+                credentials: 'include'
+              })
+              if (paymentMethodsRes.ok) {
+                const methodsData = await paymentMethodsRes.json()
+                if (methodsData.success && methodsData.paymentMethods?.length > 0) {
+                  setSavedPaymentMethods(methodsData.paymentMethods)
+                  // Auto-select: prefer default method, otherwise use first saved card
+                  const defaultMethod = methodsData.paymentMethods.find((m: any) => m.isDefault)
+                  if (defaultMethod) {
+                    setSelectedPaymentMethod(defaultMethod.id)
+                    console.log('💳 Default payment method selected:', defaultMethod.id)
+                  } else {
+                    // No default set - use first saved card
+                    setSelectedPaymentMethod(methodsData.paymentMethods[0].id)
+                    console.log('💳 First saved payment method selected:', methodsData.paymentMethods[0].id)
+                  }
+                  console.log('💳 Saved payment methods loaded:', methodsData.paymentMethods.length)
+                }
+              }
+            } catch (pmError) {
+              console.error('Failed to load saved payment methods:', pmError)
+            } finally {
+              setSavedMethodsLoading(false)
             }
           } else {
             const errorText = await profileRes.text()
@@ -907,8 +976,9 @@ export default function BookingPageClient({ carId }: { carId: string }) {
       return { allowed: false }  // No reason - user sees Verify Identity section
     }
 
-    // ✅ Check if payment info is complete (via Stripe Payment Element)
-    if (!isPaymentElementComplete || !isPaymentElementReady) {
+    // ✅ Check if payment info is complete (via Stripe Payment Element or saved method)
+    const hasSavedMethodSelected = selectedPaymentMethod !== 'new' && savedPaymentMethods.length > 0
+    if (!hasSavedMethodSelected && (!isPaymentElementComplete || !isPaymentElementReady)) {
       return { allowed: false }  // No reason - user sees Payment Element
     }
 
@@ -1017,9 +1087,15 @@ export default function BookingPageClient({ carId }: { carId: string }) {
   // Personal insurance card upload is OPTIONAL (for deposit discount)
   const isIdentityVerified = userProfile?.documentsVerified || userProfile?.stripeIdentityStatus === 'verified'
   
+  // Check if this is a $0 booking (credits/discounts cover full amount)
+  // Stripe requires minimum $0.50, so anything below that is effectively free
+  const isZeroPaymentBooking = (savedBookingDetails?.pricing?.total ?? -1) >= 0 && (savedBookingDetails?.pricing?.total ?? -1) < 0.50
+
   // Check if payment form is complete
-  // Use Payment Element status instead of manual card validation
-  const cardValid = isPaymentElementComplete && isPaymentElementReady
+  // Use Payment Element status OR saved payment method selection
+  // For $0 bookings, payment is automatically valid (no card needed)
+  const hasSavedMethod = selectedPaymentMethod !== 'new' && savedPaymentMethods.length > 0
+  const cardValid = isZeroPaymentBooking || hasSavedMethod || (isPaymentElementComplete && isPaymentElementReady)
   // Email and phone must be valid, and all driver fields filled
   const driverInfoComplete = driverFirstName && driverLastName && driverAge && driverLicense && driverPhone && driverEmail &&
     emailValidation.isValid && phoneValidation.isValid && firstNameValidation.isValid && lastNameValidation.isValid && ageValidation.isValid
@@ -1551,24 +1627,70 @@ export default function BookingPageClient({ carId }: { carId: string }) {
     setPaymentError(null)
 
     try {
-      // Step 1: Confirm payment with Stripe Payment Element
-      if (!confirmPaymentRef.current) {
-        alert('Payment system not ready. Please try again.')
-        setIsProcessing(false)
-        return
+      // Step 1: Confirm payment (skip for $0 bookings)
+      let confirmedPaymentIntentId: string | undefined
+
+      // Check if this is a $0 booking - skip payment entirely
+      if (isZeroPaymentBooking) {
+        console.log('[Checkout] $0 booking - skipping payment confirmation')
+        confirmedPaymentIntentId = undefined // No payment needed
+      }
+      // Check if using saved payment method or new card via Payment Element
+      else if (selectedPaymentMethod !== 'new' && savedPaymentMethods.length > 0) {
+        // Using saved payment method - confirm via API
+        console.log('[Checkout] Confirming with saved payment method:', selectedPaymentMethod)
+
+        if (!paymentIntentId) {
+          alert('Payment intent not ready. Please try again.')
+          setIsProcessing(false)
+          return
+        }
+
+        const confirmRes = await fetch('/api/rentals/confirm-saved-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            paymentIntentId,
+            paymentMethodId: selectedPaymentMethod
+          })
+        })
+
+        if (!confirmRes.ok) {
+          const errorData = await confirmRes.json()
+          throw new Error(errorData.error || 'Payment confirmation failed')
+        }
+
+        const confirmData = await confirmRes.json()
+        if (!confirmData.success) {
+          throw new Error(confirmData.error || 'Payment confirmation failed')
+        }
+
+        confirmedPaymentIntentId = confirmData.paymentIntentId
+        console.log('[Checkout] Saved payment method confirmed! PaymentIntent:', confirmedPaymentIntentId)
+      } else {
+        // Using new card via Payment Element
+        if (!confirmPaymentRef.current) {
+          alert('Payment system not ready. Please try again.')
+          setIsProcessing(false)
+          return
+        }
+
+        console.log('[Checkout] Confirming payment with Payment Element...')
+        const paymentResult = await confirmPaymentRef.current()
+
+        if (!paymentResult.success) {
+          console.error('[Checkout] Payment failed:', paymentResult.error)
+          setPaymentError(paymentResult.error || 'Payment failed')
+          setIsProcessing(false)
+          return
+        }
+
+        confirmedPaymentIntentId = paymentResult.paymentIntentId
+        console.log('[Checkout] Payment Element confirmed! PaymentIntent:', confirmedPaymentIntentId)
       }
 
-      console.log('[Checkout] Confirming payment...')
-      const paymentResult = await confirmPaymentRef.current()
-
-      if (!paymentResult.success) {
-        console.error('[Checkout] Payment failed:', paymentResult.error)
-        setPaymentError(paymentResult.error || 'Payment failed')
-        setIsProcessing(false)
-        return
-      }
-
-      console.log('[Checkout] Payment confirmed! PaymentIntent:', paymentResult.paymentIntentId)
+      console.log('[Checkout] Payment step complete! PaymentIntent:', confirmedPaymentIntentId || '(none - $0 booking)')
 
       // Step 2: Create booking with confirmed payment
       const formatDateString = (dateStr: string) => {
@@ -1626,8 +1748,8 @@ export default function BookingPageClient({ carId }: { carId: string }) {
         // Include reviewerProfileId if logged in
         ...(userProfile?.id && { reviewerProfileId: userProfile.id }),
 
-        // Stripe Payment (confirmed via Payment Element)
-        paymentIntentId: paymentResult.paymentIntentId,
+        // Stripe Payment (confirmed via Payment Element, or undefined for $0 bookings)
+        ...(confirmedPaymentIntentId && { paymentIntentId: confirmedPaymentIntentId }),
 
         // Dates and times
         startDate: formatDateString(savedBookingDetails?.startDate || ''),
@@ -2196,27 +2318,40 @@ export default function BookingPageClient({ carId }: { carId: string }) {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Date of Birth <span className="text-red-500">*</span>
               </label>
-              <DatePicker
-                selected={driverAge}
-                onChange={(date) => handleDobChange(date)}
-                showYearDropdown
-                showMonthDropdown
-                scrollableYearDropdown
-                yearDropdownItemNumber={100}
-                dateFormat="MM/dd/yyyy"
-                placeholderText="Select date of birth"
-                className={`w-full px-2 py-2 bg-white dark:bg-gray-700 border rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-amber-500 focus:border-amber-500 cursor-pointer ${
-                  driverAge && ageValidation.isValid
-                    ? 'border-green-500 dark:border-green-500'
-                    : driverAge && ageValidation.error
-                      ? 'border-red-500 dark:border-red-500'
-                      : 'border-gray-200 dark:border-gray-600'
-                }`}
-                wrapperClassName="w-full"
-                calendarClassName="!rounded-xl !border-0 !shadow-xl"
-                popperClassName="!z-50"
-                required
-              />
+              <div className="relative">
+                <DatePicker
+                  selected={driverAge}
+                  onChange={(date) => handleDobChange(date)}
+                  showYearDropdown
+                  showMonthDropdown
+                  scrollableYearDropdown
+                  yearDropdownItemNumber={100}
+                  dateFormat="MM/dd/yyyy"
+                  placeholderText="Select date of birth"
+                  className={`w-full px-2 py-2 pr-10 bg-white dark:bg-gray-700 border rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-amber-500 focus:border-amber-500 cursor-pointer ${
+                    driverAge && ageValidation.isValid
+                      ? 'border-green-500 dark:border-green-500'
+                      : driverAge && ageValidation.error
+                        ? 'border-red-500 dark:border-red-500'
+                        : 'border-gray-200 dark:border-gray-600'
+                  }`}
+                  wrapperClassName="w-full"
+                  calendarClassName="!rounded-xl !border-0 !shadow-xl"
+                  popperClassName="!z-50"
+                  required
+                />
+                {/* Validation icon */}
+                {driverAge && ageValidation.isValid && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <IoCheckmarkCircle className="w-5 h-5 text-green-500" />
+                  </div>
+                )}
+                {driverAge && ageValidation.error && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <IoCloseCircle className="w-5 h-5 text-red-500" />
+                  </div>
+                )}
+              </div>
               {driverAge && ageValidation.error ? (
                 <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
                   <IoCloseCircleOutline className="w-3.5 h-3.5" />
@@ -2236,14 +2371,32 @@ export default function BookingPageClient({ carId }: { carId: string }) {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Driver&apos;s License # <span className="text-red-500">*</span>
               </label>
-              <input
-                type="text"
-                value={driverLicense}
-                onChange={(e) => setDriverLicense(e.target.value.toUpperCase())}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white dark:bg-gray-700 dark:text-white"
-                placeholder="D12345678"
-                required
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  value={driverLicense}
+                  onChange={(e) => setDriverLicense(e.target.value.toUpperCase())}
+                  className={`w-full px-3 py-2 pr-10 border rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white dark:bg-gray-700 dark:text-white ${
+                    driverLicense && driverLicense.length >= 3
+                      ? 'border-green-500 dark:border-green-500'
+                      : 'border-gray-300 dark:border-gray-600'
+                  }`}
+                  placeholder="D12345678"
+                  required
+                />
+                {/* Validation icon */}
+                {driverLicense && driverLicense.length >= 3 && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <IoCheckmarkCircle className="w-5 h-5 text-green-500" />
+                  </div>
+                )}
+              </div>
+              {driverLicense && driverLicense.length >= 3 && (
+                <p className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
+                  <IoCheckmarkOutline className="w-3.5 h-3.5" />
+                  Valid license number
+                </p>
+              )}
             </div>
 
             <div>
@@ -2960,11 +3113,111 @@ export default function BookingPageClient({ carId }: { carId: string }) {
             Payment Information
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-            Enter your card details for payment and security deposit
+            {isZeroPaymentBooking
+              ? 'Your credits cover this booking - no payment required!'
+              : savedPaymentMethods.length > 0
+                ? 'Select a saved card or enter new payment details'
+                : 'Enter your card details for payment and security deposit'
+            }
           </p>
 
-          {/* Stripe Payment Element - Supports Apple Pay, Google Pay, Cards */}
-          <div className="mb-6">
+          {/* $0 Booking - Credits Applied */}
+          {isZeroPaymentBooking && (
+            <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex-shrink-0 w-10 h-10 bg-amber-100 dark:bg-amber-800 rounded-full flex items-center justify-center">
+                    <IoCheckmarkCircle className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-amber-800 dark:text-amber-200">Credits Applied</p>
+                    <p className="text-sm text-amber-600 dark:text-amber-400">
+                      Your account balance covers this booking
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">$0.00</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Amount due</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Saved Payment Methods - Amazon-style dropdown */}
+          {!isZeroPaymentBooking && savedPaymentMethods.length > 0 && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Payment Method
+              </label>
+              <div className="space-y-2">
+                {savedPaymentMethods.map((method) => (
+                  <label
+                    key={method.id}
+                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                      selectedPaymentMethod === method.id
+                        ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20'
+                        : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value={method.id}
+                      checked={selectedPaymentMethod === method.id}
+                      onChange={() => setSelectedPaymentMethod(method.id)}
+                      className="h-4 w-4 text-amber-500 focus:ring-amber-500"
+                    />
+                    <div className="flex items-center gap-2 flex-1">
+                      {/* Card brand icon */}
+                      <span className="text-gray-600 dark:text-gray-400">
+                        {method.brand === 'visa' && '💳'}
+                        {method.brand === 'mastercard' && '💳'}
+                        {method.brand === 'amex' && '💳'}
+                        {!['visa', 'mastercard', 'amex'].includes(method.brand) && '💳'}
+                      </span>
+                      <span className="text-sm text-gray-900 dark:text-white font-medium capitalize">
+                        {method.brand} •••• {method.last4}
+                      </span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        Expires {method.expMonth.toString().padStart(2, '0')}/{method.expYear.toString().slice(-2)}
+                      </span>
+                      {method.isDefault && (
+                        <span className="ml-auto text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded">
+                          Default
+                        </span>
+                      )}
+                    </div>
+                  </label>
+                ))}
+
+                {/* New card option */}
+                <label
+                  className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                    selectedPaymentMethod === 'new'
+                      ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20'
+                      : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="new"
+                    checked={selectedPaymentMethod === 'new'}
+                    onChange={() => setSelectedPaymentMethod('new')}
+                    className="h-4 w-4 text-amber-500 focus:ring-amber-500"
+                  />
+                  <span className="text-sm text-gray-900 dark:text-white font-medium">
+                    Use a new card
+                  </span>
+                </label>
+              </div>
+            </div>
+          )}
+
+          {/* Stripe Payment Element - Show only when "new card" is selected and not $0 booking */}
+          {!isZeroPaymentBooking && (
+          <div className={`mb-6 ${savedPaymentMethods.length > 0 && selectedPaymentMethod !== 'new' ? 'hidden' : ''}`}>
             {clientSecret ? (
               <Elements
                 stripe={stripePromise}
@@ -3029,6 +3282,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
               </span>
             </div>
           </div>
+          )}
 
           {/* ========== INSURANCE CARD (OPTIONAL) - Collapsed by default per Baymard ========== */}
           {/* Show verified state if insurance is verified */}

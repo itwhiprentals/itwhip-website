@@ -50,6 +50,11 @@ interface GuestProfile {
   fullyVerified: boolean
   canInstantBook: boolean
 
+  // Driver License
+  driverLicenseNumber?: string
+  driverLicenseState?: string
+  driverLicenseExpiry?: string
+
   // Insurance
   insuranceProvider?: string
   insurancePolicyNumber?: string
@@ -152,12 +157,26 @@ function GuestProfileContent() {
     emergencyContactName: '',
     emergencyContactPhone: '',
     emergencyContactRelation: '',
+    driverLicenseNumber: '',
+    driverLicenseState: '',
+    driverLicenseExpiry: '',
     preferredLanguage: 'en',
     preferredCurrency: 'USD',
     emailNotifications: true,
     smsNotifications: true,
     pushNotifications: true
   })
+
+  // Helper to format ISO date to YYYY-MM-DD for date input
+  const formatDateForInput = (isoDate: string | undefined | null): string => {
+    if (!isoDate) return ''
+    try {
+      const date = new Date(isoDate)
+      return date.toISOString().split('T')[0]
+    } catch {
+      return ''
+    }
+  }
 
   // Helper to split name into first/last
   const splitName = (fullName: string) => {
@@ -217,10 +236,13 @@ function GuestProfileContent() {
           city: data.profile.city || '',
           state: data.profile.state || '',
           zipCode: data.profile.zipCode || '',
-          dateOfBirth: data.profile.dateOfBirth || '',
+          dateOfBirth: formatDateForInput(data.profile.dateOfBirth),
           emergencyContactName: data.profile.emergencyContactName || '',
           emergencyContactPhone: data.profile.emergencyContactPhone || '',
           emergencyContactRelation: data.profile.emergencyContactRelation || '',
+          driverLicenseNumber: data.profile.driverLicenseNumber || '',
+          driverLicenseState: data.profile.driverLicenseState || '',
+          driverLicenseExpiry: formatDateForInput(data.profile.driverLicenseExpiry),
           preferredLanguage: data.profile.preferredLanguage || 'en',
           preferredCurrency: data.profile.preferredCurrency || 'USD',
           emailNotifications: data.profile.emailNotifications !== false,
@@ -449,7 +471,10 @@ function GuestProfileContent() {
                 emergencyContactName: profile.emergencyContactName,
                 emergencyContactPhone: profile.emergencyContactPhone,
                 emergencyContactRelation: profile.emergencyContactRelation,
-                dateOfBirth: profile.dateOfBirth
+                dateOfBirth: profile.dateOfBirth,
+                driverLicenseNumber: profile.driverLicenseNumber,
+                driverLicenseState: profile.driverLicenseState,
+                driverLicenseExpiry: profile.driverLicenseExpiry
               }}
               formData={formData}
               editMode={editMode}
