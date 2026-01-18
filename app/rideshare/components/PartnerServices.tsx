@@ -10,8 +10,7 @@ import {
   IoLocationOutline,
   IoCheckmarkCircle
 } from 'react-icons/io5'
-import { FaUber, FaCarSide } from 'react-icons/fa'
-import { SiLyft, SiDoordash, SiInstacart } from 'react-icons/si'
+import { SiUber, SiLyft, SiDoordash, SiInstacart } from 'react-icons/si'
 
 interface Service {
   id: string
@@ -36,7 +35,7 @@ interface PartnerServicesProps {
 
 // Platform icon mapping with brand colors
 const PLATFORM_ICONS: Record<string, { icon: React.ReactNode; bgColor: string }> = {
-  'uber': { icon: <FaUber className="w-4 h-4 text-white" />, bgColor: 'bg-black' },
+  'uber': { icon: <SiUber className="w-4 h-4 text-white" />, bgColor: 'bg-black' },
   'lyft': { icon: <SiLyft className="w-4 h-4 text-white" />, bgColor: 'bg-[#FF00BF]' },
   'doordash': { icon: <SiDoordash className="w-4 h-4 text-white" />, bgColor: 'bg-[#FF3008]' },
   'instacart': { icon: <SiInstacart className="w-4 h-4 text-white" />, bgColor: 'bg-[#43B02A]' },

@@ -13,12 +13,14 @@ import {
   IoGridOutline,
   IoListOutline,
   IoCarSportOutline,
-  IoKeyOutline
+  IoKeyOutline,
+  IoAddCircleOutline
 } from 'react-icons/io5'
 import VehicleFilters, { FilterState } from '../components/VehicleFilters'
 import CompactCarCard from '@/app/components/cards/CompactCarCard'
 import { generateCarUrl } from '@/app/lib/utils/urls'
 import { capitalizeCarMake } from '@/app/lib/utils/formatters'
+import { useEditMode } from './EditModeContext'
 
 interface Vehicle {
   id: string
@@ -66,6 +68,8 @@ export default function PartnerVehicleGrid({
   availableMakes,
   serviceSettings
 }: PartnerVehicleGridProps) {
+  // Get edit mode from context
+  const { isEditMode, openSheet } = useEditMode()
   const [filters, setFilters] = useState<FilterState>({
     make: '',
     sortBy: 'newest',
@@ -259,11 +263,20 @@ export default function PartnerVehicleGrid({
         <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
           <IoCarOutline className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-500 dark:text-gray-400 font-medium">
-            No vehicles match your filters
+            {vehicles.length === 0 ? 'No vehicles in your fleet' : 'No vehicles match your filters'}
           </p>
           <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
-            Try adjusting your search criteria
+            {vehicles.length === 0 ? 'Add your first vehicle to get started' : 'Try adjusting your search criteria'}
           </p>
+          {isEditMode && (
+            <button
+              onClick={() => openSheet('addCar')}
+              className="inline-flex items-center gap-1.5 mt-4 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition-colors"
+            >
+              <IoAddCircleOutline className="w-4 h-4" />
+              Add Car
+            </button>
+          )}
         </div>
       )}
     </div>

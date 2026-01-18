@@ -14,7 +14,6 @@ import CompactCarCard from '@/app/components/cards/CompactCarCard'
 import InsuranceTiersSection from '@/app/components/sections/InsuranceTiersSection'
 import TrackingSection from '@/app/components/sections/TrackingSection'
 import ArizonaEventsSection from '@/app/components/sections/ArizonaEventsSection'
-import WhyBookSection from '@/app/components/sections/WhyBookSection'
 import { useUserLocation } from '@/app/hooks/useUserLocation'
 import { IoArrowForwardOutline, IoLeafOutline, IoLocationOutline, IoCarSportOutline, IoMapOutline } from 'react-icons/io5'
 import type { HomePageCar } from '@/app/lib/server/fetchHomeData'
@@ -253,9 +252,6 @@ export default function HomeClient({ initialEsgCars, initialCityCars }: HomeClie
             )}
           </div>
         </section>
-
-        {/* Why Book With Us - Horizontal Scroll */}
-        <WhyBookSection />
 
         {/* Section Components - P2P Focused */}
         <InsuranceTiersSection />

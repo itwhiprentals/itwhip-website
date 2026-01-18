@@ -4,6 +4,7 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import { cookies } from 'next/headers'
 import { jwtVerify } from 'jose'
 import { prisma } from '@/app/lib/database/prisma'
 import PartnerHero from '../components/PartnerHero'
@@ -38,6 +39,7 @@ interface PreviewTokenPayload {
 }
 
 // Validate preview token and return payload if valid
+// SECURITY: Also verifies host is currently logged in (token alone is not enough)
 async function validatePreviewToken(token: string, expectedSlug: string): Promise<PreviewTokenPayload | null> {
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET)
@@ -47,6 +49,33 @@ async function validatePreviewToken(token: string, expectedSlug: string): Promis
 
     // Check slug matches
     if (payload.slug !== expectedSlug) return null
+
+    // SECURITY: Verify host is currently logged in
+    // Preview tokens should only work when host has an active session
+    const cookieStore = await cookies()
+    const partnerToken = cookieStore.get('partner_token')?.value
+    const hostAccessToken = cookieStore.get('hostAccessToken')?.value
+
+    if (!partnerToken && !hostAccessToken) {
+      // Host is logged out - reject preview token
+      console.log('[Preview Token] Rejected - host not logged in')
+      return null
+    }
+
+    // Verify the logged-in host matches the preview token's host
+    try {
+      const sessionToken = partnerToken || hostAccessToken
+      const { payload: sessionPayload } = await jwtVerify(sessionToken!, JWT_SECRET)
+      if (sessionPayload.hostId !== payload.hostId) {
+        // Different host is logged in - reject
+        console.log('[Preview Token] Rejected - different host logged in')
+        return null
+      }
+    } catch {
+      // Session token invalid/expired - reject preview
+      console.log('[Preview Token] Rejected - session token invalid')
+      return null
+    }
 
     return payload as unknown as PreviewTokenPayload
   } catch {
@@ -657,7 +686,7 @@ export default async function PartnerLandingPage({ params, searchParams }: PageP
         </div>
       )}
 
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-16 sm:pt-20">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-16">
         {/* Breadcrumb - Hidden in preview mode */}
         {!isHostPreview && (
           <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">

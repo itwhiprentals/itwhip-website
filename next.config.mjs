@@ -2,6 +2,8 @@
 const nextConfig = {
   typescript: { ignoreBuildErrors: true },
   eslint: { ignoreDuringBuilds: true },
+  // Allow phones on local network to access dev server (for VIN scanning)
+  allowedDevOrigins: ['10.165.1.231'],
   images: {
     remotePatterns: [
       {

@@ -21,7 +21,8 @@ import {
   IoLogoTiktok,
   IoLogoYoutube,
   IoTimeOutline,
-  IoCalendarOutline
+  IoCalendarOutline,
+  IoPencilOutline
 } from 'react-icons/io5'
 
 interface PartnerStats {
@@ -67,6 +68,9 @@ interface PartnerHeroProps {
   socialLinks?: SocialLinks
   visibility?: VisibilitySettings
   isStripeVerified?: boolean
+  // Edit mode props
+  isEditMode?: boolean
+  onEditHero?: () => void
 }
 
 export default function PartnerHero({
@@ -82,7 +86,9 @@ export default function PartnerHero({
   stats,
   socialLinks,
   visibility = { showEmail: true, showPhone: true, showWebsite: true },
-  isStripeVerified = false
+  isStripeVerified = false,
+  isEditMode = false,
+  onEditHero
 }: PartnerHeroProps) {
   const [showFullBio, setShowFullBio] = useState(false)
 
@@ -126,11 +132,21 @@ export default function PartnerHero({
           }} />
         </div>
 
-        {/* Logo - Centered, overlapping bottom */}
+        {/* Divider lines - edge to edge at hero bottom edge */}
+        <div className="absolute left-0 right-0 bottom-0 z-10 flex items-center">
+          {/* Left line - edge to center minus logo radius */}
+          <div className="flex-1 h-[3px] bg-white" />
+          {/* Gap for logo (150px + 6px border = 156px, so ~78px each side) */}
+          <div className="w-[156px] flex-shrink-0" />
+          {/* Right line - center plus logo radius to edge */}
+          <div className="flex-1 h-[3px] bg-white" />
+        </div>
+
+        {/* Logo - Centered, overlapping bottom with white circle border */}
         <div className="absolute left-1/2 -translate-x-1/2 -bottom-[75px] z-20">
           <div className="relative">
-            {/* White background ensures all logos visible in both light/dark modes */}
-            <div className="relative w-[150px] h-[150px] rounded-full overflow-hidden shadow-2xl ring-1 ring-white/50 bg-white">
+            {/* White circle border */}
+            <div className="relative w-[150px] h-[150px] rounded-full overflow-hidden shadow-2xl ring-[3px] ring-white bg-white">
               {logo ? (
                 <Image
                   src={logo}
@@ -184,26 +200,49 @@ export default function PartnerHero({
             )}
           </div>
 
-          {/* Bio */}
-          {bio && (
-            <div className="text-center max-w-3xl mx-auto mb-4">
-              <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base leading-relaxed">
-                {displayBio}
-              </p>
-              {shouldTruncateBio && (
-                <button
-                  onClick={() => setShowFullBio(!showFullBio)}
-                  className="inline-flex items-center gap-1 mt-2 text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 font-medium text-xs sm:text-sm"
+          {/* Bio - Show empty placeholder in edit mode */}
+          <div className="text-center max-w-3xl mx-auto mb-4">
+            {bio ? (
+              <>
+                <div
+                  className={`${isEditMode ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg p-2 -m-2 transition-colors group' : ''}`}
+                  onClick={isEditMode ? onEditHero : undefined}
                 >
-                  {showFullBio ? (
-                    <>Show less <IoChevronUpOutline className="w-3.5 h-3.5" /></>
-                  ) : (
-                    <>Read more <IoChevronDownOutline className="w-3.5 h-3.5" /></>
+                  <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base leading-relaxed">
+                    {displayBio}
+                  </p>
+                  {isEditMode && (
+                    <span className="inline-flex items-center gap-1 mt-2 text-orange-600 dark:text-orange-400 text-xs opacity-0 group-hover:opacity-100 transition-opacity">
+                      <IoPencilOutline className="w-3 h-3" />
+                      Tap to edit
+                    </span>
                   )}
-                </button>
-              )}
-            </div>
-          )}
+                </div>
+                {shouldTruncateBio && !isEditMode && (
+                  <button
+                    onClick={() => setShowFullBio(!showFullBio)}
+                    className="inline-flex items-center gap-1 mt-2 text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 font-medium text-xs sm:text-sm"
+                  >
+                    {showFullBio ? (
+                      <>Show less <IoChevronUpOutline className="w-3.5 h-3.5" /></>
+                    ) : (
+                      <>Read more <IoChevronDownOutline className="w-3.5 h-3.5" /></>
+                    )}
+                  </button>
+                )}
+              </>
+            ) : isEditMode ? (
+              <button
+                onClick={onEditHero}
+                className="flex items-center justify-center gap-2 py-4 px-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/10 transition-colors group"
+              >
+                <IoPencilOutline className="w-5 h-5 text-gray-400 group-hover:text-orange-600" />
+                <span className="text-gray-500 dark:text-gray-400 group-hover:text-orange-600 text-sm font-medium">
+                  Add a bio for your business
+                </span>
+              </button>
+            ) : null}
+          </div>
 
           {/* Contact Info Row */}
           <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs sm:text-sm mb-4">

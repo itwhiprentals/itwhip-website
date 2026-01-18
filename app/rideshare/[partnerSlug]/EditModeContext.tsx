@@ -7,6 +7,7 @@ import { createContext, useContext, useState, useCallback, ReactNode } from 'rea
 
 export type EditableSection =
   | 'hero'
+  | 'photo'
   | 'benefits'
   | 'services'
   | 'vehicles'
@@ -14,6 +15,7 @@ export type EditableSection =
   | 'policies'
   | 'faqs'
   | 'social'
+  | 'addCar'
   | null
 
 interface LandingPageData {

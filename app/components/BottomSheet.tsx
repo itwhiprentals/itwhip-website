@@ -198,33 +198,33 @@ export default function BottomSheet({
         )}
 
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-200 dark:border-gray-700">
           <div className="flex-1 min-w-0">
             <h2
               id="bottom-sheet-title"
-              className="text-lg font-semibold text-gray-900 dark:text-white truncate"
+              className="text-base font-semibold text-gray-900 dark:text-white truncate"
             >
               {title}
             </h2>
             {subtitle && (
-              <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                 {subtitle}
               </p>
             )}
           </div>
           <button
             onClick={onClose}
-            className="p-2 -mr-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="p-1.5 -mr-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             aria-label="Close"
           >
-            <IoCloseOutline className="w-6 h-6 text-gray-500 dark:text-gray-400" />
+            <IoCloseOutline className="w-5 h-5 text-gray-500 dark:text-gray-400" />
           </button>
         </div>
 
         {/* Content */}
         <div
           ref={contentRef}
-          className="flex-1 overflow-y-auto overscroll-contain px-4 py-4"
+          className="flex-1 overflow-y-auto overscroll-contain px-4 py-3"
         >
           {children}
         </div>
