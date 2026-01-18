@@ -2,6 +2,21 @@
 
 ## Recent Fixes (January 2026)
 
+### Landing Page Preview System (Jan 17)
+- [x] Token-based preview for hosts to view unpublished landing pages
+- [x] JWT preview tokens with 1-hour expiry via `/api/partner/preview-token`
+- [x] Graceful not-found page for non-existent/unpublished partner slugs
+- [x] PreviewBanner component with quick edit links to specific tabs
+- [x] Publishing requirements tooltip explaining what's needed to go live:
+  - Account approved
+  - Valid URL slug set
+  - At least 1 active vehicle
+  - Rideshare or Rentals enabled
+- [x] Dashboard header shows Live (green) vs Draft (yellow) status
+- [x] Deep linking to editor tabs via `?tab=` query parameter
+- [x] Breadcrumb hidden in preview mode for cleaner experience
+- [x] Componentized landing page editor (reduced from 1510 to ~337 lines)
+
 ### Auth & Session Fixes
 - [x] Fix Prisma relation names broken by `db pull` command
 - [x] Add `@default(cuid())` to Session model
