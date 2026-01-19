@@ -453,15 +453,21 @@ export default function PendingHostsPage() {
                     />
 
                     {/* Avatar */}
-                    <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-                      {host.profilePhoto ? (
-                        <img 
-                          src={host.profilePhoto} 
-                          alt={host.name}
-                          className="w-full h-full rounded-full object-cover"
-                        />
-                      ) : (
+                    <div className="w-16 h-16 rounded-full flex-shrink-0 relative">
+                      {/* Placeholder always visible as base layer */}
+                      <div className="w-full h-full bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
                         <IoPersonOutline className="text-2xl text-purple-600 dark:text-purple-400" />
+                      </div>
+                      {/* Image overlays placeholder when it loads successfully */}
+                      {host.profilePhoto && (
+                        <img
+                          src={host.profilePhoto}
+                          alt={host.name}
+                          className="absolute inset-0 w-full h-full rounded-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none'
+                          }}
+                        />
                       )}
                     </div>
                     

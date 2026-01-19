@@ -401,7 +401,7 @@ export async function getExpiringDocuments(hostId: string): Promise<{
   const thirtyDaysFromNow = new Date()
   thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30)
 
-  const expiringDocs = await prisma.partnerDocument.findMany({
+  const expiringDocs = await prisma.partner_documents.findMany({
     where: {
       hostId,
       expiresAt: {
@@ -444,7 +444,7 @@ export async function getExpiredDocuments(hostId: string): Promise<{
     hoursUntilSuspension: number | null
   }>
 }> {
-  const expiredDocs = await prisma.partnerDocument.findMany({
+  const expiredDocs = await prisma.partner_documents.findMany({
     where: {
       hostId,
       isExpired: true

@@ -17,7 +17,7 @@ export async function POST(
     const { notes, reviewedBy, commissionRate } = body
 
     // Find the application
-    const application = await prisma.partnerApplication.findUnique({
+    const application = await prisma.partner_applications.findUnique({
       where: { id },
       include: {
         host: {
@@ -53,7 +53,7 @@ export async function POST(
     }
 
     // Update application status
-    await prisma.partnerApplication.update({
+    await prisma.partner_applications.update({
       where: { id },
       data: {
         status: 'APPROVED',
@@ -76,7 +76,7 @@ export async function POST(
     })
 
     // Log commission rate
-    await prisma.partnerCommissionHistory.create({
+    await prisma.partner_commission_history.create({
       data: {
         hostId: application.hostId,
         oldRate: 0.25,

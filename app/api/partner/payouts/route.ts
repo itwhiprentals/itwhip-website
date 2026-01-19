@@ -64,10 +64,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Get total count
-    const totalCount = await prisma.partnerPayout.count({ where })
+    const totalCount = await prisma.partner_payouts.count({ where })
 
     // Get payouts
-    const payouts = await prisma.partnerPayout.findMany({
+    const payouts = await prisma.partner_payouts.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       skip,
@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
     }))
 
     // Calculate summary stats
-    const allPayouts = await prisma.partnerPayout.findMany({
+    const allPayouts = await prisma.partner_payouts.findMany({
       where: { hostId: partner.id }
     })
 

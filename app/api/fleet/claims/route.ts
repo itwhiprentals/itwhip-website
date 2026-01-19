@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
               }
             }
           },
-          policy: {
+          InsurancePolicy: {
             select: {
               id: true,
               tier: true,
@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
               collisionCoverage: true,
               deductible: true,
               totalPremium: true,
-              provider: {
+              InsuranceProvider: {
                 select: {
                   id: true,
                   name: true,
@@ -102,8 +102,8 @@ export async function GET(request: NextRequest) {
       // Determine primary insurance based on host tier
       const hostTier = claim.host.earningsTier;
       let primaryInsurance = 'PLATFORM';
-      let primaryProvider = claim.policy?.provider?.name || 'Unknown';
-      let primaryPolicy = claim.policy?.policyNumber || null;
+      let primaryProvider = claim.InsurancePolicy?.InsuranceProvider?.name || 'Unknown';
+      let primaryPolicy = claim.InsurancePolicy?.policyNumber || null;
       
       if (hostTier === 'PREMIUM' && claim.host.commercialInsuranceStatus === 'ACTIVE') {
         primaryInsurance = 'HOST_COMMERCIAL';
@@ -123,7 +123,7 @@ export async function GET(request: NextRequest) {
 
       // Calculate actual deductible responsibility
       const depositHeld = claim.booking.depositHeld || 0;
-      const platformDeductible = claim.policy?.deductible || 1000;
+      const platformDeductible = claim.InsurancePolicy?.deductible || 1000;
       
       // Determine who pays deductible based on primary insurance
       let deductiblePayer = 'GUEST';
@@ -147,14 +147,14 @@ export async function GET(request: NextRequest) {
           },
           secondary: {
             type: 'PLATFORM',
-            provider: claim.policy?.provider?.name || 'Tint',
-            tier: claim.policy?.tier || 'UNKNOWN',
+            provider: claim.InsurancePolicy?.InsuranceProvider?.name || 'Tint',
+            tier: claim.InsurancePolicy?.tier || 'UNKNOWN',
             coverage: {
-              liability: claim.policy?.liabilityCoverage || 0,
-              collision: claim.policy?.collisionCoverage || 0,
-              deductible: claim.policy?.deductible || 0
+              liability: claim.InsurancePolicy?.liabilityCoverage || 0,
+              collision: claim.InsurancePolicy?.collisionCoverage || 0,
+              deductible: claim.InsurancePolicy?.deductible || 0
             },
-            premium: claim.policy?.totalPremium || 0
+            premium: claim.InsurancePolicy?.totalPremium || 0
           },
           tertiary: guestHasInsurance ? {
             type: 'GUEST_PERSONAL',
@@ -309,10 +309,10 @@ export async function POST(request: NextRequest) {
             guestEmail: true
           }
         },
-        policy: {
+        InsurancePolicy: {
           select: {
             tier: true,
-            provider: {
+            InsuranceProvider: {
               select: {
                 name: true
               }

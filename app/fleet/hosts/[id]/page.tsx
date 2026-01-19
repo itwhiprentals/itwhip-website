@@ -436,13 +436,23 @@ export default function HostDetailPage({ params }: { params: Promise<{ id: strin
                   {host.cars.map((car: any) => (
                     <div key={car.id} className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded">
                       <div className="flex items-center gap-3 min-w-0 flex-1">
-                        {car.heroPhoto ? (
-                          <img src={car.heroPhoto} alt={car.model} className="w-16 h-12 object-cover rounded flex-shrink-0" />
-                        ) : (
-                          <div className="w-16 h-12 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center flex-shrink-0">
+                        <div className="w-16 h-12 rounded flex-shrink-0 relative">
+                          {/* Placeholder always visible as base layer */}
+                          <div className="w-full h-full bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center">
                             <IoCarOutline className="text-gray-400" />
                           </div>
-                        )}
+                          {/* Image overlays placeholder when it loads successfully */}
+                          {car.heroPhoto && (
+                            <img
+                              src={car.heroPhoto}
+                              alt={car.model}
+                              className="absolute inset-0 w-full h-full object-cover rounded"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none'
+                              }}
+                            />
+                          )}
+                        </div>
                         <div className="min-w-0">
                           <div className="font-medium truncate">{car.year} {car.make} {car.model}</div>
                           <div className="text-sm text-gray-600 dark:text-gray-400">

@@ -4,12 +4,18 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { verify } from 'argon2'
 import { sign, verify as jwtVerify } from 'jsonwebtoken'
+import { logFailedLogin, logSuccessfulLogin, isIpBlocked } from '@/app/lib/security/loginMonitor'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key'
 
 // POST - Host login
 export async function POST(request: NextRequest) {
+  // Get request info for security logging
+  const userAgent = request.headers.get('user-agent') || 'unknown'
+  const forwardedFor = request.headers.get('x-forwarded-for')
+  const ip = forwardedFor?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || 'unknown'
+
   try {
     const { email, password } = await request.json()
 
@@ -23,6 +29,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Email and password are required' },
         { status: 400 }
+      )
+    }
+
+    // Check if IP is blocked due to too many attempts
+    const blocked = await isIpBlocked(ip)
+    if (blocked) {
+      await logFailedLogin({
+        email,
+        source: 'host',
+        reason: 'RATE_LIMITED',
+        ip,
+        userAgent
+      })
+      return NextResponse.json(
+        { error: 'Too many login attempts. Please try again later.' },
+        { status: 429 }
       )
     }
 
@@ -95,6 +117,13 @@ export async function POST(request: NextRequest) {
       }
 
       console.log('❌ 401: Host not found or no associated user')
+      await logFailedLogin({
+        email,
+        source: 'host',
+        reason: 'ACCOUNT_NOT_FOUND',
+        ip,
+        userAgent
+      })
       return NextResponse.json(
         { error: 'Invalid credentials' },
         { status: 401 }
@@ -113,6 +142,13 @@ export async function POST(request: NextRequest) {
 
     if (!user?.passwordHash) {
       console.log('❌ 401: No password hash found')
+      await logFailedLogin({
+        email,
+        source: 'host',
+        reason: 'PASSWORD_NOT_SET',
+        ip,
+        userAgent
+      })
       return NextResponse.json(
         { error: 'Invalid credentials' },
         { status: 401 }
@@ -124,17 +160,34 @@ export async function POST(request: NextRequest) {
 
     if (!passwordValid) {
       console.log('❌ 401: Password verification failed')
-      // Log failed attempt
+      // Log failed attempt to SecurityEvent
+      const result = await logFailedLogin({
+        email,
+        source: 'host',
+        reason: 'INVALID_CREDENTIALS',
+        ip,
+        userAgent
+      })
+
+      // Also log to LoginAttempt for backwards compatibility
       await prisma.loginAttempt.create({
         data: {
           identifier: email,
-          userId: host.user.id,  // lowercase 'user'
-          ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
-          userAgent: request.headers.get('user-agent') || 'unknown',
+          userId: host.user.id,
+          ipAddress: ip,
+          userAgent: userAgent,
           success: false,
           reason: 'Invalid password'
         }
       })
+
+      // Check if account is now locked
+      if (result.blocked) {
+        return NextResponse.json(
+          { error: result.message || 'Too many failed attempts. Account temporarily locked.' },
+          { status: 429 }
+        )
+      }
 
       return NextResponse.json(
         { error: 'Invalid credentials' },
@@ -185,13 +238,22 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Log successful login
+    // Log successful login to SecurityEvent
+    await logSuccessfulLogin({
+      userId: host.id,
+      email: host.email,
+      source: 'host',
+      ip,
+      userAgent
+    })
+
+    // Log successful login to LoginAttempt for backwards compatibility
     await prisma.loginAttempt.create({
       data: {
         identifier: email,
-        userId: host.user.id,  // lowercase 'user'
-        ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
-        userAgent: request.headers.get('user-agent') || 'unknown',
+        userId: host.user.id,
+        ipAddress: ip,
+        userAgent: userAgent,
         success: true,
         reason: 'Successful login'
       }

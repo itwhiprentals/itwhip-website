@@ -108,7 +108,7 @@ interface Partner {
     createdAt: string
     photos: { url: string; isHero: boolean; order?: number }[]
   }[]
-  partnerApplication?: {
+  partner_applications?: {
     id: string
     status: string
     submittedAt: string
@@ -120,8 +120,8 @@ interface Partner {
     fleetSize: number
     vehicleTypes: string[]
     operatingCities: string[]
-  }
-  partnerDocuments: {
+  }[]
+  partner_documents: {
     id: string
     type: string
     status: string
@@ -133,7 +133,7 @@ interface Partner {
     reviewedBy?: string
     rejectNote?: string
   }[]
-  partnerCommissionHistory: {
+  partner_commission_history: {
     id: string
     oldRate: number
     newRate: number
@@ -1117,22 +1117,22 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ id: st
               </div>
 
               {/* Application Details */}
-              {partner.partnerApplication && (
+              {partner.partner_applications?.[0] && (
                 <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Application Details</h3>
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
                       <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Business Type</div>
-                      <div className="text-gray-900 dark:text-white">{partner.partnerApplication.businessType}</div>
+                      <div className="text-gray-900 dark:text-white">{partner.partner_applications[0].businessType}</div>
                     </div>
                     <div>
                       <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Years in Business</div>
-                      <div className="text-gray-900 dark:text-white">{partner.partnerApplication.yearsInBusiness} years</div>
+                      <div className="text-gray-900 dark:text-white">{partner.partner_applications[0].yearsInBusiness} years</div>
                     </div>
                     <div className="sm:col-span-2">
                       <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Vehicle Types</div>
                       <div className="flex flex-wrap gap-2">
-                        {partner.partnerApplication.vehicleTypes.map((type, idx) => (
+                        {partner.partner_applications[0].vehicleTypes.map((type, idx) => (
                           <span
                             key={idx}
                             className="px-2 py-1 text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded"
@@ -1145,7 +1145,7 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ id: st
                     <div className="sm:col-span-2">
                       <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Operating Cities</div>
                       <div className="flex flex-wrap gap-2">
-                        {partner.partnerApplication.operatingCities.map((city, idx) => (
+                        {partner.partner_applications[0].operatingCities.map((city, idx) => (
                           <span
                             key={idx}
                             className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded"
@@ -1158,19 +1158,19 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ id: st
                     <div>
                       <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Submitted</div>
                       <div className="text-gray-900 dark:text-white">
-                        {partner.partnerApplication.submittedAt
-                          ? formatDate(partner.partnerApplication.submittedAt)
+                        {partner.partner_applications[0].submittedAt
+                          ? formatDate(partner.partner_applications[0].submittedAt)
                           : '-'}
                       </div>
                     </div>
                     <div>
                       <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Reviewed</div>
                       <div className="text-gray-900 dark:text-white">
-                        {partner.partnerApplication.reviewedAt
-                          ? formatDate(partner.partnerApplication.reviewedAt)
+                        {partner.partner_applications[0].reviewedAt
+                          ? formatDate(partner.partner_applications[0].reviewedAt)
                           : '-'}
-                        {partner.partnerApplication.reviewedBy && (
-                          <span className="text-gray-500 text-sm"> by {partner.partnerApplication.reviewedBy}</span>
+                        {partner.partner_applications[0].reviewedBy && (
+                          <span className="text-gray-500 text-sm"> by {partner.partner_applications[0].reviewedBy}</span>
                         )}
                       </div>
                     </div>
@@ -1226,11 +1226,11 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ id: st
               {/* Documents Summary */}
               <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Documents</h3>
-                {partner.partnerDocuments.length === 0 ? (
+                {partner.partner_documents.length === 0 ? (
                   <p className="text-sm text-gray-500 dark:text-gray-400">No documents uploaded</p>
                 ) : (
                   <div className="space-y-3">
-                    {partner.partnerDocuments.map((doc) => (
+                    {partner.partner_documents.map((doc) => (
                       <div key={doc.id} className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <IoDocumentTextOutline className="w-4 h-4 text-gray-400" />
@@ -1694,7 +1694,7 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ id: st
             { type: 'ARTICLES_OF_INCORPORATION', name: 'Articles of Incorporation', description: 'Business formation documents' }
           ]
           const missingOrExpiredDocs = allDocTypes.filter(dt => {
-            const doc = partner.partnerDocuments.find(d => d.type === dt.type)
+            const doc = partner.partner_documents.find(d => d.type === dt.type)
             return !doc || doc.status !== 'VERIFIED' || doc.isExpired
           }).map(dt => dt.type)
 
@@ -1704,7 +1704,7 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ id: st
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Required Documents</h3>
                 <span className="text-sm text-gray-500 dark:text-gray-400">
-                  {partner.partnerDocuments.filter(d => d.status === 'VERIFIED' && !d.isExpired).length} / 6 verified
+                  {partner.partner_documents.filter(d => d.status === 'VERIFIED' && !d.isExpired).length} / 6 verified
                 </span>
               </div>
               {missingOrExpiredDocs.length > 0 && (
@@ -1741,7 +1741,7 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ id: st
             {/* Document Checklist */}
             <div className="space-y-3">
               {allDocTypes.map((docType) => {
-                const uploadedDoc = partner.partnerDocuments.find(d => d.type === docType.type)
+                const uploadedDoc = partner.partner_documents.find(d => d.type === docType.type)
                 const isVerified = uploadedDoc?.status === 'VERIFIED' && !uploadedDoc?.isExpired
                 const isPending = uploadedDoc?.status === 'PENDING'
                 const isRejected = uploadedDoc?.status === 'REJECTED'
@@ -1857,11 +1857,11 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ id: st
         {activeTab === 'commission' && (
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Commission History</h3>
-            {partner.partnerCommissionHistory.length === 0 ? (
+            {partner.partner_commission_history.length === 0 ? (
               <p className="text-gray-500 dark:text-gray-400">No commission changes recorded.</p>
             ) : (
               <div className="space-y-4">
-                {partner.partnerCommissionHistory.map((history) => (
+                {partner.partner_commission_history.map((history) => (
                   <div
                     key={history.id}
                     className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg"

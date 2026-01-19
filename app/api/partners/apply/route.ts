@@ -165,7 +165,7 @@ export async function POST(request: NextRequest) {
     })
 
     // Create PartnerApplication record
-    await prisma.partnerApplication.create({
+    await prisma.partner_applications.create({
       data: {
         hostId: host.id,
         companyName,
@@ -224,13 +224,13 @@ export async function POST(request: NextRequest) {
     }
 
     if (documentsToCreate.length > 0) {
-      await prisma.partnerDocument.createMany({
+      await prisma.partner_documents.createMany({
         data: documentsToCreate
       })
     }
 
     // Get the application ID for email
-    const application = await prisma.partnerApplication.findFirst({
+    const application = await prisma.partner_applications.findFirst({
       where: { hostId: host.id },
       orderBy: { createdAt: 'desc' }
     })

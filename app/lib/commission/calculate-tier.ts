@@ -173,7 +173,7 @@ export async function updatePartnerCommissionRate(partnerId: string): Promise<{
     })
 
     // Log the change to commission history
-    await prisma.partnerCommissionHistory.create({
+    await prisma.partner_commission_history.create({
       data: {
         hostId: partnerId,
         oldRate: oldRate,

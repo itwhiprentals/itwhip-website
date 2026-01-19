@@ -15,7 +15,7 @@ export async function POST(
     const { notes, reviewedBy, reason } = body
 
     // Find the application
-    const application = await prisma.partnerApplication.findUnique({
+    const application = await prisma.partner_applications.findUnique({
       where: { id },
       include: {
         host: true
@@ -44,7 +44,7 @@ export async function POST(
     }
 
     // Update application status
-    await prisma.partnerApplication.update({
+    await prisma.partner_applications.update({
       where: { id },
       data: {
         status: 'REJECTED',

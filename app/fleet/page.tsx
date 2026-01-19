@@ -15,7 +15,6 @@ import {
   IoCarSportOutline,
   IoCloudUploadOutline,
   IoGridOutline,
-  IoHomeOutline,
   IoBriefcaseOutline,
   IoWalletOutline,
   IoReturnDownBackOutline,
@@ -24,6 +23,9 @@ import {
 } from 'react-icons/io5'
 import { Car, CarStatus } from './types'
 import { StatCard, StatusBadge, EmptyState, LoadingSpinner, SectionHeader } from './components'
+import AnalyticsWidget from './components/AnalyticsWidget'
+import MonitoringWidget from './components/MonitoringWidget'
+import SecurityMetricsCard from './components/SecurityMetricsCard'
 
 export default function FleetDashboard() {
   const router = useRouter()
@@ -112,7 +114,7 @@ export default function FleetDashboard() {
   if (loading) return <LoadingSpinner />
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 sm:p-6">
+    <div className="w-full">
       {/* Header with Primary Actions */}
       <div className="mb-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
@@ -121,32 +123,26 @@ export default function FleetDashboard() {
             <p className="text-gray-600 dark:text-gray-400 mt-1">Managing {cars.length} vehicles</p>
           </div>
           
-          {/* Header Actions - Primary Operations */}
+          {/* Header Actions - Quick Access */}
           <div className="flex flex-wrap gap-2">
-            <Link
-              href={`/fleet?key=${apiKey}`}
-              className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm flex items-center gap-2"
-            >
-              <IoHomeOutline className="text-lg" />
-              Dashboard
-            </Link>
             <button
               onClick={() => router.push(`/fleet/add?key=${apiKey}`)}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm flex items-center gap-2"
+              className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm flex items-center gap-2"
             >
               <IoCarSportOutline className="text-lg" />
-              Add Car
+              <span className="sm:hidden">Add</span>
+              <span className="hidden sm:inline">Add Car</span>
             </button>
             <button
               onClick={() => router.push(`/fleet/bulk-upload?key=${apiKey}`)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center gap-2"
+              className="hidden sm:flex px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm items-center gap-2"
             >
               <IoCloudUploadOutline className="text-lg" />
               Bulk Upload
             </button>
             <button
               onClick={() => router.push(`/fleet/templates?key=${apiKey}`)}
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm flex items-center gap-2"
+              className="hidden sm:flex px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm items-center gap-2"
             >
               <IoGridOutline className="text-lg" />
               Templates
@@ -287,6 +283,17 @@ export default function FleetDashboard() {
             <span className="text-sm font-medium">Settings</span>
           </Link>
         </div>
+      </div>
+
+      {/* Analytics & Monitoring Widgets */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+        <AnalyticsWidget />
+        <MonitoringWidget />
+      </div>
+
+      {/* Security Metrics */}
+      <div className="mb-6">
+        <SecurityMetricsCard />
       </div>
 
       {/* Filter and View Controls */}

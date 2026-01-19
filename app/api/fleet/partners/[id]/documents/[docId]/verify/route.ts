@@ -22,7 +22,7 @@ export async function POST(
     }
 
     // Check if document exists and belongs to this partner
-    const document = await prisma.partnerDocument.findFirst({
+    const document = await prisma.partner_documents.findFirst({
       where: {
         id: docId,
         hostId: id
@@ -37,7 +37,7 @@ export async function POST(
     }
 
     // Update document status
-    const updatedDocument = await prisma.partnerDocument.update({
+    const updatedDocument = await prisma.partner_documents.update({
       where: { id: docId },
       data: {
         status,

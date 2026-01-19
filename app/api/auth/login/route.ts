@@ -7,6 +7,7 @@ import { nanoid } from 'nanoid'
 import db from '@/app/lib/db'
 import { prisma } from '@/app/lib/database/prisma'
 import { loginRateLimit, getClientIp, createRateLimitResponse } from '@/app/lib/rate-limit'
+import { logFailedLogin, logSuccessfulLogin } from '@/app/lib/security/loginMonitor'
 
 // Lockout thresholds
 const LOCKOUT_TIERS = [
@@ -100,6 +101,14 @@ export async function POST(request: NextRequest) {
     
     if (!success) {
       console.warn(`🚨 Rate limit exceeded for IP: ${clientIp}`)
+      const userAgent = request.headers.get('user-agent') || 'unknown'
+      await logFailedLogin({
+        email: 'unknown',
+        source: 'guest',
+        reason: 'RATE_LIMITED',
+        ip: clientIp,
+        userAgent
+      })
       return createRateLimitResponse(reset, remaining)
     }
 
@@ -120,6 +129,14 @@ export async function POST(request: NextRequest) {
     const user = await db.getUserByEmail(email.toLowerCase())
 
     if (!user) {
+      const userAgent = request.headers.get('user-agent') || 'unknown'
+      await logFailedLogin({
+        email: email.toLowerCase(),
+        source: 'guest',
+        reason: 'ACCOUNT_NOT_FOUND',
+        ip: clientIp,
+        userAgent
+      })
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
@@ -140,6 +157,15 @@ export async function POST(request: NextRequest) {
     // ✅ STEP 3.6: Check if account is locked
     if (userLockout?.lockedUntil && new Date() < userLockout.lockedUntil) {
       const remainingMs = userLockout.lockedUntil.getTime() - Date.now()
+      const userAgent = request.headers.get('user-agent') || 'unknown'
+      await logFailedLogin({
+        email: email.toLowerCase(),
+        source: 'guest',
+        reason: 'RATE_LIMITED',
+        ip: clientIp,
+        userAgent,
+        metadata: { lockedUntil: userLockout.lockedUntil.toISOString() }
+      })
       return NextResponse.json(
         {
           error: `Account is temporarily locked. Try again in ${formatLockoutTime(remainingMs)}.`,
@@ -160,6 +186,16 @@ export async function POST(request: NextRequest) {
     const { valid: passwordValid, needsRehash } = await verifyPassword(password, user.password_hash)
 
     if (!passwordValid) {
+      // Log the failed attempt to SecurityEvent
+      const userAgent = request.headers.get('user-agent') || 'unknown'
+      await logFailedLogin({
+        email: email.toLowerCase(),
+        source: 'guest',
+        reason: 'INVALID_CREDENTIALS',
+        ip: clientIp,
+        userAgent
+      })
+
       // Increment failed attempts
       const newFailedAttempts = (userLockout?.failedLoginAttempts || 0) + 1
       const lockoutDuration = getLockoutDuration(newFailedAttempts)
@@ -212,6 +248,14 @@ export async function POST(request: NextRequest) {
 
     // ✅ STEP 5: Check if user is active
     if (!user.is_active) {
+      const userAgent = request.headers.get('user-agent') || 'unknown'
+      await logFailedLogin({
+        email: email.toLowerCase(),
+        source: 'guest',
+        reason: 'ACCOUNT_INACTIVE',
+        ip: clientIp,
+        userAgent
+      })
       return NextResponse.json(
         { error: 'Account is deactivated. Please contact support.' },
         { status: 403 }
@@ -233,6 +277,15 @@ export async function POST(request: NextRequest) {
     // HOST without GUEST profile trying to login via guest login
     if (hostProfile && !guestProfile) {
       console.log(`[Login] GUARD: HOST user ${user.email} tried guest login - blocking`)
+      const userAgent = request.headers.get('user-agent') || 'unknown'
+      await logFailedLogin({
+        email: email.toLowerCase(),
+        source: 'guest',
+        reason: 'INVALID_ACCOUNT_TYPE',
+        ip: clientIp,
+        userAgent,
+        metadata: { hasHostProfile: true, hasGuestProfile: false }
+      })
       return NextResponse.json(
         {
           error: 'Host account detected',
@@ -297,6 +350,16 @@ export async function POST(request: NextRequest) {
 
     // ✅ STEP 9: Update last login
     await db.updateLastLogin(user.id)
+
+    // ✅ STEP 9.5: Log successful login to SecurityEvent
+    const userAgent = request.headers.get('user-agent') || 'unknown'
+    await logSuccessfulLogin({
+      userId: user.id,
+      email: user.email,
+      source: 'guest',
+      ip: clientIp,
+      userAgent
+    })
 
     // ✅ STEP 10: Create response with cookies
     const response = NextResponse.json({

@@ -203,7 +203,7 @@ export async function GET(request: NextRequest) {
       }
 
       case 'payouts': {
-        const payouts = await prisma.partnerPayout.findMany({
+        const payouts = await prisma.partner_payouts.findMany({
           where: {
             hostId: partner.id,
             ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter })

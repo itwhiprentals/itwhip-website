@@ -4,6 +4,58 @@ import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
+interface AlertSettings {
+  // Email Settings
+  alertEmailsEnabled: boolean
+  alertEmailRecipients: string[]
+  emailDigestEnabled: boolean
+  emailDigestFrequency: 'instant' | 'hourly' | 'daily' | 'weekly'
+
+  // Partner Thresholds
+  partnerPendingDaysWarning: number
+  suspendedPartnersAlert: boolean
+
+  // Vehicle Thresholds
+  pendingVehiclesAlert: boolean
+  changesRequestedAlert: boolean
+
+  // Booking Thresholds
+  highCancellationThreshold: number
+  bookingsStartingTodayAlert: boolean
+
+  // Document Thresholds
+  documentExpiryWarningDays: number
+  documentExpiryUrgentDays: number
+  expiredDocumentsAlert: boolean
+  pendingDocumentsAlert: boolean
+
+  // Financial Thresholds
+  negativeBalanceAlert: boolean
+  failedPayoutsAlert: boolean
+  pendingRefundThreshold: number
+  pendingRefundsAlert: boolean
+
+  // Claim Thresholds
+  openClaimsAlert: boolean
+
+  // Review Thresholds
+  lowRatingThreshold: number
+  lowRatingsAlert: boolean
+
+  // Security Thresholds
+  securityEventsAlert: boolean
+  criticalSecurityThreshold: number
+
+  // Performance Thresholds
+  slowResponseThreshold: number
+  criticalResponseThreshold: number
+
+  // Metadata
+  lastEmailSentAt: string | null
+  lastDigestSentAt: string | null
+  updatedAt: string
+}
+
 interface PlatformSettings {
   global: {
     defaultTaxRate: number
@@ -75,7 +127,7 @@ interface PlatformSettings {
   }
 }
 
-type TabKey = 'global' | 'taxes' | 'host' | 'partner' | 'guest' | 'insurance' | 'deposits' | 'tripCharges'
+type TabKey = 'global' | 'taxes' | 'host' | 'partner' | 'guest' | 'insurance' | 'deposits' | 'tripCharges' | 'alerts'
 
 const TABS: { key: TabKey; label: string; icon: string }[] = [
   { key: 'global', label: 'Global', icon: 'G' },
@@ -85,7 +137,8 @@ const TABS: { key: TabKey; label: string; icon: string }[] = [
   { key: 'guest', label: 'Guest', icon: 'U' },
   { key: 'insurance', label: 'Insurance', icon: 'I' },
   { key: 'deposits', label: 'Deposits', icon: 'D' },
-  { key: 'tripCharges', label: 'Trip Charges', icon: '$' }
+  { key: 'tripCharges', label: 'Trip Charges', icon: '$' },
+  { key: 'alerts', label: 'Alerts', icon: '🔔' }
 ]
 
 const US_STATES = [
@@ -97,12 +150,16 @@ export default function FleetSettingsPage() {
   const apiKey = searchParams.get('key') || ''
 
   const [settings, setSettings] = useState<PlatformSettings | null>(null)
+  const [alertSettings, setAlertSettings] = useState<AlertSettings | null>(null)
   const [activeTab, setActiveTab] = useState<TabKey>('global')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [pendingChanges, setPendingChanges] = useState<Record<string, any>>({})
+  const [pendingAlertChanges, setPendingAlertChanges] = useState<Record<string, any>>({})
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [sendingAlerts, setSendingAlerts] = useState(false)
+  const [newEmailInput, setNewEmailInput] = useState('')
 
   // Tax modal state
   const [showTaxModal, setShowTaxModal] = useState(false)
@@ -110,6 +167,7 @@ export default function FleetSettingsPage() {
 
   useEffect(() => {
     fetchSettings()
+    fetchAlertSettings()
   }, [apiKey])
 
   const fetchSettings = async () => {
@@ -128,6 +186,108 @@ export default function FleetSettingsPage() {
       setError(err.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchAlertSettings = async () => {
+    try {
+      const response = await fetch(`/api/fleet/alert-settings?key=${apiKey}`)
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        setAlertSettings(data.settings)
+      }
+    } catch (err) {
+      console.error('Failed to fetch alert settings:', err)
+    }
+  }
+
+  const handleAlertChange = (field: string, value: any) => {
+    setPendingAlertChanges(prev => ({
+      ...prev,
+      [field]: value
+    }))
+  }
+
+  const handleSaveAlertSettings = async () => {
+    if (Object.keys(pendingAlertChanges).length === 0) return
+
+    setSaving(true)
+    setError(null)
+    setSuccessMessage(null)
+
+    try {
+      const response = await fetch(`/api/fleet/alert-settings?key=${apiKey}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pendingAlertChanges)
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to save alert settings')
+      }
+
+      setSuccessMessage(`Updated ${Object.keys(pendingAlertChanges).length} alert setting(s)`)
+      setPendingAlertChanges({})
+      fetchAlertSettings()
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleAddEmail = () => {
+    if (!newEmailInput.trim()) return
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(newEmailInput)) {
+      setError('Invalid email format')
+      return
+    }
+
+    const currentEmails = pendingAlertChanges.alertEmailRecipients || alertSettings?.alertEmailRecipients || []
+    if (currentEmails.includes(newEmailInput)) {
+      setError('Email already added')
+      return
+    }
+
+    handleAlertChange('alertEmailRecipients', [...currentEmails, newEmailInput])
+    setNewEmailInput('')
+    setError(null)
+  }
+
+  const handleRemoveEmail = (email: string) => {
+    const currentEmails = pendingAlertChanges.alertEmailRecipients || alertSettings?.alertEmailRecipients || []
+    handleAlertChange('alertEmailRecipients', currentEmails.filter((e: string) => e !== email))
+  }
+
+  const handleSendTestAlert = async () => {
+    setSendingAlerts(true)
+    setError(null)
+    setSuccessMessage(null)
+
+    try {
+      const response = await fetch(`/api/fleet/alerts/send?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ forceSend: true })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send alert')
+      }
+
+      setSuccessMessage(data.message || 'Alert sent successfully')
+      fetchAlertSettings()
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setSendingAlerts(false)
     }
   }
 
@@ -1029,6 +1189,421 @@ export default function FleetSettingsPage() {
                   />
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Alerts Tab */}
+          {activeTab === 'alerts' && (
+            <div className="space-y-8">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Alert & Notification Settings</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Configure email notifications and customize alert thresholds</p>
+              </div>
+
+              {/* Email Configuration */}
+              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-md font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                      <span>📧</span> Email Notifications
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Send alert digests to specified email addresses</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={pendingAlertChanges.alertEmailsEnabled ?? alertSettings?.alertEmailsEnabled ?? true}
+                      onChange={(e) => handleAlertChange('alertEmailsEnabled', e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Email Recipients */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email Recipients</label>
+                    <div className="flex gap-2 mb-2">
+                      <input
+                        type="email"
+                        value={newEmailInput}
+                        onChange={(e) => setNewEmailInput(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleAddEmail()}
+                        placeholder="Enter email address"
+                        className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                      <button
+                        onClick={handleAddEmail}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                      >
+                        Add
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {(pendingAlertChanges.alertEmailRecipients || alertSettings?.alertEmailRecipients || []).map((email: string) => (
+                        <span key={email} className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-sm">
+                          {email}
+                          <button
+                            onClick={() => handleRemoveEmail(email)}
+                            className="text-red-500 hover:text-red-700 ml-1"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                      {(pendingAlertChanges.alertEmailRecipients || alertSettings?.alertEmailRecipients || []).length === 0 && (
+                        <span className="text-sm text-gray-500 dark:text-gray-400">No recipients configured</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Digest Frequency */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Digest Frequency</label>
+                      <select
+                        value={pendingAlertChanges.emailDigestFrequency ?? alertSettings?.emailDigestFrequency ?? 'daily'}
+                        onChange={(e) => handleAlertChange('emailDigestFrequency', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      >
+                        <option value="instant">Instant (Send immediately)</option>
+                        <option value="hourly">Hourly Digest</option>
+                        <option value="daily">Daily Digest</option>
+                        <option value="weekly">Weekly Digest</option>
+                      </select>
+                    </div>
+                    <div className="flex items-end">
+                      <button
+                        onClick={handleSendTestAlert}
+                        disabled={sendingAlerts || (pendingAlertChanges.alertEmailRecipients || alertSettings?.alertEmailRecipients || []).length === 0}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {sendingAlerts ? 'Sending...' : 'Send Test Alert'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {alertSettings?.lastEmailSentAt && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Last alert sent: {new Date(alertSettings.lastEmailSentAt).toLocaleString()}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Document Thresholds */}
+              <div>
+                <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                  <span>📄</span> Document Expiry Thresholds
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Warning Days (before expiry)</label>
+                    <input
+                      type="number"
+                      value={pendingAlertChanges.documentExpiryWarningDays ?? alertSettings?.documentExpiryWarningDays ?? 30}
+                      onChange={(e) => handleAlertChange('documentExpiryWarningDays', parseInt(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Yellow warning threshold</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Urgent Days (before expiry)</label>
+                    <input
+                      type="number"
+                      value={pendingAlertChanges.documentExpiryUrgentDays ?? alertSettings?.documentExpiryUrgentDays ?? 7}
+                      onChange={(e) => handleAlertChange('documentExpiryUrgentDays', parseInt(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Red urgent threshold</p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-4 mt-4">
+                  <label className="inline-flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={pendingAlertChanges.expiredDocumentsAlert ?? alertSettings?.expiredDocumentsAlert ?? true}
+                      onChange={(e) => handleAlertChange('expiredDocumentsAlert', e.target.checked)}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Alert on expired documents</span>
+                  </label>
+                  <label className="inline-flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={pendingAlertChanges.pendingDocumentsAlert ?? alertSettings?.pendingDocumentsAlert ?? true}
+                      onChange={(e) => handleAlertChange('pendingDocumentsAlert', e.target.checked)}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Alert on pending documents</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Partner Thresholds */}
+              <div>
+                <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                  <span>👥</span> Partner Thresholds
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Pending Days Warning</label>
+                    <input
+                      type="number"
+                      value={pendingAlertChanges.partnerPendingDaysWarning ?? alertSettings?.partnerPendingDaysWarning ?? 7}
+                      onChange={(e) => handleAlertChange('partnerPendingDaysWarning', parseInt(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Days before flagging pending partners</p>
+                  </div>
+                  <div className="flex items-end">
+                    <label className="inline-flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={pendingAlertChanges.suspendedPartnersAlert ?? alertSettings?.suspendedPartnersAlert ?? true}
+                        onChange={(e) => handleAlertChange('suspendedPartnersAlert', e.target.checked)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Alert on suspended partners</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Vehicle Thresholds */}
+              <div>
+                <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                  <span>🚗</span> Vehicle Thresholds
+                </h3>
+                <div className="flex flex-wrap gap-4">
+                  <label className="inline-flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={pendingAlertChanges.pendingVehiclesAlert ?? alertSettings?.pendingVehiclesAlert ?? true}
+                      onChange={(e) => handleAlertChange('pendingVehiclesAlert', e.target.checked)}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Alert on pending vehicles</span>
+                  </label>
+                  <label className="inline-flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={pendingAlertChanges.changesRequestedAlert ?? alertSettings?.changesRequestedAlert ?? true}
+                      onChange={(e) => handleAlertChange('changesRequestedAlert', e.target.checked)}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Alert on changes requested</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Booking Thresholds */}
+              <div>
+                <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                  <span>📅</span> Booking Thresholds
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">High Cancellation Threshold</label>
+                    <input
+                      type="number"
+                      value={pendingAlertChanges.highCancellationThreshold ?? alertSettings?.highCancellationThreshold ?? 5}
+                      onChange={(e) => handleAlertChange('highCancellationThreshold', parseInt(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Alert if cancellations in 7 days exceeds this</p>
+                  </div>
+                  <div className="flex items-end">
+                    <label className="inline-flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={pendingAlertChanges.bookingsStartingTodayAlert ?? alertSettings?.bookingsStartingTodayAlert ?? true}
+                        onChange={(e) => handleAlertChange('bookingsStartingTodayAlert', e.target.checked)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Alert on bookings starting today</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Financial Thresholds */}
+              <div>
+                <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                  <span>💰</span> Financial Thresholds
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Pending Refund Threshold ($)</label>
+                    <input
+                      type="number"
+                      value={pendingAlertChanges.pendingRefundThreshold ?? alertSettings?.pendingRefundThreshold ?? 250}
+                      onChange={(e) => handleAlertChange('pendingRefundThreshold', parseFloat(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Alert on refunds exceeding this amount</p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-4">
+                  <label className="inline-flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={pendingAlertChanges.negativeBalanceAlert ?? alertSettings?.negativeBalanceAlert ?? true}
+                      onChange={(e) => handleAlertChange('negativeBalanceAlert', e.target.checked)}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Alert on negative balances</span>
+                  </label>
+                  <label className="inline-flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={pendingAlertChanges.failedPayoutsAlert ?? alertSettings?.failedPayoutsAlert ?? true}
+                      onChange={(e) => handleAlertChange('failedPayoutsAlert', e.target.checked)}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Alert on failed payouts</span>
+                  </label>
+                  <label className="inline-flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={pendingAlertChanges.pendingRefundsAlert ?? alertSettings?.pendingRefundsAlert ?? true}
+                      onChange={(e) => handleAlertChange('pendingRefundsAlert', e.target.checked)}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Alert on large pending refunds</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Review Thresholds */}
+              <div>
+                <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                  <span>⭐</span> Review Thresholds
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Low Rating Threshold (1-5)</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="5"
+                      value={pendingAlertChanges.lowRatingThreshold ?? alertSettings?.lowRatingThreshold ?? 2}
+                      onChange={(e) => handleAlertChange('lowRatingThreshold', parseInt(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Alert on ratings at or below this</p>
+                  </div>
+                  <div className="flex items-end">
+                    <label className="inline-flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={pendingAlertChanges.lowRatingsAlert ?? alertSettings?.lowRatingsAlert ?? true}
+                        onChange={(e) => handleAlertChange('lowRatingsAlert', e.target.checked)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Alert on low ratings</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Claims & Security */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                  <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                    <span>📋</span> Claims
+                  </h3>
+                  <label className="inline-flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={pendingAlertChanges.openClaimsAlert ?? alertSettings?.openClaimsAlert ?? true}
+                      onChange={(e) => handleAlertChange('openClaimsAlert', e.target.checked)}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Alert on open claims</span>
+                  </label>
+                </div>
+                <div>
+                  <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                    <span>🔒</span> Security
+                  </h3>
+                  <div className="space-y-3">
+                    <label className="inline-flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={pendingAlertChanges.securityEventsAlert ?? alertSettings?.securityEventsAlert ?? true}
+                        onChange={(e) => handleAlertChange('securityEventsAlert', e.target.checked)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Alert on security events</span>
+                    </label>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Critical Security Threshold</label>
+                      <input
+                        type="number"
+                        value={pendingAlertChanges.criticalSecurityThreshold ?? alertSettings?.criticalSecurityThreshold ?? 3}
+                        onChange={(e) => handleAlertChange('criticalSecurityThreshold', parseInt(e.target.value))}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Critical events before immediate alert</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Performance Thresholds */}
+              <div>
+                <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                  <span>⚡</span> Performance Thresholds
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Slow Response Threshold (ms)</label>
+                    <input
+                      type="number"
+                      value={pendingAlertChanges.slowResponseThreshold ?? alertSettings?.slowResponseThreshold ?? 5000}
+                      onChange={(e) => handleAlertChange('slowResponseThreshold', parseInt(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Warning level (5000ms = 5 seconds)</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Critical Response Threshold (ms)</label>
+                    <input
+                      type="number"
+                      value={pendingAlertChanges.criticalResponseThreshold ?? alertSettings?.criticalResponseThreshold ?? 10000}
+                      onChange={(e) => handleAlertChange('criticalResponseThreshold', parseInt(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Critical level (10000ms = 10 seconds)</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Alert Settings Save Button */}
+              {Object.keys(pendingAlertChanges).length > 0 && (
+                <div className="pt-6 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {Object.keys(pendingAlertChanges).length} unsaved alert setting(s)
+                  </p>
+                  <div className="flex gap-4">
+                    <button
+                      onClick={() => setPendingAlertChanges({})}
+                      className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleSaveAlertSettings}
+                      disabled={saving}
+                      className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {saving ? 'Saving...' : 'Save Alert Settings'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

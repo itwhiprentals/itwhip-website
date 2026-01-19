@@ -465,13 +465,23 @@ export default function FleetBonusesPage() {
                       </div>
 
                       {/* Avatar */}
-                      <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                        {guest.profilePhotoUrl ? (
-                          <img src={guest.profilePhotoUrl} alt="" className="w-full h-full object-cover" />
-                        ) : (
+                      <div className="w-10 h-10 rounded-full flex-shrink-0 relative">
+                        {/* Placeholder always visible as base layer */}
+                        <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                           <span className="text-gray-500 dark:text-gray-400 text-sm font-medium">
                             {guest.name?.charAt(0) || '?'}
                           </span>
+                        </div>
+                        {/* Image overlays placeholder when it loads successfully */}
+                        {guest.profilePhotoUrl && (
+                          <img
+                            src={guest.profilePhotoUrl}
+                            alt=""
+                            className="absolute inset-0 w-10 h-10 rounded-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none'
+                            }}
+                          />
                         )}
                       </div>
 
@@ -536,13 +546,23 @@ export default function FleetBonusesPage() {
                     className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg"
                   >
                     {/* Avatar */}
-                    <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                      {tx.reviewerProfile?.profilePhotoUrl ? (
-                        <img src={tx.reviewerProfile.profilePhotoUrl} alt="" className="w-full h-full object-cover" />
-                      ) : (
+                    <div className="w-8 h-8 rounded-full flex-shrink-0 relative">
+                      {/* Placeholder always visible as base layer */}
+                      <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                         <span className="text-gray-500 dark:text-gray-400 text-xs font-medium">
                           {tx.reviewerProfile?.name?.charAt(0) || '?'}
                         </span>
+                      </div>
+                      {/* Image overlays placeholder when it loads successfully */}
+                      {tx.reviewerProfile?.profilePhotoUrl && (
+                        <img
+                          src={tx.reviewerProfile.profilePhotoUrl}
+                          alt=""
+                          className="absolute inset-0 w-8 h-8 rounded-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none'
+                          }}
+                        />
                       )}
                     </div>
 

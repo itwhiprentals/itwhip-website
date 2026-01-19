@@ -267,17 +267,21 @@ export default function HostCarsPage({ params }: { params: Promise<{ id: string 
                     />
 
                     {/* Car Image */}
-                    <div className="w-20 h-14 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden flex-shrink-0">
-                      {car.heroPhoto ? (
-                        <img 
-                          src={car.heroPhoto} 
+                    <div className="w-20 h-14 rounded overflow-hidden flex-shrink-0 relative">
+                      {/* Placeholder always visible as base layer */}
+                      <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                        <IoCarOutline className="text-gray-400 text-2xl" />
+                      </div>
+                      {/* Image overlays placeholder when it loads successfully */}
+                      {car.heroPhoto && (
+                        <img
+                          src={car.heroPhoto}
                           alt={`${car.make} ${car.model}`}
-                          className="w-full h-full object-cover"
+                          className="absolute inset-0 w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none'
+                          }}
                         />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <IoCarOutline className="text-gray-400 text-2xl" />
-                        </div>
                       )}
                     </div>
 

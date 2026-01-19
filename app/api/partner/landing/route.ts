@@ -269,13 +269,13 @@ export async function PUT(request: NextRequest) {
     // Handle FAQs - delete all and recreate
     if (body.faqs && Array.isArray(body.faqs)) {
       // Delete existing FAQs
-      await prisma.partnerFAQ.deleteMany({
+      await prisma.partner_faqs.deleteMany({
         where: { hostId: partner.id }
       })
 
       // Create new FAQs
       if (body.faqs.length > 0) {
-        await prisma.partnerFAQ.createMany({
+        await prisma.partner_faqs.createMany({
           data: body.faqs.map((faq: { question: string; answer: string }, index: number) => ({
             hostId: partner.id,
             question: faq.question,

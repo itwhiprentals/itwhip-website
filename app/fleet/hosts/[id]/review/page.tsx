@@ -287,17 +287,23 @@ export default function HostReviewPage({ params }: { params: Promise<{ id: strin
               </h2>
               
               <div className="flex items-start gap-4 mb-4">
-                {host.profilePhoto ? (
-                  <img 
-                    src={host.profilePhoto} 
-                    alt={host.name}
-                    className="w-20 h-20 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-20 h-20 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                <div className="w-20 h-20 rounded-full relative flex-shrink-0">
+                  {/* Placeholder always visible as base layer */}
+                  <div className="w-full h-full bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
                     <IoPersonOutline className="text-3xl text-gray-400" />
                   </div>
-                )}
+                  {/* Image overlays placeholder when it loads successfully */}
+                  {host.profilePhoto && (
+                    <img
+                      src={host.profilePhoto}
+                      alt={host.name}
+                      className="absolute inset-0 w-full h-full rounded-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none'
+                      }}
+                    />
+                  )}
+                </div>
                 
                 <div className="flex-1">
                   <h3 className="text-xl font-semibold text-gray-900 dark:text-white">

@@ -232,19 +232,24 @@ export default function FleetGuestsPage() {
                     <tr key={guest.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10">
-                            {guest.profilePhotoUrl ? (
+                          <div className="flex-shrink-0 h-10 w-10 relative">
+                            {/* Placeholder always visible as base layer */}
+                            <div className="h-10 w-10 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
+                              <span className="text-purple-600 dark:text-purple-400 font-medium">
+                                {guest.name.charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                            {/* Image overlays placeholder when it loads successfully */}
+                            {guest.profilePhotoUrl && (
                               <img
-                                className="h-10 w-10 rounded-full"
+                                className="absolute inset-0 h-10 w-10 rounded-full object-cover"
                                 src={guest.profilePhotoUrl}
                                 alt={guest.name}
+                                onError={(e) => {
+                                  // Hide broken image to reveal placeholder underneath
+                                  e.currentTarget.style.display = 'none'
+                                }}
                               />
-                            ) : (
-                              <div className="h-10 w-10 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
-                                <span className="text-purple-600 dark:text-purple-400 font-medium">
-                                  {guest.name.charAt(0).toUpperCase()}
-                                </span>
-                              </div>
                             )}
                           </div>
                           <div className="ml-4">

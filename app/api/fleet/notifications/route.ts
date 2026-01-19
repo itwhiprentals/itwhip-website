@@ -15,7 +15,7 @@ function validateFleetKey(request: NextRequest): boolean {
 interface Notification {
   id: string
   type: string
-  category: 'partner' | 'vehicle' | 'booking' | 'document' | 'financial' | 'claim' | 'review'
+  category: 'partner' | 'vehicle' | 'booking' | 'document' | 'financial' | 'claim' | 'review' | 'security'
   priority: 'high' | 'medium' | 'low'
   title: string
   description: string
@@ -35,11 +35,24 @@ export async function GET(request: NextRequest) {
     const priority = searchParams.get('priority') || 'all'
     const limit = parseInt(searchParams.get('limit') || '50')
 
+    // Fetch dynamic alert settings
+    let alertSettings = await prisma.fleet_alert_settings.findUnique({
+      where: { id: 'global' }
+    })
+
+    // Create default settings if not exists
+    if (!alertSettings) {
+      alertSettings = await prisma.fleet_alert_settings.create({
+        data: { id: 'global' }
+      })
+    }
+
     const notifications: Notification[] = []
     const now = new Date()
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-    const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+    // Use dynamic document expiry warning days from settings
+    const documentWarningDate = new Date(now.getTime() + alertSettings.documentExpiryWarningDays * 24 * 60 * 60 * 1000)
 
     // 1. PARTNER ALERTS
     if (category === 'all' || category === 'partner') {
@@ -226,14 +239,15 @@ export async function GET(request: NextRequest) {
         }
       })
 
-      if (cancelledRecent > 5) {
+      // Use dynamic cancellation threshold from settings
+      if (cancelledRecent >= alertSettings.highCancellationThreshold) {
         notifications.push({
           id: 'bookings_cancelled_week',
           type: 'HIGH_CANCELLATIONS',
           category: 'booking',
           priority: 'medium',
           title: 'High Cancellation Rate',
-          description: `${cancelledRecent} booking(s) cancelled in the last 7 days`,
+          description: `${cancelledRecent} booking(s) cancelled in the last 7 days (threshold: ${alertSettings.highCancellationThreshold})`,
           link: `/fleet/bookings?status=CANCELLED`,
           timestamp: now.toISOString()
         })
@@ -242,11 +256,11 @@ export async function GET(request: NextRequest) {
 
     // 4. DOCUMENT ALERTS
     if (category === 'all' || category === 'document') {
-      // Documents expiring soon
-      const expiringDocs = await prisma.partnerDocument.findMany({
+      // Documents expiring soon (using dynamic threshold)
+      const expiringDocs = await prisma.partner_documents.findMany({
         where: {
           status: 'APPROVED',
-          expiresAt: { gte: now, lte: thirtyDaysFromNow },
+          expiresAt: { gte: now, lte: documentWarningDate },
           host: {
             hostType: { in: ['FLEET_PARTNER', 'PARTNER'] }
           }
@@ -265,11 +279,13 @@ export async function GET(request: NextRequest) {
 
       expiringDocs.forEach(doc => {
         const daysUntil = Math.ceil((doc.expiresAt!.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+        // Use dynamic urgent threshold from settings
+        const isUrgent = daysUntil <= alertSettings.documentExpiryUrgentDays
         notifications.push({
           id: `doc_expiring_${doc.id}`,
           type: 'DOCUMENT_EXPIRING',
           category: 'document',
-          priority: daysUntil <= 7 ? 'high' : 'medium',
+          priority: isUrgent ? 'high' : 'medium',
           title: 'Document Expiring Soon',
           description: `${doc.documentType} for ${doc.host?.partnerCompanyName} expires in ${daysUntil} day(s)`,
           link: `/fleet/partners/${doc.host?.id}/documents`,
@@ -279,7 +295,7 @@ export async function GET(request: NextRequest) {
       })
 
       // Expired documents
-      const expiredDocs = await prisma.partnerDocument.count({
+      const expiredDocs = await prisma.partner_documents.count({
         where: {
           status: 'EXPIRED',
           host: {
@@ -303,7 +319,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Documents pending review
-      const pendingDocs = await prisma.partnerDocument.count({
+      const pendingDocs = await prisma.partner_documents.count({
         where: {
           status: 'PENDING_REVIEW',
           host: {
@@ -350,7 +366,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Failed payouts
-      const failedPayouts = await prisma.partnerPayout.count({
+      const failedPayouts = await prisma.partner_payouts.count({
         where: {
           status: 'FAILED',
           createdAt: { gte: thirtyDaysAgo }
@@ -370,11 +386,11 @@ export async function GET(request: NextRequest) {
         })
       }
 
-      // Pending refund requests
+      // Pending refund requests (using dynamic threshold)
       const pendingRefunds = await prisma.refundRequest.count({
         where: {
           status: 'PENDING',
-          amount: { gt: 250 } // Over auto-approve threshold
+          amount: { gt: alertSettings.pendingRefundThreshold }
         }
       })
 
@@ -385,7 +401,7 @@ export async function GET(request: NextRequest) {
           category: 'financial',
           priority: 'medium',
           title: 'Refund Requests Pending',
-          description: `${pendingRefunds} refund request(s) awaiting approval`,
+          description: `${pendingRefunds} refund(s) over $${alertSettings.pendingRefundThreshold} awaiting approval`,
           link: `/fleet/refunds`,
           timestamp: now.toISOString()
         })
@@ -415,12 +431,12 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // 7. REVIEW ALERTS
+    // 7. REVIEW ALERTS (using dynamic threshold)
     if (category === 'all' || category === 'review') {
-      // Low ratings (1-2 stars) in last 7 days
+      // Low ratings using dynamic threshold
       const lowRatings = await prisma.rentalReview.count({
         where: {
-          rating: { lte: 2 },
+          rating: { lte: alertSettings.lowRatingThreshold },
           createdAt: { gte: sevenDaysAgo },
           booking: {
             rentalCar: {
@@ -439,8 +455,117 @@ export async function GET(request: NextRequest) {
           category: 'review',
           priority: 'medium',
           title: 'Low Ratings Received',
-          description: `${lowRatings} low rating(s) in the last 7 days`,
+          description: `${lowRatings} rating(s) of ${alertSettings.lowRatingThreshold} stars or less this week`,
           link: `/fleet/partners`,
+          timestamp: now.toISOString()
+        })
+      }
+    }
+
+    // 8. SECURITY ALERTS
+    if (category === 'all' || category === 'security') {
+      const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000)
+      const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+
+      // Brute force attacks detected
+      const bruteForceEvents = await prisma.securityEvent.findMany({
+        where: {
+          type: 'BRUTE_FORCE_DETECTED',
+          timestamp: { gte: twentyFourHoursAgo }
+        },
+        orderBy: { timestamp: 'desc' },
+        take: 5
+      })
+
+      bruteForceEvents.forEach(event => {
+        notifications.push({
+          id: `security_bruteforce_${event.id}`,
+          type: 'BRUTE_FORCE_DETECTED',
+          category: 'security',
+          priority: 'high',
+          title: 'Brute Force Attack Detected',
+          description: `${event.message || 'Multiple failed login attempts from IP ' + event.sourceIp}`,
+          link: `/fleet/settings?tab=alerts`,
+          metadata: { eventId: event.id, sourceIp: event.sourceIp },
+          timestamp: event.timestamp.toISOString()
+        })
+      })
+
+      // Account targeting attacks detected
+      const targetedEvents = await prisma.securityEvent.findMany({
+        where: {
+          type: 'ACCOUNT_TARGETED',
+          timestamp: { gte: twentyFourHoursAgo }
+        },
+        orderBy: { timestamp: 'desc' },
+        take: 5
+      })
+
+      targetedEvents.forEach(event => {
+        notifications.push({
+          id: `security_targeted_${event.id}`,
+          type: 'ACCOUNT_TARGETED',
+          category: 'security',
+          priority: 'high',
+          title: 'Account Targeted',
+          description: `${event.message || 'Multiple failed attempts on account ' + event.targetId}`,
+          link: `/fleet/settings?tab=alerts`,
+          metadata: { eventId: event.id, targetEmail: event.targetId },
+          timestamp: event.timestamp.toISOString()
+        })
+      })
+
+      // Recent failed logins summary
+      const failedLoginsLastHour = await prisma.securityEvent.count({
+        where: {
+          type: 'LOGIN_FAILED',
+          timestamp: { gte: oneHourAgo }
+        }
+      })
+
+      // Use dynamic threshold from settings
+      if (failedLoginsLastHour >= alertSettings.criticalSecurityThreshold) {
+        // Get unique IPs for the failed logins
+        const uniqueIps = await prisma.securityEvent.findMany({
+          where: {
+            type: 'LOGIN_FAILED',
+            timestamp: { gte: oneHourAgo }
+          },
+          select: { sourceIp: true },
+          distinct: ['sourceIp']
+        })
+
+        notifications.push({
+          id: 'security_failed_logins_hour',
+          type: 'HIGH_FAILED_LOGINS',
+          category: 'security',
+          priority: 'high',
+          title: 'High Failed Login Activity',
+          description: `${failedLoginsLastHour} failed login(s) in the last hour from ${uniqueIps.length} unique IP(s) (threshold: ${alertSettings.criticalSecurityThreshold})`,
+          link: `/fleet/settings?tab=alerts`,
+          metadata: { count: failedLoginsLastHour, uniqueIps: uniqueIps.length },
+          timestamp: now.toISOString()
+        })
+      }
+
+      // Blocked IPs summary
+      const blockedAttempts = await prisma.securityEvent.count({
+        where: {
+          blocked: true,
+          timestamp: { gte: twentyFourHoursAgo }
+        }
+      })
+
+      if (blockedAttempts > 0) {
+        notifications.push({
+          id: 'security_blocked_24h',
+          type: 'BLOCKED_ATTEMPTS',
+          category: 'security',
+          priority: 'medium',
+          title: 'Blocked Login Attempts',
+          description: `${blockedAttempts} login attempt(s) blocked in the last 24 hours`,
+          link: `/fleet/settings?tab=alerts`,
+          metadata: { blockedCount: blockedAttempts },
           timestamp: now.toISOString()
         })
       }
@@ -476,7 +601,8 @@ export async function GET(request: NextRequest) {
         document: filteredNotifications.filter(n => n.category === 'document').length,
         financial: filteredNotifications.filter(n => n.category === 'financial').length,
         claim: filteredNotifications.filter(n => n.category === 'claim').length,
-        review: filteredNotifications.filter(n => n.category === 'review').length
+        review: filteredNotifications.filter(n => n.category === 'review').length,
+        security: filteredNotifications.filter(n => n.category === 'security').length
       }
     }
 

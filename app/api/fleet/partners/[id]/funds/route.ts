@@ -270,7 +270,7 @@ export async function POST(
           }
 
           // Create payout record
-          await prisma.partnerPayout.create({
+          await prisma.partner_payouts.create({
             data: {
               hostId: id,
               grossRevenue: amount,

@@ -287,15 +287,21 @@ export default function FleetHostsPage() {
               >
                 <div className="flex items-start gap-3 sm:gap-4">
                   {/* Avatar */}
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0">
-                    {host.profilePhoto ? (
-                      <img 
-                        src={host.profilePhoto} 
-                        alt={host.name}
-                        className="w-full h-full rounded-full object-cover"
-                      />
-                    ) : (
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex-shrink-0 relative">
+                    {/* Placeholder always visible as base layer */}
+                    <div className="w-full h-full bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
                       <IoPersonOutline className="text-lg sm:text-xl text-gray-400" />
+                    </div>
+                    {/* Image overlays placeholder when it loads successfully */}
+                    {host.profilePhoto && (
+                      <img
+                        src={host.profilePhoto}
+                        alt={host.name}
+                        className="absolute inset-0 w-full h-full rounded-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none'
+                        }}
+                      />
                     )}
                   </div>
                   

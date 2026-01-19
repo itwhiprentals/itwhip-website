@@ -35,21 +35,21 @@ export async function GET(
       vehicleActivity
     ] = await Promise.all([
       // Commission history
-      prisma.partnerCommissionHistory.findMany({
+      prisma.partner_commission_history.findMany({
         where: { hostId: id },
         orderBy: { createdAt: 'desc' },
         take: limit
       }),
 
       // Document events
-      prisma.partnerDocument.findMany({
+      prisma.partner_documents.findMany({
         where: { hostId: id },
         orderBy: { uploadedAt: 'desc' },
         take: limit
       }),
 
       // Payout events
-      prisma.partnerPayout.findMany({
+      prisma.partner_payouts.findMany({
         where: { hostId: id },
         orderBy: { createdAt: 'desc' },
         take: limit,

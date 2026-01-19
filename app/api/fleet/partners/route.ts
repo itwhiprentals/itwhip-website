@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
         partnerAvgRating: true,
         currentCommissionRate: true,
         createdAt: true,
-        partnerApplication: {
+        partner_applications: {
           select: {
             id: true,
             status: true,
@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
             operatingCities: true
           }
         },
-        partnerDocuments: {
+        partner_documents: {
           where: {
             OR: [
               { isExpired: true },
@@ -92,14 +92,14 @@ export async function GET(request: NextRequest) {
 
     // Calculate document warnings
     const partnersWithStats = partners.map(partner => {
-      const expiredDocs = partner.partnerDocuments.filter(d => d.isExpired).length
-      const expiringDocs = partner.partnerDocuments.filter(d => !d.isExpired).length
+      const expiredDocs = partner.partner_documents.filter(d => d.isExpired).length
+      const expiringDocs = partner.partner_documents.filter(d => !d.isExpired).length
 
       return {
         ...partner,
         documentsExpired: expiredDocs,
         documentsExpiring: expiringDocs,
-        partnerDocuments: undefined // Remove from response
+        partner_documents: undefined // Remove from response
       }
     })
 
@@ -115,7 +115,7 @@ export async function GET(request: NextRequest) {
           active: true
         }
       }),
-      prisma.partnerApplication.count({
+      prisma.partner_applications.count({
         where: { status: 'SUBMITTED' }
       }),
       prisma.rentalHost.aggregate({
@@ -126,7 +126,7 @@ export async function GET(request: NextRequest) {
         where: { hostType: { in: ['FLEET_PARTNER', 'PARTNER'] } },
         _sum: { partnerTotalRevenue: true }
       }),
-      prisma.partnerDocument.count({
+      prisma.partner_documents.count({
         where: {
           OR: [
             { isExpired: true },

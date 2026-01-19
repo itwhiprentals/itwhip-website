@@ -88,7 +88,7 @@ export async function GET(
           take: 50,
           orderBy: { createdAt: 'desc' }
         },
-        partnerApplication: {
+        partner_applications: {
           select: {
             id: true,
             status: true,
@@ -103,7 +103,7 @@ export async function GET(
             operatingCities: true
           }
         },
-        partnerDocuments: {
+        partner_documents: {
           select: {
             id: true,
             type: true,
@@ -118,7 +118,7 @@ export async function GET(
           },
           orderBy: { uploadedAt: 'desc' }
         },
-        partnerCommissionHistory: {
+        partner_commission_history: {
           select: {
             id: true,
             oldRate: true,

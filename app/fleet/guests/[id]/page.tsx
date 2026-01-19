@@ -495,19 +495,25 @@ export default function FleetGuestDetailPage({ params }: { params: Promise<{ id:
 
           <div className="flex items-start justify-between">
             <div className="flex items-center space-x-4">
-              {guest.profilePhotoUrl ? (
-                <img
-                  src={guest.profilePhotoUrl}
-                  alt={guest.name}
-                  className="w-20 h-20 rounded-full"
-                />
-              ) : (
+              <div className="relative w-20 h-20">
+                {/* Placeholder always visible as base layer */}
                 <div className="w-20 h-20 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
                   <span className="text-3xl font-bold text-purple-600 dark:text-purple-400">
                     {guest.name.charAt(0).toUpperCase()}
                   </span>
                 </div>
-              )}
+                {/* Image overlays placeholder when it loads successfully */}
+                {guest.profilePhotoUrl && (
+                  <img
+                    src={guest.profilePhotoUrl}
+                    alt={guest.name}
+                    className="absolute inset-0 w-20 h-20 rounded-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none'
+                    }}
+                  />
+                )}
+              </div>
               <div>
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
                   {guest.name}

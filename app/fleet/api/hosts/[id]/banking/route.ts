@@ -92,7 +92,7 @@ export async function GET(
         debitCardExpYear: true,
         
         // Payment methods relation
-        paymentMethods: {
+        PaymentMethod: {
           select: {
             id: true,
             type: true,
@@ -108,9 +108,9 @@ export async function GET(
             createdAt: true
           }
         },
-        
+
         // Recent charges
-        hostCharges: {
+        host_charges: {
           take: 10,
           orderBy: { createdAt: 'desc' },
           select: {
@@ -179,7 +179,7 @@ export async function GET(
 
     // Calculate stats
     const stats = {
-      totalCharges: host.hostCharges.length,
+      totalCharges: host.host_charges.length,
       totalChargedAmount: host.totalChargedAmount || 0,
       currentBalance: host.currentBalance || 0,
       pendingBalance: host.pendingBalance || 0,
@@ -253,8 +253,8 @@ export async function GET(
           expMonth: host.debitCardExpMonth,
           expYear: host.debitCardExpYear
         } : null,
-        paymentMethods: host.paymentMethods,
-        recentCharges: host.hostCharges,
+        paymentMethods: host.PaymentMethod,
+        recentCharges: host.host_charges,
         stats
       }
     })

@@ -224,6 +224,58 @@ model AuditLog {
   @@index([userId])
 }
 
+// ============================================
+// ANALYTICS - Page View Tracking
+// Immutable event log for site analytics
+// Inspired by Stripe's Ledger pattern
+// ============================================
+model PageView {
+  id          String   @id @default(cuid())
+
+  // What was viewed
+  path        String                // /fleet/hosts, /rentals/abc123
+  referrer    String?               // https://google.com
+  queryParams String?               // Sanitized query params (no sensitive data)
+
+  // Who viewed it
+  userId      String?               // Logged-in user ID (optional)
+  sessionId   String?               // Anonymous session tracking
+  visitorId   String?               // Fingerprint for unique visitors
+
+  // Device info (parsed from user agent)
+  userAgent   String                // Full user agent string
+  device      String?               // desktop, mobile, tablet
+  browser     String?               // Chrome, Safari, Firefox
+  browserVer  String?               // Browser version
+  os          String?               // Windows, macOS, iOS, Android
+
+  // Location (from Vercel/Cloudflare headers)
+  country     String?               // US, UK, MX (ISO 3166-1 alpha-2)
+  region      String?               // Arizona, California, Texas
+  city        String?               // Phoenix, Los Angeles
+
+  // Performance metrics
+  loadTime    Int?                  // Page load time in ms
+
+  // Event metadata
+  eventType   String   @default("pageview")  // pageview, click, scroll, etc.
+  metadata    Json?                 // Additional event-specific data
+
+  // Timing (immutable - never update, only insert)
+  timestamp   DateTime @default(now())
+
+  // Composite indexes for fast analytics queries
+  @@index([path])
+  @@index([timestamp])
+  @@index([userId])
+  @@index([country])
+  @@index([visitorId])
+  @@index([eventType])
+  @@index([path, timestamp])        // Top pages over time
+  @@index([country, timestamp])     // Geographic trends
+  @@index([device, timestamp])      // Device trends
+}
+
 model BackgroundCheck {
   id               String                @id
   hostId           String
@@ -2600,6 +2652,28 @@ model SecurityEvent {
   @@index([type])
 }
 
+model MonitoringAlert {
+  id             String         @id @default(cuid())
+  type           String         // security, performance, error_rate, availability, business, fraud
+  severity       ThreatSeverity
+  status         String         @default("active") // active, acknowledged, resolved, false_positive
+  title          String
+  message        String         @db.Text
+  source         String?        // Which system triggered this
+  metadata       Json?          // Additional context
+  acknowledgedAt DateTime?
+  acknowledgedBy String?
+  resolvedAt     DateTime?
+  resolvedBy     String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([status])
+  @@index([severity])
+  @@index([type])
+  @@index([createdAt])
+}
+
 model Session {
   id           String    @id @default(cuid())
   userId       String?
@@ -3204,6 +3278,85 @@ model partner_payouts {
   @@index([hostId])
   @@index([period])
   @@index([status])
+}
+
+// Fleet Alert Settings - Customizable thresholds for monitoring alerts
+model fleet_alert_settings {
+  id                        String   @id @default("global")
+
+  // Email Notification Settings
+  alertEmailsEnabled        Boolean  @default(true)
+  alertEmailRecipients      String[] @default([])  // Array of email addresses
+  emailDigestEnabled        Boolean  @default(true)
+  emailDigestFrequency      String   @default("daily") // "instant", "hourly", "daily", "weekly"
+
+  // Partner Alert Thresholds
+  partnerPendingDaysWarning Int      @default(3)   // Days before app becomes urgent
+  suspendedPartnersAlert    Boolean  @default(true)
+
+  // Vehicle Alert Thresholds
+  pendingVehiclesAlert      Boolean  @default(true)
+  changesRequestedAlert     Boolean  @default(true)
+
+  // Booking Alert Thresholds
+  highCancellationThreshold Int      @default(5)   // Cancellations in 7 days
+  bookingsStartingTodayAlert Boolean @default(true)
+
+  // Document Alert Thresholds
+  documentExpiryWarningDays Int      @default(30)  // Days before expiry to alert
+  documentExpiryUrgentDays  Int      @default(7)   // Days before HIGH priority
+  expiredDocumentsAlert     Boolean  @default(true)
+  pendingDocumentsAlert     Boolean  @default(true)
+
+  // Financial Alert Thresholds
+  negativeBalanceAlert      Boolean  @default(true)
+  failedPayoutsAlert        Boolean  @default(true)
+  pendingRefundThreshold    Float    @default(250) // Refunds over this amount need approval
+  pendingRefundsAlert       Boolean  @default(true)
+
+  // Claim Alert Thresholds
+  openClaimsAlert           Boolean  @default(true)
+
+  // Review Alert Thresholds
+  lowRatingThreshold        Int      @default(2)   // Stars threshold for alert
+  lowRatingsAlert           Boolean  @default(true)
+
+  // Security Alert Thresholds
+  securityEventsAlert       Boolean  @default(true)
+  criticalSecurityThreshold Int      @default(1)   // Critical events before alert
+
+  // Performance Thresholds
+  slowResponseThreshold     Int      @default(1000) // ms before warning
+  criticalResponseThreshold Int      @default(3000) // ms before critical
+
+  // Notification History
+  lastEmailSentAt           DateTime?
+  lastDigestSentAt          DateTime?
+
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  @@map("fleet_alert_settings")
+}
+
+// Fleet Alert History - Track sent notifications
+model fleet_alert_history {
+  id          String   @id @default(cuid())
+  type        String   // "email", "digest", "push"
+  recipients  String[] // Email addresses
+  subject     String
+  alertCount  Int      @default(0)
+  highCount   Int      @default(0)
+  mediumCount Int      @default(0)
+  lowCount    Int      @default(0)
+  categories  String[] // ["partner", "vehicle", "document", etc.]
+  sentAt      DateTime @default(now())
+  status      String   @default("sent") // "sent", "failed", "bounced"
+  error       String?
+
+  @@index([sentAt])
+  @@index([type])
+  @@map("fleet_alert_history")
 }
 
 model PlatformSettings {

@@ -2,6 +2,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import PageTracker from '@/app/components/PageTracker'
 import './globals.css'
 import { Providers } from './providers'
 
@@ -281,6 +282,7 @@ export default function RootLayout({
           {children}
         </Providers>
         <Analytics />
+        <PageTracker />
       </body>
     </html>
   )

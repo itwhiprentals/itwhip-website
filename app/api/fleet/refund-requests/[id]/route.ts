@@ -12,14 +12,23 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-08-27.basil'
 })
 
+const FLEET_KEY = 'phoenix-fleet-2847'
+
+function verifyFleetAccess(request: NextRequest): boolean {
+  const urlKey = request.nextUrl.searchParams.get('key')
+  const headerKey = request.headers.get('x-fleet-key')
+  const fleetSession = request.cookies.get('fleet_session')?.value
+
+  return urlKey === FLEET_KEY || headerKey === FLEET_KEY || !!fleetSession
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verify fleet access
-    const key = request.nextUrl.searchParams.get('key')
-    if (key !== 'phoenix-fleet-2847' && !request.headers.get('authorization')) {
+    if (!verifyFleetAccess(request)) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -161,8 +170,7 @@ export async function PATCH(
 ) {
   try {
     // Verify fleet access
-    const key = request.nextUrl.searchParams.get('key')
-    if (key !== 'phoenix-fleet-2847' && !request.headers.get('authorization')) {
+    if (!verifyFleetAccess(request)) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -281,8 +289,7 @@ export async function POST(
 ) {
   try {
     // Verify fleet access
-    const key = request.nextUrl.searchParams.get('key')
-    if (key !== 'phoenix-fleet-2847' && !request.headers.get('authorization')) {
+    if (!verifyFleetAccess(request)) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }

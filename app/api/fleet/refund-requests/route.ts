@@ -4,11 +4,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 
+const FLEET_KEY = 'phoenix-fleet-2847'
+
+function verifyFleetAccess(request: NextRequest): boolean {
+  const urlKey = request.nextUrl.searchParams.get('key')
+  const headerKey = request.headers.get('x-fleet-key')
+  const fleetSession = request.cookies.get('fleet_session')?.value
+
+  return urlKey === FLEET_KEY || headerKey === FLEET_KEY || !!fleetSession
+}
+
 export async function GET(request: NextRequest) {
   try {
     // Verify fleet access
-    const key = request.nextUrl.searchParams.get('key')
-    if (key !== 'phoenix-fleet-2847' && !request.headers.get('authorization')) {
+    if (!verifyFleetAccess(request)) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }

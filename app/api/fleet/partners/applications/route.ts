@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch applications
-    const applications = await prisma.partnerApplication.findMany({
+    const applications = await prisma.partner_applications.findMany({
       where,
       select: {
         id: true,
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
           select: {
             id: true,
             partnerSlug: true,
-            partnerDocuments: {
+            partner_documents: {
               select: {
                 id: true,
                 type: true,
@@ -73,10 +73,10 @@ export async function GET(request: NextRequest) {
 
     // Get stats
     const [submitted, underReview, approved, rejected] = await Promise.all([
-      prisma.partnerApplication.count({ where: { status: 'SUBMITTED' } }),
-      prisma.partnerApplication.count({ where: { status: 'UNDER_REVIEW' } }),
-      prisma.partnerApplication.count({ where: { status: 'APPROVED' } }),
-      prisma.partnerApplication.count({ where: { status: 'REJECTED' } })
+      prisma.partner_applications.count({ where: { status: 'SUBMITTED' } }),
+      prisma.partner_applications.count({ where: { status: 'UNDER_REVIEW' } }),
+      prisma.partner_applications.count({ where: { status: 'APPROVED' } }),
+      prisma.partner_applications.count({ where: { status: 'REJECTED' } })
     ])
 
     return NextResponse.json({

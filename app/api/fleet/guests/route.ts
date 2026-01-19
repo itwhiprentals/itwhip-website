@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
             lastActive: true
           }
         },
-        bookings: {
+        RentalBooking: {
           select: {
             id: true,
             bookingCode: true,
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
           },
           take: 5
         },
-        reviews: {
+        RentalReview: {
           select: {
             id: true,
             rating: true,
@@ -104,8 +104,8 @@ export async function GET(request: NextRequest) {
         },
         _count: {
           select: {
-            bookings: true,
-            reviews: true
+            RentalBooking: true,
+            RentalReview: true
           }
         }
       }
@@ -125,10 +125,10 @@ export async function GET(request: NextRequest) {
       memberSince: guest.memberSince,
       userId: guest.userId,
       user: guest.user,
-      recentBookings: guest.bookings,
-      recentReviews: guest.reviews,
-      totalBookings: guest._count.bookings,
-      totalReviews: guest._count.reviews,
+      recentBookings: guest.RentalBooking,
+      recentReviews: guest.RentalReview,
+      totalBookings: guest._count.RentalBooking,
+      totalReviews: guest._count.RentalReview,
       createdAt: guest.createdAt
     }))
 

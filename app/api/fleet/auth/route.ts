@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import crypto from 'crypto'
+import { logFailedLogin, logSuccessfulLogin, isIpBlocked } from '@/app/lib/security/loginMonitor'
 
 // Fleet admin credentials from environment or defaults
 const FLEET_USERNAME = process.env.FLEET_ADMIN_USERNAME || 'admin'
@@ -28,13 +29,60 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { username, password } = body
 
+    // Get client info for security logging
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+               request.headers.get('x-real-ip') ||
+               'unknown'
+    const userAgent = request.headers.get('user-agent') || 'unknown'
+
+    // Check if IP is blocked due to too many attempts
+    const blocked = await isIpBlocked(ip)
+    if (blocked) {
+      await logFailedLogin({
+        email: `fleet:${username || 'unknown'}`,
+        source: 'fleet',
+        reason: 'BLOCKED_IP',
+        ip,
+        userAgent
+      })
+      return NextResponse.json(
+        { error: 'Too many login attempts. Please try again later.' },
+        { status: 429 }
+      )
+    }
+
     // Validate credentials
     if (username !== FLEET_USERNAME || password !== FLEET_PASSWORD) {
+      const result = await logFailedLogin({
+        email: `fleet:${username || 'unknown'}`,
+        source: 'fleet',
+        reason: 'INVALID_CREDENTIALS',
+        ip,
+        userAgent
+      })
+
+      // Check if this attempt triggered rate limiting
+      if (result.blocked) {
+        return NextResponse.json(
+          { error: result.message || 'Too many login attempts. Please try again later.' },
+          { status: 429 }
+        )
+      }
+
       return NextResponse.json(
         { error: 'Invalid username or password' },
         { status: 401 }
       )
     }
+
+    // Log successful login
+    await logSuccessfulLogin({
+      userId: 'fleet-admin',
+      email: `fleet:${username}`,
+      source: 'fleet',
+      ip,
+      userAgent
+    })
 
     // Generate session token
     const sessionToken = generateSessionToken()

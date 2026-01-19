@@ -51,7 +51,7 @@ export async function POST(
     })
 
     // Log the change
-    await prisma.partnerCommissionHistory.create({
+    await prisma.partner_commission_history.create({
       data: {
         hostId: id,
         oldRate: oldRate,
@@ -93,7 +93,7 @@ export async function GET(
   try {
     const { id } = await params
 
-    const history = await prisma.partnerCommissionHistory.findMany({
+    const history = await prisma.partner_commission_history.findMany({
       where: { hostId: id },
       orderBy: { createdAt: 'desc' },
       take: 50

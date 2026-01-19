@@ -100,7 +100,7 @@ function InternalLayoutContent({
 
   return (
     <ThemeProvider>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+      <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
         {/* Header */}
         <header className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/95 backdrop-blur sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -116,71 +116,83 @@ function InternalLayoutContent({
                 </h1>
               </div>
 
-              {/* Desktop Navigation */}
-              <div className="hidden md:flex items-center gap-6">
-                <nav className="flex items-center gap-6 text-sm">
-                  <Link 
-                    href="/fleet" 
-                    className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+              {/* Desktop Navigation - Scrollable */}
+              <div className="hidden md:flex items-center gap-4 flex-1 min-w-0 ml-4">
+                <nav className="flex items-center gap-1 text-sm overflow-x-auto scrollbar-hide flex-1 min-w-0 pr-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                  <Link
+                    href="/fleet"
+                    className="px-2.5 py-1.5 rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
                   >
                     Dashboard
                   </Link>
-                  <Link 
-                    href="/fleet/add" 
-                    className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                  <Link
+                    href="/fleet/add"
+                    className="px-2.5 py-1.5 rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
                   >
                     Add Car
                   </Link>
-                  <Link 
-                    href="/fleet/bulk" 
-                    className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                  <Link
+                    href="/fleet/bulk"
+                    className="px-2.5 py-1.5 rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
                   >
-                    Bulk Upload
+                    Bulk
                   </Link>
                   <Link
                     href="/fleet/templates"
-                    className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                    className="px-2.5 py-1.5 rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
                   >
                     Templates
                   </Link>
                   <Link
                     href="/fleet/partners"
-                    className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                    className="px-2.5 py-1.5 rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
                   >
                     Partners
                   </Link>
                   <Link
                     href="/fleet/refunds"
-                    className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                    className="px-2.5 py-1.5 rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
                   >
                     Refunds
                   </Link>
                   <Link
                     href="/fleet/bonuses"
-                    className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                    className="px-2.5 py-1.5 rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
                   >
                     Bonuses
                   </Link>
                   <Link
                     href="/fleet/claims"
-                    className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                    className="px-2.5 py-1.5 rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
                   >
                     Claims
                   </Link>
                   <Link
+                    href="/fleet/analytics"
+                    className="px-2.5 py-1.5 rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
+                  >
+                    Analytics
+                  </Link>
+                  <Link
+                    href="/fleet/monitoring"
+                    className="px-2.5 py-1.5 rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
+                  >
+                    Monitoring
+                  </Link>
+                  <Link
                     href="/fleet/settings"
-                    className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                    className="px-2.5 py-1.5 rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
                   >
                     Settings
                   </Link>
                 </nav>
-                
-                <div className="border-l border-gray-300 dark:border-gray-700 pl-6 flex items-center gap-4">
+
+                <div className="border-l border-gray-300 dark:border-gray-700 pl-4 flex items-center gap-3 flex-shrink-0">
                   <ThemeToggle />
                   <button
                     onClick={handleLogout}
                     disabled={loggingOut}
-                    className="text-sm text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 transition-colors"
+                    className="text-sm text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 transition-colors whitespace-nowrap"
                   >
                     {loggingOut ? 'Logging out...' : 'Logout'}
                   </button>
@@ -268,6 +280,20 @@ function InternalLayoutContent({
                     Claims
                   </Link>
                   <Link
+                    href="/fleet/analytics"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-3 py-2 rounded-md text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                  >
+                    Analytics
+                  </Link>
+                  <Link
+                    href="/fleet/monitoring"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-3 py-2 rounded-md text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                  >
+                    Monitoring
+                  </Link>
+                  <Link
                     href="/fleet/settings"
                     onClick={() => setMobileMenuOpen(false)}
                     className="px-3 py-2 rounded-md text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -291,7 +317,7 @@ function InternalLayoutContent({
         </header>
 
         {/* Main Content */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 overflow-x-hidden">
           {children}
         </main>
 
@@ -303,6 +329,7 @@ function InternalLayoutContent({
             </p>
           </div>
         </footer>
+
       </div>
     </ThemeProvider>
   )
