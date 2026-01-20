@@ -91,10 +91,15 @@ export default function FleetProspectsPage() {
       const data = await response.json()
 
       if (data.success) {
-        // Copy invite link to clipboard
-        await navigator.clipboard.writeText(data.inviteLink)
-        setCopiedLink(prospectId)
-        setTimeout(() => setCopiedLink(null), 3000)
+        // Copy invite link to clipboard (may fail if window not focused)
+        try {
+          await navigator.clipboard.writeText(data.inviteLink)
+          setCopiedLink(prospectId)
+          setTimeout(() => setCopiedLink(null), 3000)
+        } catch {
+          // Clipboard write failed - window probably not focused, that's OK
+          console.log('Clipboard unavailable, invite link:', data.inviteLink)
+        }
 
         // Refresh the list
         fetchProspects()

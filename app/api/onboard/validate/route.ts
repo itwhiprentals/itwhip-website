@@ -5,9 +5,24 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { sign } from 'jsonwebtoken'
 import { nanoid } from 'nanoid'
+import {
+  generateHostAccessToken,
+  getTokenExpiry,
+  logProspectActivity,
+  ACTIVITY_TYPES
+} from '@/app/lib/auth/host-tokens'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key'
+
+// Get client IP from request headers
+function getClientIp(request: NextRequest): string | undefined {
+  const forwarded = request.headers.get('x-forwarded-for')
+  if (forwarded) {
+    return forwarded.split(',')[0].trim()
+  }
+  return request.headers.get('x-real-ip') || undefined
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -174,7 +189,8 @@ export async function POST(request: NextRequest) {
           role: 'BUSINESS',
           passwordHash: '', // No password - they use magic link
           isActive: true,
-          emailVerified: false
+          emailVerified: false,
+          updatedAt: new Date()
         }
       })
     }
@@ -232,9 +248,7 @@ export async function POST(request: NextRequest) {
             hostId: newHost.id,
             status: 'PENDING_CAR',
             offeredRate: prospect.request?.offeredRate,
-            claimExpiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000), // 48 hours
-            createdAt: new Date(),
-            updatedAt: new Date()
+            claimExpiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000) // 48 hours
           }
         })
       } catch (claimError) {

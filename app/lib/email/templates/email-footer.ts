@@ -8,12 +8,12 @@ export interface EmailFooterProps {
   footerType?: 'full' | 'minimal' | 'text-only'
 }
 
-// Actual social media links from Footer.tsx
+// Actual social media links - updated Jan 2026
 const SOCIAL_LINKS = {
-  facebook: 'https://www.facebook.com/share/17C2AahAqu/?mibextid=LQQJ4d',
-  twitter: 'https://twitter.com/itwhiptech',
-  instagram: 'https://www.instagram.com/itwhiptech?igsh=NWhtdXVlNnZwYzlx',
-  linkedin: 'https://linkedin.com/company/itwhip'
+  facebook: 'https://www.facebook.com/people/Itwhipcom/61573990760395/',
+  twitter: 'https://x.com/itwhipofficial',
+  instagram: 'https://www.instagram.com/itwhipofficial',
+  linkedin: 'https://www.linkedin.com/company/itwhip/'
 }
 
 // App store links

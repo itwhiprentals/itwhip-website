@@ -1768,6 +1768,8 @@ model RentalBooking {
   // Reservation request system relations
   reservationRequest         ReservationRequest?
   requestClaim               RequestClaim?
+  // Converted from prospect (if booking came from recruitment)
+  convertedFromProspect      HostProspect?         @relation("prospect_to_booking")
 
   @@index([adminCompletedById])
   @@index([agreementStatus])
@@ -2018,59 +2020,59 @@ model RentalDispute {
 }
 
 model RentalHost {
-  id                            String                       @id
-  userId                        String?                      @unique
-  email                         String                       @unique
+  id                            String                 @id
+  userId                        String?                @unique
+  email                         String                 @unique
   name                          String
   phone                         String
   profilePhoto                  String?
   bio                           String?
-  isVerified                    Boolean                      @default(false)
+  isVerified                    Boolean                @default(false)
   verifiedAt                    DateTime?
   verificationLevel             String?
   responseTime                  Int?
   responseRate                  Float?
   acceptanceRate                Float?
-  totalTrips                    Int                          @default(0)
-  rating                        Float                        @default(5.0)
+  totalTrips                    Int                    @default(0)
+  rating                        Float                  @default(5.0)
   city                          String
   state                         String
   zipCode                       String?
-  active                        Boolean                      @default(true)
-  joinedAt                      DateTime                     @default(now())
-  createdAt                     DateTime                     @default(now())
+  active                        Boolean                @default(true)
+  joinedAt                      DateTime               @default(now())
+  createdAt                     DateTime               @default(now())
   updatedAt                     DateTime
-  approvalStatus                String                       @default("PENDING")
+  approvalStatus                String                 @default("PENDING")
   approvedAt                    DateTime?
   approvedBy                    String?
-  autoApproveBookings           Boolean                      @default(true)
+  autoApproveBookings           Boolean                @default(true)
   bankAccountInfo               String?
-  bankVerified                  Boolean                      @default(false)
-  canEditCalendar               Boolean                      @default(false)
-  canMessageGuests              Boolean                      @default(false)
-  canSetPricing                 Boolean                      @default(false)
-  canViewBookings               Boolean                      @default(false)
-  canWithdrawFunds              Boolean                      @default(false)
-  commissionRate                Float                        @default(0.25)
-  dashboardAccess               Boolean                      @default(false)
-  depositAmount                 Float                        @default(500)
-  depositMode                   String                       @default("global")
+  bankVerified                  Boolean                @default(false)
+  canEditCalendar               Boolean                @default(false)
+  canMessageGuests              Boolean                @default(false)
+  canSetPricing                 Boolean                @default(false)
+  canViewBookings               Boolean                @default(false)
+  canWithdrawFunds              Boolean                @default(false)
+  commissionRate                Float                  @default(0.25)
+  dashboardAccess               Boolean                @default(false)
+  depositAmount                 Float                  @default(500)
+  depositMode                   String                 @default("global")
   makeDeposits                  Json?
-  globalDiscountPercent         Float?                       @default(0)
-  documentsVerified             Boolean                      @default(false)
+  globalDiscountPercent         Float?                 @default(0)
+  documentsVerified             Boolean                @default(false)
   driversLicenseUrl             String?
   governmentIdUrl               String?
-  hostType                      String                       @default("PENDING")
+  hostType                      String                 @default("PENDING")
   insuranceDocUrl               String?
   maxDailyRate                  Float?
   minDailyRate                  Float?
   rejectedReason                String?
-  requireDeposit                Boolean                      @default(true)
+  requireDeposit                Boolean                @default(true)
   suspendedAt                   DateTime?
   suspendedReason               String?
   bankAccountLast4              String?
   bankAccountName               String?
-  bankAccountType               String?                      @default("checking")
+  bankAccountType               String?                @default("checking")
   bankName                      String?
   businessName                  String?
   businessType                  String?
@@ -2078,139 +2080,139 @@ model RentalHost {
   debitCardExpYear              Int?
   debitCardLast4                String?
   defaultPayoutMethod           String?
-  instantPayoutEnabled          Boolean                      @default(false)
+  instantPayoutEnabled          Boolean                @default(false)
   lastPayoutAmount              Float?
   lastPayoutDate                DateTime?
   nextScheduledPayout           DateTime?
-  payoutFrequency               String?                      @default("weekly")
-  payoutScheduleDay             String?                      @default("Friday")
-  protectionPlan                String?                      @default("BASIC")
+  payoutFrequency               String?                @default("weekly")
+  payoutScheduleDay             String?                @default("Friday")
+  protectionPlan                String?                @default("BASIC")
   protectionPlanFee             Float?
   stripeAccountId               String?
-  stripeAccountStatus           String?                      @default("pending")
-  stripeChargesEnabled          Boolean                      @default(false)
-  stripeDetailsSubmitted        Boolean                      @default(false)
-  stripePayoutsEnabled          Boolean                      @default(false)
+  stripeAccountStatus           String?                @default("pending")
+  stripeChargesEnabled          Boolean                @default(false)
+  stripeDetailsSubmitted        Boolean                @default(false)
+  stripePayoutsEnabled          Boolean                @default(false)
   stripeTosAcceptanceDate       DateTime?
   stripeTosAcceptanceIp         String?
   taxIdType                     String?
-  totalPayoutAmount             Float?                       @default(0)
-  totalPayoutCount              Int?                         @default(0)
+  totalPayoutAmount             Float?                 @default(0)
+  totalPayoutCount              Int?                   @default(0)
   backgroundCheckStatus         String?
   documentStatuses              Json?
   documentsRequestedAt          DateTime?
   documentsResubmittedAt        DateTime?
   lastNotificationSent          DateTime?
-  pendingActions                String[]                     @default([])
-  restrictionReasons            String[]                     @default([])
+  pendingActions                String[]               @default([])
+  restrictionReasons            String[]               @default([])
   bankAccountToken              String?
   bankVerifiedDate              DateTime?
-  currentBalance                Float                        @default(0)
+  currentBalance                Float                  @default(0)
   debitCardBrand                String?
   debitCardToken                String?
-  debitCardVerified             Boolean                      @default(false)
+  debitCardVerified             Boolean                @default(false)
   defaultPayoutMethodId         String?
   holdFundsUntil                DateTime?
   holdReason                    String?
-  instantPayoutFeeRate          Float                        @default(0.015)
-  minimumPayoutAmount           Float                        @default(50.00)
+  instantPayoutFeeRate          Float                  @default(0.015)
+  minimumPayoutAmount           Float                  @default(50.00)
   payoutMethods                 Json?
-  payoutSchedule                String                       @default("weekly")
+  payoutSchedule                String                 @default("weekly")
   payoutsDisabledReason         String?
-  payoutsEnabled                Boolean                      @default(false)
-  pendingBalance                Float                        @default(0)
-  platformFeeRate               Float                        @default(0.25)
-  stripeConnectAccountId        String?                      @unique
+  payoutsEnabled                Boolean                @default(false)
+  pendingBalance                Float                  @default(0)
+  platformFeeRate               Float                  @default(0.25)
+  stripeConnectAccountId        String?                @unique
   stripeOnboardingLink          String?
-  taxIdProvided                 Boolean                      @default(false)
-  totalEarnings                 Float                        @default(0)
-  totalPayoutsAmount            Float                        @default(0)
-  totalPayoutsCount             Int                          @default(0)
-  w9Submitted                   Boolean                      @default(false)
+  taxIdProvided                 Boolean                @default(false)
+  totalEarnings                 Float                  @default(0)
+  totalPayoutsAmount            Float                  @default(0)
+  totalPayoutsCount             Int                    @default(0)
+  w9Submitted                   Boolean                @default(false)
   w9SubmittedDate               DateTime?
   defaultPaymentMethodOnFile    String?
-  holdBalance                   Float                        @default(0)
+  holdBalance                   Float                  @default(0)
   lastChargeReason              String?
   lastChargedDate               DateTime?
   lastSubscriptionChargeDate    DateTime?
-  monthlySubscriptionFee        Float                        @default(0)
-  negativeBalance               Float                        @default(0)
+  monthlySubscriptionFee        Float                  @default(0)
+  negativeBalance               Float                  @default(0)
   nextSubscriptionChargeDate    DateTime?
-  stripeCustomerId              String?                      @unique
+  stripeCustomerId              String?                @unique
   subscriptionEndDate           DateTime?
   subscriptionStartDate         DateTime?
-  subscriptionStatus            String                       @default("ACTIVE")
-  subscriptionTier              String                       @default("FREE")
-  totalChargedAmount            Float                        @default(0)
+  subscriptionStatus            String                 @default("ACTIVE")
+  subscriptionTier              String                 @default("FREE")
+  totalChargedAmount            Float                  @default(0)
   deactivationReason            String?
   hostInsuranceDeactivatedAt    DateTime?
   hostInsuranceExpires          DateTime?
   hostInsuranceProvider         String?
-  hostInsuranceStatus           HostInsuranceStatus          @default(ACTIVE)
+  hostInsuranceStatus           HostInsuranceStatus    @default(ACTIVE)
   hostPolicyNumber              String?
   insuranceHistory              Json?
-  insuranceActive               Boolean                      @default(false)
+  insuranceActive               Boolean                @default(false)
   insuranceAssignedAt           DateTime?
   insuranceAssignedBy           String?
   insurancePolicyNumber         String?
   insuranceProviderId           String?
-  commercialInsuranceActive     Boolean                      @default(false)
+  commercialInsuranceActive     Boolean                @default(false)
   commercialInsuranceExpires    DateTime?
   commercialInsuranceProvider   String?
   commercialInsuranceStatus     InsuranceStatus?
   commercialPolicyNumber        String?
-  earningsTier                  EarningsTier                 @default(BASIC)
+  earningsTier                  EarningsTier           @default(BASIC)
   lastTierChange                DateTime?
-  p2pInsuranceActive            Boolean                      @default(false)
+  p2pInsuranceActive            Boolean                @default(false)
   p2pInsuranceExpires           DateTime?
   p2pInsuranceProvider          String?
   p2pInsuranceStatus            InsuranceStatus?
   p2pPolicyNumber               String?
   tierChangeBy                  String?
   tierChangeReason              String?
-  usingLegacyInsurance          Boolean                      @default(true)
-  insuranceType                 String                       @default("none")
-  revenueSplit                  Int                          @default(40)
+  usingLegacyInsurance          Boolean                @default(true)
+  insuranceType                 String                 @default("none")
+  revenueSplit                  Int                    @default(40)
   suspensionExpiresAt           DateTime?
   legacyDualId                  String?
-  autoApproveListings           Boolean                      @default(true)
-  currentCommissionRate         Float                        @default(0.25)
-  partnerAvgRating              Float                        @default(0)
+  autoApproveListings           Boolean                @default(true)
+  currentCommissionRate         Float                  @default(0.25)
+  partnerAvgRating              Float                  @default(0)
   partnerBio                    String?
   partnerCompanyName            String?
-  partnerFleetSize              Int                          @default(0)
+  partnerFleetSize              Int                    @default(0)
   partnerLogo                   String?
   partnerPayoutSchedule         PartnerPayoutSchedule?
-  partnerSlug                   String?                      @unique
+  partnerSlug                   String?                @unique
   partnerSupportEmail           String?
   partnerSupportPhone           String?
-  partnerTotalBookings          Int                          @default(0)
-  partnerTotalRevenue           Float                        @default(0)
-  tier1CommissionRate           Float                        @default(0.20)
-  tier1VehicleCount             Int                          @default(10)
-  tier2CommissionRate           Float                        @default(0.15)
-  tier2VehicleCount             Int                          @default(50)
-  tier3CommissionRate           Float                        @default(0.10)
-  tier3VehicleCount             Int                          @default(100)
+  partnerTotalBookings          Int                    @default(0)
+  partnerTotalRevenue           Float                  @default(0)
+  tier1CommissionRate           Float                  @default(0.20)
+  tier1VehicleCount             Int                    @default(10)
+  tier2CommissionRate           Float                  @default(0.15)
+  tier2VehicleCount             Int                    @default(50)
+  tier3CommissionRate           Float                  @default(0.10)
+  tier3VehicleCount             Int                    @default(100)
   businessHours                 String?
   partnerBadges                 Json?
   partnerBenefits               Json?
   partnerHeroImage              String?
-  partnerHeroImageFilter        Boolean                      @default(false)
+  partnerHeroImageFilter        Boolean                @default(false)
   partnerPolicies               Json?
   yearEstablished               Int?
   photoIdType                   String?
   photoIdUrls                   Json?
-  photoIdVerified               Boolean                      @default(false)
+  photoIdVerified               Boolean                @default(false)
   photoIdSubmittedAt            DateTime?
   hostManagerBio                String?
   hostManagerLogo               String?
   hostManagerName               String?
-  hostManagerSlug               String?                      @unique
-  isHostManager                 Boolean                      @default(false)
-  isVehicleOwner                Boolean                      @default(false)
-  managesOthersCars             Boolean                      @default(false)
-  managesOwnCars                Boolean                      @default(true)
+  hostManagerSlug               String?                @unique
+  isHostManager                 Boolean                @default(false)
+  isVehicleOwner                Boolean                @default(false)
+  managesOthersCars             Boolean                @default(false)
+  managesOwnCars                Boolean                @default(true)
   stripeDisabledReason          String?
   stripeRequirements            Json?
   partnerWebsite                String?
@@ -2220,65 +2222,84 @@ model RentalHost {
   partnerLinkedIn               String?
   partnerTikTok                 String?
   partnerYouTube                String?
-  partnerShowEmail              Boolean                      @default(true)
-  partnerShowPhone              Boolean                      @default(true)
-  partnerShowWebsite            Boolean                      @default(true)
+  partnerShowEmail              Boolean                @default(true)
+  partnerShowPhone              Boolean                @default(true)
+  partnerShowWebsite            Boolean                @default(true)
   partnerHeroTitle              String?
   partnerHeroSubtitle           String?
   partnerPrimaryColor           String?
-  referralBonusEarned           Float                        @default(0)
-  referralCode                  String?                      @unique
-  referralCount                 Int                          @default(0)
+  referralBonusEarned           Float                  @default(0)
+  referralCode                  String?                @unique
+  referralCount                 Int                    @default(0)
   referredByHostId              String?
-  enableLeasing                 Boolean                      @default(false)
-  enableRentToOwn               Boolean                      @default(false)
-  enableRentals                 Boolean                      @default(false)
-  enableRideshare               Boolean                      @default(true)
-  enableSales                   Boolean                      @default(false)
+  enableLeasing                 Boolean                @default(false)
+  enableRentToOwn               Boolean                @default(false)
+  enableRentals                 Boolean                @default(false)
+  enableRideshare               Boolean                @default(true)
+  enableSales                   Boolean                @default(false)
   partnerServices               Json?
-  vehicleApprovalMode           String                       @default("DYNAMIC")
-  vehicleApprovalThreshold      Int                          @default(25)
-  emailVerified                 Boolean                      @default(false)
+  vehicleApprovalMode           String                 @default("DYNAMIC")
+  vehicleApprovalThreshold      Int                    @default(25)
+  emailVerified                 Boolean                @default(false)
   emailVerifiedAt               DateTime?
   identityVerificationSessionId String?
-  identityVerified              Boolean                      @default(false)
+  identityVerified              Boolean                @default(false)
   identityVerifiedAt            DateTime?
-  phoneVerified                 Boolean                      @default(false)
+  phoneVerified                 Boolean                @default(false)
   phoneVerifiedAt               DateTime?
   lastLoginAt                   DateTime?
   previousLoginAt               DateTime?
   // External recruitment tracking
-  isExternalRecruit             Boolean                      @default(false)
-  recruitedVia                  String?                      // FB_MARKETPLACE, TURO, REFERRAL, etc.
+  isExternalRecruit             Boolean                @default(false)
+  recruitedVia                  String? // FB_MARKETPLACE, TURO, REFERRAL, etc.
   recruitedAt                   DateTime?
   agreementTemplateCustom       Json?
-  BackgroundCheck               BackgroundCheck[]
-  Claim                         Claim[]
-  HostDocumentStatus            HostDocumentStatus[]
-  HostESGProfile                HostESGProfile?
-  HostNotification              HostNotification[]
-  HostPayout                    HostPayout[]
-  PaymentMethod                 PaymentMethod[]
-  bookings                      RentalBooking[]
-  cars                          RentalCar[]
-  insuranceProvider             InsuranceProvider?           @relation(fields: [insuranceProviderId], references: [id])
-  user                          User?                        @relation(fields: [userId], references: [id])
-  RentalPayout                  RentalPayout[]
-  reviews                       RentalReview[]
-  host_charges                  host_charges[]
-  receivedInvitations           ManagementInvitation[]       @relation("management_invitations_recipientIdToRentalHost")
-  sentInvitations               ManagementInvitation[]       @relation("management_invitations_senderIdToRentalHost")
-  partner_applications          partner_applications?
-  partner_commission_history    partner_commission_history[]
-  partnerDiscounts              partner_discounts[]
-  partner_documents             partner_documents[]
-  partnerFaqs                   partner_faqs[]
-  partner_payouts               partner_payouts[]
-  managedVehicles               VehicleManagement[]          @relation("vehicle_management_managerIdToRentalHost")
-  ownedVehicles                 VehicleManagement[]          @relation("vehicle_management_ownerIdToRentalHost")
+
+  // ═══════════════════════════════════════════════════════════════
+  // RECRUITED HOST ONBOARDING (request-based flow)
+  // ═══════════════════════════════════════════════════════════════
+  isRecruitedRequest Boolean @default(false) // Came from recruitment email link
+  hasPassword        Boolean @default(true) // false = token-only access
+  linkedProspectId   String? // References the HostProspect they came from
+
+  // Token-based access (for recruited hosts without password)
+  hostAccessToken     String?   @unique // Token for passwordless access
+  hostAccessTokenExp  DateTime? // 7 days from creation
+  hostTokenLastUsedAt DateTime? // Last access timestamp
+  hostTokenUsedFromIp String? // IP tracking
+
+  // Onboarding status
+  onboardingStartedAt        DateTime? // When they clicked "Start"
+  onboardingCompletedAt      DateTime? // When all required steps done
+  declinedRequestAt          DateTime? // If they declined the request
+  declineReason              String? // Optional reason
+  BackgroundCheck            BackgroundCheck[]
+  Claim                      Claim[]
+  HostDocumentStatus         HostDocumentStatus[]
+  HostESGProfile             HostESGProfile?
+  HostNotification           HostNotification[]
+  HostPayout                 HostPayout[]
+  PaymentMethod              PaymentMethod[]
+  bookings                   RentalBooking[]
+  cars                       RentalCar[]
+  insuranceProvider          InsuranceProvider?           @relation(fields: [insuranceProviderId], references: [id])
+  user                       User?                        @relation(fields: [userId], references: [id])
+  RentalPayout               RentalPayout[]
+  reviews                    RentalReview[]
+  host_charges               host_charges[]
+  receivedInvitations        ManagementInvitation[]       @relation("management_invitations_recipientIdToRentalHost")
+  sentInvitations            ManagementInvitation[]       @relation("management_invitations_senderIdToRentalHost")
+  partner_applications       partner_applications?
+  partner_commission_history partner_commission_history[]
+  partnerDiscounts           partner_discounts[]
+  partner_documents          partner_documents[]
+  partnerFaqs                partner_faqs[]
+  partner_payouts            partner_payouts[]
+  managedVehicles            VehicleManagement[]          @relation("vehicle_management_managerIdToRentalHost")
+  ownedVehicles              VehicleManagement[]          @relation("vehicle_management_ownerIdToRentalHost")
   // Reservation request system relations
-  requestClaims                 RequestClaim[]
-  convertedFromProspect         HostProspect?                @relation("prospect_to_host")
+  requestClaims              RequestClaim[]
+  convertedFromProspect      HostProspect?                @relation("prospect_to_host")
 
   @@index([approvalStatus])
   @@index([city, state])
@@ -2292,6 +2313,9 @@ model RentalHost {
   @@index([isHostManager])
   @@index([isVehicleOwner])
   @@index([isExternalRecruit])
+  @@index([isRecruitedRequest])
+  @@index([hostAccessToken])
+  @@index([linkedProspectId])
   @@index([legacyDualId])
   @@index([p2pInsuranceStatus])
   @@index([partnerSlug])
@@ -3574,10 +3598,37 @@ model HostProspect {
   emailOpenedAt  DateTime?
   emailOpenCount Int            @default(0)
   linkClickedAt  DateTime?
+  linkClickCount Int            @default(0) // How many times clicked
   pageViewedAt   DateTime?
   pageViewCount  Int            @default(0)
   lastActivityAt DateTime?
   convertedAt    DateTime?
+
+  // Extended tracking - "Spy" system
+  dashboardViewedAt   DateTime? // When they first viewed dashboard
+  requestPageViewedAt DateTime? // When they viewed request details page
+  pageViewDuration    Int? // Seconds spent on page (updated periodically)
+
+  // Counter-offer system
+  counterOfferAmount     Float? // Host's proposed rate (if different)
+  counterOfferNote       String? // Host's explanation
+  counterOfferAt         DateTime? // When submitted
+  counterOfferStatus     CounterOfferStatus? // PENDING, APPROVED, REJECTED, EXPIRED
+  counterOfferReviewedBy String? // Admin who reviewed
+  counterOfferReviewedAt DateTime? // When reviewed
+
+  // Onboarding progress (tracks what host has completed)
+  onboardingStartedAt   DateTime? // When they clicked "Start"
+  carPhotosUploaded     Boolean   @default(false)
+  ratesConfigured       Boolean   @default(false)
+  payoutConnected       Boolean   @default(false)
+  agreementUploaded     Boolean   @default(false)
+  onboardingCompletedAt DateTime? // When all steps done
+
+  // Host agreement
+  hostAgreementUrl        String? // Their existing rental agreement PDF
+  hostAgreementName       String? // Original filename
+  itwhipAgreementAccepted Boolean @default(false)
 
   // Link to specific request they were invited for
   requestId String?
@@ -3586,6 +3637,13 @@ model HostProspect {
   // Link to created host account (after conversion)
   convertedHostId String?     @unique
   convertedHost   RentalHost? @relation("prospect_to_host", fields: [convertedHostId], references: [id])
+
+  // Converted booking (the booking created from this request)
+  convertedBookingId String?        @unique
+  convertedBooking   RentalBooking? @relation("prospect_to_booking", fields: [convertedBookingId], references: [id])
+
+  // Activity log
+  activities ProspectActivity[]
 
   // Admin tracking
   addedBy String? // Admin who added this prospect
@@ -3600,7 +3658,10 @@ model HostProspect {
   @@index([inviteToken])
   @@index([requestId])
   @@index([convertedHostId])
+  @@index([convertedBookingId])
   @@index([source])
+  @@index([counterOfferStatus])
+  @@index([onboardingCompletedAt])
   @@map("host_prospects")
 }
 
@@ -3647,6 +3708,29 @@ model RequestClaim {
   @@index([status])
   @@index([claimExpiresAt])
   @@map("request_claims")
+}
+
+// Activity log for prospect/recruited host tracking
+model ProspectActivity {
+  id         String       @id @default(cuid())
+  prospectId String
+  prospect   HostProspect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+
+  // Activity type
+  activityType String // EMAIL_OPENED, LINK_CLICKED, PAGE_VIEWED, COUNTER_OFFER,
+  // STARTED_ONBOARDING, PHOTO_UPLOADED, RATE_SET,
+  // PAYOUT_CONNECTED, COMPLETED, DECLINED
+
+  // Additional metadata (IP, user agent, duration, etc.)
+  metadata Json?
+
+  // Timestamp
+  createdAt DateTime @default(now())
+
+  @@index([prospectId])
+  @@index([activityType])
+  @@index([createdAt])
+  @@map("prospect_activities")
 }
 
 // Enums for the reservation request system
@@ -3698,6 +3782,13 @@ enum ProspectStatus {
   ARCHIVED // No longer pursuing
   BOUNCED // Email bounced
   UNSUBSCRIBED // Opted out
+}
+
+enum CounterOfferStatus {
+  PENDING // Awaiting admin review
+  APPROVED // Admin approved the counter-offer
+  REJECTED // Admin rejected the counter-offer
+  EXPIRED // Timed out without review
 }
 
 enum RequestClaimStatus {

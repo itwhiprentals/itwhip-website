@@ -54,7 +54,7 @@ export default function Footer() {
             {/* Social Links */}
             <div className="flex space-x-3">
               <a
-                href="https://www.facebook.com/share/17C2AahAqu/?mibextid=LQQJ4d"
+                href="https://www.facebook.com/people/Itwhipcom/61573990760395/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
@@ -63,7 +63,7 @@ export default function Footer() {
                 <IoLogoFacebook className="w-5 h-5" />
               </a>
               <a
-                href="https://twitter.com/itwhiptech"
+                href="https://x.com/itwhipofficial"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
@@ -72,7 +72,7 @@ export default function Footer() {
                 <IoLogoTwitter className="w-5 h-5" />
               </a>
               <a
-                href="https://www.instagram.com/itwhiptech?igsh=NWhtdXVlNnZwYzlx"
+                href="https://www.instagram.com/itwhipofficial"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
@@ -81,7 +81,7 @@ export default function Footer() {
                 <IoLogoInstagram className="w-5 h-5" />
               </a>
               <a
-                href="https://linkedin.com/company/itwhip"
+                href="https://www.linkedin.com/company/itwhip/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"

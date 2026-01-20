@@ -6,8 +6,23 @@ import { prisma } from '@/app/lib/database/prisma'
 import { nanoid } from 'nanoid'
 import { cookies } from 'next/headers'
 import { sign } from 'jsonwebtoken'
+import {
+  generateHostAccessToken,
+  getTokenExpiry,
+  logProspectActivity,
+  ACTIVITY_TYPES
+} from '@/app/lib/auth/host-tokens'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
+
+// Get client IP from request headers
+function getClientIp(request: NextRequest): string | undefined {
+  const forwarded = request.headers.get('x-forwarded-for')
+  if (forwarded) {
+    return forwarded.split(',')[0].trim()
+  }
+  return request.headers.get('x-real-ip') || undefined
+}
 
 // GET /api/auth/invite/[token] - Validate invite and redirect
 export async function GET(
@@ -41,15 +56,29 @@ export async function GET(
       return NextResponse.redirect(`${baseUrl}/invite/expired?email=${encodeURIComponent(prospect.email)}`)
     }
 
-    // Mark link as clicked
+    // Get client IP for tracking
+    const clientIp = getClientIp(request)
+
+    // Mark link as clicked and increment click count
+    const isFirstClick = !prospect.linkClickedAt
     await prisma.hostProspect.update({
       where: { id: prospect.id },
       data: {
-        linkClickedAt: new Date(),
+        linkClickedAt: isFirstClick ? new Date() : prospect.linkClickedAt,
+        linkClickCount: { increment: 1 },
+        lastActivityAt: new Date(),
         status: prospect.status === 'EMAIL_SENT' || prospect.status === 'EMAIL_OPENED'
           ? 'LINK_CLICKED'
           : prospect.status
       }
+    })
+
+    // Log activity
+    await logProspectActivity(prospect.id, ACTIVITY_TYPES.LINK_CLICKED, {
+      ip: clientIp,
+      userAgent: request.headers.get('user-agent'),
+      isFirstClick,
+      referrer: request.headers.get('referer')
     })
 
     // Check if this email already has a host account
@@ -58,7 +87,19 @@ export async function GET(
     })
 
     if (host) {
-      // Existing host - link the prospect and log them in
+      // Existing host - link the prospect
+      // If they already have an account, just link the prospect to track conversion
+      if (!host.linkedProspectId) {
+        await prisma.rentalHost.update({
+          where: { id: host.id },
+          data: {
+            linkedProspectId: prospect.id,
+            hostTokenLastUsedAt: new Date(),
+            hostTokenUsedFromIp: clientIp || null
+          }
+        })
+      }
+
       await prisma.hostProspect.update({
         where: { id: prospect.id },
         data: {
@@ -69,7 +110,12 @@ export async function GET(
       })
     } else {
       // Create a new host account from prospect data
+      // This is a RECRUITED HOST - they came from a recruitment email
       const hostId = nanoid()
+
+      // Generate host access token for passwordless access
+      const hostAccessToken = generateHostAccessToken()
+      const hostAccessTokenExp = getTokenExpiry(7) // 7 days
 
       host = await prisma.rentalHost.create({
         data: {
@@ -83,7 +129,18 @@ export async function GET(
           approvalStatus: 'PENDING',
           // Mark as needing to complete profile
           documentsVerified: false,
-          isVerified: false
+          isVerified: false,
+          // ═══════════════════════════════════════════════════════════════
+          // RECRUITED HOST FLAGS - This host came from recruitment flow
+          // ═══════════════════════════════════════════════════════════════
+          isRecruitedRequest: true,
+          hasPassword: false, // No password yet - using token-based access
+          linkedProspectId: prospect.id,
+          // Token-based access for passwordless login
+          hostAccessToken,
+          hostAccessTokenExp,
+          hostTokenLastUsedAt: new Date(),
+          hostTokenUsedFromIp: clientIp || null
         }
       })
 
@@ -120,16 +177,27 @@ export async function GET(
       path: '/'
     })
 
-    // Determine redirect destination
-    let redirectUrl = `${baseUrl}/partner/dashboard`
+    // Log dashboard view activity
+    await logProspectActivity(prospect.id, ACTIVITY_TYPES.DASHBOARD_VIEWED, {
+      ip: clientIp,
+      userAgent: request.headers.get('user-agent'),
+      hostId: host.id,
+      isRecruitedHost: host.isRecruitedRequest || false
+    })
 
-    // If there's an associated request that's still open, redirect to it
-    if (prospect.requestId && prospect.request?.status === 'OPEN') {
-      redirectUrl = `${baseUrl}/partner/requests/${prospect.requestId}`
-    } else {
-      // Otherwise, go to the open requests page
-      redirectUrl = `${baseUrl}/partner/requests`
-    }
+    // Update prospect with dashboard viewed timestamp
+    await prisma.hostProspect.update({
+      where: { id: prospect.id },
+      data: {
+        dashboardViewedAt: new Date(),
+        lastActivityAt: new Date()
+      }
+    })
+
+    // ALWAYS redirect to dashboard first (per the plan)
+    // The dashboard shows the Request Card for recruited hosts
+    // This makes it feel like they're "seeing their dashboard" not "signing up"
+    const redirectUrl = `${baseUrl}/partner/dashboard`
 
     return NextResponse.redirect(redirectUrl)
 
