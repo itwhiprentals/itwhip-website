@@ -6,6 +6,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import CreateRequestModal from './components/CreateRequestModal'
 import {
   IoArrowBackOutline,
   IoAddOutline,
@@ -428,114 +429,49 @@ export default function FleetRequestsPage() {
                   key={request.id}
                   className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden"
                 >
-                  {/* Main Row */}
+                  {/* Main Row - Mobile Optimized */}
                   <div
-                    className="p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                    className="p-3 sm:p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                     onClick={() => toggleExpand(request.id)}
                   >
-                    <div className="flex items-start gap-4">
-                      {/* Vehicle Icon */}
-                      <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <IoCarOutline className="w-6 h-6 text-orange-600 dark:text-orange-400" />
-                      </div>
-
-                      {/* Request Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center flex-wrap gap-2 mb-1">
-                          <span className="text-xs font-mono text-gray-500 dark:text-gray-400">
-                            #{request.requestCode.slice(-8)}
+                    {/* Top Row: Code, Status, Priority, Expand Icon */}
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <div className="flex items-center flex-wrap gap-1.5 sm:gap-2 min-w-0">
+                        <span className="text-xs font-mono text-gray-500 dark:text-gray-400 truncate">
+                          #{request.requestCode.slice(-8)}
+                        </span>
+                        <span className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium whitespace-nowrap ${getStatusBadge(request.status)}`}>
+                          {request.status.replace('_', ' ')}
+                        </span>
+                        {request.priority !== 'NORMAL' && (
+                          <span className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium whitespace-nowrap ${getPriorityBadge(request.priority)}`}>
+                            {request.priority}
                           </span>
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusBadge(request.status)}`}>
-                            {request.status.replace('_', ' ')}
+                        )}
+                        {request.source && (
+                          <span className="hidden sm:inline text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                            via {request.source}
                           </span>
-                          {request.priority !== 'NORMAL' && (
-                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getPriorityBadge(request.priority)}`}>
-                              {request.priority}
-                            </span>
-                          )}
-                          {request.source && (
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
-                              via {request.source}
-                            </span>
-                          )}
-                        </div>
-
-                        <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
-                          {request.vehicleMake || request.vehicleType || 'Any Vehicle'}
-                          {request.vehicleModel && ` ${request.vehicleModel}`}
-                          {request.quantity > 1 && ` (x${request.quantity})`}
-                        </h3>
-
-                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600 dark:text-gray-300">
-                          <span className="flex items-center gap-1">
-                            <IoPersonOutline className="w-4 h-4" />
-                            {request.guestName}
-                          </span>
-                          {request.pickupCity && (
-                            <span className="flex items-center gap-1">
-                              <IoLocationOutline className="w-4 h-4" />
-                              {request.pickupCity}, {request.pickupState}
-                            </span>
-                          )}
-                          {request.startDate && (
-                            <span className="flex items-center gap-1">
-                              <IoCalendarOutline className="w-4 h-4" />
-                              {formatDate(request.startDate)} - {formatDate(request.endDate)}
-                              {request.durationDays && ` (${request.durationDays}d)`}
-                            </span>
-                          )}
-                          {request.offeredRate && (
-                            <span className="flex items-center gap-1">
-                              <IoCashOutline className="w-4 h-4" />
-                              ${request.offeredRate}/day
-                              {request.isNegotiable && <span className="text-xs text-gray-500">(negotiable)</span>}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Claim Status */}
-                        {activeClaim && (
-                          <div className="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded border border-yellow-200 dark:border-yellow-800">
-                            <div className="flex items-center gap-2 text-sm">
-                              <IoHandRightOutline className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
-                              <span className="font-medium text-yellow-700 dark:text-yellow-300">
-                                Claimed by {activeClaim.host.name}
-                              </span>
-                              <span className={`px-2 py-0.5 rounded text-xs font-medium ${getClaimStatusBadge(activeClaim.status)}`}>
-                                {activeClaim.status.replace('_', ' ')}
-                              </span>
-                              {activeClaim.status === 'PENDING_CAR' && (
-                                <span className="flex items-center gap-1 text-yellow-600 dark:text-yellow-400">
-                                  <IoTimeOutline className="w-3 h-3" />
-                                  {getTimeRemaining(activeClaim.claimExpiresAt)}
-                                </span>
-                              )}
-                            </div>
-                          </div>
                         )}
                       </div>
-
-                      {/* Meta Info */}
-                      <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                          <span className="flex items-center gap-1">
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {/* Meta counts - always visible */}
+                        <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
+                          <span className="flex items-center gap-0.5" title="Views">
                             <IoEyeOutline className="w-3 h-3" />
                             {request.viewCount}
                           </span>
-                          <span className="flex items-center gap-1">
+                          <span className="flex items-center gap-0.5" title="Claims">
                             <IoHandRightOutline className="w-3 h-3" />
                             {request.claims?.length || 0}
                           </span>
                           {(request.invitedProspects?.length || 0) > 0 && (
-                            <span className="flex items-center gap-1">
+                            <span className="flex items-center gap-0.5" title="Prospects">
                               <IoPeopleOutline className="w-3 h-3" />
                               {request.invitedProspects.length}
                             </span>
                           )}
                         </div>
-                        <span className="text-xs text-gray-500">
-                          {formatDateTime(request.createdAt)}
-                        </span>
                         {isExpanded ? (
                           <IoChevronUpOutline className="w-5 h-5 text-gray-400" />
                         ) : (
@@ -543,6 +479,87 @@ export default function FleetRequestsPage() {
                         )}
                       </div>
                     </div>
+
+                    {/* Vehicle & Guest Row */}
+                    <div className="flex items-start gap-3">
+                      {/* Vehicle Icon - Smaller on mobile */}
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <IoCarOutline className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600 dark:text-orange-400" />
+                      </div>
+
+                      {/* Request Info */}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base leading-tight">
+                          {request.vehicleMake || request.vehicleType || 'Any Vehicle'}
+                          {request.vehicleModel && ` ${request.vehicleModel}`}
+                          {request.quantity > 1 && ` (x${request.quantity})`}
+                        </h3>
+
+                        {/* Info Grid - Stacks better on mobile */}
+                        <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-0.5 sm:gap-1 text-xs sm:text-sm text-gray-600 dark:text-gray-300">
+                          <span className="flex items-center gap-1 truncate">
+                            <IoPersonOutline className="w-3.5 h-3.5 flex-shrink-0" />
+                            <span className="truncate">{request.guestName}</span>
+                          </span>
+                          {request.pickupCity && (
+                            <span className="flex items-center gap-1 truncate">
+                              <IoLocationOutline className="w-3.5 h-3.5 flex-shrink-0" />
+                              <span className="truncate">{request.pickupCity}, {request.pickupState}</span>
+                            </span>
+                          )}
+                          {request.startDate && (
+                            <span className="flex items-center gap-1">
+                              <IoCalendarOutline className="w-3.5 h-3.5 flex-shrink-0" />
+                              <span className="truncate">
+                                {formatDate(request.startDate)} - {formatDate(request.endDate)}
+                                {request.durationDays && ` (${request.durationDays}d)`}
+                              </span>
+                            </span>
+                          )}
+                          {request.offeredRate && (
+                            <span className="flex items-center gap-1">
+                              <IoCashOutline className="w-3.5 h-3.5 flex-shrink-0 text-green-600" />
+                              <span className="font-medium text-green-600 dark:text-green-400">
+                                ${request.offeredRate}/day
+                              </span>
+                              {request.isNegotiable && <span className="text-[10px] text-gray-500">(negotiable)</span>}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Mobile: Source & Date */}
+                        <div className="mt-1 flex items-center gap-2 text-[10px] text-gray-400 sm:hidden">
+                          {request.source && <span>via {request.source}</span>}
+                          <span>{formatDateTime(request.createdAt)}</span>
+                        </div>
+
+                        {/* Desktop: Date */}
+                        <span className="hidden sm:block mt-1 text-xs text-gray-400">
+                          {formatDateTime(request.createdAt)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Claim Status */}
+                    {activeClaim && (
+                      <div className="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded border border-yellow-200 dark:border-yellow-800">
+                        <div className="flex items-center flex-wrap gap-1.5 sm:gap-2 text-xs sm:text-sm">
+                          <IoHandRightOutline className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+                          <span className="font-medium text-yellow-700 dark:text-yellow-300">
+                            Claimed by {activeClaim.host.name}
+                          </span>
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] sm:text-xs font-medium ${getClaimStatusBadge(activeClaim.status)}`}>
+                            {activeClaim.status.replace('_', ' ')}
+                          </span>
+                          {activeClaim.status === 'PENDING_CAR' && (
+                            <span className="flex items-center gap-1 text-yellow-600 dark:text-yellow-400">
+                              <IoTimeOutline className="w-3 h-3" />
+                              {getTimeRemaining(activeClaim.claimExpiresAt)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Expanded Details */}
@@ -675,359 +692,6 @@ export default function FleetRequestsPage() {
           apiKey={apiKey}
         />
       )}
-    </div>
-  )
-}
-
-// Create Request Modal Component
-function CreateRequestModal({
-  onClose,
-  onSuccess,
-  apiKey
-}: {
-  onClose: () => void
-  onSuccess: () => void
-  apiKey: string
-}) {
-  const [loading, setLoading] = useState(false)
-  const [formData, setFormData] = useState({
-    guestName: '',
-    guestEmail: '',
-    guestPhone: '',
-    vehicleType: '',
-    vehicleMake: '',
-    vehicleModel: '',
-    quantity: 1,
-    startDate: '',
-    endDate: '',
-    durationDays: '',
-    pickupCity: 'Phoenix',
-    pickupState: 'AZ',
-    offeredRate: '',
-    isNegotiable: true,
-    priority: 'NORMAL',
-    source: '',
-    guestNotes: '',
-    adminNotes: ''
-  })
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-
-    try {
-      const response = await fetch(`/api/fleet/requests?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          quantity: Number(formData.quantity) || 1,
-          durationDays: formData.durationDays ? Number(formData.durationDays) : undefined,
-          offeredRate: formData.offeredRate ? Number(formData.offeredRate) : undefined,
-          startDate: formData.startDate || undefined,
-          endDate: formData.endDate || undefined
-        })
-      })
-
-      const data = await response.json()
-
-      if (data.success) {
-        onSuccess()
-      } else {
-        alert(data.error || 'Failed to create request')
-      }
-    } catch (error) {
-      console.error('Failed to create request:', error)
-      alert('Failed to create request')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Create New Reservation Request
-          </h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
-            <IoCloseCircleOutline className="w-6 h-6" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-4 space-y-4">
-          {/* Guest Info */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Guest Name *
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.guestName}
-                onChange={(e) => setFormData({ ...formData, guestName: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Guest Email
-              </label>
-              <input
-                type="email"
-                value={formData.guestEmail}
-                onChange={(e) => setFormData({ ...formData, guestEmail: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Guest Phone
-              </label>
-              <input
-                type="tel"
-                value={formData.guestPhone}
-                onChange={(e) => setFormData({ ...formData, guestPhone: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Source
-              </label>
-              <select
-                value={formData.source}
-                onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              >
-                <option value="">Select source</option>
-                <option value="contact_form">Contact Form</option>
-                <option value="fb_marketplace">FB Marketplace</option>
-                <option value="phone_call">Phone Call</option>
-                <option value="email">Email</option>
-                <option value="referral">Referral</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Vehicle Info */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Vehicle Type
-              </label>
-              <select
-                value={formData.vehicleType}
-                onChange={(e) => setFormData({ ...formData, vehicleType: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              >
-                <option value="">Any Type</option>
-                <option value="Sedan">Sedan</option>
-                <option value="SUV">SUV</option>
-                <option value="Truck">Truck</option>
-                <option value="Van">Van</option>
-                <option value="Minivan">Minivan</option>
-                <option value="Compact">Compact</option>
-                <option value="Luxury">Luxury</option>
-                <option value="Electric">Electric</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Make
-              </label>
-              <input
-                type="text"
-                value={formData.vehicleMake}
-                onChange={(e) => setFormData({ ...formData, vehicleMake: e.target.value })}
-                placeholder="e.g. Honda, Toyota"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Model
-              </label>
-              <input
-                type="text"
-                value={formData.vehicleModel}
-                onChange={(e) => setFormData({ ...formData, vehicleModel: e.target.value })}
-                placeholder="e.g. Accord, Camry"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              />
-            </div>
-          </div>
-
-          {/* Dates and Rate */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Start Date
-              </label>
-              <input
-                type="date"
-                value={formData.startDate}
-                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                End Date
-              </label>
-              <input
-                type="date"
-                value={formData.endDate}
-                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Duration (days)
-              </label>
-              <input
-                type="number"
-                min="1"
-                value={formData.durationDays}
-                onChange={(e) => setFormData({ ...formData, durationDays: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Quantity
-              </label>
-              <input
-                type="number"
-                min="1"
-                value={formData.quantity}
-                onChange={(e) => setFormData({ ...formData, quantity: Number(e.target.value) })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              />
-            </div>
-          </div>
-
-          {/* Location */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Pickup City
-              </label>
-              <input
-                type="text"
-                value={formData.pickupCity}
-                onChange={(e) => setFormData({ ...formData, pickupCity: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                State
-              </label>
-              <input
-                type="text"
-                value={formData.pickupState}
-                onChange={(e) => setFormData({ ...formData, pickupState: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              />
-            </div>
-          </div>
-
-          {/* Rate and Priority */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Offered Rate ($/day)
-              </label>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={formData.offeredRate}
-                onChange={(e) => setFormData({ ...formData, offeredRate: e.target.value })}
-                placeholder="e.g. 22"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Priority
-              </label>
-              <select
-                value={formData.priority}
-                onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              >
-                <option value="LOW">Low</option>
-                <option value="NORMAL">Normal</option>
-                <option value="HIGH">High</option>
-                <option value="URGENT">Urgent</option>
-              </select>
-            </div>
-            <div className="flex items-end">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.isNegotiable}
-                  onChange={(e) => setFormData({ ...formData, isNegotiable: e.target.checked })}
-                  className="w-4 h-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
-                />
-                <span className="text-sm text-gray-700 dark:text-gray-300">Rate negotiable</span>
-              </label>
-            </div>
-          </div>
-
-          {/* Notes */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Guest Notes
-              </label>
-              <textarea
-                rows={3}
-                value={formData.guestNotes}
-                onChange={(e) => setFormData({ ...formData, guestNotes: e.target.value })}
-                placeholder="Special requests from guest..."
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Admin Notes
-              </label>
-              <textarea
-                rows={3}
-                value={formData.adminNotes}
-                onChange={(e) => setFormData({ ...formData, adminNotes: e.target.value })}
-                placeholder="Internal notes..."
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
-              />
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
-            >
-              {loading ? 'Creating...' : 'Create Request'}
-            </button>
-          </div>
-        </form>
-      </div>
     </div>
   )
 }

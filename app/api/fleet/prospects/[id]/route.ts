@@ -148,6 +148,28 @@ export async function PATCH(
         conversationNotes,
         status,
         requestId
+      },
+      include: {
+        request: {
+          select: {
+            id: true,
+            requestCode: true,
+            guestName: true,
+            vehicleMake: true,
+            vehicleType: true,
+            startDate: true,
+            endDate: true,
+            durationDays: true,
+            offeredRate: true,
+            status: true
+          }
+        },
+        convertedHost: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
       }
     })
 

@@ -21,62 +21,15 @@ import {
   IoLinkOutline,
   IoEyeOutline,
   IoRefreshOutline,
-  IoFunnelOutline,
   IoCopyOutline,
   IoLogoFacebook,
   IoGlobeOutline,
   IoDocumentTextOutline,
-  IoTrendingUpOutline,
   IoWarningOutline,
   IoPencilOutline,
   IoTrashOutline
 } from 'react-icons/io5'
-
-interface HostProspect {
-  id: string
-  name: string
-  email: string
-  phone?: string
-  vehicleMake?: string
-  vehicleModel?: string
-  vehicleYear?: number
-  source: string
-  sourceUrl?: string
-  conversationNotes?: string
-  inviteToken?: string
-  inviteTokenExp?: string
-  inviteSentAt?: string
-  status: string
-  emailOpenedAt?: string
-  linkClickedAt?: string
-  convertedAt?: string
-  inviteResendCount: number
-  lastResendAt?: string
-  request?: {
-    id: string
-    requestCode: string
-    vehicleMake?: string
-    vehicleType?: string
-    guestName: string
-  }
-  convertedHost?: {
-    id: string
-    name: string
-  }
-  createdAt: string
-}
-
-interface FunnelStats {
-  total: number
-  draft: number
-  emailSent: number
-  emailOpened: number
-  linkClicked: number
-  converted: number
-  expired: number
-  last7DaysConverted: number
-  conversionRate: number
-}
+import { ProspectCard, HostProspect, ConversionFunnel, FunnelStats, getStatusBadge, getSourceIcon, formatDate, isTokenExpired } from './components'
 
 export default function FleetProspectsPage() {
   const searchParams = useSearchParams()
@@ -156,52 +109,8 @@ export default function FleetProspectsPage() {
     }
   }
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'DRAFT':
-        return 'text-gray-700 bg-gray-100 dark:text-gray-400 dark:bg-gray-700'
-      case 'EMAIL_SENT':
-        return 'text-blue-700 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30'
-      case 'EMAIL_OPENED':
-        return 'text-purple-700 bg-purple-100 dark:text-purple-400 dark:bg-purple-900/30'
-      case 'LINK_CLICKED':
-        return 'text-orange-700 bg-orange-100 dark:text-orange-400 dark:bg-orange-900/30'
-      case 'CONVERTED':
-        return 'text-green-700 bg-green-100 dark:text-green-400 dark:bg-green-900/30'
-      case 'EXPIRED':
-        return 'text-red-700 bg-red-100 dark:text-red-400 dark:bg-red-900/30'
-      default:
-        return 'text-gray-700 bg-gray-100'
-    }
-  }
-
-  const getSourceIcon = (source: string) => {
-    switch (source) {
-      case 'FACEBOOK_MARKETPLACE':
-        return <IoLogoFacebook className="w-4 h-4 text-blue-600" />
-      case 'CRAIGSLIST':
-        return <IoGlobeOutline className="w-4 h-4 text-purple-600" />
-      case 'REFERRAL':
-        return <IoPersonOutline className="w-4 h-4 text-green-600" />
-      default:
-        return <IoGlobeOutline className="w-4 h-4 text-gray-500" />
-    }
-  }
-
-  const formatDate = (dateStr?: string) => {
-    if (!dateStr) return 'Never'
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit'
-    })
-  }
-
-  const isTokenExpired = (expDate?: string) => {
-    if (!expDate) return true
-    return new Date() > new Date(expDate)
-  }
+  // Utility functions imported from ProspectCard component:
+  // getStatusBadge, getSourceIcon, formatDate, isTokenExpired
 
   const filteredProspects = prospects.filter(prospect => {
     if (searchTerm) {
@@ -257,42 +166,8 @@ export default function FleetProspectsPage() {
           </div>
 
           {/* Funnel Stats */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <IoFunnelOutline className="w-5 h-5 text-orange-600" />
-              <h2 className="font-medium text-gray-900 dark:text-white">Conversion Funnel</h2>
-              {stats.conversionRate > 0 && (
-                <span className="text-sm text-green-600 dark:text-green-400 ml-auto">
-                  {stats.conversionRate.toFixed(1)}% conversion rate
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-2 overflow-x-auto pb-2">
-              {[
-                { label: 'Total', value: stats.total, color: 'bg-gray-200 dark:bg-gray-700' },
-                { label: 'Draft', value: stats.draft, color: 'bg-gray-300 dark:bg-gray-600' },
-                { label: 'Sent', value: stats.emailSent, color: 'bg-blue-200 dark:bg-blue-900/50' },
-                { label: 'Opened', value: stats.emailOpened, color: 'bg-purple-200 dark:bg-purple-900/50' },
-                { label: 'Clicked', value: stats.linkClicked, color: 'bg-orange-200 dark:bg-orange-900/50' },
-                { label: 'Converted', value: stats.converted, color: 'bg-green-200 dark:bg-green-900/50' }
-              ].map((stat, index) => (
-                <div key={stat.label} className="flex items-center">
-                  <div className={`px-4 py-2 ${stat.color} rounded-lg text-center min-w-[80px]`}>
-                    <div className="text-lg font-bold text-gray-900 dark:text-white">{stat.value}</div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400">{stat.label}</div>
-                  </div>
-                  {index < 5 && (
-                    <IoTrendingUpOutline className="w-4 h-4 text-gray-400 mx-1 flex-shrink-0" />
-                  )}
-                </div>
-              ))}
-            </div>
-            {stats.last7DaysConverted > 0 && (
-              <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                <IoCheckmarkCircleOutline className="w-4 h-4 inline mr-1 text-green-600" />
-                {stats.last7DaysConverted} converted in the last 7 days
-              </div>
-            )}
+          <div className="mb-6">
+            <ConversionFunnel stats={stats} />
           </div>
 
           {/* Search and Filter */}
@@ -354,178 +229,17 @@ export default function FleetProspectsPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {filteredProspects.map((prospect) => {
-              const tokenExpired = isTokenExpired(prospect.inviteTokenExp)
-              const canSendInvite = prospect.status !== 'CONVERTED' && (
-                prospect.status === 'DRAFT' ||
-                prospect.status === 'EXPIRED' ||
-                tokenExpired
-              )
-
-              return (
-                <div
-                  key={prospect.id}
-                  className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4"
-                >
-                  <div className="flex items-start gap-4">
-                    {/* Avatar */}
-                    <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-lg font-bold text-purple-600 dark:text-purple-400">
-                        {prospect.name.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center flex-wrap gap-2 mb-1">
-                        <h3 className="font-semibold text-gray-900 dark:text-white">
-                          {prospect.name}
-                        </h3>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusBadge(prospect.status)}`}>
-                          {prospect.status.replace('_', ' ')}
-                        </span>
-                        <span className="flex items-center gap-1 text-xs text-gray-500">
-                          {getSourceIcon(prospect.source)}
-                          {prospect.source.replace('_', ' ')}
-                        </span>
-                      </div>
-
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600 dark:text-gray-300 mb-2">
-                        <span className="flex items-center gap-1">
-                          <IoMailOutline className="w-4 h-4" />
-                          {prospect.email}
-                        </span>
-                        {prospect.phone && (
-                          <span className="flex items-center gap-1">
-                            <IoCallOutline className="w-4 h-4" />
-                            {prospect.phone}
-                          </span>
-                        )}
-                        {prospect.vehicleMake && (
-                          <span className="flex items-center gap-1">
-                            <IoCarOutline className="w-4 h-4" />
-                            {prospect.vehicleYear} {prospect.vehicleMake} {prospect.vehicleModel}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Request Link */}
-                      {prospect.request && (
-                        <div className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 dark:bg-orange-900/30 rounded text-xs text-orange-700 dark:text-orange-300 mb-2">
-                          <IoDocumentTextOutline className="w-3 h-3" />
-                          Linked to request: {prospect.request.vehicleMake || prospect.request.vehicleType} for {prospect.request.guestName}
-                        </div>
-                      )}
-
-                      {/* Invite Status */}
-                      {prospect.inviteSentAt && (
-                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
-                          <span className="flex items-center gap-1">
-                            <IoSendOutline className="w-3 h-3" />
-                            Sent: {formatDate(prospect.inviteSentAt)}
-                            {prospect.inviteResendCount > 1 && ` (${prospect.inviteResendCount}x)`}
-                          </span>
-                          {prospect.emailOpenedAt && (
-                            <span className="flex items-center gap-1 text-purple-600 dark:text-purple-400">
-                              <IoEyeOutline className="w-3 h-3" />
-                              Opened: {formatDate(prospect.emailOpenedAt)}
-                            </span>
-                          )}
-                          {prospect.linkClickedAt && (
-                            <span className="flex items-center gap-1 text-orange-600 dark:text-orange-400">
-                              <IoLinkOutline className="w-3 h-3" />
-                              Clicked: {formatDate(prospect.linkClickedAt)}
-                            </span>
-                          )}
-                          {prospect.convertedAt && (
-                            <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
-                              <IoCheckmarkCircleOutline className="w-3 h-3" />
-                              Converted: {formatDate(prospect.convertedAt)}
-                            </span>
-                          )}
-                          {prospect.inviteTokenExp && !prospect.convertedAt && (
-                            <span className={`flex items-center gap-1 ${tokenExpired ? 'text-red-600 dark:text-red-400' : ''}`}>
-                              <IoTimeOutline className="w-3 h-3" />
-                              {tokenExpired ? 'Link expired' : `Expires: ${formatDate(prospect.inviteTokenExp)}`}
-                            </span>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Notes Preview */}
-                      {prospect.conversationNotes && (
-                        <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 truncate">
-                          Notes: {prospect.conversationNotes}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex flex-col gap-2 flex-shrink-0">
-                      {prospect.status === 'CONVERTED' ? (
-                        <Link
-                          href={`/fleet/hosts/${prospect.convertedHost?.id}?key=${apiKey}`}
-                          className="flex items-center gap-1 px-3 py-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded text-sm hover:bg-green-200 dark:hover:bg-green-800/50 transition-colors"
-                        >
-                          <IoCheckmarkCircleOutline className="w-4 h-4" />
-                          View Host
-                        </Link>
-                      ) : (
-                        <>
-                          <button
-                            onClick={() => sendInvite(prospect.id)}
-                            disabled={sendingInvite === prospect.id}
-                            className={`flex items-center gap-1 px-3 py-1.5 rounded text-sm transition-colors ${
-                              canSendInvite
-                                ? 'bg-orange-600 hover:bg-orange-700 text-white'
-                                : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
-                            }`}
-                          >
-                            {sendingInvite === prospect.id ? (
-                              <>
-                                <IoRefreshOutline className="w-4 h-4 animate-spin" />
-                                Sending...
-                              </>
-                            ) : copiedLink === prospect.id ? (
-                              <>
-                                <IoCheckmarkCircleOutline className="w-4 h-4" />
-                                Link Copied!
-                              </>
-                            ) : (
-                              <>
-                                <IoSendOutline className="w-4 h-4" />
-                                {prospect.inviteSentAt ? 'Resend' : 'Send'} Invite
-                              </>
-                            )}
-                          </button>
-                          <button
-                            onClick={() => setEditingProspect(prospect)}
-                            className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                          >
-                            <IoPencilOutline className="w-4 h-4" />
-                            Edit
-                          </button>
-                          {prospect.sourceUrl && (
-                            <a
-                              href={prospect.sourceUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-1 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded text-sm hover:bg-blue-200 dark:hover:bg-blue-800/50 transition-colors"
-                            >
-                              <IoLogoFacebook className="w-4 h-4" />
-                              View Post
-                            </a>
-                          )}
-                        </>
-                      )}
-                      <span className="text-xs text-gray-400 text-right">
-                        Added {formatDate(prospect.createdAt)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
+            {filteredProspects.map((prospect) => (
+              <ProspectCard
+                key={prospect.id}
+                prospect={prospect}
+                apiKey={apiKey}
+                sendingInvite={sendingInvite}
+                copiedLink={copiedLink}
+                onSendInvite={sendInvite}
+                onEdit={setEditingProspect}
+              />
+            ))}
           </div>
         )}
       </div>
@@ -592,6 +306,8 @@ function CreateProspectModal({
   const [availableRequests, setAvailableRequests] = useState<LinkedRequest[]>([])
   const [loadingRequests, setLoadingRequests] = useState(true)
   const [selectedRequestId, setSelectedRequestId] = useState(initialRequestId || '')
+  const [emailError, setEmailError] = useState<string | null>(null)
+  const [emailStatus, setEmailStatus] = useState<{ type: 'checking' | 'new' | 'exists' | 'error' | null, message: string | null }>({ type: null, message: null })
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -664,9 +380,40 @@ function CreateProspectModal({
     return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   }
 
+  // Check if email belongs to anyone in the system
+  const checkEmail = async (email: string) => {
+    if (!email || !email.includes('@')) {
+      setEmailStatus({ type: null, message: null })
+      return
+    }
+
+    setEmailStatus({ type: 'checking', message: 'Checking email...' })
+
+    try {
+      const response = await fetch(`/api/fleet/prospects/check-email?email=${encodeURIComponent(email)}&key=${apiKey}`)
+      const data = await response.json()
+
+      if (data.exists) {
+        setEmailStatus({
+          type: 'exists',
+          message: `Known: ${data.owner}`
+        })
+      } else {
+        setEmailStatus({
+          type: 'new',
+          message: data.message || 'New guest - not in our system'
+        })
+      }
+    } catch (error) {
+      console.error('Failed to check email:', error)
+      setEmailStatus({ type: 'error', message: 'Could not verify email' })
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setEmailError(null) // Clear previous email error
 
     try {
       const response = await fetch(`/api/fleet/prospects?key=${apiKey}`, {
@@ -684,7 +431,12 @@ function CreateProspectModal({
       if (data.success) {
         onSuccess()
       } else {
-        alert(data.error || 'Failed to create prospect')
+        // Check if it's an email-related error (409 conflict)
+        if (response.status === 409 && data.error) {
+          setEmailError(data.error)
+        } else {
+          alert(data.error || 'Failed to create prospect')
+        }
       }
     } catch (error) {
       console.error('Failed to create prospect:', error)
@@ -695,19 +447,29 @@ function CreateProspectModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Add New Prospect
-          </h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
-            <IoCloseCircleOutline className="w-6 h-6" />
-          </button>
-        </div>
+    <div className="fixed inset-0 z-50">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
-        <form onSubmit={handleSubmit} className="p-4 space-y-4">
-          {/* Link to Request Section */}
+      {/* Modal - Bottom sheet on mobile, centered modal on desktop */}
+      <div className="absolute inset-x-0 bottom-0 sm:inset-0 sm:flex sm:items-center sm:justify-center sm:p-4">
+        <div className="relative bg-white dark:bg-gray-800 w-full sm:max-w-lg sm:rounded-lg rounded-t-2xl max-h-[90vh] sm:max-h-[85vh] flex flex-col shadow-xl">
+          {/* Drag handle for mobile */}
+          <div className="sm:hidden w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mt-3" />
+
+          {/* Header - Sticky */}
+          <div className="sticky top-0 z-10 bg-white dark:bg-gray-800 px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between rounded-t-2xl sm:rounded-t-lg">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Add Prospect
+            </h2>
+            <button onClick={onClose} className="p-1 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+              <IoCloseCircleOutline className="w-6 h-6" />
+            </button>
+          </div>
+
+          {/* Form - Scrollable */}
+          <form data-prospect-form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 space-y-4">
+            {/* Link to Request Section */}
           <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
             <div className="flex items-center gap-2 mb-3">
               <IoDocumentTextOutline className="w-5 h-5 text-orange-600" />
@@ -834,10 +596,40 @@ function CreateProspectModal({
                 type="email"
                 required
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, email: e.target.value })
+                  setEmailError(null) // Clear server error when email changes
+                  setEmailStatus({ type: null, message: null }) // Clear check status
+                }}
+                onBlur={(e) => checkEmail(e.target.value)}
                 placeholder="john@example.com"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                  emailError ? 'border-red-500 dark:border-red-500 focus:ring-red-500' :
+                  emailStatus.type === 'exists' ? 'border-yellow-500 dark:border-yellow-500' :
+                  emailStatus.type === 'new' ? 'border-green-500 dark:border-green-500' :
+                  'border-gray-300 dark:border-gray-600'
+                }`}
               />
+              {emailError && (
+                <p className="text-xs text-red-600 dark:text-red-400 mt-1 flex items-center gap-1">
+                  <IoWarningOutline className="w-3 h-3" />
+                  {emailError}
+                </p>
+              )}
+              {!emailError && emailStatus.message && (
+                <p className={`text-xs mt-1 flex items-center gap-1 ${
+                  emailStatus.type === 'checking' ? 'text-gray-500' :
+                  emailStatus.type === 'exists' ? 'text-yellow-600 dark:text-yellow-400' :
+                  emailStatus.type === 'new' ? 'text-green-600 dark:text-green-400' :
+                  'text-red-600 dark:text-red-400'
+                }`}>
+                  {emailStatus.type === 'checking' && <IoRefreshOutline className="w-3 h-3 animate-spin" />}
+                  {emailStatus.type === 'exists' && <IoPersonOutline className="w-3 h-3" />}
+                  {emailStatus.type === 'new' && <IoCheckmarkCircleOutline className="w-3 h-3" />}
+                  {emailStatus.type === 'error' && <IoWarningOutline className="w-3 h-3" />}
+                  {emailStatus.message}
+                </p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -943,8 +735,10 @@ function CreateProspectModal({
             />
           </div>
 
-          {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+          </form>
+
+          {/* Footer - Sticky */}
+          <div className="sticky bottom-0 z-10 bg-white dark:bg-gray-800 px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3 rounded-b-none sm:rounded-b-lg">
             <button
               type="button"
               onClick={onClose}
@@ -953,14 +747,18 @@ function CreateProspectModal({
               Cancel
             </button>
             <button
-              type="submit"
+              type="button"
+              onClick={(e) => {
+                const form = document.querySelector('form[data-prospect-form]') as HTMLFormElement
+                if (form) form.requestSubmit()
+              }}
               disabled={loading}
               className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
             >
               {loading ? 'Adding...' : 'Add Prospect'}
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   )
@@ -980,6 +778,11 @@ function EditProspectModal({
 }) {
   const [loading, setLoading] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [availableRequests, setAvailableRequests] = useState<LinkedRequest[]>([])
+  const [loadingRequests, setLoadingRequests] = useState(true)
+  const [selectedRequestId, setSelectedRequestId] = useState(prospect.request?.id || '')
+  const [linkedRequest, setLinkedRequest] = useState<LinkedRequest | null>(null)
+  const [emailStatus, setEmailStatus] = useState<{ type: 'checking' | 'new' | 'exists' | 'error' | null, message: string | null }>({ type: null, message: null })
   const [formData, setFormData] = useState({
     name: prospect.name,
     email: prospect.email,
@@ -989,8 +792,97 @@ function EditProspectModal({
     vehicleYear: prospect.vehicleYear?.toString() || '',
     source: prospect.source,
     sourceUrl: prospect.sourceUrl || '',
-    conversationNotes: prospect.conversationNotes || ''
+    conversationNotes: prospect.conversationNotes || '',
+    requestId: prospect.request?.id || ''
   })
+
+  // Fetch all available requests for dropdown
+  useEffect(() => {
+    fetchAvailableRequests()
+  }, [])
+
+  // Fetch request details when selection changes
+  useEffect(() => {
+    if (selectedRequestId) {
+      fetchRequestDetails(selectedRequestId)
+      setFormData(prev => ({ ...prev, requestId: selectedRequestId }))
+    } else {
+      setLinkedRequest(null)
+      setFormData(prev => ({ ...prev, requestId: '' }))
+    }
+  }, [selectedRequestId])
+
+  const fetchAvailableRequests = async () => {
+    setLoadingRequests(true)
+    try {
+      const response = await fetch(`/api/fleet/requests?key=${apiKey}`)
+      const data = await response.json()
+      if (data.success && data.requests) {
+        setAvailableRequests(data.requests)
+        if (prospect.request?.id) {
+          const found = data.requests.find((r: LinkedRequest) => r.id === prospect.request?.id)
+          if (found) setLinkedRequest(found)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch available requests:', error)
+    } finally {
+      setLoadingRequests(false)
+    }
+  }
+
+  const fetchRequestDetails = async (reqId: string) => {
+    if (!reqId) return
+    try {
+      const response = await fetch(`/api/fleet/requests/${reqId}?key=${apiKey}`)
+      const data = await response.json()
+      if (data.success && data.request) setLinkedRequest(data.request)
+    } catch (error) {
+      console.error('Failed to fetch request details:', error)
+    }
+  }
+
+  const formatDateShort = (dateStr?: string) => {
+    if (!dateStr) return null
+    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  }
+
+  // Check if email belongs to anyone (excluding current prospect being edited)
+  const checkEmail = async (email: string) => {
+    // Skip check if email is the same as original
+    if (email.toLowerCase() === prospect.email.toLowerCase()) {
+      setEmailStatus({ type: null, message: null })
+      return
+    }
+
+    if (!email || !email.includes('@')) {
+      setEmailStatus({ type: null, message: null })
+      return
+    }
+
+    setEmailStatus({ type: 'checking', message: 'Checking email...' })
+
+    try {
+      // Pass excludeId to exclude current prospect from the check
+      const response = await fetch(`/api/fleet/prospects/check-email?email=${encodeURIComponent(email)}&key=${apiKey}&excludeId=${prospect.id}`)
+      const data = await response.json()
+
+      if (data.exists) {
+        setEmailStatus({
+          type: 'exists',
+          message: `Known: ${data.owner}`
+        })
+      } else {
+        setEmailStatus({
+          type: 'new',
+          message: data.message || 'New guest - not in our system'
+        })
+      }
+    } catch (error) {
+      console.error('Failed to check email:', error)
+      setEmailStatus({ type: 'error', message: 'Could not verify email' })
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -1002,7 +894,8 @@ function EditProspectModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
-          vehicleYear: formData.vehicleYear ? Number(formData.vehicleYear) : undefined
+          vehicleYear: formData.vehicleYear ? Number(formData.vehicleYear) : undefined,
+          requestId: formData.requestId || null
         })
       })
 
@@ -1049,18 +942,111 @@ function EditProspectModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Edit Prospect
-          </h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
-            <IoCloseCircleOutline className="w-6 h-6" />
-          </button>
-        </div>
+    <div className="fixed inset-0 z-50">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
-        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+      {/* Modal - Bottom sheet on mobile, centered modal on desktop */}
+      <div className="absolute inset-x-0 bottom-0 sm:inset-0 sm:flex sm:items-center sm:justify-center sm:p-4">
+        <div className="relative bg-white dark:bg-gray-800 w-full sm:max-w-lg sm:rounded-lg rounded-t-2xl max-h-[90vh] sm:max-h-[85vh] flex flex-col shadow-xl">
+          {/* Drag handle for mobile */}
+          <div className="sm:hidden w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mt-3" />
+
+          {/* Header - Sticky */}
+          <div className="sticky top-0 z-10 bg-white dark:bg-gray-800 px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between rounded-t-2xl sm:rounded-t-lg">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Edit Prospect
+            </h2>
+            <button onClick={onClose} className="p-1 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+              <IoCloseCircleOutline className="w-6 h-6" />
+            </button>
+          </div>
+
+          {/* Form - Scrollable */}
+          <form data-edit-prospect-form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 space-y-4">
+          {/* Link to Request Section */}
+          <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <IoDocumentTextOutline className="w-5 h-5 text-orange-600" />
+              <h3 className="font-semibold text-orange-800 dark:text-orange-300">
+                Linked Request
+              </h3>
+            </div>
+
+            {/* Request Selector Dropdown */}
+            <div className="mb-3">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Select Request
+              </label>
+              {loadingRequests ? (
+                <div className="animate-pulse h-10 bg-orange-200 dark:bg-orange-800 rounded" />
+              ) : (
+                <select
+                  value={selectedRequestId}
+                  onChange={(e) => setSelectedRequestId(e.target.value)}
+                  className="w-full px-3 py-2 border border-orange-300 dark:border-orange-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                >
+                  <option value="">-- No request linked --</option>
+                  {availableRequests.map((req) => (
+                    <option key={req.id} value={req.id}>
+                      {req.requestCode} - {req.guestName} ({req.vehicleMake || req.vehicleType || 'Any vehicle'})
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            {/* Selected Request Details */}
+            {linkedRequest && (
+              <div className="space-y-2 text-sm border-t border-orange-200 dark:border-orange-700 pt-3">
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Guest/Client:</span>
+                  <span className="font-medium text-gray-900 dark:text-white">{linkedRequest.guestName}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Vehicle Needed:</span>
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    {linkedRequest.vehicleMake || linkedRequest.vehicleType || 'Any'}
+                  </span>
+                </div>
+                {linkedRequest.startDate && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">Dates:</span>
+                    <span className="font-medium text-gray-900 dark:text-white">
+                      {formatDateShort(linkedRequest.startDate)} - {formatDateShort(linkedRequest.endDate)}
+                    </span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Duration:</span>
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    {linkedRequest.durationDays ? `${linkedRequest.durationDays} days` : 'Flexible'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Daily Rate:</span>
+                  <span className="font-medium text-green-600 dark:text-green-400">
+                    {linkedRequest.offeredRate ? `$${linkedRequest.offeredRate}/day` : 'Negotiable'}
+                  </span>
+                </div>
+                {linkedRequest.offeredRate && linkedRequest.durationDays && (
+                  <div className="flex justify-between pt-2 border-t border-orange-200 dark:border-orange-700">
+                    <span className="text-gray-600 dark:text-gray-400 font-medium">Potential Earnings:</span>
+                    <span className="font-bold text-green-600 dark:text-green-400 text-base">
+                      ${(linkedRequest.offeredRate * linkedRequest.durationDays).toLocaleString()}
+                    </span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Location:</span>
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    {linkedRequest.pickupCity || 'Phoenix'}, {linkedRequest.pickupState || 'AZ'}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Contact Info */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -1084,10 +1070,32 @@ function EditProspectModal({
                 type="email"
                 required
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, email: e.target.value })
+                  setEmailStatus({ type: null, message: null }) // Clear status on change
+                }}
+                onBlur={(e) => checkEmail(e.target.value)}
                 placeholder="john@example.com"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                  emailStatus.type === 'exists' ? 'border-yellow-500 dark:border-yellow-500' :
+                  emailStatus.type === 'new' ? 'border-green-500 dark:border-green-500' :
+                  'border-gray-300 dark:border-gray-600'
+                }`}
               />
+              {emailStatus.message && (
+                <p className={`text-xs mt-1 flex items-center gap-1 ${
+                  emailStatus.type === 'checking' ? 'text-gray-500' :
+                  emailStatus.type === 'exists' ? 'text-yellow-600 dark:text-yellow-400' :
+                  emailStatus.type === 'new' ? 'text-green-600 dark:text-green-400' :
+                  'text-red-600 dark:text-red-400'
+                }`}>
+                  {emailStatus.type === 'checking' && <IoRefreshOutline className="w-3 h-3 animate-spin" />}
+                  {emailStatus.type === 'exists' && <IoPersonOutline className="w-3 h-3" />}
+                  {emailStatus.type === 'new' && <IoCheckmarkCircleOutline className="w-3 h-3" />}
+                  {emailStatus.type === 'error' && <IoWarningOutline className="w-3 h-3" />}
+                  {emailStatus.message}
+                </p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -1190,35 +1198,41 @@ function EditProspectModal({
             />
           </div>
 
-          {/* Actions */}
-          <div className="flex justify-between gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+          </form>
+
+          {/* Footer - Sticky */}
+          <div className="sticky bottom-0 z-10 bg-white dark:bg-gray-800 px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-between gap-3 rounded-b-none sm:rounded-b-lg">
             <button
               type="button"
               onClick={handleDelete}
               disabled={deleting}
-              className="flex items-center gap-1 px-4 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50"
+              className="flex items-center gap-1 px-3 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50 text-sm"
             >
               <IoTrashOutline className="w-4 h-4" />
-              {deleting ? 'Archiving...' : 'Archive'}
+              <span className="hidden sm:inline">{deleting ? 'Archiving...' : 'Archive'}</span>
             </button>
-            <div className="flex gap-3">
+            <div className="flex gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                className="px-3 sm:px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-sm"
               >
                 Cancel
               </button>
               <button
-                type="submit"
+                type="button"
+                onClick={() => {
+                  const form = document.querySelector('form[data-edit-prospect-form]') as HTMLFormElement
+                  if (form) form.requestSubmit()
+                }}
                 disabled={loading}
-                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+                className="px-3 sm:px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 text-sm"
               >
-                {loading ? 'Saving...' : 'Save Changes'}
+                {loading ? 'Saving...' : 'Save'}
               </button>
             </div>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   )
