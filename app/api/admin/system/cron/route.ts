@@ -112,11 +112,67 @@ export async function GET(request: NextRequest) {
       })
     }
     
-    // 5. Update system metrics
+    // 5. Expire unclaimed request claims
     try {
       const { prisma } = await import('@/app/lib/database/prisma')
       const now = new Date()
-      
+
+      // Find all claims that are PENDING_CAR and have expired
+      const expiredClaims = await prisma.requestClaim.findMany({
+        where: {
+          status: 'PENDING_CAR',
+          claimExpiresAt: { lt: now }
+        },
+        include: {
+          request: true,
+          host: { select: { id: true, name: true } }
+        }
+      })
+
+      let expiredCount = 0
+      for (const claim of expiredClaims) {
+        await prisma.requestClaim.update({
+          where: { id: claim.id },
+          data: { status: 'EXPIRED', expiredAt: now }
+        })
+
+        // Check if request has other active claims
+        const otherActiveClaims = await prisma.requestClaim.count({
+          where: {
+            requestId: claim.requestId,
+            id: { not: claim.id },
+            status: { in: ['PENDING_CAR', 'CAR_SELECTED'] }
+          }
+        })
+
+        // If no other active claims, set request back to OPEN
+        if (otherActiveClaims === 0 && claim.request.status === 'CLAIMED') {
+          await prisma.reservationRequest.update({
+            where: { id: claim.requestId },
+            data: { status: 'OPEN' }
+          })
+        }
+        expiredCount++
+      }
+
+      results.push({
+        task: 'expire-claims',
+        status: 'success',
+        expired: expiredCount
+      })
+    } catch (error) {
+      results.push({
+        task: 'expire-claims',
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
+    }
+
+    // 6. Update system metrics
+    try {
+      const { prisma } = await import('@/app/lib/database/prisma')
+      const now = new Date()
+
       // Log successful cron run
       await prisma.auditLog.create({
         data: {

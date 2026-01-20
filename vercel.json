@@ -2,10 +2,6 @@
   "crons": [
     {
       "path": "/api/admin/system/cron",
-      "schedule": "0 0 * * *"
-    },
-    {
-      "path": "/api/cron/expire-claims",
       "schedule": "*/5 * * * *"
     }
   ]
