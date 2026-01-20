@@ -3,6 +3,7 @@
 
 'use client'
 
+import { useMemo } from 'react'
 import { IconType } from 'react-icons'
 import {
   IoLocationOutline,
@@ -17,7 +18,8 @@ import {
   IoSpeedometerOutline,
   IoListOutline,
   IoTrophyOutline,
-  IoLeafOutline
+  IoLeafOutline,
+  IoHandRightOutline
 } from 'react-icons/io5'
 
 export type DashboardSection =
@@ -26,6 +28,7 @@ export type DashboardSection =
   | 'security'
   | 'api'
   | 'audit'
+  | 'requests'
   | 'booking'
   | 'fleet'
   | 'invitation'
@@ -44,6 +47,7 @@ interface NavBadge {
 
 const NAV_BADGES: NavBadge[] = [
   { id: 'tracking', label: 'Tracking', icon: IoLocationOutline, color: 'blue' },
+  { id: 'requests', label: 'Requests', icon: IoHandRightOutline, color: 'orange' },
   { id: 'session', label: 'Session', icon: IoCalendarOutline, color: 'green' },
   { id: 'security', label: 'Security', icon: IoShieldOutline, color: 'purple' },
   { id: 'api', label: 'API', icon: IoCodeOutline, color: 'cyan' },
@@ -58,17 +62,59 @@ const NAV_BADGES: NavBadge[] = [
   { id: 'esg', label: 'ESG Score', icon: IoLeafOutline, color: 'green' },
 ]
 
+// Badges to hide for external recruits (they don't need dev-focused tabs)
+const EXTERNAL_HIDDEN_BADGES: DashboardSection[] = ['api', 'audit']
+
+// Badge order for external recruits (Requests first)
+const EXTERNAL_BADGE_ORDER: DashboardSection[] = [
+  'requests',
+  'tracking',
+  'booking',
+  'fleet',
+  'session',
+  'security',
+  'invitation',
+  'revenue',
+  'fleet-status',
+  'recent-bookings',
+  'commission',
+  'esg'
+]
+
+interface BadgeCounts {
+  requests?: number
+  booking?: number
+  invitation?: number
+  [key: string]: number | undefined
+}
+
 interface DashboardNavigationProps {
   activeSection: DashboardSection
   onSectionChange: (section: DashboardSection) => void
   loading?: boolean
+  isExternalRecruit?: boolean
+  badgeCounts?: BadgeCounts
 }
 
 export default function DashboardNavigation({
   activeSection,
   onSectionChange,
-  loading = false
+  loading = false,
+  isExternalRecruit = false,
+  badgeCounts = {}
 }: DashboardNavigationProps) {
+  // Get ordered and filtered badges based on user type
+  const visibleBadges = useMemo(() => {
+    if (isExternalRecruit) {
+      // For external recruits: use custom order and hide dev-focused tabs
+      return EXTERNAL_BADGE_ORDER
+        .filter(id => !EXTERNAL_HIDDEN_BADGES.includes(id))
+        .map(id => NAV_BADGES.find(b => b.id === id)!)
+        .filter(Boolean)
+    }
+    return NAV_BADGES
+  }, [isExternalRecruit])
+
   if (loading) {
     return (
       <div className="relative">
@@ -97,9 +143,10 @@ export default function DashboardNavigation({
           msOverflowStyle: 'none',
         }}
       >
-        {NAV_BADGES.map((badge) => {
+        {visibleBadges.map((badge) => {
           const Icon = badge.icon
           const isActive = activeSection === badge.id
+          const count = badgeCounts[badge.id]
 
           return (
             <button
@@ -116,6 +163,18 @@ export default function DashboardNavigation({
             >
               <Icon className="w-4 h-4" />
               <span>{badge.label}</span>
+              {/* Badge count indicator */}
+              {count !== undefined && count > 0 && (
+                <span className={`
+                  ml-1 px-1.5 py-0.5 text-xs font-semibold rounded-full min-w-[20px] text-center
+                  ${isActive
+                    ? 'bg-white/20 text-white'
+                    : 'bg-red-500 text-white'
+                  }
+                `}>
+                  {count > 99 ? '99+' : count}
+                </span>
+              )}
             </button>
           )
         })}

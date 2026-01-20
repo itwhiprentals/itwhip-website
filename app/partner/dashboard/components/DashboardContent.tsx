@@ -12,6 +12,8 @@ import InvitationsList from './InvitationsList'
 import RevenueChart from './RevenueChart'
 import QuickActions from './QuickActions'
 import ESGScoreCard from './ESGScoreCard'
+import OpenRequestsCard from './OpenRequestsCard'
+import PendingRequestCard from './PendingRequestCard'
 import Link from 'next/link'
 import {
   IoCalendarNumberOutline,
@@ -78,6 +80,7 @@ interface DashboardContentProps {
   vehicleStatus?: VehicleStatus[]
   recentBookings?: RecentBooking[]
   loading?: boolean
+  isExternalRecruit?: boolean
 }
 
 // Map navigation sections to TrackingSecurityCard tabs
@@ -99,7 +102,8 @@ export default function DashboardContent({
   onInvitationsTabChange,
   vehicleStatus = [],
   recentBookings = [],
-  loading = false
+  loading = false,
+  isExternalRecruit = false
 }: DashboardContentProps) {
   // Loading skeleton
   if (loading) {
@@ -150,6 +154,16 @@ export default function DashboardContent({
         hideTabNavigation
       />
     )
+  }
+
+  // Requests section - Open reservation requests
+  // External recruits see PendingRequestCard with their specific booking
+  // Regular hosts see OpenRequestsCard with all open requests
+  if (activeSection === 'requests') {
+    if (isExternalRecruit) {
+      return <PendingRequestCard />
+    }
+    return <OpenRequestsCard />
   }
 
   // Booking section

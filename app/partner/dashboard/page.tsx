@@ -159,8 +159,11 @@ export default function PartnerDashboardPage() {
     memberSince: string | null
     lastLogin: string | null
     isActive?: boolean
+    isExternalRecruit?: boolean
+    recruitedVia?: string | null
   } | null>(null)
   const [userInfoLoading, setUserInfoLoading] = useState(true)
+  const [isExternalRecruit, setIsExternalRecruit] = useState(false)
 
   useEffect(() => {
     checkAccountType()
@@ -225,8 +228,17 @@ export default function PartnerDashboardPage() {
             hostType: data.user.hostType,
             memberSince: data.user.memberSince,
             lastLogin: data.user.lastLogin,
-            isActive: data.user.isActive
+            isActive: data.user.isActive,
+            isExternalRecruit: data.user.isExternalRecruit,
+            recruitedVia: data.user.recruitedVia
           })
+
+          // Set external recruit flag and default section for external hosts
+          if (data.user.isExternalRecruit) {
+            setIsExternalRecruit(true)
+            // External hosts see Requests first by default
+            setActiveSection('requests')
+          }
         }
       }
     } catch (error) {
@@ -840,6 +852,7 @@ export default function PartnerDashboardPage() {
         <DashboardNavigation
           activeSection={activeSection}
           onSectionChange={setActiveSection}
+          isExternalRecruit={isExternalRecruit}
         />
 
         {/* Card 3 - Dynamic Content (based on selected navigation) */}
@@ -851,6 +864,7 @@ export default function PartnerDashboardPage() {
           vehicleStatus={vehicleStatus}
           recentBookings={recentBookings}
           loading={loading}
+          isExternalRecruit={isExternalRecruit}
         />
 
         {/* Card 4 - Active Bookings */}

@@ -55,7 +55,9 @@ export async function GET(request: NextRequest) {
               stripeCustomerId: true,
               active: true,
               lastLoginAt: true,
-              previousLoginAt: true
+              previousLoginAt: true,
+              isExternalRecruit: true,
+              recruitedVia: true
             }
           })
         }
@@ -146,7 +148,9 @@ export async function GET(request: NextRequest) {
       // Prefer database lastLoginAt, fallback to activity log or current time
       lastLogin: host.lastLoginAt || lastLoginActivity?.createdAt || new Date(),
       previousLogin: host.previousLoginAt || null,
-      isActive: host.active
+      isActive: host.active,
+      isExternalRecruit: host.isExternalRecruit || false,
+      recruitedVia: host.recruitedVia || null
     } : {
       id: session?.user?.id,
       name: session?.user?.name || 'User',
