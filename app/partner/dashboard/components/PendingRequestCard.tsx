@@ -14,38 +14,69 @@ import {
   IoCheckmarkCircle,
   IoEllipseOutline,
   IoArrowForwardOutline,
-  IoImageOutline,
-  IoDocumentTextOutline,
   IoCloseCircleOutline,
   IoWarningOutline,
-  IoRocketOutline
+  IoRocketOutline,
+  IoPersonOutline,
+  IoStarOutline
 } from 'react-icons/io5'
 
-interface PendingClaim {
-  id: string
-  requestId: string
-  status: string
-  claimExpiresAt: string | null
-  offeredRate: number | null
-  car: {
+// Data from /api/partner/onboarding for recruited hosts
+interface OnboardingData {
+  host: {
     id: string
-    make: string
-    model: string
-    year: number
-  } | null
+    name: string
+    email: string
+    hasPassword: boolean
+    onboardingStartedAt: string | null
+    onboardingCompletedAt: string | null
+    declinedRequestAt: string | null
+    cars: Array<{
+      id: string
+      make: string
+      model: string
+      year: number
+      photos: Array<{ url: string }>
+    }>
+  }
+  prospect: {
+    id: string
+    status: string
+    counterOfferAmount: number | null
+    counterOfferNote: string | null
+    counterOfferStatus: string | null
+  }
   request: {
     id: string
-    requestCode: string
-    vehicleType: string | null
-    vehicleMake: string | null
-    vehicleModel: string | null
+    status: string
+    vehicleInfo: string | null
+    guestName: string | null
+    guestRating: number | null
+    guestTrips: number | null
     startDate: string | null
     endDate: string | null
     durationDays: number | null
-    offeredRate: number | null
     pickupCity: string | null
     pickupState: string | null
+    offeredRate: number | null
+    totalAmount: number | null
+    hostEarnings: number | null
+    platformFee: number | null
+    expiresAt: string | null
   }
+  onboardingProgress: {
+    carPhotosUploaded: boolean
+    ratesConfigured: boolean
+    payoutConnected: boolean
+    agreementUploaded: boolean
+    percentComplete: number
+  }
+  timeRemaining: {
+    ms: number
+    hours: number
+    minutes: number
+    expired: boolean
+  } | null
 }
 
 interface OnboardingProgress {
@@ -58,7 +89,8 @@ interface OnboardingProgress {
 
 export default function PendingRequestCard() {
   const [loading, setLoading] = useState(true)
-  const [pendingClaim, setPendingClaim] = useState<PendingClaim | null>(null)
+  const [onboardingData, setOnboardingData] = useState<OnboardingData | null>(null)
+  const [isRecruitedHost, setIsRecruitedHost] = useState(true) // Assume true initially
   const [progress, setProgress] = useState<OnboardingProgress>({
     hasVehicle: false,
     hasPhotos: false,
@@ -72,78 +104,84 @@ export default function PendingRequestCard() {
     fetchPendingRequest()
   }, [])
 
-  // Countdown timer
+  // Countdown timer - use timeRemaining from API or calculate from expiresAt
   useEffect(() => {
-    if (!pendingClaim?.claimExpiresAt) return
+    if (!onboardingData?.request?.expiresAt && !onboardingData?.timeRemaining) return
 
     const updateCountdown = () => {
-      const now = new Date()
-      const expires = new Date(pendingClaim.claimExpiresAt!)
-      const diff = expires.getTime() - now.getTime()
-
-      if (diff <= 0) {
-        setTimeRemaining('Expired')
+      // Use API-provided timeRemaining if available
+      if (onboardingData?.timeRemaining) {
+        if (onboardingData.timeRemaining.expired) {
+          setTimeRemaining('Expired')
+          return
+        }
+        setTimeRemaining(`${onboardingData.timeRemaining.hours}h ${onboardingData.timeRemaining.minutes}m`)
         return
       }
 
-      const hours = Math.floor(diff / (1000 * 60 * 60))
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-      setTimeRemaining(`${hours}h ${minutes}m`)
+      // Fallback to calculating from expiresAt
+      if (onboardingData?.request?.expiresAt) {
+        const now = new Date()
+        const expires = new Date(onboardingData.request.expiresAt)
+        const diff = expires.getTime() - now.getTime()
+
+        if (diff <= 0) {
+          setTimeRemaining('Expired')
+          return
+        }
+
+        const hours = Math.floor(diff / (1000 * 60 * 60))
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+        setTimeRemaining(`${hours}h ${minutes}m`)
+      }
     }
 
     updateCountdown()
     const interval = setInterval(updateCountdown, 60000) // Update every minute
 
     return () => clearInterval(interval)
-  }, [pendingClaim?.claimExpiresAt])
+  }, [onboardingData?.request?.expiresAt, onboardingData?.timeRemaining])
 
   const fetchPendingRequest = async () => {
     try {
-      // Fetch pending claims
-      const response = await fetch('/api/partner/requests?myClaims=true&limit=1')
-      const data = await response.json()
+      // Fetch onboarding data for recruited hosts
+      const response = await fetch('/api/partner/onboarding', {
+        credentials: 'include'
+      })
 
-      if (data.success && data.requests?.length > 0) {
-        const request = data.requests[0]
-        if (request.myClaim) {
-          setPendingClaim({
-            ...request.myClaim,
-            request: {
-              id: request.id,
-              requestCode: request.requestCode,
-              vehicleType: request.vehicleType,
-              vehicleMake: request.vehicleMake,
-              vehicleModel: request.vehicleModel,
-              startDate: request.startDate,
-              endDate: request.endDate,
-              durationDays: request.durationDays,
-              offeredRate: request.offeredRate,
-              pickupCity: request.pickupCity,
-              pickupState: request.pickupState
-            }
-          })
+      if (!response.ok) {
+        // Not a recruited host or error - hide the card
+        if (response.status === 400) {
+          // "Not a recruited host" - this is expected for regular hosts
+          setIsRecruitedHost(false)
         }
+        setLoading(false)
+        return
       }
 
-      // Fetch onboarding progress
-      const fleetResponse = await fetch('/api/partner/fleet')
-      const fleetData = await fleetResponse.json()
+      const data = await response.json()
 
-      if (fleetData.success) {
-        const vehicles = fleetData.vehicles || []
+      if (data.success) {
+        setOnboardingData(data)
+        setIsRecruitedHost(true)
+
+        // Set progress from API response
+        const vehicles = data.host?.cars || []
         const hasVehicle = vehicles.length > 0
-        const hasPhotos = vehicles.some((v: any) => v.photos && v.photos.length >= 3)
+        const totalPhotos = vehicles.reduce((acc: number, v: any) => acc + (v.photos?.length || 0), 0)
+        const hasPhotos = totalPhotos >= 3
 
         setProgress({
           hasVehicle,
           hasPhotos,
-          hasAgreement: false, // Will be set based on agreement status
+          hasAgreement: data.onboardingProgress?.agreementUploaded || false,
           vehicleCount: vehicles.length,
-          photoCount: vehicles.reduce((acc: number, v: any) => acc + (v.photos?.length || 0), 0)
+          photoCount: totalPhotos
         })
       }
     } catch (error) {
       console.error('Failed to fetch pending request:', error)
+      setIsRecruitedHost(false)
     } finally {
       setLoading(false)
     }
@@ -158,10 +196,12 @@ export default function PendingRequestCard() {
     })
   }
 
-  // Calculate potential earnings
-  const potentialEarnings = pendingClaim?.request?.offeredRate && pendingClaim?.request?.durationDays
-    ? pendingClaim.request.offeredRate * pendingClaim.request.durationDays
-    : null
+  // Calculate potential earnings from API data
+  const request = onboardingData?.request
+  const potentialEarnings = request?.hostEarnings ||
+    (request?.offeredRate && request?.durationDays
+      ? request.offeredRate * request.durationDays * 0.9 // 90% after platform fee
+      : null)
 
   // Loading state
   if (loading) {
@@ -179,8 +219,8 @@ export default function PendingRequestCard() {
     )
   }
 
-  // No pending request
-  if (!pendingClaim) {
+  // Not a recruited host - don't show this card
+  if (!isRecruitedHost || !onboardingData) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
         <div className="text-center py-8">
@@ -205,16 +245,59 @@ export default function PendingRequestCard() {
     )
   }
 
-  const startDate = formatDate(pendingClaim.request.startDate)
-  const endDate = formatDate(pendingClaim.request.endDate)
-  const datesDisplay = startDate && endDate ? `${startDate} - ${endDate}` : (startDate || 'Flexible')
-  const isExpiringSoon = pendingClaim.claimExpiresAt &&
-    new Date(pendingClaim.claimExpiresAt).getTime() - Date.now() < 12 * 60 * 60 * 1000 // Less than 12 hours
+  // Check if onboarding is already completed or declined
+  if (onboardingData.host.onboardingCompletedAt) {
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <div className="text-center py-8">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+            <IoCheckmarkCircle className="w-8 h-8 text-green-600" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            Onboarding Complete!
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400 max-w-sm mx-auto">
+            Your booking is being processed. Check your bookings for updates.
+          </p>
+          <Link
+            href="/partner/bookings"
+            className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors"
+          >
+            View Bookings
+            <IoArrowForwardOutline className="w-4 h-4" />
+          </Link>
+        </div>
+      </div>
+    )
+  }
 
-  // Calculate completion percentage
-  const completedSteps = [progress.hasVehicle, progress.hasPhotos, progress.hasAgreement].filter(Boolean).length
-  const totalSteps = 3
-  const completionPercent = Math.round((completedSteps / totalSteps) * 100)
+  if (onboardingData.host.declinedRequestAt) {
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <div className="text-center py-8">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+            <IoCloseCircleOutline className="w-8 h-8 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            Request Declined
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400 max-w-sm mx-auto">
+            You declined this request. Contact support if you change your mind.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  const startDate = formatDate(request?.startDate || null)
+  const endDate = formatDate(request?.endDate || null)
+  const datesDisplay = startDate && endDate ? `${startDate} - ${endDate}` : (startDate || 'Flexible')
+  const isExpiringSoon = onboardingData.timeRemaining &&
+    !onboardingData.timeRemaining.expired &&
+    onboardingData.timeRemaining.hours < 12
+
+  // Calculate completion percentage from API
+  const completionPercent = onboardingData.onboardingProgress?.percentComplete || 0
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
@@ -227,22 +310,24 @@ export default function PendingRequestCard() {
             </div>
             <div>
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Pending Request
+                Your Booking Request
               </h2>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                #{pendingClaim.request.requestCode}
+                {request?.vehicleInfo || 'Vehicle Request'}
               </p>
             </div>
           </div>
           {/* Timer */}
-          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${
-            isExpiringSoon
-              ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300'
-              : 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300'
-          }`}>
-            <IoTimeOutline className="w-4 h-4" />
-            {timeRemaining || 'Loading...'}
-          </div>
+          {timeRemaining && (
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${
+              isExpiringSoon
+                ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300'
+                : 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300'
+            }`}>
+              <IoTimeOutline className="w-4 h-4" />
+              {timeRemaining}
+            </div>
+          )}
         </div>
       </div>
 
@@ -256,22 +341,35 @@ export default function PendingRequestCard() {
                 Your Potential Payout
               </p>
               <p className="text-3xl font-bold text-green-700 dark:text-green-300">
-                ${potentialEarnings.toLocaleString()}
+                ${Math.round(potentialEarnings).toLocaleString()}
               </p>
               <p className="text-sm text-green-600 dark:text-green-400 mt-1">
-                {pendingClaim.request.durationDays} days @ ${pendingClaim.request.offeredRate}/day
+                {request?.durationDays} days @ ${request?.offeredRate}/day
               </p>
             </div>
           )}
 
           {/* Request Details */}
           <div className="space-y-3">
+            {/* Guest Info */}
+            {request?.guestName && (
+              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                <IoPersonOutline className="w-4 h-4 text-gray-400" />
+                <span>{request.guestName}</span>
+                {request.guestRating && (
+                  <span className="flex items-center gap-1 text-yellow-600">
+                    <IoStarOutline className="w-3 h-3" />
+                    {request.guestRating.toFixed(1)}
+                  </span>
+                )}
+                {request.guestTrips && (
+                  <span className="text-xs text-gray-400">({request.guestTrips} trips)</span>
+                )}
+              </div>
+            )}
             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
               <IoCarOutline className="w-4 h-4 text-gray-400" />
-              <span>
-                {pendingClaim.request.vehicleMake || pendingClaim.request.vehicleType || 'Any Vehicle'}
-                {pendingClaim.request.vehicleModel && ` ${pendingClaim.request.vehicleModel}`}
-              </span>
+              <span>{request?.vehicleInfo || 'Your Vehicle'}</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
               <IoCalendarOutline className="w-4 h-4 text-gray-400" />
@@ -280,13 +378,13 @@ export default function PendingRequestCard() {
             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
               <IoLocationOutline className="w-4 h-4 text-gray-400" />
               <span>
-                {pendingClaim.request.pickupCity || 'Phoenix'}, {pendingClaim.request.pickupState || 'AZ'}
+                {request?.pickupCity || 'Phoenix'}, {request?.pickupState || 'AZ'}
               </span>
             </div>
-            {pendingClaim.request.offeredRate && (
+            {request?.offeredRate && (
               <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                 <IoCashOutline className="w-4 h-4 text-gray-400" />
-                <span>${pendingClaim.request.offeredRate}/day</span>
+                <span>${request.offeredRate}/day</span>
               </div>
             )}
           </div>
@@ -404,10 +502,10 @@ export default function PendingRequestCard() {
         <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
           {progress.hasVehicle && progress.hasPhotos ? (
             <Link
-              href={`/partner/requests/${pendingClaim.request.id}`}
+              href={`/partner/requests/${request?.id || ''}`}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors"
             >
-              Accept & Start Booking
+              View Request Details
               <IoArrowForwardOutline className="w-4 h-4" />
             </Link>
           ) : (
@@ -420,9 +518,20 @@ export default function PendingRequestCard() {
             </Link>
           )}
           <button
-            onClick={() => {
+            onClick={async () => {
               if (confirm('Are you sure you want to decline this request? This action cannot be undone.')) {
-                // Handle decline
+                try {
+                  const response = await fetch('/api/partner/onboarding/decline', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include'
+                  })
+                  if (response.ok) {
+                    window.location.reload()
+                  }
+                } catch (error) {
+                  console.error('Failed to decline:', error)
+                }
               }
             }}
             className="px-4 py-3 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg font-medium transition-colors text-center"
