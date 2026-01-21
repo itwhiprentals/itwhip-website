@@ -112,12 +112,12 @@ export async function POST(request: NextRequest) {
         where: { id: host.id },
         data: { onboardingStartedAt: now }
       }),
-      // Update prospect
+      // Update prospect - CLAIMED_REQUEST indicates they've started working on it
       prisma.hostProspect.update({
         where: { id: prospect.id },
         data: {
           onboardingStartedAt: now,
-          status: 'ONBOARDING',
+          status: 'CLAIMED_REQUEST',
           lastActivityAt: now
         }
       })
