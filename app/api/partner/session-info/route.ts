@@ -57,7 +57,12 @@ export async function GET(request: NextRequest) {
               lastLoginAt: true,
               previousLoginAt: true,
               isExternalRecruit: true,
-              recruitedVia: true
+              recruitedVia: true,
+              _count: {
+                select: {
+                  cars: true
+                }
+              }
             }
           })
         }
@@ -150,7 +155,8 @@ export async function GET(request: NextRequest) {
       previousLogin: host.previousLoginAt || null,
       isActive: host.active,
       isExternalRecruit: host.isExternalRecruit || false,
-      recruitedVia: host.recruitedVia || null
+      recruitedVia: host.recruitedVia || null,
+      hasCars: (host._count?.cars || 0) > 0
     } : {
       id: session?.user?.id,
       name: session?.user?.name || 'User',

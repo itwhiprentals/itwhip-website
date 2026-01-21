@@ -12,7 +12,8 @@ import {
   IoBriefcaseOutline,
   IoCheckmarkCircle,
   IoBanOutline,
-  IoCameraOutline
+  IoCameraOutline,
+  IoCarOutline
 } from 'react-icons/io5'
 
 interface UserInfoCardProps {
@@ -25,6 +26,8 @@ interface UserInfoCardProps {
     memberSince: string | null
     lastLogin: string | null
     isActive?: boolean
+    isExternalRecruit?: boolean
+    hasCars?: boolean
   } | null
   loading?: boolean
   onPhotoChange?: (file: File) => void
@@ -118,6 +121,8 @@ export default function UserInfoCard({ user, loading, onPhotoChange }: UserInfoC
 
   const displayName = user.companyName || user.name || 'Fleet Manager'
   const isActive = user.isActive !== false // Default to active if not specified
+  const isExternalRecruit = user.isExternalRecruit || false
+  const hasCars = user.hasCars !== false // Default to true if not specified
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-5">
@@ -174,11 +179,16 @@ export default function UserInfoCard({ user, loading, onPhotoChange }: UserInfoC
           </div>
 
           {/* Role/Type on second line with badge */}
-          <div className="flex items-center gap-2 mt-0.5">
+          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
             <span className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
               <IoBriefcaseOutline className="w-3.5 h-3.5" />
               {getHostTypeLabel(user.hostType)}
             </span>
+            {isExternalRecruit && (
+              <span className="px-1.5 py-0.5 text-[10px] font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded">
+                External
+              </span>
+            )}
           </div>
 
           <p className="text-xs text-gray-400 dark:text-gray-500 truncate mt-1">
@@ -189,7 +199,11 @@ export default function UserInfoCard({ user, loading, onPhotoChange }: UserInfoC
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-gray-500 dark:text-gray-400">
             <div className="flex items-center gap-1">
               <IoCalendarOutline className="w-3.5 h-3.5" />
-              <span>Joined {formatDate(user.memberSince)}</span>
+              {isExternalRecruit ? (
+                <span className="text-amber-600 dark:text-amber-400 font-medium">NOT Joined</span>
+              ) : (
+                <span>Joined {formatDate(user.memberSince)}</span>
+              )}
             </div>
             <div className="flex items-center gap-1">
               <IoTimeOutline className="w-3.5 h-3.5" />
@@ -200,7 +214,12 @@ export default function UserInfoCard({ user, loading, onPhotoChange }: UserInfoC
 
         {/* Status Badge - Top Right Corner */}
         <div className="flex-shrink-0">
-          {isActive ? (
+          {isExternalRecruit && !hasCars ? (
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+              <IoCarOutline className="w-3.5 h-3.5" />
+              Not Active Car
+            </span>
+          ) : isActive ? (
             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
               <IoCheckmarkCircle className="w-3.5 h-3.5" />
               Active

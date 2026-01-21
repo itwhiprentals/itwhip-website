@@ -334,57 +334,83 @@ export default function PendingRequestCard() {
       <div className="p-6 space-y-6">
         {/* Earnings highlight + Details */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Potential Earnings */}
-          {potentialEarnings && (
+          {/* Potential Payout with Fee Breakdown */}
+          {potentialEarnings && request && (
             <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
               <p className="text-xs text-green-600 dark:text-green-400 uppercase tracking-wide font-medium mb-1">
                 Your Potential Payout
               </p>
               <p className="text-3xl font-bold text-green-700 dark:text-green-300">
-                ${Math.round(potentialEarnings).toLocaleString()}
+                ${Math.round(potentialEarnings).toLocaleString()}.00
               </p>
-              <p className="text-sm text-green-600 dark:text-green-400 mt-1">
-                {request?.durationDays} days @ ${request?.offeredRate}/day
-              </p>
+              {/* Fee Breakdown */}
+              <div className="mt-3 pt-3 border-t border-green-200 dark:border-green-700 space-y-1 text-sm">
+                <div className="flex justify-between text-gray-600 dark:text-gray-300">
+                  <span>{request.durationDays} days @ ${request.offeredRate?.toFixed(2)}/day</span>
+                  <span>${request.totalAmount?.toLocaleString() || (request.offeredRate! * request.durationDays!).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-gray-500 dark:text-gray-400">
+                  <span>Platform fee (10%)</span>
+                  <span>-${Math.round((request.totalAmount || request.offeredRate! * request.durationDays!) * 0.1).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between font-semibold text-green-700 dark:text-green-300 pt-1">
+                  <span>You receive</span>
+                  <span>${Math.round(potentialEarnings).toLocaleString()}</span>
+                </div>
+              </div>
             </div>
           )}
 
           {/* Request Details */}
           <div className="space-y-3">
-            {/* Guest Info */}
+            {/* Guest Requesting Your Vehicle */}
             {request?.guestName && (
-              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                <IoPersonOutline className="w-4 h-4 text-gray-400" />
-                <span>{request.guestName}</span>
-                {request.guestRating && (
-                  <span className="flex items-center gap-1 text-yellow-600">
-                    <IoStarOutline className="w-3 h-3" />
-                    {request.guestRating.toFixed(1)}
-                  </span>
-                )}
-                {request.guestTrips && (
-                  <span className="text-xs text-gray-400">({request.guestTrips} trips)</span>
-                )}
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium mb-1">
+                  Guest Requesting Your Vehicle
+                </p>
+                <div className="flex items-center gap-2 text-sm text-gray-900 dark:text-white font-medium">
+                  <span>{request.guestName}</span>
+                  {request.guestRating && (
+                    <span className="flex items-center gap-1 text-yellow-600">
+                      <IoStarOutline className="w-3.5 h-3.5 fill-current" />
+                      {request.guestRating.toFixed(1)}
+                    </span>
+                  )}
+                  {request.guestTrips !== null && request.guestTrips !== undefined && (
+                    <span className="text-xs text-gray-400">({request.guestTrips} trips)</span>
+                  )}
+                </div>
               </div>
             )}
-            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-              <IoCarOutline className="w-4 h-4 text-gray-400" />
-              <span>{request?.vehicleInfo || 'Your Vehicle'}</span>
+            {/* Your Vehicle */}
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Your Vehicle</p>
+              <p className="text-sm text-gray-900 dark:text-white font-medium">
+                {progress.hasVehicle ? (request?.vehicleInfo || 'Vehicle Added') : 'Not Listed'}
+              </p>
             </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-              <IoCalendarOutline className="w-4 h-4 text-gray-400" />
-              <span>{datesDisplay}</span>
+            {/* Dates */}
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Rental Period</p>
+              <p className="text-sm text-gray-900 dark:text-white font-medium">
+                {datesDisplay} ({request?.durationDays} days)
+              </p>
             </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-              <IoLocationOutline className="w-4 h-4 text-gray-400" />
-              <span>
+            {/* Location */}
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Pickup Location</p>
+              <p className="text-sm text-gray-900 dark:text-white font-medium">
                 {request?.pickupCity || 'Phoenix'}, {request?.pickupState || 'AZ'}
-              </span>
+              </p>
             </div>
+            {/* Daily Rate */}
             {request?.offeredRate && (
-              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                <IoCashOutline className="w-4 h-4 text-gray-400" />
-                <span>${request.offeredRate}/day</span>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Daily Rate</p>
+                <p className="text-sm text-gray-900 dark:text-white font-medium">
+                  ${request.offeredRate.toFixed(2)}/day
+                </p>
               </div>
             )}
           </div>
@@ -406,36 +432,28 @@ export default function PendingRequestCard() {
             <>
               {/* Add Car CTA */}
               <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
-                <div className="flex items-start gap-3">
-                  <div className="p-2 bg-blue-100 dark:bg-blue-900/40 rounded-lg">
-                    <IoCarOutline className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-blue-900 dark:text-blue-100">
-                      Add Your Car to Receive This Booking
-                    </p>
-                    <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                      List your {request?.vehicleInfo || 'vehicle'} with photos and details. This takes about 5 minutes.
-                    </p>
-                    <div className="mt-3 p-3 bg-white/60 dark:bg-gray-800/60 rounded-lg">
-                      <p className="text-xs text-blue-800 dark:text-blue-200 font-medium flex items-center gap-1.5">
-                        <IoEllipseOutline className="w-3 h-3" />
-                        Your car will NOT be published publicly
-                      </p>
-                      <p className="text-xs text-blue-600 dark:text-blue-400 mt-1 ml-4.5">
-                        Only {request?.guestName || 'this guest'} will see your listing to complete this booking.
-                      </p>
-                    </div>
-                    {/* Add Your Car button inside the info card */}
-                    <Link
-                      href={`/partner/requests/${request?.id || ''}`}
-                      className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors text-sm"
-                    >
-                      <IoCarOutline className="w-4 h-4" />
-                      Add Your Car
-                    </Link>
-                  </div>
+                <p className="font-medium text-blue-900 dark:text-blue-100">
+                  Add Your Car to Receive This Booking
+                </p>
+                <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                  List your {request?.vehicleInfo || 'vehicle'} with photos and details. This takes about 5 minutes.
+                </p>
+                <div className="mt-3 p-3 bg-white/60 dark:bg-gray-800/60 rounded-lg">
+                  <p className="text-xs text-blue-800 dark:text-blue-200 font-medium flex items-center gap-1.5">
+                    <IoEllipseOutline className="w-3 h-3" />
+                    Your car will NOT be published publicly
+                  </p>
+                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-1 ml-4.5">
+                    Only {request?.guestName || 'this guest'} will see your listing to complete this booking.
+                  </p>
                 </div>
+                {/* Add Your Car button inside the info card */}
+                <Link
+                  href="/partner/fleet"
+                  className="mt-4 w-full flex items-center justify-center px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors text-sm"
+                >
+                  Add Your Car
+                </Link>
               </div>
 
               {/* What Guest Will See Preview */}
@@ -494,32 +512,42 @@ export default function PendingRequestCard() {
               </>
             ) : (
               <>
-                <IoCarOutline className="w-5 h-5" />
                 View Full Request
               </>
             )}
           </Link>
-          <button
-            onClick={async () => {
-              if (confirm('Are you sure you want to decline this request? This action cannot be undone.')) {
-                try {
-                  const response = await fetch('/api/partner/onboarding/decline', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include'
-                  })
-                  if (response.ok) {
-                    window.location.reload()
+        </div>
+
+        {/* I Can't Do This - Visible Box */}
+        <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Changed your mind? No problem.
+              </p>
+            </div>
+            <button
+              onClick={async () => {
+                if (confirm('Are you sure you want to decline this request? This action cannot be undone.')) {
+                  try {
+                    const response = await fetch('/api/partner/onboarding/decline', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      credentials: 'include'
+                    })
+                    if (response.ok) {
+                      window.location.reload()
+                    }
+                  } catch (error) {
+                    console.error('Failed to decline:', error)
                   }
-                } catch (error) {
-                  console.error('Failed to decline:', error)
                 }
-              }
-            }}
-            className="px-4 py-3 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg font-medium transition-colors text-center"
-          >
-            I Can't Do This
-          </button>
+              }}
+              className="px-4 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg font-medium transition-colors text-sm"
+            >
+              I Can't Do This
+            </button>
+          </div>
         </div>
 
         {/* Urgency warning */}

@@ -41,10 +41,17 @@ export default function VinScanner({ onScan, onClose }: VinScannerProps) {
         await scanner.start(
           { facingMode: 'environment' },
           {
-            fps: 10,
-            qrbox: { width: 280, height: 80 },
-            aspectRatio: 3.5,
-            formatsToSupport: [0, 2, 4] // CODE_39, CODE_128, QR_CODE
+            fps: 15,
+            qrbox: { width: 300, height: 180 },
+            aspectRatio: 1.67,
+            // Support ALL VIN barcode formats used in automotive:
+            // 0=QR_CODE (Ford window stickers)
+            // 3=CODE_39 (traditional VIN standard)
+            // 5=CODE_128 (modern VIN standard - higher density)
+            // 6=DATA_MATRIX (GM newer models - 2D)
+            // 11=PDF_417 (state registration documents)
+            // 4=CODE_93 (some automotive applications)
+            formatsToSupport: [0, 3, 4, 5, 6, 11]
           },
           (decodedText) => {
             // Validate VIN format (17 alphanumeric, no I, O, Q)

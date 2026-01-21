@@ -23,8 +23,10 @@ import {
   IoShieldOutline,
   IoSparkles,
   IoLocationOutline,
-  IoRocketOutline
+  IoRocketOutline,
+  IoCameraOutline
 } from 'react-icons/io5'
+import VinScanner from '@/app/components/VinScanner'
 import { decodeVIN, isValidVIN } from '@/app/lib/utils/vin-decoder'
 import { mapBodyClassToCarType } from '@/app/lib/data/vehicle-features'
 import { AddressAutocomplete, AddressResult } from '@/app/components/shared/AddressAutocomplete'
@@ -153,6 +155,7 @@ export default function PartnerFleetAddPage() {
   const [vinError, setVinError] = useState('')
   const [vinDecoded, setVinDecoded] = useState(false)
   const [vinDecodedFields, setVinDecodedFields] = useState<string[]>([])
+  const [showVinScanner, setShowVinScanner] = useState(false)
 
   // Eligibility state
   const [eligibilityResult, setEligibilityResult] = useState<{
@@ -550,8 +553,8 @@ export default function PartnerFleetAddPage() {
                       step.id
                     )}
                   </div>
-                  <div className="mt-1 text-center hidden sm:block">
-                    <p className={`text-xs font-medium ${
+                  <div className="mt-1 text-center">
+                    <p className={`text-[10px] sm:text-xs font-medium ${
                       currentStep >= step.id
                         ? 'text-gray-900 dark:text-white'
                         : 'text-gray-500 dark:text-gray-400'
@@ -602,51 +605,75 @@ export default function PartnerFleetAddPage() {
                 Your 17-character Vehicle Identification Number will auto-populate vehicle details.
               </p>
 
-              {/* VIN Input */}
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <input
-                    type="text"
-                    value={vehicleData.vin}
-                    onChange={(e) => {
-                      const value = e.target.value.toUpperCase().replace(/[^A-HJ-NPR-Z0-9]/g, '').slice(0, 17)
-                      setVehicleData(prev => ({ ...prev, vin: value }))
-                      setVinError('')
-                      if (vinDecoded) {
-                        setVinDecoded(false)
-                        setVinDecodedFields([])
-                        setEligibilityResult(null)
-                      }
-                    }}
-                    placeholder="Enter 17-character VIN"
-                    maxLength={17}
-                    className={`w-full px-4 py-3 text-lg font-mono uppercase border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                      vinError ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                    }`}
-                  />
-                  <div className="flex justify-between mt-1">
-                    <span className="text-xs text-gray-500">{vehicleData.vin.length}/17 characters</span>
-                    {vinError && <span className="text-xs text-red-500">{vinError}</span>}
-                  </div>
+              {/* VIN Input with Decode Button Inside */}
+              <div className="flex items-center gap-2 p-2 border rounded-lg focus-within:ring-2 focus-within:ring-purple-600 dark:bg-gray-700 border-gray-300 dark:border-gray-600">
+                <input
+                  type="text"
+                  value={vehicleData.vin}
+                  onChange={(e) => {
+                    const value = e.target.value.toUpperCase().replace(/[^A-HJ-NPR-Z0-9]/g, '').slice(0, 17)
+                    setVehicleData(prev => ({ ...prev, vin: value }))
+                    setVinError('')
+                    if (vinDecoded) {
+                      setVinDecoded(false)
+                      setVinDecodedFields([])
+                      setEligibilityResult(null)
+                    }
+                  }}
+                  placeholder="Enter 17-character VIN"
+                  maxLength={17}
+                  className="flex-1 px-2 py-2 text-lg font-mono uppercase bg-transparent border-none focus:outline-none focus:ring-0 dark:text-white"
+                />
+                {/* Camera + Decode Buttons - Same line as input */}
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  {/* Camera Scan Button */}
+                  <button
+                    type="button"
+                    onClick={() => setShowVinScanner(true)}
+                    className="h-10 w-10 bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-purple-100 hover:text-purple-600 dark:hover:bg-purple-900/30 dark:hover:text-purple-400 rounded-md transition-colors flex items-center justify-center"
+                    title="Scan VIN with camera"
+                  >
+                    <IoCameraOutline className="w-5 h-5" />
+                  </button>
+                  {/* Decode VIN Button */}
+                  <button
+                    onClick={handleVinDecode}
+                    disabled={vehicleData.vin.length !== 17 || vinDecoding}
+                    className="h-10 px-4 bg-purple-600 text-white rounded-md text-sm font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 whitespace-nowrap"
+                  >
+                    {vinDecoding ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Decoding...
+                      </>
+                    ) : (
+                      <>
+                        <IoSparkles className="w-4 h-4" />
+                        Decode VIN
+                      </>
+                    )}
+                  </button>
                 </div>
-                <button
-                  onClick={handleVinDecode}
-                  disabled={vehicleData.vin.length !== 17 || vinDecoding}
-                  className="px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                >
-                  {vinDecoding ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Decoding...
-                    </>
-                  ) : (
-                    <>
-                      <IoSparkles className="w-5 h-5" />
-                      Decode VIN
-                    </>
-                  )}
-                </button>
               </div>
+              <div className="flex justify-between mt-1">
+                <span className="text-xs text-gray-500">{vehicleData.vin.length}/17 characters</span>
+                {vinError && <span className="text-xs text-red-500">{vinError}</span>}
+              </div>
+
+              {/* VIN Scanner Modal */}
+              {showVinScanner && (
+                <VinScanner
+                  onScan={(scannedVin) => {
+                    setVehicleData(prev => ({ ...prev, vin: scannedVin }))
+                    setShowVinScanner(false)
+                    // Auto-decode after scanning
+                    setTimeout(() => {
+                      handleVinDecode()
+                    }, 100)
+                  }}
+                  onClose={() => setShowVinScanner(false)}
+                />
+              )}
 
               {/* Where to find VIN */}
               <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
