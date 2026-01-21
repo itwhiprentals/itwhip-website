@@ -11,14 +11,21 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
 // Helper to get current host from auth
 async function getCurrentHost(request: NextRequest) {
   const cookieStore = await cookies()
+  // Check multiple token sources - onboard/validate sets hostAccessToken and accessToken
   const token = cookieStore.get('partner_token')?.value
+    || cookieStore.get('hostAccessToken')?.value
+    || cookieStore.get('accessToken')?.value
 
   if (!token) return null
 
   try {
-    const decoded = verify(token, JWT_SECRET) as { hostId: string }
+    const decoded = verify(token, JWT_SECRET) as { hostId?: string; userId?: string }
+    const hostId = decoded.hostId
+
+    if (!hostId) return null
+
     return await prisma.rentalHost.findUnique({
-      where: { id: decoded.hostId },
+      where: { id: hostId },
       select: {
         id: true,
         name: true,
