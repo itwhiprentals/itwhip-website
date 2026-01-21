@@ -159,10 +159,52 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user data including legacyDualId
-    const user = await prisma.user.findUnique({
+    let user = await prisma.user.findUnique({
       where: { id: primaryUserId },
-      select: { email: true, legacyDualId: true }
+      select: { id: true, email: true, legacyDualId: true }
     })
+
+    // If user not found, check if primaryUserId is actually a hostId (recruited hosts)
+    // This happens when partner_token has hostId but no userId
+    if (!user && currentRole === 'host') {
+      const hostById = await prisma.rentalHost.findUnique({
+        where: { id: primaryUserId },
+        select: { id: true, userId: true, email: true, isExternalRecruit: true, approvalStatus: true }
+      })
+
+      if (hostById) {
+        // Host exists - if they have a linked User, use that
+        if (hostById.userId) {
+          user = await prisma.user.findUnique({
+            where: { id: hostById.userId },
+            select: { id: true, email: true, legacyDualId: true }
+          })
+        }
+
+        // If still no user, this is a recruited host without a User record
+        // That's OK - they can still use the partner dashboard
+        if (!user) {
+          console.log('[Dual-Role Check] Recruited host without User record, allowing access')
+          return NextResponse.json({
+            hasBothRoles: false,
+            hasHostProfile: true,
+            hasGuestProfile: false,
+            currentRole: 'host',
+            hostApprovalStatus: hostById.approvalStatus || 'PENDING',
+            isLinkedAccount: false,
+            linkedUserId: null,
+            hostProfileIsLinked: false,
+            guestProfileIsLinked: false,
+            isRecruitedHost: hostById.isExternalRecruit || false,
+            _debug: {
+              primaryUserId,
+              hostId: hostById.id,
+              cookiesCleared: cookiesToClear.length > 0 ? cookiesToClear : 'none'
+            }
+          })
+        }
+      }
+    }
 
     if (!user) {
       console.error('[Dual-Role Check] User not found for userId:', primaryUserId)

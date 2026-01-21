@@ -390,133 +390,115 @@ export default function PendingRequestCard() {
           </div>
         </div>
 
-        {/* Progress Bar */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600 dark:text-gray-400">Onboarding Progress</span>
-            <span className="font-medium text-gray-900 dark:text-white">{completionPercent}%</span>
-          </div>
-          <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-orange-600 rounded-full transition-all duration-500"
-              style={{ width: `${completionPercent}%` }}
-            />
-          </div>
+        {/* Status indicator */}
+        <div className="flex items-center gap-2">
+          <div className={`w-2 h-2 rounded-full ${progress.hasVehicle ? 'bg-green-500' : 'bg-orange-500 animate-pulse'}`} />
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            {progress.hasVehicle
+              ? 'Car listed - Ready to view full request'
+              : 'Next step: Add your car to continue'}
+          </span>
         </div>
 
-        {/* Onboarding Steps */}
-        <div className="space-y-3">
-          <p className="text-sm font-medium text-gray-900 dark:text-white">
-            Complete these steps to accept the booking:
-          </p>
+        {/* Add Your Car Section */}
+        <div className="space-y-4">
+          {!progress.hasVehicle ? (
+            <>
+              {/* Add Car CTA */}
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-blue-100 dark:bg-blue-900/40 rounded-lg">
+                    <IoCarOutline className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-blue-900 dark:text-blue-100">
+                      Add Your Car to Receive This Booking
+                    </p>
+                    <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                      List your {request?.vehicleInfo || 'vehicle'} with photos and details. This takes about 5 minutes.
+                    </p>
+                    <div className="mt-3 p-3 bg-white/60 dark:bg-gray-800/60 rounded-lg">
+                      <p className="text-xs text-blue-800 dark:text-blue-200 font-medium flex items-center gap-1.5">
+                        <IoEllipseOutline className="w-3 h-3" />
+                        Your car will NOT be published publicly
+                      </p>
+                      <p className="text-xs text-blue-600 dark:text-blue-400 mt-1 ml-4.5">
+                        Only {request?.guestName || 'this guest'} will see your listing to complete this booking.
+                      </p>
+                    </div>
+                    {/* Add Your Car button inside the info card */}
+                    <Link
+                      href={`/partner/requests/${request?.id || ''}`}
+                      className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors text-sm"
+                    >
+                      <IoCarOutline className="w-4 h-4" />
+                      Add Your Car
+                    </Link>
+                  </div>
+                </div>
+              </div>
 
-          {/* Step 1: Add Vehicle */}
-          <div className={`flex items-center gap-3 p-3 rounded-lg border ${
-            progress.hasVehicle
-              ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-              : 'bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-700'
-          }`}>
-            {progress.hasVehicle ? (
-              <IoCheckmarkCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-            ) : (
-              <IoEllipseOutline className="w-5 h-5 text-gray-400 flex-shrink-0" />
-            )}
-            <div className="flex-1">
-              <p className={`font-medium ${progress.hasVehicle ? 'text-green-700 dark:text-green-300' : 'text-gray-900 dark:text-white'}`}>
-                Add Your Vehicle
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {progress.hasVehicle ? `${progress.vehicleCount} vehicle(s) added` : 'List your vehicle details'}
-              </p>
+              {/* What Guest Will See Preview */}
+              <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium mb-3">
+                  After you list your car, {request?.guestName || 'the guest'} will see:
+                </p>
+                <div className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <div className="w-16 h-12 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center">
+                    <IoCarOutline className="w-6 h-6 text-gray-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900 dark:text-white text-sm">
+                      {request?.vehicleInfo || 'Your Vehicle'}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Your photos • Your description • ${request?.offeredRate || '--'}/day
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold text-green-600">${request?.offeredRate || '--'}</p>
+                    <p className="text-xs text-gray-400">/day</p>
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : (
+            /* Car Added - Show Success */
+            <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
+              <div className="flex items-center gap-3">
+                <IoCheckmarkCircle className="w-6 h-6 text-green-600" />
+                <div>
+                  <p className="font-medium text-green-800 dark:text-green-200">
+                    Car Added Successfully!
+                  </p>
+                  <p className="text-sm text-green-700 dark:text-green-300">
+                    {progress.vehicleCount} vehicle with {progress.photoCount} photos. View the full request to continue.
+                  </p>
+                </div>
+              </div>
             </div>
-            {!progress.hasVehicle && (
-              <Link
-                href="/partner/fleet/add"
-                className="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white text-sm rounded-lg font-medium transition-colors"
-              >
-                Add
-              </Link>
-            )}
-          </div>
-
-          {/* Step 2: Upload Photos */}
-          <div className={`flex items-center gap-3 p-3 rounded-lg border ${
-            progress.hasPhotos
-              ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-              : 'bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-700'
-          }`}>
-            {progress.hasPhotos ? (
-              <IoCheckmarkCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-            ) : (
-              <IoEllipseOutline className="w-5 h-5 text-gray-400 flex-shrink-0" />
-            )}
-            <div className="flex-1">
-              <p className={`font-medium ${progress.hasPhotos ? 'text-green-700 dark:text-green-300' : 'text-gray-900 dark:text-white'}`}>
-                Upload Photos
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {progress.hasPhotos ? `${progress.photoCount} photos uploaded` : 'Minimum 3 photos required'}
-              </p>
-            </div>
-            {!progress.hasPhotos && progress.hasVehicle && (
-              <Link
-                href="/partner/fleet"
-                className="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white text-sm rounded-lg font-medium transition-colors"
-              >
-                Upload
-              </Link>
-            )}
-          </div>
-
-          {/* Step 3: Sign Agreement */}
-          <div className={`flex items-center gap-3 p-3 rounded-lg border ${
-            progress.hasAgreement
-              ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-              : 'bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-700'
-          }`}>
-            {progress.hasAgreement ? (
-              <IoCheckmarkCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-            ) : (
-              <IoEllipseOutline className="w-5 h-5 text-gray-400 flex-shrink-0" />
-            )}
-            <div className="flex-1">
-              <p className={`font-medium ${progress.hasAgreement ? 'text-green-700 dark:text-green-300' : 'text-gray-900 dark:text-white'}`}>
-                Sign Rental Agreement
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {progress.hasAgreement ? 'Agreement signed' : 'Review and sign the host agreement'}
-              </p>
-            </div>
-            {!progress.hasAgreement && progress.hasPhotos && (
-              <Link
-                href="/partner/settings"
-                className="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white text-sm rounded-lg font-medium transition-colors"
-              >
-                Sign
-              </Link>
-            )}
-          </div>
+          )}
         </div>
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-          {progress.hasVehicle && progress.hasPhotos ? (
-            <Link
-              href={`/partner/requests/${request?.id || ''}`}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors"
-            >
-              View Request Details
-              <IoArrowForwardOutline className="w-4 h-4" />
-            </Link>
-          ) : (
-            <Link
-              href="/partner/fleet/add"
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors"
-            >
-              Continue Onboarding
-              <IoArrowForwardOutline className="w-4 h-4" />
-            </Link>
-          )}
+          {/* Both states go to full request page */}
+          <Link
+            href={`/partner/requests/${request?.id || ''}`}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors"
+          >
+            {progress.hasVehicle ? (
+              <>
+                Continue to Request
+                <IoArrowForwardOutline className="w-4 h-4" />
+              </>
+            ) : (
+              <>
+                <IoCarOutline className="w-5 h-5" />
+                View Full Request
+              </>
+            )}
+          </Link>
           <button
             onClick={async () => {
               if (confirm('Are you sure you want to decline this request? This action cannot be undone.')) {

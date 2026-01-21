@@ -31,7 +31,10 @@ export async function GET(
 ) {
   try {
     const { token } = await params
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://itwhip.com'
+    // Use request origin for local dev, otherwise use configured URL
+    const requestOrigin = request.headers.get('origin') || request.nextUrl.origin
+    const isLocalhost = requestOrigin.includes('localhost') || requestOrigin.includes('127.0.0.1')
+    const baseUrl = isLocalhost ? requestOrigin : (process.env.NEXT_PUBLIC_APP_URL || 'https://itwhip.com')
 
     // Find the prospect with this token
     const prospect = await prisma.hostProspect.findUnique({
@@ -156,16 +159,18 @@ export async function GET(
     }
 
     // Generate auth token for the host
-    const authToken = sign(
-      {
-        hostId: host.id,
-        email: host.email,
-        name: host.name,
-        type: 'host'
-      },
-      JWT_SECRET,
-      { expiresIn: '7d' }
-    )
+    // Include userId if the host has a linked User record (for dual-role check)
+    const tokenPayload: Record<string, string> = {
+      hostId: host.id,
+      email: host.email,
+      name: host.name || '',
+      type: 'host'
+    }
+    // Add userId if host has a linked User (important for dual-role check)
+    if (host.userId) {
+      tokenPayload.userId = host.userId
+    }
+    const authToken = sign(tokenPayload, JWT_SECRET, { expiresIn: '7d' })
 
     // Set auth cookie
     const cookieStore = await cookies()
