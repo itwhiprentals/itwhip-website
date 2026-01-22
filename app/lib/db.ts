@@ -16,6 +16,7 @@ export const db = {
     
     const user = await prisma.user.create({
       data: {
+        id: nanoid(),
         email: email.toLowerCase(),
         passwordHash,
         name,

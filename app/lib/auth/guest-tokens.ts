@@ -1,5 +1,6 @@
 // app/lib/auth/guest-tokens.ts
 import { prisma } from '@/app/lib/database/prisma'
+import { nanoid } from 'nanoid'
 import crypto from 'crypto'
 import { addDays, isPast } from 'date-fns'
 
@@ -119,6 +120,7 @@ export class GuestTokenHandler {
     
     const newUser = await prisma.user.create({
       data: {
+        id: nanoid(),
         email,
         name: name || booking.guestName,
         passwordHash,

@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { jwtVerify } from 'jose'
+import { nanoid } from 'nanoid'
 import { prisma } from '@/app/lib/database/prisma'
 
 const JWT_SECRET = new TextEncoder().encode(
@@ -54,7 +55,7 @@ export async function GET(request: NextRequest) {
       where: { hostId: partner.id },
       select: { id: true }
     })
-    const vehicleIds = vehicles.map(v => v.id)
+    const vehicleIds = vehicles.map((v: { id: string }) => v.id)
 
     // Get all bookings for partner's vehicles with renter/guest data
     const bookings = await prisma.rentalBooking.findMany({
@@ -342,6 +343,7 @@ export async function POST(request: NextRequest) {
     const fullName = `${firstName} ${lastName}`.trim()
     user = await prisma.user.create({
       data: {
+        id: nanoid(),
         email: emailLower,
         name: fullName,
         phone: phone || null,

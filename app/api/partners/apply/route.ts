@@ -2,6 +2,7 @@
 // POST /api/partners/apply - Submit Fleet Partner Application
 
 import { NextRequest, NextResponse } from 'next/server'
+import { nanoid } from 'nanoid'
 import { prisma } from '@/app/lib/database/prisma'
 import { hash } from 'argon2'
 import { validatePartnerSlug } from '@/app/lib/validation/reserved-slugs'
@@ -104,6 +105,7 @@ export async function POST(request: NextRequest) {
     if (!user) {
       user = await prisma.user.create({
         data: {
+          id: nanoid(),
           email: contactEmail.toLowerCase(),
           name: contactName,
           role: 'BUSINESS',

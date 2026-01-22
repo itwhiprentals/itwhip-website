@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { jwtVerify } from 'jose'
+import { nanoid } from 'nanoid'
 import Stripe from 'stripe'
 import { prisma } from '@/app/lib/database/prisma'
 import { sendEmail } from '@/app/lib/email/send-email'
@@ -91,6 +92,7 @@ export async function POST(request: NextRequest) {
         // Create user first
         user = await prisma.user.create({
           data: {
+            id: nanoid(),
             email: email.toLowerCase(),
             name,
             phone: phone || null

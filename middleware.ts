@@ -90,6 +90,7 @@ const hostAuthRoutes = ['/host/login']
 const HOST_TO_PARTNER_REDIRECTS: Record<string, string> = {
   '/host/dashboard': '/partner/dashboard',
   '/host/cars': '/partner/fleet',
+  '/host/fleet': '/partner/fleet',  // Fleet management (invite-owner, etc.)
   '/host/bookings': '/partner/bookings',
   '/host/calendar': '/partner/calendar',
   '/host/messages': '/partner/messages',
@@ -227,10 +228,19 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/get-started/business', request.url))
   }
 
-  // 🔒 FLEET API PROTECTION - Allow phoenix-fleet-2847 key (legacy/internal) or fleet_session cookie
+  // 🔒 FLEET PROTECTION - Protect both API and UI routes (secret admin area)
+  // Allow phoenix-fleet-2847 key (legacy/internal) or fleet_session cookie
   // EXCLUDE: /api/fleet/auth - public login endpoint with its own session-based auth
-  if ((pathname.startsWith('/api/fleet/') || pathname.startsWith('/fleet/api/')) &&
-      !pathname.startsWith('/api/fleet/auth')) {
+  // EXCLUDE: /api/fleet/analytics/track - public analytics for page view tracking (all visitors)
+  // EXCLUDE: /fleet/login - public login page
+  const isFleetRoute = pathname.startsWith('/api/fleet/') ||
+                       pathname.startsWith('/fleet/api/') ||
+                       pathname.startsWith('/fleet/')
+  const isFleetExcluded = pathname.startsWith('/api/fleet/auth') ||
+                          pathname.startsWith('/api/fleet/analytics/track') ||
+                          pathname === '/fleet/login'
+
+  if (isFleetRoute && !isFleetExcluded) {
     const url = new URL(request.url)
     const urlKey = url.searchParams.get('key')
     const headerKey = request.headers.get('x-fleet-key')
@@ -266,7 +276,12 @@ export async function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
-    console.warn(`[FLEET API] 🚫 BLOCKED unauthorized access to ${pathname}`)
+    console.warn(`[FLEET] 🚫 BLOCKED unauthorized access to ${pathname}`)
+
+    // For UI routes, redirect to login; for API routes, return 403
+    if (pathname.startsWith('/fleet/') && !pathname.startsWith('/fleet/api/')) {
+      return NextResponse.redirect(new URL('/fleet/login', request.url))
+    }
 
     return NextResponse.json(
       {

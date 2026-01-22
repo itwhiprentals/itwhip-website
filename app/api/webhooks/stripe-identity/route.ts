@@ -3,6 +3,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
+import { nanoid } from 'nanoid'
 import { prisma } from '@/app/lib/database/prisma'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -82,6 +83,7 @@ async function handleVerificationSuccess(session: Stripe.Identity.VerificationSe
         console.log(`[Stripe Identity] Creating new user for: ${email}`)
         user = await prisma.user.create({
           data: {
+            id: nanoid(),
             email,
             role: 'CLAIMED',
             emailVerified: new Date(),

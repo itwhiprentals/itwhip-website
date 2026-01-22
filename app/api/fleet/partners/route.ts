@@ -3,6 +3,7 @@
 // POST /api/fleet/partners - Create a new partner (manual)
 
 import { NextRequest, NextResponse } from 'next/server'
+import { nanoid } from 'nanoid'
 import { prisma } from '@/app/lib/database/prisma'
 
 export async function GET(request: NextRequest) {
@@ -203,6 +204,7 @@ export async function POST(request: NextRequest) {
     // Create user
     const user = await prisma.user.create({
       data: {
+        id: nanoid(),
         email: contactEmail.toLowerCase(),
         name: contactName || companyName,
         role: 'BUSINESS',
