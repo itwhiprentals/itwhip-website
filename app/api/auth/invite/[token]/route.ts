@@ -4,7 +4,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { nanoid } from 'nanoid'
-import { cookies } from 'next/headers'
 import { sign } from 'jsonwebtoken'
 import {
   generateHostAccessToken,
@@ -172,16 +171,6 @@ export async function GET(
     }
     const authToken = sign(tokenPayload, JWT_SECRET, { expiresIn: '7d' })
 
-    // Set auth cookie
-    const cookieStore = await cookies()
-    cookieStore.set('partner_token', authToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60, // 7 days
-      path: '/'
-    })
-
     // Log dashboard view activity
     await logProspectActivity(prospect.id, ACTIVITY_TYPES.DASHBOARD_VIEWED, {
       ip: clientIp,
@@ -204,7 +193,19 @@ export async function GET(
     // This makes it feel like they're "seeing their dashboard" not "signing up"
     const redirectUrl = `${baseUrl}/partner/dashboard`
 
-    return NextResponse.redirect(redirectUrl)
+    // Create redirect response and set cookie on it directly
+    // IMPORTANT: We must set the cookie on the response, not via cookies() helper,
+    // because cookies() sets on the incoming request context which doesn't propagate to redirects
+    const response = NextResponse.redirect(redirectUrl)
+    response.cookies.set('partner_token', authToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60, // 7 days
+      path: '/'
+    })
+
+    return response
 
   } catch (error: any) {
     console.error('[Invite Auth] Error:', error)
