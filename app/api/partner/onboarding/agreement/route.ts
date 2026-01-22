@@ -59,7 +59,7 @@ export async function GET() {
       )
     }
 
-    if (!host.isExternalRecruit) {
+    if (!host.recruitedVia) {
       return NextResponse.json(
         { error: 'Not a recruited host' },
         { status: 400 }
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!host.isExternalRecruit) {
+    if (!host.recruitedVia) {
       return NextResponse.json(
         { error: 'Not a recruited host' },
         { status: 400 }

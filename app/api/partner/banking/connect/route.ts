@@ -46,7 +46,7 @@ async function getPartnerFromToken() {
         stripePayoutsEnabled: true,
         stripeChargesEnabled: true,
         payoutsEnabled: true,
-        isExternalRecruit: true,
+        recruitedVia: true,
         convertedFromProspect: {
           select: {
             id: true,
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
 
     // Check approval status - recruited hosts can connect before approval
     // as Stripe Connect verification will auto-approve them
-    if (partner.approvalStatus !== 'APPROVED' && !partner.isExternalRecruit) {
+    if (partner.approvalStatus !== 'APPROVED' && !partner.recruitedVia) {
       return NextResponse.json(
         {
           error: 'Account must be approved before adding banking information',

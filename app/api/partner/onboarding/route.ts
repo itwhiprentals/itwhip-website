@@ -64,8 +64,8 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Check if this is a recruited/external host
-    if (!host.isExternalRecruit) {
+    // Check if this is a recruited host (recruitedVia is source of truth)
+    if (!host.recruitedVia) {
       return NextResponse.json(
         {
           error: 'Not a recruited host',

@@ -133,9 +133,10 @@ export async function GET(
           documentsVerified: false,
           isVerified: false,
           // ═══════════════════════════════════════════════════════════════
-          // RECRUITED HOST FLAGS - This host came from recruitment flow
+          // RECRUITED HOST - Source of truth is recruitedVia field
           // ═══════════════════════════════════════════════════════════════
-          isRecruitedRequest: true,
+          recruitedVia: prospect.source || 'email_invite',
+          recruitedAt: new Date(),
           hasPassword: false, // No password yet - using token-based access
           linkedProspectId: prospect.id,
           // Token-based access for passwordless login
@@ -176,7 +177,7 @@ export async function GET(
       ip: clientIp,
       userAgent: request.headers.get('user-agent'),
       hostId: host.id,
-      isRecruitedHost: host.isRecruitedRequest || false
+      isRecruitedHost: !!host.recruitedVia
     })
 
     // Update prospect with dashboard viewed timestamp

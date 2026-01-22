@@ -83,7 +83,7 @@ async function handleAccountUpdated(account: Stripe.Account) {
       name: true,
       approvalStatus: true,
       stripeAccountStatus: true,
-      isExternalRecruit: true,
+      recruitedVia: true,
       convertedFromProspect: {
         select: { id: true }
       }
@@ -146,7 +146,7 @@ async function handleAccountUpdated(account: Stripe.Account) {
   })
 
   // If this is a recruited host with a linked prospect, update their payout status too
-  if (host.isExternalRecruit && host.convertedFromProspect?.id) {
+  if (host.recruitedVia && host.convertedFromProspect?.id) {
     const payoutEnabled = account.payouts_enabled || account.charges_enabled || false
     await prisma.hostProspect.update({
       where: { id: host.convertedFromProspect.id },

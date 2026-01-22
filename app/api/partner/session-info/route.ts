@@ -56,7 +56,6 @@ export async function GET(request: NextRequest) {
               active: true,
               lastLoginAt: true,
               previousLoginAt: true,
-              isExternalRecruit: true,
               recruitedVia: true,
               _count: {
                 select: {
@@ -154,7 +153,7 @@ export async function GET(request: NextRequest) {
       lastLogin: host.lastLoginAt || lastLoginActivity?.createdAt || new Date(),
       previousLogin: host.previousLoginAt || null,
       isActive: host.active,
-      isExternalRecruit: host.isExternalRecruit || false,
+      isExternalRecruit: !!host.recruitedVia,  // Derived from recruitedVia (source of truth)
       recruitedVia: host.recruitedVia || null,
       hasCars: (host._count?.cars || 0) > 0
     } : {

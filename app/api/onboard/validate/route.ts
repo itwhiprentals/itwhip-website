@@ -128,13 +128,12 @@ export async function POST(request: NextRequest) {
     })
 
     if (host) {
-      // Update existing host to mark as external recruit if not already
-      if (!host.isExternalRecruit) {
+      // Update existing host to mark as recruited if not already
+      if (!host.recruitedVia) {
         host = await prisma.rentalHost.update({
           where: { id: host.id },
           data: {
-            isExternalRecruit: true,
-            recruitedVia: prospect.source,
+            recruitedVia: prospect.source || 'email_invite',
             recruitedAt: new Date()
           },
           include: {
@@ -205,9 +204,8 @@ export async function POST(request: NextRequest) {
         phone: prospect.phone || '',
         city: prospect.request?.pickupCity || 'Phoenix',
         state: prospect.request?.pickupState || 'AZ',
-        // External recruit tracking
-        isExternalRecruit: true,
-        recruitedVia: prospect.source,
+        // External recruit tracking - recruitedVia is source of truth
+        recruitedVia: prospect.source || 'email_invite',
         recruitedAt: new Date(),
         // Default settings for new external hosts
         hostType: 'PENDING',
@@ -293,7 +291,7 @@ async function generateTokensAndSession(
       isRentalHost: true,
       approvalStatus: host.approvalStatus,
       hostType: host.hostType,
-      isExternalRecruit: host.isExternalRecruit
+      recruitedVia: host.recruitedVia
     },
     JWT_SECRET,
     { expiresIn: '7d' } // Longer expiry for external hosts

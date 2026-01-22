@@ -169,7 +169,7 @@ export async function GET(request: NextRequest) {
     if (!user && currentRole === 'host') {
       const hostById = await prisma.rentalHost.findUnique({
         where: { id: primaryUserId },
-        select: { id: true, userId: true, email: true, isExternalRecruit: true, approvalStatus: true }
+        select: { id: true, userId: true, email: true, recruitedVia: true, approvalStatus: true }
       })
 
       if (hostById) {
@@ -195,7 +195,7 @@ export async function GET(request: NextRequest) {
             linkedUserId: null,
             hostProfileIsLinked: false,
             guestProfileIsLinked: false,
-            isRecruitedHost: hostById.isExternalRecruit || false,
+            isRecruitedHost: !!hostById.recruitedVia,
             _debug: {
               primaryUserId,
               hostId: hostById.id,

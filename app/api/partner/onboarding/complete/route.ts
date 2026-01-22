@@ -58,8 +58,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if this is a recruited host
-    if (!host.isExternalRecruit) {
+    // Check if this is a recruited host (recruitedVia is source of truth)
+    if (!host.recruitedVia) {
       return NextResponse.json(
         { error: 'Not a recruited host' },
         { status: 400 }
