@@ -23,7 +23,8 @@ export const db = {
         phone,
         role: role as any, // Map to UserRole enum
         emailVerified: false,
-        isActive: true
+        isActive: true,
+        updatedAt: new Date()
       }
     })
     

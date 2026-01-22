@@ -87,7 +87,8 @@ async function handleVerificationSuccess(session: Stripe.Identity.VerificationSe
             email,
             role: 'CLAIMED',
             emailVerified: new Date(),
-            status: 'ACTIVE'
+            status: 'ACTIVE',
+            updatedAt: new Date()
           },
           include: { reviewerProfile: true }
         })

@@ -126,7 +126,8 @@ export class GuestTokenHandler {
         passwordHash,
         role: 'CLAIMED',
         emailVerified: false,
-        phone: booking.guestPhone
+        phone: booking.guestPhone,
+        updatedAt: new Date()
       }
     })
     

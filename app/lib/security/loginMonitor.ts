@@ -55,8 +55,8 @@ export async function logFailedLogin(details: LoginAttemptDetails): Promise<{
           reason,
           metadata
         }),
+        action: 'login_attempt',
         blocked: false,
-        mitigated: false,
         timestamp: new Date()
       }
     })
@@ -107,8 +107,8 @@ export async function logFailedLogin(details: LoginAttemptDetails): Promise<{
             targetEmails: 'multiple',
             source
           }),
+          action: 'brute_force_block',
           blocked: true,
-          mitigated: false,
           timestamp: new Date()
         }
       })
@@ -132,8 +132,8 @@ export async function logFailedLogin(details: LoginAttemptDetails): Promise<{
             attemptsInLastHour: attemptsOnEmail,
             source
           }),
+          action: 'account_lockout',
           blocked: true,
-          mitigated: false,
           timestamp: new Date()
         }
       })
@@ -180,8 +180,8 @@ export async function logSuccessfulLogin(details: {
           source,
           userId
         }),
+        action: 'login_success',
         blocked: false,
-        mitigated: false,
         timestamp: new Date()
       }
     })

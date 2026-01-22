@@ -95,7 +95,8 @@ export async function POST(request: NextRequest) {
             id: nanoid(),
             email: email.toLowerCase(),
             name,
-            phone: phone || null
+            phone: phone || null,
+            updatedAt: new Date()
           }
         })
       }

@@ -112,7 +112,8 @@ export async function POST(request: NextRequest) {
           passwordHash: hashedPassword,
           emailVerified: false,
           phoneVerified: false,
-          isActive: true
+          isActive: true,
+          updatedAt: new Date()
         }
       })
     }

@@ -347,7 +347,8 @@ export async function POST(request: NextRequest) {
         email: emailLower,
         name: fullName,
         phone: phone || null,
-        role: 'STARTER'
+        role: 'STARTER',
+        updatedAt: new Date()
       },
       include: {
         reviewerProfile: true

@@ -208,7 +208,8 @@ export async function POST(request: NextRequest) {
         email: contactEmail.toLowerCase(),
         name: contactName || companyName,
         role: 'BUSINESS',
-        isActive: true
+        isActive: true,
+        updatedAt: new Date()
       }
     })
 
