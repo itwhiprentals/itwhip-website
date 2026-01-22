@@ -335,7 +335,7 @@ export default function PartnerSettingsPage() {
         return (
           <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
             <IoAlertCircleOutline className="w-4 h-4" />
-            Pending Verification
+            Setup Incomplete
           </span>
         )
       case 'restricted':
@@ -611,6 +611,10 @@ export default function PartnerSettingsPage() {
                       <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                         {settings.stripeConnectStatus === 'connected'
                           ? 'Your payout account is set up and ready'
+                          : settings.stripeConnectStatus === 'pending'
+                          ? 'You started connecting but haven\'t finished yet'
+                          : settings.stripeConnectStatus === 'restricted'
+                          ? 'Additional information needed to complete verification'
                           : 'Connect your bank account to receive payouts'}
                       </p>
                     </div>
@@ -638,10 +642,19 @@ export default function PartnerSettingsPage() {
                   )}
 
                   {settings.stripeConnectStatus === 'pending' && (
-                    <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                      <p className="text-sm text-yellow-700 dark:text-yellow-400">
-                        Your account verification is in progress. This typically takes 1-2 business days.
-                      </p>
+                    <div className="mt-4">
+                      <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg mb-3">
+                        <p className="text-sm text-yellow-700 dark:text-yellow-400">
+                          Your payout account setup is incomplete. Click below to finish connecting your bank account.
+                        </p>
+                      </div>
+                      <button
+                        onClick={handleConnectStripe}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors"
+                      >
+                        <IoLinkOutline className="w-5 h-5" />
+                        Continue Setup
+                      </button>
                     </div>
                   )}
                 </div>
