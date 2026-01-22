@@ -173,7 +173,13 @@ export async function GET(request: NextRequest) {
         expiresAt: fleetRequest.expiresAt
       },
       onboardingProgress,
-      timeRemaining
+      timeRemaining,
+      agreement: prospect.hostAgreementUrl ? {
+        url: prospect.hostAgreementUrl,
+        fileName: prospect.hostAgreementName,
+        validationScore: prospect.agreementValidationScore,
+        validationSummary: prospect.agreementValidationSummary
+      } : undefined
     })
 
   } catch (error: any) {

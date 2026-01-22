@@ -639,18 +639,15 @@ export default function PartnerFleetAddPage() {
                   <button
                     onClick={handleVinDecode}
                     disabled={vehicleData.vin.length !== 17 || vinDecoding}
-                    className="h-10 px-4 bg-purple-600 text-white rounded-md text-sm font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 whitespace-nowrap"
+                    className="h-10 px-4 bg-purple-600 text-white rounded-md text-sm font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center whitespace-nowrap"
                   >
                     {vinDecoding ? (
                       <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-1.5" />
                         Decoding...
                       </>
                     ) : (
-                      <>
-                        <IoSparkles className="w-4 h-4" />
-                        Decode VIN
-                      </>
+                      'Decode'
                     )}
                   </button>
                 </div>

@@ -44,6 +44,10 @@ interface AgreementData {
   }
   customClauses: string[]
   expiresAt: string
+  // Test agreement fields
+  isTest?: boolean
+  hostAgreementUrl?: string
+  hostAgreementName?: string
 }
 
 export default function SignAgreementPage() {
@@ -65,6 +69,7 @@ export default function SignAgreementPage() {
 
   // Success state
   const [signedAgreementUrl, setSignedAgreementUrl] = useState<string | null>(null)
+  const [isTestAgreement, setIsTestAgreement] = useState(false)
 
   useEffect(() => {
     fetchAgreement()
@@ -100,6 +105,9 @@ export default function SignAgreementPage() {
 
       setAgreementData(data)
       setSignerName(data.customer?.name || '')
+      if (data.isTest) {
+        setIsTestAgreement(true)
+      }
       setStatus('ready')
     } catch (err) {
       setStatus('error')
@@ -160,6 +168,11 @@ export default function SignAgreementPage() {
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to submit signature')
+      }
+
+      // Check if this was a test agreement
+      if (data.isTest) {
+        setIsTestAgreement(true)
       }
 
       // Prefer viewerUrl (ItWhip domain) over raw pdfUrl
@@ -248,16 +261,26 @@ export default function SignAgreementPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          {isTestAgreement && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 mb-6">
+              <p className="text-blue-800 text-sm font-medium">Test E-Sign Preview</p>
+            </div>
+          )}
+          <div className={`w-16 h-16 ${isTestAgreement ? 'bg-blue-100' : 'bg-green-100'} rounded-full flex items-center justify-center mx-auto mb-4`}>
+            <svg className={`w-8 h-8 ${isTestAgreement ? 'text-blue-600' : 'text-green-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Agreement Signed!</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            {isTestAgreement ? 'Test Complete!' : 'Agreement Signed!'}
+          </h1>
           <p className="text-gray-600 mb-6">
-            Thank you for signing the rental agreement. A copy has been sent to your email and to the rental provider.
+            {isTestAgreement
+              ? 'This is exactly what your guests will see when they sign your rental agreement. No actual agreement was created.'
+              : 'Thank you for signing the rental agreement. A copy has been sent to your email and to the rental provider.'
+            }
           </p>
-          {signedAgreementUrl && (
+          {signedAgreementUrl && !isTestAgreement && (
             <a
               href={signedAgreementUrl}
               target="_blank"
@@ -266,6 +289,14 @@ export default function SignAgreementPage() {
             >
               View Signed Agreement
             </a>
+          )}
+          {isTestAgreement && (
+            <button
+              onClick={() => window.close()}
+              className="inline-block bg-blue-500 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-600 transition-colors"
+            >
+              Close Preview
+            </button>
           )}
           <p className="text-sm text-gray-500 mt-6">
             You can close this page now.
@@ -280,8 +311,15 @@ export default function SignAgreementPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Test Banner */}
+      {isTestAgreement && (
+        <div className="bg-blue-600 text-white py-2 px-4 text-center text-sm sticky top-0 z-20">
+          <span className="font-medium">Test Preview</span> - This is what your guests will see when signing agreements
+        </div>
+      )}
+
       {/* Header */}
-      <header className="bg-gradient-to-r from-orange-500 to-orange-600 text-white py-6 px-4 sticky top-0 z-10">
+      <header className={`bg-gradient-to-r from-orange-500 to-orange-600 text-white py-6 px-4 sticky ${isTestAgreement ? 'top-8' : 'top-0'} z-10`}>
         <div className="max-w-3xl mx-auto">
           <div className="flex items-center gap-3">
             <Image
@@ -472,6 +510,51 @@ export default function SignAgreementPage() {
             </div>
           </div>
 
+          {/* Host's Custom Agreement (if uploaded) */}
+          {agreementData.hostAgreementUrl && (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+              <div className="flex items-start">
+                <svg className="w-6 h-6 text-orange-500 mt-0.5 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <div className="flex-1">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-2">
+                    {agreementData.partner?.companyName || 'Host'}&apos;s Rental Agreement
+                  </h2>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Please review the rental provider&apos;s agreement before signing. This agreement contains terms specific to your rental.
+                  </p>
+                  <a
+                    href={agreementData.hostAgreementUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 bg-orange-50 border border-orange-200 text-orange-700 px-4 py-2 rounded-lg hover:bg-orange-100 transition-colors"
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    View {agreementData.hostAgreementName || 'Rental Agreement'} (PDF)
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ItWhip Standard Terms Header (when host has custom agreement) */}
+          {agreementData.hostAgreementUrl && (
+            <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-lg p-4 mb-6">
+              <div className="flex items-center gap-2 text-orange-800">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                <span className="font-medium">ItWhip Standard Agreement</span>
+              </div>
+              <p className="text-sm text-orange-700 mt-1 ml-7">
+                The following terms are provided by ItWhip to protect both parties during your rental.
+              </p>
+            </div>
+          )}
+
           {/* Terms and Conditions */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Terms and Conditions</h2>
@@ -481,7 +564,7 @@ export default function SignAgreementPage() {
               <section>
                 <h3 className="text-sm font-semibold text-gray-900 mb-2">1. Driver Eligibility & Requirements</h3>
                 <p className="text-sm text-gray-600 mb-2">
-                  The renter must be at least 21 years of age and possess a valid driver's license that has been active for a minimum of one year. International renters must provide a valid passport and international driving permit if their license is not in English.
+                  The renter must be at least 21 years of age and possess a valid driver&apos;s license that has been active for a minimum of one year. International renters must provide a valid passport and international driving permit if their license is not in English.
                 </p>
               </section>
 

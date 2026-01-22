@@ -3626,9 +3626,17 @@ model HostProspect {
   onboardingCompletedAt DateTime? // When all steps done
 
   // Host agreement
-  hostAgreementUrl        String? // Their existing rental agreement PDF
-  hostAgreementName       String? // Original filename
-  itwhipAgreementAccepted Boolean @default(false)
+  hostAgreementUrl           String? // Their existing rental agreement PDF
+  hostAgreementName          String? // Original filename
+  agreementValidationScore   Int? // AI validation score 0-100
+  agreementValidationSummary String? // AI summary of the agreement
+  itwhipAgreementAccepted    Boolean @default(false)
+
+  // Test E-Sign (for host to preview the signing experience)
+  testAgreementToken     String?   @unique // Token for test signing
+  testAgreementExpiresAt DateTime? // 1 day expiry
+  testAgreementSentAt    DateTime? // When test email was sent
+  testAgreementSignedAt  DateTime? // When host signed the test
 
   // Link to specific request they were invited for
   requestId String?

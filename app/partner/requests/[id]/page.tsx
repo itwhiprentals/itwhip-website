@@ -41,6 +41,7 @@ import {
 import CounterOfferModal from './components/CounterOfferModal'
 import DeclineModal from './components/DeclineModal'
 import OnboardingWizard from './components/OnboardingWizard'
+import AgreementUpload from './components/AgreementUpload'
 
 interface RequestData {
   host: {
@@ -93,6 +94,12 @@ interface RequestData {
     agreementUploaded: boolean
     percentComplete: number
   }
+  agreement?: {
+    url?: string
+    fileName?: string
+    validationScore?: number
+    validationSummary?: string
+  }
   timeRemaining: {
     ms: number
     hours: number
@@ -117,7 +124,6 @@ export default function RequestDetailPage() {
   const [startingOnboarding, setStartingOnboarding] = useState(false)
   const [copied, setCopied] = useState(false)
   const [showTestPdfModal, setShowTestPdfModal] = useState(false)
-  const [testPdfEmail, setTestPdfEmail] = useState('')
   const [sendingTestPdf, setSendingTestPdf] = useState(false)
   const [showAgreementPreview, setShowAgreementPreview] = useState(false)
 
@@ -467,14 +473,14 @@ export default function RequestDetailPage() {
                       <h3 className="text-lg font-bold text-gray-900 dark:text-white">
                         {host.cars.length > 0
                           ? `${host.cars[0].year} ${host.cars[0].make} ${host.cars[0].model}`
-                          : request.vehicleInfo || 'Set up now'}
+                          : request.vehicleInfo || 'Vehicle'}
                       </h3>
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                         hasCarListed
                           ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300'
                           : 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300'
                       }`}>
-                        {hasCarListed ? 'READY' : <><span className="sm:hidden">NOT COMPLETED</span><span className="hidden sm:inline">AWAITING SETUP</span></>}
+                        {hasCarListed ? 'READY' : 'NOT COMPLETED'}
                       </span>
                     </div>
                     {!hasCarListed && (
@@ -646,8 +652,12 @@ export default function RequestDetailPage() {
                 <div className="flex items-center gap-2">
                   <IoDocumentTextOutline className="w-5 h-5 text-gray-400" />
                   <h3 className="font-semibold text-gray-900 dark:text-white">Rental Agreement</h3>
-                  <span className="px-2 py-0.5 text-xs rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-                    Not Sent
+                  <span className={`px-2 py-0.5 text-xs rounded-full ${
+                    onboardingProgress.agreementUploaded
+                      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                      : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                  }`}>
+                    {onboardingProgress.agreementUploaded ? 'Uploaded' : 'Not Uploaded'}
                   </span>
                 </div>
                 {expandedSections.agreement ? (
@@ -659,37 +669,35 @@ export default function RequestDetailPage() {
 
               {expandedSections.agreement && (
                 <div className="px-6 pb-6 space-y-4">
-                  {/* Host's Agreement */}
+                  {/* Host's Agreement - with AI validation */}
                   <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
                       <h4 className="font-medium text-gray-900 dark:text-white">Your Rental Agreement</h4>
                       <span className="text-xs text-gray-500 dark:text-gray-400">Optional</span>
                     </div>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                      Upload your existing rental agreement for the guest to sign.
+                      Upload your existing rental agreement. Our AI will validate it automatically.
                     </p>
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 text-sm"
-                      >
-                        <IoAddOutline className="w-4 h-4" />
-                        Upload PDF
-                      </button>
-                      {/* Test E-Sign - only available after uploading PDF */}
-                      <button
-                        onClick={() => setShowTestPdfModal(true)}
-                        disabled={!onboardingProgress.agreementUploaded}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg flex items-center gap-2 text-sm font-medium"
-                        title={!onboardingProgress.agreementUploaded ? 'Upload your PDF first to test e-signature' : ''}
-                      >
-                        <IoSendOutline className="w-4 h-4" />
-                        Test E-Sign
-                      </button>
-                    </div>
-                    {!onboardingProgress.agreementUploaded && (
-                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
-                        Upload your PDF to test the e-signature feature
-                      </p>
+
+                    <AgreementUpload
+                      onUploadSuccess={fetchRequest}
+                      existingAgreement={data?.agreement}
+                    />
+
+                    {/* Test E-Sign button - only available after uploading PDF */}
+                    {onboardingProgress.agreementUploaded && (
+                      <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+                        <button
+                          onClick={() => setShowTestPdfModal(true)}
+                          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2 text-sm font-medium"
+                        >
+                          <IoSendOutline className="w-4 h-4" />
+                          Test E-Sign Experience
+                        </button>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                          Preview what guests will see when signing your agreement
+                        </p>
+                      </div>
                     )}
                   </div>
 
@@ -782,80 +790,27 @@ export default function RequestDetailPage() {
               )}
             </div>
 
-            {/* Quick Actions - Focused on Onboarding */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
-              <div className="space-y-2">
-                {!isExpired && !hasDeclined && !hasCompleted && (
-                  <>
-                    <button
-                      onClick={() => hasStartedOnboarding ? setShowOnboarding(true) : handleStartOnboarding()}
-                      disabled={startingOnboarding || hasPendingCounterOffer}
-                      className="w-full px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg font-medium flex items-center justify-center gap-2"
-                    >
-                      {onboardingProgress.carPhotosUploaded ? (
-                        <IoCheckmarkCircleOutline className="w-4 h-4" />
-                      ) : (
-                        <IoImageOutline className="w-4 h-4" />
-                      )}
-                      {onboardingProgress.carPhotosUploaded ? 'Photos Uploaded ✓' : 'Upload Car Photos'}
-                    </button>
-
-                    <button
-                      onClick={() => hasStartedOnboarding ? setShowOnboarding(true) : handleStartOnboarding()}
-                      disabled={startingOnboarding || hasPendingCounterOffer}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-center gap-2"
-                    >
-                      {onboardingProgress.ratesConfigured ? (
-                        <IoCheckmarkCircleOutline className="w-4 h-4 text-green-500" />
-                      ) : (
-                        <IoCashOutline className="w-4 h-4" />
-                      )}
-                      {onboardingProgress.ratesConfigured ? 'Rate Set ✓' : 'Set Your Rate'}
-                    </button>
-
-                    <button
-                      onClick={() => hasStartedOnboarding ? setShowOnboarding(true) : handleStartOnboarding()}
-                      disabled={startingOnboarding || hasPendingCounterOffer}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-center gap-2"
-                    >
-                      {onboardingProgress.payoutConnected ? (
-                        <IoCheckmarkCircleOutline className="w-4 h-4 text-green-500" />
-                      ) : (
-                        <IoWalletOutline className="w-4 h-4" />
-                      )}
-                      {onboardingProgress.payoutConnected ? 'Payout Connected ✓' : 'Connect Payout'}
-                    </button>
-                  </>
-                )}
+            {/* Connect Payout - Single Quick Action */}
+            {!isExpired && !hasDeclined && !hasCompleted && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Connect Payout</h3>
+                <button
+                  onClick={() => hasStartedOnboarding ? setShowOnboarding(true) : handleStartOnboarding()}
+                  disabled={startingOnboarding || hasPendingCounterOffer}
+                  className="w-full px-4 py-3 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg font-medium flex items-center justify-center gap-2"
+                >
+                  {onboardingProgress.payoutConnected ? (
+                    <IoCheckmarkCircleOutline className="w-5 h-5" />
+                  ) : (
+                    <IoWalletOutline className="w-5 h-5" />
+                  )}
+                  {onboardingProgress.payoutConnected ? 'Payout Connected ✓' : 'Connect Payout Account'}
+                </button>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+                  Required to receive payments for bookings
+                </p>
               </div>
-            </div>
-
-            {/* Help Section */}
-            <div className="bg-gray-100 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-              <div className="flex items-start gap-3">
-                <IoChatbubbleOutline className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Questions? We&apos;re here to help.
-                  </p>
-                  <div className="flex flex-wrap gap-3 mt-2">
-                    <a
-                      href="tel:+13053999069"
-                      className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 font-medium"
-                    >
-                      (305) 399-9069
-                    </a>
-                    <a
-                      href="mailto:info@itwhip.com"
-                      className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 font-medium"
-                    >
-                      info@itwhip.com
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         </div>
 
@@ -867,61 +822,61 @@ export default function RequestDetailPage() {
               What&apos;s Needed to Receive This Booking
             </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Upload Photos */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* List Your Car */}
               <div className={`p-4 rounded-lg border ${
-                onboardingProgress.carPhotosUploaded
+                onboardingProgress.carPhotosUploaded && onboardingProgress.ratesConfigured
                   ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800'
                   : 'bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800'
               }`}>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Car Photos</span>
-                  {onboardingProgress.carPhotosUploaded ? (
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">List Your Car</span>
+                  {onboardingProgress.carPhotosUploaded && onboardingProgress.ratesConfigured ? (
                     <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600" />
                   ) : (
                     <IoAlertCircleOutline className="w-5 h-5 text-amber-600" />
                   )}
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {onboardingProgress.carPhotosUploaded ? 'Photos uploaded' : 'Min 3 photos required'}
+                  {onboardingProgress.carPhotosUploaded && onboardingProgress.ratesConfigured
+                    ? 'Car listed successfully'
+                    : 'Add photos and set your rate'}
                 </p>
-                {!onboardingProgress.carPhotosUploaded && (
-                  <button
-                    onClick={() => hasStartedOnboarding ? setShowOnboarding(true) : handleStartOnboarding()}
-                    disabled={startingOnboarding || hasPendingCounterOffer}
+                {!(onboardingProgress.carPhotosUploaded && onboardingProgress.ratesConfigured) && (
+                  <Link
+                    href="/partner/fleet/add"
                     className="w-full mt-2 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-sm rounded-lg flex items-center justify-center gap-1"
                   >
-                    <IoImageOutline className="w-3 h-3" />
-                    Upload Now
-                  </button>
+                    <IoCarOutline className="w-3 h-3" />
+                    Add Car
+                  </Link>
                 )}
               </div>
 
-              {/* Set Rate */}
+              {/* Upload Rental Agreement */}
               <div className={`p-4 rounded-lg border ${
-                onboardingProgress.ratesConfigured
+                onboardingProgress.agreementUploaded
                   ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800'
                   : 'bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800'
               }`}>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Daily Rate</span>
-                  {onboardingProgress.ratesConfigured ? (
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Rental Agreement</span>
+                  {onboardingProgress.agreementUploaded ? (
                     <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600" />
                   ) : (
                     <IoAlertCircleOutline className="w-5 h-5 text-amber-600" />
                   )}
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {onboardingProgress.ratesConfigured ? `${formatCurrency(dailyRate)}/day set` : 'Confirm or adjust rate'}
+                  {onboardingProgress.agreementUploaded ? 'Agreement uploaded & tested' : 'Upload PDF and test e-sign'}
                 </p>
-                {!onboardingProgress.ratesConfigured && (
+                {!onboardingProgress.agreementUploaded && (
                   <button
-                    onClick={() => hasStartedOnboarding ? setShowOnboarding(true) : handleStartOnboarding()}
-                    disabled={startingOnboarding || hasPendingCounterOffer}
+                    onClick={() => toggleSection('agreement')}
                     className="w-full mt-2 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-sm rounded-lg flex items-center justify-center gap-1"
                   >
-                    <IoCashOutline className="w-3 h-3" />
-                    Set Rate
+                    <IoDocumentTextOutline className="w-3 h-3" />
+                    Upload Agreement
                   </button>
                 )}
               </div>
@@ -933,7 +888,7 @@ export default function RequestDetailPage() {
                   : 'bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800'
               }`}>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Payout</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Connect Payout</span>
                   {onboardingProgress.payoutConnected ? (
                     <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600" />
                   ) : (
@@ -941,7 +896,7 @@ export default function RequestDetailPage() {
                   )}
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {onboardingProgress.payoutConnected ? 'Bank connected' : 'Connect bank account'}
+                  {onboardingProgress.payoutConnected ? 'Bank connected' : 'Connect to receive payments'}
                 </p>
                 {!onboardingProgress.payoutConnected && (
                   <button
@@ -950,33 +905,8 @@ export default function RequestDetailPage() {
                     className="w-full mt-2 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-sm rounded-lg flex items-center justify-center gap-1"
                   >
                     <IoWalletOutline className="w-3 h-3" />
-                    Connect
+                    Connect Payout
                   </button>
-                )}
-              </div>
-
-              {/* Overall Progress */}
-              <div className={`p-4 rounded-lg border ${
-                onboardingProgress.percentComplete === 100
-                  ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800'
-                  : 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800'
-              }`}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Progress</span>
-                  <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                    {onboardingProgress.percentComplete}%
-                  </span>
-                </div>
-                <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-blue-600 rounded-full transition-all duration-500"
-                    style={{ width: `${onboardingProgress.percentComplete}%` }}
-                  />
-                </div>
-                {onboardingProgress.percentComplete === 100 && (
-                  <p className="text-xs text-green-600 dark:text-green-400 mt-2">
-                    Ready to receive booking!
-                  </p>
                 )}
               </div>
             </div>
@@ -990,6 +920,32 @@ export default function RequestDetailPage() {
             </div>
           </div>
         )}
+
+        {/* Help Section - Bottom */}
+        <div className="mt-6 bg-gray-100 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+          <div className="flex items-start gap-3">
+            <IoChatbubbleOutline className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Questions? We&apos;re here to help.
+              </p>
+              <div className="flex flex-wrap gap-3 mt-2">
+                <a
+                  href="tel:+13053999069"
+                  className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 font-medium"
+                >
+                  (305) 399-9069
+                </a>
+                <a
+                  href="mailto:info@itwhip.com"
+                  className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 font-medium"
+                >
+                  info@itwhip.com
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Modals */}
@@ -1017,13 +973,10 @@ export default function RequestDetailPage() {
             <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 <IoDocumentOutline className="w-5 h-5 text-blue-600" />
-                Test Your Agreement
+                Test E-Sign Experience
               </h2>
               <button
-                onClick={() => {
-                  setShowTestPdfModal(false)
-                  setTestPdfEmail('')
-                }}
+                onClick={() => setShowTestPdfModal(false)}
                 className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
               >
                 <IoCloseOutline className="w-6 h-6 text-gray-500" />
@@ -1031,44 +984,50 @@ export default function RequestDetailPage() {
             </div>
 
             <div className="p-4 space-y-4">
-              {/* Document Preview */}
-              <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center">
-                    <IoDocumentTextOutline className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              {/* What will be sent */}
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  This test will send you an email with:
+                </p>
+                <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <IoDocumentTextOutline className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white text-sm">Your Rental Agreement</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">The PDF you uploaded</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium text-gray-900 dark:text-white">Your Rental Agreement</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">The PDF you uploaded</p>
+                </div>
+                <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/50 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <IoDocumentTextOutline className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white text-sm">ItWhip Standard Agreement</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Required platform terms</p>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Email Input */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Send test to your email
-                </label>
-                <div className="relative">
-                  <IoMailOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="email"
-                    value={testPdfEmail}
-                    onChange={(e) => setTestPdfEmail(e.target.value)}
-                    placeholder="Enter your email address"
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
+              {/* Email destination */}
+              <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <IoMailOutline className="w-5 h-5 text-gray-500" />
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Test email will be sent to:</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{host.email}</p>
+                  </div>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  We'll send your agreement with an e-signature request
-                </p>
               </div>
 
               {/* Info Box */}
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
                 <p className="text-sm text-blue-700 dark:text-blue-300">
-                  <strong>How it works:</strong> You'll receive an email just like your guests will,
-                  with a link to review and sign the agreement electronically.
+                  <strong>Preview what your guests see:</strong> You'll receive an email just like your guests will, with a link to review and sign both agreements.
                 </p>
               </div>
             </div>
@@ -1076,26 +1035,35 @@ export default function RequestDetailPage() {
             {/* Actions */}
             <div className="flex gap-3 p-4 border-t border-gray-200 dark:border-gray-700">
               <button
-                onClick={() => {
-                  setShowTestPdfModal(false)
-                  setTestPdfEmail('')
-                }}
+                onClick={() => setShowTestPdfModal(false)}
                 className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg font-medium transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={async () => {
-                  if (!testPdfEmail) return
                   setSendingTestPdf(true)
-                  // TODO: Replace with actual API call to send test e-sign
-                  await new Promise(resolve => setTimeout(resolve, 1500))
-                  setSendingTestPdf(false)
-                  setShowTestPdfModal(false)
-                  setTestPdfEmail('')
-                  alert('Test agreement sent! Check your email.')
+                  try {
+                    const response = await fetch('/api/partner/onboarding/agreement/test', {
+                      method: 'POST'
+                    })
+                    const result = await response.json()
+
+                    if (!response.ok) {
+                      alert(result.error || 'Failed to send test email')
+                      return
+                    }
+
+                    setShowTestPdfModal(false)
+                    alert(`Test e-sign email sent to ${result.sentTo}! Check your inbox.`)
+                  } catch (err) {
+                    console.error('Test e-sign error:', err)
+                    alert('Failed to send test email')
+                  } finally {
+                    setSendingTestPdf(false)
+                  }
                 }}
-                disabled={!testPdfEmail || sendingTestPdf}
+                disabled={sendingTestPdf}
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {sendingTestPdf ? (
@@ -1106,7 +1074,7 @@ export default function RequestDetailPage() {
                 ) : (
                   <>
                     <IoSendOutline className="w-4 h-4" />
-                    Send Test
+                    Send Test Email
                   </>
                 )}
               </button>

@@ -1,5 +1,6 @@
 // app/api/agreements/[token]/route.ts
 // Retrieve agreement details for signing (public - no auth required)
+// Also handles test e-sign tokens from host prospects
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
@@ -21,7 +22,142 @@ export async function GET(
       )
     }
 
-    // Find booking by token
+    // First, check if this is a TEST agreement token from a host prospect
+    const prospect = await prisma.hostProspect.findFirst({
+      where: {
+        testAgreementToken: token
+      },
+      include: {
+        request: true,
+        convertedHost: {
+          include: {
+            cars: {
+              take: 1,
+              orderBy: { createdAt: 'desc' },
+              select: {
+                id: true,
+                year: true,
+                make: true,
+                model: true,
+                color: true,
+                vin: true,
+                licensePlate: true,
+                photos: {
+                  select: { url: true },
+                  where: { isHero: true },
+                  take: 1
+                }
+              }
+            }
+          }
+        }
+      }
+    })
+
+    // If this is a test agreement token
+    if (prospect) {
+      // Check if expired
+      if (isTokenExpired(prospect.testAgreementExpiresAt)) {
+        return NextResponse.json({
+          status: 'expired',
+          message: 'This test agreement link has expired. You can send a new test from your dashboard.',
+          isTest: true
+        }, { status: 410 })
+      }
+
+      // Check if already signed (test)
+      if (prospect.testAgreementSignedAt) {
+        return NextResponse.json({
+          status: 'already_signed',
+          message: 'You already completed this test signing.',
+          signedAt: prospect.testAgreementSignedAt.toISOString(),
+          isTest: true
+        })
+      }
+
+      const host = prospect.convertedHost
+      const request = prospect.request
+      const car = host?.cars?.[0]
+
+      // Calculate dates for test
+      const startDate = request?.startDate || new Date()
+      const endDate = request?.endDate || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+      const durationDays = request?.durationDays || 14
+      const dailyRate = (prospect.counterOfferStatus === 'APPROVED' && prospect.counterOfferAmount)
+        ? prospect.counterOfferAmount
+        : (request?.offeredRate || 45)
+      const totalAmount = dailyRate * durationDays
+      const securityDeposit = 250
+
+      // Build test agreement response
+      const testResponse = {
+        success: true,
+        status: 'ready_to_sign',
+        isTest: true, // Flag indicating this is a TEST agreement
+
+        booking: {
+          id: `TEST-${prospect.id}`,
+          bookingCode: `TEST-${prospect.id.slice(0, 8).toUpperCase()}`,
+          startDate: new Date(startDate).toISOString(),
+          endDate: new Date(endDate).toISOString(),
+          startTime: '10:00 AM',
+          endTime: '10:00 AM',
+          numberOfDays: durationDays,
+          dailyRate,
+          totalAmount,
+          securityDeposit,
+          pickupLocation: request?.pickupCity && request?.pickupState
+            ? `${request.pickupCity}, ${request.pickupState}`
+            : 'Phoenix, AZ',
+          pickupType: 'Guest pickup'
+        },
+
+        vehicle: car ? {
+          year: car.year,
+          make: car.make,
+          model: car.model,
+          vin: car.vin,
+          licensePlate: car.licensePlate,
+          color: car.color,
+          photo: car.photos?.[0]?.url || null
+        } : request?.vehicleInfo ? {
+          year: parseInt(request.vehicleInfo.split(' ')[0]) || new Date().getFullYear(),
+          make: request.vehicleInfo.split(' ')[1] || 'Unknown',
+          model: request.vehicleInfo.split(' ').slice(2).join(' ') || 'Model',
+          vin: null,
+          licensePlate: null,
+          color: null,
+          photo: null
+        } : null,
+
+        partner: host ? {
+          companyName: host.businessName || host.name,
+          name: host.name,
+          email: host.email,
+          phone: host.phone,
+          city: 'Phoenix',
+          state: 'AZ'
+        } : null,
+
+        customer: {
+          name: host?.name || 'Test Signer',
+          email: host?.email || prospect.email,
+          phone: host?.phone || prospect.phone
+        },
+
+        // Include host's uploaded agreement URL for test
+        hostAgreementUrl: prospect.hostAgreementUrl,
+        hostAgreementName: prospect.hostAgreementName,
+
+        customClauses: [],
+
+        expiresAt: prospect.testAgreementExpiresAt?.toISOString()
+      }
+
+      return NextResponse.json(testResponse)
+    }
+
+    // Otherwise, look for regular booking agreement token
     const booking = await prisma.rentalBooking.findFirst({
       where: {
         agreementToken: token

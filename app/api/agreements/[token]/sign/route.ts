@@ -66,6 +66,82 @@ export async function POST(
       )
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    // CHECK FOR TEST AGREEMENT TOKEN FIRST
+    // ═══════════════════════════════════════════════════════════════
+    const testProspect = await prisma.hostProspect.findFirst({
+      where: {
+        testAgreementToken: token,
+        testAgreementExpiresAt: { gte: new Date() }
+      },
+      include: {
+        convertedHost: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        request: {
+          select: {
+            vehicleInfo: true
+          }
+        }
+      }
+    })
+
+    if (testProspect) {
+      // This is a TEST agreement signing
+      const signedAt = new Date()
+      const { ipAddress } = extractClientInfo(request)
+
+      // Update the prospect to mark test as signed
+      await prisma.hostProspect.update({
+        where: { id: testProspect.id },
+        data: {
+          testAgreementSignedAt: signedAt,
+          lastActivityAt: signedAt
+        }
+      })
+
+      // Log activity
+      try {
+        await prisma.activityLog.create({
+          data: {
+            id: generateId(),
+            action: 'TEST_AGREEMENT_SIGNED',
+            entityType: 'HOST_PROSPECT',
+            entityId: testProspect.id,
+            category: 'AGREEMENT',
+            adminId: testProspect.convertedHost?.id || 'system',
+            newValue: JSON.stringify({
+              signerName: signerName.trim(),
+              signedAt: signedAt.toISOString(),
+              ipAddress,
+              isTest: true
+            })
+          }
+        })
+      } catch {
+        // Activity log is optional
+      }
+
+      console.log(`[Test Agreement Sign] Test signed by ${testProspect.convertedHost?.name || 'host'}`)
+
+      return NextResponse.json({
+        success: true,
+        isTest: true,
+        message: 'Test agreement signed successfully! This is what your guests will experience.',
+        signedAt: signedAt.toISOString(),
+        hostName: testProspect.convertedHost?.name,
+        vehicleInfo: testProspect.request?.vehicleInfo
+      })
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // REGULAR BOOKING AGREEMENT FLOW
+    // ═══════════════════════════════════════════════════════════════
+
     // Find booking by token
     const booking = await prisma.rentalBooking.findFirst({
       where: {
