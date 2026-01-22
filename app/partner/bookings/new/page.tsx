@@ -26,7 +26,8 @@ import {
   IoAlertCircleOutline,
   IoAirplaneOutline,
   IoBusinessOutline,
-  IoWalletOutline
+  IoWalletOutline,
+  IoInformationCircleOutline
 } from 'react-icons/io5'
 import { AddressAutocomplete, AddressResult } from '@/app/components/shared/AddressAutocomplete'
 
@@ -676,15 +677,16 @@ export default function NewBookingPage() {
   const isCustomerVerified = selectedCustomer?.stripeIdentityStatus === 'verified'
   const isCustomerPendingVerification = selectedCustomer?.stripeIdentityStatus === 'pending'
 
-  const steps: { key: Step; label: string; icon: React.ReactNode }[] = [
-    { key: 'customer', label: 'Customer', icon: <IoPersonOutline className="w-5 h-5" /> },
-    { key: 'verify', label: 'Verify', icon: <IoShieldCheckmarkOutline className="w-5 h-5" /> },
-    { key: 'vehicle', label: 'Vehicle', icon: <IoCarOutline className="w-5 h-5" /> },
-    { key: 'dates', label: 'Dates', icon: <IoCalendarOutline className="w-5 h-5" /> },
-    { key: 'confirm', label: 'Confirm', icon: <IoCheckmarkCircleOutline className="w-5 h-5" /> }
+  const steps = [
+    { id: 1, key: 'customer' as Step, title: 'Customer' },
+    { id: 2, key: 'verify' as Step, title: 'Verify' },
+    { id: 3, key: 'vehicle' as Step, title: 'Vehicle' },
+    { id: 4, key: 'dates' as Step, title: 'Dates' },
+    { id: 5, key: 'confirm' as Step, title: 'Confirm' }
   ]
 
   const stepIndex = steps.findIndex(s => s.key === currentStep)
+  const currentStepNum = stepIndex + 1
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -706,31 +708,45 @@ export default function NewBookingPage() {
       <div className="mb-8">
         <div className="flex items-center justify-between max-w-2xl mx-auto">
           {steps.map((step, index) => (
-            <div key={step.key} className="flex items-center">
+            <div key={step.key} className="flex items-center flex-1 last:flex-none">
               <button
                 onClick={() => {
                   if (index < stepIndex) setCurrentStep(step.key)
                 }}
                 disabled={index > stepIndex}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                  index === stepIndex
-                    ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400'
-                    : index < stepIndex
-                    ? 'text-green-600 dark:text-green-400 hover:bg-gray-100 dark:hover:bg-gray-800'
-                    : 'text-gray-400 dark:text-gray-500'
-                }`}
+                className="flex flex-col items-center"
               >
-                {index < stepIndex ? (
-                  <IoCheckmarkCircleOutline className="w-5 h-5" />
-                ) : (
-                  step.icon
-                )}
-                <span className="text-sm font-medium hidden sm:inline">{step.label}</span>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-colors ${
+                  index < stepIndex
+                    ? 'bg-green-600 text-white'
+                    : index === stepIndex
+                      ? 'bg-orange-500 text-white'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                }`}>
+                  {index < stepIndex ? (
+                    <IoCheckmarkCircleOutline className="w-6 h-6" />
+                  ) : (
+                    step.id
+                  )}
+                </div>
+                <div className="mt-1 text-center">
+                  <p className={`text-[10px] sm:text-xs font-medium ${
+                    index <= stepIndex
+                      ? 'text-gray-900 dark:text-white'
+                      : 'text-gray-500 dark:text-gray-400'
+                  }`}>
+                    {step.title}
+                  </p>
+                </div>
               </button>
               {index < steps.length - 1 && (
-                <IoChevronForwardOutline className={`w-5 h-5 mx-2 ${
-                  index < stepIndex ? 'text-green-400' : 'text-gray-300 dark:text-gray-600'
-                }`} />
+                <div className="flex-1 flex items-center justify-center px-1 sm:px-2 -mt-5">
+                  <IoChevronForwardOutline className={`w-4 h-4 sm:w-5 sm:h-5 ${
+                    index < stepIndex
+                      ? 'text-green-600'
+                      : 'text-gray-300 dark:text-gray-600'
+                  }`} />
+                </div>
               )}
             </div>
           ))}
@@ -738,7 +754,7 @@ export default function NewBookingPage() {
       </div>
 
       {error && (
-        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400 flex items-center gap-2">
+        <div className="mb-6 max-w-3xl mx-auto p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400 flex items-center gap-2">
           <IoWarningOutline className="w-5 h-5 flex-shrink-0" />
           {error}
         </div>
@@ -749,7 +765,10 @@ export default function NewBookingPage() {
         {/* Step 1: Customer Selection */}
         {currentStep === 'customer' && (
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Select Customer</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Select Customer</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              Search for an existing customer or create a new one. They&apos;ll receive a Stripe invoice for payment.
+            </p>
 
             {selectedCustomer ? (
               <div className="flex items-center justify-between p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg mb-4">
@@ -913,7 +932,10 @@ export default function NewBookingPage() {
         {/* Step 2: Identity Verification */}
         {currentStep === 'verify' && (
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Identity Verification</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Identity Verification</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              Stripe Identity verifies your guest&apos;s government ID matches their name for added security. This protects both you and your vehicle.
+            </p>
 
             {/* Customer Info */}
             <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg mb-6">
@@ -1060,7 +1082,10 @@ export default function NewBookingPage() {
         {/* Step 3: Vehicle Selection */}
         {currentStep === 'vehicle' && (
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Select Vehicle</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Select Vehicle</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              Choose from your approved fleet vehicles. Need to add a vehicle? <Link href="/partner/fleet/add" className="text-orange-600 dark:text-orange-400 hover:underline">Add a new vehicle</Link> first - it must be approved before it can be booked.
+            </p>
 
             {/* Filter */}
             <div className="flex gap-2 mb-4">
@@ -1160,7 +1185,10 @@ export default function NewBookingPage() {
         {/* Step 4: Date Selection */}
         {currentStep === 'dates' && (
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Select Dates</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Select Dates</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              Choose rental dates and pickup/dropoff details. We&apos;ll check availability and calculate the total automatically.
+            </p>
 
             {/* Selected Vehicle Display */}
             {selectedVehicle && (
@@ -1524,7 +1552,10 @@ export default function NewBookingPage() {
         {/* Step 5: Confirmation */}
         {currentStep === 'confirm' && (
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Review & Confirm</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Review & Confirm</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              Review the booking details. Once confirmed, your guest will receive a Stripe invoice for payment.
+            </p>
 
             {/* Prominent Selected Vehicle Display */}
             {selectedVehicle && (
@@ -2204,6 +2235,23 @@ export default function NewBookingPage() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* How This Works - Info Banner */}
+      <div className="max-w-3xl mx-auto mt-8">
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+          <div className="flex items-start gap-2">
+            <IoInformationCircleOutline className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+            <div className="text-xs text-blue-800 dark:text-blue-200">
+              <p className="font-medium mb-0.5">How Self-Booking Works</p>
+              <ul className="space-y-0.5 text-blue-700 dark:text-blue-300">
+                <li>• <strong>Payment:</strong> We use Stripe to send invoices directly to your guest. You control your own payments.</li>
+                <li>• <strong>Verification:</strong> Stripe Identity verifies your guest&apos;s name matches their ID for security.</li>
+                <li>• <strong>Vehicles:</strong> Only approved vehicles from your fleet can be booked.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )

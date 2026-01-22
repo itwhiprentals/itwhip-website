@@ -11,6 +11,7 @@ import {
   IoCheckmarkCircle,
   IoChevronBack,
   IoChevronForward,
+  IoChevronForwardOutline,
   IoWarningOutline,
   IoInformationCircleOutline,
   IoImageOutline,
@@ -538,7 +539,7 @@ export default function PartnerFleetAddPage() {
         <div className="max-w-4xl mx-auto px-4 pb-4">
           <div className="flex items-center justify-between">
             {STEPS.map((step, index) => (
-              <div key={step.id} className="flex items-center">
+              <div key={step.id} className="flex items-center flex-1 last:flex-none">
                 <div className="flex flex-col items-center">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-colors ${
                     currentStep > step.id
@@ -564,11 +565,13 @@ export default function PartnerFleetAddPage() {
                   </div>
                 </div>
                 {index < STEPS.length - 1 && (
-                  <div className={`w-8 sm:w-16 h-1 mx-1 sm:mx-2 rounded ${
-                    currentStep > step.id
-                      ? 'bg-green-600'
-                      : 'bg-gray-200 dark:bg-gray-700'
-                  }`} />
+                  <div className="flex-1 flex items-center justify-center px-1 sm:px-2 -mt-5">
+                    <IoChevronForwardOutline className={`w-4 h-4 sm:w-5 sm:h-5 ${
+                      currentStep > step.id
+                        ? 'text-green-600'
+                        : 'text-gray-300 dark:text-gray-600'
+                    }`} />
+                  </div>
                 )}
               </div>
             ))}
@@ -639,7 +642,7 @@ export default function PartnerFleetAddPage() {
                   <button
                     onClick={handleVinDecode}
                     disabled={vehicleData.vin.length !== 17 || vinDecoding}
-                    className="h-10 px-4 bg-purple-600 text-white rounded-md text-sm font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center whitespace-nowrap"
+                    className="h-10 px-1.5 bg-purple-600 text-white rounded-md text-sm font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center whitespace-nowrap"
                   >
                     {vinDecoding ? (
                       <>
