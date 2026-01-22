@@ -108,12 +108,19 @@ export async function GET(request: NextRequest) {
     })
 
     // Calculate onboarding progress
+    // Check host's Stripe status as fallback for payout (webhook might update host before prospect)
+    const payoutConnected = prospect.payoutConnected ||
+      host.stripePayoutsEnabled ||
+      host.stripeChargesEnabled ||
+      host.payoutsEnabled ||
+      false
+
     const onboardingProgress = {
       carPhotosUploaded: prospect.carPhotosUploaded,
       ratesConfigured: prospect.ratesConfigured,
-      payoutConnected: prospect.payoutConnected,
+      payoutConnected,
       agreementUploaded: prospect.agreementUploaded,
-      percentComplete: calculateProgressPercent(prospect)
+      percentComplete: calculateProgressPercent({ ...prospect, payoutConnected })
     }
 
     // Calculate time remaining (if request has expiry)

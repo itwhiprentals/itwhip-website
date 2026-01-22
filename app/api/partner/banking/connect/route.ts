@@ -45,7 +45,16 @@ async function getPartnerFromToken() {
         stripeDetailsSubmitted: true,
         stripePayoutsEnabled: true,
         stripeChargesEnabled: true,
-        payoutsEnabled: true
+        payoutsEnabled: true,
+        isExternalRecruit: true,
+        convertedFromProspect: {
+          select: {
+            id: true,
+            request: {
+              select: { id: true }
+            }
+          }
+        }
       }
     })
 
@@ -70,8 +79,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check approval status
-    if (partner.approvalStatus !== 'APPROVED') {
+    // Check approval status - recruited hosts can connect before approval
+    // as Stripe Connect verification will auto-approve them
+    if (partner.approvalStatus !== 'APPROVED' && !partner.isExternalRecruit) {
       return NextResponse.json(
         {
           error: 'Account must be approved before adding banking information',
@@ -80,6 +90,15 @@ export async function POST(request: NextRequest) {
         { status: 403 }
       )
     }
+
+    // Get return URL - recruited hosts go back to their request page
+    const requestId = partner.convertedFromProspect?.request?.id
+    const returnUrl = requestId
+      ? `${process.env.NEXT_PUBLIC_BASE_URL}/partner/requests/${requestId}?payout=success`
+      : `${process.env.NEXT_PUBLIC_BASE_URL}/partner/settings?tab=banking&success=true`
+    const refreshUrl = requestId
+      ? `${process.env.NEXT_PUBLIC_BASE_URL}/partner/requests/${requestId}?payout=refresh`
+      : `${process.env.NEXT_PUBLIC_BASE_URL}/partner/settings?tab=banking&refresh=true`
 
     // If already has Connect account, check if needs re-onboarding
     if (partner.stripeConnectAccountId) {
@@ -94,8 +113,8 @@ export async function POST(request: NextRequest) {
           // Create new account link for re-onboarding
           const accountLink = await stripe.accountLinks.create({
             account: partner.stripeConnectAccountId,
-            refresh_url: `${process.env.NEXT_PUBLIC_BASE_URL}/partner/settings?tab=banking&refresh=true`,
-            return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/partner/settings?tab=banking&success=true`,
+            refresh_url: refreshUrl,
+            return_url: returnUrl,
             type: 'account_onboarding',
           })
 
@@ -193,8 +212,8 @@ export async function POST(request: NextRequest) {
     // Create account link for onboarding
     const accountLink = await stripe.accountLinks.create({
       account: connectAccount.id,
-      refresh_url: `${process.env.NEXT_PUBLIC_BASE_URL}/partner/settings?tab=banking&refresh=true`,
-      return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/partner/settings?tab=banking&success=true`,
+      refresh_url: refreshUrl,
+      return_url: returnUrl,
       type: 'account_onboarding',
     })
 

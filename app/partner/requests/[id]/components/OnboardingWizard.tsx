@@ -180,10 +180,31 @@ export default function OnboardingWizard({
     }
   }
 
-  const handleConnectPayout = () => {
-    // TODO: Implement Stripe Connect OAuth flow
-    // For now, redirect to partner settings
-    window.location.href = '/partner/settings?tab=payout'
+  const handleConnectPayout = async () => {
+    setSaving(true)
+    setError(null)
+    try {
+      // Call Stripe Connect API to get onboarding URL
+      const response = await fetch('/api/partner/banking/connect', {
+        method: 'POST'
+      })
+      const data = await response.json()
+
+      if (data.success && data.onboardingUrl) {
+        // Redirect to Stripe Connect onboarding
+        window.location.href = data.onboardingUrl
+      } else if (data.alreadyConnected) {
+        // Already connected - refresh to update status
+        onComplete()
+      } else {
+        setError(data.error || 'Failed to connect with Stripe')
+      }
+    } catch (err) {
+      console.error('Stripe Connect error:', err)
+      setError('Failed to connect with Stripe')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleCompleteOnboarding = async () => {

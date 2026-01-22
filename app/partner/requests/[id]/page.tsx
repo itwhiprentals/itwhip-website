@@ -126,6 +126,7 @@ export default function RequestDetailPage() {
   const [showTestPdfModal, setShowTestPdfModal] = useState(false)
   const [sendingTestPdf, setSendingTestPdf] = useState(false)
   const [showAgreementPreview, setShowAgreementPreview] = useState(false)
+  const [connectingPayout, setConnectingPayout] = useState(false)
 
   // Expandable sections
   const [expandedSections, setExpandedSections] = useState({
@@ -228,6 +229,32 @@ export default function RequestDetailPage() {
   const handleOnboardingComplete = () => {
     setShowOnboarding(false)
     fetchRequest()
+  }
+
+  // Direct Stripe Connect - bypasses the wizard
+  const handleConnectPayoutDirect = async () => {
+    setConnectingPayout(true)
+    try {
+      const response = await fetch('/api/partner/banking/connect', {
+        method: 'POST'
+      })
+      const data = await response.json()
+
+      if (data.success && data.onboardingUrl) {
+        // Redirect to Stripe Connect
+        window.location.href = data.onboardingUrl
+      } else if (data.onboardingRequired === false) {
+        // Already connected
+        fetchRequest()
+      } else {
+        alert(data.error || 'Failed to connect with Stripe')
+      }
+    } catch (err) {
+      console.error('Stripe Connect error:', err)
+      alert('Failed to connect with Stripe')
+    } finally {
+      setConnectingPayout(false)
+    }
   }
 
   const copyToClipboard = (text: string) => {
@@ -480,7 +507,7 @@ export default function RequestDetailPage() {
                           ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300'
                           : 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300'
                       }`}>
-                        {hasCarListed ? 'READY' : 'NOT COMPLETED'}
+                        {hasCarListed ? 'READY' : 'AWAITING SETUP'}
                       </span>
                     </div>
                     {!hasCarListed && (
@@ -644,7 +671,7 @@ export default function RequestDetailPage() {
             </div>
 
             {/* Rental Agreement Section */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div id="agreement-section" className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
               <button
                 onClick={() => toggleSection('agreement')}
                 className="w-full p-4 flex items-center justify-between text-left"
@@ -795,16 +822,18 @@ export default function RequestDetailPage() {
               <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Connect Payout</h3>
                 <button
-                  onClick={() => hasStartedOnboarding ? setShowOnboarding(true) : handleStartOnboarding()}
-                  disabled={startingOnboarding || hasPendingCounterOffer}
+                  onClick={handleConnectPayoutDirect}
+                  disabled={connectingPayout || hasPendingCounterOffer || onboardingProgress.payoutConnected}
                   className="w-full px-4 py-3 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg font-medium flex items-center justify-center gap-2"
                 >
-                  {onboardingProgress.payoutConnected ? (
+                  {connectingPayout ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : onboardingProgress.payoutConnected ? (
                     <IoCheckmarkCircleOutline className="w-5 h-5" />
                   ) : (
                     <IoWalletOutline className="w-5 h-5" />
                   )}
-                  {onboardingProgress.payoutConnected ? 'Payout Connected ✓' : 'Connect Payout Account'}
+                  {connectingPayout ? 'Connecting...' : onboardingProgress.payoutConnected ? 'Payout Connected ✓' : 'Connect Payout Account'}
                 </button>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
                   Required to receive payments for bookings
@@ -872,7 +901,16 @@ export default function RequestDetailPage() {
                 </p>
                 {!onboardingProgress.agreementUploaded && (
                   <button
-                    onClick={() => toggleSection('agreement')}
+                    onClick={() => {
+                      setExpandedSections(prev => ({ ...prev, agreement: true }))
+                      setTimeout(() => {
+                        const element = document.getElementById('agreement-section')
+                        if (element) {
+                          const y = element.getBoundingClientRect().top + window.scrollY - 80
+                          window.scrollTo({ top: y, behavior: 'smooth' })
+                        }
+                      }, 100)
+                    }}
                     className="w-full mt-2 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-sm rounded-lg flex items-center justify-center gap-1"
                   >
                     <IoDocumentTextOutline className="w-3 h-3" />
@@ -900,12 +938,16 @@ export default function RequestDetailPage() {
                 </p>
                 {!onboardingProgress.payoutConnected && (
                   <button
-                    onClick={() => hasStartedOnboarding ? setShowOnboarding(true) : handleStartOnboarding()}
-                    disabled={startingOnboarding || hasPendingCounterOffer}
+                    onClick={handleConnectPayoutDirect}
+                    disabled={connectingPayout || hasPendingCounterOffer}
                     className="w-full mt-2 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-sm rounded-lg flex items-center justify-center gap-1"
                   >
-                    <IoWalletOutline className="w-3 h-3" />
-                    Connect Payout
+                    {connectingPayout ? (
+                      <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <IoWalletOutline className="w-3 h-3" />
+                    )}
+                    {connectingPayout ? 'Connecting...' : 'Connect Payout'}
                   </button>
                 )}
               </div>
