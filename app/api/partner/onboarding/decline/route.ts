@@ -85,13 +85,65 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get optional decline reason from body
+    // Get optional decline reason and deleteAccount flag from body
     const body = await request.json().catch(() => ({}))
-    const { reason } = body
+    const { reason, deleteAccount } = body
 
-    // Mark as declined
     const now = new Date()
 
+    // If deleteAccount is true, delete the host account completely
+    if (deleteAccount) {
+      // Log activity before deleting (so we have a record)
+      await logProspectActivity(prospect.id, ACTIVITY_TYPES.DECLINED, {
+        hostId: host.id,
+        requestId: prospect.requestId,
+        reason: reason || null,
+        accountDeleted: true
+      })
+
+      const transactionOps = [
+        // Update prospect status first
+        prisma.hostProspect.update({
+          where: { id: prospect.id },
+          data: {
+            status: 'DECLINED',
+            lastActivityAt: now,
+            convertedHostId: null // Unlink the host before deletion
+          }
+        }),
+        // Delete the host account
+        prisma.rentalHost.delete({
+          where: { id: host.id }
+        })
+      ]
+
+      // Update request status if exists
+      if (prospect.requestId) {
+        transactionOps.push(
+          prisma.reservationRequest.update({
+            where: { id: prospect.requestId },
+            data: { status: 'DECLINED' }
+          })
+        )
+      }
+
+      await prisma.$transaction(transactionOps)
+
+      // Clear the auth cookie
+      const cookieStore = await cookies()
+      cookieStore.delete('partner_token')
+      cookieStore.delete('hostAccessToken')
+      cookieStore.delete('accessToken')
+
+      return NextResponse.json({
+        success: true,
+        message: 'Account deleted successfully',
+        accountDeleted: true,
+        declinedAt: now
+      })
+    }
+
+    // Otherwise, just decline the booking but keep the account
     const transactionOps = [
       // Update host
       prisma.rentalHost.update({
@@ -127,12 +179,14 @@ export async function POST(request: NextRequest) {
     await logProspectActivity(prospect.id, ACTIVITY_TYPES.DECLINED, {
       hostId: host.id,
       requestId: prospect.requestId,
-      reason: reason || null
+      reason: reason || null,
+      accountDeleted: false
     })
 
     return NextResponse.json({
       success: true,
       message: 'Request declined',
+      accountDeleted: false,
       declinedAt: now
     })
 

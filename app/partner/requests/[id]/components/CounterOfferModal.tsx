@@ -78,10 +78,20 @@ export default function CounterOfferModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/50"
+        onClick={onClose}
+      />
+      {/* Bottom Sheet */}
+      <div className="absolute top-[25%] bottom-0 left-0 right-0 bg-white dark:bg-gray-800 rounded-t-2xl shadow-xl max-w-lg mx-auto transform transition-all animate-in slide-in-from-bottom duration-300 overflow-y-auto">
+        {/* Drag Handle */}
+        <div className="flex justify-center pt-3 pb-2">
+          <div className="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
+        </div>
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between px-4 pb-3 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
             <IoCashOutline className="w-5 h-5 text-orange-600" />
             Request Rate Adjustment
@@ -102,7 +112,7 @@ export default function CounterOfferModal({
               ${currentRate}/day
             </p>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Total: ${(currentRate * durationDays).toLocaleString()} ({durationDays} days)
+              Total: ${(currentRate * durationDays).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({durationDays} days)
             </p>
           </div>
 
@@ -143,15 +153,15 @@ export default function CounterOfferModal({
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600 dark:text-gray-400">New Total</span>
-                  <span className="font-medium text-gray-900 dark:text-white">${newTotal.toLocaleString()}</span>
+                  <span className="font-medium text-gray-900 dark:text-white">${newTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600 dark:text-gray-400">Platform Fee (10%)</span>
-                  <span className="text-gray-500 dark:text-gray-400">-${platformFee.toFixed(0)}</span>
+                  <span className="text-gray-500 dark:text-gray-400">-${platformFee.toFixed(2)}</span>
                 </div>
                 <div className="border-t border-green-200 dark:border-green-700 pt-2 flex justify-between">
                   <span className="font-medium text-green-700 dark:text-green-300">You'll Receive</span>
-                  <span className="font-bold text-green-700 dark:text-green-300">${hostEarnings.toFixed(0)}</span>
+                  <span className="font-bold text-green-700 dark:text-green-300">${hostEarnings.toFixed(2)}</span>
                 </div>
               </div>
               {difference !== 0 && (
@@ -190,7 +200,7 @@ export default function CounterOfferModal({
         </div>
 
         {/* Actions */}
-        <div className="flex gap-3 p-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="sticky bottom-0 flex gap-3 p-4 pb-6 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 safe-area-bottom">
           <button
             onClick={onClose}
             className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg font-medium transition-colors"

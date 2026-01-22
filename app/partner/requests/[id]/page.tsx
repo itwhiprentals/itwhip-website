@@ -33,7 +33,10 @@ import {
   IoAlertCircleOutline,
   IoCashOutline,
   IoAddOutline,
-  IoPrintOutline
+  IoEyeOutline,
+  IoCloseOutline,
+  IoSendOutline,
+  IoDocumentOutline
 } from 'react-icons/io5'
 import CounterOfferModal from './components/CounterOfferModal'
 import DeclineModal from './components/DeclineModal'
@@ -113,6 +116,10 @@ export default function RequestDetailPage() {
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [startingOnboarding, setStartingOnboarding] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [showTestPdfModal, setShowTestPdfModal] = useState(false)
+  const [testPdfEmail, setTestPdfEmail] = useState('')
+  const [sendingTestPdf, setSendingTestPdf] = useState(false)
+  const [showAgreementPreview, setShowAgreementPreview] = useState(false)
 
   // Expandable sections
   const [expandedSections, setExpandedSections] = useState({
@@ -241,8 +248,8 @@ export default function RequestDetailPage() {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
     }).format(amount)
   }
 
@@ -357,18 +364,13 @@ export default function RequestDetailPage() {
             <div className="hidden sm:flex items-center gap-2">
               {!isExpired && !hasDeclined && !hasCompleted && (
                 <>
-                  <button
-                    onClick={() => hasStartedOnboarding ? setShowOnboarding(true) : handleStartOnboarding()}
-                    disabled={startingOnboarding || hasPendingCounterOffer}
-                    className="px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg font-medium flex items-center gap-2"
+                  <Link
+                    href="/partner/fleet/add"
+                    className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium flex items-center gap-2"
                   >
-                    {startingOnboarding ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                    ) : (
-                      <IoArrowForwardOutline className="w-4 h-4" />
-                    )}
-                    {hasStartedOnboarding ? 'Continue Setup' : 'Start Setup'}
-                  </button>
+                    <IoArrowForwardOutline className="w-4 h-4" />
+                    Continue Adding Your Car
+                  </Link>
                   <button
                     onClick={() => setShowDecline(true)}
                     className="px-4 py-2 border border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 rounded-lg font-medium hover:bg-red-50 dark:hover:bg-red-900/20"
@@ -419,18 +421,13 @@ export default function RequestDetailPage() {
           <div className="sm:hidden mt-3 flex gap-2">
             {!isExpired && !hasDeclined && !hasCompleted && (
               <>
-                <button
-                  onClick={() => hasStartedOnboarding ? setShowOnboarding(true) : handleStartOnboarding()}
-                  disabled={startingOnboarding || hasPendingCounterOffer}
-                  className="flex-1 px-3 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg font-medium flex items-center justify-center gap-2 text-sm"
+                <Link
+                  href="/partner/fleet/add"
+                  className="flex-1 px-3 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium flex items-center justify-center gap-2 text-sm"
                 >
-                  {startingOnboarding ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                  ) : (
-                    <IoArrowForwardOutline className="w-4 h-4" />
-                  )}
-                  {hasStartedOnboarding ? 'Continue' : 'Start Setup'}
-                </button>
+                  <IoArrowForwardOutline className="w-4 h-4" />
+                  Continue Adding Your Car
+                </Link>
                 <button
                   onClick={() => setShowDecline(true)}
                   className="px-3 py-2 border border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 rounded-lg font-medium hover:bg-red-50 dark:hover:bg-red-900/20 text-sm"
@@ -470,14 +467,14 @@ export default function RequestDetailPage() {
                       <h3 className="text-lg font-bold text-gray-900 dark:text-white">
                         {host.cars.length > 0
                           ? `${host.cars[0].year} ${host.cars[0].make} ${host.cars[0].model}`
-                          : request.vehicleInfo || 'Vehicle Awaiting Setup'}
+                          : request.vehicleInfo || 'Set up now'}
                       </h3>
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                         hasCarListed
                           ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300'
                           : 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300'
                       }`}>
-                        {hasCarListed ? 'READY' : 'AWAITING SETUP'}
+                        {hasCarListed ? 'READY' : <><span className="sm:hidden">NOT COMPLETED</span><span className="hidden sm:inline">AWAITING SETUP</span></>}
                       </span>
                     </div>
                     {!hasCarListed && (
@@ -485,36 +482,16 @@ export default function RequestDetailPage() {
                         Add photos and set your rate to receive this booking
                       </p>
                     )}
-                    <div className="flex flex-wrap items-center gap-3">
-                      {hasCarListed ? (
+                    {hasCarListed && (
+                      <div className="flex flex-wrap items-center gap-3">
                         <Link
                           href={`/partner/fleet/${host.cars[0]?.id}`}
                           className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400"
                         >
                           View Vehicle →
                         </Link>
-                      ) : (
-                        <>
-                          <button
-                            onClick={() => hasStartedOnboarding ? setShowOnboarding(true) : handleStartOnboarding()}
-                            disabled={startingOnboarding || hasPendingCounterOffer || isExpired || hasDeclined}
-                            className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 flex items-center gap-1"
-                          >
-                            <IoImageOutline className="w-4 h-4" />
-                            Upload Car Photos
-                          </button>
-                          <span className="text-gray-300 dark:text-gray-600">|</span>
-                          <button
-                            onClick={() => hasStartedOnboarding ? setShowOnboarding(true) : handleStartOnboarding()}
-                            disabled={startingOnboarding || hasPendingCounterOffer || isExpired || hasDeclined}
-                            className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 flex items-center gap-1"
-                          >
-                            <IoCashOutline className="w-4 h-4" />
-                            Set Your Rate
-                          </button>
-                        </>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -691,13 +668,29 @@ export default function RequestDetailPage() {
                     <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
                       Upload your existing rental agreement for the guest to sign.
                     </p>
-                    <button
-                      disabled={!hasCarListed}
-                      className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <IoAddOutline className="w-4 h-4" />
-                      Upload PDF
-                    </button>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 text-sm"
+                      >
+                        <IoAddOutline className="w-4 h-4" />
+                        Upload PDF
+                      </button>
+                      {/* Test E-Sign - only available after uploading PDF */}
+                      <button
+                        onClick={() => setShowTestPdfModal(true)}
+                        disabled={!onboardingProgress.agreementUploaded}
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg flex items-center gap-2 text-sm font-medium"
+                        title={!onboardingProgress.agreementUploaded ? 'Upload your PDF first to test e-signature' : ''}
+                      >
+                        <IoSendOutline className="w-4 h-4" />
+                        Test E-Sign
+                      </button>
+                    </div>
+                    {!onboardingProgress.agreementUploaded && (
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                        Upload your PDF to test the e-signature feature
+                      </p>
+                    )}
                   </div>
 
                   {/* ItWhip Agreement */}
@@ -711,17 +704,17 @@ export default function RequestDetailPage() {
                     </p>
                     <div className="flex gap-2">
                       <button
-                        onClick={() => window.print()}
+                        onClick={() => setShowAgreementPreview(true)}
                         className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 text-sm"
                       >
-                        <IoPrintOutline className="w-4 h-4" />
-                        Preview
+                        <IoEyeOutline className="w-4 h-4" />
+                        Preview Agreement
                       </button>
                     </div>
                   </div>
 
                   <p className="text-xs text-gray-400 dark:text-gray-500">
-                    ℹ️ Guest will sign both agreements before pickup (after you list your car)
+                    Guest will sign both agreements before pickup (after you list your car)
                   </p>
                 </div>
               )}
@@ -779,7 +772,7 @@ export default function RequestDetailPage() {
                   {!hasPendingCounterOffer && !isExpired && !hasDeclined && !hasCompleted && (
                     <button
                       onClick={() => setShowCounterOffer(true)}
-                      className="w-full mt-3 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-center gap-2 text-sm"
+                      className="w-full mt-3 px-4 py-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 flex items-center justify-center gap-2 text-sm font-medium"
                     >
                       <IoHandLeftOutline className="w-4 h-4" />
                       Request Different Rate
@@ -1014,6 +1007,240 @@ export default function RequestDetailPage() {
           onClose={() => setShowDecline(false)}
           onSuccess={handleDeclineSuccess}
         />
+      )}
+
+      {/* Test PDF Modal - Tests the user's uploaded agreement */}
+      {showTestPdfModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <IoDocumentOutline className="w-5 h-5 text-blue-600" />
+                Test Your Agreement
+              </h2>
+              <button
+                onClick={() => {
+                  setShowTestPdfModal(false)
+                  setTestPdfEmail('')
+                }}
+                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                <IoCloseOutline className="w-6 h-6 text-gray-500" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-4">
+              {/* Document Preview */}
+              <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center">
+                    <IoDocumentTextOutline className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900 dark:text-white">Your Rental Agreement</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">The PDF you uploaded</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Email Input */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Send test to your email
+                </label>
+                <div className="relative">
+                  <IoMailOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="email"
+                    value={testPdfEmail}
+                    onChange={(e) => setTestPdfEmail(e.target.value)}
+                    placeholder="Enter your email address"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  We'll send your agreement with an e-signature request
+                </p>
+              </div>
+
+              {/* Info Box */}
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                <p className="text-sm text-blue-700 dark:text-blue-300">
+                  <strong>How it works:</strong> You'll receive an email just like your guests will,
+                  with a link to review and sign the agreement electronically.
+                </p>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 p-4 border-t border-gray-200 dark:border-gray-700">
+              <button
+                onClick={() => {
+                  setShowTestPdfModal(false)
+                  setTestPdfEmail('')
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg font-medium transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  if (!testPdfEmail) return
+                  setSendingTestPdf(true)
+                  // TODO: Replace with actual API call to send test e-sign
+                  await new Promise(resolve => setTimeout(resolve, 1500))
+                  setSendingTestPdf(false)
+                  setShowTestPdfModal(false)
+                  setTestPdfEmail('')
+                  alert('Test agreement sent! Check your email.')
+                }}
+                disabled={!testPdfEmail || sendingTestPdf}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {sendingTestPdf ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <IoSendOutline className="w-4 h-4" />
+                    Send Test
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Agreement Preview Modal */}
+      {showAgreementPreview && data && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <IoDocumentTextOutline className="w-5 h-5 text-purple-600" />
+                Vehicle Rental Agreement
+              </h2>
+              <button
+                onClick={() => setShowAgreementPreview(false)}
+                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                <IoCloseOutline className="w-6 h-6 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Agreement Content */}
+            <div className="p-6">
+              <div className="text-center mb-6">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Vehicle Rental Agreement</h3>
+                <p className="text-sm text-gray-500 mt-1">Request: #{data.prospect.id.slice(0, 8).toUpperCase()}</p>
+              </div>
+
+              <div className="space-y-4">
+                {/* Parties */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Renter (Guest)</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">{data.request.guestName || 'Guest'}</p>
+                  </div>
+                  <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Vehicle Owner (Partner)</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">{data.host.name}</p>
+                  </div>
+                </div>
+
+                {/* Vehicle */}
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Vehicle</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">
+                    {data.request.vehicleInfo || 'Vehicle details pending'}
+                  </p>
+                </div>
+
+                {/* Dates */}
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4 grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Pickup Date</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">
+                      {data.request.startDate ? new Date(data.request.startDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : 'TBD'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Return Date</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">
+                      {data.request.endDate ? new Date(data.request.endDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : 'TBD'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Location */}
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Pickup Location</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">
+                    {data.request.pickupCity && data.request.pickupState ? `${data.request.pickupCity}, ${data.request.pickupState}` : 'Location TBD'}
+                  </p>
+                </div>
+
+                {/* Duration & Rate */}
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4 grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total Days</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">{data.request.durationDays || 0} days</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Daily Rate</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">${data.request.offeredRate || 0}/day</p>
+                  </div>
+                </div>
+
+                {/* Total */}
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                  <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600 dark:text-gray-400">Total Rental Amount</span>
+                      <span className="text-xl font-bold text-purple-600 dark:text-purple-400">
+                        ${data.request.totalAmount?.toLocaleString() || 0}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Legal */}
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4 text-sm text-gray-500 dark:text-gray-400 space-y-2">
+                  <p><strong>Governing Law:</strong> State of Arizona</p>
+                  <p><strong>Venue:</strong> Maricopa County Superior Court</p>
+                  <p className="text-xs mt-4">
+                    By signing this agreement, both parties agree to the terms and conditions outlined herein.
+                    This agreement is facilitated by ItWhip as a platform service.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 p-4 border-t border-gray-200 dark:border-gray-700 sticky bottom-0 bg-white dark:bg-gray-800">
+              <button
+                onClick={() => setShowAgreementPreview(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg font-medium transition-colors"
+              >
+                Close
+              </button>
+              <a
+                href="https://itwhip.com/rentals/cmjutqr7k0001ju04qwg6ds9a/book"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
+              >
+                <IoDocumentTextOutline className="w-4 h-4" />
+                View Full Agreement
+              </a>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

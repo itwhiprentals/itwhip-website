@@ -1,5 +1,7 @@
 // app/partner/requests/[id]/components/DeclineModal.tsx
-// Modal for hosts to decline a booking request
+// Modal for hosts to decline a booking request with two options:
+// 1. Remove booking AND account (full removal)
+// 2. Keep account, remove booking (stay for future opportunities)
 
 'use client'
 
@@ -7,13 +9,17 @@ import { useState } from 'react'
 import {
   IoCloseOutline,
   IoWarningOutline,
-  IoRefreshOutline
+  IoRefreshOutline,
+  IoTrashOutline,
+  IoPersonOutline
 } from 'react-icons/io5'
 
 interface DeclineModalProps {
   onClose: () => void
   onSuccess: () => void
 }
+
+type DeclineOption = 'remove_all' | 'keep_account'
 
 const DECLINE_REASONS = [
   { value: 'dates_unavailable', label: 'Dates don\'t work for me' },
@@ -24,6 +30,7 @@ const DECLINE_REASONS = [
 ]
 
 export default function DeclineModal({ onClose, onSuccess }: DeclineModalProps) {
+  const [declineOption, setDeclineOption] = useState<DeclineOption | null>(null)
   const [selectedReason, setSelectedReason] = useState<string>('')
   const [customReason, setCustomReason] = useState('')
   const [confirmedUnderstand, setConfirmedUnderstand] = useState(false)
@@ -31,7 +38,7 @@ export default function DeclineModal({ onClose, onSuccess }: DeclineModalProps) 
   const [error, setError] = useState<string | null>(null)
 
   const reason = selectedReason === 'other' ? customReason : DECLINE_REASONS.find(r => r.value === selectedReason)?.label
-  const canSubmit = selectedReason && (selectedReason !== 'other' || customReason.trim()) && confirmedUnderstand
+  const canSubmit = declineOption && selectedReason && (selectedReason !== 'other' || customReason.trim()) && confirmedUnderstand
 
   const handleSubmit = async () => {
     if (!canSubmit) return
@@ -43,7 +50,10 @@ export default function DeclineModal({ onClose, onSuccess }: DeclineModalProps) 
       const response = await fetch('/api/partner/onboarding/decline', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason })
+        body: JSON.stringify({
+          reason,
+          deleteAccount: declineOption === 'remove_all'
+        })
       })
 
       const result = await response.json()
@@ -80,41 +90,139 @@ export default function DeclineModal({ onClose, onSuccess }: DeclineModalProps) 
         </div>
 
         <div className="p-4 space-y-6">
-          {/* Warning */}
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-            <p className="text-sm text-red-700 dark:text-red-300">
-              <strong>Are you sure?</strong> Declining this request means you'll miss out on this booking opportunity. This action cannot be undone.
-            </p>
-          </div>
-
-          {/* Reason Selection */}
+          {/* Decline Options */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-              Why are you declining? (helps us improve)
+              What would you like to do?
             </label>
-            <div className="space-y-2">
-              {DECLINE_REASONS.map((reason) => (
-                <label
-                  key={reason.value}
-                  className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
-                    selectedReason === reason.value
-                      ? 'border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20'
-                      : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="declineReason"
-                    value={reason.value}
-                    checked={selectedReason === reason.value}
-                    onChange={(e) => setSelectedReason(e.target.value)}
-                    className="w-4 h-4 text-red-600 border-gray-300 focus:ring-red-500"
-                  />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">{reason.label}</span>
-                </label>
-              ))}
+            <div className="space-y-3">
+              {/* Option 1: Remove booking + account */}
+              <button
+                type="button"
+                onClick={() => setDeclineOption('remove_all')}
+                className={`w-full flex items-start gap-3 p-4 border-2 rounded-lg text-left transition-colors ${
+                  declineOption === 'remove_all'
+                    ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
+                    : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                }`}
+              >
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  declineOption === 'remove_all'
+                    ? 'bg-red-100 dark:bg-red-900/50'
+                    : 'bg-gray-100 dark:bg-gray-700'
+                }`}>
+                  <IoTrashOutline className={`w-5 h-5 ${
+                    declineOption === 'remove_all'
+                      ? 'text-red-600 dark:text-red-400'
+                      : 'text-gray-500 dark:text-gray-400'
+                  }`} />
+                </div>
+                <div className="flex-1">
+                  <p className={`font-medium ${
+                    declineOption === 'remove_all'
+                      ? 'text-red-700 dark:text-red-300'
+                      : 'text-gray-900 dark:text-white'
+                  }`}>
+                    Remove booking & my account
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    Delete this booking request and remove my ItWhip account completely. I'm not interested in hosting.
+                  </p>
+                </div>
+              </button>
+
+              {/* Option 2: Keep account, remove booking */}
+              <button
+                type="button"
+                onClick={() => setDeclineOption('keep_account')}
+                className={`w-full flex items-start gap-3 p-4 border-2 rounded-lg text-left transition-colors ${
+                  declineOption === 'keep_account'
+                    ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20'
+                    : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                }`}
+              >
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  declineOption === 'keep_account'
+                    ? 'bg-orange-100 dark:bg-orange-900/50'
+                    : 'bg-gray-100 dark:bg-gray-700'
+                }`}>
+                  <IoPersonOutline className={`w-5 h-5 ${
+                    declineOption === 'keep_account'
+                      ? 'text-orange-600 dark:text-orange-400'
+                      : 'text-gray-500 dark:text-gray-400'
+                  }`} />
+                </div>
+                <div className="flex-1">
+                  <p className={`font-medium ${
+                    declineOption === 'keep_account'
+                      ? 'text-orange-700 dark:text-orange-300'
+                      : 'text-gray-900 dark:text-white'
+                  }`}>
+                    Keep my account, remove this booking
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    I can't do this booking, but I'd like to stay on ItWhip for future opportunities.
+                  </p>
+                </div>
+              </button>
             </div>
           </div>
+
+          {/* Warning based on selection */}
+          {declineOption && (
+            <div className={`rounded-lg p-4 border ${
+              declineOption === 'remove_all'
+                ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
+            }`}>
+              <p className={`text-sm ${
+                declineOption === 'remove_all'
+                  ? 'text-red-700 dark:text-red-300'
+                  : 'text-amber-700 dark:text-amber-300'
+              }`}>
+                {declineOption === 'remove_all' ? (
+                  <>
+                    <strong>This will permanently delete your account.</strong> All your data will be removed and you won't receive any future booking opportunities.
+                  </>
+                ) : (
+                  <>
+                    <strong>This booking will be cancelled.</strong> You'll miss out on this opportunity, but we'll keep you in mind for future bookings that match your availability.
+                  </>
+                )}
+              </p>
+            </div>
+          )}
+
+          {/* Reason Selection - Only show after option selected */}
+          {declineOption && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                Why are you declining? (helps us improve)
+              </label>
+              <div className="space-y-2">
+                {DECLINE_REASONS.map((reason) => (
+                  <label
+                    key={reason.value}
+                    className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+                      selectedReason === reason.value
+                        ? 'border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20'
+                        : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="declineReason"
+                      value={reason.value}
+                      checked={selectedReason === reason.value}
+                      onChange={(e) => setSelectedReason(e.target.value)}
+                      className="w-4 h-4 text-red-600 border-gray-300 focus:ring-red-500"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">{reason.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Custom Reason Input */}
           {selectedReason === 'other' && (
@@ -133,17 +241,21 @@ export default function DeclineModal({ onClose, onSuccess }: DeclineModalProps) 
           )}
 
           {/* Confirmation Checkbox */}
-          <label className="flex items-start gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={confirmedUnderstand}
-              onChange={(e) => setConfirmedUnderstand(e.target.checked)}
-              className="w-4 h-4 mt-0.5 text-red-600 border-gray-300 rounded focus:ring-red-500"
-            />
-            <span className="text-sm text-gray-600 dark:text-gray-400">
-              I understand that declining will remove this booking opportunity and I cannot undo this action.
-            </span>
-          </label>
+          {declineOption && selectedReason && (
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={confirmedUnderstand}
+                onChange={(e) => setConfirmedUnderstand(e.target.checked)}
+                className="w-4 h-4 mt-0.5 text-red-600 border-gray-300 rounded focus:ring-red-500"
+              />
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                {declineOption === 'remove_all'
+                  ? 'I understand this will permanently delete my account and all associated data.'
+                  : 'I understand I will miss this booking opportunity but can receive future requests.'}
+              </span>
+            </label>
+          )}
 
           {/* Error */}
           {error && (
@@ -164,15 +276,21 @@ export default function DeclineModal({ onClose, onSuccess }: DeclineModalProps) 
           <button
             onClick={handleSubmit}
             disabled={!canSubmit || submitting}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+              declineOption === 'remove_all'
+                ? 'bg-red-600 hover:bg-red-700 text-white'
+                : 'bg-orange-600 hover:bg-orange-700 text-white'
+            }`}
           >
             {submitting ? (
               <>
                 <IoRefreshOutline className="w-4 h-4 animate-spin" />
-                Declining...
+                Processing...
               </>
+            ) : declineOption === 'remove_all' ? (
+              'Delete Account'
             ) : (
-              'Confirm Decline'
+              'Decline Booking'
             )}
           </button>
         </div>
