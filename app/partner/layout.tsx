@@ -122,7 +122,7 @@ export default function PartnerLayout({
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
 
   // Skip auth check on public partner pages
-  const isPublicPage = pathname === '/partner/login' || pathname === '/partner/reset-password'
+  const isPublicPage = pathname === '/partner/login' || pathname === '/partner/reset-password' || pathname === '/partner/forgot-password'
 
   useEffect(() => {
     if (!isPublicPage) {
