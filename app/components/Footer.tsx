@@ -231,6 +231,11 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/help/identity-verification" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Identity Verification
+                </Link>
+              </li>
+              <li>
                 <Link href="/press" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
                   Press
                 </Link>
