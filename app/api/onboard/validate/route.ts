@@ -65,6 +65,16 @@ export async function POST(request: NextRequest) {
 
     // Check if token is expired
     if (prospect.inviteTokenExp && new Date(prospect.inviteTokenExp) < new Date()) {
+      // Track expired access attempt (spy system)
+      await prisma.hostProspect.update({
+        where: { id: prospect.id },
+        data: {
+          expiredAccessCount: { increment: 1 },
+          lastExpiredAccessAt: new Date(),
+          lastActivityAt: new Date()
+        }
+      })
+
       return NextResponse.json(
         { error: 'This link has expired. Please request a new one.' },
         { status: 410 }
@@ -213,6 +223,9 @@ export async function POST(request: NextRequest) {
         dashboardAccess: true, // Give them dashboard access immediately
         canViewBookings: true,
         autoApproveBookings: false, // Admin reviews first
+        // Recruited host flags - they haven't set a password yet
+        hasPassword: false,
+        isRecruitedRequest: true,
         updatedAt: new Date()
       },
       include: {

@@ -17,7 +17,8 @@ import {
   IoDocumentTextOutline,
   IoPencilOutline,
   IoAlertCircleOutline,
-  IoShieldCheckmarkOutline
+  IoShieldCheckmarkOutline,
+  IoWarningOutline
 } from 'react-icons/io5'
 
 export interface HostProspect {
@@ -40,6 +41,9 @@ export interface HostProspect {
   convertedAt?: string
   inviteResendCount: number
   lastResendAt?: string
+  // Expired link access tracking
+  expiredAccessCount?: number
+  lastExpiredAccessAt?: string
   // Email verification - is this email linked to a verified account?
   isProspectEmailKnown?: boolean
   prospectLinkedTo?: string | null  // "John (Host - APPROVED)" or null if NEW
@@ -184,9 +188,11 @@ export default function ProspectCard({
               onClick={(e) => { e.stopPropagation(); onSendInvite(prospect.id); }}
               disabled={sendingInvite === prospect.id}
               className={`flex items-center gap-1 px-3 py-1.5 rounded text-sm transition-colors ${
-                canSendInvite
-                  ? 'bg-orange-600 hover:bg-orange-700 text-white'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                tokenExpired && prospect.inviteSentAt
+                  ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:hover:bg-yellow-800/50'
+                  : canSendInvite
+                    ? 'bg-orange-600 hover:bg-orange-700 text-white'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
               }`}
             >
               {sendingInvite === prospect.id ? (
@@ -197,8 +203,23 @@ export default function ProspectCard({
                 <IoSendOutline className="w-4 h-4" />
               )}
               <span className="hidden lg:inline">
-                {sendingInvite === prospect.id ? 'Sending...' : copiedLink === prospect.id ? 'Copied!' : (prospect.inviteSentAt ? 'Resend' : 'Send')}
+                {sendingInvite === prospect.id
+                  ? 'Sending...'
+                  : copiedLink === prospect.id
+                    ? 'Copied!'
+                    : tokenExpired && prospect.inviteSentAt
+                      ? `Send New Link${prospect.inviteResendCount > 0 ? ` (${prospect.inviteResendCount + 1}x)` : ''}`
+                      : prospect.inviteSentAt
+                        ? `Resend (${prospect.inviteResendCount + 1}x)`
+                        : 'Send Invite'
+                }
               </span>
+              {/* Alert badge when prospect tried with expired link */}
+              {(prospect.expiredAccessCount ?? 0) > 0 && (
+                <span className="ml-1 px-1.5 py-0.5 bg-orange-200 text-orange-800 text-xs rounded font-bold dark:bg-orange-700 dark:text-orange-100">
+                  !
+                </span>
+              )}
             </button>
           )}
         </div>
@@ -312,6 +333,21 @@ export default function ProspectCard({
         </div>
       )}
 
+      {/* Expired Access Warning - Shows when prospect tried with expired link */}
+      {(prospect.expiredAccessCount ?? 0) > 0 && (
+        <div className="flex items-center gap-2 text-orange-600 dark:text-orange-400 text-[10px] sm:text-xs ml-0 sm:ml-14 mb-2 p-2 bg-orange-50 dark:bg-orange-900/20 rounded border border-orange-200 dark:border-orange-800">
+          <IoWarningOutline className="w-4 h-4 flex-shrink-0" />
+          <span>
+            Tried {prospect.expiredAccessCount}x with expired link
+            {prospect.lastExpiredAccessAt && (
+              <span className="text-gray-500 dark:text-gray-400 ml-1">
+                (last: {formatDate(prospect.lastExpiredAccessAt)})
+              </span>
+            )}
+          </span>
+        </div>
+      )}
+
       {/* Mobile Actions Row */}
       <div className="sm:hidden flex items-center gap-2 pt-2 border-t border-gray-100 dark:border-gray-700">
         {prospect.status === 'CONVERTED' ? (
@@ -328,9 +364,11 @@ export default function ProspectCard({
               onClick={() => onSendInvite(prospect.id)}
               disabled={sendingInvite === prospect.id}
               className={`flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded text-sm transition-colors ${
-                canSendInvite
-                  ? 'bg-orange-600 hover:bg-orange-700 text-white'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                tokenExpired && prospect.inviteSentAt
+                  ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
+                  : canSendInvite
+                    ? 'bg-orange-600 hover:bg-orange-700 text-white'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
               }`}
             >
               {sendingInvite === prospect.id ? (
@@ -340,7 +378,20 @@ export default function ProspectCard({
               ) : (
                 <IoSendOutline className="w-4 h-4" />
               )}
-              {sendingInvite === prospect.id ? 'Sending...' : copiedLink === prospect.id ? 'Copied!' : 'Invite'}
+              {sendingInvite === prospect.id
+                ? 'Sending...'
+                : copiedLink === prospect.id
+                  ? 'Copied!'
+                  : tokenExpired && prospect.inviteSentAt
+                    ? 'New Link'
+                    : prospect.inviteSentAt
+                      ? 'Resend'
+                      : 'Invite'
+              }
+              {/* Alert badge when prospect tried with expired link */}
+              {(prospect.expiredAccessCount ?? 0) > 0 && (
+                <span className="ml-1 px-1 py-0.5 bg-orange-200 text-orange-800 text-[10px] rounded font-bold">!</span>
+              )}
             </button>
             <button
               onClick={() => onEdit(prospect)}

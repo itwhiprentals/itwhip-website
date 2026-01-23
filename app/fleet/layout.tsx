@@ -162,6 +162,12 @@ function InternalLayoutContent({
                     Bonuses
                   </Link>
                   <Link
+                    href="/fleet/guest-prospects"
+                    className="px-2.5 py-1.5 rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
+                  >
+                    Guest Invites
+                  </Link>
+                  <Link
                     href="/fleet/claims"
                     className="px-2.5 py-1.5 rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
                   >
@@ -271,6 +277,13 @@ function InternalLayoutContent({
                     className="px-3 py-2 rounded-md text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
                   >
                     Bonuses
+                  </Link>
+                  <Link
+                    href="/fleet/guest-prospects"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-3 py-2 rounded-md text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                  >
+                    Guest Invites
                   </Link>
                   <Link
                     href="/fleet/claims"

@@ -758,15 +758,22 @@ export async function POST(request: NextRequest) {
 
       if (guestProfileId) {
         try {
-          // Get guest's current balances
+          // Get guest's current balances and verification status
           const guestProfile = await tx.reviewerProfile.findUnique({
             where: { id: guestProfileId },
             select: {
               creditBalance: true,
               bonusBalance: true,
-              depositWalletBalance: true
+              depositWalletBalance: true,
+              stripeIdentityStatus: true,
+              documentsVerified: true
             }
           })
+
+          // ========== VERIFICATION GATE FOR CREDITS ==========
+          // Credits can only be used if guest is verified
+          const isGuestVerified = guestProfile?.stripeIdentityStatus === 'verified' ||
+                                   guestProfile?.documentsVerified === true
 
           if (guestProfile) {
             const balances = {
@@ -775,33 +782,51 @@ export async function POST(request: NextRequest) {
               depositWalletBalance: guestProfile.depositWalletBalance || 0
             }
 
-            // Calculate what can be applied
-            const maxBonusPercentage = 0.25 // 25% max of base price
+            // ========== VERIFICATION GATE ==========
+            // Only apply credits/bonus if guest is verified
+            if (isGuestVerified) {
+              // Calculate what can be applied
+              const maxBonusPercentage = 0.25 // 25% max of base price
 
-            // 1. Calculate max bonus (25% of base rental price)
-            const basePrice = pricing.subtotal - pricing.insuranceFee - pricing.deliveryFee
-            const maxBonusAllowed = Math.round(basePrice * maxBonusPercentage * 100) / 100
-            bonusApplied = Math.min(balances.bonusBalance, maxBonusAllowed, pricing.total)
+              // 1. Calculate max bonus (25% of base rental price)
+              const basePrice = pricing.subtotal - pricing.insuranceFee - pricing.deliveryFee
+              const maxBonusAllowed = Math.round(basePrice * maxBonusPercentage * 100) / 100
+              bonusApplied = Math.min(balances.bonusBalance, maxBonusAllowed, pricing.total)
 
-            // 2. Credits apply to remaining (100% usable)
-            const afterBonus = pricing.total - bonusApplied
-            creditsApplied = Math.min(balances.creditBalance, afterBonus)
+              // 2. Credits apply to remaining (100% usable)
+              const afterBonus = pricing.total - bonusApplied
+              creditsApplied = Math.min(balances.creditBalance, afterBonus)
 
-            // 3. Final charge amount
-            chargeAmount = Math.round((pricing.total - creditsApplied - bonusApplied) * 100) / 100
+              // 3. Final charge amount
+              chargeAmount = Math.round((pricing.total - creditsApplied - bonusApplied) * 100) / 100
 
-            // 4. Deposit from wallet
-            depositFromWallet = Math.min(balances.depositWalletBalance, pricing.deposit)
-            depositFromCard = Math.round((pricing.deposit - depositFromWallet) * 100) / 100
+              // 4. Deposit from wallet
+              depositFromWallet = Math.min(balances.depositWalletBalance, pricing.deposit)
+              depositFromCard = Math.round((pricing.deposit - depositFromWallet) * 100) / 100
 
-            console.log('💰 Financial breakdown:', {
-              originalTotal: pricing.total,
-              creditsApplied,
-              bonusApplied,
-              chargeAmount,
-              depositFromWallet,
-              depositFromCard
-            })
+              console.log('💰 Financial breakdown (verified guest):', {
+                originalTotal: pricing.total,
+                creditsApplied,
+                bonusApplied,
+                chargeAmount,
+                depositFromWallet,
+                depositFromCard
+              })
+            } else {
+              // Guest not verified - credits are locked
+              console.log('🔒 Credits locked - guest not verified:', {
+                availableCredits: balances.creditBalance,
+                availableBonus: balances.bonusBalance,
+                availableDeposit: balances.depositWalletBalance,
+                verificationStatus: guestProfile.stripeIdentityStatus,
+                documentsVerified: guestProfile.documentsVerified,
+                message: 'Guest must complete identity verification to use credits'
+              })
+            }
+            // ========== END VERIFICATION GATE ==========
+
+            // Note: Deduction code only executes if credits were applied (which requires verification)
+            // If not verified, creditsApplied/bonusApplied/depositFromWallet remain 0
 
             // Deduct credits if applied
             if (creditsApplied > 0) {
@@ -873,7 +898,11 @@ export async function POST(request: NextRequest) {
                 bonusApplied,
                 depositFromWallet,
                 depositFromCard,
-                chargeAmount
+                chargeAmount,
+                // Track if credits were available but locked due to verification
+                ...((!isGuestVerified && (balances.creditBalance > 0 || balances.bonusBalance > 0)) ? {
+                  notes: (newBooking.notes || '') + `\n[System] Guest has ${balances.creditBalance > 0 ? `$${balances.creditBalance} credit` : ''}${balances.creditBalance > 0 && balances.bonusBalance > 0 ? ' + ' : ''}${balances.bonusBalance > 0 ? `$${balances.bonusBalance} bonus` : ''} locked - identity verification required to use.`
+                } : {})
               }
             })
           }

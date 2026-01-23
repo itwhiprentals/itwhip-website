@@ -73,13 +73,20 @@ export async function GET(request: NextRequest) {
       createdAt: tx.createdAt.toISOString()
     }))
 
+    // Determine verification status
+    // Credits are unlocked if guest is Stripe verified OR documents verified
+    const isVerified = profile.stripeIdentityStatus === 'verified' || profile.documentsVerified === true
+
     return NextResponse.json({
       success: true,
       creditBalance: profile.creditBalance,
       bonusBalance: profile.bonusBalance,
+      depositWalletBalance: profile.depositWalletBalance || 0,
       maxBonusPercentage,
       expiringBonusAmount: expiringAmount,
-      transactions: formattedTransactions
+      transactions: formattedTransactions,
+      isVerified,
+      verificationStatus: profile.stripeIdentityStatus || 'not_started'
     })
 
   } catch (error) {

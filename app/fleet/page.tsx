@@ -285,13 +285,22 @@ export default function FleetDashboard() {
             <span className="text-sm font-medium">Requests</span>
           </Link>
 
-          {/* Prospects */}
+          {/* Host Prospects */}
           <Link
             href={`/fleet/prospects?key=${apiKey}`}
             className="px-4 py-3 bg-gradient-to-br from-cyan-500 to-blue-500 text-white rounded-lg hover:from-cyan-600 hover:to-blue-600 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
           >
             <IoPersonAddOutline className="text-2xl group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium">Prospects</span>
+            <span className="text-sm font-medium">Host Leads</span>
+          </Link>
+
+          {/* Guest Invites */}
+          <Link
+            href={`/fleet/guest-prospects?key=${apiKey}`}
+            className="px-4 py-3 bg-gradient-to-br from-pink-500 to-rose-500 text-white rounded-lg hover:from-pink-600 hover:to-rose-600 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
+          >
+            <IoGiftOutline className="text-2xl group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-medium">Guest Invites</span>
           </Link>
 
           {/* Settings */}

@@ -116,17 +116,17 @@ export default function OnboardTokenPage() {
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                 Link Expired
               </h2>
-              <p className="text-gray-500 dark:text-gray-400 mb-6">
+              <p className="text-gray-500 dark:text-gray-400 mb-4">
                 {message}
               </p>
-              <p className="text-sm text-gray-400 dark:text-gray-500">
-                Please contact us to receive a new invitation link.
+              <p className="text-sm text-gray-400 dark:text-gray-500 mb-6">
+                Your invitation link has expired after 48 hours. Contact us to receive a new one.
               </p>
               <a
-                href="tel:+13053999069"
-                className="mt-4 inline-block px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors"
+                href="mailto:info@itwhip.com?subject=New%20Invite%20Link%20Request&body=Hi%2C%0A%0AMy%20invitation%20link%20has%20expired.%20Could%20you%20please%20send%20me%20a%20new%20one%3F%0A%0AThank%20you!"
+                className="inline-block px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors"
               >
-                Call (305) 399-9069
+                Email Us for New Link
               </a>
             </div>
           )}

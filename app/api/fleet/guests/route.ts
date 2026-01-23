@@ -102,6 +102,19 @@ export async function GET(request: NextRequest) {
           },
           take: 5
         },
+        // Include recent credit transactions for credit management
+        creditTransactions: {
+          select: {
+            id: true,
+            amount: true,
+            type: true,
+            action: true,
+            reason: true,
+            createdAt: true
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 5
+        },
         _count: {
           select: {
             RentalBooking: true,
@@ -116,6 +129,7 @@ export async function GET(request: NextRequest) {
       id: guest.id,
       email: guest.email,
       name: guest.name,
+      phone: guest.phone,
       profilePhotoUrl: guest.profilePhotoUrl,
       city: guest.city,
       state: guest.state,
@@ -129,7 +143,20 @@ export async function GET(request: NextRequest) {
       recentReviews: guest.RentalReview,
       totalBookings: guest._count.RentalBooking,
       totalReviews: guest._count.RentalReview,
-      createdAt: guest.createdAt
+      createdAt: guest.createdAt,
+      // Credit management fields
+      balances: {
+        credit: guest.creditBalance || 0,
+        bonus: guest.bonusBalance || 0,
+        deposit: guest.depositWalletBalance || 0,
+        total: (guest.creditBalance || 0) + (guest.bonusBalance || 0) + (guest.depositWalletBalance || 0)
+      },
+      verification: {
+        isIdentityVerified: guest.stripeIdentityStatus === 'verified' || guest.documentsVerified === true,
+        stripeStatus: guest.stripeIdentityStatus,
+        documentsVerified: guest.documentsVerified
+      },
+      creditTransactions: guest.creditTransactions
     }))
 
     return NextResponse.json({

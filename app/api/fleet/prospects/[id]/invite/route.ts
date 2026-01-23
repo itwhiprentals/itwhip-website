@@ -42,12 +42,36 @@ export async function POST(
       )
     }
 
-    // Check if already converted
+    // Check if already fully converted (has completed onboarding)
+    // Allow resending if host exists but hasn't completed onboarding
     if (prospect.convertedHostId) {
-      return NextResponse.json(
-        { error: 'This prospect has already converted to a host' },
-        { status: 400 }
-      )
+      const convertedHost = await prisma.rentalHost.findUnique({
+        where: { id: prospect.convertedHostId },
+        select: {
+          id: true,
+          hasPassword: true,
+          cars: { select: { id: true }, take: 1 }
+        }
+      })
+
+      // Only block if host has added a car (real onboarding completion)
+      const hasCar = convertedHost?.cars && convertedHost.cars.length > 0
+
+      if (hasCar) {
+        return NextResponse.json(
+          { error: 'This prospect has already completed host onboarding' },
+          { status: 400 }
+        )
+      }
+
+      // Fix hasPassword if incorrectly set to true (legacy data issue)
+      if (convertedHost && convertedHost.hasPassword === true) {
+        await prisma.rentalHost.update({
+          where: { id: convertedHost.id },
+          data: { hasPassword: false }
+        })
+      }
+      // Allow resending - they clicked but didn't finish setup
     }
 
     // Generate new invite token

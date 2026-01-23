@@ -9,8 +9,11 @@ import {
   IoWarningOutline,
   IoArrowUpOutline,
   IoArrowDownOutline,
-  IoTimeOutline
+  IoTimeOutline,
+  IoLockClosedOutline,
+  IoShieldCheckmarkOutline
 } from 'react-icons/io5'
+import Link from 'next/link'
 
 interface Transaction {
   id: string
@@ -27,11 +30,13 @@ interface Transaction {
 export default function CreditsPage() {
   const [creditBalance, setCreditBalance] = useState(0)
   const [bonusBalance, setBonusBalance] = useState(0)
+  const [depositBalance, setDepositBalance] = useState(0)
   const [maxBonusPercentage, setMaxBonusPercentage] = useState(0.25)
   const [expiringAmount, setExpiringAmount] = useState(0)
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'credit' | 'bonus'>('all')
+  const [isVerified, setIsVerified] = useState(false)
 
   useEffect(() => {
     fetchBalances()
@@ -45,9 +50,11 @@ export default function CreditsPage() {
       if (data.success) {
         setCreditBalance(data.creditBalance)
         setBonusBalance(data.bonusBalance)
+        setDepositBalance(data.depositWalletBalance || 0)
         setMaxBonusPercentage(data.maxBonusPercentage)
         setExpiringAmount(data.expiringBonusAmount || 0)
         setTransactions(data.transactions || [])
+        setIsVerified(data.isVerified || false)
       }
     } catch (error) {
       console.error('Failed to fetch balances:', error)
@@ -97,6 +104,9 @@ export default function CreditsPage() {
     )
   }
 
+  // Calculate total credits that would be locked
+  const totalCredits = creditBalance + bonusBalance + depositBalance
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -107,26 +117,76 @@ export default function CreditsPage() {
         </p>
       </div>
 
+      {/* Locked Credits Warning - Show if not verified and has credits */}
+      {!isVerified && totalCredits > 0 && (
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <IoLockClosedOutline className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-yellow-900 dark:text-yellow-100">
+                Credits Locked
+              </h3>
+              <p className="text-sm text-yellow-800 dark:text-yellow-300 mt-1">
+                Complete identity verification to unlock ${totalCredits.toFixed(2)} in credits. This quick verification keeps our community safe.
+              </p>
+              <Link
+                href="/profile/verification"
+                className="inline-flex items-center gap-1.5 mt-3 px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                <IoShieldCheckmarkOutline className="w-4 h-4" />
+                Verify Now
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Verified Badge - Show when verified and has credits */}
+      {isVerified && totalCredits > 0 && (
+        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
+          <div className="flex items-center gap-2">
+            <IoShieldCheckmarkOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
+            <span className="text-sm font-medium text-green-800 dark:text-green-200">
+              Identity Verified - All credits available for use
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Balance Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Credit Balance */}
-        <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg p-5 text-white shadow-lg">
+        <div className={`bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg p-5 text-white shadow-lg relative ${!isVerified && creditBalance > 0 ? 'opacity-75' : ''}`}>
+          {!isVerified && creditBalance > 0 && (
+            <div className="absolute top-3 right-3">
+              <IoLockClosedOutline className="w-5 h-5 text-white/80" />
+            </div>
+          )}
           <div className="flex items-center gap-2 mb-3">
             <IoWalletOutline className="w-5 h-5 opacity-90" />
             <span className="text-sm font-medium opacity-90">Credit Balance</span>
           </div>
           <p className="text-3xl font-bold mb-1">${creditBalance.toFixed(2)}</p>
-          <p className="text-xs opacity-75">100% usable per booking</p>
+          <p className="text-xs opacity-75">
+            {!isVerified && creditBalance > 0 ? 'Locked - verify to use' : '100% usable per booking'}
+          </p>
         </div>
 
         {/* Bonus Balance */}
-        <div className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg p-5 text-white shadow-lg">
+        <div className={`bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg p-5 text-white shadow-lg relative ${!isVerified && bonusBalance > 0 ? 'opacity-75' : ''}`}>
+          {!isVerified && bonusBalance > 0 && (
+            <div className="absolute top-3 right-3">
+              <IoLockClosedOutline className="w-5 h-5 text-white/80" />
+            </div>
+          )}
           <div className="flex items-center gap-2 mb-3">
             <IoGiftOutline className="w-5 h-5 opacity-90" />
             <span className="text-sm font-medium opacity-90">Bonus Balance</span>
           </div>
           <p className="text-3xl font-bold mb-1">${bonusBalance.toFixed(2)}</p>
-          <p className="text-xs opacity-75">Max {Math.round(maxBonusPercentage * 100)}% per booking</p>
+          <p className="text-xs opacity-75">
+            {!isVerified && bonusBalance > 0 ? 'Locked - verify to use' : `Max ${Math.round(maxBonusPercentage * 100)}% per booking`}
+          </p>
         </div>
       </div>
 
