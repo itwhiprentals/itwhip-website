@@ -1,48 +1,39 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useRef } from 'react'
+import { motion, useScroll, useTransform, useSpring } from 'framer-motion'
 
 export default function IDScannerAnimation() {
   const containerRef = useRef<HTMLDivElement>(null)
-  const [scrollProgress, setScrollProgress] = useState(0)
 
-  useEffect(() => {
-    const container = containerRef.current
-    if (!container) return
+  // Track scroll progress relative to container
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ['start end', 'end start'], // Track from when container enters to when it leaves
+  })
 
-    const handleScroll = () => {
-      const rect = container.getBoundingClientRect()
-      const windowHeight = window.innerHeight
+  // Apply spring physics to smooth out mobile jitter
+  const smoothProgress = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001,
+  })
 
-      // Calculate how far through the section we've scrolled
-      const sectionHeight = container.offsetHeight
+  // Transform scroll progress to ID card Y position
+  // ID starts below (100%), moves through center, exits above (-100%)
+  const idTranslateY = useTransform(smoothProgress, [0, 1], [100, -100])
 
-      // Progress from 0 to 1 as we scroll through the section
-      const totalScrollDistance = sectionHeight + windowHeight
-      const currentScroll = windowHeight - rect.top
-      const progress = Math.max(0, Math.min(1, currentScroll / totalScrollDistance))
-
-      setScrollProgress(progress)
-    }
-
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    handleScroll() // Initial calculation
-
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
-
-  // Map scroll progress to ID card position
-  // ID starts off-screen (below), moves up through the scanner, then exits (above)
-  const idTranslateY = (1 - scrollProgress) * 200 - 100 // Range: 100 to -100
+  // Transform scroll progress to scan line position
+  const scanLineTop = useTransform(smoothProgress, [0, 1], ['0%', '100%'])
 
   return (
     <div
       ref={containerRef}
       className="relative pt-0 pb-4 flex items-center justify-center overflow-hidden bg-gray-50 dark:bg-gray-900"
     >
-      {/* Scanner Surface - the "table" where you place your ID */}
+      {/* Scanner Surface */}
       <div className="relative z-10 w-full max-w-sm sm:max-w-md mx-auto px-4">
-        {/* Scanner frame - flat surface perspective */}
+        {/* Scanner frame */}
         <div
           className="relative bg-gradient-to-b from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 rounded-lg shadow-xl sm:shadow-2xl overflow-hidden"
           style={{
@@ -62,22 +53,20 @@ export default function IDScannerAnimation() {
             }}
           />
 
-          {/* Scan line effect */}
-          <div
+          {/* Scan line effect - using motion.div */}
+          <motion.div
             className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-orange-500 to-transparent opacity-60"
             style={{
-              top: `${scrollProgress * 100}%`,
+              top: scanLineTop,
               boxShadow: '0 0 20px 5px rgba(249, 115, 22, 0.4)',
-              transition: 'top 0.1s ease-out',
             }}
           />
 
-          {/* ID Card */}
-          <div
-            className="absolute inset-3 sm:inset-4 flex items-center justify-center"
+          {/* ID Card - using motion.div */}
+          <motion.div
+            className="absolute inset-3 sm:inset-4 flex items-center justify-center will-change-transform"
             style={{
-              transform: `translateY(${idTranslateY}%)`,
-              transition: 'transform 0.1s ease-out',
+              y: idTranslateY,
             }}
           >
             {/* Arizona Sample Driver License */}
@@ -87,10 +76,10 @@ export default function IDScannerAnimation() {
               alt="Sample Arizona Driver License"
               className="w-full max-w-[280px] sm:max-w-sm rounded-md sm:rounded-lg shadow-lg sm:shadow-xl"
               style={{
-                aspectRatio: '1.586 / 1', // Standard ID card ratio
+                aspectRatio: '1.586 / 1',
               }}
             />
-          </div>
+          </motion.div>
 
           {/* Corner markers - scanning frame */}
           <div className="absolute top-2 left-2 sm:top-3 sm:left-3 w-4 h-4 sm:w-6 sm:h-6 border-l-2 border-t-2 border-orange-500" />
