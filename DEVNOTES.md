@@ -2,6 +2,16 @@
 
 ## Recent Fixes (January 2026)
 
+### Email Tracking & Verification System (Jan 23)
+- [x] EmailLog model with reference IDs (format: REF-XX-XXXXXX)
+- [x] Public `/verify-email` page for email authenticity verification
+- [x] Fleet `/fleet/emails` page for searching email logs
+- [x] Visible, clickable reference IDs in guest invite emails
+- [x] Centralized email config in `/app/lib/email/config.ts`
+- [x] Schema versioning for Prisma client hot-reload in dev
+- [x] API endpoints: `/api/verify-email-reference`, `/api/fleet/emails`
+- [x] Emails button added to fleet dashboard Management Hub
+
 ### Guest Prospect Invitation System (Jan 22)
 - [x] Guest prospects management page `/fleet/guest-prospects`
 - [x] Guest invite page `/guest-invite` with token validation
