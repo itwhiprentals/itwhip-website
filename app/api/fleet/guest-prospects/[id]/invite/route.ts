@@ -70,7 +70,7 @@ export async function POST(
     const firstName = prospect.name.split(' ')[0]
 
     // Build email subject
-    const creditDisplay = prospect.creditAmount > 0 ? `$${prospect.creditAmount.toFixed(0)}` : ''
+    const creditDisplay = prospect.creditAmount > 0 ? `$${prospect.creditAmount.toFixed(2)}` : ''
     const subject = creditDisplay
       ? `${firstName}, You've Got ${creditDisplay} in Rental Credit!`
       : `${firstName}, You're Invited to ItWhip!`
@@ -94,7 +94,7 @@ export async function POST(
         <!-- Header -->
         <div style="border-bottom: 1px solid #e5e7eb; padding-bottom: 16px; margin-bottom: 24px; text-align: center;">
           <p style="margin: 0 0 4px 0; font-size: 12px; color: #ea580c; text-transform: uppercase; letter-spacing: 0.5px;">${prospect.creditAmount > 0 ? 'Your Rental Credit Is Ready' : 'You\'re Invited'}</p>
-          <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #ea580c;">${prospect.creditAmount > 0 ? `$${prospect.creditAmount.toFixed(0)} Welcome Gift Inside` : 'Welcome to ItWhip'}</h1>
+          <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #ea580c;">${prospect.creditAmount > 0 ? `$${prospect.creditAmount.toFixed(2)} Welcome Gift Inside` : 'Welcome to ItWhip'}</h1>
         </div>
 
         <!-- Main content -->
@@ -104,7 +104,7 @@ export async function POST(
 
         <p style="font-size: 16px; margin: 0 0 16px 0; color: #374151;">
           ${prospect.creditAmount > 0
-            ? `Great news! You've been gifted <strong>$${prospect.creditAmount.toFixed(0)} in ${creditTypeDisplay.toLowerCase()}</strong> toward your first rental with ItWhip.`
+            ? `Great news! You've been gifted <strong>$${prospect.creditAmount.toFixed(2)} in ${creditTypeDisplay.toLowerCase()}</strong> toward your first rental with ItWhip.`
             : 'You\'ve been invited to rent a car through ItWhip! Create your account to browse our selection of vehicles from trusted local hosts.'}
         </p>
 
@@ -116,7 +116,7 @@ export async function POST(
         <!-- Credit Display -->
         <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;">
           <p style="margin: 0 0 4px 0; font-size: 13px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">Your ${creditTypeDisplay}</p>
-          <p style="margin: 0; font-size: 36px; font-weight: 700; color: #1f2937;">$${prospect.creditAmount.toFixed(0)}</p>
+          <p style="margin: 0; font-size: 36px; font-weight: 700; color: #1f2937;">$${prospect.creditAmount.toFixed(2)}</p>
           ${prospect.creditNote ? `<p style="margin: 8px 0 0 0; font-size: 14px; color: #6b7280;">"${prospect.creditNote}"</p>` : ''}
           ${prospect.creditExpirationDays ? `<p style="margin: 4px 0 0 0; font-size: 12px; color: #9ca3af;">Valid for ${prospect.creditExpirationDays} days after claim</p>` : ''}
         </div>
@@ -243,6 +243,10 @@ export async function POST(
           <a href="https://itwhip.com/privacy" style="color: #9ca3af;">Privacy</a>
         </p>
 
+        <p style="color: #9ca3af; font-size: 9px; margin-top: 12px; text-align: center; line-height: 1.4;">
+          Credits are distributed after account verification via Stripe Identity. Terms and conditions are subject to change at any time.
+        </p>
+
         <!-- Tracking pixel for email open tracking -->
         <img src="${baseUrl}/api/tracking/guest-pixel/${id}" width="1" height="1" style="display:none;width:1px;height:1px;border:0;" alt="" />
       </body>
@@ -251,17 +255,17 @@ export async function POST(
 
     const text = `
 ${prospect.creditAmount > 0 ? 'YOUR RENTAL CREDIT IS READY' : 'YOU\'RE INVITED'}
-${prospect.creditAmount > 0 ? `$${prospect.creditAmount.toFixed(0)} Welcome Gift Inside` : 'Welcome to ItWhip'}
+${prospect.creditAmount > 0 ? `$${prospect.creditAmount.toFixed(2)} Welcome Gift Inside` : 'Welcome to ItWhip'}
 
 Hi ${firstName},
 
 ${prospect.creditAmount > 0
-  ? `Great news! You've been gifted $${prospect.creditAmount.toFixed(0)} in ${creditTypeDisplay.toLowerCase()} toward your first rental with ItWhip.`
+  ? `Great news! You've been gifted $${prospect.creditAmount.toFixed(2)} in ${creditTypeDisplay.toLowerCase()} toward your first rental with ItWhip.`
   : 'You\'ve been invited to rent a car through ItWhip! Create your account to browse our selection of vehicles from trusted local hosts.'}
 
 Click below to claim your credit and start browsing cars.
 
-${prospect.creditAmount > 0 ? `YOUR ${creditTypeDisplay.toUpperCase()}: $${prospect.creditAmount.toFixed(0)}
+${prospect.creditAmount > 0 ? `YOUR ${creditTypeDisplay.toUpperCase()}: $${prospect.creditAmount.toFixed(2)}
 ${prospect.creditNote ? `"${prospect.creditNote}"` : ''}
 ${prospect.creditExpirationDays ? `Valid for ${prospect.creditExpirationDays} days after claim` : ''}` : ''}
 
@@ -287,6 +291,8 @@ Follow us: Instagram @itwhipofficial | Facebook | X @itwhipofficial | LinkedIn
 
 ItWhip Rentals | Phoenix, AZ | itwhip.com
 About: https://itwhip.com/about | Terms: https://itwhip.com/terms | Privacy: https://itwhip.com/privacy
+
+Credits are distributed after account verification via Stripe Identity. Terms and conditions are subject to change at any time.
     `
 
     // Send the email
