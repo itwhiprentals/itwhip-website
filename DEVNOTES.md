@@ -11,6 +11,9 @@
 - [x] Tracking pixel for prospect engagement
 - [x] Guest credits system `/api/fleet/guests/[id]/credits`
 - [x] Suspense boundary fix for Next.js 15
+- [x] Updated guest invite email template (match host invite design)
+- [x] Fixed Prisma errors in credit application (nanoid, depositTransaction)
+- [x] Fixed guest invite auth recognition (add /payments/ to protected paths)
 
 ### Host Prospect Expiry Tracking (Jan 22)
 - [x] Track expired link access attempts on host prospects
