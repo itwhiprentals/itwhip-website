@@ -2,6 +2,21 @@
 
 ## Recent Fixes (January 2026)
 
+### Guest Prospect Invitation System (Jan 22)
+- [x] Guest prospects management page `/fleet/guest-prospects`
+- [x] Guest invite page `/guest-invite` with token validation
+- [x] Guest onboard API `/api/guest-onboard/validate` with credit application
+- [x] 72-hour expiry for guest invite links
+- [x] Expired access tracking (expiredAccessCount, lastExpiredAccessAt)
+- [x] Tracking pixel for prospect engagement
+- [x] Guest credits system `/api/fleet/guests/[id]/credits`
+- [x] Suspense boundary fix for Next.js 15
+
+### Host Prospect Expiry Tracking (Jan 22)
+- [x] Track expired link access attempts on host prospects
+- [x] Show warning badge when prospect tried with expired link
+- [x] Display "Tried Xx with expired link" in ProspectCard
+
 ### Edit Mode & UX Improvements (Jan 18)
 - [x] BottomSheet component for mobile-friendly inline editing
 - [x] Edit mode context system for landing page preview with section editors
@@ -66,7 +81,10 @@
 
 ## In Progress
 
-_No items in progress_
+### Host Invite Expiry Options (Jan 22)
+- [ ] Add expiry dropdown to ProspectCard Send Invite (48h, 72h, 7 days)
+- [ ] Update `/api/fleet/prospects/[id]/invite` to accept expiryHours param
+- [ ] Default to 48 hours if not specified
 
 ---
 
