@@ -2,6 +2,14 @@
 
 ## Recent Fixes (January 2026)
 
+### Identity Verification Help Page (Jan 23)
+- [x] Create `/help/identity-verification` page explaining Stripe Identity
+- [x] Build scroll-linked ID scanner animation component
+- [x] Arizona sample driver's license in scanner animation
+- [x] Stripe Identity badge with dark mode support
+- [x] Mobile and desktop responsive design
+- [x] Add Identity Verification link to footer
+
 ### Email Tracking & Verification System (Jan 23)
 - [x] EmailLog model with reference IDs (format: REF-XX-XXXXXX)
 - [x] Public `/verify-email` page for email authenticity verification
