@@ -380,7 +380,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Only refresh if pathname changed (not on initial mount - that's handled above)
     if (prevPathnameRef.current !== null && prevPathnameRef.current !== pathname) {
       // Check if navigating to a protected page that needs fresh auth
-      const protectedPaths = ['/dashboard', '/host/', '/partner/', '/admin/', '/profile', '/messages']
+      const protectedPaths = ['/dashboard', '/host/', '/partner/', '/admin/', '/profile', '/messages', '/payments/']
       const isProtectedPath = protectedPaths.some(p => pathname?.startsWith(p))
 
       if (isProtectedPath) {
