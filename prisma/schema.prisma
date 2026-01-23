@@ -3854,6 +3854,77 @@ model ProspectActivity {
   @@map("prospect_activities")
 }
 
+// Email tracking and audit log
+model EmailLog {
+  id          String   @id @default(cuid())
+  referenceId String   @unique // REF-IW-XXXXXX for support lookup
+
+  // Email details
+  recipientEmail String
+  recipientName  String?
+  subject        String
+  emailType      EmailType
+
+  // Link to related records (polymorphic)
+  relatedType String? // "guest_prospect", "host_prospect", "booking", "user"
+  relatedId   String? // ID of the related record
+
+  // Verification tracking
+  verificationToken String?  @unique // For magic link verification
+  verificationExp   DateTime? // When verification link expires
+  verifiedAt        DateTime? // When user verified email
+
+  // Delivery tracking
+  status      EmailStatus @default(QUEUED)
+  sentAt      DateTime?
+  deliveredAt DateTime?
+  openedAt    DateTime?
+  clickedAt   DateTime?
+  bouncedAt   DateTime?
+  bounceReason String?
+
+  // Metadata
+  messageId   String? // SMTP message ID
+  metadata    Json?   // Additional context (IP, user agent, etc.)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([recipientEmail])
+  @@index([emailType])
+  @@index([status])
+  @@index([relatedType, relatedId])
+  @@index([verificationToken])
+  @@index([createdAt])
+  @@map("email_logs")
+}
+
+enum EmailType {
+  GUEST_INVITE
+  HOST_INVITE
+  PASSWORD_RESET
+  EMAIL_VERIFICATION
+  BOOKING_CONFIRMATION
+  BOOKING_REMINDER
+  PAYMENT_RECEIPT
+  REFUND_NOTIFICATION
+  IDENTITY_VERIFICATION
+  WELCOME
+  NEWSLETTER
+  SUPPORT
+  SYSTEM
+}
+
+enum EmailStatus {
+  QUEUED
+  SENT
+  DELIVERED
+  OPENED
+  CLICKED
+  BOUNCED
+  FAILED
+}
+
 // Enums for the reservation request system
 enum ReservationRequestType {
   STANDARD // Regular guest request

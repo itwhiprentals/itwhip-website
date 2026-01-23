@@ -21,7 +21,8 @@ import {
   IoSettingsOutline,
   IoGiftOutline,
   IoHandRightOutline,
-  IoPersonAddOutline
+  IoPersonAddOutline,
+  IoMailOutline
 } from 'react-icons/io5'
 import { Car, CarStatus } from './types'
 import { StatCard, StatusBadge, EmptyState, LoadingSpinner, SectionHeader } from './components'
@@ -301,6 +302,15 @@ export default function FleetDashboard() {
           >
             <IoGiftOutline className="text-2xl group-hover:scale-110 transition-transform" />
             <span className="text-sm font-medium">Guest Invites</span>
+          </Link>
+
+          {/* Emails */}
+          <Link
+            href={`/fleet/emails?key=${apiKey}`}
+            className="px-4 py-3 bg-gradient-to-br from-violet-500 to-purple-600 text-white rounded-lg hover:from-violet-600 hover:to-purple-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
+          >
+            <IoMailOutline className="text-2xl group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-medium">Emails</span>
           </Link>
 
           {/* Settings */}

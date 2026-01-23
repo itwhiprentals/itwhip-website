@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { nanoid } from 'nanoid'
 import { sendEmail } from '@/app/lib/email/sender'
+import { logEmail, emailConfig, getEmailDisclaimer, generateEmailReference } from '@/app/lib/email/config'
 
 // POST /api/fleet/guest-prospects/[id]/invite - Send invite email
 export async function POST(
@@ -65,6 +66,9 @@ export async function POST(
     // Build the invite link
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
     const inviteLink = `${baseUrl}/guest-invite?token=${inviteToken}`
+
+    // Generate email reference ID upfront so it can be included in the email
+    const emailReferenceId = generateEmailReference('GU')
 
     // Get first name only
     const firstName = prospect.name.split(' ')[0]
@@ -170,15 +174,28 @@ export async function POST(
         <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
 
         <p style="color: #6b7280; font-size: 13px; margin-bottom: 0; text-align: center;">
-          Questions? Reply to this email or call <a href="tel:+13053999069" style="color: #ea580c; font-weight: 600;">(305) 399-9069</a>
+          Questions? Reply to this email or visit <a href="${emailConfig.helpUrl}" style="color: #ea580c; font-weight: 600;">itwhip.com/help</a>
         </p>
 
         <!-- About Us -->
         <p style="color: #9ca3af; font-size: 10px; margin-top: 16px; text-align: center; line-height: 1.4;">
           ItWhip is a peer-to-peer vehicle rental marketplace connecting verified renters with trusted vehicle owners.
           Find unique cars from local hosts at competitive rates.
-          <a href="https://itwhip.com/how-it-works" style="color: #ea580c;">How It Works</a> |
-          <a href="https://itwhip.com/cars" style="color: #ea580c;">Browse Cars</a>
+          <a href="${emailConfig.howItWorksUrl}" style="color: #ea580c;">How It Works</a> |
+          <a href="${emailConfig.browseCarsUrl}" style="color: #ea580c;">Browse Cars</a>
+        </p>
+
+        <!-- Credit Disclaimer - above social links -->
+        <p style="color: #9ca3af; font-size: 9px; margin-top: 16px; text-align: center; line-height: 1.4;">
+          ${getEmailDisclaimer()}
+        </p>
+
+        <p style="color: #9ca3af; font-size: 11px; margin-top: 12px; text-align: center;">
+          ${emailConfig.companyName} | ${emailConfig.companyAddress} | <a href="${emailConfig.websiteUrl}" style="color: #ea580c;">itwhip.com</a>
+          <br/>
+          <a href="${emailConfig.aboutUrl}" style="color: #9ca3af;">About</a> |
+          <a href="${emailConfig.termsUrl}" style="color: #9ca3af;">Terms</a> |
+          <a href="${emailConfig.privacyUrl}" style="color: #9ca3af;">Privacy</a>
         </p>
 
         <!-- Social Links with real SVG logos -->
@@ -186,7 +203,7 @@ export async function POST(
           <tr>
             <!-- Instagram -->
             <td style="padding: 0 3px;">
-              <a href="https://www.instagram.com/itwhipofficial" target="_blank" style="display: block; text-decoration: none;">
+              <a href="${emailConfig.social.instagram}" target="_blank" style="display: block; text-decoration: none;">
                 <table cellpadding="0" cellspacing="0" width="25" height="25" style="background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); border-radius: 5px;">
                   <tr>
                     <td align="center" valign="middle" style="width: 25px; height: 25px;">
@@ -198,7 +215,7 @@ export async function POST(
             </td>
             <!-- Facebook -->
             <td style="padding: 0 3px;">
-              <a href="https://www.facebook.com/people/Itwhipcom/61573990760395/" target="_blank" style="display: block; text-decoration: none;">
+              <a href="${emailConfig.social.facebook}" target="_blank" style="display: block; text-decoration: none;">
                 <table cellpadding="0" cellspacing="0" width="25" height="25" style="background: #1877f2; border-radius: 5px;">
                   <tr>
                     <td align="center" valign="middle" style="width: 25px; height: 25px;">
@@ -210,7 +227,7 @@ export async function POST(
             </td>
             <!-- X (Twitter) -->
             <td style="padding: 0 3px;">
-              <a href="https://x.com/itwhipofficial" target="_blank" style="display: block; text-decoration: none;">
+              <a href="${emailConfig.social.twitter}" target="_blank" style="display: block; text-decoration: none;">
                 <table cellpadding="0" cellspacing="0" width="25" height="25" style="background: #000000; border-radius: 5px;">
                   <tr>
                     <td align="center" valign="middle" style="width: 25px; height: 25px;">
@@ -222,7 +239,7 @@ export async function POST(
             </td>
             <!-- LinkedIn -->
             <td style="padding: 0 3px;">
-              <a href="https://www.linkedin.com/company/itwhip/" target="_blank" style="display: block; text-decoration: none;">
+              <a href="${emailConfig.social.linkedin}" target="_blank" style="display: block; text-decoration: none;">
                 <table cellpadding="0" cellspacing="0" width="25" height="25" style="background: #0a66c2; border-radius: 5px;">
                   <tr>
                     <td align="center" valign="middle" style="width: 25px; height: 25px;">
@@ -235,16 +252,11 @@ export async function POST(
           </tr>
         </table>
 
-        <p style="color: #9ca3af; font-size: 11px; margin-top: 8px; text-align: center;">
-          ItWhip Rentals | Phoenix, AZ | <a href="https://itwhip.com" style="color: #ea580c;">itwhip.com</a>
-          <br/>
-          <a href="https://itwhip.com/about" style="color: #9ca3af;">About</a> |
-          <a href="https://itwhip.com/terms" style="color: #9ca3af;">Terms</a> |
-          <a href="https://itwhip.com/privacy" style="color: #9ca3af;">Privacy</a>
-        </p>
-
-        <p style="color: #9ca3af; font-size: 9px; margin-top: 12px; text-align: center; line-height: 1.4;">
-          Credits are distributed after account verification via Stripe Identity. Terms and conditions are subject to change at any time.
+        <!-- Reference ID for verification -->
+        <p style="color: #6b7280; font-size: 11px; margin-top: 16px; text-align: center;">
+          <a href="${baseUrl}/verify-email?ref=${emailReferenceId}" style="color: #6b7280; text-decoration: none;">
+            Verify this email: <strong style="color: #ea580c;">${emailReferenceId}</strong>
+          </a>
         </p>
 
         <!-- Tracking pixel for email open tracking -->
@@ -282,17 +294,19 @@ WHAT YOU GET WITH ITWHIP:
 ✓ Secure Payments via Stripe   ✓ ID Verification for Safety
 ✓ Direct Host Communication    ✓ Rental History & Receipts
 
-Questions? Reply to this email or call (305) 399-9069
+Questions? Reply to this email or visit itwhip.com/help
 
 ItWhip is a peer-to-peer vehicle rental marketplace connecting verified renters with trusted vehicle owners. Find unique cars from local hosts at competitive rates.
-How It Works: https://itwhip.com/how-it-works | Browse Cars: https://itwhip.com/cars
+How It Works: ${emailConfig.howItWorksUrl} | Browse Cars: ${emailConfig.browseCarsUrl}
+
+Credits are distributed after account verification via Stripe Identity (${emailConfig.stripeIdentityUrl}). Terms and conditions are subject to change at any time.
+
+${emailConfig.companyName} | ${emailConfig.companyAddress} | itwhip.com
+About: ${emailConfig.aboutUrl} | Terms: ${emailConfig.termsUrl} | Privacy: ${emailConfig.privacyUrl}
 
 Follow us: Instagram @itwhipofficial | Facebook | X @itwhipofficial | LinkedIn
 
-ItWhip Rentals | Phoenix, AZ | itwhip.com
-About: https://itwhip.com/about | Terms: https://itwhip.com/terms | Privacy: https://itwhip.com/privacy
-
-Credits are distributed after account verification via Stripe Identity. Terms and conditions are subject to change at any time.
+Verify this email: ${baseUrl}/verify-email?ref=${emailReferenceId}
     `
 
     // Send the email
@@ -321,10 +335,31 @@ Credits are distributed after account verification via Stripe Identity. Terms an
 
     console.log('[Guest Prospect Invite] Email sent successfully:', emailResult.messageId)
 
+    // Log the email for audit trail (using pre-generated reference ID)
+    const emailLog = await logEmail({
+      recipientEmail: prospect.email,
+      recipientName: prospect.name,
+      subject,
+      emailType: 'GUEST_INVITE',
+      relatedType: 'guest_prospect',
+      relatedId: id,
+      messageId: emailResult.messageId,
+      referenceId: emailReferenceId,
+      metadata: {
+        creditAmount: prospect.creditAmount,
+        creditType: prospect.creditType,
+        inviteResendCount: updatedProspect.inviteResendCount,
+        tokenExpiry: inviteTokenExp.toISOString()
+      }
+    })
+
+    console.log('[Guest Prospect Invite] Email logged with reference:', emailLog.referenceId)
+
     return NextResponse.json({
       success: true,
       emailSent: true,
       messageId: emailResult.messageId,
+      referenceId: emailLog.referenceId,
       prospect: updatedProspect,
       inviteLink,
       expiresAt: inviteTokenExp

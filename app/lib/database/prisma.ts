@@ -27,18 +27,33 @@ const prismaClientSingleton = () => {
 // ============================================================================
 
 declare global {
-  var prisma: undefined | ReturnType<typeof prismaClientSingleton>
+  // eslint-disable-next-line no-var
+  var __prismaClient: undefined | ReturnType<typeof prismaClientSingleton>
 }
 
 // ============================================================================
 // PRISMA INSTANCE (Lazy initialization for serverless)
 // ============================================================================
 
-const prisma = globalThis.prisma ?? prismaClientSingleton()
+// Schema version - bump this after running migrations to force client refresh in dev
+const SCHEMA_VERSION = '2026-01-23-email-logs'
+
+// In development, check if schema version changed and recreate client if needed
+const needsRefresh = process.env.NODE_ENV !== 'production' &&
+  globalThis.__prismaClient &&
+  (globalThis as any).__prismaSchemaVersion !== SCHEMA_VERSION
+
+if (needsRefresh && globalThis.__prismaClient) {
+  globalThis.__prismaClient.$disconnect()
+  globalThis.__prismaClient = undefined
+}
+
+const prisma = globalThis.__prismaClient ?? prismaClientSingleton()
 
 // Cache in development to prevent connection exhaustion during hot reload
 if (process.env.NODE_ENV !== 'production') {
-  globalThis.prisma = prisma
+  globalThis.__prismaClient = prisma
+  ;(globalThis as any).__prismaSchemaVersion = SCHEMA_VERSION
 }
 
 // ============================================================================
