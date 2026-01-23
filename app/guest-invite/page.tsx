@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { IoCheckmarkCircle, IoWarning, IoTime, IoGift } from 'react-icons/io5'
 
-export default function GuestInvitePage() {
+function GuestInviteContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get('token')
@@ -182,5 +182,41 @@ export default function GuestInvitePage() {
         </div>
       </div>
     </div>
+  )
+}
+
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50 flex items-center justify-center p-4">
+      <div className="max-w-md w-full">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">
+            It<span className="text-orange-500">Whip</span>
+          </h1>
+          <p className="text-gray-500 mt-1">Welcome Gift</p>
+        </div>
+        <div className="bg-white rounded-lg shadow-xl p-8">
+          <div className="text-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-orange-100 flex items-center justify-center">
+              <IoGift className="w-8 h-8 text-orange-600 animate-pulse" />
+            </div>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+              Loading...
+            </h2>
+            <div className="mt-6 flex justify-center">
+              <div className="w-8 h-8 border-2 border-orange-600 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function GuestInvitePage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <GuestInviteContent />
+    </Suspense>
   )
 }
