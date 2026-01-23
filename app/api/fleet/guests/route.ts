@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
           take: 5
         },
         // Include recent credit transactions for credit management
-        creditTransactions: {
+        CreditBonusTransaction: {
           select: {
             id: true,
             amount: true,
@@ -156,7 +156,7 @@ export async function GET(request: NextRequest) {
         stripeStatus: guest.stripeIdentityStatus,
         documentsVerified: guest.documentsVerified
       },
-      creditTransactions: guest.creditTransactions
+      creditTransactions: guest.CreditBonusTransaction
     }))
 
     return NextResponse.json({
