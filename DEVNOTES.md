@@ -9,6 +9,7 @@
 - [x] Stripe Identity badge with dark mode support
 - [x] Mobile and desktop responsive design
 - [x] Add Identity Verification link to footer
+- [x] Fix mobile scroll jitter with Framer Motion useSpring
 
 ### Email Tracking & Verification System (Jan 23)
 - [x] EmailLog model with reference IDs (format: REF-XX-XXXXXX)
