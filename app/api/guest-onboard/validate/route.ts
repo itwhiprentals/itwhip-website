@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
           guestName: prospect.name.split(' ')[0],
           isReturning: true,
           creditApplied: false, // Already applied before
-          redirectUrl: '/payments/credits'
+          redirectUrl: '/dashboard'
         })
 
         setGuestCookies(response, tokens)
@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
             id: nanoid(),
             email: prospect.email.toLowerCase(),
             name: prospect.name,
-            role: 'GUEST',
+            role: 'CLAIMED', // CLAIMED = verified guest (via invite link)
             passwordHash: '', // No password - they use magic link
             isActive: true,
             emailVerified: false,
@@ -314,7 +314,7 @@ export async function POST(request: NextRequest) {
       creditApplied,
       creditAmount: prospect.creditAmount,
       creditType: prospect.creditType,
-      redirectUrl: '/payments/credits'
+      redirectUrl: '/dashboard'
     })
 
     setGuestCookies(response, tokens)
