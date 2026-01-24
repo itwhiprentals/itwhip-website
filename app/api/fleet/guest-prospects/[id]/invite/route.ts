@@ -133,28 +133,28 @@ export async function POST(
           Hi ${firstName},
         </p>
 
-        <p style="font-size: 16px; margin: 0 0 16px 0; color: #374151;">
+        <p style="font-size: 16px; margin: 0 0 16px 0; color: #111827;">
           ${prospect.creditAmount > 0
             ? `Great news! You've been gifted <strong>$${prospect.creditAmount.toFixed(2)} in ${creditTypeDisplay.toLowerCase()}</strong> toward your first rental with ItWhip.`
             : 'You\'ve been invited to rent a car through ItWhip! Create your account to browse our selection of vehicles from trusted local hosts.'}
         </p>
 
-        <p style="font-size: 16px; color: #374151; margin: 0;">
+        <p style="font-size: 16px; color: #111827; margin: 0;">
           Click below to claim your credit and start browsing cars.
         </p>
 
         ${prospect.creditAmount > 0 ? `
         <!-- Credit Display -->
         <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;">
-          <p style="margin: 0 0 4px 0; font-size: 13px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">Your ${creditTypeDisplay}</p>
+          <p style="margin: 0 0 4px 0; font-size: 13px; color: #374151; text-transform: uppercase; letter-spacing: 0.5px;">Your ${creditTypeDisplay}</p>
           <p style="margin: 0; font-size: 36px; font-weight: 700; color: #1f2937;">$${prospect.creditAmount.toFixed(2)}</p>
-          ${prospect.creditNote ? `<p style="margin: 8px 0 0 0; font-size: 14px; color: #6b7280;">"${prospect.creditNote}"</p>` : ''}
-          ${prospect.creditExpirationDays ? `<p style="margin: 4px 0 0 0; font-size: 12px; color: #9ca3af;">Valid for ${prospect.creditExpirationDays} days after claim</p>` : ''}
+          ${prospect.creditNote ? `<p style="margin: 8px 0 0 0; font-size: 14px; color: #374151;">"${prospect.creditNote}"</p>` : ''}
+          ${prospect.creditExpirationDays ? `<p style="margin: 4px 0 0 0; font-size: 12px; color: #4b5563;">Valid for ${prospect.creditExpirationDays} days after claim</p>` : ''}
         </div>
         ` : ''}
 
         <!-- Status indicator -->
-        <p style="font-size: 14px; color: #374151; margin: 20px 0;">
+        <p style="font-size: 14px; color: #111827; margin: 20px 0;">
           <strong>This credit is reserved for you.</strong> We're holding it for 72 hours so you have time to claim it.
         </p>
 
@@ -173,7 +173,7 @@ export async function POST(
         <p style="margin: 0 0 12px 0; color: #1f2937; font-size: 14px; font-weight: 600;">
           What you get with ItWhip:
         </p>
-        <table style="width: 100%; font-size: 13px; color: #4b5563;">
+        <table style="width: 100%; font-size: 13px; color: #1f2937;">
           <tr>
             <td style="padding: 5px 0; width: 50%;">✓ Verified Hosts & Vehicles</td>
             <td style="padding: 5px 0; width: 50%;">✓ Flexible Pickup Locations</td>
@@ -202,7 +202,7 @@ export async function POST(
 
         <!-- Closing Message -->
         <div style="margin: 28px 0 24px 0;">
-          <p style="font-size: 15px; color: #374151; margin: 0 0 16px 0;">
+          <p style="font-size: 15px; color: #111827; margin: 0 0 16px 0;">
             We're excited to have you join the ItWhip community. Happy travels!
           </p>
           <p style="font-size: 14px; color: #1f2937; margin: 0;">
@@ -219,15 +219,15 @@ export async function POST(
         <div style="text-align: center; margin: 0 0 16px 0;">
           <img class="logo-light" src="https://itwhip.com/logo.png" alt="ItWhip" width="36" style="max-width: 36px; height: auto; display: block; margin: 0 auto 2px auto;" />
           <img class="logo-dark" src="https://itwhip.com/logo-white.png" alt="ItWhip" width="36" style="max-width: 36px; height: auto; display: none; margin: 0 auto 2px auto;" />
-          <span class="email-text-muted" style="font-size: 9px; font-weight: 600; color: #6b7280; letter-spacing: 0.3px;">ITWHIP CAR RENTALS AND RIDESHARES</span>
+          <span class="email-text-muted" style="font-size: 9px; font-weight: 600; color: #374151; letter-spacing: 0.3px;">ITWHIP CAR RENTALS AND RIDESHARES</span>
         </div>
 
-        <p style="color: #6b7280; font-size: 13px; margin-bottom: 0; text-align: center;">
+        <p style="color: #374151; font-size: 13px; margin-bottom: 0; text-align: center;">
           Questions? Reply to this email or visit <a href="${emailConfig.helpUrl}" style="color: #ea580c; font-weight: 600;">itwhip.com/help</a>
         </p>
 
         <!-- About Us -->
-        <p style="color: #9ca3af; font-size: 10px; margin-top: 16px; text-align: center; line-height: 1.4;">
+        <p style="color: #4b5563; font-size: 10px; margin-top: 16px; text-align: center; line-height: 1.4;">
           ItWhip is a peer-to-peer vehicle rental marketplace connecting verified renters with trusted vehicle owners.
           Find unique cars from local hosts at competitive rates.
           <a href="${emailConfig.howItWorksUrl}" style="color: #ea580c;">How It Works</a> |
@@ -235,16 +235,16 @@ export async function POST(
         </p>
 
         <!-- Credit Disclaimer - above social links -->
-        <p style="color: #9ca3af; font-size: 9px; margin-top: 16px; text-align: center; line-height: 1.4;">
+        <p style="color: #4b5563; font-size: 9px; margin-top: 16px; text-align: center; line-height: 1.4;">
           ${getEmailDisclaimer()}
         </p>
 
-        <p style="color: #9ca3af; font-size: 11px; margin-top: 12px; text-align: center;">
+        <p style="color: #4b5563; font-size: 11px; margin-top: 12px; text-align: center;">
           ${emailConfig.companyName} | ${emailConfig.companyAddress} | <a href="${emailConfig.websiteUrl}" style="color: #ea580c;">itwhip.com</a>
           <br/>
-          <a href="${emailConfig.aboutUrl}" style="color: #9ca3af;">About</a> |
-          <a href="${emailConfig.termsUrl}" style="color: #9ca3af;">Terms</a> |
-          <a href="${emailConfig.privacyUrl}" style="color: #9ca3af;">Privacy</a>
+          <a href="${emailConfig.aboutUrl}" style="color: #4b5563;">About</a> |
+          <a href="${emailConfig.termsUrl}" style="color: #4b5563;">Terms</a> |
+          <a href="${emailConfig.privacyUrl}" style="color: #4b5563;">Privacy</a>
         </p>
 
         <!-- Social Links with hosted PNG icons -->
@@ -274,8 +274,8 @@ export async function POST(
         </table>
 
         <!-- Reference ID for verification -->
-        <p style="color: #6b7280; font-size: 11px; margin-top: 16px; text-align: center;">
-          <a href="${baseUrl}/verify-email?ref=${emailReferenceId}" style="color: #6b7280; text-decoration: none;">
+        <p style="color: #374151; font-size: 11px; margin-top: 16px; text-align: center;">
+          <a href="${baseUrl}/verify-email?ref=${emailReferenceId}" style="color: #374151; text-decoration: none;">
             Verify this email: <strong style="color: #ea580c;">${emailReferenceId}</strong>
           </a>
         </p>

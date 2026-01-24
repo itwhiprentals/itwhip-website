@@ -66,47 +66,47 @@ export async function GET(request: NextRequest) {
           Hi ${firstName},
         </p>
 
-        <p class="email-text" style="font-size: 16px; margin: 0 0 16px 0; color: #374151;">
+        <p class="email-text" style="font-size: 16px; margin: 0 0 16px 0; color: #111827;">
           Great news! As promised, we're passing along a booking for your <strong>${vehicleDesc}</strong>.
         </p>
 
-        <p class="email-text" style="font-size: 16px; color: #374151; margin: 0;">
+        <p class="email-text" style="font-size: 16px; color: #111827; margin: 0;">
           A verified guest is ready to book. Click below to view your dashboard and accept.
         </p>
 
         <!-- Earnings Section -->
         <div class="email-card" style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center; background-color: #ffffff;">
-          <p class="email-text-muted" style="margin: 0 0 4px 0; font-size: 13px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">Your Potential Payout</p>
+          <p class="email-text-muted" style="margin: 0 0 4px 0; font-size: 13px; color: #374151; text-transform: uppercase; letter-spacing: 0.5px;">Your Potential Payout</p>
           <p class="email-text" style="margin: 0; font-size: 36px; font-weight: 700; color: #1f2937;">$${potentialEarnings.toFixed(2)}</p>
-          <p class="email-text-muted" style="margin: 8px 0 0 0; font-size: 14px; color: #6b7280;">${durationDays} days @ $${offeredRate.toFixed(2)}/day</p>
+          <p class="email-text-muted" style="margin: 8px 0 0 0; font-size: 14px; color: #374151;">${durationDays} days @ $${offeredRate.toFixed(2)}/day</p>
         </div>
 
         <!-- Booking Details -->
         <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin: 16px 0;">
           <tr>
-            <td style="padding: 8px 0; color: #6b7280; border-bottom: 1px solid #e5e7eb;">Vehicle Requested</td>
+            <td style="padding: 8px 0; color: #374151; border-bottom: 1px solid #e5e7eb;">Vehicle Requested</td>
             <td style="padding: 8px 0; color: #1f2937; font-weight: 600; text-align: right; border-bottom: 1px solid #e5e7eb;">${vehicleDesc}</td>
           </tr>
           <tr>
-            <td style="padding: 8px 0; color: #6b7280; border-bottom: 1px solid #e5e7eb;">Rental Dates</td>
+            <td style="padding: 8px 0; color: #374151; border-bottom: 1px solid #e5e7eb;">Rental Dates</td>
             <td style="padding: 8px 0; color: #1f2937; font-weight: 600; text-align: right; border-bottom: 1px solid #e5e7eb;">Jan 25 - Jan 30, 2026</td>
           </tr>
           <tr>
-            <td style="padding: 8px 0; color: #6b7280; border-bottom: 1px solid #e5e7eb;">Duration</td>
+            <td style="padding: 8px 0; color: #374151; border-bottom: 1px solid #e5e7eb;">Duration</td>
             <td style="padding: 8px 0; color: #1f2937; font-weight: 600; text-align: right; border-bottom: 1px solid #e5e7eb;">${durationDays} days</td>
           </tr>
           <tr>
-            <td style="padding: 8px 0; color: #6b7280; border-bottom: 1px solid #e5e7eb;">Daily Rate</td>
+            <td style="padding: 8px 0; color: #374151; border-bottom: 1px solid #e5e7eb;">Daily Rate</td>
             <td style="padding: 8px 0; color: #1f2937; font-weight: 700; text-align: right; border-bottom: 1px solid #e5e7eb;">$${offeredRate.toFixed(2)}/day</td>
           </tr>
           <tr>
-            <td style="padding: 8px 0; color: #6b7280;">Pickup Location</td>
+            <td style="padding: 8px 0; color: #374151;">Pickup Location</td>
             <td style="padding: 8px 0; color: #1f2937; font-weight: 600; text-align: right;">Phoenix, AZ</td>
           </tr>
         </table>
 
         <!-- Status indicator -->
-        <p class="email-text" style="font-size: 14px; color: #374151; margin: 20px 0;">
+        <p class="email-text" style="font-size: 14px; color: #111827; margin: 20px 0;">
           <strong>This booking is reserved for you.</strong> We're holding it for 48 hours so you have time to review.
         </p>
 
@@ -125,7 +125,7 @@ export async function GET(request: NextRequest) {
         <p class="email-text" style="margin: 0 0 12px 0; color: #1f2937; font-size: 14px; font-weight: 600;">
           What you get with your Partner Dashboard:
         </p>
-        <table style="width: 100%; font-size: 13px; color: #4b5563;" class="email-text-muted">
+        <table style="width: 100%; font-size: 13px; color: #1f2937;" class="email-text-muted">
           <tr>
             <td style="padding: 5px 0; width: 50%;">✓ Guest Verification via Stripe</td>
             <td style="padding: 5px 0; width: 50%;">✓ Counter-Offer on Rates</td>
@@ -154,7 +154,7 @@ export async function GET(request: NextRequest) {
 
         <!-- Closing Message -->
         <div style="margin: 28px 0 24px 0;">
-          <p class="email-text" style="font-size: 15px; color: #374151; margin: 0 0 16px 0;">
+          <p class="email-text" style="font-size: 15px; color: #111827; margin: 0 0 16px 0;">
             We look forward to helping you complete this booking.
           </p>
           <p class="email-text" style="font-size: 14px; color: #1f2937; margin: 0;">
@@ -171,15 +171,15 @@ export async function GET(request: NextRequest) {
         <div style="text-align: center; margin: 0 0 16px 0;">
           <img class="logo-light" src="https://itwhip.com/logo.png" alt="ItWhip" width="36" style="max-width: 36px; height: auto; display: block; margin: 0 auto 2px auto;" />
           <img class="logo-dark" src="https://itwhip.com/logo-white.png" alt="ItWhip" width="36" style="max-width: 36px; height: auto; display: none; margin: 0 auto 2px auto;" />
-          <span class="email-text-muted" style="font-size: 9px; font-weight: 600; color: #6b7280; letter-spacing: 0.3px;">ITWHIP CAR RENTALS AND RIDESHARES</span>
+          <span class="email-text-muted" style="font-size: 9px; font-weight: 600; color: #374151; letter-spacing: 0.3px;">ITWHIP CAR RENTALS AND RIDESHARES</span>
         </div>
 
-        <p style="color: #6b7280; font-size: 13px; margin-bottom: 0; text-align: center;">
+        <p style="color: #374151; font-size: 13px; margin-bottom: 0; text-align: center;">
           Questions? Reply to this email or visit <a href="https://itwhip.com/help" style="color: #ea580c; font-weight: 600;">itwhip.com/help</a>
         </p>
 
         <!-- About Us -->
-        <p style="color: #9ca3af; font-size: 10px; margin-top: 16px; text-align: center; line-height: 1.4;">
+        <p style="color: #4b5563; font-size: 10px; margin-top: 16px; text-align: center; line-height: 1.4;">
           ItWhip is a peer-to-peer vehicle rental marketplace connecting vehicle owners with verified renters.
           We help hosts monetize their vehicles while providing guests with unique rental options.
           <a href="https://itwhip.com/host-benefits" style="color: #ea580c;">Host Benefits</a> |
@@ -187,14 +187,14 @@ export async function GET(request: NextRequest) {
         </p>
 
         <!-- Communication Footer -->
-        <p style="color: #9ca3af; font-size: 11px; margin-top: 12px; text-align: center; line-height: 1.5;">
+        <p style="color: #4b5563; font-size: 11px; margin-top: 12px; text-align: center; line-height: 1.5;">
           All hosts are welcome to finalize bookings directly with guests outside the platform.
           We just ask that you communicate clearly with the guest to ensure a smooth experience.
           <a href="https://itwhip.com/corporate" style="color: #ea580c;">Learn more about corporate rentals</a>
         </p>
 
         <!-- Insurance Disclaimer -->
-        <p style="color: #9ca3af; font-size: 10px; margin-top: 8px; text-align: center; line-height: 1.4;">
+        <p style="color: #4b5563; font-size: 10px; margin-top: 8px; text-align: center; line-height: 1.4;">
           <strong>Insurance:</strong> Hosts are responsible for maintaining valid insurance coverage on their vehicles.
           ItWhip does not provide primary insurance. Please ensure your policy covers peer-to-peer rentals.
           <a href="https://itwhip.com/support/insurance" style="color: #ea580c;">Insurance Support</a> |
@@ -228,17 +228,17 @@ export async function GET(request: NextRequest) {
           </tr>
         </table>
 
-        <p style="color: #9ca3af; font-size: 11px; margin-top: 8px; text-align: center;">
+        <p style="color: #4b5563; font-size: 11px; margin-top: 8px; text-align: center;">
           ItWhip Rentals | Phoenix, AZ | <a href="https://itwhip.com" style="color: #ea580c;">itwhip.com</a>
           <br/>
-          <a href="https://itwhip.com/about" style="color: #9ca3af;">About</a> |
-          <a href="https://itwhip.com/terms" style="color: #9ca3af;">Terms</a> |
-          <a href="https://itwhip.com/privacy" style="color: #9ca3af;">Privacy</a>
+          <a href="https://itwhip.com/about" style="color: #4b5563;">About</a> |
+          <a href="https://itwhip.com/terms" style="color: #4b5563;">Terms</a> |
+          <a href="https://itwhip.com/privacy" style="color: #4b5563;">Privacy</a>
         </p>
 
         <!-- Reference ID for verification -->
-        <p style="color: #6b7280; font-size: 11px; margin-top: 16px; text-align: center;">
-          <a href="${baseUrl}/verify-email?ref=${emailReferenceId}" style="color: #6b7280; text-decoration: none;">
+        <p style="color: #374151; font-size: 11px; margin-top: 16px; text-align: center;">
+          <a href="${baseUrl}/verify-email?ref=${emailReferenceId}" style="color: #374151; text-decoration: none;">
             Verify this email: <strong style="color: #ea580c;">${emailReferenceId}</strong>
           </a>
         </p>
