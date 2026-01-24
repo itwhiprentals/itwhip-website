@@ -34,12 +34,28 @@ export const emailConfig = {
   privacyUrl: 'https://itwhip.com/privacy',
   aboutUrl: 'https://itwhip.com/about',
 
-  // Social media
+  // Social media URLs
   social: {
     instagram: 'https://www.instagram.com/itwhipofficial',
     facebook: 'https://www.facebook.com/people/Itwhipcom/61573990760395/',
     twitter: 'https://x.com/itwhipofficial',
     linkedin: 'https://www.linkedin.com/company/itwhip/'
+  },
+
+  // Hosted social icons for email (transparent PNG with brand colors)
+  socialIcons: {
+    instagram: 'https://itwhip.com/images/email/social/instagram-v2.png',
+    facebook: 'https://itwhip.com/images/email/social/facebook-v2.png',
+    twitter: 'https://itwhip.com/images/email/social/x-v2.png',
+    linkedin: 'https://itwhip.com/images/email/social/linkedin-v2.png'
+  },
+
+  // Logo URLs for email (light and dark mode)
+  logos: {
+    default: 'https://itwhip.com/logo.png',
+    white: 'https://itwhip.com/logo-white.png',
+    darkMode: 'https://itwhip.com/press/logos/itwhip-logo-dark-mode.png',
+    lightMode: 'https://itwhip.com/press/logos/itwhip-logo-light-mode.png'
   },
 
   // Browse
