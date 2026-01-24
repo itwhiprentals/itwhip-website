@@ -2,6 +2,18 @@
 
 ## Recent Fixes (January 2026)
 
+### Fleet Analytics & Monitoring Improvements (Jan 24)
+- [x] Military-grade device detection (tablet regex, Mobi keyword, Client Hints)
+- [x] Real bounce rate calculation (single-page sessions / total visitors)
+- [x] Real uptime tracking with health checks (not estimates)
+- [x] Database-level aggregation for returning users (no memory issues)
+- [x] Add composite indexes for analytics queries (migration: add_analytics_indexes)
+- [x] HTTP cache headers on API responses (15s-2min TTL)
+- [x] Views Over Time chart: previous period comparison, trend indicators
+- [x] Security: Remove hardcoded JWT secret fallbacks (require in production)
+- [x] Next.js compression and image optimization enabled
+- [x] FLEET_API_KEY added to Vercel environment
+
 ### Identity Verification Help Page (Jan 23)
 - [x] Create `/help/identity-verification` page explaining Stripe Identity
 - [x] Build scroll-linked ID scanner animation component
