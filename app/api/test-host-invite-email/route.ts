@@ -23,7 +23,8 @@ export async function GET(request: NextRequest) {
     // Generate email reference ID for testing
     const emailReferenceId = generateEmailReference('HO')
 
-    const subject = `Your ${vehicleDesc} Booking is Ready 🚗`
+    // Avoid spam triggers: no emojis, no excessive punctuation
+    const subject = `${firstName}, your ${vehicleDesc} booking is ready`
 
     const html = `
       <!DOCTYPE html>
@@ -293,6 +294,10 @@ ItWhip Rentals | Phoenix, AZ | itwhip.com
 Verify this email: ${baseUrl}/verify-email?ref=${emailReferenceId}
     `
 
+    // Build unsubscribe link for email headers (required by Yahoo/Gmail)
+    const unsubscribeUrl = `${baseUrl}/unsubscribe?email=${encodeURIComponent(email)}&type=host_invite`
+    const unsubscribeEmail = `mailto:unsubscribe@itwhip.com?subject=Unsubscribe&body=Unsubscribe%20${encodeURIComponent(email)}`
+
     // Send the test email
     console.log('[Test Host Invite] Sending to:', email)
 
@@ -301,7 +306,13 @@ Verify this email: ${baseUrl}/verify-email?ref=${emailReferenceId}
       subject,
       html,
       text,
-      { requestId: 'test-host-invite' }
+      {
+        requestId: 'test-host-invite',
+        headers: {
+          'List-Unsubscribe': `<${unsubscribeUrl}>, <${unsubscribeEmail}>`,
+          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
+        }
+      }
     )
 
     if (!emailResult.success) {

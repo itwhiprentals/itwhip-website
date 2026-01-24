@@ -102,9 +102,9 @@ export async function POST(
     // Get first name only
     const firstName = prospect.name.split(' ')[0]
 
-    // Build email subject - friendly handover tone
+    // Build email subject - friendly handover tone (avoid spam triggers: no emojis, no excessive punctuation)
     const vehicleDesc = prospect.vehicleMake || prospect.vehicleType || 'vehicle'
-    const subject = `Your ${vehicleDesc} Booking is Ready 🚗`
+    const subject = `${firstName}, your ${vehicleDesc} booking is ready`
 
     // Calculate potential earnings if we have rate and duration
     const hasBookingDetails = prospect.request && prospect.request.offeredRate && prospect.request.durationDays
@@ -417,6 +417,10 @@ About: https://itwhip.com/about | Terms: https://itwhip.com/terms | Privacy: htt
 Verify this email: ${baseUrl}/verify-email?ref=${emailReferenceId}
     `
 
+    // Build unsubscribe link for email headers (required by Yahoo/Gmail)
+    const unsubscribeUrl = `${baseUrl}/unsubscribe?email=${encodeURIComponent(prospect.email)}&type=host_invite`
+    const unsubscribeEmail = `mailto:unsubscribe@itwhip.com?subject=Unsubscribe&body=Unsubscribe%20${encodeURIComponent(prospect.email)}`
+
     // Send the email
     console.log('[Prospect Invite] Sending email to:', prospect.email)
     console.log('[Prospect Invite] Invite link:', inviteLink)
@@ -426,7 +430,13 @@ Verify this email: ${baseUrl}/verify-email?ref=${emailReferenceId}
       subject,
       html,
       text,
-      { requestId: `prospect-invite-${id}` }
+      {
+        requestId: `prospect-invite-${id}`,
+        headers: {
+          'List-Unsubscribe': `<${unsubscribeUrl}>, <${unsubscribeEmail}>`,
+          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
+        }
+      }
     )
 
     if (!emailResult.success) {

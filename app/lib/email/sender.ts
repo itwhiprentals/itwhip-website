@@ -98,19 +98,22 @@ function getTransporter(): Transporter {
 
 /**
  * Send an email
- * 
+ *
  * @param to - Recipient email address
  * @param subject - Email subject
  * @param html - HTML email body
  * @param text - Plain text email body
- * @param opts - Optional parameters including requestId for logging
+ * @param opts - Optional parameters including requestId for logging, custom headers
  */
 export async function sendEmail(
   to: string,
   subject: string,
   html: string,
   text: string,
-  opts?: { requestId?: string }
+  opts?: {
+    requestId?: string
+    headers?: Record<string, string>
+  }
 ): Promise<EmailResponse> {
   const requestId = opts?.requestId || 'no-request-id'
   
@@ -145,7 +148,8 @@ export async function sendEmail(
       subject: subject,
       replyTo: SMTP_CONFIG.replyTo,
       html: html,
-      text: text
+      text: text,
+      headers: opts?.headers || {}
     })
     
     // Log success with messageId

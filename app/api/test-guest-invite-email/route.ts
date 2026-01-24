@@ -1,90 +1,31 @@
-// app/api/fleet/guest-prospects/[id]/invite/route.ts
-// Send or resend invite email to a guest prospect with credit incentive
+// app/api/test-guest-invite-email/route.ts
+// Test endpoint to preview/send the guest invite email template
 
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/app/lib/database/prisma'
-import { nanoid } from 'nanoid'
 import { sendEmail } from '@/app/lib/email/sender'
-import { logEmail, emailConfig, getEmailDisclaimer, generateEmailReference } from '@/app/lib/email/config'
+import { generateEmailReference, emailConfig, logEmail, getEmailDisclaimer } from '@/app/lib/email/config'
 
-// POST /api/fleet/guest-prospects/[id]/invite - Send invite email
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest) {
   try {
-    const { id } = await params
+    const searchParams = request.nextUrl.searchParams
+    const email = searchParams.get('email') || 'test@example.com'
 
-    const prospect = await prisma.guestProspect.findUnique({
-      where: { id }
-    })
-
-    if (!prospect) {
-      return NextResponse.json(
-        { error: 'Guest prospect not found' },
-        { status: 404 }
-      )
-    }
-
-    // Check if already converted
-    if (prospect.convertedProfileId) {
-      return NextResponse.json(
-        { error: 'This prospect has already created an account' },
-        { status: 400 }
-      )
-    }
-
-    // Generate new invite token (72 hours for guests)
-    const inviteToken = nanoid(32)
-    const inviteTokenExp = new Date(Date.now() + 72 * 60 * 60 * 1000) // 72 hours
-
-    // Update prospect with new token
-    const updatedProspect = await prisma.guestProspect.update({
-      where: { id },
-      data: {
-        inviteToken,
-        inviteTokenExp,
-        inviteSentAt: new Date(),
-        inviteResendCount: { increment: 1 },
-        lastResendAt: new Date(),
-        status: 'INVITED'
-      }
-    })
-
-    // Log activity
-    await prisma.guestProspectActivity.create({
-      data: {
-        prospectId: id,
-        activityType: 'EMAIL_SENT',
-        metadata: {
-          resendCount: updatedProspect.inviteResendCount,
-          tokenExpiry: inviteTokenExp.toISOString()
-        }
-      }
-    })
-
-    // Build the invite link
+    // Mock prospect data for testing
+    const firstName = 'Test'
+    const creditAmount = 25.00
+    const creditType = 'bonus'
+    const creditTypeDisplay = 'Bonus Credit'
+    const creditNote = 'Welcome to ItWhip!'
+    const creditExpirationDays = 30
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-    const inviteLink = `${baseUrl}/guest-invite?token=${inviteToken}`
+    const inviteLink = `${baseUrl}/guest-invite?token=test-token-12345`
 
-    // Generate email reference ID upfront so it can be included in the email
+    // Generate email reference ID for testing
     const emailReferenceId = generateEmailReference('GU')
 
-    // Get first name only
-    const firstName = prospect.name.split(' ')[0]
-
     // Build email subject (avoid spam triggers: no ALL CAPS, no excessive punctuation)
-    const creditDisplay = prospect.creditAmount > 0 ? `$${prospect.creditAmount.toFixed(2)}` : ''
-    const subject = creditDisplay
-      ? `${firstName}, your ${creditDisplay} rental credit is waiting`
-      : `${firstName}, you're invited to join ItWhip`
-
-    // Format credit type for display
-    const creditTypeDisplay = prospect.creditType === 'bonus'
-      ? 'Bonus Credit'
-      : prospect.creditType === 'deposit'
-        ? 'Deposit Credit'
-        : 'Rental Credit'
+    const creditDisplay = `$${creditAmount.toFixed(2)}`
+    const subject = `${firstName}, your ${creditDisplay} rental credit is waiting`
 
     const html = `
       <!DOCTYPE html>
@@ -124,8 +65,8 @@ export async function POST(
 
         <!-- Header -->
         <div style="border-bottom: 1px solid #e5e7eb; padding-bottom: 16px; margin-bottom: 24px; text-align: center;">
-          <p style="margin: 0 0 4px 0; font-size: 12px; color: #ea580c; text-transform: uppercase; letter-spacing: 0.5px;">${prospect.creditAmount > 0 ? 'Your Rental Credit Is Ready' : 'You\'re Invited'}</p>
-          <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #ea580c;">${prospect.creditAmount > 0 ? `$${prospect.creditAmount.toFixed(2)} Welcome Gift Inside` : 'Welcome to ItWhip'}</h1>
+          <p style="margin: 0 0 4px 0; font-size: 12px; color: #ea580c; text-transform: uppercase; letter-spacing: 0.5px;">Your Rental Credit Is Ready</p>
+          <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #ea580c;">${creditDisplay} Welcome Gift Inside</h1>
         </div>
 
         <!-- Main content -->
@@ -134,24 +75,20 @@ export async function POST(
         </p>
 
         <p style="font-size: 16px; margin: 0 0 16px 0; color: #111827;">
-          ${prospect.creditAmount > 0
-            ? `Great news! You've been gifted <strong>$${prospect.creditAmount.toFixed(2)} in ${creditTypeDisplay.toLowerCase()}</strong> toward your first rental with ItWhip.`
-            : 'You\'ve been invited to rent a car through ItWhip! Create your account to browse our selection of vehicles from trusted local hosts.'}
+          Great news! You've been gifted <strong>${creditDisplay} in ${creditTypeDisplay.toLowerCase()}</strong> toward your first rental with ItWhip.
         </p>
 
         <p style="font-size: 16px; color: #111827; margin: 0;">
           Click below to claim your credit and start browsing cars.
         </p>
 
-        ${prospect.creditAmount > 0 ? `
         <!-- Credit Display -->
         <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;">
           <p style="margin: 0 0 4px 0; font-size: 13px; color: #374151; text-transform: uppercase; letter-spacing: 0.5px;">Your ${creditTypeDisplay}</p>
-          <p style="margin: 0; font-size: 36px; font-weight: 700; color: #1f2937;">$${prospect.creditAmount.toFixed(2)}</p>
-          ${prospect.creditNote ? `<p style="margin: 8px 0 0 0; font-size: 14px; color: #374151;">"${prospect.creditNote}"</p>` : ''}
-          ${prospect.creditExpirationDays ? `<p style="margin: 4px 0 0 0; font-size: 12px; color: #4b5563;">Valid for ${prospect.creditExpirationDays} days after claim</p>` : ''}
+          <p style="margin: 0; font-size: 36px; font-weight: 700; color: #1f2937;">${creditDisplay}</p>
+          <p style="margin: 8px 0 0 0; font-size: 14px; color: #374151;">"${creditNote}"</p>
+          <p style="margin: 4px 0 0 0; font-size: 12px; color: #4b5563;">Valid for ${creditExpirationDays} days after claim</p>
         </div>
-        ` : ''}
 
         <!-- Status indicator -->
         <p style="font-size: 14px; color: #111827; margin: 20px 0;">
@@ -161,7 +98,7 @@ export async function POST(
         <!-- CTA Button -->
         <div style="text-align: center; margin: 28px 0;">
           <a href="${inviteLink}" style="display: inline-block; background: #ea580c; color: white; padding: 14px 32px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 15px;">
-            ${prospect.creditAmount > 0 ? 'Claim Your Credit & Browse Cars' : 'Create Account & Browse Cars'}
+            Claim Your Credit & Browse Cars
           </a>
         </div>
 
@@ -280,31 +217,27 @@ export async function POST(
           </a>
         </p>
 
-        <!-- Tracking pixel for email open tracking -->
-        <img src="${baseUrl}/api/tracking/guest-pixel/${id}" width="1" height="1" style="display:none;width:1px;height:1px;border:0;" alt="" />
       </body>
       </html>
     `
 
     const text = `
-${prospect.creditAmount > 0 ? 'YOUR RENTAL CREDIT IS READY' : 'YOU\'RE INVITED'}
-${prospect.creditAmount > 0 ? `$${prospect.creditAmount.toFixed(2)} Welcome Gift Inside` : 'Welcome to ItWhip'}
+YOUR RENTAL CREDIT IS READY
+${creditDisplay} Welcome Gift Inside
 
 Hi ${firstName},
 
-${prospect.creditAmount > 0
-  ? `Great news! You've been gifted $${prospect.creditAmount.toFixed(2)} in ${creditTypeDisplay.toLowerCase()} toward your first rental with ItWhip.`
-  : 'You\'ve been invited to rent a car through ItWhip! Create your account to browse our selection of vehicles from trusted local hosts.'}
+Great news! You've been gifted ${creditDisplay} in ${creditTypeDisplay.toLowerCase()} toward your first rental with ItWhip.
 
 Click below to claim your credit and start browsing cars.
 
-${prospect.creditAmount > 0 ? `YOUR ${creditTypeDisplay.toUpperCase()}: $${prospect.creditAmount.toFixed(2)}
-${prospect.creditNote ? `"${prospect.creditNote}"` : ''}
-${prospect.creditExpirationDays ? `Valid for ${prospect.creditExpirationDays} days after claim` : ''}` : ''}
+YOUR ${creditTypeDisplay.toUpperCase()}: ${creditDisplay}
+"${creditNote}"
+Valid for ${creditExpirationDays} days after claim
 
 This credit is reserved for you. We're holding it for 72 hours so you have time to claim it.
 
-${prospect.creditAmount > 0 ? 'Claim Your Credit & Browse Cars' : 'Create Account & Browse Cars'}:
+Claim Your Credit & Browse Cars:
 ${inviteLink}
 
 WHAT YOU GET WITH ITWHIP:
@@ -338,20 +271,19 @@ Verify this email: ${baseUrl}/verify-email?ref=${emailReferenceId}
     `
 
     // Build unsubscribe link for email headers (required by Yahoo/Gmail)
-    const unsubscribeUrl = `${baseUrl}/unsubscribe?email=${encodeURIComponent(prospect.email)}&type=guest_invite`
-    const unsubscribeEmail = `mailto:unsubscribe@itwhip.com?subject=Unsubscribe&body=Unsubscribe%20${encodeURIComponent(prospect.email)}`
+    const unsubscribeUrl = `${baseUrl}/unsubscribe?email=${encodeURIComponent(email)}&type=guest_invite`
+    const unsubscribeEmail = `mailto:unsubscribe@itwhip.com?subject=Unsubscribe&body=Unsubscribe%20${encodeURIComponent(email)}`
 
-    // Send the email
-    console.log('[Guest Prospect Invite] Sending email to:', prospect.email)
-    console.log('[Guest Prospect Invite] Invite link:', inviteLink)
+    // Send the test email
+    console.log('[Test Guest Invite] Sending to:', email)
 
     const emailResult = await sendEmail(
-      prospect.email,
+      email,
       subject,
       html,
       text,
       {
-        requestId: `guest-prospect-invite-${id}`,
+        requestId: 'test-guest-invite',
         headers: {
           'List-Unsubscribe': `<${unsubscribeUrl}>, <${unsubscribeEmail}>`,
           'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
@@ -360,54 +292,43 @@ Verify this email: ${baseUrl}/verify-email?ref=${emailReferenceId}
     )
 
     if (!emailResult.success) {
-      console.error('[Guest Prospect Invite] Email failed:', emailResult.error)
       return NextResponse.json({
-        success: true,
-        emailSent: false,
-        emailError: emailResult.error,
-        prospect: updatedProspect,
-        inviteLink,
-        expiresAt: inviteTokenExp
-      })
+        success: false,
+        error: emailResult.error
+      }, { status: 500 })
     }
 
-    console.log('[Guest Prospect Invite] Email sent successfully:', emailResult.messageId)
-
-    // Log the email for audit trail (using pre-generated reference ID)
+    // Log the email for audit trail (so reference ID can be verified)
     const emailLog = await logEmail({
-      recipientEmail: prospect.email,
-      recipientName: prospect.name,
+      recipientEmail: email,
+      recipientName: firstName,
       subject,
       emailType: 'GUEST_INVITE',
-      relatedType: 'guest_prospect',
-      relatedId: id,
+      relatedType: 'test_guest_invite',
+      relatedId: 'test-001',
       messageId: emailResult.messageId,
       referenceId: emailReferenceId,
       metadata: {
-        creditAmount: prospect.creditAmount,
-        creditType: prospect.creditType,
-        inviteResendCount: updatedProspect.inviteResendCount,
-        tokenExpiry: inviteTokenExp.toISOString()
+        creditAmount,
+        creditType,
+        creditNote
       }
     })
 
-    console.log('[Guest Prospect Invite] Email logged with reference:', emailLog.referenceId)
+    console.log('[Test Guest Invite] Email logged with reference:', emailLog.referenceId)
 
     return NextResponse.json({
       success: true,
-      emailSent: true,
+      message: `Test guest invite email sent to ${email}`,
       messageId: emailResult.messageId,
-      referenceId: emailLog.referenceId,
-      prospect: updatedProspect,
-      inviteLink,
-      expiresAt: inviteTokenExp
+      referenceId: emailLog.referenceId
     })
 
   } catch (error: any) {
-    console.error('[Fleet Guest Prospect Invite] Error:', error)
-    return NextResponse.json(
-      { error: 'Failed to send invite' },
-      { status: 500 }
-    )
+    console.error('[Test Guest Invite Email] Error:', error)
+    return NextResponse.json({
+      success: false,
+      error: error.message
+    }, { status: 500 })
   }
 }
