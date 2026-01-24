@@ -85,7 +85,7 @@ export default function RentalBookingsSection() {
   // Loading state
   if (loading) {
     return (
-      <div className="bg-white dark:bg-gray-800/95 rounded-lg shadow-md p-4 sm:p-6 mb-4 border-2 border-gray-300 dark:border-gray-600">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6 mb-4 border border-gray-200 dark:border-gray-700">
         <h2 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white mb-4">
           Your Car Rentals
         </h2>
@@ -99,7 +99,7 @@ export default function RentalBookingsSection() {
   // Error state
   if (error) {
     return (
-      <div className="bg-white dark:bg-gray-800/95 rounded-lg shadow-md p-4 sm:p-6 mb-4 border-2 border-gray-300 dark:border-gray-600">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6 mb-4 border border-gray-200 dark:border-gray-700">
         <h2 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white mb-4">
           Your Car Rentals
         </h2>
@@ -120,7 +120,7 @@ export default function RentalBookingsSection() {
   // No bookings state
   if (!bookings || bookings.length === 0) {
     return (
-      <div className="bg-white dark:bg-gray-800/95 rounded-lg shadow-md p-4 sm:p-6 mb-4 border-2 border-gray-300 dark:border-gray-600">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6 mb-4 border border-gray-200 dark:border-gray-700">
         <h2 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white mb-4">
           Your Car Rentals
         </h2>
@@ -141,8 +141,8 @@ export default function RentalBookingsSection() {
   // Has bookings - MOBILE: GRID/SQUARE CARDS, DESKTOP: LIST VIEW
   return (
     <>
-      {/* Header with fixed dark mode background */}
-      <div className="bg-white dark:bg-gray-800/95 rounded-lg shadow-md p-4 sm:p-6 mb-4 border-2 border-gray-300 dark:border-gray-600">
+      {/* Header */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6 mb-4 border border-gray-200 dark:border-gray-700">
         <div className="flex justify-between items-center">
           <h2 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white">
             Your Car Rentals ({bookings.length})
@@ -162,7 +162,7 @@ export default function RentalBookingsSection() {
           {bookings.slice(0, 3).map(booking => (
             <div
               key={booking.id}
-              className="flex-shrink-0 w-64 bg-white dark:bg-gray-800/95 border-2 border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden hover:shadow-lg cursor-pointer transition-all snap-start shadow-md"
+              className="flex-shrink-0 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden hover:shadow-md cursor-pointer transition-all snap-start shadow-sm"
               onClick={() => handleBookingClick(booking.id)}
             >
               {/* Car Image - Square aspect ratio */}
@@ -232,7 +232,7 @@ export default function RentalBookingsSection() {
       </div>
 
       {/* DESKTOP: List view with container */}
-      <div className="hidden sm:block bg-white dark:bg-gray-800/95 rounded-lg shadow-md p-4 sm:p-6 mb-4 border-2 border-gray-300 dark:border-gray-600">
+      <div className="hidden sm:block bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6 mb-4 border border-gray-200 dark:border-gray-700">
         <div className="space-y-3">
           {bookings.slice(0, 3).map(booking => (
             <div 

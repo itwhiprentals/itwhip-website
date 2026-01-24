@@ -394,24 +394,20 @@ const CORE_SERVICES: ServiceConfig[] = [
   }
 ]
 
+// Reordered: Credits & Deposit first for visibility
 const STATS_CONFIG = [
   {
-    label: 'Active Rentals',
-    key: 'activeRentals' as keyof DashboardStats,
-    icon: Car,
-    iconColor: 'text-green-500',
-    textColor: 'text-gray-900 dark:text-white',
-    path: '/rentals/dashboard/bookings?filter=active',
-    clickable: true
-  },
-  {
-    label: 'Total Trips',
-    key: 'completedTrips' as keyof DashboardStats,
-    icon: Calendar,
-    iconColor: 'text-blue-500',
-    textColor: 'text-gray-900 dark:text-white',
-    path: '/rentals/dashboard/bookings?filter=completed',
-    clickable: true
+    label: 'Credits & Bonus',
+    key: 'creditsAndBonus' as keyof DashboardStats,
+    icon: Award,
+    iconColor: 'text-purple-500',
+    textColor: 'text-purple-600 dark:text-purple-400',
+    format: (val: number) => `$${val.toFixed(2)}`,
+    path: '/payments/credits',
+    clickable: true,
+    tooltip: 'Credits: 100% usable per booking. Bonus: Max 25% per booking.',
+    lockWhenUnverified: true,
+    lockTooltip: 'Verify your identity to unlock'
   },
   {
     label: 'Deposit',
@@ -422,20 +418,25 @@ const STATS_CONFIG = [
     format: (val: number) => `$${val.toFixed(2)}`,
     path: '/payments/deposit',
     clickable: true,
-    tooltip: 'Pre-loaded funds for security deposits. Used to cover potential damages during rentals.'
+    tooltip: 'Security deposit for rentals'
   },
   {
-    label: 'Credits & Bonus',
-    key: 'creditsAndBonus' as keyof DashboardStats,
-    icon: Award,
-    iconColor: 'text-purple-500',
+    label: 'Active Rentals',
+    key: 'activeRentals' as keyof DashboardStats,
+    icon: Car,
+    iconColor: 'text-blue-500',
     textColor: 'text-gray-900 dark:text-white',
-    format: (val: number) => `$${val.toFixed(2)}`,
-    path: '/payments/credits',
-    clickable: true,
-    tooltip: 'Credits: 100% usable per booking. Bonus: Max 25% per booking. Applied automatically at checkout.',
-    lockWhenUnverified: true,
-    lockTooltip: 'Verify your identity with Stripe to unlock your credits'
+    path: '/rentals/dashboard/bookings?filter=active',
+    clickable: true
+  },
+  {
+    label: 'Total Trips',
+    key: 'completedTrips' as keyof DashboardStats,
+    icon: Calendar,
+    iconColor: 'text-gray-500',
+    textColor: 'text-gray-900 dark:text-white',
+    path: '/rentals/dashboard/bookings?filter=completed',
+    clickable: true
   },
   {
     label: 'Messages',
@@ -447,7 +448,7 @@ const STATS_CONFIG = [
     clickable: true
   },
   {
-    label: 'Active Claims',
+    label: 'Claims',
     key: 'activeClaims' as keyof DashboardStats,
     icon: AlertCircle,
     iconColor: 'text-red-500',
@@ -1056,109 +1057,71 @@ export default function GuestDashboard() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-0 sm:px-2 lg:px-4">
-        
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 -mt-10 sm:-mt-12">
+
+        {/* Greeting */}
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-3">
+          {(() => {
+            const hour = new Date().getHours()
+            if (hour < 12) return `Good morning, ${userName.split(' ')[0]}!`
+            if (hour < 17) return `Good afternoon, ${userName.split(' ')[0]}!`
+            return `Good evening, ${userName.split(' ')[0]}!`
+          })()}
+        </h1>
+
         {/* Profile Card */}
         <div
-          className={`bg-white dark:bg-gray-800 rounded-lg shadow-md border-2 border-gray-300 dark:border-gray-600 p-3 sm:p-4 -mt-8 transition-all duration-700 ${
+          className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 sm:p-4 transition-all duration-500 ${
             state.profileLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
         >
-          
-          {/* Mobile Layout */}
-          <div className="flex flex-col sm:hidden space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3 flex-1 min-w-0">
-                <img
-                  src={userAvatar}
-                  alt={`${userName}'s profile picture`}
-                  className="h-12 w-12 rounded-full ring-2 ring-green-500 flex-shrink-0 object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/default-avatar.svg'
-                  }}
-                />
-                <div className="flex-1 min-w-0">
-                  <h1 className="text-base font-bold text-gray-900 dark:text-white truncate">
-                    {userName}
-                  </h1>
-                  <div className="flex items-center space-x-2">
-                    {state.userProfile?.verified && (
-                      <Shield className="w-3 h-3 text-green-500 flex-shrink-0" />
-                    )}
-                    <span className="text-xs text-gray-600 dark:text-gray-400 truncate">
-                      {getMemberSince()}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex items-center space-x-1 flex-shrink-0">
-                <button
-                  onClick={() => {
-                    router.push('/profile')
-                  }}
-                  className="px-3 py-3 min-h-[44px] bg-green-600 hover:bg-green-700 active:scale-95 text-white text-sm rounded-lg font-medium flex items-center space-x-1 transition-all"
-                  aria-label="Edit profile"
-                >
-                  <Edit className="w-4 h-4" />
-                  <span>Edit</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Desktop Layout */}
-          <div className="hidden sm:flex sm:items-center sm:justify-between">
-            <div className="flex items-center space-x-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
               <img
                 src={userAvatar}
                 alt={`${userName}'s profile picture`}
-                className="h-14 w-14 md:h-16 md:w-16 rounded-full ring-2 ring-green-500 ring-offset-2 object-cover"
+                className="h-14 w-14 sm:h-16 sm:w-16 rounded-full ring-2 ring-green-500 flex-shrink-0 object-cover"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = '/default-avatar.svg'
                 }}
               />
-              
-              <div>
-                <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
-                  {userName}
-                </h1>
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
-                    Member since {getMemberSince()}
-                  </span>
+              <div className="flex-1 min-w-0">
+                {/* Name Row */}
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white truncate">
+                    {userName}
+                  </h2>
                   {state.userProfile?.verified && (
-                    <span className="inline-flex items-center text-xs text-green-600 dark:text-green-400">
-                      <Shield className="w-3 h-3 mr-1" />
+                    <span className="flex-shrink-0 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
                       Verified
                     </span>
                   )}
                 </div>
+                {/* Location Row */}
+                <p className="text-xs text-gray-500 dark:text-gray-400">Phoenix, AZ</p>
+                {/* Member Since Row */}
+                <p className="text-xs text-gray-500 dark:text-gray-400">{getMemberSince()}</p>
               </div>
             </div>
-            
-            <div className="flex items-center space-x-2 md:space-x-3">
+
+            <div className="flex items-center gap-2 flex-shrink-0">
               <button
                 onClick={handleRefresh}
                 disabled={state.isRefreshing}
-                className={`hidden lg:block p-2 min-w-[44px] min-h-[44px] text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-lg transition-all ${
+                className={`hidden sm:flex p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg transition-all ${
                   state.isRefreshing ? 'animate-spin' : ''
                 }`}
                 aria-label="Refresh dashboard"
-                title="Refresh"
               >
                 <RefreshCw className="w-5 h-5" />
               </button>
-              
               <button
-                onClick={() => {
-                  router.push('/profile')
-                }}
-                className="px-3 md:px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors text-sm md:text-base flex items-center space-x-2"
+                onClick={() => router.push('/profile')}
+                className="px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium transition-colors text-sm flex items-center gap-1.5"
                 aria-label="Edit profile"
               >
                 <Edit className="w-4 h-4" />
-                <span>Edit Profile</span>
+                <span className="hidden sm:inline">Edit</span>
               </button>
             </div>
           </div>
@@ -1303,96 +1266,145 @@ export default function GuestDashboard() {
           return null
         })()}
 
-        {/* Stats Grid */}
+        {/* Featured Cards - Find a Car + Upcoming Trip */}
+        <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 transition-all duration-700 ${
+          state.statsLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+        }`}>
+          {/* Find a Car - Primary CTA */}
+          <button
+            onClick={() => handleServiceClick('/rentals/search', state.suspensionInfo?.suspensionLevel === 'BANNED')}
+            disabled={state.suspensionInfo?.suspensionLevel === 'BANNED'}
+            className="bg-gradient-to-br from-green-500 to-green-600 dark:from-green-600 dark:to-green-700 p-5 sm:p-6 rounded-lg shadow-lg hover:shadow-xl active:scale-[0.98] transition-all text-left group disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg sm:text-xl font-bold text-white mb-1">Find a Car</h3>
+                <p className="text-green-100 text-sm">Browse available vehicles near you</p>
+              </div>
+              <div className="bg-white/20 p-3 rounded-full group-hover:bg-white/30 transition-colors">
+                <Search className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+              </div>
+            </div>
+          </button>
+
+          {/* Upcoming Trip or Browse Cars CTA */}
+          {state.rentalBookings.length > 0 && state.rentalBookings.find(b => b.status === 'CONFIRMED' || b.status === 'ACTIVE') ? (
+            <div
+              onClick={() => {
+                const upcomingBooking = state.rentalBookings.find(b => b.status === 'CONFIRMED' || b.status === 'ACTIVE')
+                if (upcomingBooking) router.push(`/rentals/dashboard/bookings/${upcomingBooking.id}`)
+              }}
+              className="bg-white dark:bg-gray-800 p-5 sm:p-6 rounded-lg shadow-md border-2 border-gray-200 dark:border-gray-700 hover:shadow-lg active:scale-[0.98] transition-all cursor-pointer group"
+            >
+              {(() => {
+                const upcomingBooking = state.rentalBookings.find(b => b.status === 'CONFIRMED' || b.status === 'ACTIVE')
+                if (!upcomingBooking) return null
+                return (
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                          upcomingBooking.status === 'ACTIVE'
+                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                            : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                        }`}>
+                          {upcomingBooking.status === 'ACTIVE' ? 'Active Now' : 'Upcoming'}
+                        </span>
+                      </div>
+                      <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white truncate">
+                        {upcomingBooking.car.year} {upcomingBooking.car.make} {upcomingBooking.car.model}
+                      </h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {new Date(upcomingBooking.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(upcomingBooking.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      </p>
+                    </div>
+                    <div className="flex-shrink-0 ml-4">
+                      <div className="bg-gray-100 dark:bg-gray-700 p-3 rounded-full group-hover:bg-gray-200 dark:group-hover:bg-gray-600 transition-colors">
+                        <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600 dark:text-gray-300" />
+                      </div>
+                    </div>
+                  </div>
+                )
+              })()}
+            </div>
+          ) : (
+            <button
+              onClick={() => router.push('/rentals/search')}
+              className="bg-white dark:bg-gray-800 p-5 sm:p-6 rounded-lg shadow-md border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-green-400 dark:hover:border-green-500 hover:shadow-lg active:scale-[0.98] transition-all text-left group"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-1">No upcoming trips</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Book your first car rental today</p>
+                </div>
+                <div className="bg-gray-100 dark:bg-gray-700 p-3 rounded-full group-hover:bg-green-100 dark:group-hover:bg-green-900/30 transition-colors">
+                  <Car className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors" />
+                </div>
+              </div>
+            </button>
+          )}
+        </div>
+
+        {/* Stats Grid - 3x2 on Mobile, 6x1 on Desktop */}
         <div
-          className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 mt-4 transition-all duration-700 ${
+          className={`mt-4 transition-all duration-700 ${
             state.statsLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
         >
-          {STATS_CONFIG.map((stat, index) => {
-            const value = state.stats[stat.key]
-            const displayValue = stat.format ? stat.format(value as number) : value
-            const StatIcon = stat.icon
-            const isVerified = state.userProfile?.verified || state.documentVerification?.stripeIdentityStatus === 'verified'
-            const showLock = (stat as any).lockWhenUnverified && !isVerified && (value as number) > 0
+          <div className="grid grid-cols-3 md:grid-cols-6 gap-2 md:gap-3">
+            {STATS_CONFIG.map((stat, index) => {
+              const value = state.stats[stat.key]
+              const displayValue = stat.format ? stat.format(value as number) : value
+              const StatIcon = stat.icon
+              const isVerified = state.userProfile?.verified || state.documentVerification?.stripeIdentityStatus === 'verified'
+              const showLock = (stat as any).lockWhenUnverified && !isVerified && (value as number) > 0
 
-            return (
-              <div
-                key={stat.label}
-                onClick={() => stat.clickable && handleStatClick(stat.path)}
-                style={{
-                  animationDelay: `${index * 100}ms`,
-                  animation: state.statsLoaded ? 'fadeInUp 0.5s ease-out forwards' : 'none'
-                }}
-                className={`bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 sm:p-4 border-2 border-gray-300 dark:border-gray-600 min-h-[88px] group relative ${
-                  stat.clickable ? 'cursor-pointer hover:shadow-lg active:scale-95 transition-all' : ''
-                } ${showLock ? 'opacity-75' : ''}`}
-              >
-                <div>
-                  <div className="flex items-center gap-1">
-                    <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{stat.label}</p>
-                    {showLock && (
-                      <span
-                        className="text-yellow-600 dark:text-yellow-400 cursor-help"
-                        title={(stat as any).lockTooltip || 'Verify your identity to unlock'}
-                      >
-                        <IoLockClosedOutline className="w-3 h-3" />
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between mt-1">
-                    <p className={`text-xl sm:text-2xl font-bold ${showLock ? 'text-gray-400 dark:text-gray-500' : stat.textColor}`}>
+              return (
+                <div
+                  key={stat.label}
+                  onClick={() => stat.clickable && handleStatClick(stat.path)}
+                  style={{
+                    animationDelay: `${index * 50}ms`,
+                    animation: state.statsLoaded ? 'fadeInUp 0.4s ease-out forwards' : 'none'
+                  }}
+                  className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm p-2.5 sm:p-3 border border-gray-200 dark:border-gray-700 ${
+                    stat.clickable ? 'cursor-pointer hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 active:scale-[0.98] transition-all' : ''
+                  } ${showLock ? 'opacity-60' : ''}`}
+                >
+                  <div className="flex flex-col items-center text-center">
+                    <StatIcon className={`w-5 h-5 sm:w-6 sm:h-6 ${stat.iconColor} mb-1`} aria-hidden="true" />
+                    <p className={`text-base sm:text-lg font-bold ${showLock ? 'text-gray-400 dark:text-gray-500' : stat.textColor}`}>
                       {displayValue}
+                      {showLock && <IoLockClosedOutline className="inline w-3 h-3 text-yellow-500 ml-1" />}
                     </p>
-                    {(stat as any).tooltip ? (
-                      <span
-                        className="text-gray-400 dark:text-gray-500 text-xl sm:text-2xl cursor-help flex-shrink-0 ml-2"
-                        title={(stat as any).tooltip}
-                      >
-                        ⓘ
-                      </span>
-                    ) : (
-                      <StatIcon className={`w-6 h-6 sm:w-8 sm:h-8 ${stat.iconColor} opacity-60 flex-shrink-0 ml-2`} aria-hidden="true" />
-                    )}
+                    <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 truncate w-full">{stat.label}</p>
                   </div>
                 </div>
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mt-4">
-          {availableServices.map((service, index) => {
-            const isDisabled = service.id === 'search' && !service.clickable
-            
+        {/* Quick Actions - Compact Row */}
+        <div className="flex gap-2 mt-4 overflow-x-auto pb-2 scrollbar-hide">
+          {availableServices.filter(s => s.id !== 'search').map((service) => {
+            const isDisabled = false
+
             return (
               <button
                 key={service.id}
                 onClick={() => handleServiceClick(service.path, isDisabled)}
                 disabled={isDisabled}
-                style={{ 
-                  animationDelay: `${index * 100}ms`,
-                  animation: state.statsLoaded ? 'fadeInUp 0.5s ease-out forwards' : 'none'
-                }}
-                className={`bg-white dark:bg-gray-800 p-4 sm:p-6 min-h-[44px] rounded-lg shadow-md transition-all group border-2 border-gray-300 dark:border-gray-600 ${
+                className={`flex-shrink-0 flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-200 dark:border-gray-700 transition-all ${
                   isDisabled
                     ? 'opacity-50 cursor-not-allowed'
-                    : 'hover:shadow-lg active:scale-95'
+                    : 'hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 active:scale-95'
                 }`}
-                aria-label={`${service.name}: ${service.description}${isDisabled ? ' (Disabled due to account suspension)' : ''}`}
               >
-                <div className="flex flex-col items-center text-center">
-                  <div className={`p-2 sm:p-3 rounded-full ${service.bgColorClass} bg-opacity-10 ${!isDisabled && 'group-hover:bg-opacity-20'} transition-colors mb-2 sm:mb-3`}>
-                    <service.icon className={`w-5 h-5 sm:w-6 sm:h-6 ${service.iconColorClass}`} aria-hidden="true" />
-                  </div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-1 text-sm sm:text-base">
-                    {service.name}
-                  </h3>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 hidden sm:block">
-                    {isDisabled ? 'Temporarily unavailable' : service.description}
-                  </p>
-                </div>
+                <service.icon className={`w-4 h-4 ${service.iconColorClass}`} aria-hidden="true" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                  {service.name}
+                </span>
               </button>
             )
           })}
@@ -1434,132 +1446,71 @@ export default function GuestDashboard() {
             )}
           </div>
 
-          <div className="space-y-4 sm:space-y-6">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6 border-2 border-gray-300 dark:border-gray-600">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4 text-sm sm:text-base">
-                Account Overview
-              </h3>
-              
-              <div className="space-y-2 sm:space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Member Tier</span>
-                  <span className={`text-xs sm:text-sm font-semibold ${getMemberTierColor(state.stats.memberTier || 'Bronze')}`}>
-                    {state.stats.memberTier || 'Bronze'}
-                  </span>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Next Reward</span>
-                  <span className="text-xs sm:text-sm font-semibold text-green-600 dark:text-green-400">
-                    {state.stats.pointsToNextTier || 500} points away
-                  </span>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Avg Rating</span>
-                  <span className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white">
-                    {state.stats.averageRating > 0 ? `${state.stats.averageRating.toFixed(1)} ⭐` : 'No ratings yet'}
-                  </span>
-                </div>
-                
-                <div className="pt-2 sm:pt-3 border-t border-gray-200 dark:border-gray-700">
+          <div className="space-y-4">
+            {/* Recent Trips Card */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
+                  Recent Trips
+                </h3>
+                {state.rentalBookings.length > 0 && (
                   <button
-                    onClick={() => {
-                      router.push('/profile')
-                    }}
-                    className="w-full py-2 min-h-[44px] text-center text-xs sm:text-sm text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 font-medium"
-                    aria-label="View full profile"
+                    onClick={() => router.push('/rentals/dashboard/bookings')}
+                    className="text-xs text-green-600 dark:text-green-400 hover:underline"
                   >
-                    View Full Profile →
+                    View all →
                   </button>
-                </div>
+                )}
               </div>
-            </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6 border-2 border-gray-300 dark:border-gray-600">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4 text-sm sm:text-base">
-                Recent Activity
-              </h3>
-              
-              <div className="space-y-2 sm:space-y-3">
+              <div className="space-y-2">
                 {state.rentalBookings.slice(0, 3).map((booking) => (
-                  <div 
+                  <div
                     key={booking.id}
-                    className="flex items-start space-x-2 sm:space-x-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 p-2 rounded transition-colors min-h-[60px]"
-                    onClick={() => {
-                      router.push(`/rentals/dashboard/bookings/${booking.id}`)
-                    }}
+                    className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 p-2 -mx-2 rounded-lg transition-colors"
+                    onClick={() => router.push(`/rentals/dashboard/bookings/${booking.id}`)}
                   >
-                    <div className="flex-shrink-0 w-2 h-2 rounded-full bg-green-500 mt-1.5"></div>
+                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                      booking.status === 'ACTIVE' ? 'bg-green-500' :
+                      booking.status === 'COMPLETED' ? 'bg-gray-400' :
+                      'bg-yellow-500'
+                    }`} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs sm:text-sm text-gray-900 dark:text-white truncate">
-                        {booking.car.year} {booking.car.make} {booking.car.model}
+                      <p className="text-xs font-medium text-gray-900 dark:text-white truncate">
+                        {booking.car.make} {booking.car.model}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {new Date(booking.startDate).toLocaleDateString()}
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400">
+                        {new Date(booking.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       </p>
                     </div>
-                    <span className={`text-xs px-2 py-1 rounded-full whitespace-nowrap ${
-                      booking.status === 'ACTIVE' 
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                        : booking.status === 'COMPLETED'
-                        ? 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
-                        : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
-                    }`}>
-                      {booking.status}
-                    </span>
                   </div>
                 ))}
-                
+
                 {state.rentalBookings.length === 0 && (
-                  <div className="text-center py-4">
-                    <Car className="w-8 h-8 text-gray-400 dark:text-gray-600 mx-auto mb-2" />
-                    <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                      No recent bookings
+                  <div className="text-center py-3">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      No trips yet
                     </p>
-                    <button
-                      onClick={() => {
-                        router.push('/rentals/search')
-                      }}
-                      className="mt-3 text-xs sm:text-sm text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 font-medium"
-                    >
-                      Find your first car →
-                    </button>
-                  </div>
-                )}
-                
-                {state.rentalBookings.length > 0 && (
-                  <div className="pt-2 sm:pt-3 border-t border-gray-200 dark:border-gray-700">
-                    <button
-                      onClick={() => {
-                        router.push('/rentals/dashboard/bookings')
-                      }}
-                      className="w-full py-2 min-h-[44px] text-center text-xs sm:text-sm text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 font-medium"
-                    >
-                      View All Bookings →
-                    </button>
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-800 dark:to-gray-700 rounded-lg p-4 sm:p-6 border-2 border-gray-300 dark:border-gray-600 shadow-md">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-2 text-sm sm:text-base">
-                Need Help?
-              </h3>
-              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-3 sm:mb-4">
-                Our support team is available 24/7 to assist you
-              </p>
-              <button
-                onClick={() => {
-                  router.push('/support')
-                }}
-                className="w-full bg-white dark:bg-gray-800 text-green-600 dark:text-green-400 py-2 min-h-[44px] rounded-lg text-xs sm:text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors border border-gray-200 dark:border-gray-700"
-                aria-label="Contact support team"
-              >
-                Contact Support
-              </button>
-            </div>
+            {/* Support Card */}
+            <button
+              onClick={() => router.push('/support')}
+              className="w-full bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-750 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all text-left group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded-full">
+                  <MessageSquare className="w-4 h-4 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">Need Help?</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">24/7 support available</p>
+                </div>
+              </div>
+            </button>
           </div>
         </div>
       </div>
@@ -1610,6 +1561,14 @@ export default function GuestDashboard() {
             animation-iteration-count: 1 !important;
             transition-duration: 0.01ms !important;
           }
+        }
+
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
         }
       `}</style>
     </div>

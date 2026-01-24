@@ -129,7 +129,7 @@ export default function VerificationAlert({
                 Complete Your Verification
               </p>
               <p className="text-xs sm:text-sm mt-1 text-orange-700 dark:text-orange-300">
-                You started the verification process but didn't finish. Please complete it to book cars and receive your $250 Credit and Bonus.
+                You started the verification process but didn't finish. Complete it to start booking cars.
               </p>
               <div className="mt-3 flex items-center space-x-2 text-xs text-orange-700 dark:text-orange-300">
                 <ExternalLink className="w-4 h-4" />
@@ -172,7 +172,7 @@ export default function VerificationAlert({
                 Complete Your Verification
               </p>
               <p className="text-xs sm:text-sm mt-1 text-orange-700 dark:text-orange-300">
-                You started the verification process but it's not complete yet. Please finish to book cars and receive your $250 Credit and Bonus.
+                You started the verification process but it's not complete yet. Finish to start booking cars.
               </p>
               <div className="mt-3 flex items-center space-x-2 text-xs text-orange-700 dark:text-orange-300">
                 <ExternalLink className="w-4 h-4" />
@@ -199,78 +199,26 @@ export default function VerificationAlert({
     )
   }
 
-  // Not verified state - action required
+  // Not verified state - action required (soft blue/gray theme)
   return (
     <div
-      className="bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-200 dark:border-yellow-800 rounded-lg p-3 sm:p-4 mt-4 transition-all duration-300 animate-fadeIn shadow-md"
+      className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-750 border border-blue-200 dark:border-gray-700 rounded-lg p-4 mt-4 transition-all duration-300 animate-fadeIn shadow-sm"
       role="alert"
       aria-live="polite"
     >
-      <div className="flex items-start justify-between flex-wrap gap-3">
+      <div className="flex items-center justify-between gap-4">
         {/* Left Section: Icon + Text */}
-        <div className="flex items-start flex-1 min-w-0">
-          <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600 dark:text-yellow-400 mr-2 sm:mr-3 flex-shrink-0 mt-0.5" />
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <div className="flex-shrink-0 bg-blue-100 dark:bg-blue-900/30 p-2 rounded-full">
+            <Shield className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          </div>
           <div className="min-w-0 flex-1">
-            <p className="font-medium text-sm sm:text-base text-yellow-900 dark:text-yellow-100">
-              Verify Your Identity
+            <p className="font-semibold text-sm text-gray-900 dark:text-white">
+              Complete Stripe Verification
             </p>
-            <p className="text-xs sm:text-sm mt-1 text-yellow-700 dark:text-yellow-300">
-              Complete identity verification to unlock all features and receive a $250 Credit and Bonus.
+            <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+              {!hasPhone ? 'Add phone number to continue' : 'Verify your ID with Stripe to unlock booking'}
             </p>
-
-            {/* Verification steps */}
-            <div className="mt-3 space-y-1.5">
-              {/* Phone Number - Show if missing */}
-              {!hasPhone && (
-                <div className="flex items-center text-xs">
-                  <div className="w-4 h-4 rounded-full border-2 border-red-400 dark:border-red-500 mr-2" />
-                  <span className="text-red-700 dark:text-red-300 font-medium">
-                    Add Phone Number First
-                  </span>
-                </div>
-              )}
-
-              {/* Stripe Identity verification steps */}
-              <div className="flex items-center text-xs">
-                <div className="w-4 h-4 rounded-full border-2 border-yellow-400 dark:border-yellow-500 mr-2 flex items-center justify-center">
-                  <span className="text-[8px] text-yellow-600">1</span>
-                </div>
-                <span className="text-yellow-700 dark:text-yellow-300">
-                  Photo of Driver's License (front & back)
-                </span>
-              </div>
-              <div className="flex items-center text-xs">
-                <div className="w-4 h-4 rounded-full border-2 border-yellow-400 dark:border-yellow-500 mr-2 flex items-center justify-center">
-                  <span className="text-[8px] text-yellow-600">2</span>
-                </div>
-                <span className="text-yellow-700 dark:text-yellow-300">
-                  Selfie to match your ID
-                </span>
-              </div>
-              <div className="flex items-center text-xs">
-                <div className="w-4 h-4 rounded-full border-2 border-yellow-400 dark:border-yellow-500 mr-2 flex items-center justify-center">
-                  <span className="text-[8px] text-yellow-600">3</span>
-                </div>
-                <span className="text-yellow-700 dark:text-yellow-300">
-                  Instant verification via Stripe
-                </span>
-              </div>
-            </div>
-
-            {/* Bonus callout */}
-            <div className="mt-3 flex items-center gap-2 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded text-xs">
-              <Shield className="w-4 h-4 text-green-600 dark:text-green-400" />
-              <span className="text-green-700 dark:text-green-300 font-medium">
-                Get signup bonus when verified + payment method added!
-              </span>
-            </div>
-
-            {/* Error message */}
-            {error && (
-              <div className="mt-2 text-xs text-red-600 dark:text-red-400">
-                {error}
-              </div>
-            )}
           </div>
         </div>
 
@@ -278,24 +226,30 @@ export default function VerificationAlert({
         <button
           onClick={hasPhone ? handleVerifyWithStripe : () => onNavigate('/profile?tab=personal')}
           disabled={isLoading}
-          className={`px-2.5 sm:px-3 py-1.5 sm:py-2 ${
+          className={`px-4 py-2 ${
             hasPhone
-              ? 'bg-yellow-600 hover:bg-yellow-700'
-              : 'bg-gray-500 hover:bg-gray-600'
-          } text-white rounded-lg text-xs font-medium transition-colors whitespace-nowrap flex items-center space-x-1.5 active:scale-95 flex-shrink-0 disabled:opacity-50`}
+              ? 'bg-blue-600 hover:bg-blue-700'
+              : 'bg-gray-600 hover:bg-gray-700'
+          } text-white rounded-lg text-sm font-medium transition-all whitespace-nowrap flex items-center gap-2 active:scale-95 flex-shrink-0 disabled:opacity-50 shadow-sm`}
           aria-label={hasPhone ? "Verify with Stripe" : "Add phone number"}
         >
           {isLoading ? (
             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
           ) : (
             <>
-              <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">{hasPhone ? 'Verify with Stripe' : 'Add Phone First'}</span>
-              <span className="sm:hidden">{hasPhone ? 'Verify' : 'Add Phone'}</span>
+              <Shield className="w-4 h-4" />
+              <span>{hasPhone ? 'Verify Now' : 'Add Phone'}</span>
             </>
           )}
         </button>
       </div>
+
+      {/* Error message */}
+      {error && (
+        <div className="mt-2 text-xs text-red-600 dark:text-red-400 pl-11">
+          {error}
+        </div>
+      )}
 
       <style jsx>{`
         @keyframes fadeIn {
