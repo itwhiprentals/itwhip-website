@@ -2,6 +2,16 @@
 
 ## Recent Fixes (January 2026)
 
+### Guest Dashboard UX Improvements (Jan 24)
+- [x] Guest invite link redirects to `/dashboard` instead of `/payments/credits`
+- [x] Lock icon with tooltip on Credits & Bonus stat when unverified
+- [x] Lock icon with tooltip on Credits page header when unverified
+- [x] Desktop logout dropdown menu (Profile + Sign Out options)
+- [x] Remove footer from dashboard-style pages (`/dashboard`, `/profile`, `/payments/*`, `/messages`, `/claims/*`, `/settings/*`)
+- [x] Fix transaction history to show dollar sign (+$250.00 format)
+- [x] Reduce header/footer logo size by 30% (w-10 → w-7)
+- [x] Fixed user role from invalid 'GUEST' to 'CLAIMED' in guest onboard API
+
 ### Email Deliverability Fixes (Jan 24)
 - [x] Reverted dark mode CSS from email templates (Gmail ignores media queries)
 - [x] Removed List-Unsubscribe headers (endpoint doesn't exist)
