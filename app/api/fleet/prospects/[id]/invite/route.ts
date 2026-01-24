@@ -163,35 +163,8 @@ export async function POST(
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta name="color-scheme" content="light dark">
-        <meta name="supported-color-schemes" content="light dark">
-        <!--[if mso]>
-        <style type="text/css">
-          .dark-mode-bg { background-color: #ffffff !important; }
-          .dark-mode-text { color: #1f2937 !important; }
-        </style>
-        <![endif]-->
-        <style>
-          :root { color-scheme: light dark; }
-          @media (prefers-color-scheme: dark) {
-            .email-body { background-color: #1a1a1a !important; }
-            .email-card { background-color: #262626 !important; border-color: #404040 !important; }
-            .email-text { color: #e5e5e5 !important; }
-            .email-text-muted { color: #a3a3a3 !important; }
-            .email-divider { border-color: #404040 !important; background-color: #404040 !important; }
-            .email-cta { background-color: #ea580c !important; }
-            .logo-light { display: none !important; }
-            .logo-dark { display: block !important; }
-          }
-          /* Outlook dark mode */
-          [data-ogsc] .email-body { background-color: #1a1a1a !important; }
-          [data-ogsc] .email-card { background-color: #262626 !important; border-color: #404040 !important; }
-          [data-ogsc] .email-text { color: #e5e5e5 !important; }
-          [data-ogsc] .logo-light { display: none !important; }
-          [data-ogsc] .logo-dark { display: block !important; }
-        </style>
       </head>
-      <body class="email-body" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; background-color: #ffffff; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; background-color: #ffffff; max-width: 600px; margin: 0 auto; padding: 20px;">
 
         <!-- Header -->
         <div style="border-bottom: 1px solid #e5e7eb; padding-bottom: 16px; margin-bottom: 24px; text-align: center;">
@@ -223,13 +196,13 @@ export async function POST(
 
         <!-- CTA Button -->
         <div style="text-align: center; margin: 28px 0;">
-          <a href="${inviteLink}" style="display: inline-block; background: #ea580c; color: white; padding: 14px 32px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 15px;">
+          <a href="${inviteLink}" style="display: inline-block; background: #ea580c; color: #ffffff; padding: 14px 32px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 15px;">
             View Your Dashboard & Accept
           </a>
         </div>
 
         <table width="100%" cellpadding="0" cellspacing="0" style="margin: 24px 0;">
-          <tr><td class="email-divider" style="height: 1px; background-color: #e5e7eb; line-height: 1px; font-size: 1px;">&nbsp;</td></tr>
+          <tr><td style="height: 1px; background-color: #e5e7eb; line-height: 1px; font-size: 1px;">&nbsp;</td></tr>
         </table>
 
         <!-- Benefits Section -->
@@ -417,10 +390,6 @@ About: https://itwhip.com/about | Terms: https://itwhip.com/terms | Privacy: htt
 Verify this email: ${baseUrl}/verify-email?ref=${emailReferenceId}
     `
 
-    // Build unsubscribe link for email headers (required by Yahoo/Gmail)
-    const unsubscribeUrl = `${baseUrl}/unsubscribe?email=${encodeURIComponent(prospect.email)}&type=host_invite`
-    const unsubscribeEmail = `mailto:unsubscribe@itwhip.com?subject=Unsubscribe&body=Unsubscribe%20${encodeURIComponent(prospect.email)}`
-
     // Send the email
     console.log('[Prospect Invite] Sending email to:', prospect.email)
     console.log('[Prospect Invite] Invite link:', inviteLink)
@@ -431,11 +400,7 @@ Verify this email: ${baseUrl}/verify-email?ref=${emailReferenceId}
       html,
       text,
       {
-        requestId: `prospect-invite-${id}`,
-        headers: {
-          'List-Unsubscribe': `<${unsubscribeUrl}>, <${unsubscribeEmail}>`,
-          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
-        }
+        requestId: `prospect-invite-${id}`
       }
     )
 

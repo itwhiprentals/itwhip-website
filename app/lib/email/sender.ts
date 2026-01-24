@@ -142,15 +142,21 @@ export async function sendEmail(
     
     console.log(`[${requestId}] Attempting to send email to: ${to}`)
     
-    const result = await transport.sendMail({
+    const mailOptions: any = {
       from: SMTP_CONFIG.from,
       to: to,
       subject: subject,
       replyTo: SMTP_CONFIG.replyTo,
       html: html,
-      text: text,
-      headers: opts?.headers || {}
-    })
+      text: text
+    }
+
+    // Only add headers if explicitly provided
+    if (opts?.headers && Object.keys(opts.headers).length > 0) {
+      mailOptions.headers = opts.headers
+    }
+
+    const result = await transport.sendMail(mailOptions)
     
     // Log success with messageId
     console.log(`[${requestId}] Email sent successfully:`, {

@@ -32,51 +32,30 @@ export async function GET(request: NextRequest) {
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta name="color-scheme" content="light dark">
-        <meta name="supported-color-schemes" content="light dark">
-        <style>
-          /* Dark mode styles */
-          @media (prefers-color-scheme: dark) {
-            .email-body { background-color: #1a1a1a !important; }
-            .email-card { background-color: #262626 !important; border-color: #404040 !important; }
-            .email-text { color: #e5e5e5 !important; }
-            .email-text-muted { color: #a3a3a3 !important; }
-            .email-text-heading { color: #ea580c !important; }
-            .email-divider { border-color: #404040 !important; background-color: #404040 !important; }
-            .logo-light { display: none !important; }
-            .logo-dark { display: block !important; }
-          }
-          /* Outlook dark mode */
-          [data-ogsc] .email-body { background-color: #1a1a1a !important; }
-          [data-ogsc] .email-card { background-color: #262626 !important; border-color: #404040 !important; }
-          [data-ogsc] .email-text { color: #e5e5e5 !important; }
-          [data-ogsc] .logo-light { display: none !important; }
-          [data-ogsc] .logo-dark { display: block !important; }
-        </style>
       </head>
-      <body class="email-body" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #ffffff;">
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #ffffff;">
 
         <!-- Header -->
-        <div class="email-divider" style="border-bottom: 1px solid #e5e7eb; padding-bottom: 16px; margin-bottom: 24px; text-align: center;">
-          <p class="email-text-heading" style="margin: 0 0 4px 0; font-size: 12px; color: #ea580c; text-transform: uppercase; letter-spacing: 0.5px;">Your Booking Is Ready • #${requestCode}</p>
-          <h1 class="email-text-heading" style="margin: 0; font-size: 20px; font-weight: 700; color: #ea580c;">Here's the Booking We Discussed</h1>
+        <div style="border-bottom: 1px solid #e5e7eb; padding-bottom: 16px; margin-bottom: 24px; text-align: center;">
+          <p style="margin: 0 0 4px 0; font-size: 12px; color: #ea580c; text-transform: uppercase; letter-spacing: 0.5px;">Your Booking Is Ready • #${requestCode}</p>
+          <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #ea580c;">Here's the Booking We Discussed</h1>
         </div>
 
         <!-- Main content -->
-        <p class="email-text" style="font-size: 16px; margin: 0 0 16px 0; color: #1f2937;">
+        <p style="font-size: 16px; margin: 0 0 16px 0; color: #1f2937;">
           Hi ${firstName},
         </p>
 
-        <p class="email-text" style="font-size: 16px; margin: 0 0 16px 0; color: #111827;">
+        <p style="font-size: 16px; margin: 0 0 16px 0; color: #111827;">
           Great news! As promised, we're passing along a booking for your <strong>${vehicleDesc}</strong>.
         </p>
 
-        <p class="email-text" style="font-size: 16px; color: #111827; margin: 0;">
+        <p style="font-size: 16px; color: #111827; margin: 0;">
           A verified guest is ready to book. Click below to view your dashboard and accept.
         </p>
 
         <!-- Earnings Section -->
-        <div class="email-card" style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center; background-color: #ffffff;">
+        <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center; background-color: #ffffff;">
           <p class="email-text-muted" style="margin: 0 0 4px 0; font-size: 13px; color: #374151; text-transform: uppercase; letter-spacing: 0.5px;">Your Potential Payout</p>
           <p class="email-text" style="margin: 0; font-size: 36px; font-weight: 700; color: #1f2937;">$${potentialEarnings.toFixed(2)}</p>
           <p class="email-text-muted" style="margin: 8px 0 0 0; font-size: 14px; color: #374151;">${durationDays} days @ $${offeredRate.toFixed(2)}/day</p>
@@ -107,26 +86,26 @@ export async function GET(request: NextRequest) {
         </table>
 
         <!-- Status indicator -->
-        <p class="email-text" style="font-size: 14px; color: #111827; margin: 20px 0;">
+        <p style="font-size: 14px; color: #111827; margin: 20px 0;">
           <strong>This booking is reserved for you.</strong> We're holding it for 48 hours so you have time to review.
         </p>
 
         <!-- CTA Button -->
         <div style="text-align: center; margin: 28px 0;">
-          <a href="${inviteLink}" style="display: inline-block; background: #ea580c; color: white; padding: 14px 32px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 15px;">
+          <a href="${inviteLink}" style="display: inline-block; background: #ea580c; color: #ffffff; padding: 14px 32px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 15px;">
             View Your Dashboard & Accept
           </a>
         </div>
 
         <table width="100%" cellpadding="0" cellspacing="0" style="margin: 24px 0;">
-          <tr><td class="email-divider" style="height: 1px; background-color: #e5e7eb; line-height: 1px; font-size: 1px;">&nbsp;</td></tr>
+          <tr><td style="height: 1px; background-color: #e5e7eb; line-height: 1px; font-size: 1px;">&nbsp;</td></tr>
         </table>
 
         <!-- Benefits Section -->
-        <p class="email-text" style="margin: 0 0 12px 0; color: #1f2937; font-size: 14px; font-weight: 600;">
+        <p style="margin: 0 0 12px 0; color: #1f2937; font-size: 14px; font-weight: 600;">
           What you get with your Partner Dashboard:
         </p>
-        <table style="width: 100%; font-size: 13px; color: #1f2937;" class="email-text-muted">
+        <table style="width: 100%; font-size: 13px; color: #1f2937;">
           <tr>
             <td style="padding: 5px 0; width: 50%;">✓ Guest Verification via Stripe</td>
             <td style="padding: 5px 0; width: 50%;">✓ Counter-Offer on Rates</td>
@@ -155,17 +134,17 @@ export async function GET(request: NextRequest) {
 
         <!-- Closing Message -->
         <div style="margin: 28px 0 24px 0;">
-          <p class="email-text" style="font-size: 15px; color: #111827; margin: 0 0 16px 0;">
+          <p style="font-size: 15px; color: #111827; margin: 0 0 16px 0;">
             We look forward to helping you complete this booking.
           </p>
-          <p class="email-text" style="font-size: 14px; color: #1f2937; margin: 0;">
+          <p style="font-size: 14px; color: #1f2937; margin: 0;">
             Best regards,<br/>
             <strong>The ItWhip Team</strong>
           </p>
         </div>
 
         <table width="100%" cellpadding="0" cellspacing="0" style="margin: 24px 0 12px 0;">
-          <tr><td class="email-divider" style="height: 1px; background-color: #e5e7eb; line-height: 1px; font-size: 1px;">&nbsp;</td></tr>
+          <tr><td style="height: 1px; background-color: #e5e7eb; line-height: 1px; font-size: 1px;">&nbsp;</td></tr>
         </table>
 
         <!-- Footer Header with Logo - Dark/Light mode support -->
@@ -294,10 +273,6 @@ ItWhip Rentals | Phoenix, AZ | itwhip.com
 Verify this email: ${baseUrl}/verify-email?ref=${emailReferenceId}
     `
 
-    // Build unsubscribe link for email headers (required by Yahoo/Gmail)
-    const unsubscribeUrl = `${baseUrl}/unsubscribe?email=${encodeURIComponent(email)}&type=host_invite`
-    const unsubscribeEmail = `mailto:unsubscribe@itwhip.com?subject=Unsubscribe&body=Unsubscribe%20${encodeURIComponent(email)}`
-
     // Send the test email
     console.log('[Test Host Invite] Sending to:', email)
 
@@ -307,11 +282,7 @@ Verify this email: ${baseUrl}/verify-email?ref=${emailReferenceId}
       html,
       text,
       {
-        requestId: 'test-host-invite',
-        headers: {
-          'List-Unsubscribe': `<${unsubscribeUrl}>, <${unsubscribeEmail}>`,
-          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
-        }
+        requestId: 'test-host-invite'
       }
     )
 
