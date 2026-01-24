@@ -2,6 +2,14 @@
 
 ## Recent Fixes (January 2026)
 
+### Email Deliverability Fixes (Jan 24)
+- [x] Reverted dark mode CSS from email templates (Gmail ignores media queries)
+- [x] Removed List-Unsubscribe headers (endpoint doesn't exist)
+- [x] Fixed sender.ts to not pass empty headers object to nodemailer
+- [x] Changed guest invite subject from promotional "$25 credit waiting" to "your account is ready"
+- [x] Changed CTA from "Claim Your Credit" to "Activate Your Account"
+- [x] Removed urgency language ("waiting", "gift", "claim") to avoid Yahoo spam filters
+
 ### Fleet Analytics & Monitoring Improvements (Jan 24)
 - [x] Military-grade device detection (tablet regex, Mobi keyword, Client Hints)
 - [x] Real bounce rate calculation (single-page sessions / total visitors)
