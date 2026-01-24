@@ -4,6 +4,20 @@
 export { parseUserAgent } from './parse-user-agent'
 export { extractGeoFromHeaders, getClientIP } from './extract-geo'
 
+// Military-grade visitor identification (v2)
+export {
+  collectVisitorFingerprint,
+  getVisitorId,
+  getDetailedFingerprint,
+  type VisitorFingerprint
+} from './visitor-fingerprint'
+
+export {
+  identifyVisitor,
+  generateServerVisitorId,
+  getVisitorStats
+} from './visitor-identification'
+
 // Sensitive query params to exclude from tracking
 export const SENSITIVE_PARAMS = [
   'token',

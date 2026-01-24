@@ -5,15 +5,38 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/app/lib/database/prisma'
 
-// Cache stats for 1 minute to reduce DB load
-let statsCache: { data: any; timestamp: number } | null = null
+// Cache stats by key (range + path) for 1 minute to reduce DB load
+const statsCache = new Map<string, { data: any; timestamp: number }>()
 const CACHE_TTL = 60000 // 1 minute
+
+// Clean old cache entries every 5 minutes
+setInterval(() => {
+  const now = Date.now()
+  for (const [key, value] of statsCache.entries()) {
+    if (value.timestamp < now - CACHE_TTL * 5) {
+      statsCache.delete(key)
+    }
+  }
+}, 300000)
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const range = searchParams.get('range') || '7d'
     const pathFilter = searchParams.get('path') || null
+
+    // Check cache first
+    const cacheKey = `${range}-${pathFilter || 'all'}`
+    const cached = statsCache.get(cacheKey)
+    if (cached && cached.timestamp > Date.now() - CACHE_TTL) {
+      const response = NextResponse.json(cached.data)
+      // HTTP cache headers - allow caching for remaining TTL
+      const age = Math.floor((Date.now() - cached.timestamp) / 1000)
+      const maxAge = Math.max(0, Math.floor(CACHE_TTL / 1000) - age)
+      response.headers.set('Cache-Control', `private, max-age=${maxAge}, stale-while-revalidate=30`)
+      response.headers.set('X-Cache', 'HIT')
+      return response
+    }
 
     // Calculate date range
     const now = new Date()
@@ -46,18 +69,13 @@ export async function GET(request: NextRequest) {
       where.path = { startsWith: pathFilter }
     }
 
-    // Check cache (only for default queries)
-    const cacheKey = `${range}-${pathFilter || 'all'}`
-    if (statsCache && statsCache.timestamp > Date.now() - CACHE_TTL) {
-      // Return cached data
-    }
-
     // Run all queries in parallel for speed
     const [
       totalViews,
       uniqueVisitors,
       topPages,
       viewsByDay,
+      previousPeriodViewsByDay,
       viewsByCountry,
       viewsByDevice,
       viewsByBrowser,
@@ -83,7 +101,10 @@ export async function GET(request: NextRequest) {
       }),
 
       // Views by day (for chart)
-      getViewsByDay(startDate, where),
+      getViewsByDay(startDate, now),
+
+      // Previous period views (for comparison)
+      getPreviousPeriodViewsByDay(startDate, now),
 
       // Views by country
       prisma.pageView.groupBy({
@@ -128,11 +149,14 @@ export async function GET(request: NextRequest) {
       })
     ])
 
-    // Calculate averages
-    const avgLoadTime = await prisma.pageView.aggregate({
-      where: { ...where, loadTime: { not: null } },
-      _avg: { loadTime: true }
-    })
+    // Calculate averages and bounce rate in parallel
+    const [avgLoadTime, bounceRate] = await Promise.all([
+      prisma.pageView.aggregate({
+        where: { ...where, loadTime: { not: null } },
+        _avg: { loadTime: true }
+      }),
+      calculateActualBounceRate(startDate)
+    ])
 
     // Format response
     const stats = {
@@ -140,13 +164,14 @@ export async function GET(request: NextRequest) {
         totalViews,
         uniqueVisitors,
         avgLoadTime: avgLoadTime._avg.loadTime ? Math.round(avgLoadTime._avg.loadTime) : null,
-        bounceRate: calculateBounceRate(uniqueVisitors, totalViews)
+        bounceRate
       },
       topPages: topPages.map(p => ({
         path: p.path,
         views: p._count.path
       })),
       viewsByDay: viewsByDay,
+      previousPeriodViewsByDay: previousPeriodViewsByDay,
       viewsByCountry: viewsByCountry.map(c => ({
         country: c.country || 'Unknown',
         views: c._count.country
@@ -172,9 +197,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Update cache
-    statsCache = { data: stats, timestamp: Date.now() }
+    statsCache.set(cacheKey, { data: stats, timestamp: Date.now() })
 
-    return NextResponse.json(stats)
+    const response = NextResponse.json(stats)
+    // HTTP cache headers - fresh data, can cache for full TTL
+    response.headers.set('Cache-Control', `private, max-age=${Math.floor(CACHE_TTL / 1000)}, stale-while-revalidate=30`)
+    response.headers.set('X-Cache', 'MISS')
+    return response
 
   } catch (error) {
     console.error('[Analytics] Stats error:', error)
@@ -185,15 +214,15 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Helper: Get views grouped by day
-async function getViewsByDay(startDate: Date, where: any) {
-  // Use raw query for date grouping
+// Helper: Get views grouped by day for current period
+async function getViewsByDay(startDate: Date, endDate: Date) {
   const result = await prisma.$queryRaw<Array<{ date: string; count: bigint }>>`
     SELECT
       DATE(timestamp) as date,
       COUNT(*) as count
     FROM "PageView"
     WHERE timestamp >= ${startDate}
+      AND timestamp <= ${endDate}
       AND "eventType" = 'pageview'
     GROUP BY DATE(timestamp)
     ORDER BY date ASC
@@ -205,12 +234,65 @@ async function getViewsByDay(startDate: Date, where: any) {
   }))
 }
 
-// Helper: Calculate bounce rate (single page sessions)
-function calculateBounceRate(uniqueVisitors: number, totalViews: number): number {
-  if (uniqueVisitors === 0) return 0
-  // Simplified: if views ≈ visitors, high bounce rate
-  const pagesPerVisitor = totalViews / uniqueVisitors
-  // If avg is 1.2 pages, bounce rate is ~80%
-  const bounceRate = Math.max(0, Math.min(100, (1 - (pagesPerVisitor - 1) / 2) * 100))
-  return Math.round(bounceRate)
+// Helper: Get views for the previous period (for comparison chart)
+async function getPreviousPeriodViewsByDay(currentStartDate: Date, currentEndDate: Date) {
+  // Calculate the duration of the current period
+  const periodDuration = currentEndDate.getTime() - currentStartDate.getTime()
+
+  // Previous period ends where current period starts
+  const prevEndDate = new Date(currentStartDate.getTime() - 1) // 1ms before current start
+  const prevStartDate = new Date(prevEndDate.getTime() - periodDuration)
+
+  const result = await prisma.$queryRaw<Array<{ date: string; count: bigint }>>`
+    SELECT
+      DATE(timestamp) as date,
+      COUNT(*) as count
+    FROM "PageView"
+    WHERE timestamp >= ${prevStartDate}
+      AND timestamp <= ${prevEndDate}
+      AND "eventType" = 'pageview'
+    GROUP BY DATE(timestamp)
+    ORDER BY date ASC
+  `
+
+  return result.map(r => ({
+    date: r.date,
+    views: Number(r.count)
+  }))
+}
+
+// Helper: Calculate ACTUAL bounce rate (visitors with only 1 page view)
+// Bounce rate = (single-page visitors / total visitors) * 100
+async function calculateActualBounceRate(startDate: Date): Promise<number> {
+  try {
+    // Query: Count visitors grouped by their page view count
+    // Then calculate percentage of visitors with exactly 1 page view
+    const result = await prisma.$queryRaw<Array<{ single_page_visitors: bigint; total_visitors: bigint }>>`
+      WITH visitor_counts AS (
+        SELECT "visitorId", COUNT(*) as page_count
+        FROM "PageView"
+        WHERE timestamp >= ${startDate}
+          AND "eventType" = 'pageview'
+          AND "visitorId" IS NOT NULL
+        GROUP BY "visitorId"
+      )
+      SELECT
+        COUNT(CASE WHEN page_count = 1 THEN 1 END) as single_page_visitors,
+        COUNT(*) as total_visitors
+      FROM visitor_counts
+    `
+
+    if (result.length === 0 || Number(result[0].total_visitors) === 0) {
+      return 0
+    }
+
+    const singlePage = Number(result[0].single_page_visitors)
+    const total = Number(result[0].total_visitors)
+    const bounceRate = (singlePage / total) * 100
+
+    return Math.round(bounceRate)
+  } catch (error) {
+    console.error('[Analytics] Bounce rate calculation error:', error)
+    return 0
+  }
 }

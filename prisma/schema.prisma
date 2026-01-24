@@ -274,6 +274,9 @@ model PageView {
   @@index([path, timestamp]) // Top pages over time
   @@index([country, timestamp]) // Geographic trends
   @@index([device, timestamp]) // Device trends
+  @@index([visitorId, timestamp]) // Returning users analysis
+  @@index([sessionId, visitorId]) // Bounce rate (single-page sessions)
+  @@index([visitorId, eventType, timestamp]) // Visitor activity tracking
 }
 
 model BackgroundCheck {
@@ -2691,6 +2694,8 @@ model SecurityEvent {
   @@index([sourceIp])
   @@index([timestamp])
   @@index([type])
+  @@index([type, severity, timestamp]) // Uptime tracking queries
+  @@index([blocked, timestamp]) // Failed request tracking
 }
 
 model MonitoringAlert {

@@ -3,18 +3,22 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { jwtVerify } from 'jose'
 
-// Get all three JWT secrets
-const GUEST_JWT_SECRET = new TextEncoder().encode(
-  process.env.GUEST_JWT_SECRET || 'fallback-guest-secret-key'
-)
+// Get all three JWT secrets - REQUIRE in production, allow fallback in development only
+function getRequiredSecret(name: string, fallback: string): Uint8Array {
+  const value = process.env[name]
+  if (!value) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(`Missing required environment variable: ${name}`)
+    }
+    console.warn(`[Security] Using fallback for ${name} - set proper secret in production!`)
+    return new TextEncoder().encode(fallback)
+  }
+  return new TextEncoder().encode(value)
+}
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-key'
-)
-
-const ADMIN_JWT_SECRET = new TextEncoder().encode(
-  process.env.ADMIN_JWT_SECRET || 'admin-secret-key-change-this'
-)
+const GUEST_JWT_SECRET = getRequiredSecret('GUEST_JWT_SECRET', 'dev-guest-secret-change-me')
+const JWT_SECRET = getRequiredSecret('JWT_SECRET', 'dev-jwt-secret-change-me')
+const ADMIN_JWT_SECRET = getRequiredSecret('ADMIN_JWT_SECRET', 'dev-admin-secret-change-me')
 
 // 🔒 FLEET API SECURITY KEY
 const FLEET_API_KEY = process.env.FLEET_API_KEY
@@ -486,7 +490,11 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith('/api/admin/') && !pathname.startsWith('/api/admin/auth/')) {
     if (pathname.startsWith('/api/admin/system/')) {
       const authHeader = request.headers.get('authorization')
-      const cronSecret = process.env.CRON_SECRET || 'itwhip-cron-secret-2024'
+      const cronSecret = process.env.CRON_SECRET
+      if (!cronSecret) {
+        console.warn('[Security] CRON_SECRET not set - cron access denied')
+        return NextResponse.json({ error: 'Cron access not configured' }, { status: 403 })
+      }
       
       if (authHeader === `Bearer ${cronSecret}`) {
         const response = NextResponse.next()

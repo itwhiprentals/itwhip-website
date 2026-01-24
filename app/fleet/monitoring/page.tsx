@@ -14,7 +14,8 @@ import {
   SecurityEventsCard,
   ActiveAlertsCard,
   SystemHealthCard,
-  QuickActionsCard
+  QuickActionsCard,
+  ReturnUsersCard
 } from './components'
 
 interface MonitoringData {
@@ -58,6 +59,12 @@ interface MonitoringData {
     totalPageViews: number
     criticalErrors: number
     alertsActive: number
+    p95ResponseTime?: number | null
+    errorRate?: number
+    dbStatus?: 'healthy' | 'degraded' | 'down'
+    dbLatency?: number
+    uptimePercent?: number
+    lastChecked?: string
   }
   range: string
   generatedAt: string
@@ -248,12 +255,16 @@ export default function MonitoringPage() {
             }}
             loading={loading && !data}
           />
+
+          {/* Return Users - Under Security Events */}
+          <ReturnUsersCard />
         </div>
 
         {/* Right Column - Alerts, Health, Actions */}
         <div className="space-y-6">
           <ActiveAlertsCard
             alerts={data?.alerts.active || []}
+            health={data?.health}
             loading={loading && !data}
             onAcknowledge={handleAcknowledge}
             onResolve={handleResolve}

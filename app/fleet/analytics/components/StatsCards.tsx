@@ -1,15 +1,20 @@
 // app/fleet/analytics/components/StatsCards.tsx
-// Overview stats cards for analytics dashboard
+// Overview stats cards for analytics dashboard - clickable for details
 
 'use client'
 
-import { IoEyeOutline, IoPeopleOutline, IoTimeOutline, IoExitOutline } from 'react-icons/io5'
+import { useState } from 'react'
+import { IoEyeOutline, IoPeopleOutline, IoTimeOutline, IoExitOutline, IoChevronForwardOutline } from 'react-icons/io5'
+import StatsDetailModal, { StatType } from './StatsDetailModal'
 
 interface StatsCardsProps {
   totalViews: number
   uniqueVisitors: number
   avgLoadTime: number | null
   bounceRate: number
+  topPages?: { path: string; views: number }[]
+  viewsByCountry?: { country: string; views: number }[]
+  viewsByDevice?: { device: string; views: number }[]
   loading?: boolean
 }
 
@@ -18,10 +23,23 @@ export default function StatsCards({
   uniqueVisitors,
   avgLoadTime,
   bounceRate,
+  topPages,
+  viewsByCountry,
+  viewsByDevice,
   loading = false
 }: StatsCardsProps) {
-  const stats = [
+  const [selectedStat, setSelectedStat] = useState<StatType | null>(null)
+
+  const stats: Array<{
+    key: StatType
+    label: string
+    value: string
+    icon: typeof IoEyeOutline
+    color: string
+    bgColor: string
+  }> = [
     {
+      key: 'totalViews',
       label: 'Total Views',
       value: totalViews.toLocaleString(),
       icon: IoEyeOutline,
@@ -29,6 +47,7 @@ export default function StatsCards({
       bgColor: 'bg-blue-500/10'
     },
     {
+      key: 'uniqueVisitors',
       label: 'Unique Visitors',
       value: uniqueVisitors.toLocaleString(),
       icon: IoPeopleOutline,
@@ -36,6 +55,7 @@ export default function StatsCards({
       bgColor: 'bg-green-500/10'
     },
     {
+      key: 'avgLoadTime',
       label: 'Avg Load Time',
       value: avgLoadTime ? `${avgLoadTime}ms` : 'N/A',
       icon: IoTimeOutline,
@@ -43,6 +63,7 @@ export default function StatsCards({
       bgColor: 'bg-yellow-500/10'
     },
     {
+      key: 'bounceRate',
       label: 'Bounce Rate',
       value: `${bounceRate}%`,
       icon: IoExitOutline,
@@ -65,23 +86,44 @@ export default function StatsCards({
   }
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      {stats.map((stat) => (
-        <div
-          key={stat.label}
-          className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700"
-        >
-          <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg ${stat.bgColor}`}>
-              <stat.icon className={`w-5 h-5 ${stat.color}`} />
+    <>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map((stat) => (
+          <button
+            key={stat.key}
+            onClick={() => setSelectedStat(stat.key)}
+            className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 text-left hover:ring-2 hover:ring-blue-500/50 transition-all group"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg ${stat.bgColor}`}>
+                  <stat.icon className={`w-5 h-5 ${stat.color}`} />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{stat.label}</p>
+                  <p className="text-xl font-bold text-gray-900 dark:text-white">{stat.value}</p>
+                </div>
+              </div>
+              <IoChevronForwardOutline className="w-4 h-4 text-gray-300 dark:text-gray-600 group-hover:text-blue-500 transition-colors" />
             </div>
-            <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{stat.label}</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">{stat.value}</p>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
+          </button>
+        ))}
+      </div>
+
+      {/* Detail Modal */}
+      <StatsDetailModal
+        stat={selectedStat}
+        data={{
+          totalViews,
+          uniqueVisitors,
+          avgLoadTime,
+          bounceRate,
+          topPages,
+          viewsByCountry,
+          viewsByDevice
+        }}
+        onClose={() => setSelectedStat(null)}
+      />
+    </>
   )
 }

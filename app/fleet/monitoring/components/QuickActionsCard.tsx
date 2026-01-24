@@ -10,17 +10,23 @@ import {
   IoDownloadOutline,
   IoSettingsOutline,
   IoRefreshOutline,
-  IoCheckmarkCircleOutline
+  IoCheckmarkCircleOutline,
+  IoTrashOutline,
+  IoListOutline
 } from 'react-icons/io5'
+import AlertSettingsModal from './AlertSettingsModal'
 
 interface Props {
   onTestAlert?: () => Promise<void>
   onRefresh?: () => void
+  onClearResolved?: () => Promise<void>
 }
 
-export default function QuickActionsCard({ onTestAlert, onRefresh }: Props) {
+export default function QuickActionsCard({ onTestAlert, onRefresh, onClearResolved }: Props) {
   const [testingAlert, setTestingAlert] = useState(false)
   const [testSuccess, setTestSuccess] = useState(false)
+  const [clearingResolved, setClearingResolved] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   const handleTestAlert = async () => {
     if (!onTestAlert) return
@@ -32,6 +38,16 @@ export default function QuickActionsCard({ onTestAlert, onRefresh }: Props) {
       setTimeout(() => setTestSuccess(false), 3000)
     } finally {
       setTestingAlert(false)
+    }
+  }
+
+  const handleClearResolved = async () => {
+    if (!onClearResolved) return
+    setClearingResolved(true)
+    try {
+      await onClearResolved()
+    } finally {
+      setClearingResolved(false)
     }
   }
 
@@ -74,59 +90,86 @@ export default function QuickActionsCard({ onTestAlert, onRefresh }: Props) {
       id: 'settings',
       label: 'Alert Settings',
       icon: IoSettingsOutline,
-      color: 'text-gray-500',
+      color: 'text-gray-600 dark:text-gray-300',
       bgColor: 'bg-gray-500/10 hover:bg-gray-500/20',
-      onClick: () => {
-        // Navigate to settings or open modal
-        alert('Alert settings coming soon! Configure in .env.local:\n\nALERT_EMAIL_ENABLED=true\nALERT_EMAIL_RECIPIENTS=you@email.com\nSLACK_WEBHOOK_URL=...')
-      },
+      onClick: () => setSettingsOpen(true),
       description: 'Configure notifications'
+    },
+    {
+      id: 'clear-resolved',
+      label: 'Clear Resolved',
+      icon: IoTrashOutline,
+      color: 'text-red-500',
+      bgColor: 'bg-red-500/10 hover:bg-red-500/20',
+      onClick: handleClearResolved,
+      loading: clearingResolved,
+      description: 'Delete resolved alerts'
+    },
+    {
+      id: 'audit-log',
+      label: 'Audit Log',
+      icon: IoListOutline,
+      color: 'text-indigo-500',
+      bgColor: 'bg-indigo-500/10 hover:bg-indigo-500/20',
+      onClick: () => {
+        // Scroll to security events section
+        document.getElementById('security-events')?.scrollIntoView({ behavior: 'smooth' })
+      },
+      description: 'View security events'
     }
   ]
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg border dark:border-gray-700 p-4">
-      {/* Header */}
-      <div className="flex items-center gap-2 mb-4">
-        <IoFlashOutline className="w-5 h-5 text-purple-500" />
-        <h3 className="font-semibold text-gray-900 dark:text-white">
-          Quick Actions
-        </h3>
-      </div>
+    <>
+      <div className="bg-white dark:bg-gray-800 rounded-lg border dark:border-gray-700 p-4">
+        {/* Header */}
+        <div className="flex items-center gap-2 mb-4">
+          <IoFlashOutline className="w-5 h-5 text-purple-500" />
+          <h3 className="font-semibold text-gray-900 dark:text-white">
+            Quick Actions
+          </h3>
+        </div>
 
-      {/* Actions Grid */}
-      <div className="grid grid-cols-2 gap-2">
-        {actions.map(action => {
-          const Icon = action.icon
-          return (
-            <button
-              key={action.id}
-              onClick={action.onClick}
-              disabled={action.loading}
-              className={`p-3 rounded-lg ${action.bgColor} transition-colors text-left disabled:opacity-50`}
-            >
-              <Icon className={`w-5 h-5 ${action.color} mb-2 ${action.loading ? 'animate-spin' : ''}`} />
-              <p className={`text-sm font-medium ${action.color}`}>
-                {action.loading ? 'Processing...' : action.label}
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                {action.description}
-              </p>
-            </button>
-          )
-        })}
-      </div>
+        {/* Actions Grid - 2 columns */}
+        <div className="grid grid-cols-2 gap-2">
+          {actions.map(action => {
+            const Icon = action.icon
+            return (
+              <button
+                key={action.id}
+                onClick={action.onClick}
+                disabled={action.loading}
+                className={`p-3 rounded-lg ${action.bgColor} transition-colors text-left disabled:opacity-50`}
+              >
+                <Icon className={`w-5 h-5 ${action.color} mb-2 ${action.loading ? 'animate-spin' : ''}`} />
+                <p className={`text-sm font-medium ${action.color}`}>
+                  {action.loading ? 'Processing...' : action.label}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  {action.description}
+                </p>
+              </button>
+            )
+          })}
+        </div>
 
-      {/* Status Info */}
-      <div className="mt-4 pt-4 border-t dark:border-gray-700">
-        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-          <span>Alerts powered by your existing infrastructure</span>
-          <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-green-500" />
-            System Active
-          </span>
+        {/* Status Info */}
+        <div className="mt-4 pt-4 border-t dark:border-gray-700">
+          <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+            <span>Alerts powered by your existing infrastructure</span>
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-green-500" />
+              System Active
+            </span>
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Alert Settings Modal */}
+      <AlertSettingsModal
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+      />
+    </>
   )
 }

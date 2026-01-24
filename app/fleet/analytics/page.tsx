@@ -25,6 +25,7 @@ interface AnalyticsData {
   }
   topPages: Array<{ path: string; views: number }>
   viewsByDay: Array<{ date: string; views: number }>
+  previousPeriodViewsByDay?: Array<{ date: string; views: number }>
   viewsByCountry: Array<{ country: string; views: number }>
   viewsByDevice: Array<{ device: string; views: number }>
   viewsByBrowser: Array<{ browser: string; views: number }>
@@ -149,6 +150,9 @@ export default function FleetAnalyticsPage() {
           uniqueVisitors={data?.overview.uniqueVisitors || 0}
           avgLoadTime={data?.overview.avgLoadTime || null}
           bounceRate={data?.overview.bounceRate || 0}
+          topPages={data?.topPages}
+          viewsByCountry={data?.viewsByCountry}
+          viewsByDevice={data?.viewsByDevice}
           loading={loading && !data}
         />
       </div>
@@ -159,6 +163,7 @@ export default function FleetAnalyticsPage() {
         <div className="lg:col-span-2">
           <ViewsChart
             data={data?.viewsByDay || []}
+            previousPeriodData={data?.previousPeriodViewsByDay}
             loading={loading && !data}
           />
         </div>

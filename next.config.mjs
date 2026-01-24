@@ -4,7 +4,17 @@ const nextConfig = {
   eslint: { ignoreDuringBuilds: true },
   // Allow phones on local network to access dev server (for VIN scanning)
   allowedDevOrigins: ['10.165.1.231'],
+
+  // Performance optimizations
+  compress: true, // Enable gzip compression
+  poweredByHeader: false, // Remove X-Powered-By header for security
+
+  // Production optimizations
+  productionBrowserSourceMaps: false, // Disable source maps in production for smaller bundles
+
   images: {
+    // Image optimization
+    formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       {
         protocol: 'https',
