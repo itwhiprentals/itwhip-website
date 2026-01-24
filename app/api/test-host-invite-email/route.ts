@@ -3,7 +3,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { sendEmail } from '@/app/lib/email/sender'
-import { generateEmailReference, emailConfig } from '@/app/lib/email/config'
+import { generateEmailReference, emailConfig, logEmail } from '@/app/lib/email/config'
 
 export async function GET(request: NextRequest) {
   try {
@@ -311,10 +311,31 @@ Verify this email: ${baseUrl}/verify-email?ref=${emailReferenceId}
       }, { status: 500 })
     }
 
+    // Log the email for audit trail (so reference ID can be verified)
+    const emailLog = await logEmail({
+      recipientEmail: email,
+      recipientName: firstName,
+      subject,
+      emailType: 'HOST_INVITE',
+      relatedType: 'test_host_invite',
+      relatedId: 'test-001',
+      messageId: emailResult.messageId,
+      referenceId: emailReferenceId,
+      metadata: {
+        vehicleDesc,
+        potentialEarnings,
+        durationDays,
+        offeredRate
+      }
+    })
+
+    console.log('[Test Host Invite] Email logged with reference:', emailLog.referenceId)
+
     return NextResponse.json({
       success: true,
       message: `Test host invite email sent to ${email}`,
-      messageId: emailResult.messageId
+      messageId: emailResult.messageId,
+      referenceId: emailLog.referenceId
     })
 
   } catch (error: any) {
