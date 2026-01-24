@@ -27,6 +27,13 @@ interface AnalyticsData {
   viewsByDay: Array<{ date: string; views: number }>
   previousPeriodViewsByDay?: Array<{ date: string; views: number }>
   viewsByCountry: Array<{ country: string; views: number }>
+  viewsByLocation?: Array<{
+    country: string
+    region: string | null
+    city: string | null
+    location: string
+    views: number
+  }>
   viewsByDevice: Array<{ device: string; views: number }>
   viewsByBrowser: Array<{ browser: string; views: number }>
   recentViews: Array<{
@@ -36,7 +43,46 @@ interface AnalyticsData {
     device: string | null
     browser: string | null
     timestamp: string
+    loadTime?: number | null
   }>
+  drillDown?: {
+    loadTime: {
+      byPage: Array<{
+        path: string
+        avgLoadTime: number
+        minLoadTime: number
+        maxLoadTime: number
+        p95LoadTime: number
+        sampleCount: number
+      }>
+      byLocation: Array<{
+        location: string
+        country: string
+        region: string | null
+        city: string | null
+        avgLoadTime: number
+        p95LoadTime: number
+        sampleCount: number
+      }>
+    }
+    bounce: {
+      byPage: Array<{
+        path: string
+        totalVisitors: number
+        bouncedVisitors: number
+        bounceRate: number
+      }>
+      byLocation: Array<{
+        location: string
+        country: string
+        region: string | null
+        city: string | null
+        totalVisitors: number
+        bouncedVisitors: number
+        bounceRate: number
+      }>
+    }
+  }
   range: string
   generatedAt: string
 }
@@ -143,8 +189,8 @@ export default function FleetAnalyticsPage() {
         </div>
       )}
 
-      {/* Stats Cards */}
-      <div className="mb-6">
+      {/* Stats Cards - Row of 4 */}
+      <section className="mb-6">
         <StatsCards
           totalViews={data?.overview.totalViews || 0}
           uniqueVisitors={data?.overview.uniqueVisitors || 0}
@@ -153,34 +199,32 @@ export default function FleetAnalyticsPage() {
           topPages={data?.topPages}
           viewsByCountry={data?.viewsByCountry}
           viewsByDevice={data?.viewsByDevice}
+          drillDown={data?.drillDown}
           loading={loading && !data}
         />
-      </div>
+      </section>
 
-      {/* Main Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        {/* Views Chart - Takes 2 columns */}
-        <div className="lg:col-span-2">
-          <ViewsChart
-            data={data?.viewsByDay || []}
-            previousPeriodData={data?.previousPeriodViewsByDay}
-            loading={loading && !data}
-          />
-        </div>
+      {/* Views Chart - Full width */}
+      <section className="mb-6">
+        <ViewsChart
+          data={data?.viewsByDay || []}
+          previousPeriodData={data?.previousPeriodViewsByDay}
+          loading={loading && !data}
+        />
+      </section>
 
-        {/* Live Feed - 1 column */}
-        <div className="lg:col-span-1">
+      {/* Bottom Section: 4-column grid on desktop */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+        {/* Live Feed */}
+        <div className="sm:col-span-1">
           <LiveFeed
             views={data?.recentViews || []}
             loading={loading && !data}
           />
         </div>
-      </div>
 
-      {/* Secondary Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Top Pages */}
-        <div>
+        <div className="sm:col-span-1">
           <TopPagesTable
             pages={data?.topPages || []}
             loading={loading && !data}
@@ -188,22 +232,23 @@ export default function FleetAnalyticsPage() {
         </div>
 
         {/* Geographic Breakdown */}
-        <div>
+        <div className="sm:col-span-1">
           <GeoBreakdown
             data={data?.viewsByCountry || []}
+            locationData={data?.viewsByLocation}
             loading={loading && !data}
           />
         </div>
 
         {/* Device & Browser Breakdown */}
-        <div>
+        <div className="sm:col-span-1">
           <DeviceBreakdown
             devices={data?.viewsByDevice || []}
             browsers={data?.viewsByBrowser || []}
             loading={loading && !data}
           />
         </div>
-      </div>
+      </section>
 
       {/* Footer note */}
       <div className="mt-8 text-center">

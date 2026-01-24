@@ -19,6 +19,54 @@ import {
 
 export type StatType = 'totalViews' | 'uniqueVisitors' | 'avgLoadTime' | 'bounceRate'
 
+// Drill-down data types
+interface LoadTimeByPage {
+  path: string
+  avgLoadTime: number
+  minLoadTime: number
+  maxLoadTime: number
+  p95LoadTime: number
+  sampleCount: number
+}
+
+interface LoadTimeByLocation {
+  location: string
+  country: string
+  region: string | null
+  city: string | null
+  avgLoadTime: number
+  p95LoadTime: number
+  sampleCount: number
+}
+
+interface BounceByPage {
+  path: string
+  totalVisitors: number
+  bouncedVisitors: number
+  bounceRate: number
+}
+
+interface BounceByLocation {
+  location: string
+  country: string
+  region: string | null
+  city: string | null
+  totalVisitors: number
+  bouncedVisitors: number
+  bounceRate: number
+}
+
+interface DrillDownData {
+  loadTime: {
+    byPage: LoadTimeByPage[]
+    byLocation: LoadTimeByLocation[]
+  }
+  bounce: {
+    byPage: BounceByPage[]
+    byLocation: BounceByLocation[]
+  }
+}
+
 interface StatsDetailModalProps {
   stat: StatType | null
   data: {
@@ -29,6 +77,7 @@ interface StatsDetailModalProps {
     topPages?: { path: string; views: number }[]
     viewsByCountry?: { country: string; views: number }[]
     viewsByDevice?: { device: string; views: number }[]
+    drillDown?: DrillDownData
   }
   onClose: () => void
 }
@@ -330,6 +379,145 @@ export default function StatsDetailModal({ stat, data, onClose }: StatsDetailMod
                 ))}
               </div>
             </div>
+          )}
+
+          {/* Load Time Drill-Down (for avgLoadTime) */}
+          {stat === 'avgLoadTime' && data.drillDown?.loadTime && (
+            <>
+              {/* Slowest Pages */}
+              {data.drillDown.loadTime.byPage.length > 0 && (
+                <div className="mb-4">
+                  <label className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                    Slowest Pages
+                  </label>
+                  <div className="space-y-2">
+                    {data.drillDown.loadTime.byPage.slice(0, 5).map((page, index) => {
+                      const loadStatus = getLoadTimeStatus(page.avgLoadTime)
+                      return (
+                        <div key={index} className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm text-gray-700 dark:text-gray-300 truncate flex-1">
+                              {page.path === '/' ? 'Home' : page.path}
+                            </span>
+                            <span className={`text-sm font-bold ${loadStatus.color}`}>
+                              {page.avgLoadTime}ms
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                            <span>P95: {page.p95LoadTime}ms</span>
+                            <span>Min: {page.minLoadTime}ms</span>
+                            <span>Max: {page.maxLoadTime}ms</span>
+                            <span className="ml-auto">{page.sampleCount} samples</span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Slowest Locations */}
+              {data.drillDown.loadTime.byLocation.length > 0 && (
+                <div className="mb-4">
+                  <label className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
+                    Slowest Locations
+                  </label>
+                  <div className="space-y-2">
+                    {data.drillDown.loadTime.byLocation.slice(0, 5).map((loc, index) => {
+                      const loadStatus = getLoadTimeStatus(loc.avgLoadTime)
+                      return (
+                        <div key={index} className="flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
+                          <div className="flex-1">
+                            <span className="text-sm text-gray-700 dark:text-gray-300">
+                              {loc.location}
+                            </span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                              ({loc.sampleCount} samples)
+                            </span>
+                          </div>
+                          <div className="text-right">
+                            <span className={`text-sm font-bold ${loadStatus.color}`}>
+                              {loc.avgLoadTime}ms
+                            </span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                              P95: {loc.p95LoadTime}ms
+                            </span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Bounce Rate Drill-Down (for bounceRate) */}
+          {stat === 'bounceRate' && data.drillDown?.bounce && (
+            <>
+              {/* Highest Bounce Pages */}
+              {data.drillDown.bounce.byPage.length > 0 && (
+                <div className="mb-4">
+                  <label className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                    Highest Bounce Pages
+                  </label>
+                  <div className="space-y-2">
+                    {data.drillDown.bounce.byPage.slice(0, 5).map((page, index) => {
+                      const bounceStatus = getBounceRateStatus(page.bounceRate)
+                      return (
+                        <div key={index} className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm text-gray-700 dark:text-gray-300 truncate flex-1">
+                              {page.path === '/' ? 'Home' : page.path}
+                            </span>
+                            <span className={`text-sm font-bold ${bounceStatus.color}`}>
+                              {page.bounceRate}%
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                            <span>{page.bouncedVisitors} bounced</span>
+                            <span>of {page.totalVisitors} visitors</span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Highest Bounce Locations */}
+              {data.drillDown.bounce.byLocation.length > 0 && (
+                <div className="mb-4">
+                  <label className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
+                    Highest Bounce Locations
+                  </label>
+                  <div className="space-y-2">
+                    {data.drillDown.bounce.byLocation.slice(0, 5).map((loc, index) => {
+                      const bounceStatus = getBounceRateStatus(loc.bounceRate)
+                      return (
+                        <div key={index} className="flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
+                          <div className="flex-1">
+                            <span className="text-sm text-gray-700 dark:text-gray-300">
+                              {loc.location}
+                            </span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                              ({loc.bouncedVisitors}/{loc.totalVisitors})
+                            </span>
+                          </div>
+                          <span className={`text-sm font-bold ${bounceStatus.color}`}>
+                            {loc.bounceRate}%
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           {/* Tips */}

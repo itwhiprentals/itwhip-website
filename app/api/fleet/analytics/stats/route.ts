@@ -77,9 +77,15 @@ export async function GET(request: NextRequest) {
       viewsByDay,
       previousPeriodViewsByDay,
       viewsByCountry,
+      viewsByLocation, // Enhanced with city/region
       viewsByDevice,
       viewsByBrowser,
-      recentViews
+      recentViews,
+      // Drill-down queries for load time and bounce rate
+      loadTimeByPage,
+      loadTimeByLocation,
+      bounceByPage,
+      bounceByLocation
     ] = await Promise.all([
       // Total page views
       prisma.pageView.count({ where }),
@@ -106,7 +112,7 @@ export async function GET(request: NextRequest) {
       // Previous period views (for comparison)
       getPreviousPeriodViewsByDay(startDate, now),
 
-      // Views by country
+      // Views by country (simple)
       prisma.pageView.groupBy({
         by: ['country'],
         where: { ...where, country: { not: null } },
@@ -114,6 +120,9 @@ export async function GET(request: NextRequest) {
         orderBy: { _count: { country: 'desc' } },
         take: 10
       }),
+
+      // Enhanced location with city and region (military-grade precision)
+      getViewsByLocation(startDate),
 
       // Views by device
       prisma.pageView.groupBy({
@@ -132,7 +141,7 @@ export async function GET(request: NextRequest) {
         take: 5
       }),
 
-      // Recent views (for live feed)
+      // Recent views (for live feed) - with enhanced location
       prisma.pageView.findMany({
         where,
         orderBy: { timestamp: 'desc' },
@@ -141,12 +150,26 @@ export async function GET(request: NextRequest) {
           id: true,
           path: true,
           country: true,
+          region: true,
           city: true,
           device: true,
           browser: true,
-          timestamp: true
+          timestamp: true,
+          loadTime: true
         }
-      })
+      }),
+
+      // Load time drill-down by page (slowest pages)
+      getLoadTimeByPage(startDate),
+
+      // Load time drill-down by location (slowest locations)
+      getLoadTimeByLocation(startDate),
+
+      // Bounce rate by page (highest bounce pages)
+      getBounceRateByPage(startDate),
+
+      // Bounce rate by location (highest bounce locations)
+      getBounceRateByLocation(startDate)
     ])
 
     // Calculate averages and bounce rate in parallel
@@ -176,6 +199,8 @@ export async function GET(request: NextRequest) {
         country: c.country || 'Unknown',
         views: c._count.country
       })),
+      // Enhanced location data with city/region (military-grade)
+      viewsByLocation: viewsByLocation,
       viewsByDevice: viewsByDevice.map(d => ({
         device: d.device || 'Unknown',
         views: d._count.device
@@ -187,11 +212,24 @@ export async function GET(request: NextRequest) {
       recentViews: recentViews.map(v => ({
         id: v.id,
         path: v.path,
-        location: v.city && v.country ? `${v.city}, ${v.country}` : (v.country || 'Unknown'),
+        // Enhanced location format: City, Region, Country
+        location: formatLocation(v.city, v.region, v.country),
         device: v.device,
         browser: v.browser,
-        timestamp: v.timestamp
+        timestamp: v.timestamp,
+        loadTime: v.loadTime
       })),
+      // Drill-down data for metrics analysis
+      drillDown: {
+        loadTime: {
+          byPage: loadTimeByPage,
+          byLocation: loadTimeByLocation
+        },
+        bounce: {
+          byPage: bounceByPage,
+          byLocation: bounceByLocation
+        }
+      },
       range,
       generatedAt: new Date().toISOString()
     }
@@ -294,5 +332,274 @@ async function calculateActualBounceRate(startDate: Date): Promise<number> {
   } catch (error) {
     console.error('[Analytics] Bounce rate calculation error:', error)
     return 0
+  }
+}
+
+// Helper: Format location with city, region, country (military-grade precision)
+function formatLocation(city: string | null, region: string | null, country: string | null): string {
+  const parts: string[] = []
+  if (city) parts.push(city)
+  if (region) parts.push(region)
+  if (country) parts.push(country)
+  return parts.length > 0 ? parts.join(', ') : 'Unknown'
+}
+
+// Helper: Get views by location with city/region detail
+async function getViewsByLocation(startDate: Date) {
+  try {
+    const result = await prisma.$queryRaw<Array<{
+      country: string | null
+      region: string | null
+      city: string | null
+      views: bigint
+    }>>`
+      SELECT
+        country,
+        region,
+        city,
+        COUNT(*) as views
+      FROM "PageView"
+      WHERE timestamp >= ${startDate}
+        AND "eventType" = 'pageview'
+        AND country IS NOT NULL
+      GROUP BY country, region, city
+      ORDER BY views DESC
+      LIMIT 15
+    `
+
+    return result.map(r => ({
+      country: r.country || 'Unknown',
+      region: r.region || null,
+      city: r.city || null,
+      location: formatLocation(r.city, r.region, r.country),
+      views: Number(r.views)
+    }))
+  } catch (error) {
+    console.error('[Analytics] Location query error:', error)
+    return []
+  }
+}
+
+// Helper: Get load time breakdown by page (identify slow pages)
+async function getLoadTimeByPage(startDate: Date) {
+  try {
+    const result = await prisma.$queryRaw<Array<{
+      path: string
+      avg_load_time: number
+      min_load_time: number
+      max_load_time: number
+      p95_load_time: number
+      sample_count: bigint
+    }>>`
+      SELECT
+        path,
+        ROUND(AVG("loadTime")::numeric, 0) as avg_load_time,
+        MIN("loadTime") as min_load_time,
+        MAX("loadTime") as max_load_time,
+        ROUND(PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY "loadTime")::numeric, 0) as p95_load_time,
+        COUNT(*) as sample_count
+      FROM "PageView"
+      WHERE timestamp >= ${startDate}
+        AND "eventType" = 'pageview'
+        AND "loadTime" IS NOT NULL
+        AND "loadTime" > 0
+      GROUP BY path
+      HAVING COUNT(*) >= 3
+      ORDER BY AVG("loadTime") DESC
+      LIMIT 10
+    `
+
+    return result.map(r => ({
+      path: r.path,
+      avgLoadTime: Number(r.avg_load_time),
+      minLoadTime: Number(r.min_load_time),
+      maxLoadTime: Number(r.max_load_time),
+      p95LoadTime: Number(r.p95_load_time),
+      sampleCount: Number(r.sample_count)
+    }))
+  } catch (error) {
+    console.error('[Analytics] Load time by page error:', error)
+    return []
+  }
+}
+
+// Helper: Get load time breakdown by location (identify slow regions)
+async function getLoadTimeByLocation(startDate: Date) {
+  try {
+    const result = await prisma.$queryRaw<Array<{
+      country: string | null
+      region: string | null
+      city: string | null
+      avg_load_time: number
+      p95_load_time: number
+      sample_count: bigint
+    }>>`
+      SELECT
+        country,
+        region,
+        city,
+        ROUND(AVG("loadTime")::numeric, 0) as avg_load_time,
+        ROUND(PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY "loadTime")::numeric, 0) as p95_load_time,
+        COUNT(*) as sample_count
+      FROM "PageView"
+      WHERE timestamp >= ${startDate}
+        AND "eventType" = 'pageview'
+        AND "loadTime" IS NOT NULL
+        AND "loadTime" > 0
+        AND country IS NOT NULL
+      GROUP BY country, region, city
+      HAVING COUNT(*) >= 3
+      ORDER BY AVG("loadTime") DESC
+      LIMIT 10
+    `
+
+    return result.map(r => ({
+      location: formatLocation(r.city, r.region, r.country),
+      country: r.country || 'Unknown',
+      region: r.region || null,
+      city: r.city || null,
+      avgLoadTime: Number(r.avg_load_time),
+      p95LoadTime: Number(r.p95_load_time),
+      sampleCount: Number(r.sample_count)
+    }))
+  } catch (error) {
+    console.error('[Analytics] Load time by location error:', error)
+    return []
+  }
+}
+
+// Helper: Get bounce rate by page (identify high-bounce pages)
+async function getBounceRateByPage(startDate: Date) {
+  try {
+    // Calculate bounce rate per page using visitor sessions
+    const result = await prisma.$queryRaw<Array<{
+      path: string
+      total_visitors: bigint
+      bounced_visitors: bigint
+      bounce_rate: number
+    }>>`
+      WITH page_visitors AS (
+        SELECT
+          path,
+          "visitorId",
+          COUNT(*) as visit_count
+        FROM "PageView"
+        WHERE timestamp >= ${startDate}
+          AND "eventType" = 'pageview'
+          AND "visitorId" IS NOT NULL
+        GROUP BY path, "visitorId"
+      ),
+      visitor_total_pages AS (
+        SELECT
+          "visitorId",
+          COUNT(DISTINCT path) as total_pages
+        FROM "PageView"
+        WHERE timestamp >= ${startDate}
+          AND "eventType" = 'pageview'
+          AND "visitorId" IS NOT NULL
+        GROUP BY "visitorId"
+      ),
+      page_bounce_stats AS (
+        SELECT
+          pv.path,
+          COUNT(DISTINCT pv."visitorId") as total_visitors,
+          COUNT(DISTINCT CASE WHEN vtp.total_pages = 1 THEN pv."visitorId" END) as bounced_visitors
+        FROM page_visitors pv
+        JOIN visitor_total_pages vtp ON pv."visitorId" = vtp."visitorId"
+        GROUP BY pv.path
+        HAVING COUNT(DISTINCT pv."visitorId") >= 5
+      )
+      SELECT
+        path,
+        total_visitors,
+        bounced_visitors,
+        ROUND((bounced_visitors::numeric / total_visitors::numeric) * 100, 1) as bounce_rate
+      FROM page_bounce_stats
+      ORDER BY bounce_rate DESC
+      LIMIT 10
+    `
+
+    return result.map(r => ({
+      path: r.path,
+      totalVisitors: Number(r.total_visitors),
+      bouncedVisitors: Number(r.bounced_visitors),
+      bounceRate: Number(r.bounce_rate)
+    }))
+  } catch (error) {
+    console.error('[Analytics] Bounce rate by page error:', error)
+    return []
+  }
+}
+
+// Helper: Get bounce rate by location (identify high-bounce regions)
+async function getBounceRateByLocation(startDate: Date) {
+  try {
+    const result = await prisma.$queryRaw<Array<{
+      country: string | null
+      region: string | null
+      city: string | null
+      total_visitors: bigint
+      bounced_visitors: bigint
+      bounce_rate: number
+    }>>`
+      WITH location_visitors AS (
+        SELECT
+          country,
+          region,
+          city,
+          "visitorId"
+        FROM "PageView"
+        WHERE timestamp >= ${startDate}
+          AND "eventType" = 'pageview'
+          AND "visitorId" IS NOT NULL
+          AND country IS NOT NULL
+        GROUP BY country, region, city, "visitorId"
+      ),
+      visitor_page_counts AS (
+        SELECT
+          "visitorId",
+          COUNT(*) as total_pages
+        FROM "PageView"
+        WHERE timestamp >= ${startDate}
+          AND "eventType" = 'pageview'
+          AND "visitorId" IS NOT NULL
+        GROUP BY "visitorId"
+      ),
+      location_bounce_stats AS (
+        SELECT
+          lv.country,
+          lv.region,
+          lv.city,
+          COUNT(DISTINCT lv."visitorId") as total_visitors,
+          COUNT(DISTINCT CASE WHEN vpc.total_pages = 1 THEN lv."visitorId" END) as bounced_visitors
+        FROM location_visitors lv
+        JOIN visitor_page_counts vpc ON lv."visitorId" = vpc."visitorId"
+        GROUP BY lv.country, lv.region, lv.city
+        HAVING COUNT(DISTINCT lv."visitorId") >= 5
+      )
+      SELECT
+        country,
+        region,
+        city,
+        total_visitors,
+        bounced_visitors,
+        ROUND((bounced_visitors::numeric / total_visitors::numeric) * 100, 1) as bounce_rate
+      FROM location_bounce_stats
+      ORDER BY bounce_rate DESC
+      LIMIT 10
+    `
+
+    return result.map(r => ({
+      location: formatLocation(r.city, r.region, r.country),
+      country: r.country || 'Unknown',
+      region: r.region || null,
+      city: r.city || null,
+      totalVisitors: Number(r.total_visitors),
+      bouncedVisitors: Number(r.bounced_visitors),
+      bounceRate: Number(r.bounce_rate)
+    }))
+  } catch (error) {
+    console.error('[Analytics] Bounce rate by location error:', error)
+    return []
   }
 }

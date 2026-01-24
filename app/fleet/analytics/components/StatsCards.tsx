@@ -7,6 +7,45 @@ import { useState } from 'react'
 import { IoEyeOutline, IoPeopleOutline, IoTimeOutline, IoExitOutline, IoChevronForwardOutline } from 'react-icons/io5'
 import StatsDetailModal, { StatType } from './StatsDetailModal'
 
+interface DrillDownData {
+  loadTime: {
+    byPage: Array<{
+      path: string
+      avgLoadTime: number
+      minLoadTime: number
+      maxLoadTime: number
+      p95LoadTime: number
+      sampleCount: number
+    }>
+    byLocation: Array<{
+      location: string
+      country: string
+      region: string | null
+      city: string | null
+      avgLoadTime: number
+      p95LoadTime: number
+      sampleCount: number
+    }>
+  }
+  bounce: {
+    byPage: Array<{
+      path: string
+      totalVisitors: number
+      bouncedVisitors: number
+      bounceRate: number
+    }>
+    byLocation: Array<{
+      location: string
+      country: string
+      region: string | null
+      city: string | null
+      totalVisitors: number
+      bouncedVisitors: number
+      bounceRate: number
+    }>
+  }
+}
+
 interface StatsCardsProps {
   totalViews: number
   uniqueVisitors: number
@@ -15,6 +54,7 @@ interface StatsCardsProps {
   topPages?: { path: string; views: number }[]
   viewsByCountry?: { country: string; views: number }[]
   viewsByDevice?: { device: string; views: number }[]
+  drillDown?: DrillDownData
   loading?: boolean
 }
 
@@ -26,6 +66,7 @@ export default function StatsCards({
   topPages,
   viewsByCountry,
   viewsByDevice,
+  drillDown,
   loading = false
 }: StatsCardsProps) {
   const [selectedStat, setSelectedStat] = useState<StatType | null>(null)
@@ -120,7 +161,8 @@ export default function StatsCards({
           bounceRate,
           topPages,
           viewsByCountry,
-          viewsByDevice
+          viewsByDevice,
+          drillDown
         }}
         onClose={() => setSelectedStat(null)}
       />
