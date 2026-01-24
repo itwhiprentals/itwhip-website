@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sendEmail } from '@/app/lib/email/sender'
 import { prisma } from '@/app/lib/database/prisma'
+import { nanoid } from 'nanoid'
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,12 +22,14 @@ export async function POST(request: NextRequest) {
     // Store message in ContactMessage table
     const contactMessage = await prisma.contactMessage.create({
       data: {
+        id: nanoid(),
         name,
         email,
         phone: phone || null,
         subject: `${userType ? `[${userType}] ` : ''}${subject}`,
         message,
-        status: 'UNREAD'
+        status: 'UNREAD',
+        updatedAt: new Date()
       }
     })
     
