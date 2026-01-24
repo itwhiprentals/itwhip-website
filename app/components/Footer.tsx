@@ -26,7 +26,7 @@ export default function Footer() {
           <div className="col-span-2 md:col-span-1">
             {/* Logo and Branding */}
             <div className="flex flex-col items-start mb-4">
-              <div className="relative ml-3 mt-1 w-10 h-10 rounded-full overflow-hidden bg-white dark:bg-gray-800">
+              <div className="relative ml-3 mt-1 w-7 h-7 rounded-full overflow-hidden bg-white dark:bg-gray-800">
                 {/* Light mode logo */}
                 <Image
                   src="/logo.png"

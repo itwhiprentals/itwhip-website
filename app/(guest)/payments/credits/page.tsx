@@ -111,7 +111,17 @@ export default function CreditsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Credits & Bonus</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Credits & Bonus</h2>
+          {!isVerified && totalCredits > 0 && (
+            <span
+              className="text-yellow-600 dark:text-yellow-400 cursor-help"
+              title="Verify your identity with Stripe to unlock your credits"
+            >
+              <IoLockClosedOutline className="w-5 h-5" />
+            </span>
+          )}
+        </div>
         <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
           Your credits and promotional bonuses
         </p>
@@ -319,7 +329,7 @@ export default function CreditsPage() {
                         : 'text-purple-600 dark:text-purple-400'
                       : 'text-red-600 dark:text-red-400'
                   }`}>
-                    {tx.amount >= 0 ? '+' : ''}{tx.amount.toFixed(2)}
+                    {tx.amount >= 0 ? '+' : '-'}${Math.abs(tx.amount).toFixed(2)}
                   </p>
                 </div>
               </div>

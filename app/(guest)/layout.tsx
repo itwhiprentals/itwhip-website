@@ -2,7 +2,6 @@
 
 'use client'
 
-import { useState } from 'react'
 import { usePathname } from 'next/navigation'
 import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
@@ -22,11 +21,19 @@ export default function GuestLayout({
 }: {
   children: React.ReactNode
 }) {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const pathname = usePathname()
 
   // Hide Footer on all rental pages
   const isRentalPage = pathname?.startsWith('/rentals')
+
+  // Hide Footer on dashboard/app-style pages (no marketing footer needed)
+  const isDashboardPage =
+    pathname?.startsWith('/dashboard') ||
+    pathname?.startsWith('/profile') ||
+    pathname?.startsWith('/payments') ||
+    pathname?.startsWith('/messages') ||
+    pathname?.startsWith('/claims') ||
+    pathname?.startsWith('/settings')
 
   // Check if this is a car detail page (not a known sub-route)
   // Car detail pages are like: /rentals/2017-lamborghini-lp-580-2-spyder-...
@@ -56,8 +63,6 @@ export default function GuestLayout({
       {/* Hide Header on mobile for car detail pages */}
       <div className={isCarDetailPage ? 'hidden sm:block' : ''}>
         <Header
-          isMobileMenuOpen={isMobileMenuOpen}
-          setIsMobileMenuOpen={setIsMobileMenuOpen}
           handleGetAppClick={handleGetAppClick}
           handleSearchClick={handleSearchClick}
         />
@@ -68,8 +73,8 @@ export default function GuestLayout({
         {children}
       </main>
 
-      {/* Only show Footer if NOT on a rental page */}
-      {!isRentalPage && <Footer />}
+      {/* Only show Footer if NOT on a rental or dashboard-style page */}
+      {!isRentalPage && !isDashboardPage && <Footer />}
     </>
   )
 }

@@ -9,6 +9,7 @@
 import { useReducer, useEffect, useCallback, useRef, Component, ErrorInfo, ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
+import { IoLockClosedOutline } from 'react-icons/io5'
 
 // ========== COMPONENT IMPORTS ==========
 import SuspensionBanner from '@/app/components/SuspensionBanner'
@@ -432,7 +433,9 @@ const STATS_CONFIG = [
     format: (val: number) => `$${val.toFixed(2)}`,
     path: '/payments/credits',
     clickable: true,
-    tooltip: 'Credits: 100% usable per booking. Bonus: Max 25% per booking. Applied automatically at checkout.'
+    tooltip: 'Credits: 100% usable per booking. Bonus: Max 25% per booking. Applied automatically at checkout.',
+    lockWhenUnverified: true,
+    lockTooltip: 'Verify your identity with Stripe to unlock your credits'
   },
   {
     label: 'Messages',
@@ -1310,6 +1313,8 @@ export default function GuestDashboard() {
             const value = state.stats[stat.key]
             const displayValue = stat.format ? stat.format(value as number) : value
             const StatIcon = stat.icon
+            const isVerified = state.userProfile?.verified || state.documentVerification?.stripeIdentityStatus === 'verified'
+            const showLock = (stat as any).lockWhenUnverified && !isVerified && (value as number) > 0
 
             return (
               <div
@@ -1321,12 +1326,22 @@ export default function GuestDashboard() {
                 }}
                 className={`bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 sm:p-4 border-2 border-gray-300 dark:border-gray-600 min-h-[88px] group relative ${
                   stat.clickable ? 'cursor-pointer hover:shadow-lg active:scale-95 transition-all' : ''
-                }`}
+                } ${showLock ? 'opacity-75' : ''}`}
               >
                 <div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{stat.label}</p>
+                  <div className="flex items-center gap-1">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{stat.label}</p>
+                    {showLock && (
+                      <span
+                        className="text-yellow-600 dark:text-yellow-400 cursor-help"
+                        title={(stat as any).lockTooltip || 'Verify your identity to unlock'}
+                      >
+                        <IoLockClosedOutline className="w-3 h-3" />
+                      </span>
+                    )}
+                  </div>
                   <div className="flex items-center justify-between mt-1">
-                    <p className={`text-xl sm:text-2xl font-bold ${stat.textColor}`}>
+                    <p className={`text-xl sm:text-2xl font-bold ${showLock ? 'text-gray-400 dark:text-gray-500' : stat.textColor}`}>
                       {displayValue}
                     </p>
                     {(stat as any).tooltip ? (

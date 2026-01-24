@@ -16,7 +16,8 @@ import {
   IoHomeOutline,
   IoCalendarOutline,
   IoWalletOutline,
-  IoPersonOutline
+  IoPersonOutline,
+  IoLogOutOutline
 } from 'react-icons/io5'
 import MobileMenu from './MobileMenu'
 import ProfileModal from '../(guest)/dashboard/modals/ProfileModal'
@@ -135,6 +136,7 @@ function HeaderInner({
   const [showProfileModal, setShowProfileModal] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [profileImageError, setProfileImageError] = useState(false)
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false)
 
   // Check if we're on specific pages
   const isHostPage = pathname?.startsWith('/host/')
@@ -258,6 +260,9 @@ function HeaderInner({
       if (!target.closest('.nav-dropdown')) {
         setActiveDropdown(null)
       }
+      if (!target.closest('.profile-dropdown')) {
+        setShowProfileDropdown(false)
+      }
     }
 
     document.addEventListener('click', handleClickOutside)
@@ -307,7 +312,7 @@ function HeaderInner({
                 className="flex items-center mr-4 group"
               >
                 <div className="flex flex-col items-center -ml-2">
-                  <div className="relative top-[0.2px] w-10 h-10 rounded-full overflow-hidden bg-white dark:bg-gray-800">
+                  <div className="relative top-[0.2px] w-7 h-7 rounded-full overflow-hidden bg-white dark:bg-gray-800">
                     {/* Light mode logo */}
                     <Image
                       src="/logo.png"
@@ -477,33 +482,62 @@ function HeaderInner({
               ) : !isSwitchingRole && (
                 <div>
                   {showAsLoggedIn && user ? (
-                    <button
-                      onClick={handleProfileClick}
-                      className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors"
-                      aria-label="Go to profile"
-                    >
-                      <div className="relative">
-                        {profilePhotoUrl && !profileImageError ? (
-                          <div className="w-7 h-7 rounded-full overflow-hidden bg-white border-2 border-green-500 shadow-sm">
-                            <img
-                              src={profilePhotoUrl}
-                              alt={user.name || 'Profile'}
-                              className="w-full h-full object-contain"
-                              style={{ transform: 'scale(1.15) translateY(0.5px)', transformOrigin: 'center center' }}
-                              onError={() => setProfileImageError(true)}
-                            />
-                          </div>
-                        ) : (
-                          <div className={`w-7 h-7 ${
-                            isAdmin ? 'bg-gradient-to-br from-red-500 to-red-600' :
-                            isHost ? 'bg-gradient-to-br from-purple-500 to-purple-600' :
-                            'bg-gradient-to-br from-green-500 to-blue-600'
-                          } rounded-full flex items-center justify-center text-white font-bold text-xs border-2 border-green-500 shadow-sm`}>
-                            {user.name ? user.name[0].toUpperCase() : 'U'}
-                          </div>
-                        )}
-                      </div>
-                    </button>
+                    <div className="profile-dropdown relative">
+                      <button
+                        onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                        className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors"
+                        aria-label="Account menu"
+                      >
+                        <div className="relative">
+                          {profilePhotoUrl && !profileImageError ? (
+                            <div className="w-7 h-7 rounded-full overflow-hidden bg-white border-2 border-green-500 shadow-sm">
+                              <img
+                                src={profilePhotoUrl}
+                                alt={user.name || 'Profile'}
+                                className="w-full h-full object-contain"
+                                style={{ transform: 'scale(1.15) translateY(0.5px)', transformOrigin: 'center center' }}
+                                onError={() => setProfileImageError(true)}
+                              />
+                            </div>
+                          ) : (
+                            <div className={`w-7 h-7 ${
+                              isAdmin ? 'bg-gradient-to-br from-red-500 to-red-600' :
+                              isHost ? 'bg-gradient-to-br from-purple-500 to-purple-600' :
+                              'bg-gradient-to-br from-green-500 to-blue-600'
+                            } rounded-full flex items-center justify-center text-white font-bold text-xs border-2 border-green-500 shadow-sm`}>
+                              {user.name ? user.name[0].toUpperCase() : 'U'}
+                            </div>
+                          )}
+                        </div>
+                      </button>
+
+                      {/* Profile Dropdown Menu */}
+                      {showProfileDropdown && (
+                        <div className="absolute top-full right-0 mt-2 w-48 rounded-xl shadow-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 py-2 overflow-hidden z-50">
+                          <button
+                            onClick={() => {
+                              setShowProfileDropdown(false)
+                              handleProfileClick()
+                            }}
+                            className="w-full flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                          >
+                            <IoPersonOutline className="w-4 h-4" />
+                            <span>Profile</span>
+                          </button>
+                          <div className="border-t border-gray-200 dark:border-gray-800 my-1" />
+                          <button
+                            onClick={() => {
+                              setShowProfileDropdown(false)
+                              handleLogout()
+                            }}
+                            className="w-full flex items-center space-x-3 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                          >
+                            <IoLogOutOutline className="w-4 h-4" />
+                            <span>Sign Out</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   ) : (
                     <Link
                       href={

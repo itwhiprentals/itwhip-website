@@ -9,6 +9,8 @@
 - [x] Changed guest invite subject from promotional "$25 credit waiting" to "your account is ready"
 - [x] Changed CTA from "Claim Your Credit" to "Activate Your Account"
 - [x] Removed urgency language ("waiting", "gift", "claim") to avoid Yahoo spam filters
+- [x] Configured DKIM authentication with Microsoft 365 (selector1, selector2 CNAME records)
+- [x] Verified all email auth passes: SPF, DKIM, DMARC
 
 ### Fleet Analytics & Monitoring Improvements (Jan 24)
 - [x] Military-grade device detection (tablet regex, Mobi keyword, Client Hints)
