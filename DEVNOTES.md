@@ -13,6 +13,12 @@
 - [x] Security: Remove hardcoded JWT secret fallbacks (require in production)
 - [x] Next.js compression and image optimization enabled
 - [x] FLEET_API_KEY added to Vercel environment
+- [x] Drill-down for Avg Load Time: slowest pages/locations with P95, min, max
+- [x] Drill-down for Bounce Rate: highest bounce pages/locations with visitor counts
+- [x] Military-grade geolocation: city, region, country in Top Locations toggle
+- [x] StatsDetailModal shows detailed breakdown when clicking metrics
+- [x] Page layout reorganized: stats row, full-width chart, 4-column bottom grid
+- [x] ChartHeader and ChartLegend components for Views Over Time
 
 ### Identity Verification Help Page (Jan 23)
 - [x] Create `/help/identity-verification` page explaining Stripe Identity
