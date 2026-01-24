@@ -73,11 +73,9 @@ export async function POST(
     // Get first name only
     const firstName = prospect.name.split(' ')[0]
 
-    // Build email subject (avoid spam triggers: no ALL CAPS, no excessive punctuation)
+    // Build email subject - personal, not promotional (avoid "credit", "waiting", dollar amounts)
     const creditDisplay = prospect.creditAmount > 0 ? `$${prospect.creditAmount.toFixed(2)}` : ''
-    const subject = creditDisplay
-      ? `${firstName}, your ${creditDisplay} rental credit is waiting`
-      : `${firstName}, you're invited to join ItWhip`
+    const subject = `${firstName}, your ItWhip account is ready`
 
     // Format credit type for display
     const creditTypeDisplay = prospect.creditType === 'bonus'
@@ -97,8 +95,8 @@ export async function POST(
 
         <!-- Header -->
         <div style="border-bottom: 1px solid #e5e7eb; padding-bottom: 16px; margin-bottom: 24px; text-align: center;">
-          <p style="margin: 0 0 4px 0; font-size: 12px; color: #ea580c; text-transform: uppercase; letter-spacing: 0.5px;">${prospect.creditAmount > 0 ? 'Your Rental Credit Is Ready' : 'You\'re Invited'}</p>
-          <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #ea580c;">${prospect.creditAmount > 0 ? `$${prospect.creditAmount.toFixed(2)} Welcome Gift Inside` : 'Welcome to ItWhip'}</h1>
+          <p style="margin: 0 0 4px 0; font-size: 12px; color: #ea580c; text-transform: uppercase; letter-spacing: 0.5px;">Your Account Is Ready</p>
+          <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #ea580c;">Welcome to ItWhip</h1>
         </div>
 
         <!-- Main content -->
@@ -108,12 +106,12 @@ export async function POST(
 
         <p style="font-size: 16px; margin: 0 0 16px 0; color: #111827;">
           ${prospect.creditAmount > 0
-            ? `Great news! You've been gifted <strong>$${prospect.creditAmount.toFixed(2)} in ${creditTypeDisplay.toLowerCase()}</strong> toward your first rental with ItWhip.`
-            : 'You\'ve been invited to rent a car through ItWhip! Create your account to browse our selection of vehicles from trusted local hosts.'}
+            ? `Your account includes <strong>$${prospect.creditAmount.toFixed(2)} in ${creditTypeDisplay.toLowerCase()}</strong> toward your first rental with ItWhip.`
+            : 'You\'ve been invited to rent a car through ItWhip. Your account is ready to browse our selection of vehicles from trusted local hosts.'}
         </p>
 
         <p style="font-size: 16px; color: #111827; margin: 0;">
-          Click below to claim your credit and start browsing cars.
+          Click below to activate your account and start browsing cars.
         </p>
 
         ${prospect.creditAmount > 0 ? `
@@ -128,13 +126,13 @@ export async function POST(
 
         <!-- Status indicator -->
         <p style="font-size: 14px; color: #111827; margin: 20px 0;">
-          <strong>This credit is reserved for you.</strong> We're holding it for 72 hours so you have time to claim it.
+          <strong>Your account is reserved.</strong> This link is valid for 72 hours.
         </p>
 
         <!-- CTA Button -->
         <div style="text-align: center; margin: 28px 0;">
           <a href="${inviteLink}" style="display: inline-block; background: #ea580c; color: #ffffff; padding: 14px 32px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 15px;">
-            ${prospect.creditAmount > 0 ? 'Claim Your Credit & Browse Cars' : 'Create Account & Browse Cars'}
+            Activate Your Account
           </a>
         </div>
 
@@ -259,24 +257,24 @@ export async function POST(
     `
 
     const text = `
-${prospect.creditAmount > 0 ? 'YOUR RENTAL CREDIT IS READY' : 'YOU\'RE INVITED'}
-${prospect.creditAmount > 0 ? `$${prospect.creditAmount.toFixed(2)} Welcome Gift Inside` : 'Welcome to ItWhip'}
+YOUR ACCOUNT IS READY
+Welcome to ItWhip
 
 Hi ${firstName},
 
 ${prospect.creditAmount > 0
-  ? `Great news! You've been gifted $${prospect.creditAmount.toFixed(2)} in ${creditTypeDisplay.toLowerCase()} toward your first rental with ItWhip.`
-  : 'You\'ve been invited to rent a car through ItWhip! Create your account to browse our selection of vehicles from trusted local hosts.'}
+  ? `Your account includes $${prospect.creditAmount.toFixed(2)} in ${creditTypeDisplay.toLowerCase()} toward your first rental with ItWhip.`
+  : 'You\'ve been invited to rent a car through ItWhip. Your account is ready to browse our selection of vehicles from trusted local hosts.'}
 
-Click below to claim your credit and start browsing cars.
+Click below to activate your account and start browsing cars.
 
 ${prospect.creditAmount > 0 ? `YOUR ${creditTypeDisplay.toUpperCase()}: $${prospect.creditAmount.toFixed(2)}
 ${prospect.creditNote ? `"${prospect.creditNote}"` : ''}
-${prospect.creditExpirationDays ? `Valid for ${prospect.creditExpirationDays} days after claim` : ''}` : ''}
+${prospect.creditExpirationDays ? `Valid for ${prospect.creditExpirationDays} days after activation` : ''}` : ''}
 
-This credit is reserved for you. We're holding it for 72 hours so you have time to claim it.
+Your account is reserved. This link is valid for 72 hours.
 
-${prospect.creditAmount > 0 ? 'Claim Your Credit & Browse Cars' : 'Create Account & Browse Cars'}:
+Activate Your Account:
 ${inviteLink}
 
 WHAT YOU GET WITH ITWHIP:

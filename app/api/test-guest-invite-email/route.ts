@@ -23,9 +23,9 @@ export async function GET(request: NextRequest) {
     // Generate email reference ID for testing
     const emailReferenceId = generateEmailReference('GU')
 
-    // Build email subject
+    // Build email subject - personal, not promotional
     const creditDisplay = `$${creditAmount.toFixed(2)}`
-    const subject = `${firstName}, your ${creditDisplay} rental credit is waiting`
+    const subject = `${firstName}, your ItWhip account is ready`
 
     const html = `
       <!DOCTYPE html>
@@ -38,8 +38,8 @@ export async function GET(request: NextRequest) {
 
         <!-- Header -->
         <div style="border-bottom: 1px solid #e5e7eb; padding-bottom: 16px; margin-bottom: 24px; text-align: center;">
-          <p style="margin: 0 0 4px 0; font-size: 12px; color: #ea580c; text-transform: uppercase; letter-spacing: 0.5px;">Your Rental Credit Is Ready</p>
-          <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #ea580c;">${creditDisplay} Welcome Gift Inside</h1>
+          <p style="margin: 0 0 4px 0; font-size: 12px; color: #ea580c; text-transform: uppercase; letter-spacing: 0.5px;">Your Account Is Ready</p>
+          <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #ea580c;">Welcome to ItWhip</h1>
         </div>
 
         <!-- Main content -->
@@ -48,11 +48,11 @@ export async function GET(request: NextRequest) {
         </p>
 
         <p style="font-size: 16px; margin: 0 0 16px 0; color: #111827;">
-          Great news! You've been gifted <strong>${creditDisplay} in ${creditTypeDisplay.toLowerCase()}</strong> toward your first rental with ItWhip.
+          Your account includes <strong>${creditDisplay} in ${creditTypeDisplay.toLowerCase()}</strong> toward your first rental with ItWhip.
         </p>
 
         <p style="font-size: 16px; color: #111827; margin: 0;">
-          Click below to claim your credit and start browsing cars.
+          Click below to activate your account and start browsing cars.
         </p>
 
         <!-- Credit Display -->
@@ -65,13 +65,13 @@ export async function GET(request: NextRequest) {
 
         <!-- Status indicator -->
         <p style="font-size: 14px; color: #111827; margin: 20px 0;">
-          <strong>This credit is reserved for you.</strong> We're holding it for 72 hours so you have time to claim it.
+          <strong>Your account is reserved.</strong> This link is valid for 72 hours.
         </p>
 
         <!-- CTA Button -->
         <div style="text-align: center; margin: 28px 0;">
           <a href="${inviteLink}" style="display: inline-block; background: #ea580c; color: #ffffff; padding: 14px 32px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 15px;">
-            Claim Your Credit & Browse Cars
+            Activate Your Account
           </a>
         </div>
 
@@ -194,22 +194,22 @@ export async function GET(request: NextRequest) {
     `
 
     const text = `
-YOUR RENTAL CREDIT IS READY
-${creditDisplay} Welcome Gift Inside
+YOUR ACCOUNT IS READY
+Welcome to ItWhip
 
 Hi ${firstName},
 
-Great news! You've been gifted ${creditDisplay} in ${creditTypeDisplay.toLowerCase()} toward your first rental with ItWhip.
+Your account includes ${creditDisplay} in ${creditTypeDisplay.toLowerCase()} toward your first rental with ItWhip.
 
-Click below to claim your credit and start browsing cars.
+Click below to activate your account and start browsing cars.
 
 YOUR ${creditTypeDisplay.toUpperCase()}: ${creditDisplay}
 "${creditNote}"
-Valid for ${creditExpirationDays} days after claim
+Valid for ${creditExpirationDays} days after activation
 
-This credit is reserved for you. We're holding it for 72 hours so you have time to claim it.
+Your account is reserved. This link is valid for 72 hours.
 
-Claim Your Credit & Browse Cars:
+Activate Your Account:
 ${inviteLink}
 
 WHAT YOU GET WITH ITWHIP:
