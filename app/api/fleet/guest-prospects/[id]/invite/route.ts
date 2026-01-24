@@ -92,8 +92,35 @@ export async function POST(
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="color-scheme" content="light dark">
+        <meta name="supported-color-schemes" content="light dark">
+        <!--[if mso]>
+        <style type="text/css">
+          .dark-mode-bg { background-color: #ffffff !important; }
+          .dark-mode-text { color: #1f2937 !important; }
+        </style>
+        <![endif]-->
+        <style>
+          :root { color-scheme: light dark; }
+          @media (prefers-color-scheme: dark) {
+            .email-body { background-color: #1a1a1a !important; }
+            .email-card { background-color: #262626 !important; border-color: #404040 !important; }
+            .email-text { color: #e5e5e5 !important; }
+            .email-text-muted { color: #a3a3a3 !important; }
+            .email-divider { border-color: #404040 !important; background-color: #404040 !important; }
+            .email-cta { background-color: #ea580c !important; }
+            .logo-light { display: none !important; }
+            .logo-dark { display: block !important; }
+          }
+          /* Outlook dark mode */
+          [data-ogsc] .email-body { background-color: #1a1a1a !important; }
+          [data-ogsc] .email-card { background-color: #262626 !important; border-color: #404040 !important; }
+          [data-ogsc] .email-text { color: #e5e5e5 !important; }
+          [data-ogsc] .logo-light { display: none !important; }
+          [data-ogsc] .logo-dark { display: block !important; }
+        </style>
       </head>
-      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <body class="email-body" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; background-color: #ffffff; max-width: 600px; margin: 0 auto; padding: 20px;">
 
         <!-- Header -->
         <div style="border-bottom: 1px solid #e5e7eb; padding-bottom: 16px; margin-bottom: 24px; text-align: center;">
@@ -138,7 +165,9 @@ export async function POST(
           </a>
         </div>
 
-        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin: 24px 0;">
+          <tr><td class="email-divider" style="height: 1px; background-color: #e5e7eb; line-height: 1px; font-size: 1px;">&nbsp;</td></tr>
+        </table>
 
         <!-- Benefits Section -->
         <p style="margin: 0 0 12px 0; color: #1f2937; font-size: 14px; font-weight: 600;">
@@ -171,7 +200,27 @@ export async function POST(
           </tr>
         </table>
 
-        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
+        <!-- Closing Message -->
+        <div style="margin: 28px 0 24px 0;">
+          <p style="font-size: 15px; color: #374151; margin: 0 0 16px 0;">
+            We're excited to have you join the ItWhip community. Happy travels!
+          </p>
+          <p style="font-size: 14px; color: #1f2937; margin: 0;">
+            Best regards,<br/>
+            <strong>The ItWhip Team</strong>
+          </p>
+        </div>
+
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin: 24px 0 12px 0;">
+          <tr><td class="email-divider" style="height: 1px; background-color: #e5e7eb; line-height: 1px; font-size: 1px;">&nbsp;</td></tr>
+        </table>
+
+        <!-- Footer Header with Logo - Dark/Light mode support -->
+        <div style="text-align: center; margin: 0 0 16px 0;">
+          <img class="logo-light" src="https://itwhip.com/logo.png" alt="ItWhip" width="36" style="max-width: 36px; height: auto; display: block; margin: 0 auto 2px auto;" />
+          <img class="logo-dark" src="https://itwhip.com/logo-white.png" alt="ItWhip" width="36" style="max-width: 36px; height: auto; display: none; margin: 0 auto 2px auto;" />
+          <span class="email-text-muted" style="font-size: 9px; font-weight: 600; color: #6b7280; letter-spacing: 0.3px;">ITWHIP CAR RENTALS AND RIDESHARES</span>
+        </div>
 
         <p style="color: #6b7280; font-size: 13px; margin-bottom: 0; text-align: center;">
           Questions? Reply to this email or visit <a href="${emailConfig.helpUrl}" style="color: #ea580c; font-weight: 600;">itwhip.com/help</a>
@@ -198,55 +247,27 @@ export async function POST(
           <a href="${emailConfig.privacyUrl}" style="color: #9ca3af;">Privacy</a>
         </p>
 
-        <!-- Social Links with real SVG logos -->
+        <!-- Social Links with hosted PNG icons -->
         <table cellpadding="0" cellspacing="0" style="margin: 16px auto;">
           <tr>
-            <!-- Instagram -->
-            <td style="padding: 0 3px;">
-              <a href="${emailConfig.social.instagram}" target="_blank" style="display: block; text-decoration: none;">
-                <table cellpadding="0" cellspacing="0" width="25" height="25" style="background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); border-radius: 5px;">
-                  <tr>
-                    <td align="center" valign="middle" style="width: 25px; height: 25px;">
-                      <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z'/%3E%3C/svg%3E" alt="Instagram" width="14" height="14" style="display: block; border: 0;" />
-                    </td>
-                  </tr>
-                </table>
+            <td style="padding: 0 10px;">
+              <a href="${emailConfig.social.instagram}" target="_blank" style="text-decoration: none;">
+                <img src="${emailConfig.socialIcons.instagram}" alt="Instagram" width="20" height="20" style="display: block; border: 0;" />
               </a>
             </td>
-            <!-- Facebook -->
-            <td style="padding: 0 3px;">
-              <a href="${emailConfig.social.facebook}" target="_blank" style="display: block; text-decoration: none;">
-                <table cellpadding="0" cellspacing="0" width="25" height="25" style="background: #1877f2; border-radius: 5px;">
-                  <tr>
-                    <td align="center" valign="middle" style="width: 25px; height: 25px;">
-                      <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z'/%3E%3C/svg%3E" alt="Facebook" width="14" height="14" style="display: block; border: 0;" />
-                    </td>
-                  </tr>
-                </table>
+            <td style="padding: 0 10px;">
+              <a href="${emailConfig.social.facebook}" target="_blank" style="text-decoration: none;">
+                <img src="${emailConfig.socialIcons.facebook}" alt="Facebook" width="20" height="20" style="display: block; border: 0;" />
               </a>
             </td>
-            <!-- X (Twitter) -->
-            <td style="padding: 0 3px;">
-              <a href="${emailConfig.social.twitter}" target="_blank" style="display: block; text-decoration: none;">
-                <table cellpadding="0" cellspacing="0" width="25" height="25" style="background: #000000; border-radius: 5px;">
-                  <tr>
-                    <td align="center" valign="middle" style="width: 25px; height: 25px;">
-                      <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z'/%3E%3C/svg%3E" alt="X" width="12" height="12" style="display: block; border: 0;" />
-                    </td>
-                  </tr>
-                </table>
+            <td style="padding: 0 10px;">
+              <a href="${emailConfig.social.twitter}" target="_blank" style="text-decoration: none;">
+                <img src="${emailConfig.socialIcons.twitter}" alt="X" width="20" height="20" style="display: block; border: 0;" />
               </a>
             </td>
-            <!-- LinkedIn -->
-            <td style="padding: 0 3px;">
-              <a href="${emailConfig.social.linkedin}" target="_blank" style="display: block; text-decoration: none;">
-                <table cellpadding="0" cellspacing="0" width="25" height="25" style="background: #0a66c2; border-radius: 5px;">
-                  <tr>
-                    <td align="center" valign="middle" style="width: 25px; height: 25px;">
-                      <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z'/%3E%3C/svg%3E" alt="LinkedIn" width="14" height="14" style="display: block; border: 0;" />
-                    </td>
-                  </tr>
-                </table>
+            <td style="padding: 0 10px;">
+              <a href="${emailConfig.social.linkedin}" target="_blank" style="text-decoration: none;">
+                <img src="${emailConfig.socialIcons.linkedin}" alt="LinkedIn" width="20" height="20" style="display: block; border: 0;" />
               </a>
             </td>
           </tr>
@@ -293,6 +314,13 @@ WHAT YOU GET WITH ITWHIP:
 ✓ Unique Vehicle Selection     ✓ Easy Booking Process
 ✓ Secure Payments via Stripe   ✓ ID Verification for Safety
 ✓ Direct Host Communication    ✓ Rental History & Receipts
+
+We're excited to have you join the ItWhip community. Happy travels!
+
+Best regards,
+The ItWhip Team
+
+---
 
 Questions? Reply to this email or visit itwhip.com/help
 
