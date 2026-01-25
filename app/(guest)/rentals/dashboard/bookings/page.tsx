@@ -138,31 +138,28 @@ export default function BookingsListPage() {
  }
 
  return (
-   <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+   <div className="min-h-screen bg-gray-50 dark:bg-gray-900 overflow-x-hidden">
      {/* Header */}
      <div className="bg-white dark:bg-gray-800 shadow">
-       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-         <div className="flex items-center justify-between">
-           <div className="flex items-center">
-             <button
-               onClick={() => router.push('/dashboard')}
-               className="mr-4 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-             >
-               <IoArrowBackOutline className="w-6 h-6" />
-             </button>
-             <div>
-               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                 My Rental Bookings
-               </h1>
-               <p className="text-gray-600 dark:text-gray-400 mt-1">
-                 View and manage all your car rental reservations
-               </p>
-             </div>
+       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+         <div className="flex items-center gap-3 mb-3 sm:mb-0">
+           <button
+             onClick={() => router.push('/dashboard')}
+             className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+           >
+             <IoArrowBackOutline className="w-6 h-6" />
+           </button>
+           <div className="flex-1 min-w-0">
+             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white truncate">
+               My Rental Bookings
+             </h1>
+             <p className="text-sm text-gray-600 dark:text-gray-400 hidden sm:block">
+               View and manage all your car rental reservations
+             </p>
            </div>
-           
            <button
              onClick={() => router.push('/rentals/search')}
-             className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+             className="px-3 sm:px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm sm:text-base whitespace-nowrap"
            >
              New Booking
            </button>
@@ -172,8 +169,9 @@ export default function BookingsListPage() {
 
      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
        {/* Search and Filters */}
-       <div className="flex flex-col sm:flex-row gap-4 mb-6">
-         <div className="flex-1 relative">
+       <div className="space-y-4 mb-6">
+         {/* Search Bar */}
+         <div className="relative">
            <IoSearchOutline className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
            <input
              type="text"
@@ -183,26 +181,29 @@ export default function BookingsListPage() {
              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white"
            />
          </div>
-         
-         <div className="flex gap-2">
-           {['all', 'upcoming', 'active', 'completed', 'needs-action'].map(f => (
-             <button
-               key={f}
-               onClick={() => setFilter(f)}
-               className={`px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
-                 filter === f
-                   ? 'bg-green-600 text-white'
-                   : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-               }`}
-             >
-               {f === 'needs-action' ? 'Needs Action' : f.charAt(0).toUpperCase() + f.slice(1)}
-               {f === 'needs-action' && needsActionCount > 0 && (
-                 <span className="ml-2 bg-yellow-500 text-white text-xs rounded-full px-2 py-0.5">
-                   {needsActionCount}
-                 </span>
-               )}
-             </button>
-           ))}
+
+         {/* Filter Pills - Horizontal Scroll on Mobile */}
+         <div className="-mx-4 sm:mx-0 px-4 sm:px-0 overflow-x-auto scrollbar-hide">
+           <div className="flex gap-2 min-w-max sm:min-w-0 sm:flex-wrap">
+             {['all', 'upcoming', 'active', 'completed', 'needs-action'].map(f => (
+               <button
+                 key={f}
+                 onClick={() => setFilter(f)}
+                 className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                   filter === f
+                     ? 'bg-green-600 text-white'
+                     : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                 }`}
+               >
+                 {f === 'needs-action' ? 'Needs Action' : f.charAt(0).toUpperCase() + f.slice(1)}
+                 {f === 'needs-action' && needsActionCount > 0 && (
+                   <span className="ml-1.5 bg-yellow-500 text-white text-xs rounded-full px-1.5 py-0.5">
+                     {needsActionCount}
+                   </span>
+                 )}
+               </button>
+             ))}
+           </div>
          </div>
        </div>
 
@@ -252,76 +253,126 @@ export default function BookingsListPage() {
        ) : (
          <div className="space-y-4">
            {filteredBookings.map(booking => (
-             <div 
+             <div
                key={booking.id}
-               className="bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition-shadow p-6 cursor-pointer"
+               className="bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition-shadow p-4 sm:p-6 cursor-pointer overflow-hidden"
                onClick={() => router.push(`/rentals/dashboard/bookings/${booking.id}`)}
              >
-               <div className="flex flex-col lg:flex-row lg:items-center justify-between">
-                 <div className="flex items-start space-x-4 mb-4 lg:mb-0">
+               {/* Mobile Layout */}
+               <div className="sm:hidden">
+                 <div className="flex gap-3 mb-3">
                    {booking.car.photos?.[0] && (
-                     <img 
+                     <img
                        src={booking.car.photos[0].url}
                        alt={`${booking.car.make} ${booking.car.model}`}
-                       className="w-32 h-20 object-cover rounded-lg"
+                       className="w-24 h-16 object-cover rounded-lg flex-shrink-0"
                      />
                    )}
-                   
-                   <div className="flex-1">
-                     <div className="flex items-start justify-between">
-                       <div>
-                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                           {booking.car.year} {booking.car.make} {booking.car.model}
-                         </h3>
-                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                           Booking Code: {booking.bookingCode}
-                         </p>
-                       </div>
-                     </div>
-                     
-                     <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                       <div className="flex items-center text-gray-600 dark:text-gray-400">
-                         <IoCalendarOutline className="w-4 h-4 mr-2" />
-                         {new Date(booking.startDate).toLocaleDateString()} - {new Date(booking.endDate).toLocaleDateString()}
-                       </div>
-                       <div className="flex items-center text-gray-600 dark:text-gray-400">
-                         <IoTimeOutline className="w-4 h-4 mr-2" />
-                         {booking.numberOfDays} day{booking.numberOfDays > 1 ? 's' : ''}
-                       </div>
-                       <div className="text-gray-600 dark:text-gray-400">
-                         Host: {booking.host.name}
-                       </div>
-                       <div className="text-gray-600 dark:text-gray-400">
-                         Booked: {new Date(booking.createdAt).toLocaleDateString()}
-                       </div>
-                     </div>
-
-                     {booking.verificationStatus === 'pending' && (
-                       <div className="mt-3 flex items-center text-sm text-yellow-600 dark:text-yellow-400">
-                         <IoWarningOutline className="w-4 h-4 mr-1" />
-                         Verification required - Upload documents to confirm
-                       </div>
-                     )}
-                   </div>
-                 </div>
-
-                 <div className="flex flex-row lg:flex-col items-center lg:items-end justify-between lg:justify-start space-y-0 lg:space-y-3">
-                   <div className="text-right">
-                     <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                       ${booking.totalAmount.toFixed(2)}
+                   <div className="flex-1 min-w-0">
+                     <h3 className="text-base font-semibold text-gray-900 dark:text-white truncate">
+                       {booking.car.year} {booking.car.make}
+                     </h3>
+                     <p className="text-sm text-gray-700 dark:text-gray-300 truncate">
+                       {booking.car.model}
                      </p>
-                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                       ${booking.car.dailyRate}/day
+                     <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                       {booking.bookingCode}
                      </p>
-                   </div>
-                   
-                   <div className="flex items-center">
-                     {getStatusIcon(booking.status, booking.verificationStatus)}
-                     <span className={`ml-2 px-3 py-1 rounded-full text-sm font-medium ${
+                     <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-medium ${
                        getStatusColor(booking.status, booking.verificationStatus)
                      }`}>
                        {booking.verificationStatus === 'pending' ? 'Verify Now' : booking.status}
                      </span>
+                   </div>
+                 </div>
+
+                 <div className="flex items-center justify-between text-sm border-t border-gray-100 dark:border-gray-700 pt-3">
+                   <div className="flex items-center text-gray-600 dark:text-gray-400">
+                     <IoCalendarOutline className="w-4 h-4 mr-1.5 flex-shrink-0" />
+                     <span className="text-xs">
+                       {new Date(booking.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(booking.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                     </span>
+                   </div>
+                   <p className="text-lg font-bold text-gray-900 dark:text-white">
+                     ${booking.totalAmount.toFixed(0)}
+                   </p>
+                 </div>
+
+                 {booking.verificationStatus === 'pending' && (
+                   <div className="mt-2 flex items-center text-xs text-yellow-600 dark:text-yellow-400">
+                     <IoWarningOutline className="w-3.5 h-3.5 mr-1 flex-shrink-0" />
+                     <span className="truncate">Upload documents to confirm</span>
+                   </div>
+                 )}
+               </div>
+
+               {/* Desktop Layout */}
+               <div className="hidden sm:block">
+                 <div className="flex flex-col lg:flex-row lg:items-center justify-between">
+                   <div className="flex items-start space-x-4 mb-4 lg:mb-0">
+                     {booking.car.photos?.[0] && (
+                       <img
+                         src={booking.car.photos[0].url}
+                         alt={`${booking.car.make} ${booking.car.model}`}
+                         className="w-32 h-20 object-cover rounded-lg flex-shrink-0"
+                       />
+                     )}
+
+                     <div className="flex-1 min-w-0">
+                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                         {booking.car.year} {booking.car.make}
+                       </h3>
+                       <p className="text-base text-gray-700 dark:text-gray-300">
+                         {booking.car.model}
+                       </p>
+                       <p className="text-sm text-gray-500 dark:text-gray-400">
+                         Booking Code: {booking.bookingCode}
+                       </p>
+
+                       <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                         <div className="flex items-center text-gray-600 dark:text-gray-400">
+                           <IoCalendarOutline className="w-4 h-4 mr-2 flex-shrink-0" />
+                           {new Date(booking.startDate).toLocaleDateString()} - {new Date(booking.endDate).toLocaleDateString()}
+                         </div>
+                         <div className="flex items-center text-gray-600 dark:text-gray-400">
+                           <IoTimeOutline className="w-4 h-4 mr-2 flex-shrink-0" />
+                           {booking.numberOfDays} day{booking.numberOfDays > 1 ? 's' : ''}
+                         </div>
+                         <div className="text-gray-600 dark:text-gray-400">
+                           Host: {booking.host.name}
+                         </div>
+                         <div className="text-gray-600 dark:text-gray-400">
+                           Booked: {new Date(booking.createdAt).toLocaleDateString()}
+                         </div>
+                       </div>
+
+                       {booking.verificationStatus === 'pending' && (
+                         <div className="mt-3 flex items-center text-sm text-yellow-600 dark:text-yellow-400">
+                           <IoWarningOutline className="w-4 h-4 mr-1" />
+                           Verification required - Upload documents to confirm
+                         </div>
+                       )}
+                     </div>
+                   </div>
+
+                   <div className="flex flex-row lg:flex-col items-center lg:items-end justify-between lg:justify-start space-y-0 lg:space-y-3">
+                     <div className="text-right">
+                       <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                         ${booking.totalAmount.toFixed(2)}
+                       </p>
+                       <p className="text-sm text-gray-600 dark:text-gray-400">
+                         ${booking.car.dailyRate}/day
+                       </p>
+                     </div>
+
+                     <div className="flex items-center">
+                       {getStatusIcon(booking.status, booking.verificationStatus)}
+                       <span className={`ml-2 px-3 py-1 rounded-full text-sm font-medium ${
+                         getStatusColor(booking.status, booking.verificationStatus)
+                       }`}>
+                         {booking.verificationStatus === 'pending' ? 'Verify Now' : booking.status}
+                       </span>
+                     </div>
                    </div>
                  </div>
                </div>

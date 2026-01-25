@@ -453,7 +453,16 @@ input[type="password"],
 input[type="tel"],
 input[type="number"],
 input[type="search"],
+input[type="date"],
 textarea {
   font-size: 16px !important;
   font-size: max(16px, 1rem) !important;
+}
+
+/* Fix date input width to match text inputs */
+input[type="date"] {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  min-width: 0;
 }
