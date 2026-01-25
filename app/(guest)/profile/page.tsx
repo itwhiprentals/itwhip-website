@@ -7,7 +7,6 @@ import { IoArrowBackOutline } from 'react-icons/io5'
 
 // Import components
 import ProfileHeader from './components/ProfileHeader'
-import VerificationProgress from './components/VerificationProgress'
 import TabNavigation, { TabType } from './components/TabNavigation'
 import ProfileTab from './components/tabs/ProfileTab'
 import StatusTab from './components/tabs/StatusTab'
@@ -414,7 +413,7 @@ function GuestProfileContent() {
         </div>
 
         {/* Profile Header */}
-        <div className="mb-4">
+        <div className="-mx-4 sm:mx-0 px-4 sm:px-0 mb-4">
           <ProfileHeader
             profile={{
               id: profile.id,
@@ -436,28 +435,17 @@ function GuestProfileContent() {
           />
         </div>
 
-        {/* Verification Progress */}
-        <div className="mb-4">
-          <VerificationProgress
-            documentsVerified={profile.documentsVerified}
-            emailVerified={profile.emailVerified}
-            phoneVerified={profile.phoneVerified}
-            insuranceVerified={profile.insuranceVerified}
-            fullyVerified={profile.fullyVerified}
-            email={profile.email}
-            phone={profile.phone}
+        {/* Tab Navigation */}
+        <div className="-mx-4 sm:mx-0 px-4 sm:px-0">
+          <TabNavigation
+            activeTab={activeTab}
             onTabChange={setActiveTab}
           />
         </div>
 
-        {/* Tab Navigation */}
-        <TabNavigation
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-        />
-
         {/* Tab Content */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border-2 border-gray-300 dark:border-gray-600 p-4 sm:p-6">
+        <div className="-mx-4 sm:mx-0 px-4 sm:px-0">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border-2 border-gray-300 dark:border-gray-600 p-4 sm:p-6">
           {activeTab === 'profile' && (
             <ProfileTab
               profile={{
@@ -550,6 +538,7 @@ function GuestProfileContent() {
           {activeTab === 'reviews' && (
             <ReviewsTab />
           )}
+          </div>
         </div>
       </div>
     </div>

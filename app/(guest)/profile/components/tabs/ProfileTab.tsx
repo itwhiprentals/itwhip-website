@@ -294,7 +294,7 @@ export default function ProfileTab({
                 type="date"
                 value={formData.driverLicenseExpiry}
                 onChange={(e) => handleInputChange('driverLicenseExpiry', e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-400 dark:border-gray-500 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
+                className="w-full max-w-full box-border px-3 py-2 text-sm border border-gray-400 dark:border-gray-500 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
               />
             ) : (
               <p className="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white shadow-sm">
@@ -422,7 +422,7 @@ export default function ProfileTab({
                 type="date"
                 value={formData.dateOfBirth}
                 onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-400 dark:border-gray-500 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
+                className="w-full max-w-full box-border px-3 py-2 text-sm border border-gray-400 dark:border-gray-500 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
               />
             ) : (
               <p className="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white shadow-sm">

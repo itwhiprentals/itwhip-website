@@ -392,7 +392,7 @@ export default function InsuranceForm({
                 onChange={handleInputChange}
                 min={new Date().toISOString().split('T')[0]}
                 disabled={loading}
-                className={`w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 ${
+                className={`w-full max-w-full box-border px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 ${
                   errors.expiryDate ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                 }`}
               />

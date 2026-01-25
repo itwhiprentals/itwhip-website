@@ -7,7 +7,6 @@ import {
   IoCameraOutline,
   IoStarOutline,
   IoCarOutline,
-  IoTrophyOutline,
   IoShieldCheckmarkOutline,
   IoWalletOutline,
   IoGiftOutline
@@ -65,23 +64,6 @@ export default function ProfileHeader({
       
       onPhotoUpload(file)
     }
-  }
-
-  const getTierColor = (tier: string) => {
-    switch (tier.toLowerCase()) {
-      case 'platinum':
-        return 'from-gray-400 to-gray-600'
-      case 'gold':
-        return 'from-yellow-400 to-yellow-600'
-      case 'silver':
-        return 'from-gray-300 to-gray-500'
-      default:
-        return 'from-orange-400 to-orange-600'
-    }
-  }
-
-  const getTierIcon = (tier: string) => {
-    return <IoTrophyOutline className="w-3 h-3 sm:w-4 sm:h-4" />
   }
 
   return (
@@ -152,12 +134,6 @@ export default function ProfileHeader({
               <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-0.5 truncate">
                 {profile.email}
               </p>
-            </div>
-
-            {/* Member Tier Badge */}
-            <div className={`px-2 py-0.5 sm:px-2.5 sm:py-1 bg-gradient-to-r ${getTierColor(profile.memberTier)} text-white rounded-lg text-[10px] sm:text-xs font-bold flex items-center gap-1 whitespace-nowrap flex-shrink-0`}>
-              <span className="hidden sm:inline">{getTierIcon(profile.memberTier)}</span>
-              <span>{profile.memberTier}</span>
             </div>
           </div>
 

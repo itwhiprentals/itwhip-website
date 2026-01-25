@@ -1071,7 +1071,7 @@ export default function GuestDashboard() {
 
         {/* Profile Card */}
         <div
-          className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 sm:p-4 transition-all duration-500 ${
+          className={`-mx-2 sm:mx-0 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 sm:p-4 transition-all duration-500 ${
             state.profileLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
         >
@@ -1267,7 +1267,7 @@ export default function GuestDashboard() {
         })()}
 
         {/* Featured Cards - Find a Car + Upcoming Trip */}
-        <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 transition-all duration-700 ${
+        <div className={`-mx-2 sm:mx-0 grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 transition-all duration-700 ${
           state.statsLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
         }`}>
           {/* Find a Car - Primary CTA */}
@@ -1347,7 +1347,7 @@ export default function GuestDashboard() {
 
         {/* Stats Grid - 3x2 on Mobile, 6x1 on Desktop */}
         <div
-          className={`mt-4 transition-all duration-700 ${
+          className={`-mx-2 sm:mx-0 mt-4 transition-all duration-700 ${
             state.statsLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
         >
@@ -1386,7 +1386,7 @@ export default function GuestDashboard() {
         </div>
 
         {/* Quick Actions - Compact Row */}
-        <div className="flex gap-2 mt-4 overflow-x-auto pb-2 scrollbar-hide">
+        <div className="-mx-2 sm:mx-0 flex gap-2 mt-4 overflow-x-auto pb-2 scrollbar-hide">
           {availableServices.filter(s => s.id !== 'search').map((service) => {
             const isDisabled = false
 
@@ -1448,7 +1448,7 @@ export default function GuestDashboard() {
 
           <div className="space-y-4">
             {/* Recent Trips Card */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700">
+            <div className="-mx-2 sm:mx-0 bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
                   Recent Trips
@@ -1499,7 +1499,7 @@ export default function GuestDashboard() {
             {/* Support Card */}
             <button
               onClick={() => router.push('/support')}
-              className="w-full bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-750 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all text-left group"
+              className="-mx-2 sm:mx-0 w-full bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-750 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all text-left group"
             >
               <div className="flex items-center gap-3">
                 <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded-full">

@@ -142,7 +142,7 @@ export default function RentalBookingsSection() {
   return (
     <>
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6 mb-4 border border-gray-200 dark:border-gray-700">
+      <div className="-mx-2 sm:mx-0 bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6 mb-4 border border-gray-200 dark:border-gray-700">
         <div className="flex justify-between items-center">
           <h2 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white">
             Your Car Rentals ({bookings.length})
@@ -157,12 +157,12 @@ export default function RentalBookingsSection() {
       </div>
       
       {/* MOBILE: Horizontal scrollable square cards */}
-      <div className="sm:hidden mb-4">
-        <div className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide">
+      <div className="sm:hidden mb-4 -mx-2">
+        <div className="flex gap-3 overflow-x-auto pb-4 px-2 snap-x snap-mandatory scrollbar-hide">
           {bookings.slice(0, 3).map(booking => (
             <div
               key={booking.id}
-              className="flex-shrink-0 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden hover:shadow-md cursor-pointer transition-all snap-start shadow-sm"
+              className="flex-shrink-0 w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden hover:shadow-md cursor-pointer transition-all snap-start shadow-sm"
               onClick={() => handleBookingClick(booking.id)}
             >
               {/* Car Image - Square aspect ratio */}
