@@ -7,7 +7,10 @@
 - [x] Profile: Remove VerificationProgress section (redundant with dashboard alert)
 - [x] Profile: Remove Bronze membership tier badge from header
 - [x] Profile: Add -mx-4 sm:mx-0 wrappers for mobile alignment
-- [x] Fix date input overflow with max-w-full box-border (ProfileTab, InsuranceForm)
+- [x] Fix date input overflow - add appearance-none, min-width:0 in globals.css
+- [x] Bookings page: Fix horizontal scroll with scrollable filter pills
+- [x] Bookings page: Mobile-optimized card layout (compact, no overflow)
+- [x] Bookings page: Split car name display (Year Make / Model on separate lines)
 
 ### Guest Dashboard UX Improvements (Jan 24)
 - [x] Guest invite link redirects to `/dashboard` instead of `/payments/credits`
