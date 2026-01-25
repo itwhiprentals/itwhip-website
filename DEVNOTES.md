@@ -2,6 +2,14 @@
 
 ## Recent Fixes (January 2026)
 
+### Guest Dashboard Enhancements (Jan 25)
+- [x] Status badges on Recent Trips card (Active, Complete, Canceled, Pending)
+- [x] Status badges on booking cards (mobile and desktop)
+- [x] Vehicle display: Year + Make on line 1, Model on line 2
+- [x] Currency formatting: $1,500.00 with locale-aware commas and decimals
+- [x] Visible line separators between Recent Trips items
+- [x] Important Information insurance disclaimer under Support card
+
 ### Mobile Layout Fixes (Jan 24)
 - [x] Dashboard: Add -mx-2 sm:mx-0 to all cards for edge-to-edge mobile alignment
 - [x] Profile: Remove VerificationProgress section (redundant with dashboard alert)
