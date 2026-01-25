@@ -73,16 +73,80 @@ export async function POST(
     // Get first name only
     const firstName = prospect.name.split(' ')[0]
 
-    // Build email subject - personal, not promotional (avoid "credit", "waiting", dollar amounts)
+    // Format credit display
     const creditDisplay = prospect.creditAmount > 0 ? `$${prospect.creditAmount.toFixed(2)}` : ''
-    const subject = `${firstName}, your ItWhip account is ready`
 
     // Format credit type for display
     const creditTypeDisplay = prospect.creditType === 'bonus'
       ? 'Bonus Credit'
       : prospect.creditType === 'deposit'
         ? 'Deposit Credit'
-        : 'Rental Credit'
+        : 'Booking Credit'
+
+    // Determine email template based on creditPurpose
+    const isBookingCredit = prospect.creditPurpose === 'booking_credit'
+    const referenceBooking = prospect.referenceBooking as { vehicle?: string; referenceId?: string; pickupDate?: string; returnDate?: string; location?: string } | null
+
+    // Build email subject based on purpose
+    const subject = isBookingCredit && prospect.creditAmount > 0
+      ? `${firstName}, your ${creditDisplay} ItWhip credit is ready`
+      : `${firstName}, your ItWhip account is ready`
+
+    // Generate booking reference section HTML if applicable
+    const bookingReferenceHtml = isBookingCredit && referenceBooking ? `
+        <!-- Previous Booking Reference -->
+        <div style="background-color: #f9fafb; border-radius: 8px; padding: 16px; margin: 20px 0;">
+          <p style="margin: 0 0 8px 0; font-size: 13px; color: #374151; font-weight: 600;">Reference Booking:</p>
+          <table style="width: 100%; font-size: 13px; color: #4b5563;">
+            ${referenceBooking.vehicle ? `<tr>
+              <td style="padding: 3px 0;">Vehicle:</td>
+              <td style="padding: 3px 0; text-align: right; font-weight: 500; color: #1f2937;">${referenceBooking.vehicle}</td>
+            </tr>` : ''}
+            ${referenceBooking.pickupDate && referenceBooking.returnDate ? `<tr>
+              <td style="padding: 3px 0;">Dates:</td>
+              <td style="padding: 3px 0; text-align: right;">${referenceBooking.pickupDate} - ${referenceBooking.returnDate}</td>
+            </tr>` : ''}
+            ${referenceBooking.location ? `<tr>
+              <td style="padding: 3px 0;">Location:</td>
+              <td style="padding: 3px 0; text-align: right;">${referenceBooking.location}</td>
+            </tr>` : ''}
+            ${referenceBooking.referenceId ? `<tr>
+              <td style="padding: 3px 0;">Reference ID:</td>
+              <td style="padding: 3px 0; text-align: right; font-family: monospace;">${referenceBooking.referenceId}</td>
+            </tr>` : ''}
+          </table>
+        </div>
+        ` : ''
+
+    // Generate booking reference section text if applicable
+    const bookingReferenceText = isBookingCredit && referenceBooking ? `
+REFERENCE BOOKING:
+${referenceBooking.vehicle ? `Vehicle: ${referenceBooking.vehicle}` : ''}
+${referenceBooking.pickupDate && referenceBooking.returnDate ? `Dates: ${referenceBooking.pickupDate} - ${referenceBooking.returnDate}` : ''}
+${referenceBooking.location ? `Location: ${referenceBooking.location}` : ''}
+${referenceBooking.referenceId ? `Reference ID: ${referenceBooking.referenceId}` : ''}
+` : ''
+
+    // Credit intro text varies by purpose
+    const creditIntroHtml = isBookingCredit
+      ? `We've issued a <strong>${creditDisplay} credit</strong> to your account for your future rentals with ItWhip.`
+      : prospect.creditAmount > 0
+        ? `Your account includes <strong>${creditDisplay} in ${creditTypeDisplay.toLowerCase()}</strong> toward your first rental with ItWhip.`
+        : 'You\'ve been invited to rent a car through ItWhip. Your account is ready to browse our selection of vehicles from trusted local hosts.'
+
+    const creditIntroText = isBookingCredit
+      ? `We've issued a ${creditDisplay} credit to your account for your future rentals with ItWhip.`
+      : prospect.creditAmount > 0
+        ? `Your account includes ${creditDisplay} in ${creditTypeDisplay.toLowerCase()} toward your first rental with ItWhip.`
+        : 'You\'ve been invited to rent a car through ItWhip. Your account is ready to browse our selection of vehicles from trusted local hosts.'
+
+    // Header text varies by purpose
+    const headerText = isBookingCredit ? 'Your Credit Is Ready' : 'Your Account Is Ready'
+
+    // Credit expiration display
+    const expirationDisplay = prospect.creditExpirationDays
+      ? `Available for ${prospect.creditExpirationDays} days after activation`
+      : ''
 
     const html = `
       <!DOCTYPE html>
@@ -95,7 +159,7 @@ export async function POST(
 
         <!-- Header -->
         <div style="border-bottom: 1px solid #e5e7eb; padding-bottom: 16px; margin-bottom: 24px; text-align: center;">
-          <p style="margin: 0 0 4px 0; font-size: 12px; color: #ea580c; text-transform: uppercase; letter-spacing: 0.5px;">Your Account Is Ready</p>
+          <p style="margin: 0 0 4px 0; font-size: 12px; color: #ea580c; text-transform: uppercase; letter-spacing: 0.5px;">${headerText}</p>
           <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #ea580c;">Welcome to ItWhip</h1>
         </div>
 
@@ -105,28 +169,28 @@ export async function POST(
         </p>
 
         <p style="font-size: 16px; margin: 0 0 16px 0; color: #111827;">
-          ${prospect.creditAmount > 0
-            ? `Your account includes <strong>$${prospect.creditAmount.toFixed(2)} in ${creditTypeDisplay.toLowerCase()}</strong> toward your first rental with ItWhip.`
-            : 'You\'ve been invited to rent a car through ItWhip. Your account is ready to browse our selection of vehicles from trusted local hosts.'}
+          ${creditIntroHtml}
         </p>
 
         <p style="font-size: 16px; color: #111827; margin: 0;">
-          Click below to activate your account and start browsing cars.
+          ${isBookingCredit ? 'Click below to activate your account and apply this credit toward your next booking.' : 'Click below to activate your account and start browsing cars.'}
         </p>
 
         ${prospect.creditAmount > 0 ? `
         <!-- Credit Display -->
         <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;">
           <p style="margin: 0 0 4px 0; font-size: 13px; color: #374151; text-transform: uppercase; letter-spacing: 0.5px;">Your ${creditTypeDisplay}</p>
-          <p style="margin: 0; font-size: 36px; font-weight: 700; color: #1f2937;">$${prospect.creditAmount.toFixed(2)}</p>
-          ${prospect.creditNote ? `<p style="margin: 8px 0 0 0; font-size: 14px; color: #374151;">"${prospect.creditNote}"</p>` : ''}
-          ${prospect.creditExpirationDays ? `<p style="margin: 4px 0 0 0; font-size: 12px; color: #4b5563;">Valid for ${prospect.creditExpirationDays} days after claim</p>` : ''}
+          <p style="margin: 0; font-size: 36px; font-weight: 700; color: #1f2937;">${creditDisplay}</p>
+          ${prospect.creditExpirationDays ? `<p style="margin: 8px 0 0 0; font-size: 12px; color: #ea580c; font-weight: 500;">${expirationDisplay}</p>` : ''}
+          ${prospect.creditNote && !isBookingCredit ? `<p style="margin: 8px 0 0 0; font-size: 14px; color: #374151;">"${prospect.creditNote}"</p>` : ''}
         </div>
         ` : ''}
 
+        ${bookingReferenceHtml}
+
         <!-- Status indicator -->
         <p style="font-size: 14px; color: #111827; margin: 20px 0;">
-          <strong>Your account is reserved.</strong> This link is valid for 72 hours.
+          <strong>Your account is reserved.</strong> ${isBookingCredit ? 'Activate within 72 hours to claim your credit.' : 'This link is valid for 72 hours.'}
         </p>
 
         <!-- CTA Button -->
@@ -257,22 +321,19 @@ export async function POST(
     `
 
     const text = `
-YOUR ACCOUNT IS READY
+${headerText.toUpperCase()}
 Welcome to ItWhip
 
 Hi ${firstName},
 
-${prospect.creditAmount > 0
-  ? `Your account includes $${prospect.creditAmount.toFixed(2)} in ${creditTypeDisplay.toLowerCase()} toward your first rental with ItWhip.`
-  : 'You\'ve been invited to rent a car through ItWhip. Your account is ready to browse our selection of vehicles from trusted local hosts.'}
+${creditIntroText}
 
-Click below to activate your account and start browsing cars.
+${isBookingCredit ? 'Click below to activate your account and apply this credit toward your next booking.' : 'Click below to activate your account and start browsing cars.'}
 
-${prospect.creditAmount > 0 ? `YOUR ${creditTypeDisplay.toUpperCase()}: $${prospect.creditAmount.toFixed(2)}
-${prospect.creditNote ? `"${prospect.creditNote}"` : ''}
-${prospect.creditExpirationDays ? `Valid for ${prospect.creditExpirationDays} days after activation` : ''}` : ''}
-
-Your account is reserved. This link is valid for 72 hours.
+${prospect.creditAmount > 0 ? `YOUR ${creditTypeDisplay.toUpperCase()}: ${creditDisplay}
+${expirationDisplay}` : ''}
+${bookingReferenceText}
+Your account is reserved. ${isBookingCredit ? 'Activate within 72 hours to claim your credit.' : 'This link is valid for 72 hours.'}
 
 Activate Your Account:
 ${inviteLink}
@@ -348,6 +409,9 @@ Verify this email: ${baseUrl}/verify-email?ref=${emailReferenceId}
       metadata: {
         creditAmount: prospect.creditAmount,
         creditType: prospect.creditType,
+        creditPurpose: prospect.creditPurpose,
+        creditExpirationDays: prospect.creditExpirationDays,
+        referenceBooking: prospect.referenceBooking,
         inviteResendCount: updatedProspect.inviteResendCount,
         tokenExpiry: inviteTokenExp.toISOString()
       }

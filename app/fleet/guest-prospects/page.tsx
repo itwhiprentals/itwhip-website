@@ -708,9 +708,16 @@ function CreateGuestModal({
     notes: '',
     creditAmount: 250,
     creditType: 'credit',
+    creditPurpose: 'guest_invite' as 'guest_invite' | 'booking_credit' | 'refund_credit',
     creditNote: '',
     creditExpirationDays: 90,
-    sendImmediately: true
+    sendImmediately: true,
+    // Reference booking fields (for booking_credit)
+    referenceVehicle: '',
+    referenceId: '',
+    referencePickupDate: '',
+    referenceReturnDate: '',
+    referenceLocation: ''
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -718,6 +725,17 @@ function CreateGuestModal({
     setLoading(true)
 
     try {
+      // Build reference booking object if this is a booking credit
+      const referenceBooking = formData.creditPurpose === 'booking_credit' && formData.referenceId
+        ? {
+            vehicle: formData.referenceVehicle,
+            referenceId: formData.referenceId,
+            pickupDate: formData.referencePickupDate,
+            returnDate: formData.referenceReturnDate,
+            location: formData.referenceLocation
+          }
+        : null
+
       // Create the prospect
       const response = await fetch('/api/fleet/guest-prospects', {
         method: 'POST',
@@ -729,8 +747,10 @@ function CreateGuestModal({
           notes: formData.notes,
           creditAmount: formData.creditAmount,
           creditType: formData.creditType,
+          creditPurpose: formData.creditPurpose,
           creditNote: formData.creditNote,
           creditExpirationDays: formData.creditExpirationDays || null,
+          referenceBooking,
           sendInviteImmediately: false // We'll send separately if needed
         })
       })
@@ -834,6 +854,27 @@ function CreateGuestModal({
                 </h3>
               </div>
 
+              {/* Credit Purpose */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Purpose
+                </label>
+                <select
+                  value={formData.creditPurpose}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    creditPurpose: e.target.value as 'guest_invite' | 'booking_credit' | 'refund_credit',
+                    // Set default expiration based on purpose
+                    creditExpirationDays: e.target.value === 'booking_credit' ? 7 : 90
+                  })}
+                  className="w-full px-3 py-2 border border-orange-300 dark:border-orange-700 rounded-lg bg-white dark:bg-gray-800"
+                >
+                  <option value="guest_invite">New Guest Invite</option>
+                  <option value="booking_credit">Booking Credit (previous booking resolution)</option>
+                  <option value="refund_credit">Refund Credit</option>
+                </select>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -893,8 +934,85 @@ function CreateGuestModal({
                   placeholder="90"
                   className="w-full px-3 py-2 border border-orange-300 dark:border-orange-700 rounded-lg bg-white dark:bg-gray-800"
                 />
-                <p className="text-xs text-gray-500 mt-1">Leave empty for no expiration</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {formData.creditPurpose === 'booking_credit'
+                    ? 'Recommended: 7 days for booking credits'
+                    : 'Leave empty for no expiration'}
+                </p>
               </div>
+
+              {/* Reference Booking Fields (for booking_credit) */}
+              {formData.creditPurpose === 'booking_credit' && (
+                <div className="mt-4 pt-4 border-t border-orange-200 dark:border-orange-700">
+                  <h4 className="text-sm font-medium text-orange-800 dark:text-orange-300 mb-3">
+                    Reference Booking Details
+                  </h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                        Vehicle
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.referenceVehicle}
+                        onChange={(e) => setFormData({ ...formData, referenceVehicle: e.target.value })}
+                        placeholder="e.g. 2017 Lamborghini Huracan"
+                        className="w-full px-3 py-2 border border-orange-300 dark:border-orange-700 rounded-lg bg-white dark:bg-gray-800 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                        Reference ID
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.referenceId}
+                        onChange={(e) => setFormData({ ...formData, referenceId: e.target.value })}
+                        placeholder="e.g. WM1742688059"
+                        className="w-full px-3 py-2 border border-orange-300 dark:border-orange-700 rounded-lg bg-white dark:bg-gray-800 text-sm"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                          Pickup Date
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.referencePickupDate}
+                          onChange={(e) => setFormData({ ...formData, referencePickupDate: e.target.value })}
+                          placeholder="e.g. 4/5/2025"
+                          className="w-full px-3 py-2 border border-orange-300 dark:border-orange-700 rounded-lg bg-white dark:bg-gray-800 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                          Return Date
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.referenceReturnDate}
+                          onChange={(e) => setFormData({ ...formData, referenceReturnDate: e.target.value })}
+                          placeholder="e.g. 4/6/2025"
+                          className="w-full px-3 py-2 border border-orange-300 dark:border-orange-700 rounded-lg bg-white dark:bg-gray-800 text-sm"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                        Location
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.referenceLocation}
+                        onChange={(e) => setFormData({ ...formData, referenceLocation: e.target.value })}
+                        placeholder="e.g. Tempe, AZ"
+                        className="w-full px-3 py-2 border border-orange-300 dark:border-orange-700 rounded-lg bg-white dark:bg-gray-800 text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Notes */}

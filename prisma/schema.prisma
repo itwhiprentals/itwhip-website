@@ -3705,8 +3705,10 @@ model GuestProspect {
   // ═══════════════════════════════════════════════════════════════
   creditAmount         Float   @default(0) // Amount offered (e.g., $250)
   creditType           String  @default("credit") // 'credit' | 'bonus' | 'deposit'
+  creditPurpose        String  @default("guest_invite") // 'guest_invite' | 'booking_credit' | 'refund_credit'
   creditNote           String? // Why this credit (e.g., "Referral bonus")
   creditExpirationDays Int? // Optional expiration (days from activation)
+  referenceBooking     Json? // For booking_credit: { vehicle, referenceId, pickupDate, returnDate, location }
 
   // ═══════════════════════════════════════════════════════════════
   // INVITE TOKEN (72-hour expiry)

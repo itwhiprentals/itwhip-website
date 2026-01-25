@@ -198,8 +198,10 @@ export async function POST(request: NextRequest) {
       source,
       creditAmount,
       creditType,
+      creditPurpose,
       creditNote,
       creditExpirationDays,
+      referenceBooking,
       createdBy,
       sendInviteImmediately
     } = body
@@ -249,8 +251,10 @@ export async function POST(request: NextRequest) {
         source: source || 'admin_invite',
         creditAmount: creditAmount || 0,
         creditType: creditType || 'credit',
+        creditPurpose: creditPurpose || 'guest_invite',
         creditNote,
         creditExpirationDays,
+        referenceBooking: referenceBooking || null,
         createdBy,
         status: sendInviteImmediately ? 'INVITED' : 'DRAFT',
         inviteToken,
