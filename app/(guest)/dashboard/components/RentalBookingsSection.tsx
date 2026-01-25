@@ -182,22 +182,33 @@ export default function RentalBookingsSection() {
                 {/* Status badge on image */}
                 <div className="absolute top-2 right-2">
                   <span className={`px-2 py-1 rounded text-xs font-medium ${
-                    booking.status === 'ACTIVE' 
+                    booking.status === 'ACTIVE'
                       ? 'bg-green-500 text-white'
                       : booking.status === 'COMPLETED'
                       ? 'bg-gray-500 text-white'
-                      : 'bg-yellow-500 text-white'
+                      : booking.status === 'CANCELLED' || booking.status === 'CANCELED'
+                      ? 'bg-red-500 text-white'
+                      : booking.status === 'PENDING'
+                      ? 'bg-yellow-500 text-white'
+                      : 'bg-blue-500 text-white'
                   }`}>
-                    {booking.status}
+                    {booking.status === 'COMPLETED' ? 'Complete' :
+                     booking.status === 'CANCELLED' || booking.status === 'CANCELED' ? 'Canceled' :
+                     booking.status === 'ACTIVE' ? 'Active' :
+                     booking.status === 'PENDING' ? 'Pending' :
+                     booking.status}
                   </span>
                 </div>
               </div>
               
               {/* Card Info */}
               <div className="p-3">
-                <h3 className="font-semibold text-gray-900 dark:text-white text-sm mb-1 truncate">
-                  {booking.car?.year} {booking.car?.make} {booking.car?.model}
-                </h3>
+                <p className="font-semibold text-gray-900 dark:text-white text-sm">
+                  {booking.car?.year} {booking.car?.make}
+                </p>
+                <p className="text-sm text-gray-700 dark:text-gray-300 mb-1 truncate">
+                  {booking.car?.model}
+                </p>
                 
                 {/* Confirmation Number */}
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-1.5">
@@ -215,7 +226,7 @@ export default function RentalBookingsSection() {
                 <div className="flex justify-between items-center pt-2 border-t border-gray-100 dark:border-gray-700">
                   <span className="text-xs text-gray-600 dark:text-gray-400">Total</span>
                   <span className="text-sm font-bold text-gray-900 dark:text-white">
-                    ${booking.totalAmount?.toFixed(0) || '0'}
+                    ${(booking.totalAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
                 
@@ -255,9 +266,12 @@ export default function RentalBookingsSection() {
                   )}
                   <div>
                     <p className="font-medium text-gray-900 dark:text-white">
-                      {booking.car?.year} {booking.car?.make} {booking.car?.model}
+                      {booking.car?.year} {booking.car?.make}
                     </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
+                      {booking.car?.model}
+                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
                       {booking.bookingCode} • {new Date(booking.startDate).toLocaleDateString()} - {new Date(booking.endDate).toLocaleDateString()}
                     </p>
                     {(booking.verificationStatus === 'pending' || booking.verificationStatus === 'submitted') && (
@@ -269,13 +283,27 @@ export default function RentalBookingsSection() {
                   </div>
                 </div>
                 
-                <div className="text-right">
+                <div className="text-right flex flex-col items-end gap-1">
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    ${booking.totalAmount?.toFixed(0) || '0'}
+                    ${(booking.totalAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    {booking.status}
-                  </p>
+                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                    booking.status === 'ACTIVE'
+                      ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                      : booking.status === 'COMPLETED'
+                      ? 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                      : booking.status === 'CANCELLED' || booking.status === 'CANCELED'
+                      ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                      : booking.status === 'PENDING'
+                      ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
+                      : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                  }`}>
+                    {booking.status === 'COMPLETED' ? 'Complete' :
+                     booking.status === 'CANCELLED' || booking.status === 'CANCELED' ? 'Canceled' :
+                     booking.status === 'ACTIVE' ? 'Active' :
+                     booking.status === 'PENDING' ? 'Pending' :
+                     booking.status}
+                  </span>
                 </div>
               </div>
             </div>

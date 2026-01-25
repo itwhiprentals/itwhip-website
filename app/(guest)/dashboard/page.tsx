@@ -1448,7 +1448,7 @@ export default function GuestDashboard() {
 
           <div className="space-y-4">
             {/* Recent Trips Card */}
-            <div className="-mx-2 sm:mx-0 bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700">
+            <div className="-mx-2 sm:mx-0 w-[calc(100%+1rem)] sm:w-full bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
                   Recent Trips
@@ -1463,26 +1463,41 @@ export default function GuestDashboard() {
                 )}
               </div>
 
-              <div className="space-y-2">
+              <div className="divide-y divide-gray-200 dark:divide-gray-600">
                 {state.rentalBookings.slice(0, 3).map((booking) => (
                   <div
                     key={booking.id}
-                    className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 p-2 -mx-2 rounded-lg transition-colors"
+                    className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 py-3 transition-colors"
                     onClick={() => router.push(`/rentals/dashboard/bookings/${booking.id}`)}
                   >
-                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                      booking.status === 'ACTIVE' ? 'bg-green-500' :
-                      booking.status === 'COMPLETED' ? 'bg-gray-400' :
-                      'bg-yellow-500'
-                    }`} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-gray-900 dark:text-white truncate">
-                        {booking.car.make} {booking.car.model}
+                      <p className="text-xs font-medium text-gray-900 dark:text-white">
+                        {booking.car.year} {booking.car.make}
                       </p>
-                      <p className="text-[10px] text-gray-500 dark:text-gray-400">
+                      <p className="text-xs text-gray-700 dark:text-gray-300 truncate">
+                        {booking.car.model}
+                      </p>
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
                         {new Date(booking.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       </p>
                     </div>
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-semibold flex-shrink-0 ${
+                      booking.status === 'ACTIVE'
+                        ? 'bg-emerald-500 text-white'
+                        : booking.status === 'COMPLETED'
+                        ? 'bg-slate-500 text-white'
+                        : booking.status === 'CANCELLED' || booking.status === 'CANCELED'
+                        ? 'bg-rose-500 text-white'
+                        : booking.status === 'PENDING'
+                        ? 'bg-amber-500 text-white'
+                        : 'bg-sky-500 text-white'
+                    }`}>
+                      {booking.status === 'COMPLETED' ? 'Complete' :
+                       booking.status === 'CANCELLED' || booking.status === 'CANCELED' ? 'Canceled' :
+                       booking.status === 'ACTIVE' ? 'Active' :
+                       booking.status === 'PENDING' ? 'Pending' :
+                       booking.status}
+                    </span>
                   </div>
                 ))}
 
@@ -1499,7 +1514,7 @@ export default function GuestDashboard() {
             {/* Support Card */}
             <button
               onClick={() => router.push('/support')}
-              className="-mx-2 sm:mx-0 w-full bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-750 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all text-left group"
+              className="block -mx-2 sm:mx-0 w-[calc(100%+1rem)] sm:w-full bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-750 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all text-left group"
             >
               <div className="flex items-center gap-3">
                 <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded-full">
@@ -1511,6 +1526,16 @@ export default function GuestDashboard() {
                 </div>
               </div>
             </button>
+
+            {/* Important Information Disclaimer */}
+            <div className="-mx-2 sm:mx-0 w-[calc(100%+1rem)] sm:w-full mt-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
+              <p className="text-[10px] font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                Important Information
+              </p>
+              <p className="text-[9px] leading-relaxed text-gray-500 dark:text-gray-500">
+                Protection provided through licensed third-party insurance carriers. Coverage amounts and availability subject to vehicle eligibility, location, and underwriter approval. ItWhip facilitates coverage but is not an insurance company. Protection applies only during active rental periods booked through our platform. Physical damage reimbursement is contractual allocation of risk, not insurance. Deductibles and coverage limits are subject to change. Individual insurance requirements and coverage may vary. Consult with your personal insurance provider before participating in car sharing. FNOL and claims processes are subject to documentation requirements and may vary based on incident complexity. Insurance tier eligibility requires fleet verification of provided documentation. Lapsed insurance results in automatic tier downgrade. Platform reserves right to modify terms, features, and tier requirements with notice. Arizona-specific regulations apply. This information does not constitute insurance, legal, or financial advice.
+              </p>
+            </div>
           </div>
         </div>
       </div>
