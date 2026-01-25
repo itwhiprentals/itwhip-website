@@ -2,6 +2,13 @@
 
 ## Recent Fixes (January 2026)
 
+### Mobile Layout Fixes (Jan 24)
+- [x] Dashboard: Add -mx-2 sm:mx-0 to all cards for edge-to-edge mobile alignment
+- [x] Profile: Remove VerificationProgress section (redundant with dashboard alert)
+- [x] Profile: Remove Bronze membership tier badge from header
+- [x] Profile: Add -mx-4 sm:mx-0 wrappers for mobile alignment
+- [x] Fix date input overflow with max-w-full box-border (ProfileTab, InsuranceForm)
+
 ### Guest Dashboard UX Improvements (Jan 24)
 - [x] Guest invite link redirects to `/dashboard` instead of `/payments/credits`
 - [x] Lock icon with tooltip on Credits & Bonus stat when unverified
