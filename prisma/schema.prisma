@@ -2741,6 +2741,23 @@ model Session {
   @@index([userId])
 }
 
+// Short-lived session tokens for guest invite callback flow
+// Used to pass auth tokens from validate API to callback route
+model GuestSession {
+  id           String    @id @default(cuid())
+  token        String    @unique
+  userId       String
+  accessToken  String    @db.Text
+  refreshToken String    @db.Text
+  expiresAt    DateTime
+  consumed     Boolean   @default(false)
+  consumedAt   DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([token])
+  @@index([expiresAt])
+}
+
 model Threat {
   id              String         @id
   type            AttackType

@@ -1,11 +1,10 @@
 'use client'
 
 import { Suspense, useEffect, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { IoCheckmarkCircle, IoWarning, IoTime, IoGift } from 'react-icons/io5'
 
 function GuestInviteContent() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get('token')
 
@@ -57,9 +56,10 @@ function GuestInviteContent() {
           : 'Welcome! Redirecting to your account...'
         )
 
-        // Redirect to credits page
+        // Redirect to server-side callback that sets cookies and redirects to dashboard
+        // This ensures cookies and redirect happen in the SAME HTTP response (no race condition)
         setTimeout(() => {
-          router.push(data.redirectUrl || '/payments/credits')
+          window.location.href = `/api/auth/guest-callback?token=${data.sessionToken}`
         }, 2000)
       }
     } catch (error) {

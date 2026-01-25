@@ -94,19 +94,30 @@ export async function POST(request: NextRequest) {
       })
 
       if (existingProfile?.user) {
-        // Generate tokens and log them in
+        // Generate tokens for returning user
         const tokens = await generateGuestTokens(existingProfile.user)
 
-        const response = NextResponse.json({
+        // Create short-lived session for callback flow (60 seconds)
+        const sessionToken = nanoid(32)
+        await prisma.guestSession.create({
+          data: {
+            token: sessionToken,
+            userId: existingProfile.user.id,
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
+            expiresAt: new Date(Date.now() + 60 * 1000) // 60 seconds
+          }
+        })
+
+        return NextResponse.json({
           success: true,
+          sessionToken, // Client uses this for callback redirect
           guestName: prospect.name.split(' ')[0],
           isReturning: true,
           creditApplied: false, // Already applied before
-          redirectUrl: '/dashboard'
+          creditAmount: 0,
+          creditType: 'credit'
         })
-
-        setGuestCookies(response, tokens)
-        return response
       }
     }
 
@@ -304,21 +315,31 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Generate tokens and log them in
+    // Generate tokens for new/existing user
     const tokens = await generateGuestTokens(user!)
 
-    const response = NextResponse.json({
+    // Create short-lived session for callback flow (60 seconds)
+    // This eliminates the cookie race condition by setting cookies in the callback response
+    const sessionToken = nanoid(32)
+    await prisma.guestSession.create({
+      data: {
+        token: sessionToken,
+        userId: user!.id,
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        expiresAt: new Date(Date.now() + 60 * 1000) // 60 seconds
+      }
+    })
+
+    return NextResponse.json({
       success: true,
+      sessionToken, // Client uses this for callback redirect
       guestName: prospect.name.split(' ')[0],
       isNew,
       creditApplied,
       creditAmount: prospect.creditAmount,
-      creditType: prospect.creditType,
-      redirectUrl: '/dashboard'
+      creditType: prospect.creditType
     })
-
-    setGuestCookies(response, tokens)
-    return response
 
   } catch (error: any) {
     console.error('[Guest Onboard Validate] Error:', error)
@@ -380,44 +401,5 @@ async function generateGuestTokens(
   return { accessToken, refreshToken }
 }
 
-// Helper: Set guest auth cookies on response
-function setGuestCookies(
-  response: NextResponse,
-  tokens: { accessToken: string; refreshToken: string }
-) {
-  const isProduction = process.env.NODE_ENV === 'production'
-
-  // Guest access token
-  response.cookies.set('accessToken', tokens.accessToken, {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: 'lax',
-    maxAge: 15 * 60, // 15 minutes
-    path: '/'
-  })
-
-  // Refresh token
-  response.cookies.set('refreshToken', tokens.refreshToken, {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: 'lax',
-    maxAge: 7 * 24 * 60 * 60, // 7 days
-    path: '/'
-  })
-
-  // Clear any host cookies
-  response.cookies.set('hostAccessToken', '', {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: 'lax',
-    maxAge: 0,
-    path: '/'
-  })
-  response.cookies.set('partner_token', '', {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: 'lax',
-    maxAge: 0,
-    path: '/'
-  })
-}
+// Note: Cookie setting moved to /api/auth/guest-callback route
+// This eliminates race condition between Set-Cookie and client navigation
