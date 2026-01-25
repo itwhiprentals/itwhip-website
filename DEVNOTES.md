@@ -12,6 +12,14 @@
 - [x] Bookings page: Mobile-optimized card layout (compact, no overflow)
 - [x] Bookings page: Split car name display (Year Make / Model on separate lines)
 
+### Booking Credit Invite System (Jan 25)
+- [x] Add creditPurpose field to GuestProspect (guest_invite, booking_credit, refund_credit)
+- [x] Add referenceBooking JSON field for previous booking details
+- [x] Fleet dashboard: credit purpose dropdown with conditional reference booking fields
+- [x] Dynamic email templates: "Your Credit Is Ready" header for booking credits
+- [x] Reference booking section in email (vehicle, dates, location, reference ID)
+- [x] 7-day default expiration for booking credits (vs 90 days for guest invites)
+
 ### Guest Dashboard UX Improvements (Jan 24)
 - [x] Guest invite link redirects to `/dashboard` instead of `/payments/credits`
 - [x] Lock icon with tooltip on Credits & Bonus stat when unverified
