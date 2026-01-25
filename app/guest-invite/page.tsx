@@ -30,7 +30,8 @@ function GuestInviteContent() {
       const response = await fetch('/api/guest-onboard/validate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token })
+        body: JSON.stringify({ token }),
+        credentials: 'include'
       })
 
       const data = await response.json()
