@@ -2,6 +2,17 @@
 
 ## Recent Fixes (January 2026)
 
+### Guest Profile Page Redesign (Jan 25)
+- [x] Simplified ProfileHeader: removed stats grid, compact layout with photo/name/badge
+- [x] Consolidated tabs from 7 to 5: Account, Documents, Insurance, Payment, Security
+- [x] Added photo upload section to Account tab with clear guidelines
+- [x] Email/phone change with verification flow (sends link to new email)
+- [x] New SecurityTab: password management, 2FA placeholder, account linking, deletion
+- [x] API: Added hasPassword field to detect converted prospects (via invite link)
+- [x] New endpoint: /api/user/set-password for no-password accounts
+- [x] New endpoints: /api/guest/email/change-request, /api/guest/email/verify
+- [x] Layout: Aligned Scan License and Edit buttons to right of section headers
+
 ### Guest Dashboard Enhancements (Jan 25)
 - [x] Status badges on Recent Trips card (Active, Complete, Canceled, Pending)
 - [x] Status badges on booking cards (mobile and desktop)
