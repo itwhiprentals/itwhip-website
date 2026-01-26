@@ -111,6 +111,7 @@ export default function GuestProspectsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [sendingInvite, setSendingInvite] = useState<string | null>(null)
   const [copiedLink, setCopiedLink] = useState<string | null>(null)
+  const [resendingSecurityEmail, setResendingSecurityEmail] = useState<string | null>(null)
 
   // Existing guest search state
   const [existingSearch, setExistingSearch] = useState('')
@@ -204,6 +205,27 @@ export default function GuestProspectsPage() {
       alert('Failed to send invite')
     } finally {
       setSendingInvite(null)
+    }
+  }
+
+  const resendSecurityEmail = async (prospectId: string) => {
+    setResendingSecurityEmail(prospectId)
+    try {
+      const response = await fetch(`/api/fleet/guest-prospects/${prospectId}/resend-security-email`, {
+        method: 'POST'
+      })
+      const data = await response.json()
+
+      if (data.success) {
+        alert('Security setup email sent successfully!')
+      } else {
+        alert(data.error || 'Failed to send security email')
+      }
+    } catch (error) {
+      console.error('Failed to resend security email:', error)
+      alert('Failed to send security email')
+    } finally {
+      setResendingSecurityEmail(null)
     }
   }
 
@@ -449,63 +471,72 @@ export default function GuestProspectsPage() {
                   key={guest.id}
                   className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700"
                 >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-medium text-gray-900 dark:text-white truncate">
-                          {guest.name || 'Unknown'}
-                        </h3>
-                        {guest.verification?.isIdentityVerified ? (
-                          <span className="text-xs text-green-600 bg-green-100 px-1.5 py-0.5 rounded flex items-center gap-1">
-                            <IoCheckmarkCircleOutline className="w-3 h-3" />
-                            Verified
-                          </span>
-                        ) : (
-                          <span className="text-xs text-yellow-600 bg-yellow-100 px-1.5 py-0.5 rounded flex items-center gap-1">
-                            <IoLockClosedOutline className="w-3 h-3" />
-                            Unverified
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
-                        <span className="flex items-center gap-1">
-                          <IoMailOutline className="w-4 h-4" />
-                          {guest.email}
-                        </span>
-                        {guest.phone && (
-                          <span className="flex items-center gap-1">
-                            <IoCallOutline className="w-4 h-4" />
-                            {guest.phone}
-                          </span>
-                        )}
-                      </div>
+                  {/* Header Row: Name + Action Button */}
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <h3 className="font-medium text-gray-900 dark:text-white truncate text-base">
+                      {guest.name || 'Unknown'}
+                    </h3>
+                    <button
+                      onClick={() => {
+                        setSelectedGuest(guest)
+                        setShowCreditModal(true)
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-700 hover:bg-green-200 rounded-lg text-xs font-medium transition-colors flex-shrink-0 whitespace-nowrap"
+                    >
+                      <IoGiftOutline className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Manage Credits</span>
+                      <span className="sm:hidden">Credits</span>
+                    </button>
+                  </div>
 
-                      {/* Balance display */}
-                      <div className="mt-2 flex items-center gap-4 text-sm">
-                        <span className="text-green-600 font-medium">
-                          Credit: ${guest.balances?.credit?.toFixed(2) || '0.00'}
-                        </span>
-                        <span className="text-purple-600 font-medium">
-                          Bonus: ${guest.balances?.bonus?.toFixed(2) || '0.00'}
-                        </span>
-                        <span className="text-blue-600 font-medium">
-                          Deposit: ${guest.balances?.deposit?.toFixed(2) || '0.00'}
-                        </span>
-                      </div>
+                  {/* Verification Badge */}
+                  <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                    {guest.verification?.isIdentityVerified ? (
+                      <span className="text-xs text-green-600 bg-green-100 px-1.5 py-0.5 rounded font-medium flex items-center gap-1">
+                        <IoCheckmarkCircleOutline className="w-3 h-3" />
+                        Verified
+                      </span>
+                    ) : (
+                      <span className="text-xs text-yellow-600 bg-yellow-100 px-1.5 py-0.5 rounded font-medium flex items-center gap-1">
+                        <IoLockClosedOutline className="w-3 h-3" />
+                        Unverified
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Contact Info */}
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-sm text-gray-500 dark:text-gray-400 mb-2">
+                    <span className="flex items-center gap-1 truncate">
+                      <IoMailOutline className="w-4 h-4 flex-shrink-0" />
+                      <span className="truncate">{guest.email}</span>
+                    </span>
+                    {guest.phone && (
+                      <span className="flex items-center gap-1">
+                        <IoCallOutline className="w-4 h-4 flex-shrink-0" />
+                        {guest.phone}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Balance display - Grid on mobile for better layout */}
+                  <div className="grid grid-cols-3 gap-2 text-xs sm:text-sm pt-2 border-t border-gray-100 dark:border-gray-700">
+                    <div className="text-center">
+                      <p className="text-gray-400 dark:text-gray-500">Credit</p>
+                      <p className="text-green-600 font-semibold">
+                        ${guest.balances?.credit?.toFixed(2) || '0.00'}
+                      </p>
                     </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => {
-                          setSelectedGuest(guest)
-                          setShowCreditModal(true)
-                        }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-700 hover:bg-green-200 rounded-lg text-sm font-medium transition-colors"
-                      >
-                        <IoGiftOutline className="w-4 h-4" />
-                        Manage Credits
-                      </button>
+                    <div className="text-center">
+                      <p className="text-gray-400 dark:text-gray-500">Bonus</p>
+                      <p className="text-purple-600 font-semibold">
+                        ${guest.balances?.bonus?.toFixed(2) || '0.00'}
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-gray-400 dark:text-gray-500">Deposit</p>
+                      <p className="text-blue-600 font-semibold">
+                        ${guest.balances?.deposit?.toFixed(2) || '0.00'}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -539,123 +570,143 @@ export default function GuestProspectsPage() {
                 key={prospect.id}
                 className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700"
               >
-                <div className="flex items-start justify-between gap-4">
-                  {/* Left: Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-medium text-gray-900 dark:text-white truncate">
-                        {prospect.name}
-                      </h3>
-                      {getStatusBadge(prospect.status)}
-                      {prospect.isEmailKnown && (
-                        <span className="text-xs text-yellow-600 bg-yellow-100 px-1.5 py-0.5 rounded">
-                          Existing
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
-                      <span className="flex items-center gap-1">
-                        <IoMailOutline className="w-4 h-4" />
-                        {prospect.email}
-                      </span>
-                      {prospect.phone && (
-                        <span className="flex items-center gap-1">
-                          <IoCallOutline className="w-4 h-4" />
-                          {prospect.phone}
-                        </span>
-                      )}
-                    </div>
+                {/* Header Row: Name + Action Button */}
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <h3 className="font-medium text-gray-900 dark:text-white truncate text-base">
+                    {prospect.name}
+                  </h3>
 
-                    {/* Credit info */}
-                    {prospect.creditAmount > 0 && (
-                      <div className="mt-2 flex items-center gap-2">
-                        <span className="flex items-center gap-1 text-sm text-orange-600 dark:text-orange-400 font-medium">
-                          <IoGiftOutline className="w-4 h-4" />
-                          ${prospect.creditAmount.toFixed(0)} {prospect.creditType}
-                        </span>
-                        {prospect.creditNote && (
-                          <span className="text-xs text-gray-500">"{prospect.creditNote}"</span>
-                        )}
-                        {prospect.creditAppliedAt && (
-                          <span className="text-xs text-green-600 flex items-center gap-1">
-                            <IoCheckmarkCircleOutline className="w-3 h-3" />
-                            Applied
-                          </span>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Timeline */}
-                    {prospect.inviteSentAt && (
-                      <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 space-x-3">
-                        <span>Sent {formatDate(prospect.inviteSentAt)}</span>
-                        {prospect.emailOpenedAt && (
-                          <span className="text-blue-600">
-                            Opened {formatDate(prospect.emailOpenedAt)} ({prospect.emailOpenCount}x)
-                          </span>
-                        )}
-                        {prospect.linkClickedAt && (
-                          <span className="text-purple-600">
-                            Clicked {formatDate(prospect.linkClickedAt)}
-                          </span>
-                        )}
-                        {prospect.convertedAt && (
-                          <span className="text-green-600">
-                            Converted {formatDate(prospect.convertedAt)}
-                          </span>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Verification status if converted */}
-                    {prospect.convertedProfile && (
-                      <div className="mt-2 flex items-center gap-2 text-xs">
-                        {prospect.convertedProfile.stripeIdentityStatus === 'verified' || prospect.convertedProfile.documentsVerified ? (
-                          <span className="text-green-600 flex items-center gap-1">
-                            <IoCheckmarkCircleOutline className="w-3 h-3" />
-                            Verified - Credits Unlocked
-                          </span>
-                        ) : (
-                          <span className="text-yellow-600 flex items-center gap-1">
-                            <IoLockClosedOutline className="w-3 h-3" />
-                            Pending Verification - Credits Locked
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Right: Actions */}
-                  <div className="flex items-center gap-2">
-                    {prospect.status !== 'CONVERTED' && (
+                  {/* Action Button - Always visible */}
+                  <div className="flex-shrink-0">
+                    {prospect.status !== 'CONVERTED' ? (
                       <button
                         onClick={() => sendInvite(prospect.id)}
                         disabled={sendingInvite === prospect.id}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
                           isTokenExpired(prospect.inviteTokenExp) && prospect.inviteSentAt
                             ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
                             : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
                         } disabled:opacity-50`}
                       >
                         {sendingInvite === prospect.id ? (
-                          <IoRefreshOutline className="w-4 h-4 animate-spin" />
+                          <IoRefreshOutline className="w-3.5 h-3.5 animate-spin" />
                         ) : copiedLink === prospect.id ? (
-                          <IoCopyOutline className="w-4 h-4" />
+                          <IoCopyOutline className="w-3.5 h-3.5" />
                         ) : (
-                          <IoMailOutline className="w-4 h-4" />
+                          <IoMailOutline className="w-3.5 h-3.5" />
                         )}
-                        {sendingInvite === prospect.id
-                          ? 'Sending...'
-                          : copiedLink === prospect.id
-                            ? 'Link Copied!'
-                            : prospect.inviteSentAt
-                              ? `Resend (${prospect.inviteResendCount + 1}x)`
-                              : 'Send Invite'
-                        }
+                        <span className="hidden sm:inline">
+                          {sendingInvite === prospect.id
+                            ? 'Sending...'
+                            : copiedLink === prospect.id
+                              ? 'Copied!'
+                              : prospect.inviteSentAt
+                                ? `Resend`
+                                : 'Send'
+                          }
+                        </span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => resendSecurityEmail(prospect.id)}
+                        disabled={resendingSecurityEmail === prospect.id}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors bg-green-100 text-green-700 hover:bg-green-200 disabled:opacity-50 whitespace-nowrap"
+                        title="Send email to set up password"
+                      >
+                        {resendingSecurityEmail === prospect.id ? (
+                          <IoRefreshOutline className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <IoLockClosedOutline className="w-3.5 h-3.5" />
+                        )}
+                        <span className="hidden sm:inline">
+                          {resendingSecurityEmail === prospect.id ? 'Sending...' : 'Security'}
+                        </span>
                       </button>
                     )}
                   </div>
                 </div>
+
+                {/* Status Badges Row */}
+                <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                  {getStatusBadge(prospect.status)}
+                  {prospect.isEmailKnown && (
+                    <span className="text-xs text-yellow-600 bg-yellow-100 px-1.5 py-0.5 rounded font-medium">
+                      Existing
+                    </span>
+                  )}
+                  {prospect.creditAmount > 0 && (
+                    <span className="flex items-center gap-1 text-xs text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded font-medium">
+                      <IoGiftOutline className="w-3 h-3" />
+                      ${prospect.creditAmount.toFixed(0)}
+                    </span>
+                  )}
+                  {prospect.creditAppliedAt && (
+                    <span className="text-xs text-green-600 bg-green-50 px-1.5 py-0.5 rounded font-medium flex items-center gap-0.5">
+                      <IoCheckmarkCircleOutline className="w-3 h-3" />
+                      Applied
+                    </span>
+                  )}
+                </div>
+
+                {/* Contact Info */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-sm text-gray-500 dark:text-gray-400 mb-2">
+                  <span className="flex items-center gap-1 truncate">
+                    <IoMailOutline className="w-4 h-4 flex-shrink-0" />
+                    <span className="truncate">{prospect.email}</span>
+                  </span>
+                  {prospect.phone && (
+                    <span className="flex items-center gap-1">
+                      <IoCallOutline className="w-4 h-4 flex-shrink-0" />
+                      {prospect.phone}
+                    </span>
+                  )}
+                </div>
+
+                {/* Credit Note (if any) */}
+                {prospect.creditNote && prospect.creditAmount > 0 && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400 italic mb-2">
+                    "{prospect.creditNote}"
+                  </p>
+                )}
+
+                {/* Timeline - Stacked on mobile, inline on desktop */}
+                {prospect.inviteSentAt && (
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-500 dark:text-gray-400 mb-2">
+                    <span>Sent {formatDate(prospect.inviteSentAt)}</span>
+                    {prospect.emailOpenedAt && (
+                      <span className="text-blue-600">
+                        Opened {formatDate(prospect.emailOpenedAt)} ({prospect.emailOpenCount}x)
+                      </span>
+                    )}
+                    {prospect.linkClickedAt && (
+                      <span className="text-purple-600">
+                        Clicked {formatDate(prospect.linkClickedAt)}
+                      </span>
+                    )}
+                    {prospect.convertedAt && (
+                      <span className="text-green-600">
+                        Converted {formatDate(prospect.convertedAt)}
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* Verification status if converted */}
+                {prospect.convertedProfile && (
+                  <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
+                    {prospect.convertedProfile.stripeIdentityStatus === 'verified' || prospect.convertedProfile.documentsVerified ? (
+                      <span className="text-xs text-green-600 flex items-center gap-1">
+                        <IoCheckmarkCircleOutline className="w-3.5 h-3.5" />
+                        Verified - Credits Unlocked
+                      </span>
+                    ) : (
+                      <span className="text-xs text-yellow-600 flex items-center gap-1">
+                        <IoLockClosedOutline className="w-3.5 h-3.5" />
+                        Pending Verification - Credits Locked
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>

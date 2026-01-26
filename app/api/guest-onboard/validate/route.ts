@@ -6,6 +6,8 @@ import { prisma } from '@/app/lib/database/prisma'
 import { Prisma } from '@prisma/client'
 import { SignJWT } from 'jose'
 import { nanoid } from 'nanoid'
+import crypto from 'crypto'
+import { generateEmailReference } from '@/app/lib/email/config'
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'fallback-secret-key'
@@ -314,6 +316,52 @@ export async function POST(request: NextRequest) {
         }
       }
     })
+
+    // Send welcome email with link to set password (only for new users)
+    if (isNew && user?.email) {
+      try {
+        const { sendEmail } = await import('@/app/lib/email/sender')
+        const { getGuestWelcomeTemplate } = await import('@/app/lib/email/templates/guest-welcome')
+
+        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://itwhip.com'
+
+        // Generate a set-password token (similar to forgot-password flow)
+        const setPasswordToken = crypto.randomBytes(32).toString('hex')
+        const hashedToken = crypto.createHash('sha256').update(setPasswordToken).digest('hex')
+
+        // Save token to user (expires in 7 days)
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            resetToken: hashedToken,
+            resetTokenExpiry: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+            resetTokenUsed: false
+          }
+        })
+
+        // Generate reference ID upfront so it can be included in the email
+        const emailReferenceId = generateEmailReference('GW')
+
+        const emailData = {
+          guestName: prospect.name,
+          guestEmail: user.email,
+          creditAmount: creditApplied ? prospect.creditAmount : undefined,
+          creditType: prospect.creditType as 'credit' | 'bonus' | 'deposit' | undefined,
+          setPasswordUrl: `${baseUrl}/auth/set-password?token=${setPasswordToken}`,
+          dashboardUrl: `${baseUrl}/dashboard`,
+          supportEmail: 'info@itwhip.com',
+          referenceId: emailReferenceId
+        }
+
+        const { subject, html, text } = getGuestWelcomeTemplate(emailData)
+        await sendEmail(user.email, subject, html, text)
+
+        console.log(`[Guest Onboard] Welcome email sent to: ${user.email} (ref: ${emailReferenceId})`)
+      } catch (emailError) {
+        console.error('[Guest Onboard] Failed to send welcome email:', emailError)
+        // Non-critical - continue with login flow
+      }
+    }
 
     // Generate tokens for new/existing user
     const tokens = await generateGuestTokens(user!)
