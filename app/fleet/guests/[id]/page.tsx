@@ -480,25 +480,25 @@ export default function FleetGuestDetailPage({ params }: { params: Promise<{ id:
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 sm:py-8 lg:px-8">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <button
             onClick={() => {
               router.push('/fleet/guests?key=phoenix-fleet-2847')
             }}
-            className="flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 mb-4"
+            className="flex items-center text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 mb-3 sm:mb-4"
           >
-            <IoArrowBackOutline className="w-5 h-5 mr-2" />
+            <IoArrowBackOutline className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
             Back to Guests
           </button>
 
-          <div className="flex items-start justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="relative w-20 h-20">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="relative w-14 h-14 sm:w-20 sm:h-20 flex-shrink-0">
                 {/* Placeholder always visible as base layer */}
-                <div className="w-20 h-20 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
-                  <span className="text-3xl font-bold text-purple-600 dark:text-purple-400">
+                <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
+                  <span className="text-xl sm:text-3xl font-bold text-purple-600 dark:text-purple-400">
                     {guest.name.charAt(0).toUpperCase()}
                   </span>
                 </div>
@@ -507,33 +507,35 @@ export default function FleetGuestDetailPage({ params }: { params: Promise<{ id:
                   <img
                     src={guest.profilePhotoUrl}
                     alt={guest.name}
-                    className="absolute inset-0 w-20 h-20 rounded-full object-cover"
+                    className="absolute inset-0 w-14 h-14 sm:w-20 sm:h-20 rounded-full object-cover"
                     onError={(e) => {
                       e.currentTarget.style.display = 'none'
                     }}
                   />
                 )}
               </div>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white truncate">
                   {guest.name}
                 </h1>
-                <div className="flex items-center mt-2 space-x-4">
+                <div className="flex flex-col sm:flex-row sm:items-center mt-1 sm:mt-2 gap-1 sm:gap-4">
                   {guest.email && (
-                    <div className="flex items-center text-gray-600 dark:text-gray-400">
-                      <IoMailOutline className="w-4 h-4 mr-1" />
-                      <span className="text-sm">{guest.email}</span>
+                    <div className="flex items-center text-gray-600 dark:text-gray-400 min-w-0">
+                      <IoMailOutline className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 flex-shrink-0" />
+                      <span className="text-xs sm:text-sm truncate">{guest.email}</span>
                     </div>
                   )}
                   <div className="flex items-center text-gray-600 dark:text-gray-400">
-                    <IoLocationOutline className="w-4 h-4 mr-1" />
-                    <span className="text-sm">{guest.city}, {guest.state}</span>
+                    <IoLocationOutline className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 flex-shrink-0" />
+                    <span className="text-xs sm:text-sm">{guest.city}, {guest.state}</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {getSuspensionStatusBadge()}
+            <div className="self-start">
+              {getSuspensionStatusBadge()}
+            </div>
           </div>
         </div>
 
@@ -607,52 +609,56 @@ export default function FleetGuestDetailPage({ params }: { params: Promise<{ id:
         )}
 
         {/* Action Buttons */}
-        <div className="mb-6 flex flex-wrap gap-3">
+        <div className="mb-6 flex flex-wrap gap-2 sm:gap-3">
           {isSuspended ? (
             <button
               onClick={() => openActionModal('unsuspend')}
               disabled={actionLoading !== null}
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+              className="px-3 sm:px-4 py-2 text-xs sm:text-sm bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
             >
-              <IoLockOpenOutline className="w-4 h-4 mr-2" />
-              Reactivate Account
+              <IoLockOpenOutline className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+              <span className="hidden sm:inline">Reactivate Account</span>
+              <span className="sm:hidden">Reactivate</span>
             </button>
           ) : (
             <>
               <button
                 onClick={() => setShowWarningModal(true)}
                 disabled={actionLoading !== null}
-                className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                className="px-3 sm:px-4 py-2 text-xs sm:text-sm bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
               >
-                <IoWarningOutline className="w-4 h-4 mr-2" />
-                Issue Warning
+                <IoWarningOutline className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+                <span className="hidden sm:inline">Issue Warning</span>
+                <span className="sm:hidden">Warn</span>
               </button>
 
               <button
                 onClick={() => openActionModal('suspend', 'SOFT')}
                 disabled={actionLoading !== null}
-                className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                className="px-3 sm:px-4 py-2 text-xs sm:text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
               >
-                <IoAlertCircleOutline className="w-4 h-4 mr-2" />
-                Soft Suspend
+                <IoAlertCircleOutline className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+                <span className="hidden sm:inline">Soft Suspend</span>
+                <span className="sm:hidden">Soft</span>
               </button>
 
               <button
                 onClick={() => openActionModal('suspend', 'HARD')}
                 disabled={actionLoading !== null}
-                className="px-4 py-2 bg-orange-700 hover:bg-orange-800 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                className="px-3 sm:px-4 py-2 text-xs sm:text-sm bg-orange-700 hover:bg-orange-800 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
               >
-                <IoLockClosedOutline className="w-4 h-4 mr-2" />
-                Hard Suspend
+                <IoLockClosedOutline className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+                <span className="hidden sm:inline">Hard Suspend</span>
+                <span className="sm:hidden">Hard</span>
               </button>
 
               <button
                 onClick={() => openActionModal('ban')}
                 disabled={actionLoading !== null}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                className="px-3 sm:px-4 py-2 text-xs sm:text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
               >
-                <IoBanOutline className="w-4 h-4 mr-2" />
-                Ban Guest
+                <IoBanOutline className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+                Ban
               </button>
             </>
           )}
@@ -660,91 +666,95 @@ export default function FleetGuestDetailPage({ params }: { params: Promise<{ id:
           <button
             onClick={handleToggleInstantBook}
             disabled={actionLoading === 'instantbook'}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center ${
+            className={`px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center ${
               guest.canInstantBook
                 ? 'bg-gray-600 hover:bg-gray-700 text-white'
                 : 'bg-blue-600 hover:bg-blue-700 text-white'
             }`}
           >
-            {guest.canInstantBook ? <IoCloseCircleOutline className="w-4 h-4 mr-2" /> : <IoCheckmarkCircleOutline className="w-4 h-4 mr-2" />}
-            {actionLoading === 'instantbook' ? 'Processing...' : guest.canInstantBook ? 'Remove Instant Book' : 'Enable Instant Book'}
+            {guest.canInstantBook ? <IoCloseCircleOutline className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" /> : <IoCheckmarkCircleOutline className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />}
+            <span className="hidden sm:inline">{actionLoading === 'instantbook' ? 'Processing...' : guest.canInstantBook ? 'Remove Instant Book' : 'Enable Instant Book'}</span>
+            <span className="sm:hidden">{actionLoading === 'instantbook' ? '...' : guest.canInstantBook ? 'No IB' : 'IB'}</span>
           </button>
 
           <button
             onClick={handleRequireVerification}
             disabled={actionLoading === 'verification'}
-            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+            className="px-3 sm:px-4 py-2 text-xs sm:text-sm bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
           >
-            <IoWarningOutline className="w-4 h-4 mr-2" />
-            {actionLoading === 'verification' ? 'Processing...' : 'Require Re-verification'}
+            <IoWarningOutline className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+            <span className="hidden sm:inline">{actionLoading === 'verification' ? 'Processing...' : 'Require Re-verification'}</span>
+            <span className="sm:hidden">{actionLoading === 'verification' ? '...' : 'Re-verify'}</span>
           </button>
 
           <Link
             href={`/fleet/guests/${guest.id}/permissions?key=phoenix-fleet-2847`}
-            className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors flex items-center"
+            className="px-3 sm:px-4 py-2 text-xs sm:text-sm bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors flex items-center"
           >
-            <IoSettingsOutline className="w-4 h-4 mr-2" />
-            Manage Permissions
+            <IoSettingsOutline className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+            <span className="hidden sm:inline">Manage Permissions</span>
+            <span className="sm:hidden">Perms</span>
           </Link>
 
           <Link
             href={`/fleet/guests/${guest.id}/documents?key=phoenix-fleet-2847`}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors flex items-center"
+            className="px-3 sm:px-4 py-2 text-xs sm:text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors flex items-center"
           >
-            <IoDocumentTextOutline className="w-4 h-4 mr-2" />
-            View Documents
+            <IoDocumentTextOutline className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+            <span className="hidden sm:inline">View Documents</span>
+            <span className="sm:hidden">Docs</span>
           </Link>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Total Bookings</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{guest.stats.totalBookings}</p>
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Total Bookings</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{guest.stats.totalBookings}</p>
               </div>
-              <IoCarOutline className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+              <IoCarOutline className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 dark:text-blue-400" />
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Completed</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{guest.stats.completedBookings}</p>
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Completed</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{guest.stats.completedBookings}</p>
               </div>
-              <IoCheckmarkCircleOutline className="w-8 h-8 text-green-600 dark:text-green-400" />
+              <IoCheckmarkCircleOutline className="w-6 h-6 sm:w-8 sm:h-8 text-green-600 dark:text-green-400" />
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Reviews</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{guest.stats.totalReviews}</p>
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Reviews</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{guest.stats.totalReviews}</p>
               </div>
-              <IoStarOutline className="w-8 h-8 text-yellow-600 dark:text-yellow-400" />
+              <IoStarOutline className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-600 dark:text-yellow-400" />
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Warnings</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{guest.warningCount}</p>
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Warnings</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{guest.warningCount}</p>
               </div>
-              <IoWarningOutline className="w-8 h-8 text-yellow-600 dark:text-yellow-400" />
+              <IoWarningOutline className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-600 dark:text-yellow-400" />
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-4 col-span-2 sm:col-span-1">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Total Spent</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">${guest.stats.totalSpent.toFixed(0)}</p>
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Total Spent</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">${guest.stats.totalSpent.toFixed(0)}</p>
               </div>
-              <IoCashOutline className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+              <IoCashOutline className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600 dark:text-purple-400" />
             </div>
           </div>
         </div>
@@ -752,7 +762,7 @@ export default function FleetGuestDetailPage({ params }: { params: Promise<{ id:
         {/* Tabs */}
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div className="border-b border-gray-200 dark:border-gray-700">
-            <nav className="flex -mb-px overflow-x-auto">
+            <nav className="flex -mb-px overflow-x-auto scrollbar-hide">
               {[
                 { key: 'overview', label: 'Overview', icon: IoPersonOutline },
                 { key: 'bookings', label: 'Bookings', icon: IoCarOutline, count: guest.bookings.length },
@@ -765,18 +775,19 @@ export default function FleetGuestDetailPage({ params }: { params: Promise<{ id:
                 <button
                   key={tab.key}
                   onClick={() => handleTabChange(tab.key)}
-                  className={`py-4 px-6 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                  className={`py-3 sm:py-4 px-3 sm:px-6 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                     activeTab === tab.key
                       ? 'border-purple-500 text-purple-600 dark:text-purple-400'
                       : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
                   }`}
                 >
                   <div className="flex items-center">
-                    <tab.icon className="w-4 h-4 mr-2" />
-                    {tab.label}
-                    {tab.count !== undefined && ` (${tab.count})`}
+                    <tab.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+                    <span className="hidden xs:inline">{tab.label}</span>
+                    <span className="xs:hidden">{tab.label.slice(0, 3)}</span>
+                    {tab.count !== undefined && <span className="hidden sm:inline ml-1">({tab.count})</span>}
                     {tab.badge !== undefined && tab.badge > 0 && (
-                      <span className="ml-2 px-2 py-0.5 text-xs font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                      <span className="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
                         {tab.badge}
                       </span>
                     )}
@@ -786,7 +797,7 @@ export default function FleetGuestDetailPage({ params }: { params: Promise<{ id:
             </nav>
           </div>
 
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             {/* Overview Tab */}
             {activeTab === 'overview' && (
               <div className="space-y-6">

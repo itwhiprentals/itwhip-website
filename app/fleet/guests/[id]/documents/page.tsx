@@ -6,7 +6,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { 
+import {
   IoArrowBackOutline,
   IoDocumentTextOutline,
   IoCheckmarkCircleOutline,
@@ -20,7 +20,9 @@ import {
   IoCarOutline,
   IoImageOutline,
   IoTimeOutline,
-  IoAlertCircleOutline
+  IoAlertCircleOutline,
+  IoConstructOutline,
+  IoFingerPrintOutline
 } from 'react-icons/io5'
 
 interface Document {
@@ -224,7 +226,7 @@ export default function GuestDocumentsPage({ params }: { params: Promise<{ id: s
     setActionLoading(documentType)
     try {
       const updateData: any = { rejectionReason: reason }
-      
+
       switch (documentType) {
         case 'driversLicense':
           updateData.driversLicenseVerified = false
@@ -253,6 +255,47 @@ export default function GuestDocumentsPage({ params }: { params: Promise<{ id: s
     } catch (error) {
       console.error('Failed to reject document:', error)
       alert('Failed to reject document')
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  const handleAdminOverride = async (enable: boolean) => {
+    const confirmMessage = enable
+      ? 'This will mark the guest as fully verified, bypassing Stripe Identity and document requirements. Only use this if you have manually verified their identity through other means (in-person, phone call, etc.). Continue?'
+      : 'This will remove the admin override and reset all verification status. The guest will need to complete verification again. Continue?'
+
+    if (!confirm(confirmMessage)) return
+
+    setActionLoading('adminOverride')
+    try {
+      const response = await fetch(`/api/fleet/guests/${guestId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-fleet-key': 'phoenix-fleet-2847'
+        },
+        body: JSON.stringify({
+          isVerified: enable,
+          fullyVerified: enable,
+          documentsVerified: enable,
+          adminOverride: enable,
+          adminOverrideBy: enable ? 'Fleet Admin' : null,
+          adminOverrideAt: enable ? new Date().toISOString() : null,
+          reason: enable ? 'Admin override - manual identity verification' : 'Admin override removed'
+        })
+      })
+
+      if (response.ok) {
+        alert(enable ? 'Admin override applied - guest is now verified' : 'Admin override removed')
+        await loadGuest()
+      } else {
+        const data = await response.json()
+        alert(data.error || 'Failed to apply admin override')
+      }
+    } catch (error) {
+      console.error('Failed to apply admin override:', error)
+      alert('Failed to apply admin override')
     } finally {
       setActionLoading(null)
     }
@@ -343,90 +386,88 @@ export default function GuestDocumentsPage({ params }: { params: Promise<{ id: s
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-6xl mx-auto px-4 py-4 sm:px-6 sm:py-8 lg:px-8">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <button
             onClick={() => router.push(`/fleet/guests/${guestId}?key=phoenix-fleet-2847`)}
-            className="flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 mb-4"
+            className="flex items-center text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 mb-3 sm:mb-4"
           >
-            <IoArrowBackOutline className="w-5 h-5 mr-2" />
+            <IoArrowBackOutline className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
             Back to Guest Details
           </button>
 
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                Document Verification
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-2">
-                Review and verify {guest.name}'s identity documents (2 required + insurance optional)
-              </p>
-            </div>
+          <div>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
+              Document Verification
+            </h1>
+            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1 sm:mt-2">
+              Review and verify {guest.name}'s identity documents (2 required + insurance optional)
+            </p>
           </div>
         </div>
 
         {/* Overview Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Uploaded</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Uploaded</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">
                   {uploadedCount}/{totalDocs}
                 </p>
               </div>
-              <IoDocumentTextOutline className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+              <IoDocumentTextOutline className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 dark:text-blue-400" />
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Verified</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Verified</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">
                   {guest.documentsVerified ? 'Yes' : 'No'}
                 </p>
               </div>
-              <IoCheckmarkCircleOutline className="w-8 h-8 text-green-600 dark:text-green-400" />
+              <IoCheckmarkCircleOutline className="w-6 h-6 sm:w-8 sm:h-8 text-green-600 dark:text-green-400" />
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Insurance</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Insurance</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">
                   {hasInsurance ? 'Added' : 'None'}
                 </p>
               </div>
-              <IoShieldCheckmarkOutline className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+              <IoShieldCheckmarkOutline className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600 dark:text-purple-400" />
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Completion</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Completion</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">
                   {completionPercentage}%
                 </p>
               </div>
-              <div className="w-12 h-12 relative">
-                <svg className="transform -rotate-90 w-12 h-12">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 relative">
+                <svg className="transform -rotate-90 w-10 h-10 sm:w-12 sm:h-12">
                   <circle
-                    cx="24"
-                    cy="24"
-                    r="20"
+                    cx="50%"
+                    cy="50%"
+                    r="40%"
                     stroke="currentColor"
                     strokeWidth="4"
                     fill="transparent"
                     className="text-gray-200 dark:text-gray-700"
                   />
                   <circle
-                    cx="24"
-                    cy="24"
-                    r="20"
+                    cx="50%"
+                    cy="50%"
+                    r="40%"
                     stroke="currentColor"
                     strokeWidth="4"
                     fill="transparent"
@@ -437,6 +478,42 @@ export default function GuestDocumentsPage({ params }: { params: Promise<{ id: s
                 </svg>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Admin Override Section */}
+        <div className="mb-6 bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-300 dark:border-amber-700 rounded-lg p-4">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <IoConstructOutline className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="font-semibold text-amber-900 dark:text-amber-100 text-sm sm:text-base">
+                  Admin Override - Identity Verification
+                </h3>
+                <p className="text-xs sm:text-sm text-amber-800 dark:text-amber-300 mt-1">
+                  Bypass Stripe Identity when service is unavailable or you've verified the guest manually.
+                </p>
+                <p className="text-[10px] sm:text-xs text-amber-700 dark:text-amber-400 mt-2">
+                  <strong>Use when:</strong> Stripe outage, in-person verification, corporate accounts, or special circumstances.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => handleAdminOverride(!guest.documentsVerified)}
+              disabled={actionLoading === 'adminOverride'}
+              className={`w-full sm:w-auto px-4 py-2.5 rounded-lg font-medium text-sm transition-colors flex items-center justify-center gap-2 flex-shrink-0 ${
+                guest.documentsVerified
+                  ? 'bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-700 dark:text-red-300'
+                  : 'bg-amber-600 hover:bg-amber-700 text-white'
+              }`}
+            >
+              <IoFingerPrintOutline className="w-4 h-4" />
+              {actionLoading === 'adminOverride'
+                ? 'Processing...'
+                : guest.documentsVerified
+                ? 'Remove Override'
+                : 'Verify Manually'}
+            </button>
           </div>
         </div>
 
@@ -819,14 +896,14 @@ export default function GuestDocumentsPage({ params }: { params: Promise<{ id: s
         </div>
 
         {/* Actions */}
-        <div className="mt-8 flex items-center justify-between">
+        <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <Link
             href={`/fleet/guests/${guestId}/permissions?key=phoenix-fleet-2847`}
-            className="px-6 py-2.5 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors"
+            className="w-full sm:w-auto px-4 sm:px-6 py-2.5 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium text-sm text-center transition-colors"
           >
             Manage Permissions
           </Link>
-          
+
           {requiredUploaded === requiredCount && !guest.documentsVerified && (
             <button
               onClick={() => {
@@ -835,9 +912,9 @@ export default function GuestDocumentsPage({ params }: { params: Promise<{ id: s
                 }
               }}
               disabled={actionLoading === 'all'}
-              className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors flex items-center disabled:opacity-50"
+              className="w-full sm:w-auto px-4 sm:px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium text-sm transition-colors flex items-center justify-center disabled:opacity-50"
             >
-              <IoCheckmarkCircleOutline className="w-5 h-5 mr-2" />
+              <IoCheckmarkCircleOutline className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
               {actionLoading === 'all' ? 'Processing...' : 'Verify All Documents'}
             </button>
           )}
