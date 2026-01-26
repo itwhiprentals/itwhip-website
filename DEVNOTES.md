@@ -2,12 +2,24 @@
 
 ## Recent Fixes (January 2026)
 
+### Two-Factor Authentication (Jan 26)
+- [x] TOTP-based 2FA using `otpauth` library
+- [x] QR code generation for authenticator apps (Google Authenticator, Authy, 1Password)
+- [x] Manual secret entry option for accessibility
+- [x] 10 backup codes generated with Argon2 hashing
+- [x] New endpoints: /api/user/2fa/setup, /api/user/2fa/verify, /api/user/2fa/disable
+- [x] TwoFactorSetupModal component with step-by-step flow
+- [x] DisableTwoFactorModal with password confirmation
+- [x] SecurityTab fully integrated with 2FA enable/disable
+- [x] Confirmation emails sent on 2FA enable/disable
+- [x] Fixed export-data API Prisma relation names (RentalReview, LoginAttempt, Session)
+
 ### Guest Profile Page Redesign (Jan 25)
 - [x] Simplified ProfileHeader: removed stats grid, compact layout with photo/name/badge
 - [x] Consolidated tabs from 7 to 5: Account, Documents, Insurance, Payment, Security
 - [x] Added photo upload section to Account tab with clear guidelines
 - [x] Email/phone change with verification flow (sends link to new email)
-- [x] New SecurityTab: password management, 2FA placeholder, account linking, deletion
+- [x] New SecurityTab: password management, 2FA, account linking, deletion
 - [x] API: Added hasPassword field to detect converted prospects (via invite link)
 - [x] New endpoint: /api/user/set-password for no-password accounts
 - [x] New endpoints: /api/guest/email/change-request, /api/guest/email/verify
