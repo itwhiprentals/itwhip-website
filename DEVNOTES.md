@@ -2,6 +2,15 @@
 
 ## Recent Fixes (January 2026)
 
+### Fleet Guest Admin Override (Jan 26)
+- [x] Admin override capability for identity verification in fleet guest management
+- [x] Override available in /fleet/guests/[id]/documents and /fleet/guests/[id]/permissions
+- [x] Admins can manually verify guests when Stripe Identity unavailable
+- [x] /api/identity/verify now recognizes admin override (documentsVerified, fullyVerified)
+- [x] Guest profile correctly shows "Identity Verified" after admin override
+- [x] DocumentsTab displays "manually verified by our team" for admin-verified users
+- [x] Mobile-optimized all fleet guest pages (Overview, Documents, Permissions)
+
 ### Guest Profile Simplification (Jan 26)
 - [x] Email verification auto-marks when prospects complete onboarding or set password via invite link
 - [x] Documents tab simplified: removed redundant DL/selfie uploads (Stripe Identity handles it)
