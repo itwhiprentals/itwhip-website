@@ -26,7 +26,7 @@ export async function GET(
               orderBy: { takenAt: 'desc' },
               take: 50
             },
-            appeals: {
+            GuestAppeal: {
               orderBy: { submittedAt: 'desc' },
               take: 20
             }
@@ -45,7 +45,7 @@ export async function GET(
             orderBy: { takenAt: 'desc' },
             take: 50
           },
-          appeals: {
+          GuestAppeal: {
             orderBy: { submittedAt: 'desc' },
             take: 20
           }
@@ -70,7 +70,7 @@ export async function GET(
 
     const profile = guest.reviewerProfile
     const moderationActions = profile.moderationHistory
-    const appeals = profile.appeals
+    const appeals = profile.GuestAppeal
 
     // ========== DETERMINE ACCOUNT STATUS ==========
     let accountStatus: 'ACTIVE' | 'WARNED' | 'SOFT_SUSPENDED' | 'HARD_SUSPENDED' | 'BANNED' = 'ACTIVE'
@@ -203,7 +203,7 @@ export async function GET(
         id: profile.id,
         name: guest.name,
         email: guest.email,
-        verified: profile.verified || false,
+        verified: profile.isVerified || false,
         memberSince: guest.createdAt
       }
     }

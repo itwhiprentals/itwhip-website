@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { updateProfileStatus } from '@/lib/helpers/guestProfileStatus'
+import { nanoid } from 'nanoid'
 
 // ============================================================================
 // HELPER TYPES & FUNCTIONS FOR WARNING SYSTEM
@@ -141,7 +142,7 @@ export async function GET(
             lastActive: true
           }
         },
-        bookings: {
+        RentalBooking: {
           include: {
             car: {
               select: {
@@ -169,7 +170,7 @@ export async function GET(
             createdAt: 'desc'
           }
         },
-        reviews: {
+        RentalReview: {
           include: {
             car: {
               select: {
@@ -196,7 +197,7 @@ export async function GET(
           },
           take: 20
         },
-        appeals: {
+        GuestAppeal: {
           orderBy: {
             submittedAt: 'desc'
           },
@@ -204,10 +205,10 @@ export async function GET(
         },
         _count: {
           select: {
-            bookings: true,
-            reviews: true,
+            RentalBooking: true,
+            RentalReview: true,
             moderationHistory: true,
-            appeals: true
+            GuestAppeal: true
           }
         }
       }
@@ -221,17 +222,17 @@ export async function GET(
     }
 
     // Calculate stats
-    const completedBookings = guest.bookings.filter(b => b.status === 'COMPLETED').length
-    const totalSpent = guest.bookings
-      .filter(b => b.status === 'COMPLETED')
-      .reduce((sum, b) => sum + b.totalAmount, 0)
-    
-    const averageRating = guest.reviews.length > 0
-      ? guest.reviews.reduce((sum, r) => sum + r.rating, 0) / guest.reviews.length
+    const completedBookings = guest.RentalBooking.filter((b: any) => b.status === 'COMPLETED').length
+    const totalSpent = guest.RentalBooking
+      .filter((b: any) => b.status === 'COMPLETED')
+      .reduce((sum: number, b: any) => sum + b.totalAmount, 0)
+
+    const averageRating = guest.RentalReview.length > 0
+      ? guest.RentalReview.reduce((sum: number, r: any) => sum + r.rating, 0) / guest.RentalReview.length
       : 0
 
     // Count pending appeals
-    const pendingAppeals = guest.appeals.filter(a => a.status === 'PENDING').length
+    const pendingAppeals = guest.GuestAppeal.filter((a: any) => a.status === 'PENDING').length
 
     // Format response
     const response = {
@@ -282,17 +283,17 @@ export async function GET(
       
       // Stats
       stats: {
-        totalBookings: guest._count.bookings,
+        totalBookings: guest._count.RentalBooking,
         completedBookings,
-        totalReviews: guest._count.reviews,
+        totalReviews: guest._count.RentalReview,
         totalSpent,
         averageRating: Math.round(averageRating * 10) / 10,
         moderationActions: guest._count.moderationHistory,
         pendingAppeals
       },
-      
+
       // Related data
-      bookings: guest.bookings.map(b => ({
+      bookings: guest.RentalBooking.map((b: any) => ({
         id: b.id,
         bookingCode: b.bookingCode,
         car: {
@@ -306,9 +307,9 @@ export async function GET(
         totalAmount: b.totalAmount,
         createdAt: b.createdAt
       })),
-      reviews: guest.reviews,
+      reviews: guest.RentalReview,
       moderationHistory: guest.moderationHistory,
-      appeals: guest.appeals,
+      appeals: guest.GuestAppeal,
       
       createdAt: guest.createdAt,
       updatedAt: guest.updatedAt
@@ -505,7 +506,7 @@ export async function DELETE(
       where: { id },
       include: {
         user: true,
-        bookings: {
+        RentalBooking: {
           select: {
             id: true,
             bookingCode: true,
@@ -558,6 +559,7 @@ export async function DELETE(
           // Create moderation record (for audit trail)
           moderationAction = await tx.guestModeration.create({
             data: {
+              id: nanoid(),
               guestId: id,
               actionType: 'WARNING',
               suspensionLevel: null,
@@ -652,16 +654,17 @@ export async function DELETE(
         const suspensionLevel = ['SOFT', 'HARD'].includes(level) ? level : 'HARD'
         const expirationDate = expiresAt ? new Date(expiresAt) : null
 
-        const activeBookings = guest.bookings.filter(b => 
+        const activeBookings = guest.RentalBooking.filter(b => 
           b.status === 'ACTIVE' && b.endDate > now
         )
-        const futureBookings = guest.bookings.filter(b => 
+        const futureBookings = guest.RentalBooking.filter(b => 
           ['PENDING', 'CONFIRMED'].includes(b.status) && b.startDate > now
         )
 
         await prisma.$transaction(async (tx) => {
           moderationAction = await tx.guestModeration.create({
             data: {
+              id: nanoid(),
               guestId: id,
               actionType: 'SUSPEND',
               suspensionLevel,
@@ -740,13 +743,14 @@ export async function DELETE(
       // BAN - Complete Ban (Unchanged)
       // ========================================================================
       case 'ban':
-        const allFutureBookings = guest.bookings.filter(b => 
+        const allFutureBookings = guest.RentalBooking.filter(b => 
           b.startDate > now || (b.status === 'ACTIVE' && b.endDate > now)
         )
 
         await prisma.$transaction(async (tx) => {
           moderationAction = await tx.guestModeration.create({
             data: {
+              id: nanoid(),
               guestId: id,
               actionType: 'BAN',
               suspensionLevel: 'BANNED',
@@ -828,6 +832,7 @@ export async function DELETE(
         await prisma.$transaction(async (tx) => {
           moderationAction = await tx.guestModeration.create({
             data: {
+              id: nanoid(),
               guestId: id,
               actionType: 'UNSUSPEND',
               suspensionLevel: null,
