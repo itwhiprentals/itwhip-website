@@ -5,6 +5,7 @@ import { verifyRequest } from '@/app/lib/auth/verify-request'
 import { sendEmail } from '@/app/lib/email/send-email'
 import { getClaimNotificationFleetTemplate } from '@/app/lib/email/templates/claim-notification-fleet'
 import { trackActivity } from '@/lib/helpers/guestProfileStatus'
+import { nanoid } from 'nanoid'
 
 // GET /api/guest/claims - List all claims for logged-in guest
 export async function GET(request: NextRequest) {
@@ -81,7 +82,7 @@ export async function GET(request: NextRequest) {
             }
           },
           // Check for existing claims on this booking
-          claims: {
+          Claim: {
             select: {
               id: true,
               status: true,
@@ -93,7 +94,7 @@ export async function GET(request: NextRequest) {
             }
           },
           // Check for TripIssue that needs acknowledgment
-          tripIssue: {
+          TripIssue: {
             select: {
               id: true,
               status: true,
@@ -112,26 +113,26 @@ export async function GET(request: NextRequest) {
       // Process bookings to determine eligibility
       const eligibleBookings = bookings.map(booking => {
         // Find claims on this booking
-        const claimsAgainstGuest = booking.claims.filter(c =>
+        const claimsAgainstGuest = booking.Claim.filter((c: any) =>
           c.filedByRole === null || c.filedByRole === 'HOST' || c.filedByRole === 'FLEET'
         )
-        const claimsFiledByGuest = booking.claims.filter(c =>
+        const claimsFiledByGuest = booking.Claim.filter((c: any) =>
           c.filedByGuestId === profile.id || c.filedByRole === 'GUEST'
         )
 
         // Check if there's an active claim against guest that needs response
-        const pendingClaimAgainstGuest = claimsAgainstGuest.find(c =>
+        const pendingClaimAgainstGuest = claimsAgainstGuest.find((c: any) =>
           !['APPROVED', 'DENIED', 'CLOSED', 'RESOLVED'].includes(c.status) &&
           !c.guestResponseText
         )
 
         // Check if guest already filed a claim for this booking
-        const hasGuestFiledClaim = claimsFiledByGuest.some(c =>
+        const hasGuestFiledClaim = claimsFiledByGuest.some((c: any) =>
           !['DENIED', 'CLOSED'].includes(c.status) // Active or pending claim by guest
         )
 
         // Check for unacknowledged TripIssue from host
-        const tripIssue = booking.tripIssue
+        const tripIssue = booking.TripIssue
         const hasUnacknowledgedTripIssue = tripIssue &&
           tripIssue.hostReportedAt &&
           !tripIssue.guestAcknowledgedAt &&
@@ -378,13 +379,13 @@ export async function GET(request: NextRequest) {
             rating: true
           }
         },
-        policy: {
+        InsurancePolicy: {
           select: {
             tier: true,
             deductible: true
           }
         },
-        damagePhotos: {
+        ClaimDamagePhoto: {
           where: { deletedAt: null },
           orderBy: { order: 'asc' }
         }
@@ -446,7 +447,7 @@ export async function GET(request: NextRequest) {
         },
 
         // Photos
-        damagePhotos: claim.damagePhotos.map(p => ({
+        damagePhotos: claim.ClaimDamagePhoto.map((p: any) => ({
           id: p.id,
           url: p.url,
           caption: p.caption,
@@ -588,7 +589,7 @@ export async function POST(request: NextRequest) {
             email: true
           }
         },
-        insurancePolicy: {
+        InsurancePolicy: {
           select: {
             id: true,
             tier: true,
@@ -596,7 +597,7 @@ export async function POST(request: NextRequest) {
           }
         },
         // Include TripIssue to check for unacknowledged issues
-        tripIssue: {
+        TripIssue: {
           select: {
             id: true,
             status: true,
@@ -630,8 +631,8 @@ export async function POST(request: NextRequest) {
 
     // ========== TRIP ISSUE GUARD ==========
     // Check if there's an unacknowledged TripIssue from host
-    if (booking.tripIssue) {
-      const tripIssue = booking.tripIssue
+    if (booking.TripIssue) {
+      const tripIssue = booking.TripIssue
       const hasUnacknowledgedTripIssue =
         tripIssue.hostReportedAt &&
         !tripIssue.guestAcknowledgedAt &&
@@ -671,7 +672,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if booking has an insurance policy
-    if (!booking.insurancePolicy) {
+    if (!booking.InsurancePolicy) {
       return NextResponse.json(
         { error: 'This booking does not have an insurance policy' },
         { status: 400 }
@@ -681,9 +682,10 @@ export async function POST(request: NextRequest) {
     // Create the claim
     const claim = await prisma.claim.create({
       data: {
+        id: nanoid(),
         bookingId,
         hostId: booking.hostId,
-        policyId: booking.insurancePolicy.id,
+        policyId: booking.InsurancePolicy.id,
         type: claimType,
         description: description.trim(),
         incidentDate: new Date(incidentDate),
@@ -693,7 +695,8 @@ export async function POST(request: NextRequest) {
         filedByGuestId: profile.id,
         filedByRole: 'GUEST',
         guestAtFault: false, // Default - not guest's fault if they're filing
-        deductible: booking.insurancePolicy.deductible
+        deductible: booking.InsurancePolicy.deductible,
+        updatedAt: new Date()
       }
     })
 
@@ -712,6 +715,7 @@ export async function POST(request: NextRequest) {
     // Create notification for host
     await prisma.hostNotification.create({
       data: {
+        id: nanoid(),
         hostId: booking.hostId,
         type: 'GUEST_CLAIM_FILED',
         category: 'claim',
@@ -720,7 +724,8 @@ export async function POST(request: NextRequest) {
         status: 'PENDING',
         priority: 'HIGH',
         actionUrl: `/host/claims/${claim.id}`,
-        actionLabel: 'View Claim'
+        actionLabel: 'View Claim',
+        updatedAt: new Date()
       }
     })
 
@@ -756,13 +761,17 @@ export async function POST(request: NextRequest) {
       // Don't fail the claim creation if email fails
     }
 
-    // Track activity
+    // Track activity for guest profile status
     try {
-      await trackActivity(profile.id, 'CLAIM_FILED', {
-        claimId: claim.id,
-        bookingId,
-        claimType,
-        filedBy: 'GUEST'
+      await trackActivity(profile.id, {
+        action: 'CLAIM_FILED' as any,
+        description: `Filed a ${claimType.toLowerCase().replace('_', ' ')} claim for booking ${booking.bookingCode}`,
+        metadata: {
+          claimId: claim.id,
+          bookingId,
+          claimType,
+          filedBy: 'GUEST'
+        }
       })
     } catch (activityError) {
       console.error('Failed to track claim activity:', activityError)
@@ -771,6 +780,7 @@ export async function POST(request: NextRequest) {
     // Log activity
     await prisma.activityLog.create({
       data: {
+        id: nanoid(),
         userId: userId || profile.id,
         action: 'guest_claim_filed',
         entityType: 'claim',
