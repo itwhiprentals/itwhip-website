@@ -21,13 +21,17 @@ import {
   IoKeyOutline
 } from 'react-icons/io5'
 import DeleteAccountModal from '../DeleteAccountModal'
+import TwoFactorSetupModal from '../TwoFactorSetupModal'
+import DisableTwoFactorModal from '../DisableTwoFactorModal'
 
 interface SecurityTabProps {
   userEmail?: string
   userStatus?: 'ACTIVE' | 'PENDING_DELETION' | 'DELETED' | 'SUSPENDED'
   deletionScheduledFor?: string | null
   hasPassword?: boolean
+  twoFactorEnabled?: boolean
   onPasswordSet?: () => void // Callback when password is successfully set
+  onRefresh?: () => void // Callback to refresh profile data
 }
 
 export default function SecurityTab({
@@ -35,14 +39,19 @@ export default function SecurityTab({
   userStatus = 'ACTIVE',
   deletionScheduledFor,
   hasPassword = true,
-  onPasswordSet
+  twoFactorEnabled = false,
+  onPasswordSet,
+  onRefresh
 }: SecurityTabProps) {
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [showSetPasswordModal, setShowSetPasswordModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [show2FASetupModal, setShow2FASetupModal] = useState(false)
+  const [show2FADisableModal, setShow2FADisableModal] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
   const [exportError, setExportError] = useState('')
   const [isCancellingDeletion, setIsCancellingDeletion] = useState(false)
+  const [is2FAEnabled, setIs2FAEnabled] = useState(twoFactorEnabled)
 
   // Change Password form state
   const [passwordForm, setPasswordForm] = useState({
@@ -334,19 +343,48 @@ export default function SecurityTab({
           )}
 
           {/* Two-Factor Authentication */}
-          <button className="w-full text-left p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-0.5">
-                  Two-Factor Authentication
-                </h4>
-                <p className="text-xs text-gray-600 dark:text-gray-400">
-                  Add an extra layer of security to your account
-                </p>
+          {is2FAEnabled ? (
+            <div className="w-full p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-0.5">
+                      Two-Factor Authentication
+                    </h4>
+                    <span className="px-1.5 py-0.5 text-[10px] font-medium bg-green-200 dark:bg-green-800 text-green-700 dark:text-green-300 rounded">
+                      Enabled
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    Your account is protected with an authenticator app
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShow2FADisableModal(true)}
+                  className="px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                >
+                  Disable
+                </button>
               </div>
-              <span className="text-xs text-gray-500 dark:text-gray-400 mr-2">Coming soon</span>
             </div>
-          </button>
+          ) : (
+            <button
+              onClick={() => setShow2FASetupModal(true)}
+              className="w-full text-left p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-0.5">
+                    Two-Factor Authentication
+                  </h4>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    Add an extra layer of security with authenticator apps
+                  </p>
+                </div>
+                <IoChevronForwardOutline className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              </div>
+            </button>
+          )}
 
           {/* Account Linking */}
           <Link
@@ -886,6 +924,26 @@ export default function SecurityTab({
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
         userEmail={userEmail}
+      />
+
+      {/* 2FA Setup Modal */}
+      <TwoFactorSetupModal
+        isOpen={show2FASetupModal}
+        onClose={() => setShow2FASetupModal(false)}
+        onSuccess={() => {
+          setIs2FAEnabled(true)
+          onRefresh?.()
+        }}
+      />
+
+      {/* 2FA Disable Modal */}
+      <DisableTwoFactorModal
+        isOpen={show2FADisableModal}
+        onClose={() => setShow2FADisableModal(false)}
+        onSuccess={() => {
+          setIs2FAEnabled(false)
+          onRefresh?.()
+        }}
       />
     </div>
   )

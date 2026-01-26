@@ -41,7 +41,8 @@ export async function GET(request: NextRequest) {
             avatar: true,
             status: true,
             deletionScheduledFor: true,
-            passwordHash: true
+            passwordHash: true,
+            twoFactorEnabled: true
           }
         }
       }
@@ -192,7 +193,8 @@ export async function GET(request: NextRequest) {
       driverLicenseExpiry: profileData.driverLicenseExpiry,
 
       // Security - detect if user has a password set (for converted prospects)
-      hasPassword: !!(profileData.user?.passwordHash && profileData.user.passwordHash.length > 0)
+      hasPassword: !!(profileData.user?.passwordHash && profileData.user.passwordHash.length > 0),
+      twoFactorEnabled: profileData.user?.twoFactorEnabled ?? false
     }
 
     // 🔍 DEBUG LOGGING - Remove after testing

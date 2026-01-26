@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { UserDataPdfGenerator } from '@/app/lib/pdf/userDataPdfGenerator'
+import { nanoid } from 'nanoid'
 
 // Helper to get user ID from JWT
 async function getUserFromToken(req: NextRequest): Promise<string | null> {
@@ -94,7 +95,7 @@ export async function GET(req: NextRequest) {
         reviewerProfile: {
           select: {
             id: true,
-            reviews: {
+            RentalReview: {
               select: {
                 id: true,
                 rating: true,
@@ -127,7 +128,7 @@ export async function GET(req: NextRequest) {
           }
         },
         // Login history
-        loginAttempts: {
+        LoginAttempt: {
           select: {
             id: true,
             ipAddress: true,
@@ -139,7 +140,7 @@ export async function GET(req: NextRequest) {
           take: 50
         },
         // Sessions
-        sessions: {
+        Session: {
           select: {
             id: true,
             ipAddress: true,
@@ -164,13 +165,13 @@ export async function GET(req: NextRequest) {
       exportDate: new Date().toISOString(),
       account: {
         id: user.id,
-        email: user.email,
+        email: user.email || '',
         name: user.name,
         phone: maskPhone(user.phone),
         avatarUrl: user.avatar,
         role: user.role,
         status: user.status,
-        emailVerified: user.emailVerified,
+        emailVerified: user.emailVerified ?? false,
         phoneVerified: user.phoneVerified,
         memberSince: user.createdAt,
         lastUpdated: user.updatedAt,
@@ -185,7 +186,7 @@ export async function GET(req: NextRequest) {
         vehicle: booking.car ? `${booking.car.year} ${booking.car.make} ${booking.car.model}` : null,
         createdAt: booking.createdAt
       })),
-      reviews: user.reviewerProfile?.reviews.map(review => ({
+      reviews: user.reviewerProfile?.RentalReview.map(review => ({
         id: review.id,
         rating: review.rating,
         title: review.title,
@@ -203,13 +204,13 @@ export async function GET(req: NextRequest) {
         addedOn: pm.createdAt
       })),
       securityLog: {
-        recentLoginAttempts: user.loginAttempts.map(attempt => ({
+        recentLoginAttempts: user.LoginAttempt.map(attempt => ({
           ipAddress: attempt.ipAddress,
           device: attempt.userAgent,
           successful: attempt.success,
           timestamp: attempt.timestamp
         })),
-        activeSessions: user.sessions.map(session => ({
+        activeSessions: user.Session.map(session => ({
           id: session.id,
           ipAddress: session.ipAddress,
           device: session.userAgent,
@@ -228,6 +229,7 @@ export async function GET(req: NextRequest) {
     try {
       await prisma.dataExportLog.create({
         data: {
+          id: nanoid(),
           userId,
           status: 'completed',
           completedAt: new Date(),
@@ -243,7 +245,7 @@ export async function GET(req: NextRequest) {
     // Return as downloadable PDF file
     const fileName = `ItWhip-My-Data-${new Date().toISOString().split('T')[0]}.pdf`
 
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(new Uint8Array(pdfBuffer), {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',

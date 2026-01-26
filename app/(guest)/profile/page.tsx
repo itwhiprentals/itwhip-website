@@ -29,6 +29,10 @@ interface GuestProfile {
   status?: 'ACTIVE' | 'PENDING_DELETION' | 'DELETED' | 'SUSPENDED'
   deletionScheduledFor?: string | null
 
+  // Security
+  hasPassword?: boolean
+  twoFactorEnabled?: boolean
+
   // Emergency Contact
   emergencyContactName?: string
   emergencyContactPhone?: string
@@ -485,6 +489,10 @@ function GuestProfileContent() {
               userEmail={profile.email}
               userStatus={profile.status}
               deletionScheduledFor={profile.deletionScheduledFor}
+              hasPassword={profile.hasPassword}
+              twoFactorEnabled={profile.twoFactorEnabled}
+              onPasswordSet={fetchProfile}
+              onRefresh={fetchProfile}
             />
           )}
           </div>
