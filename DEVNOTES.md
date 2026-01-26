@@ -14,6 +14,18 @@
 - [x] Confirmation emails sent on 2FA enable/disable
 - [x] Fixed export-data API Prisma relation names (RentalReview, LoginAttempt, Session)
 
+### Token-Based Password Setup for Converted Guests (Jan 26)
+- [x] New `/auth/set-password` page for setting initial password via token
+- [x] Light/dark mode toggle with localStorage persistence
+- [x] Password strength indicator (weak/medium/strong)
+- [x] New `/api/auth/set-password` endpoint for token validation
+- [x] Token generation in guest-onboard/validate route when sending welcome email
+- [x] New guest-welcome email template matching prospect invitation layout
+- [x] Resend security email button in fleet guest-prospects admin panel
+- [x] Email reference ID included in all security setup emails
+- [x] 7-day token expiration for password setup links
+- [x] Reuses resetToken/resetTokenExpiry fields from User model
+
 ### Guest Profile Page Redesign (Jan 25)
 - [x] Simplified ProfileHeader: removed stats grid, compact layout with photo/name/badge
 - [x] Consolidated tabs from 7 to 5: Account, Documents, Insurance, Payment, Security
