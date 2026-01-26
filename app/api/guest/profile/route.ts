@@ -40,7 +40,8 @@ export async function GET(request: NextRequest) {
             email: true,
             avatar: true,
             status: true,
-            deletionScheduledFor: true
+            deletionScheduledFor: true,
+            passwordHash: true
           }
         }
       }
@@ -188,7 +189,10 @@ export async function GET(request: NextRequest) {
       // Driver License Info
       driverLicenseNumber: profileData.driverLicenseNumber,
       driverLicenseState: profileData.driverLicenseState,
-      driverLicenseExpiry: profileData.driverLicenseExpiry
+      driverLicenseExpiry: profileData.driverLicenseExpiry,
+
+      // Security - detect if user has a password set (for converted prospects)
+      hasPassword: !!(profileData.user?.passwordHash && profileData.user.passwordHash.length > 0)
     }
 
     // 🔍 DEBUG LOGGING - Remove after testing

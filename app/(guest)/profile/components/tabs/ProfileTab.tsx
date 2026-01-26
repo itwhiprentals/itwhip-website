@@ -1,8 +1,25 @@
 // app/(guest)/profile/components/tabs/ProfileTab.tsx
+// Also known as "Account" tab - includes photo upload, personal info, preferences
 'use client'
 
 import { useState, useRef, useMemo } from 'react'
-import { IoSaveOutline, IoCloseOutline, IoPencilOutline, IoCameraOutline, IoAlertCircleOutline, IoScanOutline } from 'react-icons/io5'
+import {
+  IoSaveOutline,
+  IoCloseOutline,
+  IoPencilOutline,
+  IoCameraOutline,
+  IoAlertCircleOutline,
+  IoScanOutline,
+  IoPersonCircleOutline,
+  IoTrashOutline,
+  IoNotificationsOutline,
+  IoMailOutline,
+  IoChatbubbleOutline,
+  IoPhonePortraitOutline,
+  IoGlobeOutline,
+  IoCheckmarkCircleOutline,
+  IoSendOutline
+} from 'react-icons/io5'
 import Image from 'next/image'
 import DriverLicenseScanner, { type DriverLicenseData } from '@/app/components/DriverLicenseScanner'
 
@@ -24,6 +41,16 @@ interface ProfileTabProps {
     driverLicenseNumber?: string
     driverLicenseState?: string
     driverLicenseExpiry?: string
+    profilePhoto?: string
+    // Verification status
+    emailVerified?: boolean
+    phoneVerified?: boolean
+    // Preferences (from Settings)
+    emailNotifications?: boolean
+    smsNotifications?: boolean
+    pushNotifications?: boolean
+    preferredLanguage?: string
+    preferredCurrency?: string
   }
   formData: {
     firstName: string
@@ -41,13 +68,22 @@ interface ProfileTabProps {
     driverLicenseNumber: string
     driverLicenseState: string
     driverLicenseExpiry: string
+    // Preferences
+    emailNotifications: boolean
+    smsNotifications: boolean
+    pushNotifications: boolean
+    preferredLanguage: string
+    preferredCurrency: string
   }
   editMode: boolean
   saving: boolean
+  uploadingPhoto?: boolean
   onEditToggle: () => void
   onSave: () => void
   onCancel: () => void
   onFormChange: (data: Partial<ProfileTabProps['formData']>) => void
+  onPhotoUpload?: (file: File) => void
+  onPhotoRemove?: () => void
 }
 
 // Helper to format phone number as +1 (XXX) XXX-XXXX
@@ -96,17 +132,73 @@ const RELATIONSHIPS = [
   'Child', 'Friend', 'Other'
 ]
 
+const LANGUAGES = [
+  { code: 'en', name: 'English' },
+  { code: 'es', name: 'Español (Spanish)' },
+  { code: 'fr', name: 'Français (French)' },
+  { code: 'de', name: 'Deutsch (German)' },
+  { code: 'zh', name: '中文 (Chinese)' },
+  { code: 'ja', name: '日本語 (Japanese)' },
+  { code: 'ko', name: '한국어 (Korean)' }
+]
+
+const CURRENCIES = [
+  { code: 'USD', symbol: '$', name: 'US Dollar' },
+  { code: 'EUR', symbol: '€', name: 'Euro' },
+  { code: 'GBP', symbol: '£', name: 'British Pound' },
+  { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' },
+  { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
+  { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
+  { code: 'CNY', symbol: '¥', name: 'Chinese Yuan' }
+]
+
 export default function ProfileTab({
   profile,
   formData,
   editMode,
   saving,
+  uploadingPhoto = false,
   onEditToggle,
   onSave,
   onCancel,
-  onFormChange
+  onFormChange,
+  onPhotoUpload,
+  onPhotoRemove
 }: ProfileTabProps) {
   const [showLicenseScanner, setShowLicenseScanner] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Bottom sheet states for email/phone changes
+  const [showEmailSheet, setShowEmailSheet] = useState(false)
+  const [showPhoneSheet, setShowPhoneSheet] = useState(false)
+  const [newEmail, setNewEmail] = useState('')
+  const [newPhone, setNewPhone] = useState('')
+  const [emailSending, setEmailSending] = useState(false)
+  const [phoneSaving, setPhoneSaving] = useState(false)
+  const [emailSent, setEmailSent] = useState(false)
+  const [phoneSuccess, setPhoneSuccess] = useState(false)
+  const [sheetError, setSheetError] = useState('')
+
+  const handlePhotoClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file (JPG, PNG)')
+        return
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image must be less than 5MB')
+        return
+      }
+      onPhotoUpload?.(file)
+    }
+    // Reset input to allow re-selecting same file
+    if (e.target) e.target.value = ''
+  }
 
   // Handle scanned license data
   const handleLicenseScan = (data: DriverLicenseData) => {
@@ -176,8 +268,168 @@ export default function ProfileTab({
     })
   }
 
+  // Open email change sheet
+  const openEmailSheet = () => {
+    setNewEmail('')
+    setEmailSent(false)
+    setSheetError('')
+    setShowEmailSheet(true)
+  }
+
+  // Open phone change sheet
+  const openPhoneSheet = () => {
+    setNewPhone(profile.phone || '')
+    setPhoneSuccess(false)
+    setSheetError('')
+    setShowPhoneSheet(true)
+  }
+
+  // Handle email change request - sends verification email
+  const handleEmailChangeRequest = async () => {
+    if (!newEmail.trim()) {
+      setSheetError('Please enter a new email address')
+      return
+    }
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(newEmail)) {
+      setSheetError('Please enter a valid email address')
+      return
+    }
+    if (newEmail.toLowerCase() === profile.email.toLowerCase()) {
+      setSheetError('New email must be different from current email')
+      return
+    }
+
+    setEmailSending(true)
+    setSheetError('')
+    try {
+      const response = await fetch('/api/guest/email/change-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ newEmail })
+      })
+      const data = await response.json()
+      if (response.ok && data.success) {
+        setEmailSent(true)
+      } else {
+        setSheetError(data.error || 'Failed to send verification email')
+      }
+    } catch {
+      setSheetError('Failed to send verification email. Please try again.')
+    } finally {
+      setEmailSending(false)
+    }
+  }
+
+  // Handle phone number change - direct update (no verification for now)
+  const handlePhoneUpdate = async () => {
+    const formattedPhone = formatPhoneNumber(newPhone)
+    if (!formattedPhone || formattedPhone.length < 10) {
+      setSheetError('Please enter a valid phone number')
+      return
+    }
+
+    setPhoneSaving(true)
+    setSheetError('')
+    try {
+      const response = await fetch('/api/guest/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ phone: formattedPhone })
+      })
+      const data = await response.json()
+      if (response.ok && data.success) {
+        setPhoneSuccess(true)
+        // Update the form data
+        onFormChange({ phone: formattedPhone })
+        // Close after a short delay
+        setTimeout(() => {
+          setShowPhoneSheet(false)
+          setPhoneSuccess(false)
+        }, 1500)
+      } else {
+        setSheetError(data.error || 'Failed to update phone number')
+      }
+    } catch {
+      setSheetError('Failed to update phone number. Please try again.')
+    } finally {
+      setPhoneSaving(false)
+    }
+  }
+
   return (
     <div>
+      {/* Profile Photo Section */}
+      <div className="mb-4">
+        <div className="flex items-center gap-3">
+          {/* Current Photo - CIRCULAR - Smaller */}
+          <div className="relative flex-shrink-0">
+            <div
+              className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-200 dark:border-gray-700 cursor-pointer group"
+              onClick={handlePhotoClick}
+            >
+              {profile.profilePhoto ? (
+                <Image
+                  src={profile.profilePhoto}
+                  alt={profile.name}
+                  width={64}
+                  height={64}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-green-500 to-blue-600 flex items-center justify-center">
+                  <IoPersonCircleOutline className="w-8 h-8 text-white/80" />
+                </div>
+              )}
+              {/* Hover overlay */}
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-full">
+                {uploadingPhoto ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                ) : (
+                  <IoCameraOutline className="w-5 h-5 text-white" />
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Name & Age Display */}
+          <div className="flex-1 min-w-0">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white truncate">
+              {profile.name || 'Guest'}
+            </h2>
+            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+              {age !== null && <span>{age} years old</span>}
+              <span>•</span>
+              <span className="cursor-pointer hover:text-green-600" onClick={handlePhotoClick}>
+                Tap photo to {profile.profilePhoto ? 'change' : 'add'}
+              </span>
+            </div>
+            {profile.profilePhoto && onPhotoRemove && (
+              <button
+                onClick={onPhotoRemove}
+                disabled={uploadingPhoto}
+                className="mt-1 text-xs text-red-500 hover:text-red-600 flex items-center gap-1"
+              >
+                <IoTrashOutline className="w-3 h-3" />
+                Remove
+              </button>
+            )}
+          </div>
+
+          {/* Hidden File Input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+        </div>
+      </div>
+
       {/* Phone Missing Banner */}
       {phoneMissing && (
         <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border-2 border-red-300 dark:border-red-700 rounded-lg shadow-sm">
@@ -196,46 +448,45 @@ export default function ProfileTab({
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
+      <div className="mb-4">
+        <div className="flex items-center justify-between">
           <h2 className="text-base font-semibold text-gray-900 dark:text-white">Personal Information</h2>
-          <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
-            Update your profile and emergency contact
-          </p>
+          {!editMode && (
+            <button
+              onClick={onEditToggle}
+              className="flex items-center gap-1 px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-[10px] font-medium rounded-md transition-colors"
+            >
+              <IoPencilOutline className="w-3 h-3" />
+              <span>Edit</span>
+            </button>
+          )}
         </div>
-
-        {!editMode && (
-          <button
-            onClick={onEditToggle}
-            className="flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition-colors"
-          >
-            <IoPencilOutline className="w-3.5 h-3.5" />
-            <span>Edit</span>
-          </button>
-        )}
+        <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+          Update your profile and emergency contact
+        </p>
       </div>
 
       {/* Driver License Section - First for easy access */}
       <div className="mb-6">
-        <div className="flex items-center justify-between mb-3">
-          <div>
+        <div className="mb-3">
+          <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
               Driver License Information
             </h3>
-            <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
-              Required for vehicle rentals and identity verification
-            </p>
+            {editMode && (
+              <button
+                type="button"
+                onClick={() => setShowLicenseScanner(true)}
+                className="flex items-center gap-1 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-medium rounded-md transition-colors"
+              >
+                <IoScanOutline className="w-3 h-3" />
+                Scan License
+              </button>
+            )}
           </div>
-          {editMode && (
-            <button
-              type="button"
-              onClick={() => setShowLicenseScanner(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors"
-            >
-              <IoScanOutline className="w-3.5 h-3.5" />
-              Scan License
-            </button>
-          )}
+          <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+            Required for vehicle rentals and identity verification
+          </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -363,16 +614,32 @@ export default function ProfileTab({
             )}
           </div>
 
-          {/* Email (Read-only) */}
+          {/* Email Address */}
           <div>
             <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-              Email Address
+              Email Address <span className="text-red-500">*</span>
             </label>
-            <p className="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-600 dark:text-gray-400 shadow-sm">
-              {profile.email}
-            </p>
+            <div className="relative">
+              <p className="px-3 py-2 pr-20 text-sm bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white shadow-sm">
+                {profile.email}
+              </p>
+              <span className={`absolute right-2 top-1/2 -translate-y-1/2 text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                profile.emailVerified
+                  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                  : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+              }`}>
+                {profile.emailVerified ? 'Verified' : 'Not Verified'}
+              </span>
+            </div>
             <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">
-              Contact support to change your email
+              To change your email,{' '}
+              <button
+                type="button"
+                onClick={openEmailSheet}
+                className="text-green-600 dark:text-green-400 hover:underline"
+              >
+                click here
+              </button>
             </p>
           </div>
 
@@ -394,16 +661,39 @@ export default function ProfileTab({
                 placeholder="+1 (555) 123-4567"
               />
             ) : (
-              <p className={`px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 border rounded-lg shadow-sm ${
-                phoneMissing
-                  ? 'border-2 border-red-500 dark:border-red-500 text-red-500'
-                  : 'border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white'
-              }`}>
-                {profile.phone ? formatPhoneNumber(profile.phone) : <span className="text-red-500">Not set - Required</span>}
-              </p>
+              <div className="relative">
+                <p className={`px-3 py-2 pr-20 text-sm bg-gray-100 dark:bg-gray-800 border rounded-lg shadow-sm ${
+                  phoneMissing
+                    ? 'border-2 border-red-500 dark:border-red-500 text-red-500'
+                    : 'border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white'
+                }`}>
+                  {profile.phone ? formatPhoneNumber(profile.phone) : <span className="text-red-500">Not set - Required</span>}
+                </p>
+                {profile.phone && (
+                  <span className={`absolute right-2 top-1/2 -translate-y-1/2 text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                    profile.phoneVerified
+                      ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                      : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                  }`}>
+                    {profile.phoneVerified ? 'Verified' : 'Not Verified'}
+                  </span>
+                )}
+              </div>
             )}
             {phoneMissing && editMode && (
               <p className="text-[10px] text-red-500 mt-1">Phone number is required</p>
+            )}
+            {!editMode && (
+              <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">
+                To change your phone number,{' '}
+                <button
+                  type="button"
+                  onClick={openPhoneSheet}
+                  className="text-green-600 dark:text-green-400 hover:underline"
+                >
+                  click here
+                </button>
+              </p>
             )}
           </div>
 
@@ -602,6 +892,152 @@ export default function ProfileTab({
         </div>
       </div>
 
+      {/* Preferences Section */}
+      <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Preferences</h3>
+
+        {/* Notification Preferences */}
+        <div className="mb-4">
+          <h4 className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1.5">
+            <IoNotificationsOutline className="w-4 h-4" />
+            Notification Settings
+          </h4>
+          <div className="space-y-2">
+            {/* Email Notifications */}
+            <label className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800">
+              <div className="flex items-center gap-2">
+                <IoMailOutline className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                <span className="text-sm text-gray-900 dark:text-white">Email Notifications</span>
+              </div>
+              {editMode ? (
+                <input
+                  type="checkbox"
+                  checked={formData.emailNotifications}
+                  onChange={(e) => onFormChange({ emailNotifications: e.target.checked })}
+                  className="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                />
+              ) : (
+                <span className={`text-xs px-2 py-0.5 rounded-full ${
+                  profile.emailNotifications !== false
+                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                }`}>
+                  {profile.emailNotifications !== false ? 'On' : 'Off'}
+                </span>
+              )}
+            </label>
+
+            {/* SMS Notifications */}
+            <label className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800">
+              <div className="flex items-center gap-2">
+                <IoChatbubbleOutline className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                <span className="text-sm text-gray-900 dark:text-white">SMS Notifications</span>
+              </div>
+              {editMode ? (
+                <input
+                  type="checkbox"
+                  checked={formData.smsNotifications}
+                  onChange={(e) => onFormChange({ smsNotifications: e.target.checked })}
+                  className="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                />
+              ) : (
+                <span className={`text-xs px-2 py-0.5 rounded-full ${
+                  profile.smsNotifications !== false
+                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                }`}>
+                  {profile.smsNotifications !== false ? 'On' : 'Off'}
+                </span>
+              )}
+            </label>
+
+            {/* Push Notifications */}
+            <label className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800">
+              <div className="flex items-center gap-2">
+                <IoPhonePortraitOutline className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                <span className="text-sm text-gray-900 dark:text-white">Push Notifications</span>
+              </div>
+              {editMode ? (
+                <input
+                  type="checkbox"
+                  checked={formData.pushNotifications}
+                  onChange={(e) => onFormChange({ pushNotifications: e.target.checked })}
+                  className="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                />
+              ) : (
+                <span className={`text-xs px-2 py-0.5 rounded-full ${
+                  profile.pushNotifications !== false
+                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                }`}>
+                  {profile.pushNotifications !== false ? 'On' : 'Off'}
+                </span>
+              )}
+            </label>
+          </div>
+        </div>
+
+        {/* Language & Currency */}
+        <div>
+          <h4 className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1.5">
+            <IoGlobeOutline className="w-4 h-4" />
+            Language & Currency
+          </h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {/* Language */}
+            <div>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+                Preferred Language
+              </label>
+              {editMode ? (
+                <select
+                  value={formData.preferredLanguage}
+                  onChange={(e) => onFormChange({ preferredLanguage: e.target.value })}
+                  className="w-full px-3 py-2 text-sm border border-gray-400 dark:border-gray-500 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
+                >
+                  {LANGUAGES.map((lang) => (
+                    <option key={lang.code} value={lang.code}>
+                      {lang.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <p className="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white shadow-sm">
+                  {LANGUAGES.find(l => l.code === (profile.preferredLanguage || 'en'))?.name || 'English'}
+                </p>
+              )}
+            </div>
+
+            {/* Currency */}
+            <div>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+                Preferred Currency
+              </label>
+              {editMode ? (
+                <select
+                  value={formData.preferredCurrency}
+                  onChange={(e) => onFormChange({ preferredCurrency: e.target.value })}
+                  className="w-full px-3 py-2 text-sm border border-gray-400 dark:border-gray-500 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
+                >
+                  {CURRENCIES.map((curr) => (
+                    <option key={curr.code} value={curr.code}>
+                      {curr.symbol} {curr.code} - {curr.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <p className="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white shadow-sm">
+                  {(() => {
+                    const curr = CURRENCIES.find(c => c.code === (profile.preferredCurrency || 'USD'))
+                    return curr ? `${curr.symbol} ${curr.code} - ${curr.name}` : '$ USD - US Dollar'
+                  })()}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Action Buttons */}
       {editMode && (
         <div className="flex items-center justify-end gap-2 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
@@ -644,6 +1080,205 @@ export default function ProfileTab({
           onScan={handleLicenseScan}
           onClose={() => setShowLicenseScanner(false)}
         />
+      )}
+
+      {/* Email Change Bottom Sheet */}
+      {showEmailSheet && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => !emailSending && setShowEmailSheet(false)}
+          />
+          {/* Sheet */}
+          <div className="relative w-full max-w-md bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl shadow-xl max-h-[90vh] overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Change Email</h3>
+              <button
+                onClick={() => setShowEmailSheet(false)}
+                disabled={emailSending}
+                className="p-1 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+              >
+                <IoCloseOutline className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-4 space-y-4">
+              {emailSent ? (
+                <div className="text-center py-6">
+                  <IoCheckmarkCircleOutline className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                  <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                    Verification Email Sent
+                  </h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    We've sent a verification link to <strong>{newEmail}</strong>. Please check your inbox and click the link to verify your new email address.
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500">
+                    The link will expire in 24 hours.
+                  </p>
+                  <button
+                    onClick={() => setShowEmailSheet(false)}
+                    className="mt-6 px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium"
+                  >
+                    Done
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      Current email: <strong>{profile.email}</strong>
+                    </p>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      New Email Address
+                    </label>
+                    <input
+                      type="email"
+                      value={newEmail}
+                      onChange={(e) => setNewEmail(e.target.value)}
+                      className="w-full px-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      placeholder="Enter new email address"
+                      autoComplete="email"
+                    />
+                  </div>
+
+                  {sheetError && (
+                    <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                      <p className="text-sm text-red-700 dark:text-red-400">{sheetError}</p>
+                    </div>
+                  )}
+
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <p className="text-xs text-blue-700 dark:text-blue-300">
+                      <strong>Note:</strong> A verification email will be sent to your new address. Your email will only be updated after you click the verification link.
+                    </p>
+                  </div>
+
+                  <div className="flex gap-3 pt-2">
+                    <button
+                      onClick={() => setShowEmailSheet(false)}
+                      disabled={emailSending}
+                      className="flex-1 px-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleEmailChangeRequest}
+                      disabled={emailSending || !newEmail.trim()}
+                      className="flex-1 px-4 py-2.5 text-sm bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {emailSending ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <IoSendOutline className="w-4 h-4" />
+                          Send Verification
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Phone Change Bottom Sheet */}
+      {showPhoneSheet && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => !phoneSaving && setShowPhoneSheet(false)}
+          />
+          {/* Sheet */}
+          <div className="relative w-full max-w-md bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl shadow-xl max-h-[90vh] overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Change Phone Number</h3>
+              <button
+                onClick={() => setShowPhoneSheet(false)}
+                disabled={phoneSaving}
+                className="p-1 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+              >
+                <IoCloseOutline className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-4 space-y-4">
+              {phoneSuccess ? (
+                <div className="text-center py-6">
+                  <IoCheckmarkCircleOutline className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                  <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                    Phone Number Updated
+                  </h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Your phone number has been successfully updated.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      Current phone: <strong>{profile.phone ? formatPhoneNumber(profile.phone) : 'Not set'}</strong>
+                    </p>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      New Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      value={newPhone}
+                      onChange={(e) => setNewPhone(formatPhoneNumber(e.target.value))}
+                      className="w-full px-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      placeholder="+1 (555) 123-4567"
+                      autoComplete="tel"
+                    />
+                  </div>
+
+                  {sheetError && (
+                    <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                      <p className="text-sm text-red-700 dark:text-red-400">{sheetError}</p>
+                    </div>
+                  )}
+
+                  <div className="flex gap-3 pt-2">
+                    <button
+                      onClick={() => setShowPhoneSheet(false)}
+                      disabled={phoneSaving}
+                      className="flex-1 px-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handlePhoneUpdate}
+                      disabled={phoneSaving || !newPhone.trim()}
+                      className="flex-1 px-4 py-2.5 text-sm bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {phoneSaving ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <IoSaveOutline className="w-4 h-4" />
+                          Save Phone Number
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

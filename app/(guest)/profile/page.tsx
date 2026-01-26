@@ -6,15 +6,12 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { IoArrowBackOutline } from 'react-icons/io5'
 
 // Import components
-import ProfileHeader from './components/ProfileHeader'
 import TabNavigation, { TabType } from './components/TabNavigation'
 import ProfileTab from './components/tabs/ProfileTab'
-import StatusTab from './components/tabs/StatusTab'
 import DocumentsTab from './components/tabs/DocumentsTab'
 import InsuranceTab from './components/tabs/InsuranceTab'
 import PaymentMethodsTab from './components/tabs/PaymentMethodsTab'
-import SettingsTab from './components/tabs/SettingsTab'
-import ReviewsTab from './components/tabs/ReviewsTab'
+import SecurityTab from './components/tabs/SecurityTab'
 
 interface GuestProfile {
   id: string
@@ -141,7 +138,7 @@ function GuestProfileContent() {
   const [saving, setSaving] = useState(false)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [editMode, setEditMode] = useState(false)
-  const [activeTab, setActiveTab] = useState<TabType>('profile')
+  const [activeTab, setActiveTab] = useState<TabType>('account')
   
   const [formData, setFormData] = useState({
     firstName: '',
@@ -192,7 +189,7 @@ function GuestProfileContent() {
   // ✅ FIXED: Handle tab changes separately
   useEffect(() => {
     const tabParam = searchParams.get('tab')
-    if (tabParam && ['profile', 'status', 'documents', 'insurance', 'payment', 'settings', 'reviews'].includes(tabParam)) {
+    if (tabParam && ['account', 'documents', 'insurance', 'payment', 'security'].includes(tabParam)) {
       setActiveTab(tabParam as TabType)
     }
   }, [searchParams])
@@ -395,48 +392,22 @@ function GuestProfileContent() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-4">
-        {/* Page Header */}
-        <div className="mb-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-4">
+        {/* Page Header - Back button and title on same row */}
+        <div className="flex items-center gap-3 mb-2">
           <button
             onClick={() => router.push('/dashboard')}
-            className="flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 mb-4 min-h-[44px] active:scale-95 transition-all"
+            className="flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 min-h-[44px] active:scale-95 transition-all"
           >
-            <IoArrowBackOutline className="w-5 h-5 mr-2" />
-            <span className="hidden sm:inline">Back to Dashboard</span>
-            <span className="sm:hidden">Back</span>
+            <IoArrowBackOutline className="w-5 h-5" />
           </button>
-          
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
             My Profile
           </h1>
         </div>
 
-        {/* Profile Header */}
-        <div className="-mx-4 sm:mx-0 px-4 sm:px-0 mb-4">
-          <ProfileHeader
-            profile={{
-              id: profile.id,
-              name: profile.name,
-              email: profile.email,
-              profilePhoto: profile.profilePhoto,
-              memberSince: profile.memberSince,
-              totalTrips: profile.totalTrips,
-              averageRating: profile.averageRating,
-              loyaltyPoints: profile.loyaltyPoints,
-              memberTier: profile.memberTier,
-              fullyVerified: profile.fullyVerified,
-              creditBalance: profile.creditBalance || 0,
-              bonusBalance: profile.bonusBalance || 0
-            }}
-            uploadingPhoto={uploadingPhoto}
-            onPhotoUpload={handlePhotoUpload}
-            canEdit={true}
-          />
-        </div>
-
         {/* Tab Navigation */}
-        <div className="-mx-4 sm:mx-0 px-4 sm:px-0">
+        <div className="-mx-4 sm:mx-0 px-4 sm:px-0 mb-2">
           <TabNavigation
             activeTab={activeTab}
             onTabChange={setActiveTab}
@@ -446,7 +417,7 @@ function GuestProfileContent() {
         {/* Tab Content */}
         <div className="-mx-4 sm:mx-0 px-4 sm:px-0">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border-2 border-gray-300 dark:border-gray-600 p-4 sm:p-6">
-          {activeTab === 'profile' && (
+          {activeTab === 'account' && (
             <ProfileTab
               profile={{
                 name: profile.name,
@@ -462,11 +433,22 @@ function GuestProfileContent() {
                 dateOfBirth: profile.dateOfBirth,
                 driverLicenseNumber: profile.driverLicenseNumber,
                 driverLicenseState: profile.driverLicenseState,
-                driverLicenseExpiry: profile.driverLicenseExpiry
+                driverLicenseExpiry: profile.driverLicenseExpiry,
+                profilePhoto: profile.profilePhoto,
+                // Verification status
+                emailVerified: profile.emailVerified,
+                phoneVerified: profile.phoneVerified,
+                // Preferences
+                emailNotifications: profile.emailNotifications,
+                smsNotifications: profile.smsNotifications,
+                pushNotifications: profile.pushNotifications,
+                preferredLanguage: profile.preferredLanguage,
+                preferredCurrency: profile.preferredCurrency
               }}
               formData={formData}
               editMode={editMode}
               saving={saving}
+              uploadingPhoto={uploadingPhoto}
               onEditToggle={() => setEditMode(true)}
               onSave={handleSaveProfile}
               onCancel={() => {
@@ -474,18 +456,13 @@ function GuestProfileContent() {
                 fetchProfile()
               }}
               onFormChange={(data) => setFormData({ ...formData, ...data })}
+              onPhotoUpload={handlePhotoUpload}
             />
-          )}
-
-          {activeTab === 'status' && (
-            <StatusTab guestId={profile.id} />
           )}
 
           {activeTab === 'documents' && (
             <DocumentsTab
               profile={{
-                governmentIdUrl: profile.governmentIdUrl,
-                governmentIdType: profile.governmentIdType,
                 driversLicenseUrl: profile.driversLicenseUrl,
                 selfieUrl: profile.selfieUrl,
                 documentsVerified: profile.documentsVerified,
@@ -496,47 +473,19 @@ function GuestProfileContent() {
           )}
 
           {activeTab === 'insurance' && (
-            <InsuranceTab
-              profile={{
-                insuranceProvider: profile.insuranceProvider,
-                insurancePolicyNumber: profile.insurancePolicyNumber,
-                insuranceExpires: profile.insuranceExpires,
-                insuranceCardUrl: profile.insuranceCardUrl,
-                insuranceVerified: profile.insuranceVerified,
-                insuranceVerifiedAt: profile.insuranceVerifiedAt
-              }}
-              onShowInsuranceForm={(mode) => {
-                console.log('Show insurance form:', mode)
-              }}
-              onDeactivateInsurance={handleDeactivateInsurance}
-            />
+            <InsuranceTab />
           )}
 
           {activeTab === 'payment' && (
             <PaymentMethodsTab />
           )}
 
-          {activeTab === 'settings' && (
-            <SettingsTab
-              profile={{
-                preferredLanguage: profile.preferredLanguage,
-                preferredCurrency: profile.preferredCurrency,
-                emailNotifications: profile.emailNotifications,
-                smsNotifications: profile.smsNotifications,
-                pushNotifications: profile.pushNotifications
-              }}
-              formData={formData}
-              saving={saving}
-              onFormChange={(data) => setFormData({ ...formData, ...data })}
-              onSave={handleSaveSettings}
+          {activeTab === 'security' && (
+            <SecurityTab
               userEmail={profile.email}
               userStatus={profile.status}
               deletionScheduledFor={profile.deletionScheduledFor}
             />
-          )}
-
-          {activeTab === 'reviews' && (
-            <ReviewsTab />
           )}
           </div>
         </div>
