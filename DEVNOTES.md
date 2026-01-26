@@ -2,6 +2,14 @@
 
 ## Recent Fixes (January 2026)
 
+### Guest Profile Simplification (Jan 26)
+- [x] Email verification auto-marks when prospects complete onboarding or set password via invite link
+- [x] Documents tab simplified: removed redundant DL/selfie uploads (Stripe Identity handles it)
+- [x] Documents tab now shows Stripe Identity verification status with "How it works" link
+- [x] Profile page layout matches Payments page (sticky header with chevron, underline tabs)
+- [x] Payment Methods tab: white card backgrounds (was dark), locked buttons now redirect properly
+- [x] TabNavigation component: underline-style active tabs (matching PaymentsNav)
+
 ### Two-Factor Authentication (Jan 26)
 - [x] TOTP-based 2FA using `otpauth` library
 - [x] QR code generation for authenticator apps (Google Authenticator, Authy, 1Password)
