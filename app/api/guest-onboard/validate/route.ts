@@ -303,6 +303,12 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    // Mark email as verified (they clicked the invite link sent to their email)
+    await prisma.user.update({
+      where: { id: user!.id },
+      data: { emailVerified: true }
+    })
+
     // Log conversion activity
     await prisma.guestProspectActivity.create({
       data: {

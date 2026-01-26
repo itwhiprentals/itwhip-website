@@ -3,7 +3,7 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { IoArrowBackOutline } from 'react-icons/io5'
+import { IoChevronBackOutline } from 'react-icons/io5'
 
 // Import components
 import TabNavigation, { TabType } from './components/TabNavigation'
@@ -82,49 +82,38 @@ interface GuestProfile {
 function GuestProfileLoadingSkeleton() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-4">
-        <div className="animate-pulse space-y-6">
-          {/* Back button skeleton */}
-          <div className="h-11 bg-gray-200 dark:bg-gray-700 rounded w-32"></div>
-          
-          {/* Header skeleton */}
-          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-48"></div>
-          
-          {/* Profile card skeleton */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center space-x-4">
-              <div className="h-24 w-24 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
-              <div className="flex-1 space-y-3">
-                <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-48"></div>
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-64"></div>
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32"></div>
-              </div>
-            </div>
+      {/* Sticky Header skeleton */}
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
+        <div className="max-w-4xl mx-auto px-4 py-3">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-20"></div>
           </div>
-          
-          {/* Verification progress skeleton */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <div className="space-y-3">
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-4/6"></div>
-            </div>
-          </div>
-          
-          {/* Tabs skeleton */}
-          <div className="flex space-x-4 border-b border-gray-200 dark:border-gray-700 pb-2">
-            {[1, 2, 3, 4].map(i => (
-              <div key={i} className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
+        </div>
+      </div>
+
+      {/* Tab Navigation skeleton */}
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="flex gap-1 py-3">
+            {[1, 2, 3, 4, 5].map(i => (
+              <div key={i} className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
             ))}
           </div>
-          
-          {/* Content skeleton */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <div className="space-y-4">
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-4/6"></div>
-            </div>
+        </div>
+      </div>
+
+      {/* Content skeleton */}
+      <div className="max-w-4xl mx-auto px-4 py-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <div className="animate-pulse space-y-4">
+            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-32"></div>
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-4/6"></div>
+            <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-full mt-4"></div>
+            <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+            <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
           </div>
         </div>
       </div>
@@ -396,31 +385,34 @@ function GuestProfileContent() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-4">
-        {/* Page Header - Back button and title on same row */}
-        <div className="flex items-center gap-3 mb-2">
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 min-h-[44px] active:scale-95 transition-all"
-          >
-            <IoArrowBackOutline className="w-5 h-5" />
-          </button>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
-            My Profile
-          </h1>
+      {/* Sticky Header */}
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
+        <div className="max-w-4xl mx-auto px-4 py-3">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="p-2 -ml-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            >
+              <IoChevronBackOutline className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+            </button>
+            <h1 className="text-lg font-bold text-gray-900 dark:text-white">Profile</h1>
+          </div>
         </div>
+      </div>
 
-        {/* Tab Navigation */}
-        <div className="-mx-4 sm:mx-0 px-4 sm:px-0 mb-2">
+      {/* Tab Navigation */}
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <div className="max-w-4xl mx-auto px-4">
           <TabNavigation
             activeTab={activeTab}
             onTabChange={setActiveTab}
           />
         </div>
+      </div>
 
-        {/* Tab Content */}
-        <div className="-mx-4 sm:mx-0 px-4 sm:px-0">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border-2 border-gray-300 dark:border-gray-600 p-4 sm:p-6">
+      {/* Tab Content */}
+      <div className="max-w-4xl mx-auto px-4 py-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
           {activeTab === 'account' && (
             <ProfileTab
               profile={{
@@ -495,7 +487,6 @@ function GuestProfileContent() {
               onRefresh={fetchProfile}
             />
           )}
-          </div>
         </div>
       </div>
     </div>

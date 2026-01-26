@@ -27,54 +27,33 @@ const tabs: { value: TabType; label: string; icon: React.ComponentType<{ classNa
 
 export default function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border-2 border-gray-300 dark:border-gray-600 p-1">
-      <nav
-        className="flex gap-0 overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth"
-        role="tablist"
-        aria-label="Profile sections"
-      >
-        {tabs.map((tab) => {
-          const isActive = activeTab === tab.value
-          const Icon = tab.icon
+    <nav
+      className="flex gap-1 overflow-x-auto scrollbar-hide"
+      role="tablist"
+      aria-label="Profile sections"
+    >
+      {tabs.map((tab) => {
+        const isActive = activeTab === tab.value
+        const Icon = tab.icon
 
-          return (
-            <button
-              key={tab.value}
-              onClick={() => onTabChange(tab.value)}
-              role="tab"
-              aria-selected={isActive}
-              aria-controls={`${tab.value}-panel`}
-              className={`
-                py-1.5 px-2 sm:px-2.5 rounded-md font-medium text-xs sm:text-sm capitalize
-                whitespace-nowrap flex-shrink-0 transition-all cursor-pointer
-                ${isActive
-                  ? 'bg-green-600 text-white shadow-sm'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
-                }
-              `}
-            >
-              <span className="flex items-center gap-1">
-                <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span>{tab.label}</span>
-              </span>
-            </button>
-          )
-        })}
-      </nav>
-      
-      {/* Hide scrollbar CSS */}
-      <style jsx>{`
-        .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-        }
-        .scrollbar-hide {
-          -webkit-overflow-scrolling: touch;
-        }
-      `}</style>
-    </div>
+        return (
+          <button
+            key={tab.value}
+            onClick={() => onTabChange(tab.value)}
+            role="tab"
+            aria-selected={isActive}
+            aria-controls={`${tab.value}-panel`}
+            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+              isActive
+                ? 'border-green-500 text-green-600 dark:text-green-400'
+                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-300'
+            }`}
+          >
+            <Icon className="w-4 h-4" />
+            {tab.label}
+          </button>
+        )
+      })}
+    </nav>
   )
 }

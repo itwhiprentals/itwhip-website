@@ -169,20 +169,20 @@ export default function PaymentMethodsTab() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-3 gap-2 mb-4">
-        <div className={`rounded-lg p-3 text-white text-center ${isVerified ? 'bg-gradient-to-br from-blue-500 to-blue-600' : 'bg-gradient-to-br from-gray-400 to-gray-500'}`}>
-          <IoCardOutline className="w-5 h-5 mx-auto mb-1 opacity-90" />
-          <p className="text-lg font-bold">{data?.paymentMethodCount || 0}</p>
-          <p className="text-[10px] opacity-80">Cards</p>
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-center">
+          <IoCardOutline className="w-5 h-5 mx-auto mb-1 text-blue-600 dark:text-blue-400" />
+          <p className="text-lg font-bold text-gray-900 dark:text-white">{data?.paymentMethodCount || 0}</p>
+          <p className="text-[10px] text-gray-500 dark:text-gray-400">Cards</p>
         </div>
-        <div className={`rounded-lg p-3 text-white text-center ${isVerified ? 'bg-gradient-to-br from-green-500 to-emerald-600' : 'bg-gradient-to-br from-gray-400 to-gray-500'}`}>
-          <IoWalletOutline className="w-5 h-5 mx-auto mb-1 opacity-90" />
-          <p className="text-lg font-bold">${(data?.depositWalletBalance || 0).toFixed(0)}</p>
-          <p className="text-[10px] opacity-80">Deposit</p>
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-center">
+          <IoWalletOutline className="w-5 h-5 mx-auto mb-1 text-green-600 dark:text-green-400" />
+          <p className="text-lg font-bold text-gray-900 dark:text-white">${(data?.depositWalletBalance || 0).toFixed(0)}</p>
+          <p className="text-[10px] text-gray-500 dark:text-gray-400">Deposit</p>
         </div>
-        <div className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg p-3 text-white text-center">
-          <IoGiftOutline className="w-5 h-5 mx-auto mb-1 opacity-90" />
-          <p className="text-lg font-bold">${((data?.creditBalance || 0) + (data?.bonusBalance || 0)).toFixed(0)}</p>
-          <p className="text-[10px] opacity-80">Credits</p>
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-center">
+          <IoGiftOutline className="w-5 h-5 mx-auto mb-1 text-purple-600 dark:text-purple-400" />
+          <p className="text-lg font-bold text-gray-900 dark:text-white">${((data?.creditBalance || 0) + (data?.bonusBalance || 0)).toFixed(0)}</p>
+          <p className="text-[10px] text-gray-500 dark:text-gray-400">Credits</p>
         </div>
       </div>
 
@@ -237,20 +237,20 @@ export default function PaymentMethodsTab() {
           </>
         ) : (
           <>
-            <div
-              className="flex-1 px-4 py-2.5 bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 text-sm font-medium rounded-lg text-center cursor-not-allowed flex items-center justify-center gap-1"
-              title="Verify your identity to add payment methods"
+            <Link
+              href="/payments/methods"
+              className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg text-center flex items-center justify-center gap-1 transition-colors"
             >
               <IoLockClosedOutline className="w-4 h-4" />
               Add Payment Method
-            </div>
-            <div
-              className="flex-1 px-4 py-2.5 bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 text-sm font-medium rounded-lg text-center cursor-not-allowed flex items-center justify-center gap-1"
-              title="Verify your identity to add deposits"
+            </Link>
+            <Link
+              href="/payments/deposit"
+              className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg text-center flex items-center justify-center gap-1 transition-colors"
             >
               <IoLockClosedOutline className="w-4 h-4" />
               Add Deposit
-            </div>
+            </Link>
           </>
         )}
       </div>
