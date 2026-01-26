@@ -23,6 +23,7 @@ interface DocumentsTabProps {
 
 interface StripeIdentityStatus {
   isVerified: boolean
+  isAdminOverride: boolean
   status: string | null
 }
 
@@ -43,6 +44,7 @@ export default function DocumentsTab({ profile, onDocumentUpdate }: DocumentsTab
         const data = await response.json()
         setIdentityStatus({
           isVerified: data.isVerified || false,
+          isAdminOverride: data.isAdminOverride || false,
           status: data.status || null
         })
       }
@@ -54,6 +56,7 @@ export default function DocumentsTab({ profile, onDocumentUpdate }: DocumentsTab
   }
 
   const isIdentityVerified = identityStatus?.isVerified || false
+  const isAdminOverride = identityStatus?.isAdminOverride || false
 
   return (
     <div>
@@ -82,22 +85,27 @@ export default function DocumentsTab({ profile, onDocumentUpdate }: DocumentsTab
                 Identity Verified ✨
               </h3>
               <p className="text-xs text-green-800 dark:text-green-300 mb-2">
-                Your identity has been verified via Stripe Identity. You can now book vehicles instantly and access premium cars.
+                {isAdminOverride
+                  ? 'Your identity has been manually verified by our team. You can now book vehicles instantly and access premium cars.'
+                  : 'Your identity has been verified via Stripe Identity. You can now book vehicles instantly and access premium cars.'
+                }
               </p>
               <ul className="text-[10px] text-green-700 dark:text-green-400 space-y-0.5 mb-2">
                 <li>✓ Driver's license verified</li>
-                <li>✓ Face verification complete</li>
+                <li>✓ {isAdminOverride ? 'Manual verification complete' : 'Face verification complete'}</li>
                 <li>✓ Instant booking enabled</li>
                 <li>✓ Access to all vehicles</li>
               </ul>
-              <a
-                href="https://itwhip.com/help/identity-verification"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[10px] text-green-700 dark:text-green-400 hover:underline"
-              >
-                Learn more about verification →
-              </a>
+              {!isAdminOverride && (
+                <a
+                  href="https://itwhip.com/help/identity-verification"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] text-green-700 dark:text-green-400 hover:underline"
+                >
+                  Learn more about verification →
+                </a>
+              )}
             </div>
             <IoCheckmarkCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
           </div>

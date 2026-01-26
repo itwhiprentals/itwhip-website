@@ -49,12 +49,24 @@ export async function GET() {
 
     const profile = user.reviewerProfile
 
+    // Check if verified via Stripe Identity OR admin override
+    const isStripeVerified = profile.stripeIdentityStatus === 'verified'
+    const isAdminOverride = profile.documentsVerified === true || profile.fullyVerified === true
+    const isVerified = isStripeVerified || isAdminOverride
+
+    // Determine effective status
+    let effectiveStatus = profile.stripeIdentityStatus || 'not_started'
+    if (isAdminOverride && !isStripeVerified) {
+      effectiveStatus = 'admin_verified'
+    }
+
     return NextResponse.json({
-      status: profile.stripeIdentityStatus || 'not_started',
-      verifiedAt: profile.stripeIdentityVerifiedAt,
-      isVerified: profile.stripeIdentityStatus === 'verified',
-      // Verified data (only return if verified)
-      verifiedData: profile.stripeIdentityStatus === 'verified' ? {
+      status: effectiveStatus,
+      verifiedAt: profile.stripeIdentityVerifiedAt || (isAdminOverride ? profile.documentVerifiedAt : null),
+      isVerified,
+      isAdminOverride,
+      // Verified data (only return if verified via Stripe)
+      verifiedData: isStripeVerified ? {
         firstName: profile.stripeVerifiedFirstName,
         lastName: profile.stripeVerifiedLastName,
         dob: profile.stripeVerifiedDob,
