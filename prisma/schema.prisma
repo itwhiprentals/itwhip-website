@@ -1946,6 +1946,7 @@ model RentalCar {
   VehicleServiceRecord       VehicleServiceRecord[]
   vehicleManagement          VehicleManagement?
   requestClaims              RequestClaim[]
+  smartcarVehicle            SmartcarVehicle?
 
   @@index([activeClaimId])
   @@index([carType])
@@ -2303,6 +2304,8 @@ model RentalHost {
   // Reservation request system relations
   requestClaims              RequestClaim[]
   convertedFromProspect      HostProspect?                @relation("prospect_to_host")
+  // Smartcar vehicle tracking
+  smartcarVehicles           SmartcarVehicle[]
 
   @@index([approvalStatus])
   @@index([city, state])
@@ -3508,6 +3511,71 @@ model VehicleManagement {
   @@index([ownerId])
   @@index([status])
   @@map("vehicle_management")
+}
+
+// =============================================================================
+// SMARTCAR VEHICLE TRACKING
+// For hosts connecting vehicles via Smartcar API (no hardware required)
+// =============================================================================
+
+model SmartcarVehicle {
+  id                  String    @id @default(cuid())
+  hostId              String
+  carId               String?   @unique // Optional link to RentalCar if matched
+  smartcarVehicleId   String    @unique // Smartcar's vehicle ID
+  accessToken         String    @db.Text
+  refreshToken        String    @db.Text
+  tokenExpiresAt      DateTime
+  vin                 String?
+  make                String?
+  model               String?
+  year                Int?
+  isActive            Boolean   @default(true)
+
+  // Last synced data
+  lastSyncAt          DateTime?
+  lastLocation        Json?     // { lat, lng, timestamp }
+  lastOdometer        Float?    // miles
+  lastFuel            Float?    // percentage (ICE vehicles)
+  lastBattery         Float?    // percentage (EVs)
+  lastLockStatus      String?   // "locked" | "unlocked"
+
+  // Timestamps
+  connectedAt         DateTime  @default(now())
+  disconnectedAt      DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  // Relations
+  host                RentalHost @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  car                 RentalCar? @relation(fields: [carId], references: [id])
+  webhooks            SmartcarWebhook[]
+
+  @@index([hostId])
+  @@index([carId])
+  @@index([vin])
+  @@index([isActive])
+  @@map("smartcar_vehicles")
+}
+
+model SmartcarWebhook {
+  id                  String    @id @default(cuid())
+  vehicleId           String
+  smartcarWebhookId   String    @unique // Smartcar's webhook ID
+  webhookType         String    // "scheduled" | "event" | "diagnostic"
+  frequency           String?   // "hourly" | "daily" etc. for scheduled
+  dataPoints          String[]  // ["location", "odometer", "fuel"]
+  isActive            Boolean   @default(true)
+  lastReceivedAt      DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  // Relation
+  vehicle             SmartcarVehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId])
+  @@index([isActive])
+  @@map("smartcar_webhooks")
 }
 
 // =============================================================================

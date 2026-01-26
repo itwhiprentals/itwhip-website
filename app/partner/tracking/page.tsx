@@ -5,6 +5,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import {
   IoLocationOutline,
@@ -25,7 +26,10 @@ import {
   IoBatteryFullOutline,
   IoSpeedometerOutline,
   IoTrendingUpOutline,
-  IoStar
+  IoStar,
+  IoCloseCircleOutline,
+  IoCheckmarkCircle,
+  IoWarningOutline
 } from 'react-icons/io5'
 
 // Import provider data from shared module
@@ -60,20 +64,114 @@ interface TrackedVehicle {
   odometer: number | null
 }
 
+interface SmartcarVehicle {
+  id: string
+  smartcarVehicleId: string
+  make: string | null
+  model: string | null
+  year: number | null
+  vin: string | null
+  isActive: boolean
+  lastSyncAt: string | null
+  lastLocation: { lat: number; lng: number; timestamp: string } | null
+  lastOdometer: number | null
+  lastFuel: number | null
+  lastBattery: number | null
+  connectedAt: string
+  car?: {
+    id: string
+    make: string
+    model: string
+    year: number
+    licensePlate: string | null
+    photos: { url: string }[]
+  } | null
+}
+
 export default function TrackingPage() {
+  const searchParams = useSearchParams()
   const [loading, setLoading] = useState(true)
   const [connectedProviders, setConnectedProviders] = useState<ConnectedProvider[]>([])
   const [trackedVehicles, setTrackedVehicles] = useState<TrackedVehicle[]>([])
   const [totalVehicles, setTotalVehicles] = useState(0)
   const [selectedVehicle, setSelectedVehicle] = useState<string | null>(null)
 
-  const hasTracking = connectedProviders.length > 0
+  // Smartcar state
+  const [smartcarVehicles, setSmartcarVehicles] = useState<SmartcarVehicle[]>([])
+  const [smartcarConnecting, setSmartcarConnecting] = useState(false)
+  const [smartcarNotification, setSmartcarNotification] = useState<{
+    type: 'success' | 'error'
+    message: string
+  } | null>(null)
+
+  const hasTracking = connectedProviders.length > 0 || smartcarVehicles.length > 0
+
+  // Check URL params for Smartcar callback results
+  useEffect(() => {
+    const smartcarSuccess = searchParams.get('smartcar_success')
+    const smartcarError = searchParams.get('smartcar_error')
+    const vehiclesConnected = searchParams.get('smartcar_vehicles_connected')
+
+    if (smartcarSuccess === 'true') {
+      setSmartcarNotification({
+        type: 'success',
+        message: `Successfully connected ${vehiclesConnected || '1'} vehicle(s) via Smartcar!`
+      })
+      // Clear URL params after reading
+      window.history.replaceState({}, '', '/partner/tracking')
+      // Reload Smartcar vehicles
+      loadSmartcarVehicles()
+    } else if (smartcarError) {
+      const errorMessages: Record<string, string> = {
+        'access_denied': 'You denied access to your vehicle. Please try again if this was a mistake.',
+        'no_vehicles': 'No compatible vehicles were found. Make sure your vehicle is connected to its manufacturer\'s app.',
+        'state_expired': 'The connection request expired. Please try again.',
+        'invalid_host': 'Session expired. Please log in and try again.',
+        'missing_params': 'Invalid callback. Please try connecting again.',
+        'not_configured': 'Smartcar is not configured. Please contact support.',
+        'processing_failed': 'Failed to process the connection. Please try again.'
+      }
+      setSmartcarNotification({
+        type: 'error',
+        message: errorMessages[smartcarError] || `Connection failed: ${smartcarError}`
+      })
+      window.history.replaceState({}, '', '/partner/tracking')
+    }
+  }, [searchParams])
+
+  // Load Smartcar connected vehicles
+  const loadSmartcarVehicles = async () => {
+    try {
+      const response = await fetch('/api/smartcar/vehicles', { credentials: 'include' })
+      if (response.ok) {
+        const data = await response.json()
+        setSmartcarVehicles(data.vehicles || [])
+        // Update connected providers if we have Smartcar vehicles
+        if (data.vehicles && data.vehicles.length > 0) {
+          setConnectedProviders(prev => {
+            const withoutSmartcar = prev.filter(p => p.id !== 'smartcar')
+            return [...withoutSmartcar, {
+              id: 'smartcar',
+              name: 'Smartcar',
+              vehicleCount: data.vehicles.length,
+              lastSync: new Date().toISOString(),
+              status: 'active' as const
+            }]
+          })
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load Smartcar vehicles:', error)
+    }
+  }
 
   useEffect(() => {
     // Load real tracking data from API
     const loadTrackingData = async () => {
       try {
-        // TODO: Replace with real API call
+        // Load Smartcar vehicles
+        await loadSmartcarVehicles()
+        // TODO: Load other tracking data
         setTotalVehicles(3)
         setLoading(false)
       } catch (error) {
@@ -83,6 +181,55 @@ export default function TrackingPage() {
     }
     loadTrackingData()
   }, [])
+
+  // Handle Smartcar Connect button click
+  const handleSmartcarConnect = async () => {
+    setSmartcarConnecting(true)
+    setSmartcarNotification(null)
+    try {
+      const response = await fetch('/api/smartcar/connect', { credentials: 'include' })
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to get connect URL')
+      }
+      const data = await response.json()
+      // Redirect to Smartcar Connect
+      window.location.href = data.url
+    } catch (error) {
+      console.error('Smartcar connect error:', error)
+      setSmartcarNotification({
+        type: 'error',
+        message: error instanceof Error ? error.message : 'Failed to start connection'
+      })
+      setSmartcarConnecting(false)
+    }
+  }
+
+  // Handle Smartcar disconnect
+  const handleSmartcarDisconnect = async (vehicleId: string) => {
+    if (!confirm('Are you sure you want to disconnect this vehicle from Smartcar?')) return
+    try {
+      const response = await fetch('/api/smartcar/disconnect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ vehicleId })
+      })
+      if (response.ok) {
+        setSmartcarVehicles(prev => prev.filter(v => v.id !== vehicleId))
+        setSmartcarNotification({
+          type: 'success',
+          message: 'Vehicle disconnected successfully'
+        })
+      }
+    } catch (error) {
+      console.error('Disconnect error:', error)
+      setSmartcarNotification({
+        type: 'error',
+        message: 'Failed to disconnect vehicle'
+      })
+    }
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -163,6 +310,125 @@ export default function TrackingPage() {
           )}
         </div>
 
+        {/* Smartcar Notification Banner */}
+        {smartcarNotification && (
+          <div className={`mb-6 p-4 rounded-lg flex items-start gap-3 ${
+            smartcarNotification.type === 'success'
+              ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
+              : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
+          }`}>
+            {smartcarNotification.type === 'success' ? (
+              <IoCheckmarkCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+            ) : (
+              <IoWarningOutline className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+            )}
+            <div className="flex-1">
+              <p className={`text-sm font-medium ${
+                smartcarNotification.type === 'success'
+                  ? 'text-green-800 dark:text-green-200'
+                  : 'text-red-800 dark:text-red-200'
+              }`}>
+                {smartcarNotification.message}
+              </p>
+            </div>
+            <button
+              onClick={() => setSmartcarNotification(null)}
+              className={`p-1 rounded-full hover:bg-white/50 ${
+                smartcarNotification.type === 'success'
+                  ? 'text-green-600 dark:text-green-400'
+                  : 'text-red-600 dark:text-red-400'
+              }`}
+            >
+              <IoCloseCircleOutline className="w-5 h-5" />
+            </button>
+          </div>
+        )}
+
+        {/* Connected Smartcar Vehicles Section */}
+        {smartcarVehicles.length > 0 && (
+          <div className="mb-8 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                  <IoCarSportOutline className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-white">Smartcar Connected</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{smartcarVehicles.length} vehicle(s) linked</p>
+                </div>
+              </div>
+              <button
+                onClick={handleSmartcarConnect}
+                disabled={smartcarConnecting}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white rounded-lg transition-colors"
+              >
+                <IoAddOutline className="w-4 h-4" />
+                Add More
+              </button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {smartcarVehicles.map(vehicle => (
+                <div key={vehicle.id} className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white">
+                        {vehicle.year} {vehicle.make} {vehicle.model}
+                      </p>
+                      {vehicle.vin && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400">VIN: ...{vehicle.vin.slice(-6)}</p>
+                      )}
+                    </div>
+                    <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium rounded">
+                      Connected
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+                    {vehicle.lastOdometer && (
+                      <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
+                        <IoSpeedometerOutline className="w-3 h-3" />
+                        {Math.round(vehicle.lastOdometer).toLocaleString()} mi
+                      </div>
+                    )}
+                    {vehicle.lastFuel !== null && (
+                      <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
+                        <IoBatteryFullOutline className="w-3 h-3" />
+                        {Math.round(vehicle.lastFuel)}% fuel
+                      </div>
+                    )}
+                    {vehicle.lastBattery !== null && (
+                      <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
+                        <IoBatteryFullOutline className="w-3 h-3" />
+                        {Math.round(vehicle.lastBattery)}% battery
+                      </div>
+                    )}
+                    {vehicle.lastSyncAt && (
+                      <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
+                        <IoTimeOutline className="w-3 h-3" />
+                        {formatRelativeTime(vehicle.lastSyncAt)}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => loadSmartcarVehicles()}
+                      className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                    >
+                      <IoRefreshOutline className="w-3 h-3" />
+                      Sync
+                    </button>
+                    <button
+                      onClick={() => handleSmartcarDisconnect(vehicle.id)}
+                      className="px-2 py-1.5 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                    >
+                      Disconnect
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {!hasTracking ? (
           // No Provider Connected - Onboarding View
           <div className="space-y-8">
@@ -214,12 +480,25 @@ export default function TrackingPage() {
                   rel="noopener noreferrer"
                   className="flex-1 flex items-center justify-center gap-2 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors"
                 >
-                  Get Started
+                  Get Bouncie
                   <IoChevronForwardOutline className="w-4 h-4" />
                 </a>
-                <button className="flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                  <IoLinkOutline className="w-4 h-4" />
-                  Connect
+                <button
+                  onClick={handleSmartcarConnect}
+                  disabled={smartcarConnecting}
+                  className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white text-sm font-medium rounded-lg transition-colors"
+                >
+                  {smartcarConnecting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Connecting...
+                    </>
+                  ) : (
+                    <>
+                      <IoLinkOutline className="w-4 h-4" />
+                      Connect Smartcar
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -353,11 +632,24 @@ export default function TrackingPage() {
             {/* Already Have a Device */}
             <div className="text-center py-6 border-t border-gray-200 dark:border-gray-700">
               <p className="text-gray-600 dark:text-gray-400 mb-3">
-                Already have a tracking device or account?
+                Already have a connected vehicle? Link it via Smartcar (no hardware needed).
               </p>
-              <button className="inline-flex items-center gap-2 px-6 py-3 border-2 border-orange-600 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 font-medium rounded-lg transition-colors">
-                <IoLinkOutline className="w-5 h-5" />
-                Connect Existing Account
+              <button
+                onClick={handleSmartcarConnect}
+                disabled={smartcarConnecting}
+                className="inline-flex items-center gap-2 px-6 py-3 border-2 border-purple-600 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 disabled:opacity-50 font-medium rounded-lg transition-colors"
+              >
+                {smartcarConnecting ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-purple-300 border-t-purple-600 rounded-full animate-spin" />
+                    Connecting...
+                  </>
+                ) : (
+                  <>
+                    <IoLinkOutline className="w-5 h-5" />
+                    Connect via Smartcar
+                  </>
+                )}
               </button>
             </div>
 
