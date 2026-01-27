@@ -1947,6 +1947,7 @@ model RentalCar {
   vehicleManagement          VehicleManagement?
   requestClaims              RequestClaim[]
   smartcarVehicle            SmartcarVehicle?
+  bouncieDevice              BouncieDevice?
 
   @@index([activeClaimId])
   @@index([carType])
@@ -2306,6 +2307,8 @@ model RentalHost {
   convertedFromProspect      HostProspect?                @relation("prospect_to_host")
   // Smartcar vehicle tracking
   smartcarVehicles           SmartcarVehicle[]
+  // Bouncie OBD device tracking
+  bouncieDevices             BouncieDevice[]
 
   @@index([approvalStatus])
   @@index([city, state])
@@ -3538,6 +3541,9 @@ model SmartcarVehicle {
   lastOdometer        Float?    // miles
   lastFuel            Float?    // percentage (ICE vehicles)
   lastBattery         Float?    // percentage (EVs)
+  lastTirePressure    Json?     // { frontLeft, frontRight, backLeft, backRight } in PSI
+  lastOilLife         Float?    // percentage remaining
+  lastChargeState     Json?     // { isPluggedIn: boolean, state: 'CHARGING' | 'FULLY_CHARGED' | 'NOT_CHARGING' }
   lastLockStatus      String?   // "locked" | "unlocked"
 
   // Timestamps
@@ -3576,6 +3582,114 @@ model SmartcarWebhook {
   @@index([vehicleId])
   @@index([isActive])
   @@map("smartcar_webhooks")
+}
+
+// =============================================================================
+// BOUNCIE OBD DEVICE INTEGRATION
+// Reference: BOUNCIE_AUDIT.md
+// =============================================================================
+
+// Bouncie OBD device connected to a vehicle
+model BouncieDevice {
+  id                  String    @id @default(cuid())
+  hostId              String
+  carId               String?   @unique // Optional link to RentalCar if matched
+  deviceImei          String    @unique // Bouncie device IMEI
+  authorizationCode   String    @db.Text // OAuth authorization code
+  apiKey              String?   @db.Text // API key if separate
+  nickname            String?   // User-defined name for device
+  isActive            Boolean   @default(true)
+
+  // Vehicle info (from Bouncie)
+  vin                 String?
+  make                String?
+  model               String?
+  year                Int?
+
+  // Last synced data
+  lastSyncAt          DateTime?
+  lastLocation        Json?     // { lat, lng, speed, heading, timestamp }
+  lastOdometer        Float?    // miles (estimated)
+  lastFuel            Float?    // percentage (estimated)
+  lastBatteryVoltage  Float?    // 12V battery voltage
+  lastSpeed           Float?    // mph
+  lastEngineStatus    String?   // "running" | "off"
+
+  // Timestamps
+  connectedAt         DateTime  @default(now())
+  disconnectedAt      DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  // Relations
+  host                RentalHost @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  car                 RentalCar? @relation(fields: [carId], references: [id])
+  geofences           BouncieGeofence[]
+  trips               BouncieTrip[]
+
+  @@index([hostId])
+  @@index([carId])
+  @@index([deviceImei])
+  @@index([isActive])
+  @@map("bouncie_devices")
+}
+
+// Geofence zones for Bouncie devices
+model BouncieGeofence {
+  id                  String    @id @default(cuid())
+  deviceId            String
+  bouncieGeofenceId   String?   // Bouncie's geofence ID (if synced)
+  name                String
+  geoType             String    @default("circle") // "circle" | "polygon"
+  centerLat           Float?
+  centerLng           Float?
+  radiusMeters        Int?
+  polygonPoints       Json?     // Array of {lat, lng} for polygon
+  alertOnEnter        Boolean   @default(true)
+  alertOnExit         Boolean   @default(true)
+  isActive            Boolean   @default(true)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  // Relation
+  device              BouncieDevice @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId])
+  @@index([isActive])
+  @@map("bouncie_geofences")
+}
+
+// Trip records from Bouncie devices
+model BouncieTrip {
+  id                  String    @id @default(cuid())
+  deviceId            String
+  bouncieTripId       String?   @unique // Bouncie's trip ID
+  startTime           DateTime
+  endTime             DateTime?
+  startLat            Float
+  startLng            Float
+  endLat              Float?
+  endLng              Float?
+  startAddress        String?
+  endAddress          String?
+  distanceMiles       Float?
+  durationMinutes     Int?
+  maxSpeedMph         Int?
+  avgSpeedMph         Int?
+  hardBrakes          Int       @default(0)
+  rapidAccelerations  Int       @default(0)
+  idleMinutes         Int       @default(0)
+  fuelUsedGallons     Float?
+  fuelEconomyMpg      Float?
+  createdAt           DateTime  @default(now())
+
+  // Relation
+  device              BouncieDevice @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId])
+  @@index([startTime])
+  @@index([bouncieTripId])
+  @@map("bouncie_trips")
 }
 
 // =============================================================================

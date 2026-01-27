@@ -104,6 +104,9 @@ async function fetchLiveData(smartcarVehicleId: string, accessToken: string) {
     odometer?: number | null
     fuel?: number | null
     battery?: number | null
+    tirePressure?: { frontLeft: number; frontRight: number; backLeft: number; backRight: number } | null
+    oilLife?: number | null
+    chargeState?: { isPluggedIn: boolean; state: 'CHARGING' | 'FULLY_CHARGED' | 'NOT_CHARGING' | null } | null
   } = {}
 
   // Fetch location
@@ -159,6 +162,55 @@ async function fetchLiveData(smartcarVehicleId: string, accessToken: string) {
     }
   } catch (e) {
     // Expected to fail for ICE vehicles
+  }
+
+  // Fetch tire pressure
+  try {
+    const tireResponse = await fetch(`${SMARTCAR_API_URL}/vehicles/${smartcarVehicleId}/tires/pressure`, {
+      headers: { 'Authorization': `Bearer ${accessToken}` }
+    })
+    if (tireResponse.ok) {
+      const tireData = await tireResponse.json()
+      // Convert kPa to PSI (1 kPa = 0.145038 PSI)
+      const kpaToPsi = (kpa: number) => Math.round(kpa * 0.145038)
+      data.tirePressure = {
+        frontLeft: kpaToPsi(tireData.frontLeft),
+        frontRight: kpaToPsi(tireData.frontRight),
+        backLeft: kpaToPsi(tireData.backLeft),
+        backRight: kpaToPsi(tireData.backRight)
+      }
+    }
+  } catch (e) {
+    // Tire pressure not available for all vehicles
+  }
+
+  // Fetch oil life (for ICE vehicles)
+  try {
+    const oilResponse = await fetch(`${SMARTCAR_API_URL}/vehicles/${smartcarVehicleId}/engine/oil`, {
+      headers: { 'Authorization': `Bearer ${accessToken}` }
+    })
+    if (oilResponse.ok) {
+      const oilData = await oilResponse.json()
+      data.oilLife = oilData.lifeRemaining * 100 // Convert to percentage
+    }
+  } catch (e) {
+    // Oil life not available for EVs
+  }
+
+  // Fetch charge state (for EVs)
+  try {
+    const chargeResponse = await fetch(`${SMARTCAR_API_URL}/vehicles/${smartcarVehicleId}/charge`, {
+      headers: { 'Authorization': `Bearer ${accessToken}` }
+    })
+    if (chargeResponse.ok) {
+      const chargeData = await chargeResponse.json()
+      data.chargeState = {
+        isPluggedIn: chargeData.isPluggedIn ?? false,
+        state: chargeData.state || null // 'CHARGING' | 'FULLY_CHARGED' | 'NOT_CHARGING'
+      }
+    }
+  } catch (e) {
+    // Charge state not available for ICE vehicles
   }
 
   return data
@@ -242,16 +294,21 @@ export async function GET(request: NextRequest) {
               where: { id: vehicle.id },
               data: {
                 lastSyncAt: new Date(),
-                lastLocation: liveData.location ? {
-                  lat: liveData.location.latitude,
-                  lng: liveData.location.longitude,
-                  timestamp: new Date().toISOString()
-                } : vehicle.lastLocation,
+                lastLocation: liveData.location
+                  ? {
+                      lat: liveData.location.latitude,
+                      lng: liveData.location.longitude,
+                      timestamp: new Date().toISOString()
+                    }
+                  : undefined, // Keep existing value
                 lastOdometer: liveData.odometer
                   ? liveData.odometer * 0.621371 // Convert km to miles
-                  : vehicle.lastOdometer,
-                lastFuel: liveData.fuel ?? vehicle.lastFuel,
-                lastBattery: liveData.battery ?? vehicle.lastBattery
+                  : undefined,
+                lastFuel: liveData.fuel ?? undefined,
+                lastBattery: liveData.battery ?? undefined,
+                lastTirePressure: liveData.tirePressure ?? undefined,
+                lastOilLife: liveData.oilLife ?? undefined,
+                lastChargeState: liveData.chargeState ?? undefined
               }
             })
 
@@ -259,11 +316,18 @@ export async function GET(request: NextRequest) {
               ...vehicle,
               accessToken: undefined,
               refreshToken: undefined,
+              // Include new data fields
+              lastTirePressure: liveData.tirePressure ?? vehicle.lastTirePressure,
+              lastOilLife: liveData.oilLife ?? vehicle.lastOilLife,
+              lastChargeState: liveData.chargeState ?? vehicle.lastChargeState,
               realTimeData: {
                 location: liveData.location,
                 odometer: liveData.odometer ? liveData.odometer * 0.621371 : null, // miles
                 fuel: liveData.fuel,
                 battery: liveData.battery,
+                tirePressure: liveData.tirePressure,
+                oilLife: liveData.oilLife,
+                chargeState: liveData.chargeState,
                 fetchedAt: new Date().toISOString()
               }
             }

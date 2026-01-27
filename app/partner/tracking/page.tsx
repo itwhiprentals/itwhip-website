@@ -29,7 +29,16 @@ import {
   IoStar,
   IoCloseCircleOutline,
   IoCheckmarkCircle,
-  IoWarningOutline
+  IoWarningOutline,
+  IoLockClosedOutline,
+  IoLockOpenOutline,
+  IoPowerOutline,
+  IoSnowOutline,
+  IoLocateOutline,
+  IoFlashOutline,
+  IoRadioOutline,
+  IoCloseOutline,
+  IoInformationCircleOutline
 } from 'react-icons/io5'
 
 // Import provider data from shared module
@@ -37,6 +46,14 @@ import {
   MILEAGE_FORENSICS,
   getSecondaryProviders
 } from './shared/providers'
+
+// Import provider features configuration
+import {
+  TRACKING_FEATURES,
+  PROVIDERS,
+  getFeaturesByProvider,
+  getBouncieOnlyFeatures
+} from '@/app/lib/tracking/providerFeatures'
 
 interface ConnectedProvider {
   id: string
@@ -51,7 +68,7 @@ interface TrackedVehicle {
   make: string
   model: string
   year: number
-  status: 'moving' | 'parked' | 'offline'
+  status: 'moving' | 'parked' | 'offline' | 'disabled'
   location: string | null
   coordinates: { lat: number; lng: number } | null
   speed: number | null
@@ -62,6 +79,16 @@ interface TrackedVehicle {
   tripEndsAt: string | null
   fuelLevel: number | null
   odometer: number | null
+  batteryLevel: number | null
+  tirePressure: { frontLeft: number; frontRight: number; backLeft: number; backRight: number } | null
+  oilLife: number | null
+  chargeState: { isPluggedIn: boolean; state: 'CHARGING' | 'FULLY_CHARGED' | 'NOT_CHARGING' | null } | null
+  isEV: boolean
+  isLocked: boolean
+  engineRunning: boolean
+  acOn: boolean
+  isDisabled: boolean
+  smartcarVehicleId?: string
 }
 
 interface SmartcarVehicle {
@@ -77,6 +104,9 @@ interface SmartcarVehicle {
   lastOdometer: number | null
   lastFuel: number | null
   lastBattery: number | null
+  lastTirePressure: { frontLeft: number; frontRight: number; backLeft: number; backRight: number } | null
+  lastOilLife: number | null
+  lastChargeState: { isPluggedIn: boolean; state: 'CHARGING' | 'FULLY_CHARGED' | 'NOT_CHARGING' | null } | null
   connectedAt: string
   car?: {
     id: string
@@ -85,6 +115,32 @@ interface SmartcarVehicle {
     year: number
     licensePlate: string | null
     photos: { url: string }[]
+  } | null
+}
+
+interface BouncieDevice {
+  id: string
+  deviceImei: string
+  nickname: string | null
+  make: string | null
+  model: string | null
+  year: number | null
+  vin: string | null
+  isActive: boolean
+  lastSyncAt: string | null
+  lastLocation: { lat: number; lng: number; speed: number; heading: string; timestamp: string } | null
+  lastOdometer: number | null
+  lastFuel: number | null
+  lastBatteryVoltage: number | null
+  lastSpeed: number | null
+  lastEngineStatus: string | null
+  connectedAt: string
+  car?: {
+    id: string
+    make: string
+    model: string
+    year: number
+    licensePlate: string | null
   } | null
 }
 
@@ -104,7 +160,20 @@ export default function TrackingPage() {
     message: string
   } | null>(null)
 
-  const hasTracking = connectedProviders.length > 0 || smartcarVehicles.length > 0
+  // Bouncie state (for future integration)
+  const [bouncieDevices, setBouncieDevices] = useState<BouncieDevice[]>([])
+
+  // Remote control states (Smartcar supports: lock/unlock, start/stop charging)
+  const [isLocking, setIsLocking] = useState<string | null>(null)
+  const [isLocating, setIsLocating] = useState<string | null>(null)
+  const [isChargingControl, setIsChargingControl] = useState<string | null>(null)
+  const [refreshingVehicle, setRefreshingVehicle] = useState<string | null>(null)
+
+  // Computed states
+  const hasSmartcar = smartcarVehicles.length > 0
+  const hasBouncie = bouncieDevices.length > 0
+  const hasItWhipPlus = hasSmartcar && hasBouncie
+  const hasTracking = connectedProviders.length > 0 || hasSmartcar || hasBouncie
 
   // Check URL params for Smartcar callback results
   useEffect(() => {
@@ -165,14 +234,57 @@ export default function TrackingPage() {
     }
   }
 
+  // Convert Smartcar vehicles to tracked vehicle format for unified display
+  useEffect(() => {
+    if (smartcarVehicles.length > 0) {
+      const converted: TrackedVehicle[] = smartcarVehicles.map(sv => {
+        // Determine if this is an EV (has battery data but no fuel data)
+        const isEV = sv.lastBattery !== null && sv.lastFuel === null
+
+        return {
+          id: sv.id,
+          make: sv.make || 'Unknown',
+          model: sv.model || 'Vehicle',
+          year: sv.year || 0,
+          status: sv.lastLocation ? 'parked' : 'offline', // Default to parked if we have location
+          location: sv.lastLocation
+            ? `${sv.lastLocation.lat.toFixed(4)}, ${sv.lastLocation.lng.toFixed(4)}`
+            : null,
+          coordinates: sv.lastLocation
+            ? { lat: sv.lastLocation.lat, lng: sv.lastLocation.lng }
+            : null,
+          speed: null,
+          heading: null,
+          lastUpdate: sv.lastSyncAt || sv.connectedAt,
+          provider: 'Smartcar',
+          guest: null, // Would come from active bookings
+          tripEndsAt: null,
+          fuelLevel: sv.lastFuel,
+          odometer: sv.lastOdometer,
+          batteryLevel: sv.lastBattery,
+          tirePressure: sv.lastTirePressure,
+          oilLife: sv.lastOilLife,
+          chargeState: sv.lastChargeState,
+          isEV,
+          isLocked: true, // Default to locked
+          engineRunning: false,
+          acOn: false,
+          isDisabled: false,
+          smartcarVehicleId: sv.smartcarVehicleId
+        }
+      })
+      setTrackedVehicles(converted)
+      setTotalVehicles(converted.length)
+    }
+  }, [smartcarVehicles])
+
   useEffect(() => {
     // Load real tracking data from API
     const loadTrackingData = async () => {
       try {
         // Load Smartcar vehicles
         await loadSmartcarVehicles()
-        // TODO: Load other tracking data
-        setTotalVehicles(3)
+        // TODO: Load other tracking data (Bouncie, etc.)
         setLoading(false)
       } catch (error) {
         console.error('Failed to load tracking data:', error)
@@ -231,24 +343,129 @@ export default function TrackingPage() {
     }
   }
 
+  // Remote control handlers
+  const toggleLock = async (vehicleId: string, smartcarVehicleId?: string) => {
+    if (!smartcarVehicleId) return
+    setIsLocking(vehicleId)
+    try {
+      const vehicle = trackedVehicles.find(v => v.id === vehicleId)
+      const action = vehicle?.isLocked ? 'unlock' : 'lock'
+      const response = await fetch('/api/smartcar/control', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ vehicleId, action })
+      })
+      if (response.ok) {
+        setTrackedVehicles(prev => prev.map(v =>
+          v.id === vehicleId ? { ...v, isLocked: !v.isLocked } : v
+        ))
+        setSmartcarNotification({
+          type: 'success',
+          message: `Vehicle ${action}ed successfully`
+        })
+      } else {
+        throw new Error('Failed to control vehicle')
+      }
+    } catch (error) {
+      console.error('Lock/unlock error:', error)
+      setSmartcarNotification({
+        type: 'error',
+        message: 'Failed to control vehicle lock'
+      })
+    } finally {
+      setIsLocking(null)
+    }
+  }
+
+  // EV Charging control (Smartcar supports start/stop charging for EVs)
+  const toggleCharging = async (vehicleId: string) => {
+    setIsChargingControl(vehicleId)
+    try {
+      const vehicle = trackedVehicles.find(v => v.id === vehicleId)
+      const isCharging = vehicle?.chargeState?.state === 'CHARGING'
+      const action = isCharging ? 'stop_charge' : 'start_charge'
+
+      const response = await fetch('/api/smartcar/control', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ vehicleId, action })
+      })
+
+      if (response.ok) {
+        // Update local state
+        setTrackedVehicles(prev => prev.map(v =>
+          v.id === vehicleId
+            ? {
+                ...v,
+                chargeState: {
+                  isPluggedIn: v.chargeState?.isPluggedIn ?? true,
+                  state: isCharging ? 'NOT_CHARGING' : 'CHARGING'
+                }
+              }
+            : v
+        ))
+        setSmartcarNotification({
+          type: 'success',
+          message: isCharging ? 'Charging stopped' : 'Charging started'
+        })
+      } else {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to control charging')
+      }
+    } catch (error) {
+      console.error('Charging control error:', error)
+      setSmartcarNotification({
+        type: 'error',
+        message: error instanceof Error ? error.message : 'Failed to control charging. Make sure the vehicle is plugged in.'
+      })
+    } finally {
+      setIsChargingControl(null)
+    }
+  }
+
+  const refreshVehicleData = async (vehicleId: string) => {
+    setRefreshingVehicle(vehicleId)
+    try {
+      const response = await fetch(`/api/smartcar/vehicles?vehicleId=${vehicleId}&realtime=true`, {
+        credentials: 'include'
+      })
+      if (response.ok) {
+        await loadSmartcarVehicles()
+        setSmartcarNotification({
+          type: 'success',
+          message: 'Vehicle data refreshed'
+        })
+      }
+    } catch (error) {
+      console.error('Refresh error:', error)
+    } finally {
+      setRefreshingVehicle(null)
+    }
+  }
+
+  const locateVehicle = async (vehicleId: string) => {
+    setIsLocating(vehicleId)
+    const vehicle = trackedVehicles.find(v => v.id === vehicleId)
+    if (vehicle?.coordinates) {
+      // Open in Google Maps
+      window.open(
+        `https://www.google.com/maps?q=${vehicle.coordinates.lat},${vehicle.coordinates.lng}`,
+        '_blank'
+      )
+    }
+    setTimeout(() => setIsLocating(null), 500)
+  }
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'moving': return 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
       case 'parked': return 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20'
+      case 'disabled': return 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20'
       case 'offline': return 'text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700'
       default: return 'text-gray-600 dark:text-gray-400'
     }
-  }
-
-  const getProviderBgColor = (color: string) => {
-    const colors: Record<string, string> = {
-      blue: 'bg-gradient-to-br from-blue-500 to-blue-600',
-      purple: 'bg-gradient-to-br from-purple-500 to-purple-600',
-      green: 'bg-gradient-to-br from-green-500 to-green-600',
-      cyan: 'bg-gradient-to-br from-cyan-500 to-cyan-600',
-      red: 'bg-gradient-to-br from-red-500 to-red-600'
-    }
-    return colors[color] || colors.blue
   }
 
   const formatRelativeTime = (dateString: string) => {
@@ -297,14 +514,14 @@ export default function TrackingPage() {
             </p>
           </div>
           {hasTracking && (
-            <div className="flex items-center gap-3">
-              <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <button className="flex items-center gap-2 px-3 sm:px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                 <IoAddOutline className="w-5 h-5" />
-                Add Provider
+                <span className="hidden sm:inline">Add Provider</span>
               </button>
-              <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+              <button className="flex items-center gap-2 px-3 sm:px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                 <IoSettingsOutline className="w-5 h-5" />
-                Settings
+                <span className="hidden sm:inline">Settings</span>
               </button>
             </div>
           )}
@@ -366,66 +583,464 @@ export default function TrackingPage() {
                 Add More
               </button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {smartcarVehicles.map(vehicle => (
-                <div key={vehicle.id} className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-white">
-                        {vehicle.year} {vehicle.make} {vehicle.model}
-                      </p>
-                      {vehicle.vin && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400">VIN: ...{vehicle.vin.slice(-6)}</p>
-                      )}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {smartcarVehicles.map(vehicle => {
+                const isEV = vehicle.lastBattery !== null && vehicle.lastFuel === null
+                const isCharging = vehicle.lastChargeState?.state === 'CHARGING'
+                const isFullyCharged = vehicle.lastChargeState?.state === 'FULLY_CHARGED'
+
+                return (
+                  <div key={vehicle.id} className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-600 transition-colors">
+                    {/* Header */}
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                          isEV
+                            ? 'bg-gradient-to-br from-green-400 to-emerald-600'
+                            : 'bg-gradient-to-br from-gray-400 to-gray-600'
+                        }`}>
+                          {isEV ? (
+                            <IoFlashOutline className="w-5 h-5 text-white" />
+                          ) : (
+                            <IoCarSportOutline className="w-5 h-5 text-white" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-900 dark:text-white text-sm">
+                            {vehicle.year} {vehicle.make} {vehicle.model}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {vehicle.vin ? `VIN: ...${vehicle.vin.slice(-6)}` : 'VIN pending'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium rounded">
+                          Connected
+                        </span>
+                        {isEV && (
+                          <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-medium rounded">
+                            EV
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium rounded">
-                      Connected
-                    </span>
+
+                    {/* Data Grid */}
+                    <div className="grid grid-cols-3 gap-2 mb-3">
+                      {/* Odometer */}
+                      <div className="text-center p-2 bg-white dark:bg-gray-800 rounded-lg">
+                        <IoSpeedometerOutline className="w-4 h-4 text-gray-400 mx-auto mb-1" />
+                        <p className="text-xs font-semibold text-gray-900 dark:text-white">
+                          {vehicle.lastOdometer ? `${Math.round(vehicle.lastOdometer).toLocaleString()}` : '—'}
+                        </p>
+                        <p className="text-[10px] text-gray-500">miles</p>
+                      </div>
+
+                      {/* Fuel or Battery */}
+                      <div className="text-center p-2 bg-white dark:bg-gray-800 rounded-lg">
+                        {isEV ? (
+                          <>
+                            <IoBatteryFullOutline className={`w-4 h-4 mx-auto mb-1 ${
+                              isCharging ? 'text-green-500 animate-pulse' :
+                              (vehicle.lastBattery ?? 0) < 20 ? 'text-red-500' : 'text-gray-400'
+                            }`} />
+                            <p className="text-xs font-semibold text-gray-900 dark:text-white">
+                              {vehicle.lastBattery !== null ? `${Math.round(vehicle.lastBattery)}%` : '—'}
+                            </p>
+                            <p className="text-[10px] text-gray-500">
+                              {isCharging ? 'charging' : isFullyCharged ? 'full' : 'battery'}
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <IoFlashOutline className={`w-4 h-4 mx-auto mb-1 ${
+                              (vehicle.lastFuel ?? 0) < 20 ? 'text-red-500' : 'text-gray-400'
+                            }`} />
+                            <p className="text-xs font-semibold text-gray-900 dark:text-white">
+                              {vehicle.lastFuel !== null ? `${Math.round(vehicle.lastFuel)}%` : '—'}
+                            </p>
+                            <p className="text-[10px] text-gray-500">fuel</p>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Oil Life or Charge State */}
+                      <div className="text-center p-2 bg-white dark:bg-gray-800 rounded-lg">
+                        {isEV && vehicle.lastChargeState ? (
+                          <>
+                            <IoFlashOutline className={`w-4 h-4 mx-auto mb-1 ${
+                              isCharging ? 'text-green-500 animate-pulse' : 'text-gray-400'
+                            }`} />
+                            <p className="text-xs font-semibold text-gray-900 dark:text-white">
+                              {vehicle.lastChargeState.isPluggedIn ? 'Yes' : 'No'}
+                            </p>
+                            <p className="text-[10px] text-gray-500">plugged</p>
+                          </>
+                        ) : vehicle.lastOilLife !== null ? (
+                          <>
+                            <IoSpeedometerOutline className={`w-4 h-4 mx-auto mb-1 ${
+                              vehicle.lastOilLife < 20 ? 'text-orange-500' : 'text-gray-400'
+                            }`} />
+                            <p className="text-xs font-semibold text-gray-900 dark:text-white">
+                              {Math.round(vehicle.lastOilLife)}%
+                            </p>
+                            <p className="text-[10px] text-gray-500">oil life</p>
+                          </>
+                        ) : (
+                          <>
+                            <IoTimeOutline className="w-4 h-4 text-gray-400 mx-auto mb-1" />
+                            <p className="text-xs font-semibold text-gray-900 dark:text-white">
+                              {vehicle.lastSyncAt ? formatRelativeTime(vehicle.lastSyncAt) : '—'}
+                            </p>
+                            <p className="text-[10px] text-gray-500">synced</p>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Tire Pressure (if available) */}
+                    {vehicle.lastTirePressure && (
+                      <div className="mb-3 p-2 bg-white dark:bg-gray-800 rounded-lg">
+                        <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Tire Pressure (PSI)</p>
+                        <div className="grid grid-cols-2 gap-1 text-[10px]">
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">FL:</span>
+                            <span className="font-medium text-gray-900 dark:text-white">{vehicle.lastTirePressure.frontLeft}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">FR:</span>
+                            <span className="font-medium text-gray-900 dark:text-white">{vehicle.lastTirePressure.frontRight}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">BL:</span>
+                            <span className="font-medium text-gray-900 dark:text-white">{vehicle.lastTirePressure.backLeft}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">BR:</span>
+                            <span className="font-medium text-gray-900 dark:text-white">{vehicle.lastTirePressure.backRight}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Location Preview */}
+                    {vehicle.lastLocation && (
+                      <div className="mb-3 flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                        <IoLocationOutline className="w-3.5 h-3.5 text-purple-500 flex-shrink-0" />
+                        <span className="truncate">
+                          {vehicle.lastLocation.lat.toFixed(4)}, {vehicle.lastLocation.lng.toFixed(4)}
+                        </span>
+                        <button
+                          onClick={() => window.open(`https://www.google.com/maps?q=${vehicle.lastLocation!.lat},${vehicle.lastLocation!.lng}`, '_blank')}
+                          className="ml-auto text-purple-600 hover:text-purple-700 dark:text-purple-400 font-medium"
+                        >
+                          View
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => refreshVehicleData(vehicle.id)}
+                        disabled={refreshingVehicle === vehicle.id}
+                        className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-xs bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white font-medium rounded-lg transition-colors"
+                      >
+                        <IoRefreshOutline className={`w-3.5 h-3.5 ${refreshingVehicle === vehicle.id ? 'animate-spin' : ''}`} />
+                        {refreshingVehicle === vehicle.id ? 'Syncing...' : 'Sync Now'}
+                      </button>
+                      {isEV && (
+                        <button
+                          onClick={() => toggleCharging(vehicle.id)}
+                          disabled={isChargingControl === vehicle.id}
+                          className={`flex items-center justify-center gap-1 px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
+                            isCharging
+                              ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 hover:bg-orange-200'
+                              : 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 hover:bg-green-200'
+                          }`}
+                        >
+                          <IoFlashOutline className={`w-3.5 h-3.5 ${isChargingControl === vehicle.id ? 'animate-pulse' : ''}`} />
+                          {isCharging ? 'Stop' : 'Charge'}
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleSmartcarDisconnect(vehicle.id)}
+                        className="px-3 py-2 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                      >
+                        <IoCloseCircleOutline className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs mb-3">
-                    {vehicle.lastOdometer && (
-                      <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
-                        <IoSpeedometerOutline className="w-3 h-3" />
-                        {Math.round(vehicle.lastOdometer).toLocaleString()} mi
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Provider Features Section - Shows what features are available */}
+        {(hasSmartcar || hasBouncie) && (
+          <div className="mb-8">
+            {/* ItWhip+ Active Banner - Both providers connected */}
+            {hasItWhipPlus ? (
+              <>
+                <div className="mb-6 bg-gradient-to-r from-purple-600 via-orange-500 to-amber-500 rounded-lg p-6 text-white">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
+                      <IoStar className="w-8 h-8" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-2xl font-bold">ItWhip+ Active</h2>
+                        <span className="px-2 py-0.5 bg-white/20 text-white text-xs font-semibold rounded">
+                          COMPLETE PROTECTION
+                        </span>
                       </div>
-                    )}
-                    {vehicle.lastFuel !== null && (
-                      <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
-                        <IoBatteryFullOutline className="w-3 h-3" />
-                        {Math.round(vehicle.lastFuel)}% fuel
-                      </div>
-                    )}
-                    {vehicle.lastBattery !== null && (
-                      <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
-                        <IoBatteryFullOutline className="w-3 h-3" />
-                        {Math.round(vehicle.lastBattery)}% battery
-                      </div>
-                    )}
-                    {vehicle.lastSyncAt && (
-                      <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
-                        <IoTimeOutline className="w-3 h-3" />
-                        {formatRelativeTime(vehicle.lastSyncAt)}
-                      </div>
-                    )}
+                      <p className="text-white/80">
+                        Both Smartcar + Bouncie connected • All {TRACKING_FEATURES.length} features • Mileage Forensics™ enabled
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => loadSmartcarVehicles()}
-                      className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-                    >
-                      <IoRefreshOutline className="w-3 h-3" />
-                      Sync
-                    </button>
-                    <button
-                      onClick={() => handleSmartcarDisconnect(vehicle.id)}
-                      className="px-2 py-1.5 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                    >
-                      Disconnect
-                    </button>
+
+                  {/* All Features Grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
+                    {TRACKING_FEATURES.map(feature => (
+                      <div
+                        key={feature.id}
+                        className="flex items-center gap-2 p-2 bg-white/10 rounded-lg"
+                      >
+                        <IoCheckmarkCircle className="w-4 h-4 text-green-300 flex-shrink-0" />
+                        <span className="text-xs text-white truncate">{feature.name}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              ))}
-            </div>
+
+                {/* Provider Status Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Smartcar Status */}
+                  <div className="bg-white dark:bg-gray-800 rounded-lg border border-purple-200 dark:border-purple-800 p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: PROVIDERS.smartcar.color }}>
+                        <IoCarSportOutline className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-gray-900 dark:text-white">{PROVIDERS.smartcar.name}</h3>
+                          <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium rounded">
+                            Connected
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {smartcarVehicles.length} vehicle(s) • Lock/Unlock, EV Charging, Odometer
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Bouncie Status */}
+                  <div className="bg-white dark:bg-gray-800 rounded-lg border border-emerald-200 dark:border-emerald-800 p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: PROVIDERS.bouncie.color }}>
+                        <IoRadioOutline className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-gray-900 dark:text-white">{PROVIDERS.bouncie.name}</h3>
+                          <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium rounded">
+                            Connected
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {bouncieDevices.length} device(s) • Real-time GPS, Geofencing, Speed Alerts
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                  <IoInformationCircleOutline className="w-5 h-5 text-gray-400" />
+                  Your Tracking Capabilities
+                </h2>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Smartcar Features Card */}
+                  <div className={`bg-white dark:bg-gray-800 rounded-lg p-5 ${
+                    hasSmartcar
+                      ? 'border-2 border-purple-200 dark:border-purple-800'
+                      : 'border border-gray-200 dark:border-gray-700'
+                  }`}>
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: PROVIDERS.smartcar.color }}>
+                        <IoCarSportOutline className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                          {PROVIDERS.smartcar.name}
+                          <span className={`px-2 py-0.5 text-xs font-medium rounded ${
+                            hasSmartcar
+                              ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                          }`}>
+                            {hasSmartcar ? 'Connected' : 'Not Connected'}
+                          </span>
+                        </h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{PROVIDERS.smartcar.tagline}</p>
+                      </div>
+                    </div>
+
+                    <div className="mb-4">
+                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+                        {hasSmartcar ? 'Available' : 'Would Unlock'} Features ({getFeaturesByProvider('smartcar').length})
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {getFeaturesByProvider('smartcar').map(feature => (
+                          <div
+                            key={feature.id}
+                            className={`flex items-center gap-2 p-2 rounded-lg border ${
+                              hasSmartcar
+                                ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800'
+                                : 'bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 opacity-60'
+                            }`}
+                          >
+                            {hasSmartcar ? (
+                              <IoCheckmarkCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                            ) : (
+                              <IoCloseOutline className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            )}
+                            <span className={`text-xs truncate ${
+                              hasSmartcar ? 'text-gray-700 dark:text-gray-300' : 'text-gray-500 dark:text-gray-400'
+                            }`}>{feature.name}</span>
+                            {feature.isPremium && (
+                              <IoStar className="w-3 h-3 text-amber-500 flex-shrink-0" />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {!hasSmartcar && (
+                      <button
+                        onClick={handleSmartcarConnect}
+                        disabled={smartcarConnecting}
+                        className="w-full py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white text-sm font-medium rounded-lg transition-colors"
+                      >
+                        {smartcarConnecting ? 'Connecting...' : 'Connect Smartcar'}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Bouncie Features Card */}
+                  <div className={`bg-white dark:bg-gray-800 rounded-lg p-5 ${
+                    hasBouncie
+                      ? 'border-2 border-emerald-200 dark:border-emerald-800'
+                      : 'border border-gray-200 dark:border-gray-700'
+                  }`}>
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: PROVIDERS.bouncie.color }}>
+                        <IoRadioOutline className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                          {PROVIDERS.bouncie.name}
+                          <span className={`px-2 py-0.5 text-xs font-medium rounded ${
+                            hasBouncie
+                              ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                          }`}>
+                            {hasBouncie ? 'Connected' : 'Not Connected'}
+                          </span>
+                        </h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{PROVIDERS.bouncie.tagline}</p>
+                      </div>
+                    </div>
+
+                    <div className="mb-4">
+                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+                        {hasBouncie ? 'Available' : 'Would Unlock'} {getBouncieOnlyFeatures().length} Features
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {getBouncieOnlyFeatures().map(feature => (
+                          <div
+                            key={feature.id}
+                            className={`flex items-center gap-2 p-2 rounded-lg border ${
+                              hasBouncie
+                                ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800'
+                                : 'bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 opacity-60'
+                            }`}
+                          >
+                            {hasBouncie ? (
+                              <IoCheckmarkCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                            ) : (
+                              <IoCloseOutline className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            )}
+                            <span className={`text-xs truncate ${
+                              hasBouncie ? 'text-gray-700 dark:text-gray-300' : 'text-gray-500 dark:text-gray-400'
+                            }`}>{feature.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {!hasBouncie && (
+                      <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                          Add Bouncie for real-time GPS, geofencing, speed alerts, and OBD diagnostics.
+                        </p>
+                        <a
+                          href="https://bouncie.com"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors text-center"
+                        >
+                          Get Bouncie Device ($8.35/mo)
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* ItWhip+ Upsell Banner - Show when missing one provider */}
+                {(hasSmartcar && !hasBouncie) || (!hasSmartcar && hasBouncie) ? (
+                  <div className="mt-6 bg-gradient-to-r from-purple-600 to-orange-500 rounded-lg p-5 text-white">
+                    <div className="flex items-center justify-between flex-wrap gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
+                          <IoStar className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-lg">Upgrade to ItWhip+</h3>
+                          <p className="text-white/80 text-sm">
+                            Connect both Smartcar + Bouncie for complete fleet protection • All {TRACKING_FEATURES.length} features • Mileage Forensics™
+                          </p>
+                        </div>
+                      </div>
+                      {hasSmartcar && !hasBouncie ? (
+                        <a
+                          href="https://bouncie.com"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-6 py-2.5 bg-white text-purple-700 font-semibold rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0"
+                        >
+                          Add Bouncie to Complete Setup
+                        </a>
+                      ) : (
+                        <button
+                          onClick={handleSmartcarConnect}
+                          disabled={smartcarConnecting}
+                          className="px-6 py-2.5 bg-white text-purple-700 font-semibold rounded-lg hover:bg-gray-100 disabled:opacity-50 transition-colors flex-shrink-0"
+                        >
+                          {smartcarConnecting ? 'Connecting...' : 'Add Smartcar to Complete Setup'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ) : null}
+              </>
+            )}
           </div>
         )}
 
@@ -813,14 +1428,26 @@ export default function TrackingPage() {
               </div>
             </div>
 
-            {/* Vehicle List */}
+            {/* Vehicle List with Remote Controls */}
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
               <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                <h2 className="font-semibold text-gray-900 dark:text-white">Vehicle Status</h2>
-                <button className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 flex items-center gap-1">
-                  Export All
-                  <IoDownloadOutline className="w-4 h-4" />
-                </button>
+                <h2 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                  <span className="text-orange-600 dark:text-orange-400">ItWhip+</span>
+                  Vehicle Control
+                </h2>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => loadSmartcarVehicles()}
+                    className="text-sm text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 flex items-center gap-1"
+                  >
+                    <IoRefreshOutline className="w-4 h-4" />
+                    Refresh
+                  </button>
+                  <button className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 flex items-center gap-1">
+                    <IoDownloadOutline className="w-4 h-4" />
+                    Export
+                  </button>
+                </div>
               </div>
 
               {trackedVehicles.length === 0 ? (
@@ -834,107 +1461,328 @@ export default function TrackingPage() {
               ) : (
                 <div className="divide-y divide-gray-200 dark:divide-gray-700">
                   {trackedVehicles.map(vehicle => (
-                    <div
-                      key={vehicle.id}
-                      className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors ${
-                        selectedVehicle === vehicle.id ? 'bg-orange-50 dark:bg-orange-900/10' : ''
-                      }`}
-                      onClick={() => setSelectedVehicle(selectedVehicle === vehicle.id ? null : vehicle.id)}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                            vehicle.status === 'moving'
-                              ? 'bg-blue-100 dark:bg-blue-900/30'
-                              : vehicle.status === 'parked'
-                              ? 'bg-green-100 dark:bg-green-900/30'
-                              : 'bg-gray-100 dark:bg-gray-700'
-                          }`}>
-                            <IoCarSportOutline className={`w-6 h-6 ${
-                              vehicle.status === 'moving'
-                                ? 'text-blue-600 dark:text-blue-400'
+                    <div key={vehicle.id}>
+                      {/* Vehicle Row */}
+                      <div
+                        className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors ${
+                          selectedVehicle === vehicle.id ? 'bg-orange-50 dark:bg-orange-900/10' : ''
+                        } ${vehicle.isDisabled ? 'bg-red-50 dark:bg-red-900/10' : ''}`}
+                        onClick={() => setSelectedVehicle(selectedVehicle === vehicle.id ? null : vehicle.id)}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                            <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                              vehicle.isDisabled
+                                ? 'bg-red-100 dark:bg-red-500/20'
+                                : vehicle.status === 'moving'
+                                ? 'bg-blue-100 dark:bg-blue-500/20'
                                 : vehicle.status === 'parked'
-                                ? 'text-green-600 dark:text-green-400'
-                                : 'text-gray-400'
+                                ? 'bg-green-100 dark:bg-green-500/20'
+                                : 'bg-gray-100 dark:bg-gray-700'
+                            }`}>
+                              <IoCarSportOutline className={`w-5 h-5 sm:w-6 sm:h-6 ${
+                                vehicle.isDisabled
+                                  ? 'text-red-600 dark:text-red-400'
+                                  : vehicle.status === 'moving'
+                                  ? 'text-blue-600 dark:text-blue-400'
+                                  : vehicle.status === 'parked'
+                                  ? 'text-green-600 dark:text-green-400'
+                                  : 'text-gray-400'
+                              }`} />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-medium text-gray-900 dark:text-white text-sm sm:text-base truncate">
+                                {vehicle.year} {vehicle.make} {vehicle.model}
+                                {vehicle.isDisabled && (
+                                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-red-100 dark:bg-red-500/30 text-red-600 dark:text-red-400 rounded">DISABLED</span>
+                                )}
+                              </p>
+                              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1 truncate">
+                                <IoLocationOutline className="w-3 h-3 flex-shrink-0" />
+                                <span className="truncate">{vehicle.location || 'Location unknown'}</span>
+                              </p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="text-[10px] text-gray-400">via {vehicle.provider}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+                            {/* Status icons - hidden on mobile */}
+                            <div className="hidden sm:flex items-center gap-2">
+                              {vehicle.isLocked ? (
+                                <IoLockClosedOutline className="w-4 h-4 text-green-500" title="Locked" />
+                              ) : (
+                                <IoLockOpenOutline className="w-4 h-4 text-red-500" title="Unlocked" />
+                              )}
+                              {vehicle.engineRunning && (
+                                <IoPowerOutline className="w-4 h-4 text-blue-500 animate-pulse" title="Engine Running" />
+                              )}
+                              {vehicle.acOn && (
+                                <IoSnowOutline className="w-4 h-4 text-cyan-500" title="AC On" />
+                              )}
+                            </div>
+                            <span className={`px-2 sm:px-2.5 py-1 text-[10px] sm:text-xs font-medium rounded-lg ${getStatusColor(vehicle.status)}`}>
+                              {vehicle.isDisabled
+                                ? 'Disabled'
+                                : vehicle.status === 'moving' && vehicle.speed
+                                ? `${vehicle.speed} mph`
+                                : vehicle.status.charAt(0).toUpperCase() + vehicle.status.slice(1)}
+                            </span>
+                            {vehicle.guest && (
+                              <div className="text-right hidden md:block">
+                                <p className="text-sm font-medium text-gray-900 dark:text-white">{vehicle.guest.name}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">{vehicle.tripEndsAt}</p>
+                              </div>
+                            )}
+                            <IoChevronForwardOutline className={`w-4 h-4 sm:w-5 sm:h-5 text-gray-400 transition-transform ${
+                              selectedVehicle === vehicle.id ? 'rotate-90' : ''
                             }`} />
                           </div>
-                          <div>
-                            <p className="font-medium text-gray-900 dark:text-white">
-                              {vehicle.year} {vehicle.make} {vehicle.model}
-                            </p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                              <IoLocationOutline className="w-3 h-3" />
-                              {vehicle.location || 'Location unknown'}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <span className={`px-2.5 py-1 text-xs font-medium rounded-lg ${getStatusColor(vehicle.status)}`}>
-                            {vehicle.status === 'moving' && vehicle.speed ? `${vehicle.speed} mph` : vehicle.status.charAt(0).toUpperCase() + vehicle.status.slice(1)}
-                          </span>
-                          {vehicle.guest && (
-                            <div className="text-right">
-                              <p className="text-sm font-medium text-gray-900 dark:text-white">{vehicle.guest.name}</p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">
-                                {vehicle.tripEndsAt}
-                              </p>
-                            </div>
-                          )}
-                          <IoChevronForwardOutline className={`w-5 h-5 text-gray-400 transition-transform ${
-                            selectedVehicle === vehicle.id ? 'rotate-90' : ''
-                          }`} />
                         </div>
                       </div>
 
-                      {/* Expanded Details */}
+                      {/* Expanded Control Panel */}
                       {selectedVehicle === vehicle.id && (
-                        <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                            <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                              <IoSpeedometerOutline className="w-5 h-5 text-gray-400 mx-auto mb-1" />
-                              <p className="text-sm font-medium text-gray-900 dark:text-white">
-                                {vehicle.odometer?.toLocaleString() || '—'} mi
-                              </p>
-                              <p className="text-xs text-gray-500">Odometer</p>
+                        <div className="px-4 pb-4 bg-gray-50 dark:bg-gray-800/50">
+                          <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                            {/* Vehicle Stats */}
+                            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3 mb-4">
+                              <div className="text-center p-2 sm:p-3 bg-white dark:bg-gray-700/50 rounded-lg shadow-sm">
+                                <IoSpeedometerOutline className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 mx-auto mb-1" />
+                                <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
+                                  {vehicle.odometer ? vehicle.odometer.toLocaleString() : '—'}
+                                </p>
+                                <p className="text-[10px] sm:text-xs text-gray-500">Miles</p>
+                              </div>
+                              <div className="text-center p-2 sm:p-3 bg-white dark:bg-gray-700/50 rounded-lg shadow-sm">
+                                {vehicle.isEV ? (
+                                  <IoBatteryFullOutline className={`w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 ${
+                                    vehicle.chargeState?.state === 'CHARGING' ? 'text-green-500 animate-pulse' :
+                                    (vehicle.batteryLevel ?? 0) < 20 ? 'text-red-500' : 'text-gray-400'
+                                  }`} />
+                                ) : (
+                                  <IoFlashOutline className={`w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 ${
+                                    (vehicle.fuelLevel ?? 0) < 20 ? 'text-red-500' : 'text-gray-400'
+                                  }`} />
+                                )}
+                                <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
+                                  {vehicle.batteryLevel ?? vehicle.fuelLevel ?? '—'}%
+                                </p>
+                                <p className="text-[10px] sm:text-xs text-gray-500">
+                                  {vehicle.isEV ? (vehicle.chargeState?.state === 'CHARGING' ? 'Charging' : 'Battery') : 'Fuel'}
+                                </p>
+                              </div>
+                              {/* Oil Life (ICE vehicles) */}
+                              {!vehicle.isEV && (
+                                <div className="text-center p-2 sm:p-3 bg-white dark:bg-gray-700/50 rounded-lg shadow-sm">
+                                  <IoSpeedometerOutline className={`w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 ${
+                                    (vehicle.oilLife ?? 100) < 20 ? 'text-orange-500' : 'text-gray-400'
+                                  }`} />
+                                  <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
+                                    {vehicle.oilLife !== null ? `${Math.round(vehicle.oilLife)}%` : '—'}
+                                  </p>
+                                  <p className="text-[10px] sm:text-xs text-gray-500">Oil Life</p>
+                                </div>
+                              )}
+                              {/* Charging Status (EVs) */}
+                              {vehicle.isEV && (
+                                <div className="text-center p-2 sm:p-3 bg-white dark:bg-gray-700/50 rounded-lg shadow-sm">
+                                  <IoFlashOutline className={`w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 ${
+                                    vehicle.chargeState?.isPluggedIn ? 'text-green-500' : 'text-gray-400'
+                                  }`} />
+                                  <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
+                                    {vehicle.chargeState?.isPluggedIn ? 'Yes' : 'No'}
+                                  </p>
+                                  <p className="text-[10px] sm:text-xs text-gray-500">Plugged In</p>
+                                </div>
+                              )}
+                              <div className="text-center p-2 sm:p-3 bg-white dark:bg-gray-700/50 rounded-lg shadow-sm">
+                                <IoTimeOutline className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 mx-auto mb-1" />
+                                <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
+                                  {formatRelativeTime(vehicle.lastUpdate)}
+                                </p>
+                                <p className="text-[10px] sm:text-xs text-gray-500">Updated</p>
+                              </div>
+                              <div className="text-center p-2 sm:p-3 bg-white dark:bg-gray-700/50 rounded-lg shadow-sm hidden sm:block">
+                                {vehicle.isLocked ? (
+                                  <IoLockClosedOutline className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 mx-auto mb-1" />
+                                ) : (
+                                  <IoLockOpenOutline className="w-4 h-4 sm:w-5 sm:h-5 text-red-500 mx-auto mb-1" />
+                                )}
+                                <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
+                                  {vehicle.isLocked ? 'Locked' : 'Unlocked'}
+                                </p>
+                                <p className="text-[10px] sm:text-xs text-gray-500">Doors</p>
+                              </div>
+                              <div className="text-center p-2 sm:p-3 bg-white dark:bg-gray-700/50 rounded-lg shadow-sm hidden sm:block">
+                                <IoNavigateOutline className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 mx-auto mb-1" />
+                                <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
+                                  {vehicle.heading || '—'}
+                                </p>
+                                <p className="text-[10px] sm:text-xs text-gray-500">Heading</p>
+                              </div>
                             </div>
-                            <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                              <IoBatteryFullOutline className="w-5 h-5 text-gray-400 mx-auto mb-1" />
-                              <p className="text-sm font-medium text-gray-900 dark:text-white">
-                                {vehicle.fuelLevel || '—'}%
-                              </p>
-                              <p className="text-xs text-gray-500">Fuel/Battery</p>
-                            </div>
-                            <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                              <IoNavigateOutline className="w-5 h-5 text-gray-400 mx-auto mb-1" />
-                              <p className="text-sm font-medium text-gray-900 dark:text-white">
-                                {vehicle.heading || '—'}
-                              </p>
-                              <p className="text-xs text-gray-500">Heading</p>
-                            </div>
-                            <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                              <IoTimeOutline className="w-5 h-5 text-gray-400 mx-auto mb-1" />
-                              <p className="text-sm font-medium text-gray-900 dark:text-white">
-                                {formatRelativeTime(vehicle.lastUpdate)}
-                              </p>
-                              <p className="text-xs text-gray-500">Last Update</p>
-                            </div>
-                          </div>
 
-                          <div className="flex items-center gap-2">
-                            <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors">
-                              <IoMapOutline className="w-4 h-4" />
-                              Track Live
-                            </button>
-                            {vehicle.guest && (
-                              <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                <IoChatbubbleOutline className="w-4 h-4" />
-                                Message Guest
-                              </button>
+                            {/* Tire Pressure (if available) */}
+                            {vehicle.tirePressure && (
+                              <div className="mb-4 p-3 bg-white dark:bg-gray-700/50 rounded-lg shadow-sm">
+                                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Tire Pressure (PSI)</p>
+                                <div className="grid grid-cols-4 gap-2 text-center">
+                                  <div>
+                                    <p className="text-[10px] text-gray-500">Front Left</p>
+                                    <p className={`text-sm font-semibold ${
+                                      vehicle.tirePressure.frontLeft < 30 ? 'text-red-600' : 'text-gray-900 dark:text-white'
+                                    }`}>{vehicle.tirePressure.frontLeft}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-[10px] text-gray-500">Front Right</p>
+                                    <p className={`text-sm font-semibold ${
+                                      vehicle.tirePressure.frontRight < 30 ? 'text-red-600' : 'text-gray-900 dark:text-white'
+                                    }`}>{vehicle.tirePressure.frontRight}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-[10px] text-gray-500">Back Left</p>
+                                    <p className={`text-sm font-semibold ${
+                                      vehicle.tirePressure.backLeft < 30 ? 'text-red-600' : 'text-gray-900 dark:text-white'
+                                    }`}>{vehicle.tirePressure.backLeft}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-[10px] text-gray-500">Back Right</p>
+                                    <p className={`text-sm font-semibold ${
+                                      vehicle.tirePressure.backRight < 30 ? 'text-red-600' : 'text-gray-900 dark:text-white'
+                                    }`}>{vehicle.tirePressure.backRight}</p>
+                                  </div>
+                                </div>
+                              </div>
                             )}
-                            <button className="flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                              <IoDownloadOutline className="w-4 h-4" />
-                              Trip Log
-                            </button>
+
+                            {/* Remote Control Buttons */}
+                            <div className="mb-4">
+                              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+                                Remote Commands {vehicle.isEV && <span className="text-emerald-600 ml-1">• EV Controls Available</span>}
+                              </p>
+                              <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 sm:gap-2">
+                                {/* Lock/Unlock */}
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); toggleLock(vehicle.id, vehicle.smartcarVehicleId) }}
+                                  disabled={isLocking === vehicle.id || vehicle.isDisabled}
+                                  className={`flex flex-col items-center gap-0.5 p-2 sm:p-3 rounded-lg transition-all ${
+                                    vehicle.isDisabled
+                                      ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                                      : vehicle.isLocked
+                                      ? 'bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 hover:bg-green-200 border border-green-300 dark:border-green-500/30'
+                                      : 'bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-200 border border-red-300 dark:border-red-500/30'
+                                  } ${isLocking === vehicle.id ? 'opacity-50' : ''}`}
+                                >
+                                  {isLocking === vehicle.id ? (
+                                    <IoRefreshOutline className="w-5 h-5 animate-spin" />
+                                  ) : vehicle.isLocked ? (
+                                    <IoLockClosedOutline className="w-5 h-5" />
+                                  ) : (
+                                    <IoLockOpenOutline className="w-5 h-5" />
+                                  )}
+                                  <span className="text-[10px] font-medium">
+                                    {isLocking === vehicle.id ? '...' : vehicle.isLocked ? 'Unlock' : 'Lock'}
+                                  </span>
+                                </button>
+
+                                {/* EV Charging Control */}
+                                {vehicle.isEV && (
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); toggleCharging(vehicle.id) }}
+                                    disabled={isChargingControl === vehicle.id || vehicle.isDisabled}
+                                    className={`flex flex-col items-center gap-0.5 p-2 sm:p-3 rounded-lg transition-all border ${
+                                      vehicle.isDisabled
+                                        ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                                        : vehicle.chargeState?.state === 'CHARGING'
+                                        ? 'bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 hover:bg-green-200 border-green-300 dark:border-green-500/30'
+                                        : 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-200 border-emerald-300 dark:border-emerald-500/30'
+                                    } ${isChargingControl === vehicle.id ? 'opacity-50' : ''}`}
+                                  >
+                                    {isChargingControl === vehicle.id ? (
+                                      <IoRefreshOutline className="w-5 h-5 animate-spin" />
+                                    ) : (
+                                      <IoFlashOutline className={`w-5 h-5 ${vehicle.chargeState?.state === 'CHARGING' ? 'animate-pulse' : ''}`} />
+                                    )}
+                                    <span className="text-[10px] font-medium">
+                                      {isChargingControl === vehicle.id ? '...' : vehicle.chargeState?.state === 'CHARGING' ? 'Stop' : 'Charge'}
+                                    </span>
+                                  </button>
+                                )}
+
+                                {/* Locate */}
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); locateVehicle(vehicle.id) }}
+                                  disabled={isLocating === vehicle.id || !vehicle.coordinates}
+                                  className={`flex flex-col items-center gap-0.5 p-2 sm:p-3 rounded-lg transition-all border ${
+                                    !vehicle.coordinates
+                                      ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 border-gray-300 cursor-not-allowed'
+                                      : 'bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 hover:bg-purple-200 border-purple-300 dark:border-purple-500/30'
+                                  } ${isLocating === vehicle.id ? 'opacity-50' : ''}`}
+                                >
+                                  {isLocating === vehicle.id ? (
+                                    <IoRefreshOutline className="w-5 h-5 animate-spin" />
+                                  ) : (
+                                    <IoLocateOutline className="w-5 h-5" />
+                                  )}
+                                  <span className="text-[10px] font-medium">Locate</span>
+                                </button>
+
+                                {/* Refresh Data */}
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); refreshVehicleData(vehicle.id) }}
+                                  disabled={refreshingVehicle === vehicle.id}
+                                  className={`flex flex-col items-center gap-0.5 p-2 sm:p-3 rounded-lg transition-all border bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 hover:bg-blue-200 border-blue-300 dark:border-blue-500/30 ${refreshingVehicle === vehicle.id ? 'opacity-50' : ''}`}
+                                >
+                                  <IoRefreshOutline className={`w-5 h-5 ${refreshingVehicle === vehicle.id ? 'animate-spin' : ''}`} />
+                                  <span className="text-[10px] font-medium">Sync</span>
+                                </button>
+
+                                {/* View on Map */}
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); locateVehicle(vehicle.id) }}
+                                  disabled={!vehicle.coordinates}
+                                  className={`flex flex-col items-center gap-0.5 p-2 sm:p-3 rounded-lg transition-all border ${
+                                    !vehicle.coordinates
+                                      ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 border-gray-300 cursor-not-allowed'
+                                      : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 border-gray-300 dark:border-gray-600'
+                                  }`}
+                                >
+                                  <IoMapOutline className="w-5 h-5" />
+                                  <span className="text-[10px] font-medium">Map</span>
+                                </button>
+
+                                {/* Trip History */}
+                                <button
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="flex flex-col items-center gap-0.5 p-2 sm:p-3 rounded-lg transition-all border bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 hover:bg-orange-200 border-orange-300 dark:border-orange-500/30"
+                                >
+                                  <IoStatsChartOutline className="w-5 h-5" />
+                                  <span className="text-[10px] font-medium">History</span>
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-3 border-t border-gray-200 dark:border-gray-700">
+                              <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                <IoMapOutline className="w-4 h-4" />
+                                View Trip History
+                              </button>
+                              {vehicle.guest && (
+                                <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                  <IoChatbubbleOutline className="w-4 h-4" />
+                                  Message Guest
+                                </button>
+                              )}
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleSmartcarDisconnect(vehicle.id) }}
+                                className="flex items-center justify-center gap-2 px-4 py-2 border border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 text-sm font-medium rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                              >
+                                <IoCloseCircleOutline className="w-4 h-4" />
+                                Disconnect
+                              </button>
+                            </div>
                           </div>
                         </div>
                       )}
