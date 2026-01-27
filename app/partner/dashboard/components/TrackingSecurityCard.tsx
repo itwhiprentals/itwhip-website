@@ -161,11 +161,21 @@ export default function TrackingSecurityCard({
   const [fleetLoading, setFleetLoading] = useState(false)
   const [totalVehicles, setTotalVehicles] = useState(0) // Dynamic from API
 
-  // Mock tracking data - will be replaced with real API
-  const [trackingProviders] = useState<TrackingProvider[]>([])
-  const [trackedVehicles] = useState<TrackedVehicle[]>([])
+  // Smartcar tracking state
+  const [smartcarVehicles, setSmartcarVehicles] = useState<TrackedVehicle[]>([])
+  const [smartcarLoading, setSmartcarLoading] = useState(false)
+  const [lastSmartcarSync, setLastSmartcarSync] = useState<string | null>(null)
 
-  const hasTracking = trackingProviders.some(p => p.connected)
+  // Computed tracking state
+  const hasTracking = smartcarVehicles.length > 0
+  const trackedVehicles = smartcarVehicles
+  const trackingProviders: TrackingProvider[] = hasTracking ? [{
+    id: 'smartcar',
+    name: 'Smartcar',
+    connected: true,
+    vehicleCount: smartcarVehicles.length,
+    lastSync: lastSmartcarSync
+  }] : []
 
   // Persist demo mode to localStorage
   useEffect(() => {
@@ -178,6 +188,8 @@ export default function TrackingSecurityCard({
     fetchSessionInfo()
     // Also fetch fleet data on mount for vehicle count
     fetchFleetVehicles()
+    // Fetch Smartcar connected vehicles
+    fetchSmartcarVehicles()
   }, [])
 
   const fetchSessionInfo = async () => {
@@ -248,6 +260,54 @@ export default function TrackingSecurityCard({
       setTotalVehicles(0)
     } finally {
       setFleetLoading(false)
+    }
+  }
+
+  // Fetch Smartcar connected vehicles
+  const fetchSmartcarVehicles = async () => {
+    try {
+      setSmartcarLoading(true)
+      const response = await fetch('/api/smartcar/vehicles', {
+        credentials: 'include'
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        if (result.vehicles && result.vehicles.length > 0) {
+          const vehicles: TrackedVehicle[] = result.vehicles.map((v: {
+            id: string
+            make: string | null
+            model: string | null
+            year: number | null
+            lastLocation: { lat: number; lng: number } | null
+            lastSyncAt: string | null
+            car?: { id: string } | null
+          }) => ({
+            id: v.id,
+            make: v.make || 'Unknown',
+            model: v.model || 'Vehicle',
+            year: v.year || 0,
+            status: v.lastLocation ? 'parked' : 'offline',
+            location: v.lastLocation ? `${v.lastLocation.lat.toFixed(4)}, ${v.lastLocation.lng.toFixed(4)}` : null,
+            speed: null,
+            guest: null, // Would need to check active bookings
+            tripEndsIn: null,
+            provider: 'Smartcar'
+          }))
+          setSmartcarVehicles(vehicles)
+          // Find most recent sync
+          const syncs = result.vehicles
+            .map((v: { lastSyncAt: string | null }) => v.lastSyncAt)
+            .filter(Boolean)
+          if (syncs.length > 0) {
+            setLastSmartcarSync(syncs.sort().reverse()[0])
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Smartcar fetch error:', err)
+    } finally {
+      setSmartcarLoading(false)
     }
   }
 
@@ -537,7 +597,7 @@ export default function TrackingSecurityCard({
                   <span>
                     {totalVehicles === 0
                       ? 'No vehicles in fleet'
-                      : `0 of ${totalVehicles} vehicle${totalVehicles !== 1 ? 's' : ''} tracked`
+                      : `${smartcarVehicles.length} of ${totalVehicles} vehicle${totalVehicles !== 1 ? 's' : ''} tracked`
                     }
                   </span>
                 </div>
