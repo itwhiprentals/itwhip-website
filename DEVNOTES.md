@@ -2,6 +2,19 @@
 
 ## Recent Fixes (January 2026)
 
+### Smartcar Tracking Dashboard Polish (Jan 27)
+- [x] EV charging controls (start/stop charging via Smartcar API)
+- [x] Enhanced vehicle cards with gradient icons (EV vs ICE distinction)
+- [x] Tire pressure display with low-pressure warnings (< 30 PSI)
+- [x] Oil life percentage display (ICE vehicles)
+- [x] Charging state display (EVs: plugged in, charging status)
+- [x] Bouncie Prisma models: BouncieDevice, BouncieGeofence, BouncieTrip
+- [x] ItWhip+ combined view when both Smartcar + Bouncie connected
+- [x] New SmartcarVehicle fields: lastTirePressure, lastOilLife, lastChargeState
+- [x] API: /api/smartcar/control for lock/unlock and charge control
+- [x] API: /api/smartcar/vehicles fetches tire, oil, charge data
+- [x] SMARTCAR_AUDIT.md and BOUNCIE_AUDIT.md documentation
+
 ### Fleet Guest Admin Override (Jan 26)
 - [x] Admin override capability for identity verification in fleet guest management
 - [x] Override available in /fleet/guests/[id]/documents and /fleet/guests/[id]/permissions
