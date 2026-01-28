@@ -71,10 +71,20 @@ export async function verifyRequest(
   request: NextRequest
 ): Promise<VerifiedUser | null> {
   try {
-    // Get token from cookie - check guest, host, and partner tokens
-    const token = request.cookies.get('accessToken')?.value ||
-                 request.cookies.get('hostAccessToken')?.value ||
-                 request.cookies.get('partner_token')?.value
+    // Check Authorization header first (mobile app sends Bearer tokens)
+    const authHeader = request.headers.get('authorization')
+    let token: string | undefined
+
+    if (authHeader?.startsWith('Bearer ')) {
+      token = authHeader.substring(7)
+    }
+
+    // Fall back to cookies (web browser sessions)
+    if (!token) {
+      token = request.cookies.get('accessToken')?.value ||
+              request.cookies.get('hostAccessToken')?.value ||
+              request.cookies.get('partner_token')?.value
+    }
 
     if (!token) {
       return null
