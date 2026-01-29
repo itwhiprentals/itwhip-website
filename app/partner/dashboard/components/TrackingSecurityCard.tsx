@@ -311,6 +311,28 @@ export default function TrackingSecurityCard({
     }
   }
 
+  // Handle Smartcar disconnect
+  const [disconnecting, setDisconnecting] = useState<string | null>(null)
+  const handleSmartcarDisconnect = async (vehicleId: string) => {
+    if (!confirm('Are you sure you want to disconnect this vehicle from Smartcar?')) return
+    setDisconnecting(vehicleId)
+    try {
+      const response = await fetch('/api/smartcar/disconnect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ vehicleId })
+      })
+      if (response.ok) {
+        setSmartcarVehicles(prev => prev.filter(v => v.id !== vehicleId))
+      }
+    } catch (error) {
+      console.error('Disconnect error:', error)
+    } finally {
+      setDisconnecting(null)
+    }
+  }
+
   // Handle entering demo mode
   const handleEnterDemoMode = async () => {
     if (fleetVehicles.length === 0) {
@@ -702,6 +724,32 @@ export default function TrackingSecurityCard({
                       {trackedVehicles.filter(v => v.status === 'parked').length}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">Parked</p>
+                  </div>
+                </div>
+
+                {/* Connected Vehicles with Disconnect */}
+                <div>
+                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+                    Connected Vehicles
+                  </p>
+                  <div className="space-y-2">
+                    {trackedVehicles.map(vehicle => (
+                      <div
+                        key={vehicle.id}
+                        className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                      >
+                        <span className="text-sm text-gray-900 dark:text-white">
+                          {vehicle.year} {vehicle.make} {vehicle.model}
+                        </span>
+                        <button
+                          onClick={() => handleSmartcarDisconnect(vehicle.id)}
+                          disabled={disconnecting === vehicle.id}
+                          className="px-2 py-1 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors disabled:opacity-50"
+                        >
+                          {disconnecting === vehicle.id ? 'Disconnecting...' : 'Disconnect'}
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 </div>
 

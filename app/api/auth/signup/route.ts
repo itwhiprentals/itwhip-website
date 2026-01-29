@@ -170,10 +170,9 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Create ReviewerProfile ONLY for explicit guest signups
-    // Host signups will create RentalHost profile through separate flow
-    // ⚠️ CRITICAL: No auto-creation - must explicitly specify roleHint='guest'
-    if (roleHint === 'guest') {
+    // Create ReviewerProfile for all signups (ensures visibility in fleet guest list)
+    // Host signups will also get a RentalHost profile through separate flow later
+    {
       try {
         const reviewerProfile = await prisma.reviewerProfile.create({
           data: {
@@ -233,9 +232,6 @@ export async function POST(request: NextRequest) {
         console.error('[Signup] Failed to create ReviewerProfile:', profileError)
         // Don't block signup if profile creation fails
       }
-    } else {
-      console.log(`[Signup] Skipping ReviewerProfile creation for roleHint: ${roleHint || 'NOT PROVIDED'}`)
-      console.log(`[Signup] ⚠️ No profile created - user must complete signup through proper flow`)
     }
 
     // Send verification email

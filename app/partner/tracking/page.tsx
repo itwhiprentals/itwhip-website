@@ -41,6 +41,10 @@ import {
   IoInformationCircleOutline
 } from 'react-icons/io5'
 
+// Import live fleet map
+import dynamic from 'next/dynamic'
+const LiveFleetMap = dynamic(() => import('./components/LiveFleetMap'), { ssr: false })
+
 // Import provider data from shared module
 import {
   MILEAGE_FORENSICS,
@@ -168,6 +172,7 @@ export default function TrackingPage() {
   const [isLocating, setIsLocating] = useState<string | null>(null)
   const [isChargingControl, setIsChargingControl] = useState<string | null>(null)
   const [refreshingVehicle, setRefreshingVehicle] = useState<string | null>(null)
+  const [mapRefreshing, setMapRefreshing] = useState(false)
 
   // Computed states
   const hasSmartcar = smartcarVehicles.length > 0
@@ -234,6 +239,22 @@ export default function TrackingPage() {
     }
   }
 
+  // Refresh map data (fetch real-time from Smartcar)
+  const handleMapRefresh = async () => {
+    setMapRefreshing(true)
+    try {
+      const response = await fetch('/api/smartcar/vehicles?realtime=true', { credentials: 'include' })
+      if (response.ok) {
+        const data = await response.json()
+        setSmartcarVehicles(data.vehicles || [])
+      }
+    } catch (error) {
+      console.error('Map refresh failed:', error)
+    } finally {
+      setMapRefreshing(false)
+    }
+  }
+
   // Convert Smartcar vehicles to tracked vehicle format for unified display
   useEffect(() => {
     if (smartcarVehicles.length > 0) {
@@ -274,7 +295,6 @@ export default function TrackingPage() {
         }
       })
       setTrackedVehicles(converted)
-      setTotalVehicles(converted.length)
     }
   }, [smartcarVehicles])
 
@@ -282,9 +302,20 @@ export default function TrackingPage() {
     // Load real tracking data from API
     const loadTrackingData = async () => {
       try {
+        // Load fleet count
+        try {
+          const fleetRes = await fetch('/api/partner/fleet', { credentials: 'include' })
+          if (fleetRes.ok) {
+            const fleetData = await fleetRes.json()
+            if (fleetData.success && fleetData.vehicles) {
+              setTotalVehicles(fleetData.vehicles.length)
+            }
+          }
+        } catch (e) {
+          console.error('Failed to load fleet count:', e)
+        }
         // Load Smartcar vehicles
         await loadSmartcarVehicles()
-        // TODO: Load other tracking data (Bouncie, etc.)
         setLoading(false)
       } catch (error) {
         console.error('Failed to load tracking data:', error)
@@ -340,6 +371,40 @@ export default function TrackingPage() {
         type: 'error',
         message: 'Failed to disconnect vehicle'
       })
+    }
+  }
+
+  // Handle Smartcar disconnect ALL vehicles (master disconnect)
+  const [disconnectingAll, setDisconnectingAll] = useState(false)
+  const handleSmartcarDisconnectAll = async () => {
+    if (!confirm(`Disconnect all ${smartcarVehicles.length} vehicle(s) from Smartcar? This will revoke access for every connected vehicle.`)) return
+    setDisconnectingAll(true)
+    try {
+      let failed = 0
+      for (const vehicle of smartcarVehicles) {
+        const response = await fetch('/api/smartcar/disconnect', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ vehicleId: vehicle.id })
+        })
+        if (!response.ok) failed++
+      }
+      setSmartcarVehicles([])
+      setSmartcarNotification({
+        type: failed > 0 ? 'error' : 'success',
+        message: failed > 0
+          ? `Disconnected with ${failed} error(s). Some vehicles may need manual removal.`
+          : 'All vehicles disconnected from Smartcar successfully'
+      })
+    } catch (error) {
+      console.error('Disconnect all error:', error)
+      setSmartcarNotification({
+        type: 'error',
+        message: 'Failed to disconnect all vehicles'
+      })
+    } finally {
+      setDisconnectingAll(false)
     }
   }
 
@@ -505,10 +570,16 @@ export default function TrackingPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              <IoLocationOutline className="w-7 h-7 text-orange-600" />
-              Vehicle Tracking
-            </h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <IoLocationOutline className="w-7 h-7 text-orange-600" />
+                Vehicle Tracking
+              </h1>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-sm text-gray-600 dark:text-gray-300">
+                <IoCarSportOutline className="w-4 h-4" />
+                {trackedVehicles.length} of {totalVehicles} tracked
+              </span>
+            </div>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
               Track your fleet in real-time, prevent theft, and resolve disputes faster
             </p>
@@ -574,14 +645,24 @@ export default function TrackingPage() {
                   <p className="text-xs text-gray-500 dark:text-gray-400">{smartcarVehicles.length} vehicle(s) linked</p>
                 </div>
               </div>
-              <button
-                onClick={handleSmartcarConnect}
-                disabled={smartcarConnecting}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white rounded-lg transition-colors"
-              >
-                <IoAddOutline className="w-4 h-4" />
-                Add More
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleSmartcarDisconnectAll}
+                  disabled={disconnectingAll}
+                  className="flex items-center gap-2 px-3 py-1.5 text-sm border border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 rounded-lg transition-colors"
+                >
+                  <IoCloseCircleOutline className="w-4 h-4" />
+                  {disconnectingAll ? 'Disconnecting...' : 'Disconnect All'}
+                </button>
+                <button
+                  onClick={handleSmartcarConnect}
+                  disabled={smartcarConnecting}
+                  className="flex items-center gap-2 px-3 py-1.5 text-sm bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white rounded-lg transition-colors"
+                >
+                  <IoAddOutline className="w-4 h-4" />
+                  Add More
+                </button>
+              </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {smartcarVehicles.map(vehicle => {
@@ -1165,16 +1246,6 @@ export default function TrackingPage() {
               </div>
             </div>
 
-            {/* Fleet Status */}
-            <div className="flex items-center justify-center">
-              <div className="inline-flex items-center gap-3 px-5 py-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
-                <IoCarSportOutline className="w-5 h-5 text-gray-400" />
-                <span className="text-gray-600 dark:text-gray-300">
-                  <span className="font-semibold text-gray-900 dark:text-white">0</span> of{' '}
-                  <span className="font-semibold text-gray-900 dark:text-white">{totalVehicles}</span> vehicles tracked
-                </span>
-              </div>
-            </div>
 
             {/* Other Provider Options */}
             <div>
@@ -1352,22 +1423,40 @@ export default function TrackingPage() {
                     Live Fleet Map
                   </h2>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      Last update: {formatRelativeTime(new Date().toISOString())}
-                    </span>
-                    <button className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-                      <IoRefreshOutline className="w-4 h-4" />
+                    {smartcarVehicles.length > 0 && smartcarVehicles[0]?.lastSyncAt && (
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        Last sync: {formatRelativeTime(smartcarVehicles[0].lastSyncAt)}
+                      </span>
+                    )}
+                    <button
+                      onClick={handleMapRefresh}
+                      disabled={mapRefreshing}
+                      className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50"
+                    >
+                      <IoRefreshOutline className={`w-4 h-4 ${mapRefreshing ? 'animate-spin' : ''}`} />
                     </button>
                   </div>
                 </div>
-                <div className="h-96 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 relative">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="relative w-full h-full">
-                      <div className="absolute inset-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex items-center justify-center">
-                        <span className="text-gray-400 dark:text-gray-500 text-sm">Connect a provider to see your fleet</span>
-                      </div>
-                    </div>
-                  </div>
+                <div className="h-96 relative">
+                  <LiveFleetMap
+                    vehicles={trackedVehicles.map(v => ({
+                      id: v.id,
+                      make: v.make,
+                      model: v.model,
+                      year: v.year,
+                      status: v.status as 'moving' | 'parked' | 'offline',
+                      coordinates: v.coordinates,
+                      fuelLevel: v.fuelLevel,
+                      batteryLevel: v.batteryLevel,
+                      odometer: v.odometer,
+                      lastUpdate: v.lastUpdate,
+                      provider: v.provider
+                    }))}
+                    onVehicleSelect={setSelectedVehicle}
+                    selectedVehicleId={selectedVehicle}
+                    onRefresh={handleMapRefresh}
+                    isRefreshing={mapRefreshing}
+                  />
                 </div>
               </div>
 

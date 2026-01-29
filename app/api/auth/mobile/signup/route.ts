@@ -99,8 +99,8 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Create guest profile
-    if (roleHint === 'guest') {
+    // Create guest profile (always — ensures user appears in fleet guest list)
+    {
       try {
         const reviewerProfile = await prisma.reviewerProfile.create({
           data: {

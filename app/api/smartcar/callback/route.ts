@@ -12,6 +12,8 @@ const SMARTCAR_REDIRECT_URI = process.env.SMARTCAR_REDIRECT_URI || 'https://itwh
 // Smartcar API base URL
 const SMARTCAR_API_URL = 'https://api.smartcar.com/v2.0'
 const SMARTCAR_AUTH_URL = 'https://auth.smartcar.com/oauth/token'
+const SMARTCAR_MANAGEMENT_TOKEN = process.env.SMARTCAR_MANAGEMENT_TOKEN
+const SMARTCAR_WEBHOOK_CALLBACK = process.env.SMARTCAR_WEBHOOK_CALLBACK || 'https://itwhip.com/api/webhooks/smartcar'
 
 interface SmartcarTokenResponse {
   access_token: string
@@ -108,6 +110,63 @@ async function getVehicleVin(vehicleId: string, accessToken: string): Promise<st
   } catch (error) {
     console.warn(`Error getting VIN for vehicle ${vehicleId}:`, error)
     return null
+  }
+}
+
+// Subscribe a vehicle to Smartcar scheduled webhooks for recurring data
+async function subscribeToWebhook(
+  vehicleDbId: string,
+  smartcarVehicleId: string,
+  accessToken: string
+) {
+  if (!SMARTCAR_MANAGEMENT_TOKEN) {
+    console.warn('No SMARTCAR_MANAGEMENT_TOKEN - skipping webhook subscription')
+    return
+  }
+
+  try {
+    // Subscribe to scheduled webhook for location + odometer + fuel + battery
+    const response = await fetch(`${SMARTCAR_API_URL}/vehicles/${smartcarVehicleId}/subscribe`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        'SC-Unit-System': 'metric'
+      },
+      body: JSON.stringify({
+        webhookId: SMARTCAR_MANAGEMENT_TOKEN, // Management token acts as webhook ID for subscribe
+        callbackUri: SMARTCAR_WEBHOOK_CALLBACK
+      })
+    })
+
+    if (response.ok) {
+      const data = await response.json()
+      console.log(`Subscribed vehicle ${smartcarVehicleId} to webhook: ${data.webhookId || 'ok'}`)
+
+      // Save webhook record in DB
+      const webhookId = data.webhookId || `sub_${smartcarVehicleId}`
+      await prisma.smartcarWebhook.upsert({
+        where: { smartcarWebhookId: webhookId },
+        create: {
+          vehicleId: vehicleDbId,
+          smartcarWebhookId: webhookId,
+          webhookType: 'scheduled',
+          frequency: 'hourly',
+          dataPoints: ['location', 'odometer', 'fuel', 'battery', 'charge', 'tires', 'engineOil'],
+          isActive: true
+        },
+        update: {
+          isActive: true,
+          vehicleId: vehicleDbId
+        }
+      })
+    } else {
+      const errorText = await response.text()
+      console.warn(`Webhook subscription failed for ${smartcarVehicleId}: ${response.status} ${errorText}`)
+    }
+  } catch (error) {
+    // Non-fatal: vehicle still connected even if webhook fails
+    console.error(`Webhook subscription error for ${smartcarVehicleId}:`, error)
   }
 }
 
@@ -216,6 +275,9 @@ export async function GET(request: NextRequest) {
               vin: vin || existing.vin
             }
           })
+          // Subscribe to webhook for recurring data
+          await subscribeToWebhook(existing.id, smartcarVehicleId, tokens.access_token)
+
           connectedVehicles.push({
             id: existing.id,
             smartcarVehicleId,
@@ -255,6 +317,9 @@ export async function GET(request: NextRequest) {
               isActive: true
             }
           })
+
+          // Subscribe to webhook for recurring data
+          await subscribeToWebhook(newVehicle.id, smartcarVehicleId, tokens.access_token)
 
           connectedVehicles.push({
             id: newVehicle.id,
