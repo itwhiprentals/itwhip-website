@@ -13,6 +13,7 @@ const SMARTCAR_REDIRECT_URI = process.env.SMARTCAR_REDIRECT_URI || 'https://itwh
 const SMARTCAR_API_URL = 'https://api.smartcar.com/v2.0'
 const SMARTCAR_AUTH_URL = 'https://auth.smartcar.com/oauth/token'
 const SMARTCAR_MANAGEMENT_TOKEN = process.env.SMARTCAR_MANAGEMENT_TOKEN
+const SMARTCAR_WEBHOOK_ID = process.env.SMARTCAR_WEBHOOK_ID || ''
 const SMARTCAR_WEBHOOK_CALLBACK = process.env.SMARTCAR_WEBHOOK_CALLBACK || 'https://itwhip.com/api/webhooks/smartcar'
 
 interface SmartcarTokenResponse {
@@ -119,8 +120,8 @@ async function subscribeToWebhook(
   smartcarVehicleId: string,
   accessToken: string
 ) {
-  if (!SMARTCAR_MANAGEMENT_TOKEN) {
-    console.warn('No SMARTCAR_MANAGEMENT_TOKEN - skipping webhook subscription')
+  if (!SMARTCAR_WEBHOOK_ID) {
+    console.warn('No SMARTCAR_WEBHOOK_ID - skipping webhook subscription')
     return
   }
 
@@ -134,8 +135,7 @@ async function subscribeToWebhook(
         'SC-Unit-System': 'metric'
       },
       body: JSON.stringify({
-        webhookId: SMARTCAR_MANAGEMENT_TOKEN, // Management token acts as webhook ID for subscribe
-        callbackUri: SMARTCAR_WEBHOOK_CALLBACK
+        webhookId: SMARTCAR_WEBHOOK_ID
       })
     })
 

@@ -1,6 +1,6 @@
 // app/api/webhooks/smartcar/route.ts
 // Receive webhook events from Smartcar (VERIFY, VEHICLE_STATE, VEHICLE_ERROR)
-// Uses smartcar.hashChallenge equivalent for VERIFY handshake
+// Payload format v4.0 uses signals array with code/group/body
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
@@ -8,16 +8,25 @@ import { createHmac } from 'crypto'
 
 const SMARTCAR_MANAGEMENT_TOKEN = process.env.SMARTCAR_MANAGEMENT_TOKEN || ''
 
-// Hash challenge for VERIFY handshake (equivalent to smartcar.hash_challenge)
+// Hash challenge for VERIFY handshake
 function hashChallenge(amt: string, challenge: string): string {
   const hmac = createHmac('sha256', amt)
   hmac.update(challenge)
   return hmac.digest('hex')
 }
 
-// Convert kPa to PSI
-function kpaToPsi(kpa: number): number {
-  return Math.round(kpa * 0.145038)
+// Extract a signal value from the signals array
+function getSignal(signals: Signal[], code: string): Signal | undefined {
+  return signals.find(s => s.code === code && s.status?.value === 'SUCCESS')
+}
+
+interface Signal {
+  code: string
+  name: string
+  group: string
+  body: Record<string, unknown>
+  status: { value: string }
+  meta?: { oemUpdatedAt?: number; retrievedAt?: number }
 }
 
 export async function POST(request: NextRequest) {
@@ -29,110 +38,85 @@ export async function POST(request: NextRequest) {
     }
 
     const eventType = payload.eventType
-    console.log(`[Smartcar Webhook] Received eventType: ${eventType}`)
+    console.log(`[Smartcar Webhook] eventType: ${eventType}`)
 
     // ============================================
-    // VERIFY - Smartcar challenge handshake
+    // VERIFY - challenge handshake
     // ============================================
     if (eventType === 'VERIFY') {
       const challenge = payload.data?.challenge
-      if (!challenge) {
-        return NextResponse.json({ error: 'Missing challenge' }, { status: 400 })
+      if (!challenge || !SMARTCAR_MANAGEMENT_TOKEN) {
+        return NextResponse.json({ error: 'Missing challenge or token' }, { status: 400 })
       }
-
-      if (!SMARTCAR_MANAGEMENT_TOKEN) {
-        console.error('[Smartcar Webhook] No management token for VERIFY')
-        return NextResponse.json({ error: 'Not configured' }, { status: 500 })
-      }
-
       const hmac = hashChallenge(SMARTCAR_MANAGEMENT_TOKEN, challenge)
-      console.log('[Smartcar Webhook] VERIFY challenge responded')
+      console.log('[Smartcar Webhook] VERIFY responded')
       return NextResponse.json({ challenge: hmac })
     }
 
     // ============================================
-    // VEHICLE_STATE - Vehicle data update
+    // VEHICLE_STATE - v4.0 signals format
     // ============================================
     if (eventType === 'VEHICLE_STATE') {
-      const vehicleId = payload.vehicleId
-      const data = payload.data || {}
-      const timestamp = payload.timestamp || new Date().toISOString()
+      const vehicleData = payload.data?.vehicle
+      const signals: Signal[] = payload.data?.signals || []
+      const smartcarVehicleId = vehicleData?.id
+      const webhookId = payload.meta?.webhookId
+      const deliveredAt = payload.meta?.deliveredAt
 
-      if (!vehicleId) {
-        console.warn('[Smartcar Webhook] VEHICLE_STATE missing vehicleId')
+      if (!smartcarVehicleId) {
+        console.warn('[Smartcar Webhook] VEHICLE_STATE missing vehicle id')
         return NextResponse.json({ received: true })
       }
 
-      // Find vehicle by Smartcar vehicle ID
+      // Find vehicle in DB
       const vehicle = await prisma.smartcarVehicle.findUnique({
-        where: { smartcarVehicleId: vehicleId }
+        where: { smartcarVehicleId }
       })
 
       if (!vehicle) {
-        console.warn(`[Smartcar Webhook] Unknown vehicle: ${vehicleId}`)
+        console.warn(`[Smartcar Webhook] Unknown vehicle: ${smartcarVehicleId}`)
         return NextResponse.json({ received: true })
       }
 
       if (!vehicle.isActive) {
-        console.warn(`[Smartcar Webhook] Inactive vehicle: ${vehicleId}`)
+        console.warn(`[Smartcar Webhook] Inactive vehicle: ${smartcarVehicleId}`)
         return NextResponse.json({ received: true })
       }
 
-      // Build update data from whatever fields Smartcar sends
+      // Build update from signals
       const updateData: Record<string, unknown> = {
-        lastSyncAt: new Date(timestamp)
+        lastSyncAt: deliveredAt ? new Date(deliveredAt) : new Date()
       }
 
-      // Location
-      if (data.location) {
-        updateData.lastLocation = {
-          lat: data.location.latitude,
-          lng: data.location.longitude,
-          timestamp
-        }
+      // Lock status
+      const lockSignal = getSignal(signals, 'closure-islocked')
+      if (lockSignal) {
+        updateData.lastLockStatus = lockSignal.body.value ? 'locked' : 'unlocked'
       }
 
-      // Odometer (Smartcar sends km in metric mode)
-      if (data.odometer?.distance != null) {
-        updateData.lastOdometer = data.odometer.distance * 0.621371 // km to miles
+      // Fuel level (already in percent)
+      const fuelSignal = getSignal(signals, 'internalcombustionengine-fuellevel')
+      if (fuelSignal && fuelSignal.body.value != null) {
+        updateData.lastFuel = fuelSignal.body.value as number
       }
 
-      // Fuel
-      if (data.fuel?.percentRemaining != null) {
-        updateData.lastFuel = data.fuel.percentRemaining * 100
+      // Odometer (km -> miles)
+      const odoSignal = getSignal(signals, 'odometer-traveleddistance')
+      if (odoSignal && odoSignal.body.value != null) {
+        updateData.lastOdometer = (odoSignal.body.value as number) * 0.621371
       }
 
-      // Battery / EV
-      if (data.battery?.percentRemaining != null) {
-        updateData.lastBattery = data.battery.percentRemaining * 100
+      // Battery / EV state of charge (already in percent)
+      const batterySignal = getSignal(signals, 'tractionbattery-stateofcharge')
+      if (batterySignal && batterySignal.body.value != null) {
+        updateData.lastBattery = batterySignal.body.value as number
       }
 
-      // Charge state
-      if (data.charge) {
-        updateData.lastChargeState = {
-          isPluggedIn: data.charge.isPluggedIn,
-          state: data.charge.state
-        }
-      }
-
-      // Tire pressure (kPa -> PSI)
-      if (data.tires?.pressure) {
-        updateData.lastTirePressure = {
-          frontLeft: kpaToPsi(data.tires.pressure.frontLeft),
-          frontRight: kpaToPsi(data.tires.pressure.frontRight),
-          backLeft: kpaToPsi(data.tires.pressure.backLeft),
-          backRight: kpaToPsi(data.tires.pressure.backRight)
-        }
-      }
-
-      // Engine oil
-      if (data.engineOil?.lifeRemaining != null) {
-        updateData.lastOilLife = data.engineOil.lifeRemaining * 100
-      }
-
-      // Security / lock status
-      if (data.security?.isLocked != null) {
-        updateData.lastLockStatus = data.security.isLocked ? 'locked' : 'unlocked'
+      // Update vehicle make/model/year if provided and different
+      if (vehicleData.make && vehicleData.model && vehicleData.year) {
+        updateData.make = vehicleData.make
+        updateData.model = vehicleData.model
+        updateData.year = vehicleData.year
       }
 
       // Update vehicle in DB
@@ -141,29 +125,31 @@ export async function POST(request: NextRequest) {
         data: updateData
       })
 
-      console.log(`[Smartcar Webhook] Updated vehicle ${vehicleId}: ${Object.keys(updateData).join(', ')}`)
+      // Update webhook last received
+      if (webhookId) {
+        await prisma.smartcarWebhook.updateMany({
+          where: { smartcarWebhookId: webhookId, vehicleId: vehicle.id },
+          data: { lastReceivedAt: new Date() }
+        })
+      }
+
+      console.log(`[Smartcar Webhook] Updated ${smartcarVehicleId}: ${Object.keys(updateData).join(', ')}`)
       return NextResponse.json({ received: true })
     }
 
     // ============================================
-    // VEHICLE_ERROR - Vehicle error event
+    // VEHICLE_ERROR
     // ============================================
     if (eventType === 'VEHICLE_ERROR') {
-      const vehicleId = payload.vehicleId
-      const error = payload.data || payload.error
-      console.error(`[Smartcar Webhook] VEHICLE_ERROR for ${vehicleId}:`, error)
+      console.error(`[Smartcar Webhook] VEHICLE_ERROR:`, JSON.stringify(payload.data))
       return NextResponse.json({ received: true })
     }
 
-    // Unknown event type
     console.warn(`[Smartcar Webhook] Unknown eventType: ${eventType}`)
     return NextResponse.json({ received: true })
 
   } catch (error) {
     console.error('[Smartcar Webhook] Error:', error)
-    return NextResponse.json(
-      { error: 'Webhook processing failed' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Webhook processing failed' }, { status: 500 })
   }
 }
