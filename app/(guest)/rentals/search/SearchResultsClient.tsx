@@ -19,6 +19,7 @@ import { format, parseISO } from 'date-fns'
 import { MapContainer } from './components/MapContainer'
 import RentalSearchCard from '@/app/(guest)/components/hero/RentalSearchWidget'
 import CompactCarCard from '@/app/components/cards/CompactCarCard'
+import AIChatView from '@/app/components/ai-booking/AIChatView'
 
 // Loading skeleton component - compact style
 function CarCardSkeleton() {
@@ -72,6 +73,8 @@ export default function SearchResultsClient({
 
   // Check for view parameter from URL
   const viewParam = searchParams.get('view')
+  const modeParam = searchParams.get('mode')
+  const [searchMode, setSearchMode] = useState<'normal' | 'ai'>(modeParam === 'ai' ? 'ai' : 'normal')
 
   const [cars, setCars] = useState<any[]>(initialCars)
   const [carsInCity, setCarsInCity] = useState<any[]>(initialCarsInCity)
@@ -402,6 +405,24 @@ export default function SearchResultsClient({
 
   return (
     <div className="bg-gray-50 dark:bg-gray-900">
+      {/* AI Search Mode — replaces the search card */}
+      {searchMode === 'ai' && (
+        <div className="max-w-2xl mx-auto px-4 py-6" style={{ height: 'calc(100vh - 200px)', minHeight: '500px' }}>
+          <AIChatView
+            onNavigateToBooking={(vehicleId, startDate, endDate) => {
+              router.push(`/rentals/${vehicleId}?startDate=${startDate}&endDate=${endDate}`)
+            }}
+            onNavigateToLogin={() => {
+              router.push('/login?redirect=/rentals/search')
+            }}
+            onClassicSearch={() => setSearchMode('normal')}
+          />
+        </div>
+      )}
+
+      {/* Normal Search Mode */}
+      {searchMode === 'normal' && <>
+
       {/* Search Widget - Hidden on map view for more space */}
       {!showMap && (
         <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 py-4">
@@ -714,6 +735,8 @@ export default function SearchResultsClient({
           </>
         </div>
       )}
+
+      </>}
     </div>
   )
 }

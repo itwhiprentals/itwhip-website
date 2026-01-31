@@ -53,6 +53,15 @@ The app uses a dual-role authentication system:
 - Prefer editing existing files over creating new ones
 - All card components must use `rounded-lg` for consistent border radius
 
+## AI Booking Assistant
+
+- Service layer: `app/lib/ai-booking/` (types, state-machine, system-prompt, parse-response, search-bridge, risk-bridge, weather-bridge)
+- API: `POST /api/ai/booking` — two-call Claude Haiku pattern (~$0.005/conversation)
+- UI components: `app/components/ai-booking/` (AIChatView, AIMessageBubble, AIVehicleCard, AIProgressBar, AIChatInput, AIBookingSummary, AISearchToggle, AISearchWrapper)
+- Entry points: `/rentals/search?mode=ai` (toggle in SearchResultsClient), homepage AI button (AISearchButton in RentalSearchWidget + LocationInput)
+- Search API returns photos as `[{url, alt}]` objects — search-bridge normalizes to string URLs
+- Model: `claude-3-5-haiku-20241022`
+
 ## Git Commits
 
 - Use author: Chris H <info@itwhip.com>

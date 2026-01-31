@@ -9,6 +9,7 @@ import {
   IoCloseOutline,
   IoNavigateOutline,
 } from 'react-icons/io5'
+import AISearchButton from './AISearchButton'
 import { getGroupedLocations, getPopularLocations, type Location } from '@/lib/data/arizona-locations'
 import LocationDropdown from './LocationDropdown' // Import the external component
 
@@ -166,6 +167,10 @@ export default function LocationInput({
               <IoNavigateOutline className="w-4 h-4 text-gray-400" />
             )}
           </button>
+          {/* AI button - mobile only (desktop version is next to Search button) */}
+          <div className="sm:hidden">
+            <AISearchButton variant="mobile" />
+          </div>
         </div>
         
         {/* Use the external LocationDropdown component - ADDED onClose! */}

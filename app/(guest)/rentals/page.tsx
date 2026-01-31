@@ -328,38 +328,38 @@ export default async function RentalsPage({
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {/* Filters */}
-        <Suspense fallback={<div className="h-24 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />}>
-          <CarFilters
-            currentType={params?.type || ''}
-            currentMake={params?.make || ''}
-            currentPriceRange={params?.price || ''}
-            makes={makes}
-            totalCount={totalCount}
-          />
-        </Suspense>
+          {/* Filters */}
+          <Suspense fallback={<div className="h-24 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />}>
+            <CarFilters
+              currentType={params?.type || ''}
+              currentMake={params?.make || ''}
+              currentPriceRange={params?.price || ''}
+              makes={makes}
+              totalCount={totalCount}
+            />
+          </Suspense>
 
-        {/* Car Grid */}
-        <Suspense fallback={
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="bg-white dark:bg-gray-800 rounded-lg h-80 animate-pulse" />
-            ))}
-          </div>
-        }>
-          <CarGrid
-            initialCars={transformedCars}
-            totalCount={totalCount}
-            currentPage={currentPage}
-            perPage={ITEMS_PER_PAGE}
-            filters={{
-              type: params?.type,
-              make: params?.make,
-              priceMin: params?.priceMin,
-              priceMax: params?.priceMax
-            }}
-          />
-        </Suspense>
+          {/* Car Grid */}
+          <Suspense fallback={
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="bg-white dark:bg-gray-800 rounded-lg h-80 animate-pulse" />
+              ))}
+            </div>
+          }>
+            <CarGrid
+              initialCars={transformedCars}
+              totalCount={totalCount}
+              currentPage={currentPage}
+              perPage={ITEMS_PER_PAGE}
+              filters={{
+                type: params?.type,
+                make: params?.make,
+                priceMin: params?.priceMin,
+                priceMax: params?.priceMax
+              }}
+            />
+          </Suspense>
       </main>
 
       {/* Footer */}

@@ -2,6 +2,21 @@
 
 ## Recent Fixes (January 2026)
 
+### ItWhip AI Booking Assistant (Jan 30)
+- [x] AI-powered conversational car rental search on `/rentals/search?mode=ai`
+- [x] Service layer in `app/lib/ai-booking/` (types, state machine, prompt builder, response parser, search/risk/weather bridges)
+- [x] API endpoint `POST /api/ai/booking` with two-call Claude Haiku pattern
+- [x] State machine: INIT → COLLECTING_LOCATION → COLLECTING_DATES → COLLECTING_VEHICLE → CONFIRMING → CHECKING_AUTH → READY_FOR_PAYMENT
+- [x] Multi-field extraction (e.g. "Tesla in Scottsdale this weekend" extracts location + dates + type)
+- [x] Real vehicle search results from production `/api/rentals/search`
+- [x] AI vehicle cards with photos, pricing, ratings, instant book badges
+- [x] Chat UI: message bubbles, typing indicator, suggestion chips, progress bar
+- [x] "ItWhip AI" header with "Powered by Claude" branding + "Classic Search" toggle
+- [x] Red "AI" button on homepage: desktop (next to Search), mobile (inside location field)
+- [x] Risk scoring integration for booking fraud detection
+- [x] Photo normalization fix: API returns `{url, alt}` objects, not strings
+- [x] SDK-ready architecture (bridge pattern, pure functions, no framework coupling)
+
 ### Smartcar Tracking Dashboard Polish (Jan 27)
 - [x] EV charging controls (start/stop charging via Smartcar API)
 - [x] Enhanced vehicle cards with gradient icons (EV vs ICE distinction)

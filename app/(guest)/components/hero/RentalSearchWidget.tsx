@@ -13,6 +13,7 @@ import LocationInput from './search-components/LocationInput'
 import CalendarModal from './search-components/CalendarModal'
 import TimeDropdown from './search-components/TimeDropdown'
 import SearchButton from './search-components/SearchButton'
+import AISearchButton from './search-components/AISearchButton'
 
 interface RentalSearchCardProps {
   onSearch?: (params: any) => void
@@ -335,6 +336,11 @@ export default function RentalSearchCard({
                 disabled={!searchParams.location || !!dateError}
                 isLoading={isLoading}
               />
+
+              {/* AI Search Button - desktop only */}
+              <div className="hidden sm:block">
+                <AISearchButton />
+              </div>
             </div>
             
             {/* Date Error */}
