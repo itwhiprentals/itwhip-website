@@ -20,6 +20,54 @@ export function isWeatherRelevant(message: string): boolean {
   return WEATHER_KEYWORDS.some((kw) => lower.includes(kw));
 }
 
+/** Check if user is directly asking about weather (not car-related) */
+export function isDirectWeatherQuestion(message: string): boolean {
+  const lower = message.toLowerCase();
+  const patterns = [
+    /what('s| is) the weather/,
+    /how('s| is) the weather/,
+    /weather (in|at|for|like)/,
+    /is it (hot|cold|raining|sunny|warm|cool)/,
+    /what('s| is) the temperature/,
+    /how hot is it/,
+    /how cold is it/,
+  ];
+  return patterns.some((p) => p.test(lower));
+}
+
+/** Extract city name from a weather question */
+export function extractCityFromWeatherQuestion(message: string): string | null {
+  const lower = message.toLowerCase();
+  const cities = Object.keys(CITY_COORDS);
+  for (const city of cities) {
+    if (lower.includes(city)) return city;
+  }
+  return null;
+}
+
+/** Build a friendly weather response without calling Claude */
+export function buildWeatherReply(weather: WeatherContext): string {
+  const desc = weather.description;
+  const temp = weather.temp;
+  const city = weather.city.charAt(0).toUpperCase() + weather.city.slice(1);
+
+  let emoji = '🌤️';
+  if (desc.includes('cloud')) emoji = '☁️';
+  else if (desc.includes('rain') || desc.includes('drizzle')) emoji = '🌧️';
+  else if (desc.includes('storm') || desc.includes('thunder')) emoji = '⛈️';
+  else if (desc.includes('clear') || desc.includes('sunny')) emoji = '☀️';
+  else if (temp >= 100) emoji = '🔥';
+
+  let comment = '';
+  if (temp >= 100) comment = 'Great day for an AC-blasting ride!';
+  else if (temp >= 85) comment = 'Perfect convertible weather!';
+  else if (temp >= 70) comment = 'Beautiful driving weather!';
+  else if (temp >= 55) comment = 'Nice and comfortable out there!';
+  else comment = 'A little cool — cozy ride weather!';
+
+  return `It's ${temp}°F and ${desc} in ${city} ${emoji} ${comment} Need a car to cruise around?`;
+}
+
 // =============================================================================
 // WEATHER FETCH
 // =============================================================================

@@ -87,7 +87,13 @@ When presenting cars to the user:
 - Show make, model, year, daily rate, rating, and distance
 - Do NOT show internal IDs to the user
 - Present as numbered options the user can choose from
-- Include the vehicle ID in your extractedData when user selects one`;
+
+VEHICLE SELECTION (critical):
+- When the user names a car from the list above (by name, number, or partial match like "BMW" or "the Corvette"), this is a SELECTION — NOT a new search request.
+- Set extractedData.vehicleId to the matching car's ID from the list above.
+- Do NOT set searchQuery when the user is selecting from already-shown vehicles.
+- Move to CONFIRMING state and show a booking summary.
+- Example: if cars include "2018 BMW 430i [ID: abc123]" and user says "BMW 430i" → set extractedData.vehicleId = "abc123", nextState = "CONFIRMING"`;
 }
 
 function buildWeatherContext(weather: WeatherContext): string {
@@ -135,7 +141,7 @@ const ALLOWED_QUESTIONS = `BOOKING-RELATED QUESTIONS (answer briefly, then redir
 - Age: "Must be 21+ to rent."
 - Mileage: "Standard rentals include 200 miles/day. Extra miles available at checkout."
 - Delivery: "Most hosts offer pickup, airport delivery, or hotel delivery."
-- Deposits: "Security deposits vary: $250 for economy, $700 for luxury, $1000 for exotic."
+- Deposits: "Security deposits vary by vehicle — some cars have no deposit at all, others range from $250-$1000. You'll see the deposit amount (if any) before you book."
 
 After answering, always redirect: "Now, [next booking question]?"`;
 

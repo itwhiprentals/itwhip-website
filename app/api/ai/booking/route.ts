@@ -23,7 +23,10 @@ import { searchVehicles } from '@/app/lib/ai-booking/search-bridge'
 import { assessBookingRisk } from '@/app/lib/ai-booking/risk-bridge'
 import {
   isWeatherRelevant,
+  isDirectWeatherQuestion,
+  extractCityFromWeatherQuestion,
   fetchWeatherContext,
+  buildWeatherReply,
 } from '@/app/lib/ai-booking/weather-bridge'
 
 // =============================================================================
@@ -62,7 +65,25 @@ export async function POST(request: NextRequest) {
     let vehicles: VehicleSummary[] | null = body.previousVehicles || null
     let weather = undefined
 
-    // Check weather relevance (before calling Claude)
+    // Direct weather question — answer without calling Claude (cost optimization)
+    if (isDirectWeatherQuestion(body.message)) {
+      const city = extractCityFromWeatherQuestion(body.message) || session.location || 'phoenix';
+      const weatherData = await fetchWeatherContext(city);
+      if (weatherData) {
+        const reply = buildWeatherReply(weatherData);
+        session = addMessage(session, 'assistant', reply);
+        return NextResponse.json({
+          reply,
+          session,
+          vehicles: body.previousVehicles || null,
+          summary: null,
+          action: null,
+          suggestions: getSuggestions(session.state),
+        } satisfies AIBookingResponse);
+      }
+    }
+
+    // Check weather relevance for vehicle recommendations (before calling Claude)
     if (
       isWeatherRelevant(body.message) &&
       session.location
