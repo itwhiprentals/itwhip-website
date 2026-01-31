@@ -537,7 +537,7 @@ export default function SearchResultsClient({
                 className="h-10 px-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-700 rounded-lg text-sm font-medium hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors flex items-center gap-2 whitespace-nowrap"
               >
                 <IoSparklesOutline className="w-4 h-4" />
-                Try ItWhip AI
+                Try Choé
               </button>
 
               {/* Sort Dropdown */}

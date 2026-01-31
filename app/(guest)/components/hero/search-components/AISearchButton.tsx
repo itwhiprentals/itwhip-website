@@ -4,6 +4,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { IoSparklesSharp } from 'react-icons/io5'
 
 interface AISearchButtonProps {
@@ -27,13 +28,13 @@ export default function AISearchButton({ variant = 'desktop', onActivate }: AISe
       <button
         onClick={handleClick}
         type="button"
-        title="Try ItWhip AI"
-        className="px-3 py-1.5 bg-red-600 hover:bg-red-700 rounded-md shadow-sm
-          flex items-center gap-1.5 transition-all active:scale-95"
-        aria-label="Try ItWhip AI"
+        title="Try Choé"
+        className="h-[34px] px-2.5 bg-red-600 hover:bg-red-700 rounded-md shadow-sm
+          flex items-center gap-1 transition-all active:scale-95 overflow-hidden"
+        aria-label="Try Choé"
       >
-        <IoSparklesSharp className="w-3.5 h-3.5 text-white" />
-        <span className="text-[10px] font-bold text-white whitespace-nowrap">Try ItWhip AI</span>
+        <IoSparklesSharp className="w-3.5 h-3.5 text-white flex-shrink-0" />
+        <Image src="/images/choe-logo.png" alt="Choé" width={80} height={30} className="h-[44px] w-auto brightness-0 invert" />
       </button>
     )
   }
@@ -42,14 +43,14 @@ export default function AISearchButton({ variant = 'desktop', onActivate }: AISe
     <button
       onClick={handleClick}
       type="button"
-      title="Try AI Search"
+      title="Try Choé"
       className="h-[38px] px-3 rounded-md bg-red-600 hover:bg-red-700
-        text-white text-[11px] font-bold transition-all duration-200
+        text-white transition-all duration-200
         flex items-center justify-center gap-1 shadow-md
-        hover:shadow-lg hover:scale-[1.02] active:scale-95"
+        hover:shadow-lg hover:scale-[1.02] active:scale-95 overflow-hidden"
     >
-      <IoSparklesSharp className="w-3 h-3" />
-      <span>AI</span>
+      <IoSparklesSharp className="w-3.5 h-3.5 flex-shrink-0" />
+      <Image src="/images/choe-logo.png" alt="Choé" width={80} height={34} className="h-[50px] w-auto brightness-0 invert" />
     </button>
   )
 }
