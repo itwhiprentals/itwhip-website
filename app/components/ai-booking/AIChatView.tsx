@@ -25,13 +25,37 @@ interface AIChatViewProps {
 }
 
 export default function AIChatView({ onNavigateToBooking, onNavigateToLogin, onClassicSearch }: AIChatViewProps) {
-  const [session, setSession] = useState<BookingSession | null>(null)
-  const [vehicles, setVehicles] = useState<VehicleSummary[] | null>(null)
+  const [session, setSession] = useState<BookingSession | null>(() => {
+    if (typeof window === 'undefined') return null
+    try {
+      const saved = localStorage.getItem('itwhip-ai-session')
+      return saved ? JSON.parse(saved) : null
+    } catch { return null }
+  })
+  const [vehicles, setVehicles] = useState<VehicleSummary[] | null>(() => {
+    if (typeof window === 'undefined') return null
+    try {
+      const saved = localStorage.getItem('itwhip-ai-vehicles')
+      return saved ? JSON.parse(saved) : null
+    } catch { return null }
+  })
   const [summary, setSummary] = useState<BookingSummary | null>(null)
   const [action, setAction] = useState<BookingAction | null>(null)
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  // Persist session and vehicles to localStorage
+  useEffect(() => {
+    if (session) {
+      localStorage.setItem('itwhip-ai-session', JSON.stringify(session))
+    }
+  }, [session])
+  useEffect(() => {
+    if (vehicles) {
+      localStorage.setItem('itwhip-ai-vehicles', JSON.stringify(vehicles))
+    }
+  }, [vehicles])
 
   // Auto-scroll to bottom on new messages (skip initial mount)
   const hasInteracted = useRef(false)
@@ -94,6 +118,8 @@ export default function AIChatView({ onNavigateToBooking, onNavigateToLogin, onC
     setSummary(null)
     setAction(null)
     setSuggestions([])
+    localStorage.removeItem('itwhip-ai-session')
+    localStorage.removeItem('itwhip-ai-vehicles')
   }, [])
 
   const handleVehicleSelect = useCallback((vehicle: VehicleSummary) => {

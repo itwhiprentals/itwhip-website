@@ -21,13 +21,16 @@ export default function AIChatInput({
   const [value, setValue] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
+  // Only focus after user has sent their first message (not on initial mount)
+  const hasSentMessage = useRef(false)
   useEffect(() => {
-    if (!disabled) inputRef.current?.focus()
+    if (!disabled && hasSentMessage.current) inputRef.current?.focus()
   }, [disabled])
 
   const handleSubmit = () => {
     const trimmed = value.trim()
     if (!trimmed || disabled) return
+    hasSentMessage.current = true
     onSend(trimmed)
     setValue('')
   }

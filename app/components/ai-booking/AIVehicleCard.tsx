@@ -1,6 +1,7 @@
 'use client'
 
 import Image from 'next/image'
+import Link from 'next/link'
 import { IoStar, IoLocationSharp, IoFlash } from 'react-icons/io5'
 import type { VehicleSummary } from '@/app/lib/ai-booking/types'
 
@@ -30,12 +31,21 @@ export default function AIVehicleCard({ vehicle, onSelect }: AIVehicleCardProps)
 
           <div className="flex items-center justify-between mt-2">
             <VehiclePrice dailyRate={vehicle.dailyRate} />
-            <button
-              onClick={() => onSelect(vehicle)}
-              className="px-3 py-1.5 bg-primary text-white text-xs font-semibold rounded-md hover:bg-primary/90 transition-colors"
-            >
-              Select
-            </button>
+            <div className="flex items-center gap-1.5">
+              <Link
+                href={`/rentals/cars/${vehicle.id}`}
+                target="_blank"
+                className="px-2 py-1.5 text-primary text-xs font-medium hover:underline"
+              >
+                Details
+              </Link>
+              <button
+                onClick={() => onSelect(vehicle)}
+                className="px-3 py-1.5 bg-primary text-white text-xs font-semibold rounded-md hover:bg-primary/90 transition-colors"
+              >
+                Select
+              </button>
+            </div>
           </div>
         </div>
       </div>

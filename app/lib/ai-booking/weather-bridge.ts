@@ -20,10 +20,10 @@ export function isWeatherRelevant(message: string): boolean {
   return WEATHER_KEYWORDS.some((kw) => lower.includes(kw));
 }
 
-/** Check if user is directly asking about weather (not car-related) */
+/** Check if user is ONLY asking about weather (not also requesting a car/booking) */
 export function isDirectWeatherQuestion(message: string): boolean {
   const lower = message.toLowerCase();
-  const patterns = [
+  const weatherPatterns = [
     /what('s| is) the weather/,
     /how('s| is) the weather/,
     /weather (in|at|for|like)/,
@@ -32,7 +32,19 @@ export function isDirectWeatherQuestion(message: string): boolean {
     /how hot is it/,
     /how cold is it/,
   ];
-  return patterns.some((p) => p.test(lower));
+  if (!weatherPatterns.some((p) => p.test(lower))) return false;
+
+  // If message also contains booking intent, let Claude handle both
+  const bookingPatterns = [
+    /\bfind me\b/, /\bget me\b/, /\bshow me\b/, /\bi need\b/, /\bi want\b/, /\bbook\b/,
+    /\brent\b/, /\bcar\b/, /\bsuv\b/, /\btruck\b/, /\bconvertible\b/, /\bsedan\b/, /\btesla\b/,
+    /\bbmw\b/, /\bmercedes\b/, /\btoyota\b/, /\bhonda\b/, /\bavailable\b/, /\bsearch\b/,
+    /\bthis weekend\b/, /\btomorrow\b/, /\bnext week\b/,
+    /\bfriday\b/, /\bsaturday\b/, /\bsunday\b/,
+    /\bmonday\b/, /\btuesday\b/, /\bwednesday\b/, /\bthursday\b/,
+    /\bjeep\b/, /\bporsche\b/, /\bferrari\b/, /\blamborghini\b/,
+  ];
+  return !bookingPatterns.some((p) => p.test(lower));
 }
 
 /** Extract city name from a weather question */
@@ -78,6 +90,13 @@ const CITY_COORDS: Record<string, { lat: number; lon: number }> = {
   tempe: { lat: 33.4255, lon: -111.9400 },
   mesa: { lat: 33.4152, lon: -111.8315 },
   chandler: { lat: 33.3062, lon: -111.8413 },
+  gilbert: { lat: 33.3528, lon: -111.7890 },
+  glendale: { lat: 33.5387, lon: -112.1860 },
+  peoria: { lat: 33.5806, lon: -112.2374 },
+  surprise: { lat: 33.6292, lon: -112.3680 },
+  goodyear: { lat: 33.4353, lon: -112.3577 },
+  'paradise valley': { lat: 33.5310, lon: -111.9425 },
+  'fountain hills': { lat: 33.6117, lon: -111.7174 },
   sedona: { lat: 34.8697, lon: -111.7610 },
   tucson: { lat: 32.2226, lon: -110.9747 },
   flagstaff: { lat: 35.1983, lon: -111.6513 },
@@ -87,7 +106,7 @@ const CITY_COORDS: Record<string, { lat: number; lon: number }> = {
 export async function fetchWeatherContext(
   location: string
 ): Promise<WeatherContext | null> {
-  const apiKey = process.env.OPENWEATHER_API_KEY || process.env.EXPO_PUBLIC_OPENWEATHER_API_KEY;
+  const apiKey = process.env.OPENWEATHER_API_KEY || process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY || process.env.EXPO_PUBLIC_OPENWEATHER_API_KEY;
   if (!apiKey) return null;
 
   const cityKey = location.toLowerCase().trim();

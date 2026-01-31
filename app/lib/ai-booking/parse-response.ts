@@ -165,10 +165,19 @@ function normalizeSearchQuery(
 // =============================================================================
 
 function createFallbackResponse(raw: string): ClaudeBookingOutput {
-  // Use the raw text as the reply if Claude didn't return JSON
-  const reply = raw.trim().length > 0
-    ? raw.trim().slice(0, 500)
-    : "Sorry, I had a moment there. What kind of car are you looking for in Arizona?";
+  let reply = "Sorry, I had a moment there. What kind of car are you looking for in Arizona?";
+
+  if (raw.trim().length > 0) {
+    // If the raw text looks like JSON, try to extract just the reply field
+    const replyMatch = raw.match(/"reply"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+    if (replyMatch) {
+      reply = replyMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+    } else {
+      // Use raw text but strip any JSON-like content
+      const cleaned = raw.trim().replace(/^\{[\s\S]*\}$/, '').trim();
+      reply = cleaned.length > 0 ? cleaned.slice(0, 500) : reply;
+    }
+  }
 
   return {
     reply,

@@ -128,47 +128,60 @@ export async function POST(request: NextRequest) {
     if (parsed.searchQuery) {
       vehicles = await searchVehicles(parsed.searchQuery)
 
-      // If we got vehicles, call Claude again with vehicle context
-      if (vehicles.length > 0) {
-        const enrichedPrompt = buildSystemPrompt({
-          session,
-          isLoggedIn: !!body.userId,
-          isVerified: false,
-          vehicles,
-          weather,
-        })
+      // Fallback: if filtered search returned 0 results, retry without filters
+      if (vehicles.length === 0 && hasFilters(parsed.searchQuery)) {
+        const fallbackQuery = { location: parsed.searchQuery.location, pickupDate: parsed.searchQuery.pickupDate, returnDate: parsed.searchQuery.returnDate, pickupTime: parsed.searchQuery.pickupTime, returnTime: parsed.searchQuery.returnTime }
+        vehicles = await searchVehicles(fallbackQuery)
+      }
 
-        const enrichedResponse = await client.messages.create({
-          model: 'claude-3-5-haiku-20241022',
-          max_tokens: 1024,
-          system: enrichedPrompt,
-          messages: [
-            ...claudeMessages,
-            {
-              role: 'assistant',
-              content: `I found ${vehicles.length} cars matching your criteria. Let me present them.`,
-            },
-            {
-              role: 'user',
-              content: 'Show me the available cars.',
-            },
-          ],
-        })
+      // Sort by price if user asked for cheapest/budget
+      if (vehicles.length > 0 && wantsLowestPrice(body.message)) {
+        vehicles = [...vehicles].sort((a, b) => a.dailyRate - b.dailyRate)
+      }
 
-        const enrichedText = enrichedResponse.content
-          .filter((block) => block.type === 'text')
-          .map((block) => (block as { type: 'text'; text: string }).text)
-          .join('')
+      // Call Claude again with vehicle context (or with 0-result context)
+      const enrichedPrompt = buildSystemPrompt({
+        session,
+        isLoggedIn: !!body.userId,
+        isVerified: false,
+        vehicles: vehicles.length > 0 ? vehicles : undefined,
+        weather,
+      })
 
-        const enrichedParsed = parseClaudeResponse(enrichedText)
-        // Use enriched reply but keep original extracted data
-        parsed.reply = enrichedParsed.reply
-        if (enrichedParsed.nextState) {
-          parsed.nextState = enrichedParsed.nextState
-        }
-      } else {
-        // No results — Claude should tell the user
-        parsed.reply += "\n\nI couldn't find any cars matching those criteria. Want to try different dates or a different area?"
+      const noResultsNote = vehicles.length === 0
+        ? ` No exact matches were found for the filters (make/type/price/seats). Show the user what IS available nearby, or suggest broadening their search.`
+        : ''
+
+      const enrichedResponse = await client.messages.create({
+        model: 'claude-3-5-haiku-20241022',
+        max_tokens: 1024,
+        system: enrichedPrompt,
+        messages: [
+          ...claudeMessages,
+          {
+            role: 'assistant',
+            content: vehicles.length > 0
+              ? `I found ${vehicles.length} cars matching your criteria. Let me present them.`
+              : `I searched but couldn't find exact matches for those filters.${noResultsNote}`,
+          },
+          {
+            role: 'user',
+            content: vehicles.length > 0
+              ? 'Show me the available cars.'
+              : 'What do you have instead?',
+          },
+        ],
+      })
+
+      const enrichedText = enrichedResponse.content
+        .filter((block) => block.type === 'text')
+        .map((block) => (block as { type: 'text'; text: string }).text)
+        .join('')
+
+      const enrichedParsed = parseClaudeResponse(enrichedText)
+      parsed.reply = enrichedParsed.reply
+      if (enrichedParsed.nextState) {
+        parsed.nextState = enrichedParsed.nextState
       }
     }
 
@@ -319,4 +332,17 @@ function getSuggestions(state: BookingState): string[] {
     default:
       return []
   }
+}
+
+// =============================================================================
+// SEARCH FILTER CHECK
+// =============================================================================
+
+function hasFilters(query: import('@/app/lib/ai-booking/types').SearchQuery): boolean {
+  return !!(query.make || query.carType || query.priceMin || query.priceMax || query.seats || query.transmission)
+}
+
+function wantsLowestPrice(message: string): boolean {
+  const lower = message.toLowerCase()
+  return /\b(cheapest|cheapest|budget|lowest price|most affordable|under \$|least expensive)\b/.test(lower)
 }
