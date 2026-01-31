@@ -294,7 +294,7 @@ function HeaderInner({
 
   return (
     <>
-      <nav className={`fixed top-0 w-full z-50 transition-all duration-300 pt-safe bg-white dark:bg-gray-950 ${
+      <nav className={`fixed top-0 w-full z-50 transition-all duration-300 pt-safe bg-white dark:bg-gray-900 ${
         scrolled ? 'shadow-sm' : ''
       } border-b border-gray-200 dark:border-gray-800`}>
         <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
@@ -609,7 +609,7 @@ function HeaderInner({
 export default function Header(props: HeaderProps = {}) {
   return (
     <Suspense fallback={
-      <nav className="fixed top-0 w-full z-50 bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800">
+      <nav className="fixed top-0 w-full z-50 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
         <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center ml-4 sm:ml-0">

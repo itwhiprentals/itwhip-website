@@ -16,7 +16,7 @@ export const viewport: Viewport = {
   viewportFit: 'cover', // Allow content to extend under status bar
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#030712' },
+    { media: '(prefers-color-scheme: dark)', color: '#111827' },
   ],
 }
 
