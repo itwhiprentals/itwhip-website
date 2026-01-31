@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { IoSparkles } from 'react-icons/io5'
 import AIMessageBubble from './AIMessageBubble'
 import AIVehicleCard from './AIVehicleCard'
@@ -122,58 +123,127 @@ export default function AIChatView({ onNavigateToBooking, onNavigateToLogin, onC
   const messages = session?.messages || []
   const hasMessages = messages.length > 0
 
+  const springTransition = { type: 'spring', stiffness: 300, damping: 30 }
+
   return (
-    <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={springTransition}
+      className="flex flex-col h-full bg-gray-50 dark:bg-gray-900 overflow-hidden"
+    >
       {/* Header */}
       <ChatHeader onClassicSearch={onClassicSearch} />
 
       {/* Progress bar */}
-      {session && (
-        <div className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
-          <AIProgressBar state={session.state} />
-        </div>
-      )}
+      <AnimatePresence>
+        {session && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={springTransition}
+            className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden"
+          >
+            <AIProgressBar state={session.state} />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {!hasMessages && <WelcomeMessage />}
+        {!hasMessages && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={springTransition}
+          >
+            <WelcomeMessage />
+          </motion.div>
+        )}
 
         {messages.map((msg, i) => (
-          <AIMessageBubble key={i} role={msg.role} content={msg.content} />
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ ...springTransition, delay: i === messages.length - 1 ? 0.05 : 0 }}
+          >
+            <AIMessageBubble role={msg.role} content={msg.content} />
+          </motion.div>
         ))}
 
         {/* Vehicle cards */}
-        {vehicles && vehicles.length > 0 && session?.state === BookingState.COLLECTING_VEHICLE && (
-          <VehicleResults vehicles={vehicles} onSelect={handleVehicleSelect} />
-        )}
+        <AnimatePresence>
+          {vehicles && vehicles.length > 0 && session?.state === BookingState.COLLECTING_VEHICLE && (
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={springTransition}
+            >
+              <VehicleResults vehicles={vehicles} onSelect={handleVehicleSelect} />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Booking summary */}
-        {summary && session?.state === BookingState.CONFIRMING && (
-          <AIBookingSummary
-            summary={summary}
-            onConfirm={handleConfirm}
-            onChangeVehicle={handleChangeVehicle}
-          />
-        )}
+        <AnimatePresence>
+          {summary && session?.state === BookingState.CONFIRMING && (
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={springTransition}
+            >
+              <AIBookingSummary
+                summary={summary}
+                onConfirm={handleConfirm}
+                onChangeVehicle={handleChangeVehicle}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Action buttons */}
-        {action && <ActionPrompt action={action} onAction={handleAction} />}
+        <AnimatePresence>
+          {action && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={springTransition}
+            >
+              <ActionPrompt action={action} onAction={handleAction} />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Loading indicator */}
-        {loading && <TypingIndicator />}
+        <AnimatePresence>
+          {loading && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={springTransition}
+            >
+              <TypingIndicator />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
-      <AIChatInput
-        onSend={sendMessage}
-        onReset={handleReset}
-        suggestions={suggestions}
-        disabled={loading}
-        hasMessages={hasMessages}
-      />
-    </div>
+      {/* Input — sticky at bottom, keyboard pushes it up via env(safe-area-inset-bottom) */}
+      <div style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+        <AIChatInput
+          onSend={sendMessage}
+          onReset={handleReset}
+          suggestions={suggestions}
+          disabled={loading}
+          hasMessages={hasMessages}
+        />
+      </div>
+    </motion.div>
   )
 }
 

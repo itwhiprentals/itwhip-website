@@ -411,9 +411,9 @@ export default function SearchResultsClient({
 
   return (
     <div className="bg-gray-50 dark:bg-gray-900">
-      {/* AI Search Mode — replaces the search card */}
+      {/* AI Search Mode — full screen chat experience */}
       {searchMode === 'ai' && (
-        <div className="max-w-2xl mx-auto px-4 py-6" style={{ height: 'calc(100vh - 200px)', minHeight: '500px' }}>
+        <div className="fixed inset-0 z-50 bg-gray-50 dark:bg-gray-900" style={{ height: '100dvh' }}>
           <AIChatView
             onNavigateToBooking={(vehicleId, startDate, endDate) => {
               router.push(`/rentals/${vehicleId}?startDate=${startDate}&endDate=${endDate}`)

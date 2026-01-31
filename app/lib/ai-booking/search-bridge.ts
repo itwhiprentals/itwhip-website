@@ -44,12 +44,24 @@ export async function searchVehicles(
 function buildSearchParams(query: SearchQuery): URLSearchParams {
   const params = new URLSearchParams();
 
-  if (query.location) params.set('location', query.location);
+  // Default location to Phoenix if not specified
+  params.set('location', query.location || 'Phoenix, AZ');
+
   if (query.carType) params.set('carType', query.carType);
-  if (query.pickupDate) params.set('pickupDate', query.pickupDate);
-  if (query.returnDate) params.set('returnDate', query.returnDate);
-  if (query.pickupTime) params.set('pickupTime', query.pickupTime || '10:00');
-  if (query.returnTime) params.set('returnTime', query.returnTime || '10:00');
+
+  // Default dates to tomorrow + 3 days if not provided (required by search API)
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const threeDaysLater = new Date(tomorrow);
+  threeDaysLater.setDate(threeDaysLater.getDate() + 3);
+  const defaultPickup = tomorrow.toISOString().split('T')[0];
+  const defaultReturn = threeDaysLater.toISOString().split('T')[0];
+
+  params.set('pickupDate', query.pickupDate || defaultPickup);
+  params.set('returnDate', query.returnDate || defaultReturn);
+  params.set('pickupTime', query.pickupTime || '10:00');
+  params.set('returnTime', query.returnTime || '10:00');
+
   if (query.make) params.set('make', query.make);
   if (query.priceMin) params.set('priceMin', String(query.priceMin));
   if (query.priceMax) params.set('priceMax', String(query.priceMax));
