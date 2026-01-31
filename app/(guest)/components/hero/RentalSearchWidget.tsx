@@ -17,6 +17,7 @@ import AISearchButton from './search-components/AISearchButton'
 
 interface RentalSearchCardProps {
   onSearch?: (params: any) => void
+  onAISearch?: () => void
   variant?: 'hero' | 'compact'
   // NEW: Props for initial values
   initialLocation?: string
@@ -26,8 +27,9 @@ interface RentalSearchCardProps {
   initialReturnTime?: string
 }
 
-export default function RentalSearchCard({ 
+export default function RentalSearchCard({
   onSearch,
+  onAISearch,
   variant = 'hero',
   initialLocation,
   initialPickupDate,
@@ -242,6 +244,7 @@ export default function RentalSearchCard({
                   onChange={handleLocationChange}
                   onLocationSelect={handleLocationSelect}
                   placeholder="Where?"
+                  onAISearch={onAISearch}
                 />
               </div>
               
@@ -339,7 +342,7 @@ export default function RentalSearchCard({
 
               {/* AI Search Button - desktop only */}
               <div className="hidden sm:block">
-                <AISearchButton />
+                <AISearchButton onActivate={onAISearch} />
               </div>
             </div>
             

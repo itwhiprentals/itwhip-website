@@ -32,9 +32,15 @@ export default function AIChatView({ onNavigateToBooking, onNavigateToLogin, onC
   const [loading, setLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // Auto-scroll to bottom on new messages
+  // Auto-scroll to bottom on new messages (skip initial mount)
+  const hasInteracted = useRef(false)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (session?.messages.length) {
+      if (hasInteracted.current) {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+      }
+      hasInteracted.current = true
+    }
   }, [session?.messages.length, vehicles, summary])
 
   const sendMessage = useCallback(async (message: string) => {

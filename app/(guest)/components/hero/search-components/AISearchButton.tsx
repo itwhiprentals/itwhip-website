@@ -8,15 +8,24 @@ import { IoSparklesSharp } from 'react-icons/io5'
 
 interface AISearchButtonProps {
   variant?: 'desktop' | 'mobile'
+  onActivate?: () => void
 }
 
-export default function AISearchButton({ variant = 'desktop' }: AISearchButtonProps) {
+export default function AISearchButton({ variant = 'desktop', onActivate }: AISearchButtonProps) {
   const router = useRouter()
+
+  const handleClick = () => {
+    if (onActivate) {
+      onActivate()
+    } else {
+      router.push('/rentals/search?mode=ai')
+    }
+  }
 
   if (variant === 'mobile') {
     return (
       <button
-        onClick={() => router.push('/rentals/search?mode=ai')}
+        onClick={handleClick}
         type="button"
         title="Try ItWhip AI"
         className="px-3 py-1.5 bg-red-600 hover:bg-red-700 rounded-md shadow-sm
@@ -31,7 +40,7 @@ export default function AISearchButton({ variant = 'desktop' }: AISearchButtonPr
 
   return (
     <button
-      onClick={() => router.push('/rentals/search?mode=ai')}
+      onClick={handleClick}
       type="button"
       title="Try AI Search"
       className="h-[38px] px-3 rounded-md bg-red-600 hover:bg-red-700

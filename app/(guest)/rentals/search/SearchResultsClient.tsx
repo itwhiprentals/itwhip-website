@@ -13,7 +13,8 @@ import {
   IoCloseOutline,
   IoSwapVerticalOutline,
   IoAirplaneOutline,
-  IoBusinessOutline
+  IoBusinessOutline,
+  IoSparklesOutline
 } from 'react-icons/io5'
 import { format, parseISO } from 'date-fns'
 import { MapContainer } from './components/MapContainer'
@@ -75,6 +76,11 @@ export default function SearchResultsClient({
   const viewParam = searchParams.get('view')
   const modeParam = searchParams.get('mode')
   const [searchMode, setSearchMode] = useState<'normal' | 'ai'>(modeParam === 'ai' ? 'ai' : 'normal')
+
+  // Sync searchMode with URL param changes (e.g. navigating to ?mode=ai while already on page)
+  useEffect(() => {
+    setSearchMode(modeParam === 'ai' ? 'ai' : 'normal')
+  }, [modeParam])
 
   const [cars, setCars] = useState<any[]>(initialCars)
   const [carsInCity, setCarsInCity] = useState<any[]>(initialCarsInCity)
@@ -429,6 +435,7 @@ export default function SearchResultsClient({
           <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
             <RentalSearchCard
               onSearch={handleSearchUpdate}
+              onAISearch={() => setSearchMode('ai')}
               variant="compact"
               initialLocation={location}
               initialPickupDate={pickupDate}
@@ -522,6 +529,15 @@ export default function SearchResultsClient({
                     {activeFilterCount}
                   </span>
                 )}
+              </button>
+
+              {/* AI Search Button */}
+              <button
+                onClick={() => setSearchMode('ai')}
+                className="h-10 px-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-700 rounded-lg text-sm font-medium hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors flex items-center gap-2 whitespace-nowrap"
+              >
+                <IoSparklesOutline className="w-4 h-4" />
+                Try ItWhip AI
               </button>
 
               {/* Sort Dropdown */}

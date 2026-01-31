@@ -18,13 +18,15 @@ interface LocationInputProps {
   onChange: (value: string) => void
   onLocationSelect: (location: Location) => void
   placeholder?: string
+  onAISearch?: () => void
 }
 
 export default function LocationInput({
   value,
   onChange,
   onLocationSelect,
-  placeholder = "Where?"
+  placeholder = "Where?",
+  onAISearch
 }: LocationInputProps) {
   const [showDropdown, setShowDropdown] = useState(false)
   const [locationQuery, setLocationQuery] = useState(value)
@@ -169,7 +171,7 @@ export default function LocationInput({
           </button>
           {/* AI button - mobile only (desktop version is next to Search button) */}
           <div className="sm:hidden">
-            <AISearchButton variant="mobile" />
+            <AISearchButton variant="mobile" onActivate={onAISearch} />
           </div>
         </div>
         
