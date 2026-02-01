@@ -132,7 +132,11 @@ export async function GET(request: NextRequest) {
     })
     
     const totalBookings = bookingStats[0]?._count || 0
-    
+
+    const vehicleCount = await prisma.rentalCar.count({
+      where: { hostId: host.id }
+    })
+
     const profile = {
       id: host.id,
       email: host.email,
@@ -150,6 +154,7 @@ export async function GET(request: NextRequest) {
       responseRate: host.responseRate,
       acceptanceRate: host.acceptanceRate,
       totalTrips: host.totalTrips || totalBookings,
+      partnerFleetSize: vehicleCount,
       rating: host.rating,
       governmentIdUrl: host.governmentIdUrl,
       driversLicenseUrl: host.driversLicenseUrl,
