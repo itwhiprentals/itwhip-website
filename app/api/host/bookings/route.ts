@@ -34,7 +34,8 @@ export async function GET(request: NextRequest) {
     }
     
     // Check if host has permission to view bookings
-    if (host.approvalStatus !== 'APPROVED' && host.approvalStatus !== 'SUSPENDED') {
+    // Allow PENDING hosts read-only access to their own bookings
+    if (!['APPROVED', 'SUSPENDED', 'PENDING'].includes(host.approvalStatus || '')) {
       return NextResponse.json(
         { error: 'Host not approved' },
         { status: 403 }
