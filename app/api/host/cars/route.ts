@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
         photos: {
           orderBy: { order: 'asc' }
         },
-        classification: true,
+        VehicleClassification: true,
         bookings: {
           where: {
             OR: [

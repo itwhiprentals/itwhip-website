@@ -71,7 +71,20 @@ export async function GET(request: NextRequest) {
             status: true,
             startDate: true,
             endDate: true,
-            totalAmount: true
+            totalAmount: true,
+            guestName: true,
+            car: {
+              select: {
+                make: true,
+                model: true,
+                year: true,
+                photos: {
+                  select: { url: true, isHero: true },
+                  orderBy: { order: 'asc' },
+                  take: 3
+                }
+              }
+            }
           },
           orderBy: {
             createdAt: 'desc'
