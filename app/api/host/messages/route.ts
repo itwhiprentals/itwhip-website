@@ -73,6 +73,22 @@ export async function GET(request: NextRequest) {
         endDate: true,
         guestName: true,
         guestEmail: true,
+        renterId: true,
+        renter: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+            avatar: true,
+          }
+        },
+        reviewerProfile: {
+          select: {
+            id: true,
+            name: true,
+            profilePhotoUrl: true,
+          }
+        },
         car: {
           select: {
             make: true,
@@ -112,9 +128,18 @@ export async function GET(request: NextRequest) {
       .filter(booking => booking.messages.length > 0)
       .map(booking => {
         const lastMessage = booking.messages[0]
-        const unreadCount = booking.messages.filter(m => 
+        const unreadCount = booking.messages.filter(m =>
           !m.isRead && m.senderType !== 'host'
         ).length
+
+        // Guest photo: prefer reviewerProfile.profilePhotoUrl, fallback to renter.image/avatar
+        const guestPhoto = booking.reviewerProfile?.profilePhotoUrl
+          || booking.renter?.image
+          || booking.renter?.avatar
+          || null
+        const guestName = booking.reviewerProfile?.name
+          || booking.renter?.name
+          || booking.guestName
 
         return {
           id: booking.id,
@@ -123,8 +148,9 @@ export async function GET(request: NextRequest) {
           type: 'booking' as const,
           subject: `Booking #${booking.bookingCode}`,
           preview: lastMessage.message.substring(0, 100),
-          sender: booking.guestName,
+          sender: guestName,
           senderEmail: booking.guestEmail,
+          guestPhoto,
           category: lastMessage.category,
           isRead: unreadCount === 0,
           isUrgent: booking.messages.some(m => m.isUrgent),
