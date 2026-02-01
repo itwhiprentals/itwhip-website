@@ -177,6 +177,51 @@ export function hasRole(user: VerifiedUser | null, allowedRoles: string[]): bool
 }
 
 /**
+ * Verify host/partner request — returns hostId from JWT
+ * Accepts Authorization Bearer header (mobile) or cookies (web)
+ *
+ * Usage in partner API routes:
+ * ```typescript
+ * const hostId = await verifyHostRequest(request)
+ * if (!hostId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+ * ```
+ */
+export async function verifyHostRequest(
+  request: NextRequest
+): Promise<string | null> {
+  try {
+    // Check Authorization header first (mobile app sends Bearer tokens)
+    const authHeader = request.headers.get('authorization')
+    let token: string | undefined
+
+    if (authHeader?.startsWith('Bearer ')) {
+      token = authHeader.substring(7)
+    }
+
+    // Fall back to cookies (web browser sessions)
+    if (!token) {
+      token = request.cookies.get('partner_token')?.value ||
+              request.cookies.get('hostAccessToken')?.value ||
+              request.cookies.get('accessToken')?.value
+    }
+
+    if (!token) return null
+
+    const { payload } = await verifyTokenWithSecrets(token)
+    const hostId = payload.hostId as string
+    if (!hostId) return null
+
+    // Check expiry
+    const now = Math.floor(Date.now() / 1000)
+    if (payload.exp && payload.exp < now) return null
+
+    return hostId
+  } catch {
+    return null
+  }
+}
+
+/**
  * Helper: Check if user is guest type
  */
 export function isGuestUser(user: VerifiedUser | null): boolean {

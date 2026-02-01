@@ -10,11 +10,19 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
 
 // Helper to get current host from auth
 async function getCurrentHost(request: NextRequest) {
-  const cookieStore = await cookies()
-  // Check multiple token sources - onboard/validate sets hostAccessToken and accessToken
-  const token = cookieStore.get('partner_token')?.value
-    || cookieStore.get('hostAccessToken')?.value
-    || cookieStore.get('accessToken')?.value
+  // Check Authorization header first (mobile app), then fall back to cookies
+  const authHeader = request.headers.get('authorization')
+  let token: string | undefined
+  if (authHeader?.startsWith('Bearer ')) {
+    token = authHeader.substring(7)
+  }
+  if (!token) {
+    const cookieStore = await cookies()
+    // Check multiple token sources - onboard/validate sets hostAccessToken and accessToken
+    token = cookieStore.get('partner_token')?.value
+      || cookieStore.get('hostAccessToken')?.value
+      || cookieStore.get('accessToken')?.value
+  }
 
   if (!token) return null
 

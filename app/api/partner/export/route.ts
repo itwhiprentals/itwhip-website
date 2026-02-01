@@ -10,9 +10,17 @@ const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'your-secret-key'
 )
 
-async function getPartnerFromToken() {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('partner_token')?.value
+async function getPartnerFromToken(request?: NextRequest) {
+  // Check Authorization header first (mobile app), then fall back to cookies
+  let token: string | undefined
+  const authHeader = request?.headers.get('authorization')
+  if (authHeader?.startsWith('Bearer ')) {
+    token = authHeader.substring(7)
+  }
+  if (!token) {
+    const cookieStore = await cookies()
+    token = cookieStore.get('partner_token')?.value
+  }
 
   if (!token) return null
 
@@ -52,7 +60,7 @@ function generateCsv(headers: string[], rows: any[][]): string {
 
 export async function GET(request: NextRequest) {
   try {
-    const partner = await getPartnerFromToken()
+    const partner = await getPartnerFromToken(request)
 
     if (!partner) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

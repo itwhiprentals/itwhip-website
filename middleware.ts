@@ -429,11 +429,13 @@ export async function middleware(request: NextRequest) {
       !pathname.startsWith('/api/host/verify') &&
       !pathname.startsWith('/api/host/forgot-password') &&
       !pathname.startsWith('/api/host/reset-password')) {
-    // Check all possible auth cookies - OAuth sets partner_token
-    const hostToken = request.cookies.get('hostAccessToken')?.value ||
+    // Check Authorization header first (mobile app sends Bearer tokens), then cookies
+    const authHeader = request.headers.get('authorization')
+    const hostToken = (authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null) ||
+                     request.cookies.get('hostAccessToken')?.value ||
                      request.cookies.get('partner_token')?.value ||
                      request.cookies.get('accessToken')?.value
-    
+
     if (!hostToken) {
       return NextResponse.json(
         { error: 'Unauthorized - Host access required' },

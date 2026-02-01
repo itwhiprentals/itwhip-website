@@ -13,13 +13,20 @@ const JWT_SECRET = new TextEncoder().encode(
 )
 
 // UNIFIED PORTAL: Accept all token types
-async function getPartnerFromToken() {
-  const cookieStore = await cookies()
-
-  // Accept partner_token, hostAccessToken, or accessToken
-  const token = cookieStore.get('partner_token')?.value ||
-                cookieStore.get('hostAccessToken')?.value ||
-                cookieStore.get('accessToken')?.value
+async function getPartnerFromToken(request?: NextRequest) {
+  // Check Authorization header first (mobile app)
+  const authHeader = request?.headers.get('authorization')
+  let token: string | undefined
+  if (authHeader?.startsWith('Bearer ')) {
+    token = authHeader.substring(7)
+  }
+  // Fall back to cookies (web)
+  if (!token) {
+    const cookieStore = await cookies()
+    token = cookieStore.get('partner_token')?.value ||
+            cookieStore.get('hostAccessToken')?.value ||
+            cookieStore.get('accessToken')?.value
+  }
 
   if (!token) return null
 
@@ -70,7 +77,7 @@ async function getPartnerFromToken() {
 // POST - Create Stripe Connect Express account
 export async function POST(request: NextRequest) {
   try {
-    const partner = await getPartnerFromToken()
+    const partner = await getPartnerFromToken(request)
 
     if (!partner) {
       return NextResponse.json(
@@ -242,7 +249,7 @@ export async function POST(request: NextRequest) {
 // GET - Check Connect account status
 export async function GET(request: NextRequest) {
   try {
-    const partner = await getPartnerFromToken()
+    const partner = await getPartnerFromToken(request)
 
     if (!partner) {
       return NextResponse.json(

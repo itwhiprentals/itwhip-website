@@ -12,10 +12,18 @@ const JWT_SECRET = new TextEncoder().encode(
 
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    // Accept both partner_token AND hostAccessToken for unified portal
-    const token = cookieStore.get('partner_token')?.value ||
-                  cookieStore.get('hostAccessToken')?.value
+    // Check Authorization header first (mobile app), then fall back to cookies
+    const authHeader = request.headers.get('authorization')
+    let token: string | undefined
+    if (authHeader?.startsWith('Bearer ')) {
+      token = authHeader.substring(7)
+    }
+    if (!token) {
+      const cookieStore = await cookies()
+      // Accept both partner_token AND hostAccessToken for unified portal
+      token = cookieStore.get('partner_token')?.value ||
+                    cookieStore.get('hostAccessToken')?.value
+    }
 
     if (!token) {
       return NextResponse.json(

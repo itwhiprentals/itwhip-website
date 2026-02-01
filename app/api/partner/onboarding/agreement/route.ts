@@ -18,11 +18,19 @@ cloudinary.config({
 })
 
 // Helper to get current host from auth
-async function getCurrentHost() {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('partner_token')?.value
-    || cookieStore.get('hostAccessToken')?.value
-    || cookieStore.get('accessToken')?.value
+async function getCurrentHost(request?: NextRequest) {
+  // Check Authorization header first (mobile app), then fall back to cookies
+  let token: string | undefined
+  const authHeader = request?.headers.get('authorization')
+  if (authHeader?.startsWith('Bearer ')) {
+    token = authHeader.substring(7)
+  }
+  if (!token) {
+    const cookieStore = await cookies()
+    token = cookieStore.get('partner_token')?.value
+      || cookieStore.get('hostAccessToken')?.value
+      || cookieStore.get('accessToken')?.value
+  }
 
   if (!token) return null
 
@@ -48,9 +56,9 @@ async function getCurrentHost() {
 }
 
 // GET - Get current agreement status
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const host = await getCurrentHost()
+    const host = await getCurrentHost(request)
 
     if (!host) {
       return NextResponse.json(
@@ -96,7 +104,7 @@ export async function GET() {
 // POST - Upload new agreement
 export async function POST(request: NextRequest) {
   try {
-    const host = await getCurrentHost()
+    const host = await getCurrentHost(request)
 
     if (!host) {
       return NextResponse.json(
@@ -237,9 +245,9 @@ export async function POST(request: NextRequest) {
 }
 
 // DELETE - Remove agreement
-export async function DELETE() {
+export async function DELETE(request: NextRequest) {
   try {
-    const host = await getCurrentHost()
+    const host = await getCurrentHost(request)
 
     if (!host) {
       return NextResponse.json(

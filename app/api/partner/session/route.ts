@@ -46,12 +46,19 @@ function computeRole(host: {
 
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies()
-
-    // Accept both partner_token and hostAccessToken for unified portal
-    const token = cookieStore.get('partner_token')?.value ||
-                  cookieStore.get('hostAccessToken')?.value ||
-                  cookieStore.get('accessToken')?.value
+    // Check Authorization header first (mobile app)
+    const authHeader = request.headers.get('authorization')
+    let token: string | undefined
+    if (authHeader?.startsWith('Bearer ')) {
+      token = authHeader.substring(7)
+    }
+    // Fall back to cookies (web)
+    if (!token) {
+      const cookieStore = await cookies()
+      token = cookieStore.get('partner_token')?.value ||
+              cookieStore.get('hostAccessToken')?.value ||
+              cookieStore.get('accessToken')?.value
+    }
 
     if (!token) {
       return NextResponse.json(

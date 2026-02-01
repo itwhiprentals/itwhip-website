@@ -13,10 +13,18 @@ const JWT_SECRET = new TextEncoder().encode(
 
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    // Accept both partner_token AND hostAccessToken (for fleet managers after signup)
-    const token = cookieStore.get('partner_token')?.value ||
-                  cookieStore.get('hostAccessToken')?.value
+    // Check Authorization header first (mobile app)
+    const authHeader = request.headers.get('authorization')
+    let token: string | undefined
+    if (authHeader?.startsWith('Bearer ')) {
+      token = authHeader.substring(7)
+    }
+    // Fall back to cookies (web)
+    if (!token) {
+      const cookieStore = await cookies()
+      token = cookieStore.get('partner_token')?.value ||
+              cookieStore.get('hostAccessToken')?.value
+    }
 
     if (!token) {
       return NextResponse.json(

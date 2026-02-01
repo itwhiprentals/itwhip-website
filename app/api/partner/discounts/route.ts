@@ -11,11 +11,19 @@ const JWT_SECRET = new TextEncoder().encode(
 )
 
 // Helper to get hostId from token
-async function getHostIdFromToken() {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('partner_token')?.value ||
-                cookieStore.get('hostAccessToken')?.value ||
-                cookieStore.get('accessToken')?.value
+async function getHostIdFromToken(request?: NextRequest) {
+  // Check Authorization header first (mobile app), then fall back to cookies
+  let token: string | undefined
+  const authHeader = request?.headers.get('authorization')
+  if (authHeader?.startsWith('Bearer ')) {
+    token = authHeader.substring(7)
+  }
+  if (!token) {
+    const cookieStore = await cookies()
+    token = cookieStore.get('partner_token')?.value ||
+                  cookieStore.get('hostAccessToken')?.value ||
+                  cookieStore.get('accessToken')?.value
+  }
 
   if (!token) return null
 
@@ -29,7 +37,7 @@ async function getHostIdFromToken() {
 
 export async function GET(request: NextRequest) {
   try {
-    const hostId = await getHostIdFromToken()
+    const hostId = await getHostIdFromToken(request)
 
     if (!hostId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -65,7 +73,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const hostId = await getHostIdFromToken()
+    const hostId = await getHostIdFromToken(request)
 
     if (!hostId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

@@ -10,11 +10,19 @@ const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'your-secret-key'
 )
 
-async function getPartnerFromToken() {
-  const cookieStore = await cookies()
-  // Accept both partner_token AND hostAccessToken for unified portal
-  const token = cookieStore.get('partner_token')?.value ||
-                cookieStore.get('hostAccessToken')?.value
+async function getPartnerFromToken(request?: NextRequest) {
+  // Check Authorization header first (mobile app), then fall back to cookies
+  let token: string | undefined
+  const authHeader = request?.headers.get('authorization')
+  if (authHeader?.startsWith('Bearer ')) {
+    token = authHeader.substring(7)
+  }
+  if (!token) {
+    const cookieStore = await cookies()
+    // Accept both partner_token AND hostAccessToken for unified portal
+    token = cookieStore.get('partner_token')?.value ||
+                  cookieStore.get('hostAccessToken')?.value
+  }
 
   if (!token) return null
 
@@ -39,7 +47,7 @@ async function getPartnerFromToken() {
 
 export async function GET(request: NextRequest) {
   try {
-    const partner = await getPartnerFromToken()
+    const partner = await getPartnerFromToken(request)
 
     if (!partner) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -195,7 +203,7 @@ export async function GET(request: NextRequest) {
 // POST - Create new maintenance record
 export async function POST(request: NextRequest) {
   try {
-    const partner = await getPartnerFromToken()
+    const partner = await getPartnerFromToken(request)
 
     if (!partner) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
