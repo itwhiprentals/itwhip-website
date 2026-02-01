@@ -75,6 +75,51 @@ async function generateTokens(user: { id: string; email: string; name: string | 
   return { accessToken, refreshToken }
 }
 
+// Host-specific token generation — uses JWT_SECRET (not guest secret) and includes hostId
+async function generateHostTokens(user: { id: string; email: string; name: string | null; role: string }, host: { id: string; approvalStatus: string; hostType: string }) {
+  const tokenFamily = nanoid()
+  const isFleetPartner = host.hostType === 'FLEET_PARTNER'
+
+  const accessToken = await new SignJWT({
+    userId: user.id,
+    hostId: host.id,
+    email: user.email,
+    name: user.name,
+    role: 'BUSINESS',
+    isRentalHost: true,
+    approvalStatus: host.approvalStatus,
+    hostType: host.hostType,
+    isFleetPartner,
+    type: 'access',
+  })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setJti(nanoid())
+    .setIssuedAt()
+    .setExpirationTime('15m')
+    .sign(JWT_SECRET)
+
+  const refreshToken = await new SignJWT({
+    userId: user.id,
+    hostId: host.id,
+    type: 'refresh',
+    family: tokenFamily,
+  })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setJti(nanoid())
+    .setIssuedAt()
+    .setExpirationTime('7d')
+    .sign(JWT_REFRESH_SECRET)
+
+  await db.saveRefreshToken({
+    userId: user.id,
+    token: refreshToken,
+    family: tokenFamily,
+    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  })
+
+  return { accessToken, refreshToken }
+}
+
 function deepLinkRedirect(data: Record<string, any>) {
   const encoded = Buffer.from(JSON.stringify(data)).toString('base64url')
   return NextResponse.redirect(`${APP_SCHEME}://google-auth?data=${encoded}`)
@@ -250,15 +295,14 @@ export async function GET(request: NextRequest) {
           include: { cars: { select: { id: true, make: true, model: true, year: true, isActive: true } } },
         })
 
-        const { accessToken, refreshToken } = await generateTokens({
-          id: existingUser.id, email: existingUser.email,
-          name: existingUser.name || name || null, role: existingUser.role,
-        })
-
         await db.updateLastLogin(existingUser.id)
         await logSuccessfulLogin({ userId: existingUser.id, email: existingUser.email, source: 'mobile_google_host', ip: clientIp, userAgent })
 
         if (host) {
+          const { accessToken, refreshToken } = await generateHostTokens(
+            { id: existingUser.id, email: existingUser.email, name: existingUser.name || name || null, role: existingUser.role },
+            { id: host.id, approvalStatus: host.approvalStatus, hostType: host.hostType }
+          )
           return deepLinkRedirect({
             success: true,
             user: { id: existingUser.id, email: existingUser.email, name: existingUser.name || name, role: existingUser.role },
@@ -281,11 +325,16 @@ export async function GET(request: NextRequest) {
           },
         })
 
+        const { accessToken: newHostAccessToken, refreshToken: newHostRefreshToken } = await generateHostTokens(
+          { id: existingUser.id, email: existingUser.email, name: existingUser.name || name || null, role: existingUser.role },
+          { id: newHost.id, approvalStatus: 'PENDING', hostType: 'REAL' }
+        )
+
         return deepLinkRedirect({
           success: true,
           user: { id: existingUser.id, email: existingUser.email, name: existingUser.name || name, role: existingUser.role },
           host: { id: newHost.id, approvalStatus: 'PENDING', hostType: 'REAL', role: 'individual' },
-          accessToken, refreshToken, expiresIn: 15 * 60, isNewUser: false, isNewHost: true,
+          accessToken: newHostAccessToken, refreshToken: newHostRefreshToken, expiresIn: 15 * 60, isNewUser: false, isNewHost: true,
         })
       }
 
@@ -323,9 +372,10 @@ export async function GET(request: NextRequest) {
         })
       } catch { /* Non-fatal */ }
 
-      const { accessToken, refreshToken } = await generateTokens({
-        id: newUser.id, email: newUser.email, name: newUser.name, role: newUser.role,
-      })
+      const { accessToken, refreshToken } = await generateHostTokens(
+        { id: newUser.id, email: newUser.email, name: newUser.name, role: newUser.role },
+        { id: newHost.id, approvalStatus: 'PENDING', hostType: 'REAL' }
+      )
 
       await logSuccessfulLogin({ userId: newUser.id, email: newUser.email, source: 'mobile_google_host', ip: clientIp, userAgent })
       console.log(`✅ Mobile Google signup (host): ${newUser.email}`)
