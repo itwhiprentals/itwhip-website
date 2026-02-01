@@ -184,7 +184,7 @@ export async function GET(request: NextRequest) {
     const formattedBookings = filteredBookings.map(booking => ({
       id: booking.id,
       bookingCode: booking.bookingCode,
-      car: {
+      car: booking.car ? {
         id: booking.car.id,
         make: booking.car.make,
         model: booking.car.model,
@@ -192,7 +192,7 @@ export async function GET(request: NextRequest) {
         photos: booking.car.photos.map(p => ({
           url: p.url
         }))
-      },
+      } : null,
       renter: booking.renter ? {
         id: booking.renter.id,
         name: booking.renter.name,
