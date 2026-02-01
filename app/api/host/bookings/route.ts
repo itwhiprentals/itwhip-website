@@ -147,7 +147,7 @@ export async function GET(request: NextRequest) {
             avatar: true
           }
         },
-        insurancePolicy: {
+        InsurancePolicy: {
           select: {
             id: true,
             tier: true,
@@ -177,7 +177,7 @@ export async function GET(request: NextRequest) {
     // Filter by insurance if requested
     let filteredBookings = bookings
     if (hasInsurance) {
-      filteredBookings = bookings.filter(b => b.insurancePolicy !== null)
+      filteredBookings = bookings.filter(b => b.InsurancePolicy !== null)
     }
     
     // Format bookings for response
@@ -218,12 +218,12 @@ export async function GET(request: NextRequest) {
       tripStatus: booking.tripStatus,
       licenseVerified: booking.licenseVerified,
       selfieVerified: booking.selfieVerified,
-      insurancePolicy: booking.insurancePolicy ? {
-        id: booking.insurancePolicy.id,
-        tier: booking.insurancePolicy.tier,
-        deductible: booking.insurancePolicy.deductible,
-        collisionCoverage: booking.insurancePolicy.collisionCoverage,
-        liabilityCoverage: booking.insurancePolicy.liabilityCoverage
+      insurancePolicy: booking.InsurancePolicy ? {
+        id: booking.InsurancePolicy.id,
+        tier: booking.InsurancePolicy.tier,
+        deductible: booking.InsurancePolicy.deductible,
+        collisionCoverage: booking.InsurancePolicy.collisionCoverage,
+        liabilityCoverage: booking.InsurancePolicy.liabilityCoverage
       } : null,
       createdAt: booking.createdAt.toISOString(),
       messages: booking.messages
