@@ -73,6 +73,21 @@ export async function GET(request: NextRequest) {
             endDate: true,
             totalAmount: true,
             guestName: true,
+            reviewerProfile: {
+              select: {
+                id: true,
+                name: true,
+                profilePhotoUrl: true,
+              }
+            },
+            renter: {
+              select: {
+                id: true,
+                name: true,
+                image: true,
+                avatar: true,
+              }
+            },
             car: {
               select: {
                 make: true,
@@ -274,7 +289,13 @@ export async function GET(request: NextRequest) {
         // Cars with full data for completion checking
         cars: formattedCars,
         
-        recentBookings: host.bookings,
+        recentBookings: host.bookings.map(b => ({
+          ...b,
+          guestAvatar: b.reviewerProfile?.profilePhotoUrl
+            || b.renter?.image
+            || b.renter?.avatar
+            || null,
+        })),
         recentReviews: host.reviews,
         
         // Dates
