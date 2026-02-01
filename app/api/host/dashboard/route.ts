@@ -128,15 +128,20 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get claims count
+    // Get claims counts
     let claimsCount = 0
+    let claimsApproved = 0
+    let claimsPending = 0
+    let claimsAmount = 0
     try {
-      claimsCount = await prisma.claim.count({
-        where: {
-          hostId: hostId,
-          status: 'PENDING'
-        }
+      const allClaims = await prisma.claim.findMany({
+        where: { hostId: hostId },
+        select: { status: true, estimatedCost: true }
       })
+      claimsCount = allClaims.length
+      claimsPending = allClaims.filter(c => c.status === 'PENDING' || c.status === 'UNDER_REVIEW').length
+      claimsApproved = allClaims.filter(c => c.status === 'APPROVED' || c.status === 'PAID').length
+      claimsAmount = allClaims.reduce((sum, c) => sum + Number(c.estimatedCost || 0), 0)
     } catch (err) {
       console.error('Error fetching claims:', err)
     }
@@ -184,7 +189,11 @@ export async function GET(request: NextRequest) {
       totalBookings: host.bookings.length,
       totalEarnings: host.totalEarnings || 0,
       monthlyEarnings: 0,
-      pendingClaims: claimsCount,
+      claims: claimsCount,
+      claimsPending: claimsPending,
+      claimsApproved: claimsApproved,
+      claimsAmount: claimsAmount,
+      pendingClaims: claimsPending,
       unreadMessages: unreadMessagesCount,
       managedVehicles: managedVehiclesCount
     }
