@@ -1,5 +1,6 @@
 // app/api/auth/verify-email/route.ts
 import { NextRequest, NextResponse } from 'next/server'
+import { nanoid } from 'nanoid'
 import { prisma } from '@/app/lib/database/prisma'
 import { SignJWT } from 'jose'
 
@@ -111,6 +112,7 @@ export async function POST(req: NextRequest) {
       try {
         await prisma.adminNotification.create({
           data: {
+            id: nanoid(),
             type: 'GUEST_EMAIL_VERIFIED',
             title: 'Guest Email Verified',
             message: `${user.name || user.email} verified their email`,
@@ -124,7 +126,8 @@ export async function POST(req: NextRequest) {
               guestEmail: user.email,
               guestName: user.name || null,
               verifiedAt: new Date().toISOString()
-            }
+            },
+            updatedAt: new Date()
           }
         })
         console.log(`[Verify Email] AdminNotification created for verified guest: ${reviewerProfile.id}`)

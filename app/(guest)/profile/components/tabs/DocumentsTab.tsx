@@ -4,7 +4,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
 import {
   IoCheckmarkCircle,
   IoInformationCircleOutline,
@@ -30,6 +29,7 @@ interface StripeIdentityStatus {
 export default function DocumentsTab({ profile, onDocumentUpdate }: DocumentsTabProps) {
   const [identityStatus, setIdentityStatus] = useState<StripeIdentityStatus | null>(null)
   const [identityLoading, setIdentityLoading] = useState(true)
+  const [startingVerification, setStartingVerification] = useState(false)
 
   // Load Stripe Identity verification status
   useEffect(() => {
@@ -52,6 +52,40 @@ export default function DocumentsTab({ profile, onDocumentUpdate }: DocumentsTab
       console.error('Failed to load identity status:', error)
     } finally {
       setIdentityLoading(false)
+    }
+  }
+
+  const handleStartVerification = async () => {
+    try {
+      setStartingVerification(true)
+
+      // Create a Stripe Identity verification session
+      const response = await fetch('/api/identity/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          returnUrl: `${window.location.origin}/profile?tab=documents&verified=true`
+        })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to start verification')
+      }
+
+      const data = await response.json()
+
+      // Redirect to Stripe Identity verification page
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        throw new Error('No verification URL returned')
+      }
+    } catch (error) {
+      console.error('Failed to start verification:', error)
+      alert(error instanceof Error ? error.message : 'Failed to start verification. Please try again.')
+      setStartingVerification(false)
     }
   }
 
@@ -127,14 +161,24 @@ export default function DocumentsTab({ profile, onDocumentUpdate }: DocumentsTab
                 <li>✓ One-time process for all future bookings</li>
               </ul>
               <div className="flex items-center gap-3">
-                <Link
-                  href="/payments/methods"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium rounded-lg transition-colors"
+                <button
+                  onClick={handleStartVerification}
+                  disabled={startingVerification}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 disabled:bg-amber-400 disabled:cursor-not-allowed text-white text-xs font-medium rounded-lg transition-colors"
                 >
-                  <IoFingerPrintOutline className="w-4 h-4" />
-                  Complete Verification
-                  <IoArrowForwardOutline className="w-3 h-3" />
-                </Link>
+                  {startingVerification ? (
+                    <>
+                      <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent" />
+                      Starting...
+                    </>
+                  ) : (
+                    <>
+                      <IoFingerPrintOutline className="w-4 h-4" />
+                      Complete Verification
+                      <IoArrowForwardOutline className="w-3 h-3" />
+                    </>
+                  )}
+                </button>
                 <a
                   href="https://itwhip.com/help/identity-verification"
                   target="_blank"
