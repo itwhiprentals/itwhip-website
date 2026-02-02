@@ -256,14 +256,35 @@ export async function GET(request: NextRequest) {
       new Date(b.endDate || b.createdAt) <= lastMonthEnd
     ).length
 
-    // Utilization rate: % of active cars that are currently booked
+    // Utilization rate: time-based over last 30 days
+    // Formula: Total Booked Days / (Active Cars × 30) × 100
     const activeCars = h.cars.filter((car: any) => car.isActive).length
     const currentlyBooked = allBookingStats.filter(b =>
       activeStatuses.includes(b.status) &&
       new Date(b.startDate) <= now &&
       new Date(b.endDate) >= now
     ).length
-    const utilizationRate = activeCars > 0 ? Math.round((currentlyBooked / activeCars) * 100) : 0
+
+    // Calculate total booked days in last 30 days (clamp to period window)
+    const periodStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+    const revenueStatuses = [...completedStatuses, ...activeStatuses, 'CONFIRMED']
+    const totalBookedDays = allBookingStats
+      .filter(b => revenueStatuses.includes(b.status) && b.startDate && b.endDate)
+      .reduce((sum, b) => {
+        const bStart = new Date(b.startDate)
+        const bEnd = new Date(b.endDate)
+        // Clamp booking dates to the 30-day window
+        const clampedStart = bStart < periodStart ? periodStart : bStart
+        const clampedEnd = bEnd > now ? now : bEnd
+        if (clampedEnd <= clampedStart || clampedEnd <= periodStart) return sum
+        const days = Math.ceil((clampedEnd.getTime() - clampedStart.getTime()) / (1000 * 60 * 60 * 24))
+        return sum + Math.max(days, 0)
+      }, 0)
+    const totalAvailableDays = Math.max(activeCars, 1) * 30
+    const utilizationRate = activeCars > 0
+      ? Math.min(Math.round((totalBookedDays / totalAvailableDays) * 100), 100)
+      : 0
+    const liveOccupancy = activeCars > 0 ? Math.round((currentlyBooked / activeCars) * 100) : 0
 
     // Average trip duration (from completed bookings)
     const completedWithDates = allBookingStats.filter(b =>
@@ -296,6 +317,8 @@ export async function GET(request: NextRequest) {
       monthRevenue: Math.round(monthRevenue * 100) / 100,
       monthlyEarnings: Math.round(monthRevenue * 100) / 100,
       utilizationRate,
+      liveOccupancy,
+      totalBookedDays,
       avgTripDays,
       completedThisMonth,
       completedLastMonth,
