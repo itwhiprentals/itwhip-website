@@ -104,9 +104,12 @@ export async function POST(request: NextRequest) {
       try {
         const reviewerProfile = await prisma.reviewerProfile.create({
           data: {
+            id: nanoid(),
             userId: newUser.id,
             email: newUser.email,
             name: newUser.name || '',
+            city: 'Phoenix',
+            state: 'AZ',
             phoneNumber: phone || null,
             memberSince: new Date(),
             loyaltyPoints: 0,
@@ -125,6 +128,7 @@ export async function POST(request: NextRequest) {
             pushNotifications: true,
             preferredLanguage: 'en',
             preferredCurrency: 'USD',
+            updatedAt: new Date(),
           },
         })
 

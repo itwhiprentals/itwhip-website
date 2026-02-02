@@ -176,9 +176,12 @@ export async function POST(request: NextRequest) {
       try {
         const reviewerProfile = await prisma.reviewerProfile.create({
           data: {
+            id: nanoid(),
             userId: newUser.id,
             email: newUser.email,
             name: newUser.name || '',
+            city: 'Phoenix',
+            state: 'AZ',
             phoneNumber: phone || null,
             memberSince: new Date(),
             loyaltyPoints: 0,
@@ -196,7 +199,8 @@ export async function POST(request: NextRequest) {
             smsNotifications: true,
             pushNotifications: true,
             preferredLanguage: 'en',
-            preferredCurrency: 'USD'
+            preferredCurrency: 'USD',
+            updatedAt: new Date(),
           }
         })
         console.log(`[Signup] ReviewerProfile created for GUEST user: ${newUser.id}`)
@@ -205,6 +209,7 @@ export async function POST(request: NextRequest) {
         try {
           await prisma.adminNotification.create({
             data: {
+              id: nanoid(),
               type: 'NEW_GUEST_SIGNUP',
               title: 'New Guest Registered',
               message: `${name || email} just signed up as a guest`,
@@ -220,7 +225,8 @@ export async function POST(request: NextRequest) {
                 guestPhone: phone || null,
                 signupSource: 'email',
                 hasPhone: !!phone
-              }
+              },
+              updatedAt: new Date(),
             }
           })
           console.log(`[Signup] AdminNotification created for new guest: ${reviewerProfile.id}`)
@@ -273,7 +279,7 @@ If you didn't create an account, please ignore this email.
       newUser.id,
       newUser.email,
       newUser.role,
-      newUser.name
+      newUser.name || undefined
     )
 
     // Save refresh token to database
@@ -292,7 +298,7 @@ If you didn't create an account, please ignore this email.
       user: {
         id: newUser.id,
         email: newUser.email,
-        name: newUser.name,
+        name: newUser.name || '',
         role: newUser.role,
         userType // Include user type in response
       },

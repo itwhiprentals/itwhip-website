@@ -160,16 +160,16 @@ export async function POST(request: NextRequest) {
         const { accessToken, refreshToken } = await generateTokens({
           id: existingUser.id,
           email: existingUser.email,
-          name: existingUser.name || name || null,
+          name: existingUser.name || name || '',
           role: existingUser.role,
         })
 
         await db.updateLastLogin(existingUser.id)
-        await logSuccessfulLogin({ userId: existingUser.id, email: existingUser.email, source: 'mobile_google', ip: clientIp, userAgent })
+        await logSuccessfulLogin({ userId: existingUser.id, email: existingUser.email, source: 'guest', ip: clientIp, userAgent })
 
         return NextResponse.json({
           success: true,
-          user: { id: existingUser.id, email: existingUser.email, name: existingUser.name || name, role: existingUser.role },
+          user: { id: existingUser.id, email: existingUser.email, name: existingUser.name || name || '', role: existingUser.role },
           accessToken,
           refreshToken,
           expiresIn: 15 * 60,
@@ -195,6 +195,7 @@ export async function POST(request: NextRequest) {
       try {
         await prisma.account.create({
           data: {
+            id: nanoid(),
             userId: newUser.id,
             type: 'oauth',
             provider: 'google',
@@ -208,9 +209,12 @@ export async function POST(request: NextRequest) {
       try {
         await prisma.reviewerProfile.create({
           data: {
+            id: nanoid(),
             userId: newUser.id,
             email: newUser.email,
             name: name || '',
+            city: 'Phoenix',
+            state: 'AZ',
             memberSince: new Date(),
             loyaltyPoints: 0,
             memberTier: 'BRONZE',
@@ -228,6 +232,7 @@ export async function POST(request: NextRequest) {
             pushNotifications: true,
             preferredLanguage: 'en',
             preferredCurrency: 'USD',
+            updatedAt: new Date(),
           },
         })
       } catch { /* Non-fatal */ }
@@ -236,6 +241,7 @@ export async function POST(request: NextRequest) {
       try {
         await prisma.adminNotification.create({
           data: {
+            id: nanoid(),
             type: 'NEW_GUEST_SIGNUP',
             title: 'New Guest (Google OAuth, Mobile)',
             message: `${name || email} signed up via Google on mobile`,
@@ -245,6 +251,7 @@ export async function POST(request: NextRequest) {
             relatedType: 'USER',
             relatedId: newUser.id,
             metadata: { guestEmail: email, guestName: name, signupSource: 'mobile_google' },
+            updatedAt: new Date(),
           },
         })
       } catch { /* Non-fatal */ }
@@ -252,17 +259,17 @@ export async function POST(request: NextRequest) {
       const { accessToken, refreshToken } = await generateTokens({
         id: newUser.id,
         email: newUser.email,
-        name: newUser.name,
+        name: newUser.name || '',
         role: newUser.role,
       })
 
-      await logSuccessfulLogin({ userId: newUser.id, email: newUser.email, source: 'mobile_google', ip: clientIp, userAgent })
+      await logSuccessfulLogin({ userId: newUser.id, email: newUser.email, source: 'guest', ip: clientIp, userAgent })
 
       console.log(`✅ Mobile Google signup (guest): ${newUser.email}`)
 
       return NextResponse.json({
         success: true,
-        user: { id: newUser.id, email: newUser.email, name: newUser.name, role: newUser.role },
+        user: { id: newUser.id, email: newUser.email, name: newUser.name || '', role: newUser.role },
         accessToken,
         refreshToken,
         expiresIn: 15 * 60,
@@ -295,21 +302,21 @@ export async function POST(request: NextRequest) {
         if (host) {
           // Existing host — generate host tokens with hostId + JWT_SECRET
           const { accessToken, refreshToken } = await generateHostTokens(
-            { id: existingUser.id, email: existingUser.email, name: existingUser.name || name || null, role: existingUser.role },
+            { id: existingUser.id, email: existingUser.email, name: existingUser.name || name || '', role: existingUser.role },
             { id: host.id, approvalStatus: host.approvalStatus, hostType: host.hostType }
           )
 
           await db.updateLastLogin(existingUser.id)
-          await logSuccessfulLogin({ userId: existingUser.id, email: existingUser.email, source: 'mobile_google_host', ip: clientIp, userAgent })
+          await logSuccessfulLogin({ userId: existingUser.id, email: existingUser.email, source: 'host', ip: clientIp, userAgent })
 
           return NextResponse.json({
             success: true,
-            user: { id: existingUser.id, email: existingUser.email, name: existingUser.name || name, role: existingUser.role },
+            user: { id: existingUser.id, email: existingUser.email, name: existingUser.name || name || '', role: existingUser.role },
             host: {
               id: host.id,
               approvalStatus: host.approvalStatus,
               hostType: host.hostType,
-              companyName: host.companyName,
+              name: host.name,
               role: host.hostType === 'FLEET_PARTNER' ? 'fleet_partner' : 'individual',
               cars: host.cars,
             },
@@ -323,29 +330,32 @@ export async function POST(request: NextRequest) {
         // User exists but no host record — create one (pending approval)
         const newHost = await prisma.rentalHost.create({
           data: {
+            id: nanoid(),
             userId: existingUser.id,
             email: email.toLowerCase(),
-            firstName: name?.split(' ')[0] || '',
-            lastName: name?.split(' ').slice(1).join(' ') || '',
+            name: name || '',
             phone: existingUser.phone || '',
+            city: 'Phoenix',
+            state: 'AZ',
             approvalStatus: 'PENDING',
             hostType: 'REAL',
             managesOwnCars: true,
             isHostManager: false,
             managesOthersCars: false,
+            updatedAt: new Date(),
           },
         })
 
         const { accessToken, refreshToken } = await generateHostTokens(
-          { id: existingUser.id, email: existingUser.email, name: existingUser.name || name || null, role: existingUser.role },
+          { id: existingUser.id, email: existingUser.email, name: existingUser.name || name || '', role: existingUser.role },
           { id: newHost.id, approvalStatus: 'PENDING', hostType: 'REAL' }
         )
 
-        await logSuccessfulLogin({ userId: existingUser.id, email: existingUser.email, source: 'mobile_google_host', ip: clientIp, userAgent })
+        await logSuccessfulLogin({ userId: existingUser.id, email: existingUser.email, source: 'host', ip: clientIp, userAgent })
 
         return NextResponse.json({
           success: true,
-          user: { id: existingUser.id, email: existingUser.email, name: existingUser.name || name, role: existingUser.role },
+          user: { id: existingUser.id, email: existingUser.email, name: existingUser.name || name || '', role: existingUser.role },
           host: {
             id: newHost.id,
             approvalStatus: 'PENDING',
@@ -376,6 +386,7 @@ export async function POST(request: NextRequest) {
       try {
         await prisma.account.create({
           data: {
+            id: nanoid(),
             userId: newUser.id,
             type: 'oauth',
             provider: 'google',
@@ -387,16 +398,19 @@ export async function POST(request: NextRequest) {
 
       const newHost = await prisma.rentalHost.create({
         data: {
+          id: nanoid(),
           userId: newUser.id,
           email: email.toLowerCase(),
-          firstName: name?.split(' ')[0] || '',
-          lastName: name?.split(' ').slice(1).join(' ') || '',
+          name: name || '',
           phone: '',
+          city: 'Phoenix',
+          state: 'AZ',
           approvalStatus: 'PENDING',
           hostType: 'REAL',
           managesOwnCars: true,
           isHostManager: false,
           managesOthersCars: false,
+          updatedAt: new Date(),
         },
       })
 
@@ -404,6 +418,7 @@ export async function POST(request: NextRequest) {
       try {
         await prisma.adminNotification.create({
           data: {
+            id: nanoid(),
             type: 'NEW_HOST_APPLICATION',
             title: 'New Host (Google OAuth, Mobile)',
             message: `${name || email} signed up as host via Google on mobile`,
@@ -413,22 +428,23 @@ export async function POST(request: NextRequest) {
             relatedType: 'RENTAL_HOST',
             relatedId: newHost.id,
             metadata: { hostEmail: email, hostName: name, signupSource: 'mobile_google' },
+            updatedAt: new Date(),
           },
         })
       } catch { /* Non-fatal */ }
 
       const { accessToken, refreshToken } = await generateHostTokens(
-        { id: newUser.id, email: newUser.email, name: newUser.name, role: newUser.role },
+        { id: newUser.id, email: newUser.email, name: newUser.name || '', role: newUser.role },
         { id: newHost.id, approvalStatus: 'PENDING', hostType: 'REAL' }
       )
 
-      await logSuccessfulLogin({ userId: newUser.id, email: newUser.email, source: 'mobile_google_host', ip: clientIp, userAgent })
+      await logSuccessfulLogin({ userId: newUser.id, email: newUser.email, source: 'host', ip: clientIp, userAgent })
 
       console.log(`✅ Mobile Google signup (host): ${newUser.email}`)
 
       return NextResponse.json({
         success: true,
-        user: { id: newUser.id, email: newUser.email, name: newUser.name, role: newUser.role },
+        user: { id: newUser.id, email: newUser.email, name: newUser.name || '', role: newUser.role },
         host: {
           id: newHost.id,
           approvalStatus: 'PENDING',
