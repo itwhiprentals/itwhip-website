@@ -84,6 +84,7 @@ export async function GET(request: NextRequest) {
         model: true,
         year: true,
         status: true,
+        isActive: true,
         primaryPhotoUrl: true
       }
     })
@@ -231,7 +232,8 @@ export async function GET(request: NextRequest) {
         id: v.id,
         name: `${v.year} ${v.make} ${v.model}`,
         photo: v.primaryPhotoUrl,
-        status: v.status
+        status: v.status,
+        isActive: v.isActive,
       })),
       availability,
       dateRange: {
