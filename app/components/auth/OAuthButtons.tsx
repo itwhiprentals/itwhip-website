@@ -3,6 +3,9 @@
 
 import { useState } from 'react'
 import { signIn, signOut } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
+import { IoPhonePortraitOutline } from 'react-icons/io5'
+import { FaApple } from 'react-icons/fa'
 
 // Theme variants for different auth contexts
 type ThemeVariant = 'guest' | 'host'
@@ -28,8 +31,9 @@ export default function OAuthButtons({
   roleHint,
   mode = 'signup'
 }: OAuthButtonsProps) {
-  const [isLoading, setIsLoading] = useState<'google' | null>(null)
+  const [isLoading, setIsLoading] = useState<'google' | 'apple' | 'phone' | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
 
   const sizeClasses = {
     sm: 'py-2 px-4 text-sm',
@@ -72,7 +76,21 @@ export default function OAuthButtons({
     return params.toString() ? `${baseUrl}?${params.toString()}` : baseUrl
   }
 
-  const handleOAuthSignIn = async (provider: 'google') => {
+  const handlePhoneLogin = () => {
+    setIsLoading('phone')
+    // Redirect to phone login page with return URL
+    const params = new URLSearchParams()
+    if (callbackUrl) {
+      params.set('returnTo', callbackUrl)
+    }
+    if (roleHint) {
+      params.set('roleHint', roleHint)
+    }
+    const url = `/auth/phone-login${params.toString() ? `?${params.toString()}` : ''}`
+    router.push(url)
+  }
+
+  const handleOAuthSignIn = async (provider: 'google' | 'apple') => {
     try {
       setIsLoading(provider)
       setError(null)
@@ -139,12 +157,27 @@ export default function OAuthButtons({
   }
 
   return (
-    <div className={`space-y-4 ${className}`}>
+    <div className={`space-y-3 ${className}`}>
       {error && (
         <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
           <p className="text-sm text-red-400 text-center">{error}</p>
         </div>
       )}
+
+      {/* Phone Login - PRIMARY METHOD */}
+      <button
+        type="button"
+        onClick={handlePhoneLogin}
+        disabled={isLoading !== null}
+        className={`w-full flex items-center justify-center gap-3 ${sizeClasses[buttonSize]} bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transform hover:scale-[1.01]`}
+      >
+        {isLoading === 'phone' ? (
+          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+        ) : (
+          <IoPhonePortraitOutline className="w-5 h-5" />
+        )}
+        <span>Continue with Phone</span>
+      </button>
 
       {/* Google Sign In */}
       <button
@@ -176,6 +209,21 @@ export default function OAuthButtons({
           </svg>
         )}
         <span>Continue with Google</span>
+      </button>
+
+      {/* Apple Sign In */}
+      <button
+        type="button"
+        onClick={() => handleOAuthSignIn('apple')}
+        disabled={isLoading !== null}
+        className={`w-full flex items-center justify-center gap-3 ${sizeClasses[buttonSize]} bg-black hover:bg-gray-900 text-white font-medium rounded-lg border border-gray-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow`}
+      >
+        {isLoading === 'apple' ? (
+          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+        ) : (
+          <FaApple className="w-5 h-5" />
+        )}
+        <span>Continue with Apple</span>
       </button>
 
       {/* Divider */}
