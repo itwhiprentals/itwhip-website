@@ -8,7 +8,7 @@ import { SignJWT } from 'jose'
 import { cookies } from 'next/headers'
 import { nanoid } from 'nanoid'
 import { phoneLoginRateLimit, getClientIp, createRateLimitResponse } from '@/app/lib/rate-limit'
-import { getEnhancedLocation } from '@/app/lib/security/geolocation'
+import { getEnhancedLocation, detectImpossibleTravel } from '@/app/lib/security/geolocation'
 import { detectBot, isLegitimateBot } from '@/app/lib/security/botDetection'
 import { sendEmail } from '@/app/lib/email/sender'
 import { getNewDeviceAlertTemplate } from '@/app/lib/email/templates/new-device-alert'
@@ -190,7 +190,7 @@ export async function POST(request: NextRequest) {
       const threatScore = location.riskScore + (botDetection.isBot ? botDetection.confidence : 0)
 
       // Block only high-confidence bots
-      if (botDetection.isBot && botDetection.confidence > 80 && !isLegitimateBot(userAgent, clientIp)) {
+      if (botDetection.isBot && botDetection.confidence > 80 && !(await isLegitimateBot(userAgent, clientIp))) {
         console.warn(`[Phone Login] Bot detected (${botDetection.confidence}%): ${botDetection.botName}`)
         try {
           await prisma.securityEvent.create({
@@ -229,21 +229,52 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // Impossible travel detection (best-effort)
+      let impossibleTravel = false
+      if (location.latitude && location.longitude) {
+        try {
+          const lastLogin = await prisma.securityEvent.findFirst({
+            where: { targetId: user.email, type: 'LOGIN_SUCCESS' },
+            orderBy: { timestamp: 'desc' },
+            select: { details: true, timestamp: true }
+          })
+          if (lastLogin?.details) {
+            const lastDetails = JSON.parse(lastLogin.details)
+            if (lastDetails.latitude && lastDetails.longitude) {
+              const travel = detectImpossibleTravel(
+                lastDetails.latitude, lastDetails.longitude, lastLogin.timestamp,
+                location.latitude, location.longitude, new Date()
+              )
+              if (travel.impossible) {
+                impossibleTravel = true
+                console.warn(`[Phone Login] ⚠️ Impossible travel: ${Math.round(travel.distance)}km in ${Math.round(travel.speed)}km/h`)
+              }
+            }
+          }
+        } catch (e) {
+          console.error('[Phone Login] Impossible travel check failed:', e)
+        }
+      }
+
       // Log security event for Fleet monitoring (best-effort)
+      const eventSeverity = impossibleTravel ? 'HIGH' : threatScore > 50 ? 'MEDIUM' : 'LOW'
       await prisma.securityEvent.create({
         data: {
           id: nanoid(), type: 'LOGIN_SUCCESS',
-          severity: threatScore > 50 ? 'MEDIUM' : 'LOW',
+          severity: eventSeverity,
           sourceIp: clientIp, targetId: user.email,
-          message: 'Phone login successful',
+          message: impossibleTravel ? 'Phone login successful (IMPOSSIBLE TRAVEL)' : 'Phone login successful',
           details: JSON.stringify({
             method: 'phone', phone: verifiedPhone, fingerprint: deviceFingerprint,
             newDevice: !existingSession, source: 'guest_portal',
             emailVerified: user.emailVerified, userId: user.id,
             country: location.country, city: location.city,
+            latitude: location.latitude, longitude: location.longitude,
             isVpn: location.isVpn, isProxy: location.isProxy, isTor: location.isTor,
             riskScore: location.riskScore,
             isBot: botDetection.isBot, botConfidence: botDetection.confidence,
+            isp: location.isp, asn: location.asn, organization: location.organization,
+            impossibleTravel,
             threatScore
           }),
           action: 'login_success', blocked: false, userAgent,
@@ -251,7 +282,26 @@ export async function POST(request: NextRequest) {
         }
       })
 
-      console.log(`[Phone Login] Security check complete - Threat: ${threatScore}`)
+      // Create session record for device tracking (best-effort)
+      if (deviceFingerprint) {
+        try {
+          await prisma.session.create({
+            data: {
+              userId: user.id,
+              token: nanoid(),
+              ipAddress: clientIp,
+              userAgent,
+              fingerprint: deviceFingerprint,
+              expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+            }
+          })
+          console.log(`[Phone Login] Session created for device: ${deviceFingerprint.substring(0, 8)}...`)
+        } catch (e) {
+          console.error('[Phone Login] Session creation failed (non-blocking):', e)
+        }
+      }
+
+      console.log(`[Phone Login] Security check complete - Threat: ${threatScore}${impossibleTravel ? ' ⚠️ IMPOSSIBLE TRAVEL' : ''}`)
     } catch (securityError) {
       // CRITICAL: Security monitoring should NEVER block a successful login
       console.error('[Phone Login] Security monitoring failed (non-blocking):', securityError)

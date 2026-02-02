@@ -16,6 +16,7 @@ import {
   IoPersonOutline
 } from 'react-icons/io5'
 import OAuthButtons from '@/app/components/auth/OAuthButtons'
+import FingerprintJS from '@fingerprintjs/fingerprintjs'
 
 // Guard response type for cross-account type login attempts
 interface GuardResponse {
@@ -35,10 +36,25 @@ function LoginContent() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [guard, setGuard] = useState<GuardResponse | null>(null)
+  const [deviceFingerprint, setDeviceFingerprint] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   })
+
+  // Initialize device fingerprinting on mount
+  useEffect(() => {
+    const loadFingerprint = async () => {
+      try {
+        const fp = await FingerprintJS.load()
+        const result = await fp.get()
+        setDeviceFingerprint(result.visitorId)
+      } catch (error) {
+        console.error('[Login] Failed to load fingerprint:', error)
+      }
+    }
+    loadFingerprint()
+  }, [])
 
   // Handle OAuth error params
   useEffect(() => {
@@ -62,11 +78,16 @@ function LoginContent() {
     setIsLoading(true)
 
     try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      }
+      if (deviceFingerprint) {
+        headers['X-Fingerprint'] = deviceFingerprint
+      }
+
       const response = await fetch('/api/auth/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify(formData)
       })
 

@@ -163,14 +163,113 @@ function extractBotName(userAgent: string): string {
 }
 
 /**
- * Check if request is from a legitimate search engine bot
+ * Check if request is from a legitimate search engine bot.
+ * Uses reverse DNS + forward DNS verification (Google's recommended method).
+ * Falls back to user agent check if DNS lookup fails.
  */
-export function isLegitimateBot(userAgent: string, ip: string): boolean {
+export async function isLegitimateBot(userAgent: string, ip: string): Promise<boolean> {
   const legitimateBots = [
     'Googlebot', 'Bingbot', 'Slurp', 'DuckDuckBot',
     'Baiduspider', 'YandexBot', 'facebookexternalhit',
     'Twitterbot', 'LinkedInBot', 'Discordbot'
   ]
 
-  return legitimateBots.some(bot => userAgent.includes(bot))
+  // First check: does the UA even claim to be a known bot?
+  const claimsBot = legitimateBots.some(bot => userAgent.includes(bot))
+  if (!claimsBot) return false
+
+  // Second check: verify via reverse DNS (cached, non-blocking)
+  try {
+    const verified = await verifyBotIp(ip, userAgent)
+    if (verified !== null) return verified
+  } catch {
+    // DNS failed — fall back to UA check
+  }
+
+  return true // Trust the UA claim if DNS is unavailable
+}
+
+// In-memory cache for bot DNS verification (10 min TTL)
+const botDnsCache = new Map<string, { result: boolean; expires: number }>()
+const BOT_DNS_CACHE_TTL = 10 * 60 * 1000
+
+// Map bot names to their valid reverse DNS domains
+const botDomains: Record<string, string[]> = {
+  'Googlebot': ['googlebot.com', 'google.com', 'googleusercontent.com'],
+  'Bingbot': ['search.msn.com'],
+  'Baiduspider': ['baidu.com', 'baidu.jp'],
+  'YandexBot': ['yandex.ru', 'yandex.net', 'yandex.com'],
+}
+
+/**
+ * Verify bot IP via reverse DNS + forward DNS lookup.
+ * Returns true if verified, false if spoofed, null if DNS unavailable.
+ */
+async function verifyBotIp(ip: string, userAgent: string): Promise<boolean | null> {
+  // Check cache
+  const cached = botDnsCache.get(ip)
+  if (cached && cached.expires > Date.now()) return cached.result
+
+  // Only do DNS verification for bots we have domain lists for
+  const botName = Object.keys(botDomains).find(name => userAgent.includes(name))
+  if (!botName) return null // No domain list — can't verify, trust UA
+
+  try {
+    const dns = await import('dns')
+    const dnsPromises = dns.promises
+
+    // Step 1: Reverse DNS lookup (IP → hostname)
+    const hostnames = await Promise.race([
+      dnsPromises.reverse(ip),
+      new Promise<string[]>((_, reject) => setTimeout(() => reject(new Error('DNS timeout')), 2000))
+    ])
+
+    if (!hostnames || hostnames.length === 0) {
+      cacheResult(ip, false)
+      return false
+    }
+
+    // Step 2: Check if hostname ends with a valid domain
+    const validDomains = botDomains[botName]
+    const hostname = hostnames[0]
+    const matchesDomain = validDomains.some(domain => hostname.endsWith(`.${domain}`) || hostname === domain)
+
+    if (!matchesDomain) {
+      console.warn(`[BotVerify] ${botName} claimed by ${ip} but reverse DNS = ${hostname} (SPOOFED)`)
+      cacheResult(ip, false)
+      return false
+    }
+
+    // Step 3: Forward DNS lookup (hostname → IP) to confirm
+    const addresses = await Promise.race([
+      dnsPromises.resolve4(hostname).catch(() => [] as string[]),
+      new Promise<string[]>((_, reject) => setTimeout(() => reject(new Error('DNS timeout')), 2000))
+    ])
+
+    const verified = addresses.includes(ip)
+    if (!verified) {
+      console.warn(`[BotVerify] ${botName} reverse DNS matched ${hostname} but forward DNS doesn't resolve to ${ip} (SPOOFED)`)
+    } else {
+      console.log(`[BotVerify] ✅ ${botName} verified: ${ip} → ${hostname} → ${ip}`)
+    }
+
+    cacheResult(ip, verified)
+    return verified
+  } catch (error: any) {
+    if (error.message === 'DNS timeout') {
+      console.warn(`[BotVerify] DNS timeout for ${ip}`)
+    }
+    return null // DNS unavailable
+  }
+}
+
+function cacheResult(ip: string, result: boolean) {
+  botDnsCache.set(ip, { result, expires: Date.now() + BOT_DNS_CACHE_TTL })
+  // Clean old entries
+  if (botDnsCache.size > 200) {
+    const now = Date.now()
+    for (const [key, val] of botDnsCache) {
+      if (val.expires < now) botDnsCache.delete(key)
+    }
+  }
 }

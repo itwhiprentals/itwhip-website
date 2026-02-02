@@ -366,6 +366,25 @@ export async function POST(request: NextRequest) {
       headers: request.headers
     })
 
+    // ✅ STEP 9.6: Create session record for device tracking (best-effort)
+    try {
+      const deviceFingerprint = request.headers.get('x-fingerprint')
+      if (deviceFingerprint) {
+        await prisma.session.create({
+          data: {
+            userId: user.id,
+            token: nanoid(),
+            ipAddress: clientIp,
+            userAgent,
+            fingerprint: deviceFingerprint,
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+          }
+        })
+      }
+    } catch (e) {
+      console.error('[Login] Session creation failed (non-blocking):', e)
+    }
+
     // ✅ STEP 10: Create response with cookies
     const response = NextResponse.json({
       success: true,
