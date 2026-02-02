@@ -133,7 +133,8 @@ export async function GET(request: NextRequest) {
         },
         _count: {
           select: {
-            reviews: true
+            reviews: true,
+            bookings: true
           }
         }
       }
@@ -196,17 +197,112 @@ export async function GET(request: NextRequest) {
       console.error('Error fetching managed vehicles:', err)
     }
 
+    // Query booking stats by status
+    const now = new Date()
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const weekStart = new Date(todayStart)
+    weekStart.setDate(weekStart.getDate() - 7)
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59)
+
+    // Get all booking status counts + revenue in one query
+    let allBookingStats: any[] = []
+    try {
+      allBookingStats = await prisma.rentalBooking.findMany({
+        where: { hostId },
+        select: {
+          status: true,
+          totalAmount: true,
+          startDate: true,
+          endDate: true,
+          createdAt: true,
+        }
+      })
+    } catch (err) {
+      console.error('Error fetching booking stats:', err)
+    }
+
+    const activeStatuses = ['CONFIRMED', 'ACTIVE', 'IN_PROGRESS']
+    const completedStatuses = ['COMPLETED', 'RETURNED']
+    const pendingStatuses = ['PENDING', 'AWAITING_CONFIRMATION']
+
+    const activeBookings = allBookingStats.filter(b => activeStatuses.includes(b.status)).length
+    const pendingBookingsCount = allBookingStats.filter(b => pendingStatuses.includes(b.status)).length
+    const completedBookingsCount = allBookingStats.filter(b => completedStatuses.includes(b.status)).length
+
+    // Revenue from completed/active bookings
+    const revenueBookings = allBookingStats.filter(b =>
+      [...completedStatuses, ...activeStatuses, 'CONFIRMED'].includes(b.status)
+    )
+    const grossRevenue = revenueBookings.reduce((sum, b) => sum + Number(b.totalAmount || 0), 0)
+    const commissionRate = host.commissionRate || 0.25
+    const netRevenue = grossRevenue * (1 - commissionRate)
+
+    // Time-based revenue (by booking creation date)
+    const todayRevenue = revenueBookings
+      .filter(b => new Date(b.createdAt) >= todayStart)
+      .reduce((sum, b) => sum + Number(b.totalAmount || 0), 0) * (1 - commissionRate)
+    const weekRevenue = revenueBookings
+      .filter(b => new Date(b.createdAt) >= weekStart)
+      .reduce((sum, b) => sum + Number(b.totalAmount || 0), 0) * (1 - commissionRate)
+    const monthRevenue = revenueBookings
+      .filter(b => new Date(b.createdAt) >= monthStart)
+      .reduce((sum, b) => sum + Number(b.totalAmount || 0), 0) * (1 - commissionRate)
+
+    // Completed this month vs last month
+    const completedThisMonth = allBookingStats.filter(b =>
+      completedStatuses.includes(b.status) && new Date(b.endDate || b.createdAt) >= monthStart
+    ).length
+    const completedLastMonth = allBookingStats.filter(b =>
+      completedStatuses.includes(b.status) &&
+      new Date(b.endDate || b.createdAt) >= lastMonthStart &&
+      new Date(b.endDate || b.createdAt) <= lastMonthEnd
+    ).length
+
+    // Utilization rate: % of active cars that are currently booked
+    const activeCars = host.cars.filter(car => car.isActive).length
+    const currentlyBooked = allBookingStats.filter(b =>
+      activeStatuses.includes(b.status) &&
+      new Date(b.startDate) <= now &&
+      new Date(b.endDate) >= now
+    ).length
+    const utilizationRate = activeCars > 0 ? Math.round((currentlyBooked / activeCars) * 100) : 0
+
+    // Average trip duration (from completed bookings)
+    const completedWithDates = allBookingStats.filter(b =>
+      completedStatuses.includes(b.status) && b.startDate && b.endDate
+    )
+    const avgTripDays = completedWithDates.length > 0
+      ? Math.round(completedWithDates.reduce((sum, b) => {
+          const days = Math.ceil((new Date(b.endDate).getTime() - new Date(b.startDate).getTime()) / (1000 * 60 * 60 * 24))
+          return sum + Math.max(days, 1)
+        }, 0) / completedWithDates.length)
+      : 0
+
     // Calculate additional stats
     const stats = {
       totalCars: host.cars.length,
-      activeCars: host.cars.filter(car => car.isActive).length,
-      totalTrips: host.totalTrips || 0,
+      activeCars,
+      totalTrips: host.totalTrips || completedBookingsCount,
       rating: host.rating || 0,
       responseRate: host.responseRate || 0,
       acceptanceRate: host.acceptanceRate || 0,
-      totalBookings: host.bookings.length,
-      totalEarnings: host.totalEarnings || 0,
-      monthlyEarnings: 0,
+      totalBookings: host._count?.bookings || allBookingStats.length,
+      activeBookings,
+      pendingBookings: pendingBookingsCount,
+      completedBookings: completedBookingsCount,
+      totalEarnings: host.totalEarnings || netRevenue,
+      grossEarnings: grossRevenue,
+      netRevenue: Math.round(netRevenue * 100) / 100,
+      todayRevenue: Math.round(todayRevenue * 100) / 100,
+      weekRevenue: Math.round(weekRevenue * 100) / 100,
+      monthRevenue: Math.round(monthRevenue * 100) / 100,
+      monthlyEarnings: Math.round(monthRevenue * 100) / 100,
+      utilizationRate,
+      avgTripDays,
+      completedThisMonth,
+      completedLastMonth,
       claims: claimsCount,
       claimsPending: claimsPending,
       claimsApproved: claimsApproved,
