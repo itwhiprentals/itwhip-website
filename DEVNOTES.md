@@ -1,5 +1,21 @@
 # ItWhip Development Notes
 
+## Recent Fixes (February 2026)
+
+### Guest Verification & Signup Fixes (Feb 2)
+- [x] Fixed verify-email route missing id and updatedAt fields in AdminNotification
+  - Was causing PrismaClientValidationError on email verification completion
+  - Added nanoid() import and required fields to match signup route pattern
+- [x] Fixed Stripe Identity verification flow in profile Documents tab
+  - Changed incorrect Link to /payments/methods to proper button with API call
+  - Added handleStartVerification function to create Stripe session and redirect
+  - Added loading state while redirecting to Stripe verification page
+  - Guests can now properly start identity verification from /profile?tab=documents
+- [x] Fixed incomplete account creation bug in mobile/google OAuth signup
+  - Added missing required fields (id, city, state, updatedAt) to ReviewerProfile
+  - Fixed RentalHost schema (name field instead of firstName/lastName)
+  - Manually repaired 3 affected user accounts (mariyahm@icloud.com, etc.)
+
 ## Recent Fixes (January 2026)
 
 ### ItWhip AI Booking Assistant (Jan 30)
