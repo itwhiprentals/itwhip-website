@@ -2951,7 +2951,7 @@ model User {
   phoneVerificationSkipped     Boolean                   @default(false)
   isActive                     Boolean                   @default(true)
   jobTitle                 String?
-  phone                    String?
+  phone                    String?                   @unique
   avatar                   String?
   hotelId                  String?
   createdAt                DateTime                  @default(now())

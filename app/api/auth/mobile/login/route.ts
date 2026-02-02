@@ -212,6 +212,44 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // GUARD CHECK: Detect HOST trying to access GUEST login
+    const hostProfile = await prisma.rentalHost.findFirst({
+      where: { OR: [{ userId: user.id }, { email: user.email.toLowerCase() }] },
+      select: { id: true, approvalStatus: true }
+    })
+    const guestProfile = await prisma.reviewerProfile.findFirst({
+      where: { OR: [{ userId: user.id }, { email: user.email.toLowerCase() }] },
+      select: { id: true }
+    })
+
+    if (hostProfile && !guestProfile) {
+      console.log(`[Mobile Login] GUARD: HOST user ${user.email} tried guest login - blocking`)
+      await logFailedLogin({
+        email: email.toLowerCase(),
+        source: 'mobile',
+        reason: 'INVALID_ACCOUNT_TYPE',
+        ip: clientIp,
+        userAgent,
+        metadata: { guard: 'host-on-guest', hasHostProfile: true, hasGuestProfile: false }
+      })
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Host account detected',
+          guard: {
+            type: 'host-on-guest',
+            title: 'Host Account Detected',
+            message: 'You have a Host account. Please switch to Host login to access your account.',
+            actions: {
+              primary: { label: 'Switch to Host Login' },
+              secondary: { label: 'Apply for Guest Account' },
+            },
+          },
+        },
+        { status: 403 }
+      )
+    }
+
     // Upgrade password hash if needed
     if (needsRehash) {
       upgradePasswordHash(user.id, password).catch(() => {})

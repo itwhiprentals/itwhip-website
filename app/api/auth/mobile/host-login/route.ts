@@ -110,15 +110,25 @@ export async function POST(request: NextRequest) {
         })
 
         if (guestProfile) {
+          console.log(`[Mobile Host Login] GUARD: GUEST user ${email} tried host login - blocking`)
+          await logFailedLogin({
+            email: email.toLowerCase(),
+            source: 'mobile_host',
+            reason: 'INVALID_ACCOUNT_TYPE',
+            ip: clientIp,
+            userAgent,
+            metadata: { guard: 'guest-on-host', hasHostProfile: false, hasGuestProfile: true }
+          })
           return NextResponse.json({
+            success: false,
             error: 'Guest account detected',
             guard: {
               type: 'guest-on-host',
               title: 'Guest Account Detected',
-              message: 'You have a Guest account. Use Guest login or apply to become a Host.',
+              message: 'You have a Guest account. Please switch to Guest login to access your account, or apply to become a Host.',
               actions: {
-                primary: { label: 'Go to Guest Login', url: '/auth/login' },
-                secondary: { label: 'Apply to Become a Host', url: '/host/signup' },
+                primary: { label: 'Switch to Guest Login' },
+                secondary: { label: 'Apply to Become a Host' },
               },
             },
           }, { status: 403 })
