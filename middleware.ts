@@ -3,6 +3,50 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { jwtVerify } from 'jose'
 
+// ============================================================================
+// SECURITY HEADERS HELPER
+// ============================================================================
+function addSecurityHeaders(response: NextResponse): NextResponse {
+  // Prevent clickjacking
+  response.headers.set('X-Frame-Options', 'DENY')
+
+  // Prevent MIME sniffing
+  response.headers.set('X-Content-Type-Options', 'nosniff')
+
+  // XSS protection
+  response.headers.set('X-XSS-Protection', '1; mode=block')
+
+  // Referrer policy
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+
+  // Permissions policy
+  response.headers.set('Permissions-Policy', 'geolocation=(), microphone=(), camera=()')
+
+  // Content Security Policy (strict - no unsafe-inline)
+  const csp = [
+    "default-src 'self'",
+    "script-src 'self' https://maps.googleapis.com https://js.stripe.com https://www.gstatic.com",
+    "style-src 'self' https://fonts.googleapis.com",
+    "img-src 'self' data: https: blob:",
+    "font-src 'self' data: https://fonts.gstatic.com",
+    "connect-src 'self' https://maps.googleapis.com https://api.stripe.com",
+    "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
+    "object-src 'none'",
+    "base-uri 'self'"
+  ].join('; ')
+  response.headers.set('Content-Security-Policy', csp)
+
+  // HSTS (production only)
+  if (process.env.NODE_ENV === 'production') {
+    response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
+  }
+
+  // Remove server identification
+  response.headers.delete('X-Powered-By')
+
+  return response
+}
+
 // Get all three JWT secrets - REQUIRE in production, allow fallback in development only
 function getRequiredSecret(name: string, fallback: string): Uint8Array {
   const value = process.env[name]
@@ -633,15 +677,15 @@ export async function middleware(request: NextRequest) {
         // Invalid token, let them access admin login
       }
     }
-    return NextResponse.next()
+    return addSecurityHeaders(NextResponse.next())
   }
 
-  const needsProtection = Object.keys(protectedRoutes).some(route => 
+  const needsProtection = Object.keys(protectedRoutes).some(route =>
     pathname.startsWith(route) && !pathname.startsWith('/admin/') && !pathname.startsWith('/host/')
   )
 
   if (!needsProtection) {
-    return NextResponse.next()
+    return addSecurityHeaders(NextResponse.next())
   }
 
   if (!guestToken) {
@@ -709,7 +753,7 @@ export async function middleware(request: NextRequest) {
     response.headers.set('x-user-name', payload.name as string || '')
     response.headers.set('x-token-type', secretType)
 
-    return response
+    return addSecurityHeaders(response)
 
   } catch (error) {
     console.error('Guest JWT verification failed:', error)
