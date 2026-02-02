@@ -2,7 +2,33 @@
 
 ## Recent Fixes (February 2026)
 
-### Guest Verification & Signup Fixes (Feb 2)
+### Phone Verification Integration (Feb 2 - Later)
+- [x] Added comprehensive phone verification flow with edit/skip capabilities
+  - Database: Added phoneVerificationAttempts and phoneVerificationSkipped tracking fields to User and ReviewerProfile
+  - Migration: 20260202094711_add_phone_verification_tracking
+- [x] Enhanced /auth/verify-phone page with full control over verification process
+  - Editable phone number field with pen icon (can change before sending code)
+  - "Skip for Now" button allows optional verification (can complete later in profile)
+  - Force skip after 2 Firebase SMS failures (changes button to "Continue Without Verification")
+  - Updated handleSendCode to use editablePhone and track failure attempts
+- [x] Profile integration: phone changes now require verification
+  - ProfileTab: handlePhoneUpdate redirects to /auth/verify-phone instead of direct save
+  - Added notice in phone change bottom sheet about verification requirement
+  - Phone saved as unverified, then verified via Firebase SMS
+- [x] Documents tab: Added phone verification for users who skipped
+  - Blue card prompts phone verification if phone exists but not verified
+  - Green card shows verified status with phone number
+  - Redirects to /auth/verify-phone?returnTo=/profile?tab=documents
+- [x] Created skip verification API endpoint
+  - POST /api/auth/skip-phone-verification marks verification as skipped
+  - Resets attempt counter and syncs to ReviewerProfile
+  - Allows users to verify later without blocking signup flow
+- [x] Updated phone verification API with attempt tracking
+  - Resets phoneVerificationAttempts to 0 on success
+  - Clears phoneVerificationSkipped flag when user verifies later
+  - Syncs all fields to ReviewerProfile for consistency
+
+### Guest Verification & Signup Fixes (Feb 2 - Earlier)
 - [x] Fixed verify-email route missing id and updatedAt fields in AdminNotification
   - Was causing PrismaClientValidationError on email verification completion
   - Added nanoid() import and required fields to match signup route pattern
