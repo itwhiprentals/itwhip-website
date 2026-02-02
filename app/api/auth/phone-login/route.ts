@@ -97,56 +97,39 @@ export async function POST(request: NextRequest) {
     } catch (error: any) {
       console.error('[Phone Login] Firebase token verification failed:', error)
 
-      // Enhanced geolocation + bot detection for failed attempts
-      const userAgent = request.headers.get('user-agent') || ''
-      const location = await getEnhancedLocation(clientIp)
-      const botDetection = detectBot(userAgent, clientIp, request.headers)
+      // Best-effort security logging (never block the error response)
+      try {
+        const userAgent = request.headers.get('user-agent') || ''
+        const location = await getEnhancedLocation(clientIp)
+        const botDetection = detectBot(userAgent, clientIp, request.headers)
+        const threatScore = location.riskScore + (botDetection.isBot ? botDetection.confidence : 0)
 
-      // Calculate total threat score
-      const threatScore = location.riskScore + (botDetection.isBot ? botDetection.confidence : 0)
-
-      // Log failed attempt to fleet monitoring with enhanced data
-      await prisma.securityEvent.create({
-        data: {
-          id: nanoid(),
-          type: 'LOGIN_FAILED',
-          severity: threatScore > 80 ? 'HIGH' : threatScore > 50 ? 'MEDIUM' : 'LOW',
-          sourceIp: clientIp,
-          targetId: phone,
-          message: 'Phone verification failed',
-          details: JSON.stringify({
-            method: 'phone',
-            phone: phone,
-            reason: 'FIREBASE_VERIFICATION_FAILED',
-            error: error.message,
-            source: 'guest_portal',
-            // Enhanced location data
-            zipCode: location.zipCode,
-            isp: location.isp,
-            asn: location.asn,
-            organization: location.organization,
-            // Threat intelligence
-            isVpn: location.isVpn,
-            isProxy: location.isProxy,
-            isTor: location.isTor,
-            isDatacenter: location.isDatacenter,
-            isHosting: location.isHosting,
-            riskScore: location.riskScore,
-            // Bot detection
-            isBot: botDetection.isBot,
-            botName: botDetection.botName,
-            botConfidence: botDetection.confidence,
-            botReasons: botDetection.reasons,
-            threatScore
-          }),
-          action: 'login_denied',
-          blocked: false,
-          userAgent: userAgent,
-          country: location.country,
-          city: location.city,
-          timestamp: new Date()
-        }
-      })
+        await prisma.securityEvent.create({
+          data: {
+            id: nanoid(),
+            type: 'LOGIN_FAILED',
+            severity: threatScore > 80 ? 'HIGH' : threatScore > 50 ? 'MEDIUM' : 'LOW',
+            sourceIp: clientIp,
+            targetId: phone,
+            message: 'Phone verification failed',
+            details: JSON.stringify({
+              method: 'phone', phone, reason: 'FIREBASE_VERIFICATION_FAILED',
+              error: error.message, source: 'guest_portal',
+              isVpn: location.isVpn, isProxy: location.isProxy, isTor: location.isTor,
+              riskScore: location.riskScore, isBot: botDetection.isBot,
+              botConfidence: botDetection.confidence, threatScore
+            }),
+            action: 'login_denied',
+            blocked: false,
+            userAgent: userAgent,
+            country: location.country,
+            city: location.city,
+            timestamp: new Date()
+          }
+        })
+      } catch (securityError) {
+        console.error('[Phone Login] Security logging failed (non-blocking):', securityError)
+      }
 
       return NextResponse.json(
         { error: 'Phone verification failed. Please try again.' },
@@ -197,136 +180,82 @@ export async function POST(request: NextRequest) {
     }
 
     // ============================================================================
-    // ULTRA SECURITY: Enhanced Geolocation + Bot Detection + Device Fingerprinting
+    // ULTRA SECURITY: Best-effort (NEVER blocks login if it fails)
     // ============================================================================
+    try {
+      const userAgent = request.headers.get('user-agent') || ''
+      const deviceFingerprint = request.headers.get('x-fingerprint')
+      const location = await getEnhancedLocation(clientIp)
+      const botDetection = detectBot(userAgent, clientIp, request.headers)
+      const threatScore = location.riskScore + (botDetection.isBot ? botDetection.confidence : 0)
 
-    // Get device info and enhanced location
-    const userAgent = request.headers.get('user-agent') || ''
-    const deviceFingerprint = request.headers.get('x-fingerprint') // From client
-    const location = await getEnhancedLocation(clientIp)
-    const botDetection = detectBot(userAgent, clientIp, request.headers)
+      // Block only high-confidence bots
+      if (botDetection.isBot && botDetection.confidence > 80 && !isLegitimateBot(userAgent, clientIp)) {
+        console.warn(`[Phone Login] Bot detected (${botDetection.confidence}%): ${botDetection.botName}`)
+        try {
+          await prisma.securityEvent.create({
+            data: {
+              id: nanoid(), type: 'LOGIN_FAILED', severity: 'HIGH',
+              sourceIp: clientIp, targetId: user.email,
+              message: `Bot login blocked: ${botDetection.botName}`,
+              details: JSON.stringify({ method: 'phone', phone: verifiedPhone, reason: 'BOT_DETECTED', botConfidence: botDetection.confidence, source: 'guest_portal' }),
+              action: 'login_denied', blocked: true, userAgent, country: location.country, city: location.city, timestamp: new Date()
+            }
+          })
+        } catch (e) { console.error('[Phone Login] Bot event log failed:', e) }
 
-    // Calculate total threat score
-    const threatScore = location.riskScore + (botDetection.isBot ? botDetection.confidence : 0)
+        return NextResponse.json(
+          { error: 'Security check failed. Please try again from a supported browser.' },
+          { status: 403 }
+        )
+      }
 
-    // Block if high-confidence bot (unless legitimate search engine)
-    if (botDetection.isBot && botDetection.confidence > 80 && !isLegitimateBot(userAgent, clientIp)) {
-      console.warn(`[Phone Login] Bot detected (${botDetection.confidence}% confidence): ${botDetection.botName}`)
+      // New device alert (best-effort)
+      const existingSession = deviceFingerprint ? await prisma.session.findFirst({
+        where: { userId: user.id, fingerprint: deviceFingerprint }
+      }).catch(() => null) : null
 
+      if (!existingSession && user.emailVerified && !user.email.includes('@itwhip.temp')) {
+        try {
+          const deviceAlert = getNewDeviceAlertTemplate(user.name, {
+            browser: 'Browser', os: 'OS', ip: clientIp,
+            location: location.country ? `${location.city || 'Unknown'}, ${location.country}` : 'Unknown',
+            time: new Date().toLocaleString()
+          })
+          await sendEmail(user.email, deviceAlert.subject, deviceAlert.html)
+          console.log(`[Phone Login] New device alert sent to: ${user.email}`)
+        } catch (emailError) {
+          console.error('[Phone Login] New device alert failed (non-blocking):', emailError)
+        }
+      }
+
+      // Log security event for Fleet monitoring (best-effort)
       await prisma.securityEvent.create({
         data: {
-          id: nanoid(),
-          type: 'LOGIN_FAILED',
-          severity: 'HIGH',
-          sourceIp: clientIp,
-          targetId: user.email,
-          message: `Bot login blocked: ${botDetection.botName}`,
+          id: nanoid(), type: 'LOGIN_SUCCESS',
+          severity: threatScore > 50 ? 'MEDIUM' : 'LOW',
+          sourceIp: clientIp, targetId: user.email,
+          message: 'Phone login successful',
           details: JSON.stringify({
-            method: 'phone',
-            phone: verifiedPhone,
-            reason: 'BOT_DETECTED',
-            botName: botDetection.botName,
-            botConfidence: botDetection.confidence,
-            botReasons: botDetection.reasons,
-            source: 'guest_portal'
+            method: 'phone', phone: verifiedPhone, fingerprint: deviceFingerprint,
+            newDevice: !existingSession, source: 'guest_portal',
+            emailVerified: user.emailVerified, userId: user.id,
+            country: location.country, city: location.city,
+            isVpn: location.isVpn, isProxy: location.isProxy, isTor: location.isTor,
+            riskScore: location.riskScore,
+            isBot: botDetection.isBot, botConfidence: botDetection.confidence,
+            threatScore
           }),
-          action: 'login_denied',
-          blocked: true,
-          userAgent: userAgent,
-          country: location.country,
-          city: location.city,
-          timestamp: new Date()
+          action: 'login_success', blocked: false, userAgent,
+          country: location.country, city: location.city, timestamp: new Date()
         }
       })
 
-      return NextResponse.json(
-        { error: 'Security check failed. Please try again from a supported browser.' },
-        { status: 403 }
-      )
+      console.log(`[Phone Login] Security check complete - Threat: ${threatScore}`)
+    } catch (securityError) {
+      // CRITICAL: Security monitoring should NEVER block a successful login
+      console.error('[Phone Login] Security monitoring failed (non-blocking):', securityError)
     }
-
-    // Warn for VPN/Proxy/Tor (don't block, just log)
-    if (location.isVpn || location.isProxy || location.isTor) {
-      console.warn(`[Phone Login] Suspicious connection detected - VPN:${location.isVpn} Proxy:${location.isProxy} Tor:${location.isTor}`)
-    }
-
-    // Check if this is a new device
-    const existingSession = deviceFingerprint ? await prisma.session.findFirst({
-      where: {
-        userId: user.id,
-        fingerprint: deviceFingerprint
-      }
-    }) : null
-
-    // If new device, send security alert email
-    if (!existingSession && user.emailVerified && !user.email.includes('@itwhip.temp')) {
-      try {
-        const deviceAlert = getNewDeviceAlertTemplate(user.name, {
-          browser: 'Browser', // TODO: Parse from userAgent
-          os: 'OS', // TODO: Parse from userAgent
-          ip: clientIp,
-          location: location.country ? `${location.city || 'Unknown'}, ${location.country}` : 'Unknown',
-          time: new Date().toLocaleString()
-        })
-
-        await sendEmail(user.email, deviceAlert.subject, deviceAlert.html)
-        console.log(`[Phone Login] New device alert sent to: ${user.email}`)
-      } catch (emailError) {
-        console.error('[Phone Login] Failed to send new device alert:', emailError)
-        // Don't fail the login if email fails
-      }
-    }
-
-    // Log security event for FLEET MONITORING with ULTRA SECURITY data
-    await prisma.securityEvent.create({
-      data: {
-        id: nanoid(),
-        type: 'LOGIN_SUCCESS',
-        severity: threatScore > 50 ? 'MEDIUM' : 'LOW',
-        sourceIp: clientIp,
-        targetId: user.email,
-        message: 'Phone login successful',
-        details: JSON.stringify({
-          method: 'phone',
-          phone: verifiedPhone,
-          fingerprint: deviceFingerprint,
-          newDevice: !existingSession,
-          source: 'guest_portal',
-          emailVerified: user.emailVerified,
-          userId: user.id,
-          // Enhanced location data (ZIP, ISP, ASN)
-          zipCode: location.zipCode,
-          isp: location.isp,
-          asn: location.asn,
-          organization: location.organization,
-          latitude: location.latitude,
-          longitude: location.longitude,
-          timezone: location.timezone,
-          // Threat intelligence (VPN/Proxy/Tor/Datacenter/Hosting)
-          isVpn: location.isVpn,
-          isProxy: location.isProxy,
-          isTor: location.isTor,
-          isDatacenter: location.isDatacenter,
-          isHosting: location.isHosting,
-          riskScore: location.riskScore,
-          // Bot detection (1000+ signatures)
-          isBot: botDetection.isBot,
-          botName: botDetection.botName,
-          botConfidence: botDetection.confidence,
-          botReasons: botDetection.reasons,
-          // Total threat score (risk + bot confidence)
-          threatScore
-        }),
-        action: 'login_success',
-        blocked: false,
-        userAgent: userAgent,
-        country: location.country,
-        city: location.city,
-        timestamp: new Date()
-      }
-    })
-
-    console.log(`[Phone Login] Ultra security check complete - Risk: ${location.riskScore}, Bot: ${botDetection.confidence}, Total: ${threatScore}`)
 
     // Generate JWT tokens
     const { accessToken, refreshToken } = await generateJWTTokens(
