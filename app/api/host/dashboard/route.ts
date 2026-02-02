@@ -118,13 +118,6 @@ export async function GET(request: NextRequest) {
                 profilePhotoUrl: true,
               }
             },
-            renter: {
-              select: {
-                name: true,
-                image: true,
-                avatar: true,
-              }
-            }
           },
           orderBy: {
             createdAt: 'desc'
@@ -146,6 +139,9 @@ export async function GET(request: NextRequest) {
         { status: 404 }
       )
     }
+
+    // Cast to any for included relations
+    const h: any = host
 
     // Get claims counts
     let claimsCount = 0
@@ -261,7 +257,7 @@ export async function GET(request: NextRequest) {
     ).length
 
     // Utilization rate: % of active cars that are currently booked
-    const activeCars = host.cars.filter(car => car.isActive).length
+    const activeCars = h.cars.filter((car: any) => car.isActive).length
     const currentlyBooked = allBookingStats.filter(b =>
       activeStatuses.includes(b.status) &&
       new Date(b.startDate) <= now &&
@@ -282,13 +278,13 @@ export async function GET(request: NextRequest) {
 
     // Calculate additional stats
     const stats = {
-      totalCars: host.cars.length,
+      totalCars: h.cars.length,
       activeCars,
       totalTrips: host.totalTrips || completedBookingsCount,
       rating: host.rating || 0,
       responseRate: host.responseRate || 0,
       acceptanceRate: host.acceptanceRate || 0,
-      totalBookings: host._count?.bookings || allBookingStats.length,
+      totalBookings: h._count?.bookings || allBookingStats.length,
       activeBookings,
       pendingBookings: pendingBookingsCount,
       completedBookings: completedBookingsCount,
@@ -308,13 +304,13 @@ export async function GET(request: NextRequest) {
       claimsApproved: claimsApproved,
       claimsAmount: claimsAmount,
       pendingClaims: claimsPending,
-      reviewCount: host._count?.reviews || 0,
+      reviewCount: h._count?.reviews || 0,
       unreadMessages: unreadMessagesCount,
       managedVehicles: managedVehiclesCount
     }
 
     // Format cars with completion status data and enhanced metrics
-    const formattedCars = host.cars.map(car => {
+    const formattedCars = h.cars.map((car: any) => {
       // Calculate if car has enough content
       const hasRules = Array.isArray(car.rules) && car.rules.length > 0
       const hasFeatures = Array.isArray(car.features) && car.features.length > 0
@@ -413,14 +409,14 @@ export async function GET(request: NextRequest) {
         // Cars with full data for completion checking
         cars: formattedCars,
         
-        recentBookings: host.bookings.map(b => ({
+        recentBookings: h.bookings.map((b: any) => ({
           ...b,
           guestAvatar: b.reviewerProfile?.profilePhotoUrl
             || b.renter?.image
             || b.renter?.avatar
             || null,
         })),
-        recentReviews: host.reviews.map((r: any) => ({
+        recentReviews: h.reviews.map((r: any) => ({
           id: r.id,
           rating: r.rating,
           comment: r.comment,
