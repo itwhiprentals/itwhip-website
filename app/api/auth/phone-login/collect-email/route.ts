@@ -3,8 +3,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { SignJWT } from 'jose'
 import { cookies } from 'next/headers'
+import { nanoid } from 'nanoid'
 import { sendEmail } from '@/app/lib/email/sender'
 import { getEmailVerificationTemplate, generateVerificationCode } from '@/app/lib/email/templates/email-verification'
+import { getClientIp } from '@/app/lib/rate-limit'
+import { getEnhancedLocation } from '@/app/lib/security/geolocation'
+import { detectBot } from '@/app/lib/security/botDetection'
 
 // JWT secrets
 const GUEST_JWT_SECRET = new TextEncoder().encode(
@@ -93,7 +97,7 @@ export async function POST(request: NextRequest) {
           name,
           emailVerified: false,
           emailVerificationCode: verificationCode,
-          emailVerificationCodeExpiry: codeExpiry
+          emailVerificationExpiry: codeExpiry
         }
       })
     } else {
@@ -106,7 +110,7 @@ export async function POST(request: NextRequest) {
           phoneVerified: true,
           emailVerified: false,
           emailVerificationCode: verificationCode,
-          emailVerificationCodeExpiry: codeExpiry,
+          emailVerificationExpiry: codeExpiry,
           role: 'CLAIMED'
         }
       })
@@ -114,20 +118,78 @@ export async function POST(request: NextRequest) {
       // Create ReviewerProfile
       await prisma.reviewerProfile.create({
         data: {
+          id: nanoid(),
           userId: user.id,
+          name: name || email.split('@')[0],
           email,
+          city: 'Unknown',
           phoneNumber: phone,
           phoneVerified: true,
-          emailVerified: false
+          emailVerified: false,
+          updatedAt: new Date()
         }
       })
     }
 
     // Send verification email
     const emailTemplate = getEmailVerificationTemplate(name, verificationCode)
-    await sendEmail(email, emailTemplate.subject, emailTemplate.html)
+    await sendEmail(email, emailTemplate.subject, emailTemplate.html, emailTemplate.text)
 
     console.log(`[Phone Login] Verification email sent to: ${email}`)
+
+    // ============================================================================
+    // ULTRA SECURITY: Log email collection with enhanced threat detection
+    // ============================================================================
+    const clientIp = getClientIp(request)
+    const userAgent = request.headers.get('user-agent') || ''
+    const location = await getEnhancedLocation(clientIp)
+    const botDetection = detectBot(userAgent, clientIp, request.headers)
+    const threatScore = location.riskScore + (botDetection.isBot ? botDetection.confidence : 0)
+
+    await prisma.securityEvent.create({
+      data: {
+        id: nanoid(),
+        type: 'EMAIL_COLLECTED',
+        severity: threatScore > 50 ? 'MEDIUM' : 'LOW',
+        sourceIp: clientIp,
+        targetId: email,
+        message: 'Email collected for phone user',
+        details: JSON.stringify({
+          method: 'phone',
+          phone: phone,
+          emailProvided: email,
+          nameProvided: name,
+          userId: user.id,
+          source: 'guest_portal',
+          // Enhanced location data
+          zipCode: location.zipCode,
+          isp: location.isp,
+          asn: location.asn,
+          organization: location.organization,
+          // Threat intelligence
+          isVpn: location.isVpn,
+          isProxy: location.isProxy,
+          isTor: location.isTor,
+          isDatacenter: location.isDatacenter,
+          isHosting: location.isHosting,
+          riskScore: location.riskScore,
+          // Bot detection
+          isBot: botDetection.isBot,
+          botName: botDetection.botName,
+          botConfidence: botDetection.confidence,
+          botReasons: botDetection.reasons,
+          threatScore
+        }),
+        action: 'email_collected',
+        blocked: false,
+        userAgent: userAgent,
+        country: location.country,
+        city: location.city,
+        timestamp: new Date()
+      }
+    })
+
+    console.log(`[Phone Login] Email collection logged - Risk: ${location.riskScore}, Bot: ${botDetection.confidence}`)
 
     // Generate JWT tokens
     const { accessToken, refreshToken } = await generateJWTTokens(

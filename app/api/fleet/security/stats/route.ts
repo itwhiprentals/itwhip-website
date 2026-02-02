@@ -84,14 +84,14 @@ export async function GET(request: NextRequest) {
           timestamp: { gte: since }
         }
       }),
-      // Recent events for display
+      // Recent events for display (include ALL login types + EMAIL_COLLECTED)
       prisma.securityEvent.findMany({
         where: {
           timestamp: { gte: since },
-          type: { in: ['LOGIN_FAILED', 'BRUTE_FORCE_DETECTED', 'ACCOUNT_TARGETED'] }
+          type: { in: ['LOGIN_FAILED', 'LOGIN_SUCCESS', 'BRUTE_FORCE_DETECTED', 'ACCOUNT_TARGETED', 'EMAIL_COLLECTED'] }
         },
         orderBy: { timestamp: 'desc' },
-        take: 20,
+        take: 30,
         select: {
           id: true,
           type: true,
@@ -101,7 +101,10 @@ export async function GET(request: NextRequest) {
           message: true,
           details: true,
           blocked: true,
-          timestamp: true
+          timestamp: true,
+          country: true,
+          city: true,
+          userAgent: true
         }
       })
     ])
@@ -132,7 +135,7 @@ export async function GET(request: NextRequest) {
       f => new Date(f.sourceIp).getTime() > oneHourAgo.getTime()
     ).length
 
-    // Format recent events for display
+    // Format recent events for display with ULTRA SECURITY data
     const formattedEvents = recentEvents.map(event => {
       let details: Record<string, any> = {}
       try {
@@ -149,7 +152,34 @@ export async function GET(request: NextRequest) {
         source: details.source || null,
         message: event.message,
         blocked: event.blocked,
-        timestamp: event.timestamp.toISOString()
+        timestamp: event.timestamp.toISOString(),
+        // Enhanced location data
+        country: event.country || null,
+        city: event.city || null,
+        zipCode: details.zipCode || null,
+        isp: details.isp || null,
+        asn: details.asn || null,
+        organization: details.organization || null,
+        // Phone login data
+        phone: details.phone || null,
+        method: details.method || 'email',
+        fingerprint: details.fingerprint || null,
+        newDevice: details.newDevice || false,
+        // Threat intelligence
+        isVpn: details.isVpn || false,
+        isProxy: details.isProxy || false,
+        isTor: details.isTor || false,
+        isDatacenter: details.isDatacenter || false,
+        isHosting: details.isHosting || false,
+        riskScore: details.riskScore || 0,
+        // Bot detection
+        isBot: details.isBot || false,
+        botName: details.botName || null,
+        botConfidence: details.botConfidence || 0,
+        botReasons: details.botReasons || [],
+        // Total threat score
+        threatScore: details.threatScore || 0,
+        userId: details.userId || null
       }
     })
 

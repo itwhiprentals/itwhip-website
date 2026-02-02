@@ -41,6 +41,33 @@ interface SecurityEvent {
   message: string
   blocked: boolean
   timestamp: string
+  // Enhanced location data
+  country: string | null
+  city: string | null
+  zipCode: string | null
+  isp: string | null
+  asn: number | null
+  organization: string | null
+  // Phone login data
+  phone: string | null
+  method: string
+  fingerprint: string | null
+  newDevice: boolean
+  // Threat intelligence
+  isVpn: boolean
+  isProxy: boolean
+  isTor: boolean
+  isDatacenter: boolean
+  isHosting: boolean
+  riskScore: number
+  // Bot detection
+  isBot: boolean
+  botName: string | null
+  botConfidence: number
+  botReasons: string[]
+  // Total threat score
+  threatScore: number
+  userId: string | null
 }
 
 interface SecurityData {
@@ -65,7 +92,14 @@ const reasonLabels: Record<string, string> = {
   'ACCOUNT_PENDING': 'Pending',
   'ACCOUNT_INACTIVE': 'Inactive',
   'PASSWORD_NOT_SET': 'No Password',
-  'INVALID_ACCOUNT_TYPE': 'Wrong Portal'
+  'INVALID_ACCOUNT_TYPE': 'Wrong Portal',
+  // Phone-specific reasons
+  'FIREBASE_VERIFICATION_FAILED': 'Phone Verification Failed',
+  'INVALID_PHONE': 'Invalid Phone',
+  'SMS_QUOTA_EXCEEDED': 'SMS Quota Exceeded',
+  'PHONE_NOT_VERIFIED': 'Phone Not Verified',
+  'BOT_DETECTED': 'Bot Detected',
+  'SMS_FAILED': 'SMS Failed'
 }
 
 export default function SecurityMetricsCard() {
@@ -259,41 +293,135 @@ export default function SecurityMetricsCard() {
               </button>
 
               {showEvents && data.recentEvents.length > 0 && (
-                <div className="mt-3 space-y-2 max-h-48 overflow-y-auto">
-                  {data.recentEvents.slice(0, 10).map(event => (
-                    <div
-                      key={event.id}
-                      className={`text-xs p-2 rounded-lg ${
-                        event.type === 'BRUTE_FORCE_DETECTED' ? 'bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800' :
-                        event.type === 'ACCOUNT_TARGETED' ? 'bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800' :
-                        event.blocked ? 'bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800' :
-                        'bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            {event.type === 'BRUTE_FORCE_DETECTED' && <IoSkullOutline className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />}
-                            {event.type === 'ACCOUNT_TARGETED' && <IoPersonOutline className="w-3.5 h-3.5 text-orange-500 flex-shrink-0" />}
-                            {event.type === 'LOGIN_FAILED' && <IoWarningOutline className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />}
-                            <span className="font-medium text-gray-900 dark:text-white truncate">
-                              {event.targetEmail}
-                            </span>
-                          </div>
-                          <div className="text-gray-500 dark:text-gray-400 mt-0.5 flex items-center gap-2">
-                            <span>IP: {event.sourceIp}</span>
-                            {event.source && <span className="text-gray-400">• {event.source}</span>}
+                <div className="mt-3 space-y-2 max-h-96 overflow-y-auto">
+                  {data.recentEvents.slice(0, 15).map(event => {
+                    // Determine threat level color based on threatScore
+                    const threatColor = event.threatScore > 80 ? 'red' :
+                                       event.threatScore > 50 ? 'orange' :
+                                       event.threatScore > 30 ? 'yellow' : 'gray'
+
+                    return (
+                      <div
+                        key={event.id}
+                        className={`text-xs p-3 rounded-lg ${
+                          event.type === 'BRUTE_FORCE_DETECTED' ? 'bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800' :
+                          event.type === 'ACCOUNT_TARGETED' ? 'bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800' :
+                          event.type === 'LOGIN_SUCCESS' ? 'bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800' :
+                          event.blocked ? 'bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800' :
+                          'bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="flex-1 min-w-0">
+                            {/* Top row: Email/Phone + Method badge */}
+                            <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                              {event.type === 'BRUTE_FORCE_DETECTED' && <IoSkullOutline className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />}
+                              {event.type === 'ACCOUNT_TARGETED' && <IoPersonOutline className="w-3.5 h-3.5 text-orange-500 flex-shrink-0" />}
+                              {event.type === 'LOGIN_FAILED' && <IoWarningOutline className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />}
+                              {event.type === 'LOGIN_SUCCESS' && <IoCheckmarkCircleOutline className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />}
+                              <span className="font-medium text-gray-900 dark:text-white truncate">
+                                {event.phone || event.targetEmail}
+                              </span>
+                              {event.method === 'phone' && (
+                                <span className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded text-[10px] font-medium">
+                                  📱 PHONE
+                                </span>
+                              )}
+                              {event.newDevice && (
+                                <span className="px-1.5 py-0.5 bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 rounded text-[10px] font-medium">
+                                  🆕 NEW DEVICE
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Second row: IP + Location */}
+                            <div className="text-gray-500 dark:text-gray-400 flex items-center gap-2 flex-wrap mb-1">
+                              <span>IP: {event.sourceIp}</span>
+                              {event.city && event.country && (
+                                <span className="text-gray-400">• 📍 {event.city}, {event.country}</span>
+                              )}
+                              {event.zipCode && (
+                                <span className="text-gray-400">• ZIP {event.zipCode}</span>
+                              )}
+                              {event.source && <span className="text-gray-400">• {event.source}</span>}
+                            </div>
+
+                            {/* Third row: ISP/ASN + Threat badges */}
+                            {(event.isp || event.isVpn || event.isProxy || event.isTor || event.isBot) && (
+                              <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
+                                {event.isp && (
+                                  <span className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded text-[10px]">
+                                    🏢 {event.isp.substring(0, 30)}{event.isp.length > 30 ? '...' : ''}
+                                  </span>
+                                )}
+                                {event.isVpn && (
+                                  <span className="px-1.5 py-0.5 bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 rounded text-[10px] font-medium">
+                                    🔒 VPN
+                                  </span>
+                                )}
+                                {event.isProxy && (
+                                  <span className="px-1.5 py-0.5 bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 rounded text-[10px] font-medium">
+                                    🎭 PROXY
+                                  </span>
+                                )}
+                                {event.isTor && (
+                                  <span className="px-1.5 py-0.5 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 rounded text-[10px] font-medium">
+                                    🧅 TOR
+                                  </span>
+                                )}
+                                {event.isBot && (
+                                  <span className="px-1.5 py-0.5 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 rounded text-[10px] font-medium">
+                                    🤖 BOT ({event.botConfidence}%)
+                                  </span>
+                                )}
+                                {event.isDatacenter && (
+                                  <span className="px-1.5 py-0.5 bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 rounded text-[10px] font-medium">
+                                    🏗️ DATACENTER
+                                  </span>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Fourth row: Risk/Threat score */}
+                            {event.threatScore > 0 && (
+                              <div className="flex items-center gap-2 mt-1.5">
+                                <span className="text-gray-500 dark:text-gray-400 text-[10px]">
+                                  Risk: {event.riskScore} • Bot: {event.botConfidence} •
+                                </span>
+                                <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                                  threatColor === 'red' ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300' :
+                                  threatColor === 'orange' ? 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300' :
+                                  threatColor === 'yellow' ? 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300' :
+                                  'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                                }`}>
+                                  ⚠️ THREAT: {event.threatScore}
+                                </span>
+                              </div>
+                            )}
+
+                            {/* Blocked indicator */}
                             {event.blocked && (
-                              <span className="text-red-500 font-medium">BLOCKED</span>
+                              <div className="mt-1.5">
+                                <span className="text-red-500 font-bold text-[10px]">🚫 BLOCKED</span>
+                              </div>
                             )}
                           </div>
+
+                          {/* Timestamp on the right */}
+                          <span className="text-gray-400 whitespace-nowrap text-[10px]">
+                            {formatTime(event.timestamp)}
+                          </span>
                         </div>
-                        <span className="text-gray-400 whitespace-nowrap">
-                          {formatTime(event.timestamp)}
-                        </span>
+
+                        {/* Reason (if failed) */}
+                        {event.reason && event.type === 'LOGIN_FAILED' && (
+                          <div className="text-gray-600 dark:text-gray-300 text-[10px] mt-1 pt-1 border-t border-gray-200 dark:border-gray-700">
+                            Reason: {reasonLabels[event.reason] || event.reason}
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
 
