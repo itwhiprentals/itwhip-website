@@ -22,7 +22,22 @@ async function getHostFromHeaders() {
       approvalStatus: true,
       canEditCalendar: true,
       minDailyRate: true,
-      maxDailyRate: true
+      maxDailyRate: true,
+      // Insurance fields
+      insuranceActive: true,
+      insuranceType: true,
+      insurancePolicyNumber: true,
+      hostInsuranceProvider: true,
+      hostInsuranceStatus: true,
+      hostInsuranceExpires: true,
+      commercialInsuranceActive: true,
+      commercialInsuranceProvider: true,
+      commercialInsuranceStatus: true,
+      commercialInsuranceExpires: true,
+      p2pInsuranceActive: true,
+      p2pInsuranceProvider: true,
+      p2pInsuranceStatus: true,
+      p2pInsuranceExpires: true,
     }
   })
 
@@ -246,7 +261,24 @@ export async function GET(
           bookingCode: claimInfo.mostRecentClaim.booking.bookingCode
         } : null,
         // Host approval status for locking availability options
-        hostApprovalStatus: host.approvalStatus
+        hostApprovalStatus: host.approvalStatus,
+        // Host-level insurance
+        hostInsurance: {
+          insuranceActive: host.insuranceActive,
+          insuranceType: host.insuranceType,
+          insurancePolicyNumber: host.insurancePolicyNumber,
+          hostInsuranceProvider: host.hostInsuranceProvider,
+          hostInsuranceStatus: host.hostInsuranceStatus,
+          hostInsuranceExpires: host.hostInsuranceExpires?.toISOString() || null,
+          commercialInsuranceActive: host.commercialInsuranceActive,
+          commercialInsuranceProvider: host.commercialInsuranceProvider,
+          commercialInsuranceStatus: host.commercialInsuranceStatus,
+          commercialInsuranceExpires: host.commercialInsuranceExpires?.toISOString() || null,
+          p2pInsuranceActive: host.p2pInsuranceActive,
+          p2pInsuranceProvider: host.p2pInsuranceProvider,
+          p2pInsuranceStatus: host.p2pInsuranceStatus,
+          p2pInsuranceExpires: host.p2pInsuranceExpires?.toISOString() || null,
+        }
       }))
     })
 
