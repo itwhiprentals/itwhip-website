@@ -1,6 +1,6 @@
 // Bot detection service with 1000+ signatures and confidence scoring
 import { isbot } from 'isbot'
-import UAParser from 'ua-parser-js'
+import { UAParser } from 'ua-parser-js'
 
 export interface BotDetectionResult {
   isBot: boolean
@@ -27,7 +27,8 @@ export function detectBot(userAgent: string, ip: string, headers: Headers): BotD
   // ============================================================================
   // Check 2: Parse user agent
   // ============================================================================
-  const ua = UAParser(userAgent)
+  const parser = new UAParser(userAgent)
+  const ua = parser.getResult()
 
   // Missing browser = likely bot
   if (!ua.browser.name) {
