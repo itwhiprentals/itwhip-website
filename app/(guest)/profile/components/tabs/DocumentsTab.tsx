@@ -9,13 +9,17 @@ import {
   IoInformationCircleOutline,
   IoShieldCheckmarkOutline,
   IoArrowForwardOutline,
-  IoFingerPrintOutline
+  IoFingerPrintOutline,
+  IoPhonePortraitOutline
 } from 'react-icons/io5'
 
 interface DocumentsTabProps {
   profile: {
     documentsVerified: boolean
     documentVerifiedAt?: string
+    phoneVerified?: boolean
+    phoneNumber?: string
+    phoneVerificationSkipped?: boolean
   }
   onDocumentUpdate: () => void
 }
@@ -189,6 +193,45 @@ export default function DocumentsTab({ profile, onDocumentUpdate }: DocumentsTab
                 </a>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Phone Verification Section - Show if phone exists but not verified */}
+      {profile.phoneNumber && !profile.phoneVerified && !profile.phoneVerificationSkipped && (
+        <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-300 dark:border-blue-700 rounded-lg">
+          <div className="flex items-start gap-3">
+            <IoPhonePortraitOutline className="w-6 h-6 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-1">
+                Verify Your Phone Number
+              </h3>
+              <p className="text-xs text-blue-800 dark:text-blue-300 mb-3">
+                Phone verification helps secure your account and enables SMS notifications for bookings. It only takes a minute!
+              </p>
+              <button
+                onClick={() => {
+                  window.location.href = `/auth/verify-phone?phone=${encodeURIComponent(profile.phoneNumber || '')}&returnTo=/profile?tab=documents`
+                }}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors"
+              >
+                <IoPhonePortraitOutline className="w-4 h-4" />
+                Verify Phone Number
+                <IoArrowForwardOutline className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Phone Verified Status */}
+      {profile.phoneVerified && profile.phoneNumber && (
+        <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-300 dark:border-green-700 rounded-lg">
+          <div className="flex items-center gap-2">
+            <IoCheckmarkCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+            <p className="text-xs text-green-800 dark:text-green-300">
+              Phone number verified: {profile.phoneNumber}
+            </p>
           </div>
         </div>
       )}

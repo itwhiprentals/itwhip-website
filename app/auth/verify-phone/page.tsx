@@ -9,7 +9,8 @@ import {
   IoCheckmarkCircle,
   IoAlertCircleOutline,
   IoArrowBackOutline,
-  IoRefreshOutline
+  IoRefreshOutline,
+  IoPencilOutline
 } from 'react-icons/io5'
 import {
   getFirebaseAuth,
@@ -35,6 +36,12 @@ function VerifyPhoneContent() {
   const [success, setSuccess] = useState(false)
   const [codeSent, setCodeSent] = useState(false)
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null)
+
+  // Phone editing and skip logic
+  const [editablePhone, setEditablePhone] = useState(phone)
+  const [isEditingPhone, setIsEditingPhone] = useState(false)
+  const [verificationAttempts, setVerificationAttempts] = useState(0)
+  const [forceSkip, setForceSkip] = useState(false)
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
   const recaptchaContainerRef = useRef<HTMLDivElement>(null)
@@ -132,7 +139,8 @@ function VerifyPhoneContent() {
 
   // Send verification code
   const handleSendCode = async () => {
-    if (!phone) {
+    const phoneToVerify = editablePhone || phone
+    if (!phoneToVerify) {
       setError('Phone number is required')
       return
     }
@@ -150,7 +158,7 @@ function VerifyPhoneContent() {
       }
 
       const auth = getFirebaseAuth()
-      const formattedPhone = formatPhoneE164(phone)
+      const formattedPhone = formatPhoneE164(phoneToVerify)
 
       console.log('[Phone Verify] Sending code to:', formattedPhone)
 
@@ -167,15 +175,25 @@ function VerifyPhoneContent() {
     } catch (err: any) {
       console.error('[Phone Verify] Send code error:', err)
 
-      // Handle specific Firebase errors
-      if (err.code === 'auth/invalid-phone-number') {
-        setError('Invalid phone number format')
-      } else if (err.code === 'auth/too-many-requests') {
-        setError('Too many attempts. Please try again later.')
-      } else if (err.code === 'auth/quota-exceeded') {
-        setError('SMS quota exceeded. Please try again later.')
+      // Increment attempt counter
+      const newAttempts = verificationAttempts + 1
+      setVerificationAttempts(newAttempts)
+
+      // Force skip after 2 failures
+      if (newAttempts >= 2) {
+        setForceSkip(true)
+        setError('Unable to send verification code after multiple attempts. You can skip phone verification and complete it later in your profile settings.')
       } else {
-        setError(err.message || 'Failed to send verification code')
+        // Handle specific Firebase errors
+        if (err.code === 'auth/invalid-phone-number') {
+          setError('Invalid phone number format. You can edit it or try again.')
+        } else if (err.code === 'auth/too-many-requests') {
+          setError('Too many attempts. Please try again later or skip for now.')
+        } else if (err.code === 'auth/quota-exceeded') {
+          setError('SMS quota exceeded. Please try again later or skip for now.')
+        } else {
+          setError(err.message || 'Failed to send verification code. Please try again or skip for now.')
+        }
       }
 
       // Reset reCAPTCHA on error
@@ -312,6 +330,27 @@ function VerifyPhoneContent() {
     await handleSendCode()
   }
 
+  // Handle skip phone verification
+  const handleSkip = async () => {
+    try {
+      // Update user record to mark phone verification as skipped
+      await fetch('/api/auth/skip-phone-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      })
+
+      console.log('[Phone Verify] User skipped phone verification')
+
+      // Redirect to returnTo destination
+      router.push(returnTo)
+    } catch (err) {
+      console.error('[Phone Verify] Failed to skip verification:', err)
+      // Still redirect even if update fails
+      router.push(returnTo)
+    }
+  }
+
   if (success) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
@@ -376,21 +415,78 @@ function VerifyPhoneContent() {
           <div id="recaptcha-container" ref={recaptchaContainerRef} />
 
           {!codeSent ? (
-            // Send Code Button
-            <button
-              onClick={handleSendCode}
-              disabled={isSending}
-              className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {isSending ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-                  <span>Sending Code...</span>
-                </>
-              ) : (
-                <span>Send Verification Code</span>
+            <>
+              {/* Editable Phone Number Field */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Phone Number
+                </label>
+                <div className="relative">
+                  <input
+                    type="tel"
+                    value={formatPhoneDisplay(editablePhone)}
+                    onChange={(e) => setEditablePhone(e.target.value)}
+                    disabled={!isEditingPhone}
+                    className={`w-full px-4 py-3 pr-12 text-base border-2 rounded-lg transition-all ${
+                      isEditingPhone
+                        ? 'border-green-500 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500'
+                        : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 cursor-not-allowed'
+                    }`}
+                    placeholder="+1 (555) 123-4567"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingPhone(!isEditingPhone)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-gray-500 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors"
+                    title={isEditingPhone ? 'Lock phone number' : 'Edit phone number'}
+                  >
+                    <IoPencilOutline className="w-5 h-5" />
+                  </button>
+                </div>
+                {isEditingPhone && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Edit your phone number if needed, then click "Send Verification Code"
+                  </p>
+                )}
+              </div>
+
+              {/* Force Skip Warning */}
+              {forceSkip && (
+                <div className="mb-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-200 dark:border-yellow-800 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <IoAlertCircleOutline className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                      We're having trouble sending the verification code. You can skip this step and verify your phone later in your profile settings.
+                    </p>
+                  </div>
+                </div>
               )}
-            </button>
+
+              {/* Send Code Button */}
+              <button
+                onClick={handleSendCode}
+                disabled={isSending || forceSkip}
+                className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isSending ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                    <span>Sending Code...</span>
+                  </>
+                ) : (
+                  <span>Send Verification Code</span>
+                )}
+              </button>
+
+              {/* Skip Button */}
+              <button
+                onClick={handleSkip}
+                disabled={isSending}
+                className="w-full py-3 mt-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {forceSkip ? 'Continue Without Verification' : 'Skip for Now'}
+              </button>
+            </>
           ) : (
             <>
               {/* Code Inputs */}

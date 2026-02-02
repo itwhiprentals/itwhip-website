@@ -49,6 +49,8 @@ export async function POST(request: NextRequest) {
       data: {
         phoneVerified: true,
         phone: verifiedPhone, // Update with Firebase-verified phone
+        phoneVerificationAttempts: 0,      // Reset on success
+        phoneVerificationSkipped: false,   // Clear skip flag if they verify later
       }
     })
 
@@ -66,6 +68,8 @@ export async function POST(request: NextRequest) {
         data: {
           phoneVerified: true,
           phoneNumber: verifiedPhone,
+          phoneVerificationAttempts: 0,
+          phoneVerificationSkipped: false,
         }
       })
       console.log(`[Phone Verify] Synced phoneVerified to ReviewerProfile for user: ${user.id}`)

@@ -2519,9 +2519,11 @@ model ReviewerProfile {
   insuranceVerifiedAt      DateTime?
   loyaltyPoints            Int                      @default(0)
   memberTier               MemberTier               @default(BRONZE)
-  phoneNumber              String?
-  phoneVerified            Boolean                  @default(false)
-  preferredCurrency        String                   @default("USD")
+  phoneNumber                  String?
+  phoneVerified                Boolean                  @default(false)
+  phoneVerificationAttempts    Int                      @default(0)
+  phoneVerificationSkipped     Boolean                  @default(false)
+  preferredCurrency            String                   @default("USD")
   preferredLanguage        String                   @default("en")
   pushNotifications        Boolean                  @default(true)
   selfieUrl                String?
@@ -2944,8 +2946,10 @@ model User {
   role                     UserRole                  @default(ANONYMOUS)
   passwordHash             String?
   emailVerified            Boolean?                  @default(false)
-  phoneVerified            Boolean                   @default(false)
-  isActive                 Boolean                   @default(true)
+  phoneVerified                Boolean                   @default(false)
+  phoneVerificationAttempts    Int                       @default(0)
+  phoneVerificationSkipped     Boolean                   @default(false)
+  isActive                     Boolean                   @default(true)
   jobTitle                 String?
   phone                    String?
   avatar                   String?

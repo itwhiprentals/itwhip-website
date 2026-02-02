@@ -323,7 +323,7 @@ export default function ProfileTab({
     }
   }
 
-  // Handle phone number change - direct update (no verification for now)
+  // Handle phone number change - redirect to verification
   const handlePhoneUpdate = async () => {
     const formattedPhone = formatPhoneNumber(newPhone)
     if (!formattedPhone || formattedPhone.length < 10) {
@@ -333,27 +333,31 @@ export default function ProfileTab({
 
     setPhoneSaving(true)
     setSheetError('')
+
     try {
+      // First, update the phone in the database (unverified)
       const response = await fetch('/api/guest/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ phone: formattedPhone })
+        body: JSON.stringify({
+          phone: formattedPhone,
+          phoneVerified: false // Mark as unverified when changed
+        })
       })
+
       const data = await response.json()
+
       if (response.ok && data.success) {
-        setPhoneSuccess(true)
-        // Update the form data
-        onFormChange({ phone: formattedPhone })
-        // Close after a short delay
-        setTimeout(() => {
-          setShowPhoneSheet(false)
-          setPhoneSuccess(false)
-        }, 1500)
+        // Close the sheet
+        setShowPhoneSheet(false)
+
+        // Redirect to phone verification with return URL
+        window.location.href = `/auth/verify-phone?phone=${encodeURIComponent(formattedPhone)}&returnTo=/profile?tab=account`
       } else {
         setSheetError(data.error || 'Failed to update phone number')
       }
-    } catch {
+    } catch (error) {
       setSheetError('Failed to update phone number. Please try again.')
     } finally {
       setPhoneSaving(false)
@@ -1240,6 +1244,12 @@ export default function ProfileTab({
                       placeholder="+1 (555) 123-4567"
                       autoComplete="tel"
                     />
+                  </div>
+
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <p className="text-xs text-blue-700 dark:text-blue-300">
+                      <strong>Note:</strong> After saving, you'll be redirected to verify your new phone number via SMS.
+                    </p>
                   </div>
 
                   {sheetError && (
