@@ -57,7 +57,14 @@ export async function GET(
             name: true,
             email: true,
             phone: true,
+            image: true,
             avatar: true
+          }
+        },
+        reviewerProfile: {
+          select: {
+            name: true,
+            profilePhotoUrl: true,
           }
         },
         messages: {
@@ -73,8 +80,8 @@ export async function GET(
             isRead: true
           }
         },
-        // ADD CLAIMS DATA
-        claims: {
+        // Claims data
+        Claim: {
           orderBy: {
             createdAt: 'desc'
           },
@@ -97,7 +104,39 @@ export async function GET(
       )
     }
     
+    // Fetch trip activity timeline
+    let timeline: any[] = []
+    try {
+      const activities = await prisma.activityLog.findMany({
+        where: {
+          entityType: 'booking',
+          entityId: bookingId,
+        },
+        orderBy: { createdAt: 'asc' },
+        select: {
+          action: true,
+          metadata: true,
+          createdAt: true,
+        }
+      })
+      timeline = activities.map(a => ({
+        action: a.action,
+        metadata: a.metadata,
+        timestamp: a.createdAt.toISOString(),
+      }))
+    } catch (err) {
+      // activityLog may not have entries
+    }
+
+    // Cast to any for included relations
+    const b: any = booking
+
     // Format booking for response
+    const guestPhoto = b.reviewerProfile?.profilePhotoUrl
+      || b.renter?.image
+      || b.renter?.avatar
+      || null
+
     const formattedBooking = {
       id: booking.id,
       bookingCode: booking.bookingCode,
@@ -108,26 +147,28 @@ export async function GET(
       
       // Car details
       car: {
-        id: booking.car.id,
-        make: booking.car.make,
-        model: booking.car.model,
-        year: booking.car.year,
-        licensePlate: booking.car.licensePlate,
-        dailyRate: Number(booking.car.dailyRate),
-        photos: booking.car.photos.map(p => ({
+        id: b.car.id,
+        make: b.car.make,
+        model: b.car.model,
+        year: b.car.year,
+        licensePlate: b.car.licensePlate,
+        dailyRate: Number(b.car.dailyRate),
+        photos: b.car.photos.map((p: any) => ({
           url: p.url
         })),
-        hasActiveClaim: booking.car.hasActiveClaim,
-        activeClaimId: booking.car.activeClaimId
+        hasActiveClaim: b.car.hasActiveClaim,
+        activeClaimId: b.car.activeClaimId
       },
-      
+
       // Guest details
-      renter: booking.renter ? {
-        id: booking.renter.id,
-        name: booking.renter.name,
-        email: booking.renter.email,
-        phone: booking.renter.phone,
-        avatar: booking.renter.avatar
+      guestPhoto,
+      renter: b.renter ? {
+        id: b.renter.id,
+        name: b.renter.name,
+        email: b.renter.email,
+        phone: b.renter.phone,
+        avatar: b.renter.avatar,
+        image: b.renter.image,
       } : null,
       guestName: booking.guestName,
       guestEmail: booking.guestEmail,
@@ -185,18 +226,21 @@ export async function GET(
       chargesNotes: booking.chargesNotes,
       
       // Messages
-      messages: booking.messages,
-      
-      // CLAIMS DATA
-      claims: booking.claims?.map(claim => ({
+      messages: b.messages,
+
+      // Claims
+      claims: (b.Claim || []).map((claim: any) => ({
         id: claim.id,
         type: claim.type,
         status: claim.status,
         estimatedCost: Number(claim.estimatedCost),
         createdAt: claim.createdAt.toISOString(),
         vehicleDeactivated: claim.vehicleDeactivated
-      })) || [],
-      
+      })),
+
+      // Trip timeline
+      timeline,
+
       // Metadata
       createdAt: booking.createdAt.toISOString(),
       updatedAt: booking.updatedAt.toISOString(),
