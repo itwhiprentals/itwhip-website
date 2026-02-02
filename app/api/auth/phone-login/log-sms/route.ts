@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
   try {
     const { phone, success, error } = await request.json()
     const clientIp = getClientIp(request)
-    const location = await getLocationFromIp(clientIp)
+    const location = await getLocationFromIp(clientIp, request.headers)
 
     await prisma.securityEvent.create({
       data: {

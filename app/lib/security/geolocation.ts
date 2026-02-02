@@ -1,5 +1,5 @@
 // Enhanced IP → Location lookup with threat intelligence
-// Uses geoip-lite (battle-tested in serverless, 2.6M downloads/month)
+// Uses Vercel's built-in geo headers (free, zero-dependency, works in serverless)
 
 export interface EnhancedLocationData {
   ip: string
@@ -48,57 +48,56 @@ const EMPTY_LOCATION: EnhancedLocationData = {
 }
 
 /**
- * Enhanced geolocation with threat detection
- * Uses geoip-lite (offline MaxMind database, works reliably in Vercel serverless)
+ * Enhanced geolocation using Vercel's built-in geo headers.
+ * These headers are automatically populated by Vercel's edge network on every request.
+ * No npm packages or external API calls needed.
+ *
+ * @param ip - Client IP address
+ * @param headers - Request headers (optional, but needed for Vercel geo data)
  */
-export async function getEnhancedLocation(ip: string): Promise<EnhancedLocationData> {
+export async function getEnhancedLocation(ip: string, headers?: Headers): Promise<EnhancedLocationData> {
   try {
-    // Skip private/local IPs (they won't resolve)
     if (isPrivateIp(ip)) {
       console.log(`[Geolocation] Skipping private IP: ${ip}`)
       return { ...EMPTY_LOCATION, ip }
     }
 
-    // Use geoip-lite (reliable in serverless, no binary file issues)
-    const geoip = await import('geoip-lite')
-    const geo = geoip.default.lookup(ip)
-
-    if (!geo) {
-      console.log(`[Geolocation] No data for IP: ${ip}`)
+    if (!headers) {
+      // No headers available - return IP only
       return { ...EMPTY_LOCATION, ip }
     }
 
-    // Threat detection based on available data
-    const isVpn = false // geoip-lite doesn't provide this, safe default
-    const isProxy = false
-    const isTor = false
-    const isDatacenter = false
-    const isHosting = false
+    // Vercel automatically provides these geo headers on every request:
+    // x-vercel-ip-country, x-vercel-ip-country-region, x-vercel-ip-city,
+    // x-vercel-ip-latitude, x-vercel-ip-longitude, x-vercel-ip-timezone
+    const country = headers.get('x-vercel-ip-country') || null
+    const region = headers.get('x-vercel-ip-country-region') || null
+    const city = headers.get('x-vercel-ip-city') ? decodeURIComponent(headers.get('x-vercel-ip-city')!) : null
+    const latitude = headers.get('x-vercel-ip-latitude') ? parseFloat(headers.get('x-vercel-ip-latitude')!) : null
+    const longitude = headers.get('x-vercel-ip-longitude') ? parseFloat(headers.get('x-vercel-ip-longitude')!) : null
+    const timezone = headers.get('x-vercel-ip-timezone') || null
+    const zipCode = headers.get('x-vercel-ip-postal-code') || null
 
-    // Calculate risk score (0 for now since we don't have org data from geoip-lite)
-    const riskScore = 0
+    console.log(`[Geolocation] Vercel geo: ${city}, ${region}, ${country} (${latitude}, ${longitude})`)
 
     return {
       ip,
-      country: geo.country || null,
-      city: geo.city || null,
-      region: geo.region || null,
-      zipCode: null, // geoip-lite doesn't provide ZIP
-      timezone: geo.timezone || null,
-      latitude: geo.ll?.[0] ?? null,
-      longitude: geo.ll?.[1] ?? null,
-
-      isp: null, // geoip-lite doesn't provide ISP
+      country,
+      city,
+      region,
+      zipCode,
+      timezone,
+      latitude,
+      longitude,
+      isp: null,
       asn: null,
       organization: null,
-
-      isVpn,
-      isProxy,
-      isTor,
-      isDatacenter,
-      isHosting,
-
-      riskScore
+      isVpn: false,
+      isProxy: false,
+      isTor: false,
+      isDatacenter: false,
+      isHosting: false,
+      riskScore: 0
     }
   } catch (error) {
     console.error('[Enhanced Geolocation] Error:', error)
@@ -168,8 +167,8 @@ export function detectImpossibleTravel(
   }
 }
 
-// BACKWARD COMPATIBILITY: Keep old function for existing code
-export async function getLocationFromIp(ip: string): Promise<{
+// BACKWARD COMPATIBILITY: Keep old function for existing code (loginMonitor etc.)
+export async function getLocationFromIp(ip: string, headers?: Headers): Promise<{
   ip: string
   country: string | null
   city: string | null
@@ -178,7 +177,7 @@ export async function getLocationFromIp(ip: string): Promise<{
   longitude: number | null
   timezone: string | null
 }> {
-  const enhanced = await getEnhancedLocation(ip)
+  const enhanced = await getEnhancedLocation(ip, headers)
   return {
     ip: enhanced.ip,
     country: enhanced.country,

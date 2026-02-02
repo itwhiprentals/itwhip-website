@@ -107,7 +107,8 @@ export async function POST(request: NextRequest) {
         source: 'guest',
         reason: 'RATE_LIMITED',
         ip: clientIp,
-        userAgent
+        userAgent,
+        headers: request.headers
       })
       return createRateLimitResponse(reset, remaining)
     }
@@ -135,7 +136,8 @@ export async function POST(request: NextRequest) {
         source: 'guest',
         reason: 'ACCOUNT_NOT_FOUND',
         ip: clientIp,
-        userAgent
+        userAgent,
+        headers: request.headers
       })
       return NextResponse.json(
         { error: 'Invalid email or password' },
@@ -193,7 +195,8 @@ export async function POST(request: NextRequest) {
         source: 'guest',
         reason: 'INVALID_CREDENTIALS',
         ip: clientIp,
-        userAgent
+        userAgent,
+        headers: request.headers
       })
 
       // Increment failed attempts
@@ -254,7 +257,8 @@ export async function POST(request: NextRequest) {
         source: 'guest',
         reason: 'ACCOUNT_INACTIVE',
         ip: clientIp,
-        userAgent
+        userAgent,
+        headers: request.headers
       })
       return NextResponse.json(
         { error: 'Account is deactivated. Please contact support.' },
@@ -358,7 +362,8 @@ export async function POST(request: NextRequest) {
       email: user.email,
       source: 'guest',
       ip: clientIp,
-      userAgent
+      userAgent,
+      headers: request.headers
     })
 
     // ✅ STEP 10: Create response with cookies

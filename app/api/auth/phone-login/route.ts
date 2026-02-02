@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
       // Best-effort security logging (never block the error response)
       try {
         const userAgent = request.headers.get('user-agent') || ''
-        const location = await getEnhancedLocation(clientIp)
+        const location = await getEnhancedLocation(clientIp, request.headers)
         const botDetection = detectBot(userAgent, clientIp, request.headers)
         const threatScore = location.riskScore + (botDetection.isBot ? botDetection.confidence : 0)
 
@@ -185,7 +185,7 @@ export async function POST(request: NextRequest) {
     try {
       const userAgent = request.headers.get('user-agent') || ''
       const deviceFingerprint = request.headers.get('x-fingerprint')
-      const location = await getEnhancedLocation(clientIp)
+      const location = await getEnhancedLocation(clientIp, request.headers)
       const botDetection = detectBot(userAgent, clientIp, request.headers)
       const threatScore = location.riskScore + (botDetection.isBot ? botDetection.confidence : 0)
 

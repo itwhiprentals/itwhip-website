@@ -25,6 +25,7 @@ interface LoginAttemptDetails {
   ip: string
   userAgent: string
   metadata?: Record<string, any>
+  headers?: Headers
 }
 
 /**
@@ -36,11 +37,11 @@ export async function logFailedLogin(details: LoginAttemptDetails): Promise<{
   attemptsInLastHour: number
   message?: string
 }> {
-  const { email, source, reason, ip, userAgent, metadata } = details
+  const { email, source, reason, ip, userAgent, metadata, headers } = details
 
   try {
-    // Get location from IP
-    const location = await getLocationFromIp(ip)
+    // Get location from IP (pass headers for Vercel geo data)
+    const location = await getLocationFromIp(ip, headers)
 
     // Create SecurityEvent record
     await prisma.securityEvent.create({
@@ -171,12 +172,13 @@ export async function logSuccessfulLogin(details: {
   source: LoginSource
   ip: string
   userAgent: string
+  headers?: Headers
 }): Promise<void> {
-  const { userId, email, source, ip, userAgent } = details
+  const { userId, email, source, ip, userAgent, headers } = details
 
   try {
-    // Get location from IP
-    const location = await getLocationFromIp(ip)
+    // Get location from IP (pass headers for Vercel geo data)
+    const location = await getLocationFromIp(ip, headers)
 
     await prisma.securityEvent.create({
       data: {
