@@ -5,6 +5,7 @@
 
 import prisma from '@/app/lib/database/prisma'
 import { createHash } from 'crypto'
+import { nanoid } from 'nanoid'
 import { UserRole, CertificationTier } from '@/app/lib/dal/types'
 import type {
   RateLimitStatus
@@ -554,11 +555,13 @@ async function blockIP(ip: string): Promise<void> {
   // Log security threat
   await prisma.securityEvent.create({
     data: {
+      id: nanoid(),
       type: 'IP_BLOCKED',
       severity: 'HIGH',
       sourceIp: ip,
       userAgent: 'unknown',
       message: `IP ${ip} blocked due to suspicious activity`,
+      action: 'ip_blocked',
       blocked: true
     }
   })

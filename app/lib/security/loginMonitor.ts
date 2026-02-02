@@ -3,6 +3,7 @@
 
 import { prisma } from '@/app/lib/database/prisma'
 import { randomBytes } from 'crypto'
+import { getLocationFromIp } from './geolocation'
 
 type LoginFailureReason =
   | 'INVALID_CREDENTIALS'
@@ -38,6 +39,9 @@ export async function logFailedLogin(details: LoginAttemptDetails): Promise<{
   const { email, source, reason, ip, userAgent, metadata } = details
 
   try {
+    // Get location from IP
+    const location = await getLocationFromIp(ip)
+
     // Create SecurityEvent record
     await prisma.securityEvent.create({
       data: {
@@ -57,6 +61,8 @@ export async function logFailedLogin(details: LoginAttemptDetails): Promise<{
         }),
         action: 'login_attempt',
         blocked: false,
+        country: location.country,
+        city: location.city,
         timestamp: new Date()
       }
     })
@@ -109,6 +115,8 @@ export async function logFailedLogin(details: LoginAttemptDetails): Promise<{
           }),
           action: 'brute_force_block',
           blocked: true,
+          country: location.country,
+          city: location.city,
           timestamp: new Date()
         }
       })
@@ -134,6 +142,8 @@ export async function logFailedLogin(details: LoginAttemptDetails): Promise<{
           }),
           action: 'account_lockout',
           blocked: true,
+          country: location.country,
+          city: location.city,
           timestamp: new Date()
         }
       })
@@ -165,6 +175,9 @@ export async function logSuccessfulLogin(details: {
   const { userId, email, source, ip, userAgent } = details
 
   try {
+    // Get location from IP
+    const location = await getLocationFromIp(ip)
+
     await prisma.securityEvent.create({
       data: {
         id: `sec_${Date.now()}_${randomBytes(8).toString('hex')}`,
@@ -182,6 +195,8 @@ export async function logSuccessfulLogin(details: {
         }),
         action: 'login_success',
         blocked: false,
+        country: location.country,
+        city: location.city,
         timestamp: new Date()
       }
     })

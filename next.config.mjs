@@ -5,6 +5,9 @@ const nextConfig = {
   // Allow phones on local network to access dev server (for VIN scanning)
   allowedDevOrigins: ['10.165.1.231'],
 
+  // Exclude geoip-lite from webpack bundling (use native Node.js require)
+  serverExternalPackages: ['geoip-lite'],
+
   // Performance optimizations
   compress: true, // Enable gzip compression
   poweredByHeader: false, // Remove X-Powered-By header for security

@@ -8,10 +8,10 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 })
 
-// ✅ LOGIN RATE LIMIT: 100 attempts per 15 minutes (FOR TESTING - change to 5 in production)
+// ✅ LOGIN RATE LIMIT: 5 attempts per 15 minutes
 export const loginRateLimit = new Ratelimit({
   redis,
-  limiter: Ratelimit.slidingWindow(100, '15 m'),
+  limiter: Ratelimit.slidingWindow(5, '15 m'),
   analytics: true,
   prefix: 'ratelimit:login',
 })
@@ -38,6 +38,22 @@ export const passwordResetRateLimit = new Ratelimit({
   limiter: Ratelimit.slidingWindow(3, '1 h'),
   analytics: true,
   prefix: 'ratelimit:password-reset',
+})
+
+// ✅ PHONE SMS RATE LIMIT: 5 SMS attempts per 5 minutes per IP (prevent SMS spam)
+export const phoneSMSRateLimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(5, '5 m'),
+  analytics: true,
+  prefix: 'ratelimit:phone-sms',
+})
+
+// ✅ PHONE LOGIN RATE LIMIT: 10 login attempts per 5 minutes per IP
+export const phoneLoginRateLimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(10, '5 m'),
+  analytics: true,
+  prefix: 'ratelimit:phone-login',
 })
 
 // Helper function to get client IP
