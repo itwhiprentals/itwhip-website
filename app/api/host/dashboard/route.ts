@@ -111,12 +111,30 @@ export async function GET(request: NextRequest) {
             id: true,
             rating: true,
             comment: true,
-            createdAt: true
+            createdAt: true,
+            reviewerProfile: {
+              select: {
+                name: true,
+                profilePhotoUrl: true,
+              }
+            },
+            renter: {
+              select: {
+                name: true,
+                image: true,
+                avatar: true,
+              }
+            }
           },
           orderBy: {
             createdAt: 'desc'
           },
-          take: 3
+          take: 5
+        },
+        _count: {
+          select: {
+            reviews: true
+          }
         }
       }
     })
@@ -194,6 +212,7 @@ export async function GET(request: NextRequest) {
       claimsApproved: claimsApproved,
       claimsAmount: claimsAmount,
       pendingClaims: claimsPending,
+      reviewCount: host._count?.reviews || 0,
       unreadMessages: unreadMessagesCount,
       managedVehicles: managedVehiclesCount
     }
@@ -305,7 +324,14 @@ export async function GET(request: NextRequest) {
             || b.renter?.avatar
             || null,
         })),
-        recentReviews: host.reviews,
+        recentReviews: host.reviews.map((r: any) => ({
+          id: r.id,
+          rating: r.rating,
+          comment: r.comment,
+          createdAt: r.createdAt,
+          reviewerName: r.reviewerProfile?.name || r.renter?.name || 'Guest',
+          reviewerPhoto: r.reviewerProfile?.profilePhotoUrl || r.renter?.image || r.renter?.avatar || null,
+        })),
         
         // Dates
         joinedAt: host.joinedAt,
