@@ -25,11 +25,11 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
   // Content Security Policy (allows Next.js, Firebase, Stripe, Google Maps)
   const csp = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://js.stripe.com https://www.gstatic.com https://www.google.com https://apis.google.com https://*.firebaseapp.com",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://js.stripe.com https://www.gstatic.com https://www.google.com https://apis.google.com https://*.firebaseapp.com https://api.mapbox.com https://cdn.jsdelivr.net",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "img-src 'self' data: https: blob:",
     "font-src 'self' data: https://fonts.gstatic.com",
-    "connect-src 'self' https://*.googleapis.com https://api.stripe.com https://*.firebaseio.com https://*.firebaseapp.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://cloudflareinsights.com",
+    "connect-src 'self' https://www.google.com https://*.googleapis.com https://api.stripe.com https://*.firebaseio.com https://*.firebaseapp.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://cloudflareinsights.com https://api.mapbox.com https://res.cloudinary.com https://api.smartcar.com https://lh3.googleusercontent.com https://images.unsplash.com",
     "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://www.google.com https://*.firebaseapp.com",
     "object-src 'none'",
     "base-uri 'self'"
