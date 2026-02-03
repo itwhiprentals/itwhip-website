@@ -3,7 +3,7 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -27,6 +27,18 @@ export default function BusinessTypePage() {
   const [selectedType, setSelectedType] = useState<BusinessType | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(true)
+
+  // Update theme-color meta tag for mobile status bar
+  useEffect(() => {
+    const themeColor = isDarkMode ? '#111827' : '#f9fafb' // gray-900 or gray-50
+    let metaTag = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement
+    if (!metaTag) {
+      metaTag = document.createElement('meta')
+      metaTag.name = 'theme-color'
+      document.head.appendChild(metaTag)
+    }
+    metaTag.content = themeColor
+  }, [isDarkMode])
 
   const handleContinue = () => {
     if (!selectedType) return

@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 
@@ -16,6 +17,17 @@ export default function AuthPageLayout({
   title = 'Welcome to ItWhip',
   subtitle
 }: AuthPageLayoutProps) {
+  // Set theme-color meta tag for mobile status bar
+  useEffect(() => {
+    let metaTag = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement
+    if (!metaTag) {
+      metaTag = document.createElement('meta')
+      metaTag.name = 'theme-color'
+      document.head.appendChild(metaTag)
+    }
+    metaTag.content = '#111827' // gray-900
+  }, [])
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex flex-col">
       {/* Back Button */}
