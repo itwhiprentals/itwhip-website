@@ -61,6 +61,10 @@ function LoginContent() {
     const errorParam = searchParams.get('error')
     if (errorParam === 'no_account') {
       setError('No account found with this email. Please sign up first.')
+    } else if (errorParam === 'hidden-email') {
+      setError('For car rentals, we need your real email address. Please sign in with Apple again and select "Share My Email".')
+    } else if (errorParam === 'account-mismatch') {
+      setError('There was a problem linking this account. Please try a different sign-in method.')
     }
   }, [searchParams])
 

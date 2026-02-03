@@ -56,6 +56,22 @@ export const phoneLoginRateLimit = new Ratelimit({
   prefix: 'ratelimit:phone-login',
 })
 
+// ✅ VERIFY-LINK RATE LIMIT: 5 attempts per 10 minutes per token
+export const verifyLinkRateLimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(5, '10 m'),
+  analytics: true,
+  prefix: 'ratelimit:verify-link',
+})
+
+// ✅ VERIFY-LINK OTP SEND RATE LIMIT: 3 sends per 10 minutes per IP
+export const verifyLinkOtpRateLimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(3, '10 m'),
+  analytics: true,
+  prefix: 'ratelimit:verify-link-otp',
+})
+
 // Helper function to get client IP
 export function getClientIp(request: Request): string {
   // Check common headers for real IP (when behind proxy/CDN)

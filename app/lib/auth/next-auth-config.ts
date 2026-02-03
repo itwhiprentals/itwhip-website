@@ -13,6 +13,11 @@ const GUEST_JWT_SECRET = new TextEncoder().encode(
   process.env.GUEST_JWT_SECRET || 'fallback-guest-secret-key'
 )
 
+// JWT secret for pending link tokens (10-min expiry)
+const LINK_TOKEN_SECRET = new TextEncoder().encode(
+  process.env.GUEST_JWT_SECRET || 'fallback-guest-secret-key'
+)
+
 // Generate Apple client secret dynamically
 async function generateAppleClientSecret(): Promise<string> {
   const teamId = process.env.APPLE_TEAM_ID!
@@ -137,20 +142,24 @@ async function buildAuthOptions(): Promise<NextAuthOptions> {
 
     callbacks: {
       async signIn({ user, account }) {
-        // Simple validation - let NextAuth handle account linking with allowDangerousEmailAccountLinking
         if (!user.email) {
           console.error('OAuth sign-in failed: No email provided')
           return false
         }
 
         // ========================================================================
+        // RULE 1: Reject Apple "Hide My Email" (private relay)
+        // ========================================================================
+        if (user.email.endsWith('@privaterelay.appleid.com')) {
+          console.warn(`[NextAuth] Rejected private relay email: ${user.email}`)
+          return '/auth/login?error=hidden-email'
+        }
+
+        // ========================================================================
         // SECURITY GUARD: Prevent OAuth account linking to different user
         // ========================================================================
-        // If this is an existing user (not pending), verify their DB email matches OAuth email
-        // This prevents a scenario where OAuth account A gets erroneously linked to User B
         if (account && user.id && !user.id.startsWith('pending_')) {
           try {
-            // Fetch the user from database to verify email matches
             const dbUser = await prisma.user.findUnique({
               where: { id: user.id },
               select: { email: true }
@@ -163,12 +172,35 @@ async function buildAuthOptions(): Promise<NextAuthOptions> {
                 userId: user.id,
                 provider: account.provider
               })
-              // Block the login - this is a potential account bleeding issue
               return '/auth/login?error=account-mismatch'
             }
+
+            // ==================================================================
+            // RULE 2: Require verification before linking NEW provider
+            // ==================================================================
+            const existingAccount = await prisma.account.findFirst({
+              where: { userId: user.id, provider: account.provider }
+            })
+
+            if (!existingAccount) {
+              console.log(`[NextAuth] Provider ${account.provider} not linked to user ${user.id} — requiring verification`)
+              const pendingToken = await new SignJWT({
+                userId: user.id,
+                provider: account.provider,
+                providerAccountId: account.providerAccountId,
+                access_token: account.access_token,
+                refresh_token: account.refresh_token,
+                expires_at: account.expires_at,
+                id_token: account.id_token,
+              })
+                .setProtectedHeader({ alg: 'HS256' })
+                .setExpirationTime('10m')
+                .sign(LINK_TOKEN_SECRET)
+
+              return `/auth/verify-link?token=${pendingToken}`
+            }
           } catch (error) {
-            console.error('[NextAuth] Error checking email match:', error)
-            // Don't block on error, but log it
+            console.error('[NextAuth] Error checking provider link:', error)
           }
         }
 
@@ -297,20 +329,19 @@ export const authOptions: NextAuthOptions = {
 
   callbacks: {
     async signIn({ user, account }) {
-      // Simple validation - let NextAuth handle account linking with allowDangerousEmailAccountLinking
       if (!user.email) {
         console.error('OAuth sign-in failed: No email provided')
         return false
       }
 
-      // ========================================================================
-      // SECURITY GUARD: Prevent OAuth account linking to different user
-      // ========================================================================
-      // If this is an existing user (not pending), verify their DB email matches OAuth email
-      // This prevents a scenario where OAuth account A gets erroneously linked to User B
+      // RULE 1: Reject Apple "Hide My Email" (private relay)
+      if (user.email.endsWith('@privaterelay.appleid.com')) {
+        console.warn(`[NextAuth] Rejected private relay email: ${user.email}`)
+        return '/auth/login?error=hidden-email'
+      }
+
       if (account && user.id && !user.id.startsWith('pending_')) {
         try {
-          // Fetch the user from database to verify email matches
           const dbUser = await prisma.user.findUnique({
             where: { id: user.id },
             select: { email: true }
@@ -323,12 +354,33 @@ export const authOptions: NextAuthOptions = {
               userId: user.id,
               provider: account.provider
             })
-            // Block the login - this is a potential account bleeding issue
             return '/auth/login?error=account-mismatch'
           }
+
+          // RULE 2: Require verification before linking NEW provider
+          const existingAccount = await prisma.account.findFirst({
+            where: { userId: user.id, provider: account.provider }
+          })
+
+          if (!existingAccount) {
+            console.log(`[NextAuth] Provider ${account.provider} not linked to user ${user.id} — requiring verification`)
+            const pendingToken = await new SignJWT({
+              userId: user.id,
+              provider: account.provider,
+              providerAccountId: account.providerAccountId,
+              access_token: account.access_token,
+              refresh_token: account.refresh_token,
+              expires_at: account.expires_at,
+              id_token: account.id_token,
+            })
+              .setProtectedHeader({ alg: 'HS256' })
+              .setExpirationTime('10m')
+              .sign(LINK_TOKEN_SECRET)
+
+            return `/auth/verify-link?token=${pendingToken}`
+          }
         } catch (error) {
-          console.error('[NextAuth] Error checking email match:', error)
-          // Don't block on error, but log it
+          console.error('[NextAuth] Error checking provider link:', error)
         }
       }
 
@@ -336,13 +388,10 @@ export const authOptions: NextAuthOptions = {
     },
 
     async jwt({ token, user, account }) {
-      // Initial sign in
       if (user && account) {
-        // Check if this is a pending (new OAuth) user from DeferredPrismaAdapter
         const isPending = (user as any).isPending || user.id.startsWith('pending_')
 
         if (isPending) {
-          // NEW USER: Store OAuth data in token for later user creation
           console.log(`[NextAuth JWT] Pending user detected - storing OAuth data in token`)
           token.pendingOAuth = {
             email: user.email!,
@@ -358,10 +407,8 @@ export const authOptions: NextAuthOptions = {
             id_token: account.id_token
           }
           token.isProfileComplete = false
-          // Don't set userId - user doesn't exist in DB yet
           token.userId = undefined
         } else {
-          // EXISTING USER: Normal flow
           console.log(`[NextAuth JWT] Existing user detected - normal flow`)
           token.userId = user.id
           token.isProfileComplete = true
@@ -377,11 +424,9 @@ export const authOptions: NextAuthOptions = {
 
     async session({ session, token }) {
       if (session.user && token) {
-        // Use userId if set, otherwise fall back to sub (NextAuth's default user identifier)
         const userId = token.userId || token.sub
         ;(session.user as any).id = userId
         ;(session.user as any).provider = token.provider
-        // Include pending OAuth data and profile completion status
         ;(session.user as any).isProfileComplete = token.isProfileComplete ?? true
         ;(session.user as any).pendingOAuth = token.pendingOAuth
       }
@@ -389,7 +434,6 @@ export const authOptions: NextAuthOptions = {
     },
 
     async redirect({ url, baseUrl }) {
-      // After OAuth sign-in, redirect through oauth-redirect to set custom JWT cookies
       if (url.includes('/api/auth/callback')) {
         return `${baseUrl}/api/auth/oauth-redirect?roleHint=guest`
       }
