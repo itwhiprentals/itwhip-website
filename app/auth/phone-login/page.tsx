@@ -662,7 +662,7 @@ function PhoneLoginContent() {
             {/* Footer Note */}
             <div className="mt-6 pt-6 border-t border-gray-700 text-center">
               <p className="text-xs text-gray-500">
-                By continuing, you agree to ItWhip's Terms of Service and Privacy Policy
+                By continuing, you agree to ItWhip&apos;s Terms of Service and Privacy Policy
               </p>
             </div>
           </div>
