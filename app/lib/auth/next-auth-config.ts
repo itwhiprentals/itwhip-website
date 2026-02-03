@@ -293,6 +293,19 @@ async function buildAuthOptions(): Promise<NextAuthOptions> {
       maxAge: 7 * 24 * 60 * 60, // 7 days
     },
 
+    // Fix Apple PKCE cookie issue - form_post requires SameSite=None
+    cookies: {
+      pkceCodeVerifier: {
+        name: 'next-auth.pkce.code_verifier',
+        options: {
+          httpOnly: true,
+          sameSite: 'none',
+          path: '/',
+          secure: true,
+        },
+      },
+    },
+
     debug: process.env.NODE_ENV === 'development',
   }
 }
@@ -461,6 +474,19 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: 'jwt',
     maxAge: 7 * 24 * 60 * 60,
+  },
+
+  // Fix Apple PKCE cookie issue - form_post requires SameSite=None
+  cookies: {
+    pkceCodeVerifier: {
+      name: 'next-auth.pkce.code_verifier',
+      options: {
+        httpOnly: true,
+        sameSite: 'none',
+        path: '/',
+        secure: true,
+      },
+    },
   },
 
   debug: process.env.NODE_ENV === 'development',
