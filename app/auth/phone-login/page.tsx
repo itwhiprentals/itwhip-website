@@ -525,146 +525,145 @@ function PhoneLoginContent() {
 
           {/* Header */}
           <div className="text-center mb-8">
-              <div className="w-16 h-16 bg-green-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <IoPhonePortraitOutline className="w-8 h-8 text-green-500" />
-              </div>
-              <h1 className="text-2xl font-bold text-white mb-2">
-                {codeSent ? 'Verify Your Number' : 'Phone Login'}
-              </h1>
-              <p className="text-gray-400 text-sm">
-                {codeSent
-                  ? `Enter the 6-digit code sent to ${formatPhoneDisplay(phone)}`
-                  : 'Enter your phone number to receive a verification code'
-                }
-              </p>
+            <div className="w-16 h-16 bg-green-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <IoPhonePortraitOutline className="w-8 h-8 text-green-500" />
             </div>
+            <h1 className="text-2xl font-bold text-white mb-2">
+              {codeSent ? 'Verify Your Number' : 'Phone Login'}
+            </h1>
+            <p className="text-gray-400 text-sm">
+              {codeSent
+                ? `Enter the 6-digit code sent to ${formatPhoneDisplay(phone)}`
+                : 'Enter your phone number to receive a verification code'
+              }
+            </p>
+          </div>
 
-            {/* Invisible reCAPTCHA container */}
-            <div id="recaptcha-container" ref={recaptchaContainerRef} />
+          {/* Invisible reCAPTCHA container */}
+          <div id="recaptcha-container" ref={recaptchaContainerRef} />
 
-            {/* Error Alert */}
-            {error && (
-              <div className="mb-6 p-4 bg-red-500/10 border border-red-500/50 rounded-lg flex items-start gap-3">
-                <IoAlertCircleOutline className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-                <p className="text-red-400 text-sm">{error}</p>
-              </div>
-            )}
+          {/* Error Alert */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/50 rounded-lg flex items-start gap-3">
+              <IoAlertCircleOutline className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+              <p className="text-red-400 text-sm">{error}</p>
+            </div>
+          )}
 
-            {!codeSent ? (
-              <>
-                {/* Phone Number Input */}
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Phone Number
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="tel"
-                      value={formatPhoneDisplay(phone)}
-                      onChange={handlePhoneChange}
-                      className="w-full px-4 py-3 text-base border-2 border-gray-600 rounded-lg bg-gray-900/50 text-white focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
-                      placeholder="(123) 456-7890"
-                      disabled={isSending}
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    We&apos;ll send you a one-time verification code via SMS
-                  </p>
+          {!codeSent ? (
+            <>
+              {/* Phone Number Input */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Phone Number
+                </label>
+                <div className="relative">
+                  <input
+                    type="tel"
+                    value={formatPhoneDisplay(phone)}
+                    onChange={handlePhoneChange}
+                    className="w-full px-4 py-3 text-base border-2 border-gray-600 rounded-lg bg-gray-900/50 text-white focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                    placeholder="(123) 456-7890"
+                    disabled={isSending}
+                  />
                 </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  We&apos;ll send you a one-time verification code via SMS
+                </p>
+              </div>
 
-                {/* Send Code Button */}
+              {/* Send Code Button */}
+              <button
+                onClick={handleSendCode}
+                disabled={isSending}
+                className="w-full py-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isSending ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                    <span>Sending Code...</span>
+                  </>
+                ) : (
+                  <span>Send Verification Code</span>
+                )}
+              </button>
+            </>
+          ) : (
+            <>
+              {/* Edit Phone Number */}
+              {!isEditingPhone && (
                 <button
-                  onClick={handleSendCode}
-                  disabled={isSending}
-                  className="w-full py-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  onClick={() => {
+                    setIsEditingPhone(true)
+                    setCodeSent(false)
+                    setConfirmationResult(null)
+                    setCode(['', '', '', '', '', ''])
+                  }}
+                  className="w-full mb-4 p-3 border border-gray-600 rounded-lg flex items-center justify-between text-gray-300 hover:text-white hover:border-gray-500 transition-colors"
                 >
-                  {isSending ? (
-                    <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-                      <span>Sending Code...</span>
-                    </>
-                  ) : (
-                    <span>Send Verification Code</span>
-                  )}
+                  <span className="text-sm">{formatPhoneDisplay(phone)}</span>
+                  <IoPencilOutline className="w-4 h-4" />
                 </button>
-              </>
-            ) : (
-              <>
-                {/* Edit Phone Number */}
-                {!isEditingPhone && (
+              )}
+
+              {/* Code Inputs */}
+              <div className="flex justify-center gap-2 mb-6">
+                {code.map((digit, index) => (
+                  <input
+                    key={index}
+                    ref={el => { inputRefs.current[index] = el }}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleCodeChange(index, e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(index, e)}
+                    disabled={isVerifying}
+                    className="w-12 h-14 text-center text-2xl font-bold border-2 border-gray-600 rounded-lg bg-gray-900/50 text-white focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:opacity-50 transition-all"
+                  />
+                ))}
+              </div>
+
+              {/* Verify Button */}
+              <button
+                onClick={() => handleVerifyCode()}
+                disabled={isVerifying || code.some(d => !d)}
+                className="w-full py-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mb-4"
+              >
+                {isVerifying ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                    <span>Verifying...</span>
+                  </>
+                ) : (
+                  <span>Verify &amp; Login</span>
+                )}
+              </button>
+
+              {/* Resend Code */}
+              <div className="text-center">
+                {resendCooldown > 0 ? (
+                  <p className="text-sm text-gray-500">
+                    Resend code in {resendCooldown}s
+                  </p>
+                ) : (
                   <button
-                    onClick={() => {
-                      setIsEditingPhone(true)
-                      setCodeSent(false)
-                      setConfirmationResult(null)
-                      setCode(['', '', '', '', '', ''])
-                    }}
-                    className="w-full mb-4 p-3 border border-gray-600 rounded-lg flex items-center justify-between text-gray-300 hover:text-white hover:border-gray-500 transition-colors"
+                    onClick={handleResendCode}
+                    className="inline-flex items-center gap-2 text-sm text-green-400 hover:text-green-300 transition-colors"
                   >
-                    <span className="text-sm">{formatPhoneDisplay(phone)}</span>
-                    <IoPencilOutline className="w-4 h-4" />
+                    <IoRefreshOutline className="w-4 h-4" />
+                    <span>Resend Code</span>
                   </button>
                 )}
+              </div>
+            </>
+          )}
 
-                {/* Code Inputs */}
-                <div className="flex justify-center gap-2 mb-6">
-                  {code.map((digit, index) => (
-                    <input
-                      key={index}
-                      ref={el => { inputRefs.current[index] = el }}
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={1}
-                      value={digit}
-                      onChange={(e) => handleCodeChange(index, e.target.value)}
-                      onKeyDown={(e) => handleKeyDown(index, e)}
-                      disabled={isVerifying}
-                      className="w-12 h-14 text-center text-2xl font-bold border-2 border-gray-600 rounded-lg bg-gray-900/50 text-white focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:opacity-50 transition-all"
-                    />
-                  ))}
-                </div>
-
-                {/* Verify Button */}
-                <button
-                  onClick={() => handleVerifyCode()}
-                  disabled={isVerifying || code.some(d => !d)}
-                  className="w-full py-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mb-4"
-                >
-                  {isVerifying ? (
-                    <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-                      <span>Verifying...</span>
-                    </>
-                  ) : (
-                    <span>Verify & Login</span>
-                  )}
-                </button>
-
-                {/* Resend Code */}
-                <div className="text-center">
-                  {resendCooldown > 0 ? (
-                    <p className="text-sm text-gray-500">
-                      Resend code in {resendCooldown}s
-                    </p>
-                  ) : (
-                    <button
-                      onClick={handleResendCode}
-                      className="inline-flex items-center gap-2 text-sm text-green-400 hover:text-green-300 transition-colors"
-                    >
-                      <IoRefreshOutline className="w-4 h-4" />
-                      <span>Resend Code</span>
-                    </button>
-                  )}
-                </div>
-              </>
-            )}
-
-            {/* Footer Note */}
-            <div className="mt-6 pt-6 border-t border-gray-700 text-center">
-              <p className="text-xs text-gray-500">
-                By continuing, you agree to ItWhip&apos;s Terms of Service and Privacy Policy
-              </p>
-            </div>
+          {/* Footer Note */}
+          <div className="mt-6 pt-6 border-t border-gray-700 text-center">
+            <p className="text-xs text-gray-500">
+              By continuing, you agree to ItWhip&apos;s Terms of Service and Privacy Policy
+            </p>
           </div>
         </div>
       </div>
