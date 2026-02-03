@@ -390,8 +390,8 @@ function PhoneLoginContent() {
   }
 
   // Handle email submission
-  const handleEmailSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleEmailSubmit = async (e: React.FormEvent | null, skipVerification: boolean = false) => {
+    if (e) e.preventDefault()
     setIsSubmittingEmail(true)
     setError('')
 
@@ -406,7 +406,8 @@ function PhoneLoginContent() {
           name: `${emailData.firstName} ${emailData.lastName}`.trim(),
           firstName: emailData.firstName,
           lastName: emailData.lastName,
-          userId
+          userId,
+          skipVerification
         })
       })
 
@@ -445,7 +446,7 @@ function PhoneLoginContent() {
             </div>
           )}
 
-          <form onSubmit={handleEmailSubmit} className="space-y-4">
+          <form onSubmit={(e) => handleEmailSubmit(e, false)} className="space-y-4">
             {/* Name Fields */}
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -490,6 +491,7 @@ function PhoneLoginContent() {
               />
             </div>
 
+            {/* Primary: Verify Email */}
             <button
               type="submit"
               disabled={isSubmittingEmail}
@@ -501,9 +503,23 @@ function PhoneLoginContent() {
                   <span>Saving...</span>
                 </>
               ) : (
-                <span>Continue</span>
+                <span>Verify Email & Continue</span>
               )}
             </button>
+
+            {/* Secondary: Skip for Now */}
+            <button
+              type="button"
+              disabled={isSubmittingEmail}
+              onClick={() => handleEmailSubmit(null, true)}
+              className="w-full py-3 px-4 bg-transparent border border-gray-600 hover:border-gray-500 text-gray-300 hover:text-white font-medium rounded-lg disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
+            >
+              Skip for Now
+            </button>
+
+            <p className="text-xs text-gray-500 text-center">
+              You can verify your email later, but it's required before booking.
+            </p>
           </form>
         </div>
       </div>

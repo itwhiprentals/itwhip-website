@@ -11,43 +11,143 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-08-27.basil'
 })
 
+// Support both platform and guest JWT secrets
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'fallback-secret-key'
 )
+const GUEST_JWT_SECRET = new TextEncoder().encode(
+  process.env.GUEST_JWT_SECRET || 'fallback-guest-secret-key'
+)
 
-// Helper to get current user
+// Helper to get current user - tries both JWT secrets
 async function getCurrentUser() {
   const cookieStore = await cookies()
   const token = cookieStore.get('accessToken')?.value
 
   if (!token) return null
 
-  try {
-    const { payload } = await jwtVerify(token, JWT_SECRET)
-    if (!payload.userId) return null
+  // Try both secrets
+  const secrets = [JWT_SECRET, GUEST_JWT_SECRET]
 
-    const user = await prisma.user.findUnique({
-      where: { id: payload.userId as string },
-      include: {
-        reviewerProfile: true
-      }
-    })
+  for (const secret of secrets) {
+    try {
+      const { payload } = await jwtVerify(token, secret)
+      if (!payload.userId) continue
 
-    return user
-  } catch {
-    return null
+      const user = await prisma.user.findUnique({
+        where: { id: payload.userId as string },
+        include: {
+          reviewerProfile: true
+        }
+      })
+
+      if (user) return user
+    } catch {
+      // Continue to next secret
+      continue
+    }
   }
+
+  return null
 }
 
-// GET - Check verification status
-export async function GET() {
+// GET - Check verification status (polls Stripe directly if session is pending)
+export async function GET(_request: NextRequest) {
   try {
     const user = await getCurrentUser()
     if (!user || !user.reviewerProfile) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const profile = user.reviewerProfile
+    let profile = user.reviewerProfile
+
+    console.log(`[Identity Check] Profile ${profile.id}: sessionId=${profile.stripeIdentitySessionId}, status=${profile.stripeIdentityStatus}`)
+
+    // If there's a pending session, check Stripe directly for updated status
+    // This handles the case where user returns from Stripe before webhook fires
+    if (profile.stripeIdentitySessionId && profile.stripeIdentityStatus === 'pending') {
+      try {
+        const session = await stripe.identity.verificationSessions.retrieve(
+          profile.stripeIdentitySessionId
+        )
+
+        console.log(`[Identity Check] Stripe session ${session.id} status: ${session.status}, livemode: ${session.livemode}`)
+
+        // Log last_error if present (for debugging failed verifications)
+        if (session.last_error) {
+          console.log(`[Identity Check] Session last_error: ${JSON.stringify(session.last_error)}`)
+        }
+
+        // If Stripe shows verified, update our DB
+        if (session.status === 'verified') {
+          console.log(`[Identity Check] Updating profile ${profile.id} to verified (webhook may be delayed)`)
+
+          // Get verification report for extracted data
+          let verifiedData: {
+            firstName?: string
+            lastName?: string
+            dob?: Date
+            idNumber?: string
+            idExpiry?: Date
+          } = {}
+
+          if (session.last_verification_report) {
+            try {
+              const report = await stripe.identity.verificationReports.retrieve(
+                session.last_verification_report as string
+              )
+              if (report.document) {
+                const doc = report.document
+                verifiedData = {
+                  firstName: doc.first_name || undefined,
+                  lastName: doc.last_name || undefined,
+                  dob: doc.dob ? new Date(doc.dob.year!, doc.dob.month! - 1, doc.dob.day!) : undefined,
+                  idNumber: doc.number || undefined,
+                  idExpiry: doc.expiration_date
+                    ? new Date(doc.expiration_date.year!, doc.expiration_date.month! - 1, doc.expiration_date.day!)
+                    : undefined
+                }
+              }
+            } catch (err) {
+              console.error('[Identity Check] Error retrieving verification report:', err)
+            }
+          }
+
+          // Update profile with verified status
+          profile = await prisma.reviewerProfile.update({
+            where: { id: profile.id },
+            data: {
+              stripeIdentityStatus: 'verified',
+              stripeIdentityVerifiedAt: new Date(),
+              stripeIdentityReportId: session.last_verification_report as string || null,
+              stripeVerifiedFirstName: verifiedData.firstName,
+              stripeVerifiedLastName: verifiedData.lastName,
+              stripeVerifiedDob: verifiedData.dob,
+              stripeVerifiedIdNumber: verifiedData.idNumber,
+              stripeVerifiedIdExpiry: verifiedData.idExpiry,
+              documentsVerified: true,
+              documentVerifiedAt: new Date(),
+              documentVerifiedBy: 'stripe-identity',
+              fullyVerified: true,
+              driverLicenseNumber: verifiedData.idNumber,
+              driverLicenseExpiry: verifiedData.idExpiry
+            }
+          })
+        } else if (session.status === 'requires_input') {
+          // Verification failed or needs more input - update status
+          profile = await prisma.reviewerProfile.update({
+            where: { id: profile.id },
+            data: { stripeIdentityStatus: 'requires_input' }
+          })
+        } else if (session.status === 'processing') {
+          // Still processing - keep as pending but log it
+          console.log(`[Identity Check] Session ${session.id} still processing, keeping status as pending`)
+        }
+      } catch (err) {
+        console.error('[Identity Check] Error checking Stripe session:', err)
+        // Continue with DB status if Stripe check fails
+      }
+    }
 
     // Check if verified via Stripe Identity OR admin override
     const isStripeVerified = profile.stripeIdentityStatus === 'verified'
@@ -130,7 +230,7 @@ export async function POST(request: NextRequest) {
     const verificationSession = await stripe.identity.verificationSessions.create({
       type: 'document',
       provided_details: {
-        email: user.email
+        email: user.email || undefined
       },
       options: {
         document: {
@@ -142,7 +242,7 @@ export async function POST(request: NextRequest) {
       metadata: {
         userId: user.id,
         profileId: profile.id,
-        email: user.email
+        email: user.email || ''
       }
     })
 

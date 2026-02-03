@@ -6,7 +6,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { verify, JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken'
 import { prisma } from '@/app/lib/database/prisma'
 
+// Support both platform and guest JWT secrets
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key'
+const GUEST_JWT_SECRET = process.env.GUEST_JWT_SECRET || 'fallback-guest-secret-key'
 
 interface DecodedToken {
   userId: string
@@ -15,26 +17,33 @@ interface DecodedToken {
   [key: string]: unknown
 }
 
-// Helper to safely decode a token
+// Helper to safely decode a token - tries both secrets
 function safeDecodeToken(token: string | undefined, name: string): { userId: string | null, valid: boolean, expired: boolean } {
   if (!token || token.length < 10) {
     return { userId: null, valid: false, expired: false }
   }
 
-  try {
-    const decoded = verify(token, JWT_SECRET) as DecodedToken
-    // Partner tokens use hostId, guest tokens use userId
-    const userId = decoded.userId || decoded.hostId || null
-    return { userId, valid: true, expired: false }
-  } catch (err) {
-    if (err instanceof TokenExpiredError) {
-      return { userId: null, valid: false, expired: true }
+  // Try platform secret first, then guest secret
+  const secrets = [JWT_SECRET, GUEST_JWT_SECRET]
+
+  for (const secret of secrets) {
+    try {
+      const decoded = verify(token, secret) as DecodedToken
+      // Partner tokens use hostId, guest tokens use userId
+      const userId = decoded.userId || decoded.hostId || null
+      return { userId, valid: true, expired: false }
+    } catch (err) {
+      if (err instanceof TokenExpiredError) {
+        return { userId: null, valid: false, expired: true }
+      }
+      // Continue to next secret if signature doesn't match
+      continue
     }
-    if (err instanceof JsonWebTokenError) {
-      console.log(`[Dual-Role Check] ${name} JWT invalid:`, err.message)
-    }
-    return { userId: null, valid: false, expired: false }
   }
+
+  // If we get here, token is invalid with all secrets
+  console.log(`[Dual-Role Check] ${name} JWT invalid with all secrets`)
+  return { userId: null, valid: false, expired: false }
 }
 
 // Helper to clear a cookie properly (maxAge: 0 is more reliable than delete)

@@ -51,7 +51,7 @@ async function generateJWTTokens(userId: string, email: string, name: string | n
 
 export async function POST(request: NextRequest) {
   try {
-    const { phone, email, name, userId } = await request.json()
+    const { phone, email, name, userId, skipVerification } = await request.json()
 
     if (!phone || !email) {
       return NextResponse.json(
@@ -104,6 +104,7 @@ export async function POST(request: NextRequest) {
       // Create new user
       user = await prisma.user.create({
         data: {
+          id: nanoid(),
           email,
           name,
           phone,
@@ -111,7 +112,8 @@ export async function POST(request: NextRequest) {
           emailVerified: false,
           emailVerificationCode: verificationCode,
           emailVerificationExpiry: codeExpiry,
-          role: 'CLAIMED'
+          role: 'CLAIMED',
+          updatedAt: new Date()
         }
       })
 
@@ -131,11 +133,14 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Send verification email
-    const emailTemplate = getEmailVerificationTemplate(name, verificationCode)
-    await sendEmail(email, emailTemplate.subject, emailTemplate.html, emailTemplate.text)
-
-    console.log(`[Phone Login] Verification email sent to: ${email}`)
+    // Send verification email (unless user chose to skip)
+    if (!skipVerification) {
+      const emailTemplate = getEmailVerificationTemplate(name, verificationCode)
+      await sendEmail(email, emailTemplate.subject, emailTemplate.html, emailTemplate.text)
+      console.log(`[Phone Login] Verification email sent to: ${email}`)
+    } else {
+      console.log(`[Phone Login] User skipped email verification: ${email}`)
+    }
 
     // ============================================================================
     // ULTRA SECURITY: Log email collection with enhanced threat detection
@@ -194,7 +199,7 @@ export async function POST(request: NextRequest) {
     // Generate JWT tokens
     const { accessToken, refreshToken } = await generateJWTTokens(
       user.id,
-      user.email,
+      email, // Use the validated email input
       user.name,
       user.role
     )
@@ -218,10 +223,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      requiresEmailVerification: true,
+      requiresEmailVerification: !skipVerification, // Only require if not skipped
       user: {
         id: user.id,
-        email: user.email,
+        email: email,
         name: user.name,
         phone: user.phone,
         emailVerified: false
