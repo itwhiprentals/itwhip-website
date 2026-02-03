@@ -280,6 +280,11 @@ export async function GET(
       documentVerifiedAt: guest.documentVerifiedAt,
       documentVerifiedBy: guest.documentVerifiedBy,
       insuranceVerifiedAt: guest.insuranceVerifiedAt,
+
+      // Stripe Identity verification
+      stripeIdentityStatus: guest.stripeIdentityStatus,
+      stripeIdentitySessionId: guest.stripeIdentitySessionId,
+      stripeIdentityVerifiedAt: guest.stripeIdentityVerifiedAt,
       
       // Stats
       stats: {

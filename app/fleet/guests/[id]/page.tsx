@@ -24,7 +24,8 @@ import {
   IoSettingsOutline,
   IoAlertCircleOutline,
   IoBanOutline,
-  IoMegaphoneOutline
+  IoMegaphoneOutline,
+  IoFingerPrintOutline
 } from 'react-icons/io5'
 import WarningModal from './components/WarningModal'
 import AppealReviewPanel from './components/AppealReviewPanel'
@@ -44,6 +45,12 @@ interface GuestDetails {
   canInstantBook: boolean
   documentsVerified: boolean
   insuranceVerified: boolean
+  documentVerifiedAt: string | null
+  documentVerifiedBy: string | null
+  // Stripe Identity
+  stripeIdentityStatus: string | null
+  stripeIdentitySessionId: string | null
+  stripeIdentityVerifiedAt: string | null
   memberSince: string
   userId: string | null
   
@@ -704,6 +711,15 @@ export default function FleetGuestDetailPage({ params }: { params: Promise<{ id:
             <span className="hidden sm:inline">View Documents</span>
             <span className="sm:hidden">Docs</span>
           </Link>
+
+          <Link
+            href={`/fleet/guests/${guest.id}/banking?key=phoenix-fleet-2847`}
+            className="px-3 sm:px-4 py-2 text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors flex items-center"
+          >
+            <IoCashOutline className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+            <span className="hidden sm:inline">Banking & Payments</span>
+            <span className="sm:hidden">Banking</span>
+          </Link>
         </div>
 
         {/* Stats Grid */}
@@ -1124,17 +1140,159 @@ export default function FleetGuestDetailPage({ params }: { params: Promise<{ id:
 
             {/* Documents Tab */}
             {activeTab === 'documents' && (
-              <div className="text-center py-12">
-                <IoDocumentTextOutline className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600 dark:text-gray-400 mb-4">
-                  Document management page
-                </p>
-                <Link
-                  href={`/fleet/guests/${guest.id}/documents?key=phoenix-fleet-2847`}
-                  className="text-purple-600 hover:text-purple-700 font-medium"
-                >
-                  View Documents Page →
-                </Link>
+              <div className="space-y-6">
+                {/* Identity Verification Summary */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Identity Verification</h3>
+
+                  {/* Stripe Identity Status */}
+                  <div className={`rounded-lg p-4 border-2 mb-4 ${
+                    guest.stripeIdentityStatus === 'verified'
+                      ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700'
+                      : guest.stripeIdentityStatus === 'pending' || guest.stripeIdentityStatus === 'processing'
+                      ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700'
+                      : guest.stripeIdentityStatus === 'requires_input'
+                      ? 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700'
+                      : 'bg-gray-50 dark:bg-gray-800 border-gray-300 dark:border-gray-700'
+                  }`}>
+                    <div className="flex items-start gap-3">
+                      <IoFingerPrintOutline className={`w-6 h-6 flex-shrink-0 ${
+                        guest.stripeIdentityStatus === 'verified'
+                          ? 'text-green-600 dark:text-green-400'
+                          : guest.stripeIdentityStatus === 'pending' || guest.stripeIdentityStatus === 'processing'
+                          ? 'text-blue-600 dark:text-blue-400'
+                          : guest.stripeIdentityStatus === 'requires_input'
+                          ? 'text-red-600 dark:text-red-400'
+                          : 'text-gray-400'
+                      }`} />
+                      <div className="flex-1">
+                        <h4 className={`font-semibold ${
+                          guest.stripeIdentityStatus === 'verified'
+                            ? 'text-green-900 dark:text-green-100'
+                            : guest.stripeIdentityStatus === 'pending' || guest.stripeIdentityStatus === 'processing'
+                            ? 'text-blue-900 dark:text-blue-100'
+                            : guest.stripeIdentityStatus === 'requires_input'
+                            ? 'text-red-900 dark:text-red-100'
+                            : 'text-gray-900 dark:text-gray-100'
+                        }`}>
+                          Stripe Identity: {
+                            guest.stripeIdentityStatus === 'verified' ? 'Verified ✓' :
+                            guest.stripeIdentityStatus === 'pending' ? 'Pending' :
+                            guest.stripeIdentityStatus === 'processing' ? 'Processing...' :
+                            guest.stripeIdentityStatus === 'requires_input' ? 'Failed / Needs Retry' :
+                            'Not Started'
+                          }
+                        </h4>
+                        <p className={`text-sm mt-1 ${
+                          guest.stripeIdentityStatus === 'verified'
+                            ? 'text-green-800 dark:text-green-300'
+                            : guest.stripeIdentityStatus === 'pending' || guest.stripeIdentityStatus === 'processing'
+                            ? 'text-blue-800 dark:text-blue-300'
+                            : guest.stripeIdentityStatus === 'requires_input'
+                            ? 'text-red-800 dark:text-red-300'
+                            : 'text-gray-600 dark:text-gray-400'
+                        }`}>
+                          {guest.stripeIdentityStatus === 'verified'
+                            ? `Driver's license and selfie verified via Stripe${guest.stripeIdentityVerifiedAt ? ` on ${new Date(guest.stripeIdentityVerifiedAt).toLocaleDateString()}` : ''}`
+                            : guest.stripeIdentityStatus === 'pending'
+                            ? 'Guest has started verification but not completed it yet'
+                            : guest.stripeIdentityStatus === 'processing'
+                            ? 'Stripe is reviewing the submitted documents'
+                            : guest.stripeIdentityStatus === 'requires_input'
+                            ? 'Verification failed - guest needs to try again with valid documents'
+                            : 'Guest has not started Stripe Identity verification'}
+                        </p>
+                        {guest.stripeIdentitySessionId && (
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 font-mono">
+                            Session: {guest.stripeIdentitySessionId.slice(0, 20)}...
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Verification Status Grid */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className={`p-3 rounded-lg border ${
+                      guest.documentsVerified
+                        ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                        : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                    }`}>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Documents</span>
+                        {guest.documentsVerified ? (
+                          <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
+                        ) : (
+                          <IoCloseCircleOutline className="w-5 h-5 text-gray-400" />
+                        )}
+                      </div>
+                      {guest.documentVerifiedBy && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          by {guest.documentVerifiedBy}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className={`p-3 rounded-lg border ${
+                      guest.isVerified
+                        ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                        : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                    }`}>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Basic Verified</span>
+                        {guest.isVerified ? (
+                          <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
+                        ) : (
+                          <IoCloseCircleOutline className="w-5 h-5 text-gray-400" />
+                        )}
+                      </div>
+                    </div>
+
+                    <div className={`p-3 rounded-lg border ${
+                      guest.fullyVerified
+                        ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                        : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                    }`}>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Fully Verified</span>
+                        {guest.fullyVerified ? (
+                          <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
+                        ) : (
+                          <IoCloseCircleOutline className="w-5 h-5 text-gray-400" />
+                        )}
+                      </div>
+                    </div>
+
+                    <div className={`p-3 rounded-lg border ${
+                      guest.insuranceVerified
+                        ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                        : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                    }`}>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Insurance</span>
+                        {guest.insuranceVerified ? (
+                          <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
+                        ) : (
+                          <IoCloseCircleOutline className="w-5 h-5 text-gray-400" />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* View Full Documents Button */}
+                <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <Link
+                    href={`/fleet/guests/${guest.id}/documents?key=phoenix-fleet-2847`}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium text-sm transition-colors"
+                  >
+                    <IoDocumentTextOutline className="w-4 h-4" />
+                    View Documents & Manage Verification
+                  </Link>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    View uploaded documents, apply admin override, or verify manually
+                  </p>
+                </div>
               </div>
             )}
 
