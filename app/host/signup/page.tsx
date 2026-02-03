@@ -45,6 +45,9 @@ function HostSignupContent() {
   const { data: session, status } = useSession()
   const isOAuthUser = searchParams.get('oauth') === 'true' && session?.user
 
+  // Dark mode detection
+  const [isDark, setIsDark] = useState(false)
+
   // Start at step 2 if OAuth user (they already have account, just need vehicle info)
   const [currentStep, setCurrentStep] = useState(isOAuthUser ? 2 : 1)
   const [isLoading, setIsLoading] = useState(false)
@@ -84,23 +87,31 @@ function HostSignupContent() {
     }
   }, [isOAuthUser, session, oauthInitialized])
 
-  // Set theme-color and body background for iOS safe areas (solid gray-900, matches dark mode)
+  // Detect system dark mode
   useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    setIsDark(mediaQuery.matches)
+    const handleChange = (e: MediaQueryListEvent) => setIsDark(e.matches)
+    mediaQuery.addEventListener('change', handleChange)
+    return () => mediaQuery.removeEventListener('change', handleChange)
+  }, [])
+
+  // Set theme-color and body background for iOS safe areas
+  useEffect(() => {
+    const bgColor = isDark ? '#111827' : '#ffffff'
     let metaTag = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement
     if (!metaTag) {
       metaTag = document.createElement('meta')
       metaTag.name = 'theme-color'
       document.head.appendChild(metaTag)
     }
-    metaTag.content = '#111827' // gray-900
-
+    metaTag.content = bgColor
     const originalBg = document.body.style.backgroundColor
-    document.body.style.backgroundColor = '#111827'
-
+    document.body.style.backgroundColor = bgColor
     return () => {
       document.body.style.backgroundColor = originalBg
     }
-  }, [])
+  }, [isDark])
 
   // UNIFIED FLOW: Pre-fill hostRole from query param (from /get-started/business)
   useEffect(() => {
@@ -392,12 +403,12 @@ function HostSignupContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+    <div className="min-h-screen bg-white dark:bg-gray-900">
       {/* Back Button */}
       <div className="pt-20 px-4">
         <a
           href="/"
-          className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+          className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -412,10 +423,10 @@ function HostSignupContent() {
             <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <IoCarSportOutline className="w-8 h-8 text-green-500" />
             </div>
-            <h1 className="text-2xl font-bold text-white">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
               Become a Host
             </h1>
-            <p className="text-gray-400 mt-2">
+            <p className="text-gray-600 dark:text-gray-400 mt-2">
               Start earning by sharing your vehicle
             </p>
           </div>
@@ -1069,7 +1080,7 @@ function HostSignupContent() {
 export default function HostSignupPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center">
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
       </div>
     }>

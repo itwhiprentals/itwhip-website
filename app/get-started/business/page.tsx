@@ -26,11 +26,20 @@ export default function BusinessTypePage() {
   const router = useRouter()
   const [selectedType, setSelectedType] = useState<BusinessType | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [isDarkMode, setIsDarkMode] = useState(true)
+  const [isDarkMode, setIsDarkMode] = useState(false)
 
-  // Set theme-color and body background for iOS safe areas (matches dark/light mode)
+  // Detect system dark mode preference
   useEffect(() => {
-    const bgColor = isDarkMode ? '#111827' : '#f9fafb' // gray-900 or gray-50
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    setIsDarkMode(mediaQuery.matches)
+    const handleChange = (e: MediaQueryListEvent) => setIsDarkMode(e.matches)
+    mediaQuery.addEventListener('change', handleChange)
+    return () => mediaQuery.removeEventListener('change', handleChange)
+  }, [])
+
+  // Set theme-color and body background for iOS safe areas
+  useEffect(() => {
+    const bgColor = isDarkMode ? '#111827' : '#ffffff' // gray-900 or white
 
     let metaTag = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement
     if (!metaTag) {
@@ -108,11 +117,7 @@ export default function BusinessTypePage() {
   ]
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${
-      isDarkMode
-        ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-black'
-        : 'bg-gradient-to-br from-gray-50 via-white to-gray-100'
-    }`}>
+    <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300">
       {/* Header */}
       <header className="py-4 px-4 sm:px-6 lg:px-8">
         <nav className="flex items-center justify-between max-w-7xl mx-auto">
@@ -128,40 +133,17 @@ export default function BusinessTypePage() {
                   priority
                 />
               </div>
-              <span className={`text-[8px] tracking-widest uppercase font-medium mt-0.5 ${
-                isDarkMode ? 'text-gray-300' : 'text-gray-600'
-              }`}>
+              <span className="text-[8px] tracking-widest uppercase font-medium mt-0.5 text-gray-600 dark:text-gray-300">
                 GET STARTED
               </span>
             </div>
           </Link>
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className={`p-2 transition-colors rounded-lg ${
-                isDarkMode
-                  ? 'text-gray-300 hover:text-white hover:bg-gray-800'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
-              }`}
-              aria-label="Toggle theme"
-            >
-              {isDarkMode ? (
-                <IoSunnyOutline className="w-5 h-5" />
-              ) : (
-                <IoMoonOutline className="w-5 h-5" />
-              )}
-            </button>
-            <Link
-              href="/host/login"
-              className={`text-sm transition-colors ${
-                isDarkMode
-                  ? 'text-gray-300 hover:text-blue-400'
-                  : 'text-gray-700 hover:text-blue-600'
-              }`}
-            >
-              Already a host? <span className="font-medium">Log in</span>
-            </Link>
-          </div>
+          <Link
+            href="/host/login"
+            className="text-sm text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+          >
+            Already a host? <span className="font-medium">Log in</span>
+          </Link>
         </nav>
       </header>
 

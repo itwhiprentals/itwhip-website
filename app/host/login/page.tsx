@@ -164,9 +164,9 @@ function HostLoginContent() {
 
       {/* Signup Link */}
       <div className="pt-4 text-center">
-        <p className="text-gray-400 text-sm">
+        <p className="text-gray-600 dark:text-gray-400 text-sm">
           Don't have a host account?{' '}
-          <Link href="/host/signup" className="text-green-400 hover:underline font-medium">
+          <Link href="/host/signup" className="text-green-600 dark:text-green-400 hover:underline font-medium">
             Apply to become a host
           </Link>
         </p>
@@ -176,7 +176,7 @@ function HostLoginContent() {
       <div className="pt-2 text-center">
         <Link
           href="/auth/login"
-          className="text-sm text-gray-500 hover:text-gray-400 transition-colors"
+          className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
         >
           Looking to rent a car? Sign in as Guest →
         </Link>

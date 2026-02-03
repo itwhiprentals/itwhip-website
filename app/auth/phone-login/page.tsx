@@ -8,7 +8,6 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import {
-  IoPhonePortraitOutline,
   IoCheckmarkCircle,
   IoAlertCircleOutline,
   IoArrowBackOutline,
@@ -36,6 +35,7 @@ function PhoneLoginContent() {
   const returnTo = searchParams.get('returnTo') || '/dashboard'
   const roleHint = searchParams.get('roleHint') || 'guest'
 
+  const [isDark, setIsDark] = useState(false)
   const [phone, setPhone] = useState('')
   const [code, setCode] = useState(['', '', '', '', '', ''])
   const [error, setError] = useState('')
@@ -112,23 +112,31 @@ function PhoneLoginContent() {
     }
   }, [resendCooldown])
 
-  // Set theme-color and body background for iOS safe areas (solid gray-900, matches dark mode)
+  // Detect system dark mode
   useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    setIsDark(mediaQuery.matches)
+    const handleChange = (e: MediaQueryListEvent) => setIsDark(e.matches)
+    mediaQuery.addEventListener('change', handleChange)
+    return () => mediaQuery.removeEventListener('change', handleChange)
+  }, [])
+
+  // Set theme-color and body background for iOS safe areas
+  useEffect(() => {
+    const bgColor = isDark ? '#111827' : '#ffffff'
     let metaTag = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement
     if (!metaTag) {
       metaTag = document.createElement('meta')
       metaTag.name = 'theme-color'
       document.head.appendChild(metaTag)
     }
-    metaTag.content = '#111827' // gray-900
-
+    metaTag.content = bgColor
     const originalBg = document.body.style.backgroundColor
-    document.body.style.backgroundColor = '#111827'
-
+    document.body.style.backgroundColor = bgColor
     return () => {
       document.body.style.backgroundColor = originalBg
     }
-  }, [])
+  }, [isDark])
 
   // Initialize device fingerprinting on mount
   useEffect(() => {
@@ -503,42 +511,36 @@ function PhoneLoginContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex flex-col">
+    <div className="min-h-screen bg-white dark:bg-gray-900 flex flex-col">
       {/* Back Button */}
-      <div className="pt-20 px-4">
+      <div className="pt-12 px-4">
         <Link
           href={roleHint === 'host' ? '/host/signup' : '/auth/login'}
-          className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+          className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
         >
           <IoArrowBackOutline className="w-5 h-5" />
           <span className="text-sm">Back</span>
         </Link>
       </div>
 
-      <div className="flex-1 flex items-center justify-center px-4 pb-8">
+      <div className="flex-1 flex items-start justify-center px-4 pt-4 pb-8">
         <div className="w-full max-w-sm">
-          {/* Logo */}
-          <div className="text-center mb-6">
+          {/* Header with Logo */}
+          <div className="text-center mb-8">
             <div className="flex justify-center mb-4">
-              <Image
-                src="/logo-white.png"
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/logo.png"
                 alt="ItWhip"
-                width={120}
-                height={40}
-                className="h-10 w-auto"
+                width={60}
+                height={60}
+                style={{ width: '60px', height: '60px', borderRadius: '50%' }}
               />
             </div>
-          </div>
-
-          {/* Header */}
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-green-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <IoPhonePortraitOutline className="w-8 h-8 text-green-500" />
-            </div>
-            <h1 className="text-2xl font-bold text-white mb-2">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
               {codeSent ? 'Verify Your Number' : 'Phone Login'}
             </h1>
-            <p className="text-gray-400 text-sm">
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
               {codeSent
                 ? `Enter the 6-digit code sent to ${formatPhoneDisplay(phone)}`
                 : 'Enter your phone number to receive a verification code'
@@ -561,7 +563,7 @@ function PhoneLoginContent() {
             <>
               {/* Phone Number Input */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Phone Number
                 </label>
                 <div className="relative">
@@ -569,7 +571,7 @@ function PhoneLoginContent() {
                     type="tel"
                     value={formatPhoneDisplay(phone)}
                     onChange={handlePhoneChange}
-                    className="w-full px-4 py-3 text-base border-2 border-gray-600 rounded-lg bg-gray-900/50 text-white focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                    className="w-full px-4 py-3 text-base border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
                     placeholder="(123) 456-7890"
                     disabled={isSending}
                   />
@@ -606,7 +608,7 @@ function PhoneLoginContent() {
                     setConfirmationResult(null)
                     setCode(['', '', '', '', '', ''])
                   }}
-                  className="w-full mb-4 p-3 border border-gray-600 rounded-lg flex items-center justify-between text-gray-300 hover:text-white hover:border-gray-500 transition-colors"
+                  className="w-full mb-4 p-3 border border-gray-300 dark:border-gray-600 rounded-lg flex items-center justify-between text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
                 >
                   <span className="text-sm">{formatPhoneDisplay(phone)}</span>
                   <IoPencilOutline className="w-4 h-4" />
@@ -626,7 +628,7 @@ function PhoneLoginContent() {
                     onChange={(e) => handleCodeChange(index, e.target.value)}
                     onKeyDown={(e) => handleKeyDown(index, e)}
                     disabled={isVerifying}
-                    className="w-12 h-14 text-center text-2xl font-bold border-2 border-gray-600 rounded-lg bg-gray-900/50 text-white focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:opacity-50 transition-all"
+                    className="w-12 h-14 text-center text-2xl font-bold border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:opacity-50 transition-all"
                   />
                 ))}
               </div>
@@ -667,7 +669,7 @@ function PhoneLoginContent() {
           )}
 
           {/* Footer Note */}
-          <div className="mt-6 pt-6 border-t border-gray-700 text-center">
+          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700 text-center">
             <p className="text-xs text-gray-500">
               By continuing, you agree to ItWhip&apos;s Terms of Service and Privacy Policy
             </p>
@@ -681,7 +683,7 @@ function PhoneLoginContent() {
 export default function PhoneLoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gray-900">
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
         <div className="animate-spin rounded-full h-12 w-12 border-2 border-green-600 border-t-transparent" />
       </div>
     }>

@@ -79,13 +79,11 @@ export default function EmailLoginExpand({ mode, hostMode = false, onSuccess }: 
     }
   }
 
-  const accentColor = hostMode ? 'green' : 'blue'
-
   if (!expanded) {
     return (
       <button
         onClick={() => setExpanded(true)}
-        className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-transparent hover:bg-gray-800/50 text-gray-300 font-medium rounded-lg transition-colors border border-gray-700"
+        className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800/50 text-gray-700 dark:text-gray-300 font-medium rounded-lg transition-colors border border-gray-300 dark:border-gray-600"
       >
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -96,17 +94,17 @@ export default function EmailLoginExpand({ mode, hostMode = false, onSuccess }: 
   }
 
   return (
-    <div className="mt-2 pt-4 border-t border-gray-700/50 animate-in slide-in-from-top-2 duration-200">
+    <div className="mt-2 pt-4 border-t border-gray-200 dark:border-gray-700/50 animate-in slide-in-from-top-2 duration-200">
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
           <div className="p-3 bg-red-500/10 border border-red-500/50 rounded-lg">
-            <p className="text-sm text-red-400">{error}</p>
+            <p className="text-sm text-red-500 dark:text-red-400">{error}</p>
           </div>
         )}
 
         {mode === 'signup' && (
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-1">
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Full Name
             </label>
             <input
@@ -116,14 +114,14 @@ export default function EmailLoginExpand({ mode, hostMode = false, onSuccess }: 
               value={formData.name}
               onChange={handleChange}
               placeholder="John Doe"
-              className="w-full px-3 py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2.5 bg-white dark:bg-gray-800/50 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               autoFocus
             />
           </div>
         )}
 
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Email
           </label>
           <input
@@ -133,13 +131,13 @@ export default function EmailLoginExpand({ mode, hostMode = false, onSuccess }: 
             value={formData.email}
             onChange={handleChange}
             placeholder="you@example.com"
-            className="w-full px-3 py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2.5 bg-white dark:bg-gray-800/50 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             autoFocus={mode === 'login'}
           />
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">
+          <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Password
           </label>
           <input
@@ -149,13 +147,13 @@ export default function EmailLoginExpand({ mode, hostMode = false, onSuccess }: 
             value={formData.password}
             onChange={handleChange}
             placeholder="••••••••"
-            className="w-full px-3 py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2.5 bg-white dark:bg-gray-800/50 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
 
         {mode === 'signup' && (
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-1">
+            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Confirm Password
             </label>
             <input
@@ -165,7 +163,7 @@ export default function EmailLoginExpand({ mode, hostMode = false, onSuccess }: 
               value={formData.confirmPassword}
               onChange={handleChange}
               placeholder="••••••••"
-              className="w-full px-3 py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2.5 bg-white dark:bg-gray-800/50 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
         )}
@@ -193,7 +191,7 @@ export default function EmailLoginExpand({ mode, hostMode = false, onSuccess }: 
           <div className="text-center">
             <Link
               href={hostMode ? '/host/forgot-password' : '/auth/forgot-password'}
-              className="text-sm text-gray-400 hover:text-white transition-colors"
+              className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
             >
               Forgot password?
             </Link>
@@ -203,7 +201,7 @@ export default function EmailLoginExpand({ mode, hostMode = false, onSuccess }: 
         <button
           type="button"
           onClick={() => setExpanded(false)}
-          className="w-full text-sm text-gray-500 hover:text-gray-400 transition-colors"
+          className="w-full text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
         >
           ← Back to other options
         </button>

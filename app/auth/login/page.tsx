@@ -121,9 +121,9 @@ function LoginContent() {
 
       {/* Signup Link */}
       <div className="pt-4 text-center">
-        <p className="text-gray-400 text-sm">
+        <p className="text-gray-600 dark:text-gray-400 text-sm">
           Don't have an account?{' '}
-          <Link href="/auth/signup" className="text-white hover:underline font-medium">
+          <Link href="/auth/signup" className="text-green-600 dark:text-green-400 hover:underline font-medium">
             Sign up
           </Link>
         </p>
@@ -133,7 +133,7 @@ function LoginContent() {
       <div className="pt-2 text-center">
         <Link
           href="/host/login"
-          className="text-sm text-gray-500 hover:text-gray-400 transition-colors"
+          className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
         >
           Are you a car owner? Sign in to Host Portal →
         </Link>
