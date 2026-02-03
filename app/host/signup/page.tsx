@@ -5,8 +5,8 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
-import Header from '@/app/components/Header'
-import OAuthButtons from '@/app/components/auth/OAuthButtons'
+import PhoneLoginButton from '@/app/components/auth/PhoneLoginButton'
+import OAuthButtonsMinimal from '@/app/components/auth/OAuthButtonsMinimal'
 import CarInformationForm, { type CarData } from '@/app/components/host/CarInformationForm'
 import {
   IoPersonOutline,
@@ -50,6 +50,7 @@ function HostSignupContent() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [showEmailForm, setShowEmailForm] = useState(false)
 
   // Personal info - pre-fill from OAuth session if available
   const [formData, setFormData] = useState({
@@ -373,9 +374,20 @@ function HostSignupContent() {
   }
 
   return (
-    <>
-      <Header />
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black pt-20 pb-12">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+      {/* Back Button */}
+      <div className="pt-20 px-4">
+        <a
+          href="/"
+          className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          <span className="text-sm">Back</span>
+        </a>
+      </div>
+      <div className="pb-12">
         <div className="max-w-md lg:max-w-4xl mx-auto px-4">
           {/* Header */}
           <div className="text-center mb-6">
@@ -440,152 +452,161 @@ function HostSignupContent() {
           </div>
 
           {/* Signup Form */}
-          <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-xl p-6 lg:p-8 border border-gray-700">
+          <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg shadow-xl p-6 lg:p-8 border border-gray-700">
             <form onSubmit={handleSubmit}>
 
               {/* Step 1: Personal Info */}
               {currentStep === 1 && (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <h2 className="text-lg font-semibold text-white mb-1 text-center">
                     Personal Information
                   </h2>
                   <p className="text-gray-400 text-sm mb-4 text-center">Create your host account</p>
 
-                  {/* OAuth Buttons */}
-                  <OAuthButtons
-                    theme="host"
-                    roleHint="host"
-                    callbackUrl="/host/dashboard"
-                    showDivider={true}
-                    mode="signup"
-                  />
+                  {/* Phone-first + OAuth Buttons */}
+                  <PhoneLoginButton hostMode />
+                  <OAuthButtonsMinimal roleHint="host" mode="signup" />
 
-                  {/* Name Fields */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-1">
-                        First Name <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative">
-                        <IoPersonOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-                        <input
-                          type="text"
-                          value={formData.firstName}
-                          onChange={(e) => setFormData({...formData, firstName: e.target.value})}
-                          className="w-full pl-10 pr-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
-                          placeholder="John"
-                          required
-                        />
+                  {/* Continue with Email - Expandable */}
+                  {!showEmailForm ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowEmailForm(true)}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-800/50 hover:border-gray-500 transition-all"
+                    >
+                      <IoMailOutline className="w-5 h-5" />
+                      <span className="font-medium">Continue with Email</span>
+                    </button>
+                  ) : (
+                    <div className="space-y-4 pt-4 border-t border-gray-700 mt-4">
+                      {/* Name Fields */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-300 mb-1">
+                            First Name <span className="text-red-500">*</span>
+                          </label>
+                          <div className="relative">
+                            <IoPersonOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                            <input
+                              type="text"
+                              value={formData.firstName}
+                              onChange={(e) => setFormData({...formData, firstName: e.target.value})}
+                              className="w-full pl-10 pr-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-colors"
+                              placeholder="John"
+                              required
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-300 mb-1">
+                            Last Name <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.lastName}
+                            onChange={(e) => setFormData({...formData, lastName: e.target.value})}
+                            className="w-full px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-colors"
+                            placeholder="Doe"
+                            required
+                          />
+                        </div>
                       </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-1">
-                        Last Name <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.lastName}
-                        onChange={(e) => setFormData({...formData, lastName: e.target.value})}
-                        className="w-full px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
-                        placeholder="Doe"
-                        required
-                      />
-                    </div>
-                  </div>
 
-                  {/* Email */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">
-                      Email Address <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <IoMailOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-                      <input
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData({...formData, email: e.target.value})}
-                        className="w-full pl-10 pr-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
-                        placeholder="john@example.com"
-                        required
-                      />
-                    </div>
-                  </div>
+                      {/* Email */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">
+                          Email Address <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative">
+                          <IoMailOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                          <input
+                            type="email"
+                            value={formData.email}
+                            onChange={(e) => setFormData({...formData, email: e.target.value})}
+                            className="w-full pl-10 pr-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-colors"
+                            placeholder="john@example.com"
+                            required
+                          />
+                        </div>
+                      </div>
 
-                  {/* Phone */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">
-                      Phone Number <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <IoPhonePortraitOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-                      <input
-                        type="tel"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({...formData, phone: formatPhoneNumber(e.target.value)})}
-                        className="w-full pl-10 pr-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
-                        placeholder="(555) 123-4567"
-                        maxLength={14}
-                        required
-                      />
-                    </div>
-                  </div>
+                      {/* Phone */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">
+                          Phone Number <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative">
+                          <IoPhonePortraitOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                          <input
+                            type="tel"
+                            value={formData.phone}
+                            onChange={(e) => setFormData({...formData, phone: formatPhoneNumber(e.target.value)})}
+                            className="w-full pl-10 pr-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-colors"
+                            placeholder="(555) 123-4567"
+                            maxLength={14}
+                            required
+                          />
+                        </div>
+                      </div>
 
-                  {/* Password */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">
-                      Password <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <IoLockClosedOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        value={formData.password}
-                        onChange={(e) => setFormData({...formData, password: e.target.value})}
-                        className="w-full pl-10 pr-12 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
-                        placeholder="Min. 8 characters"
-                        required
-                        minLength={8}
-                      />
+                      {/* Password */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">
+                          Password <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative">
+                          <IoLockClosedOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                          <input
+                            type={showPassword ? 'text' : 'password'}
+                            value={formData.password}
+                            onChange={(e) => setFormData({...formData, password: e.target.value})}
+                            className="w-full pl-10 pr-12 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-colors"
+                            placeholder="Min. 8 characters"
+                            required
+                            minLength={8}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300"
+                          >
+                            {showPassword ? <IoEyeOffOutline className="w-5 h-5" /> : <IoEyeOutline className="w-5 h-5" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Confirm Password */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">
+                          Confirm Password <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative">
+                          <IoLockClosedOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                          <input
+                            type={showPassword ? 'text' : 'password'}
+                            value={formData.confirmPassword}
+                            onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
+                            className="w-full pl-10 pr-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-colors"
+                            placeholder="Confirm your password"
+                            required
+                          />
+                        </div>
+                        {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+                          <p className="text-red-400 text-sm mt-1">Passwords do not match</p>
+                        )}
+                      </div>
+
+                      {/* Next Button */}
                       <button
                         type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300"
+                        onClick={handleNextStep}
+                        disabled={!isStep1Valid()}
+                        className="w-full py-3 px-4 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-medium rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
                       >
-                        {showPassword ? <IoEyeOffOutline className="w-5 h-5" /> : <IoEyeOutline className="w-5 h-5" />}
+                        Continue to Vehicle Info
                       </button>
                     </div>
-                  </div>
-
-                  {/* Confirm Password */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">
-                      Confirm Password <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <IoLockClosedOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        value={formData.confirmPassword}
-                        onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
-                        className="w-full pl-10 pr-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
-                        placeholder="Confirm your password"
-                        required
-                      />
-                    </div>
-                    {formData.confirmPassword && formData.password !== formData.confirmPassword && (
-                      <p className="text-red-400 text-sm mt-1">Passwords do not match</p>
-                    )}
-                  </div>
-
-                  {/* Next Button */}
-                  <button
-                    type="button"
-                    onClick={handleNextStep}
-                    disabled={!isStep1Valid()}
-                    className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mt-6"
-                  >
-                    Continue to Vehicle Info
-                  </button>
+                  )}
                 </div>
               )}
 
@@ -980,7 +1001,7 @@ function HostSignupContent() {
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-400">
                 Already have an account?{' '}
-                <Link href="/host/login" className="text-blue-400 hover:text-blue-300 font-medium">
+                <Link href="/host/login" className="text-green-400 hover:text-green-300 font-medium">
                   Sign In
                 </Link>
               </p>
@@ -991,18 +1012,18 @@ function HostSignupContent() {
               <p className="text-sm text-gray-500 mb-1">
                 Looking to rent a car instead?
               </p>
-              <Link href="/auth/signup" className="text-blue-400 hover:text-blue-300 font-medium text-sm">
+              <Link href="/auth/signup" className="text-green-400 hover:text-green-300 font-medium text-sm">
                 Create Renter Account
               </Link>
             </div>
           </div>
 
           {/* Benefits */}
-          <div className="mt-8">
+          <div className="mt-8 flex flex-col items-center">
             <h3 className="text-sm font-semibold text-white mb-4 text-center">
               Why host with ItWhip?
             </h3>
-            <div className="grid grid-cols-1 gap-3">
+            <div className="flex flex-col items-center gap-3">
               <div className="flex items-center gap-3 text-sm text-gray-400">
                 <IoCheckmarkCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
                 <span>Earn up to 90% of each rental</span>
@@ -1023,7 +1044,7 @@ function HostSignupContent() {
           </div>
         </div>
       </div>
-    </>
+    </div>
   )
 }
 
