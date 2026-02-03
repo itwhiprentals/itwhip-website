@@ -112,27 +112,21 @@ function PhoneLoginContent() {
     }
   }, [resendCooldown])
 
-  // Set theme-color meta tag and backgrounds for mobile status bar/safe areas
+  // Set theme-color and body background for iOS safe areas (solid gray-900, matches dark mode)
   useEffect(() => {
-    // Set theme-color meta tag (for browser chrome)
     let metaTag = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement
     if (!metaTag) {
       metaTag = document.createElement('meta')
       metaTag.name = 'theme-color'
       document.head.appendChild(metaTag)
     }
-    metaTag.content = '#111827' // gray-900 (top of gradient)
+    metaTag.content = '#111827' // gray-900
 
-    // Set html/body backgrounds to match gradient ends (for iOS safe areas)
-    const originalHtmlBg = document.documentElement.style.backgroundColor
-    const originalBodyBg = document.body.style.backgroundColor
-    document.documentElement.style.backgroundColor = '#111827' // gray-900 (top - status bar)
-    document.body.style.backgroundColor = '#000000' // black (bottom - home indicator)
+    const originalBg = document.body.style.backgroundColor
+    document.body.style.backgroundColor = '#111827'
 
-    // Cleanup on unmount
     return () => {
-      document.documentElement.style.backgroundColor = originalHtmlBg
-      document.body.style.backgroundColor = originalBodyBg
+      document.body.style.backgroundColor = originalBg
     }
   }, [])
 
