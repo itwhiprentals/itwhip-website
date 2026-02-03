@@ -28,9 +28,11 @@ export default function BusinessTypePage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(true)
 
-  // Update theme-color meta tag for mobile status bar
+  // Update theme-color meta tag and body background for mobile status bar/safe areas
   useEffect(() => {
     const themeColor = isDarkMode ? '#111827' : '#f9fafb' // gray-900 or gray-50
+
+    // Set theme-color meta tag
     let metaTag = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement
     if (!metaTag) {
       metaTag = document.createElement('meta')
@@ -38,6 +40,14 @@ export default function BusinessTypePage() {
       document.head.appendChild(metaTag)
     }
     metaTag.content = themeColor
+
+    // Set body background to match (for iOS safe areas)
+    document.body.style.backgroundColor = themeColor
+
+    // Cleanup on unmount
+    return () => {
+      document.body.style.backgroundColor = ''
+    }
   }, [isDarkMode])
 
   const handleContinue = () => {

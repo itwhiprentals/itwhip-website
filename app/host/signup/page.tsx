@@ -84,8 +84,9 @@ function HostSignupContent() {
     }
   }, [isOAuthUser, session, oauthInitialized])
 
-  // Set theme-color meta tag for mobile status bar
+  // Set theme-color meta tag and body background for mobile status bar/safe areas
   useEffect(() => {
+    // Set theme-color meta tag
     let metaTag = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement
     if (!metaTag) {
       metaTag = document.createElement('meta')
@@ -93,6 +94,15 @@ function HostSignupContent() {
       document.head.appendChild(metaTag)
     }
     metaTag.content = '#111827' // gray-900
+
+    // Set body background to match (for iOS safe areas)
+    const originalBg = document.body.style.backgroundColor
+    document.body.style.backgroundColor = '#111827'
+
+    // Cleanup on unmount
+    return () => {
+      document.body.style.backgroundColor = originalBg
+    }
   }, [])
 
   // UNIFIED FLOW: Pre-fill hostRole from query param (from /get-started/business)
