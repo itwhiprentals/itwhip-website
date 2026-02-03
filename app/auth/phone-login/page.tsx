@@ -418,7 +418,7 @@ function PhoneLoginContent() {
         <div className="w-full max-w-md bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-xl p-8 border border-gray-700">
           <h2 className="text-2xl font-bold text-white mb-4">Complete Your Account</h2>
           <p className="text-gray-400 mb-6">
-            To finish setting up your account, please provide your email address. We'll send you a verification code.
+            To finish setting up your account, please provide your email address. We&apos;ll send you a verification code.
           </p>
 
           {error && (
@@ -568,7 +568,7 @@ function PhoneLoginContent() {
                     />
                   </div>
                   <p className="text-xs text-gray-500 mt-2">
-                    We'll send you a one-time verification code via SMS
+                    We&apos;ll send you a one-time verification code via SMS
                   </p>
                 </div>
 
