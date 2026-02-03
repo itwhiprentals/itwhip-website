@@ -28,24 +28,29 @@ export default function BusinessTypePage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(true)
 
-  // Update theme-color meta tag and body background for mobile status bar/safe areas
+  // Update theme-color meta tag and backgrounds for mobile status bar/safe areas
   useEffect(() => {
-    const themeColor = isDarkMode ? '#111827' : '#f9fafb' // gray-900 or gray-50
+    // Dark mode: gradient from gray-900 to black
+    // Light mode: gradient from gray-50 to gray-100
+    const topColor = isDarkMode ? '#111827' : '#f9fafb' // gray-900 or gray-50
+    const bottomColor = isDarkMode ? '#000000' : '#f3f4f6' // black or gray-100
 
-    // Set theme-color meta tag
+    // Set theme-color meta tag (for browser chrome)
     let metaTag = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement
     if (!metaTag) {
       metaTag = document.createElement('meta')
       metaTag.name = 'theme-color'
       document.head.appendChild(metaTag)
     }
-    metaTag.content = themeColor
+    metaTag.content = topColor
 
-    // Set body background to match (for iOS safe areas)
-    document.body.style.backgroundColor = themeColor
+    // Set html/body backgrounds to match gradient ends (for iOS safe areas)
+    document.documentElement.style.backgroundColor = topColor // top - status bar
+    document.body.style.backgroundColor = bottomColor // bottom - home indicator
 
     // Cleanup on unmount
     return () => {
+      document.documentElement.style.backgroundColor = ''
       document.body.style.backgroundColor = ''
     }
   }, [isDarkMode])

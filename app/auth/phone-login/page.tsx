@@ -112,24 +112,27 @@ function PhoneLoginContent() {
     }
   }, [resendCooldown])
 
-  // Set theme-color meta tag and body background for mobile status bar/safe areas
+  // Set theme-color meta tag and backgrounds for mobile status bar/safe areas
   useEffect(() => {
-    // Set theme-color meta tag
+    // Set theme-color meta tag (for browser chrome)
     let metaTag = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement
     if (!metaTag) {
       metaTag = document.createElement('meta')
       metaTag.name = 'theme-color'
       document.head.appendChild(metaTag)
     }
-    metaTag.content = '#111827' // gray-900
+    metaTag.content = '#111827' // gray-900 (top of gradient)
 
-    // Set body background to match (for iOS safe areas)
-    const originalBg = document.body.style.backgroundColor
-    document.body.style.backgroundColor = '#111827'
+    // Set html/body backgrounds to match gradient ends (for iOS safe areas)
+    const originalHtmlBg = document.documentElement.style.backgroundColor
+    const originalBodyBg = document.body.style.backgroundColor
+    document.documentElement.style.backgroundColor = '#111827' // gray-900 (top - status bar)
+    document.body.style.backgroundColor = '#000000' // black (bottom - home indicator)
 
     // Cleanup on unmount
     return () => {
-      document.body.style.backgroundColor = originalBg
+      document.documentElement.style.backgroundColor = originalHtmlBg
+      document.body.style.backgroundColor = originalBodyBg
     }
   }, [])
 
@@ -506,7 +509,7 @@ function PhoneLoginContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex flex-col">
       {/* Back Button */}
       <div className="pt-20 px-4">
         <Link
