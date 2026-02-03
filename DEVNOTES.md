@@ -2,6 +2,35 @@
 
 ## Recent Fixes (February 2026)
 
+### Fleet Banking Pages - DEPLOYED ✅ (Feb 3)
+**Guest Banking + Host Banking Component Refactor**
+
+#### Guest Banking Page (`/fleet/guests/[id]/banking`)
+- [x] Full banking overview with tabbed interface (Overview, Payment Methods, Charges, Refunds, Wallet, Disputes)
+- [x] API routes for charges, disputes, and banking actions
+- [x] 12 modular components (BankingHeader, BankingTabs, ChargesTab, RefundsTab, WalletTab, DisputesTab, etc.)
+- [x] Shared types file with interfaces and utility functions
+- [x] Added "Banking & Payments" button to guest detail page
+
+#### Host Banking Refactor (`/fleet/hosts/[id]/banking`)
+- [x] Reduced page.tsx from 1,189 lines to 350 lines (70% reduction)
+- [x] Extracted 14 reusable components:
+  - HostBankingHeader, AlertMessages, BalanceCards, QuickActions
+  - StripeConnectCard, StripeCustomerCard, SubscriptionCard, PayoutConfigCard
+  - PaymentMethodsList, RecentChargesTable
+  - ChargeHostModal, HoldFundsModal, ForcePayoutModal, SuspendPayoutsModal
+- [x] Shared types.ts with BankingData, PaymentMethod, HostCharge interfaces
+- [x] Barrel export via components/index.ts
+
+#### Files Created
+- `app/api/fleet/guests/[id]/banking/route.ts` - Banking overview API
+- `app/api/fleet/guests/[id]/banking/charges/route.ts` - Charges API
+- `app/api/fleet/guests/[id]/banking/disputes/route.ts` - Disputes API
+- `app/fleet/guests/[id]/banking/` - 12 component files + types + page
+- `app/fleet/hosts/[id]/banking/components/` - 14 component files + index
+
+---
+
 ### Phase 2 Ultra Security Upgrade - DEPLOYED ✅ (Feb 2 - 12:00 PM)
 **$0 Military-Grade Security for Phone Login + Fleet Monitoring**
 
