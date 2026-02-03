@@ -14,7 +14,7 @@ export default function SignupPage() {
       subtitle="Sign up to start booking cars"
     >
       {/* Phone - Primary */}
-      <PhoneLoginButton />
+      <PhoneLoginButton mode="signup" />
 
       {/* OAuth - Apple & Google */}
       <OAuthButtonsMinimal roleHint="guest" mode="signup" />
@@ -33,10 +33,10 @@ export default function SignupPage() {
       </div>
 
       {/* Host Portal Link */}
-      <div className="pt-2 text-center">
+      <div className="pt-4">
         <Link
           href="/host/signup"
-          className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800/50 text-gray-800 dark:text-gray-200 font-medium rounded-lg transition-colors border border-gray-300 dark:border-gray-600 text-sm"
         >
           Want to list your car? Join as a Host →
         </Link>

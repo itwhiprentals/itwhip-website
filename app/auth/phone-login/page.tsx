@@ -34,6 +34,7 @@ function PhoneLoginContent() {
   const searchParams = useSearchParams()
   const returnTo = searchParams.get('returnTo') || '/dashboard'
   const roleHint = searchParams.get('roleHint') || 'guest'
+  const mode = searchParams.get('mode') || 'login' // 'login' or 'signup'
 
   const [isDark, setIsDark] = useState(false)
   const [phone, setPhone] = useState('')
@@ -53,7 +54,7 @@ function PhoneLoginContent() {
   // Email collection for phone users
   const [requiresEmail, setRequiresEmail] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
-  const [emailData, setEmailData] = useState({ email: '', name: '' })
+  const [emailData, setEmailData] = useState({ email: '', firstName: '', lastName: '' })
   const [isSubmittingEmail, setIsSubmittingEmail] = useState(false)
 
   // Device fingerprinting
@@ -402,7 +403,9 @@ function PhoneLoginContent() {
         body: JSON.stringify({
           phone: formatPhoneE164(phone),
           email: emailData.email,
-          name: emailData.name || null,
+          name: `${emailData.firstName} ${emailData.lastName}`.trim(),
+          firstName: emailData.firstName,
+          lastName: emailData.lastName,
           userId
         })
       })
@@ -433,7 +436,7 @@ function PhoneLoginContent() {
         <div className="w-full max-w-md bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-xl p-8 border border-gray-700">
           <h2 className="text-2xl font-bold text-white mb-4">Complete Your Account</h2>
           <p className="text-gray-400 mb-6">
-            To finish setting up your account, please provide your email address. We&apos;ll send you a verification code.
+            To finish setting up your account, please provide your name and email address.
           </p>
 
           {error && (
@@ -443,6 +446,36 @@ function PhoneLoginContent() {
           )}
 
           <form onSubmit={handleEmailSubmit} className="space-y-4">
+            {/* Name Fields */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  First Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={emailData.firstName}
+                  onChange={(e) => setEmailData({ ...emailData, firstName: e.target.value })}
+                  className="block w-full px-3 py-2.5 border border-gray-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-gray-800/50 text-white"
+                  placeholder="John"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Last Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={emailData.lastName}
+                  onChange={(e) => setEmailData({ ...emailData, lastName: e.target.value })}
+                  className="block w-full px-3 py-2.5 border border-gray-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-gray-800/50 text-white"
+                  placeholder="Doe"
+                />
+              </div>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">
                 Email Address *
@@ -454,19 +487,6 @@ function PhoneLoginContent() {
                 onChange={(e) => setEmailData({ ...emailData, email: e.target.value })}
                 className="block w-full px-3 py-2.5 border border-gray-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-gray-800/50 text-white"
                 placeholder="you@example.com"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
-                Name (Optional)
-              </label>
-              <input
-                type="text"
-                value={emailData.name}
-                onChange={(e) => setEmailData({ ...emailData, name: e.target.value })}
-                className="block w-full px-3 py-2.5 border border-gray-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-gray-800/50 text-white"
-                placeholder="Your name"
               />
             </div>
 
@@ -515,7 +535,10 @@ function PhoneLoginContent() {
       {/* Back Button */}
       <div className="pt-12 px-4">
         <Link
-          href={roleHint === 'host' ? '/host/signup' : '/auth/login'}
+          href={roleHint === 'host'
+            ? (mode === 'signup' ? '/host/signup' : '/host/login')
+            : (mode === 'signup' ? '/auth/signup' : '/auth/login')
+          }
           className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
         >
           <IoArrowBackOutline className="w-5 h-5" />
@@ -538,12 +561,19 @@ function PhoneLoginContent() {
               />
             </div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              {codeSent ? 'Verify Your Number' : 'Phone Login'}
+              {codeSent
+                ? 'Verify Your Number'
+                : mode === 'signup'
+                  ? 'Create Account'
+                  : 'Sign In'
+              }
             </h1>
             <p className="text-gray-600 dark:text-gray-400 text-sm">
               {codeSent
                 ? `Enter the 6-digit code sent to ${formatPhoneDisplay(phone)}`
-                : 'Enter your phone number to receive a verification code'
+                : mode === 'signup'
+                  ? 'Enter your phone number to create your account'
+                  : 'Enter your phone number to sign in'
               }
             </p>
           </div>

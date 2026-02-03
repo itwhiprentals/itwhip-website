@@ -4,14 +4,19 @@ import { useRouter } from 'next/navigation'
 
 interface PhoneLoginButtonProps {
   hostMode?: boolean
+  mode?: 'login' | 'signup'
 }
 
-export default function PhoneLoginButton({ hostMode = false }: PhoneLoginButtonProps) {
+export default function PhoneLoginButton({ hostMode = false, mode = 'login' }: PhoneLoginButtonProps) {
   const router = useRouter()
 
   const handleClick = () => {
-    // Navigate to phone login page with roleHint for host
-    router.push(hostMode ? '/auth/phone-login?roleHint=host' : '/auth/phone-login')
+    // Navigate to phone login page with roleHint and mode
+    const params = new URLSearchParams()
+    if (hostMode) params.set('roleHint', 'host')
+    params.set('mode', mode)
+    const queryString = params.toString()
+    router.push(`/auth/phone-login${queryString ? `?${queryString}` : ''}`)
   }
 
   return (
