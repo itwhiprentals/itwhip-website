@@ -100,10 +100,14 @@ export default function AuthPageLayout({
             By continuing, you agree to our{' '}
             <Link href="/terms" className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white underline">
               Terms of Service
-            </Link>{' '}
-            and{' '}
+            </Link>
+            ,{' '}
             <Link href="/privacy" className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white underline">
               Privacy Policy
+            </Link>
+            , and{' '}
+            <Link href="/platform-agreement" className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white underline">
+              Platform Agreement
             </Link>
           </p>
         </div>

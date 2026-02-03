@@ -3,13 +3,12 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { 
+import {
   IoMailOutline,
   IoArrowBackOutline,
   IoCheckmarkCircle,
   IoWarningOutline,
-  IoInformationCircleOutline,
-  IoPersonOutline
+  IoInformationCircleOutline
 } from 'react-icons/io5'
 
 export default function HostForgotPasswordPage() {
@@ -61,23 +60,7 @@ export default function HostForgotPasswordPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-green-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Link href="/" className="flex items-center">
-              <span className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                ItWhip
-              </span>
-              <span className="ml-2 px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded">
-                Host Portal
-              </span>
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      <div className="min-h-[calc(100vh-64px)] flex items-center justify-center px-4 py-12">
+      <div className="min-h-screen flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
           {/* Back Button */}
           <Link
@@ -168,15 +151,9 @@ export default function HostForgotPasswordPage() {
             </form>
 
             {/* Info Box */}
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <div className="flex items-start text-xs text-gray-600">
-                <IoInformationCircleOutline className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5 text-gray-400" />
-                <p>
-                  For security, we'll send reset instructions to your email if a host account exists.
-                  The link expires in 1 hour.
-                </p>
-              </div>
-            </div>
+            <p className="mt-6 pt-6 border-t border-gray-200 text-center text-[11px] text-gray-500">
+              For security, we'll send reset instructions to your email if a host account exists. The link expires in 1 hour.
+            </p>
 
             {/* Back to Login Link */}
             <div className="mt-6 text-center">
@@ -186,39 +163,6 @@ export default function HostForgotPasswordPage() {
               >
                 Remember your password? Sign in
               </Link>
-            </div>
-          </div>
-
-          {/* 🆕 GUEST PORTAL REDIRECT SECTION */}
-          <div className="mt-8 bg-white rounded-lg border border-blue-200 p-6">
-            <div className="flex items-start">
-              <div className="flex-shrink-0">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <IoPersonOutline className="w-6 h-6 text-blue-600" />
-                </div>
-              </div>
-              <div className="ml-4 flex-1">
-                <h3 className="text-base font-semibold text-gray-900 mb-1">
-                  Looking to rent a car?
-                </h3>
-                <p className="text-sm text-gray-600 mb-3">
-                  Guest accounts use a different login system.
-                </p>
-                <Link
-                  href="/auth/forgot-password"
-                  className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors group"
-                >
-                  Go to Guest Reset
-                  <svg 
-                    className="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform" 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    stroke="currentColor"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                  </svg>
-                </Link>
-              </div>
             </div>
           </div>
 

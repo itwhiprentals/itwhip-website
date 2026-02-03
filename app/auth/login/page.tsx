@@ -119,6 +119,13 @@ function LoginContent() {
       {/* Email - Expandable */}
       <EmailLoginExpand mode="login" />
 
+      {/* Forgot Password Link */}
+      <div className="text-center">
+        <Link href="/auth/forgot-password" className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+          Forgot your password?
+        </Link>
+      </div>
+
       {/* Signup Link */}
       <div className="pt-4 text-center">
         <p className="text-gray-600 dark:text-gray-400 text-sm">
@@ -133,7 +140,7 @@ function LoginContent() {
       <div className="pt-4">
         <Link
           href="/host/login"
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800/50 text-gray-800 dark:text-gray-200 font-medium rounded-lg transition-colors border border-gray-300 dark:border-gray-600 text-sm"
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-black hover:bg-gray-900 text-white font-medium rounded-lg transition-colors border border-gray-700 text-sm"
         >
           Are you a car owner? Sign in to Host Portal →
         </Link>
