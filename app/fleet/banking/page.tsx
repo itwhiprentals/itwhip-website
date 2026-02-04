@@ -25,7 +25,8 @@ import {
   InsuranceRevenueCard,
   HostPayoutCard,
   HostLeaderboardCard,
-  HostBalanceCard
+  HostBalanceCard,
+  BookingDispositionTable
 } from './components'
 
 export default function PlatformBankingPage() {
@@ -325,68 +326,15 @@ export default function PlatformBankingPage() {
           </div>
         </div>
 
-        {/* All-Time Booking Breakdown */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 mb-6">
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-            <h3 className="font-semibold text-gray-900 dark:text-white">All-Time Booking Disposition</h3>
-            <p className="text-xs text-gray-500">Complete breakdown of every booking on the platform</p>
+        {/* All-Time Booking Breakdown - Clickable */}
+        {data.allTime?.bookingsByStatus && data.allTime?.bookingsByPaymentStatus && (
+          <div className="mb-6">
+            <BookingDispositionTable
+              bookingsByStatus={data.allTime.bookingsByStatus}
+              bookingsByPaymentStatus={data.allTime.bookingsByPaymentStatus}
+            />
           </div>
-          <div className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* By Booking Status */}
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">By Booking Status</h4>
-                <div className="space-y-2">
-                  {data.allTime?.bookingsByStatus && Object.entries(data.allTime.bookingsByStatus).map(([status, info]) => (
-                    <div key={status} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full ${
-                          status === 'COMPLETED' ? 'bg-green-500' :
-                          status === 'ACTIVE' ? 'bg-blue-500' :
-                          status === 'CANCELLED' ? 'bg-red-500' :
-                          status === 'PENDING' ? 'bg-yellow-500' :
-                          status === 'CONFIRMED' ? 'bg-purple-500' :
-                          'bg-gray-400'
-                        }`} />
-                        <span className="text-sm font-medium capitalize">{status.toLowerCase().replace('_', ' ')}</span>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm font-bold">{info.count.toLocaleString()}</div>
-                        <div className="text-xs text-gray-500">{formatCurrency(info.totalAmount)}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* By Payment Status */}
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">By Payment Status</h4>
-                <div className="space-y-2">
-                  {data.allTime?.bookingsByPaymentStatus && Object.entries(data.allTime.bookingsByPaymentStatus).map(([status, info]) => (
-                    <div key={status} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full ${
-                          status === 'PAID' ? 'bg-green-500' :
-                          status === 'REFUNDED' ? 'bg-red-500' :
-                          status === 'PARTIAL_REFUND' ? 'bg-orange-500' :
-                          status === 'PENDING' ? 'bg-yellow-500' :
-                          status === 'FAILED' ? 'bg-red-600' :
-                          'bg-gray-400'
-                        }`} />
-                        <span className="text-sm font-medium capitalize">{status.toLowerCase().replace('_', ' ')}</span>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm font-bold">{info.count.toLocaleString()}</div>
-                        <div className="text-xs text-gray-500">{formatCurrency(info.totalAmount)}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        )}
 
         {/* Revenue Breakdown & Insurance Revenue */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">

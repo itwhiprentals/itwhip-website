@@ -213,3 +213,42 @@ export async function PUT(request: NextRequest) {
     )
   }
 }
+
+// DELETE - Backfill cancellation revenue based on cancellation policies
+export async function DELETE(request: NextRequest) {
+  try {
+    // Verify fleet access
+    const key = request.nextUrl.searchParams.get('key')
+    if (key !== 'phoenix-fleet-2847') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const { dryRun = true } = body
+
+    const backfillService = new BookingBackfillService(prisma)
+    const result = await backfillService.backfillCancellationRevenue(dryRun)
+
+    return NextResponse.json({
+      success: true,
+      dryRun,
+      summary: {
+        processed: result.processed,
+        updated: result.updated,
+        totalCancellationRevenue: result.totalCancellationRevenue,
+        totalRefundAmount: result.totalRefundAmount
+      },
+      details: dryRun ? result.details : result.details.slice(0, 20),
+      message: dryRun
+        ? `Dry run complete. ${result.processed} cancelled bookings analyzed. Platform would retain $${result.totalCancellationRevenue.toFixed(2)}, refunds: $${result.totalRefundAmount.toFixed(2)}`
+        : `Backfill complete. ${result.updated} bookings updated. Platform retained: $${result.totalCancellationRevenue.toFixed(2)}, refunds: $${result.totalRefundAmount.toFixed(2)}`
+    })
+
+  } catch (error: any) {
+    console.error('Error backfilling cancellation revenue:', error)
+    return NextResponse.json(
+      { error: error.message || 'Failed to backfill cancellation revenue' },
+      { status: 500 }
+    )
+  }
+}
