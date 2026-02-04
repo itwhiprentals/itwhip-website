@@ -3,9 +3,10 @@
 // Supports switching to linked accounts via legacyDualId
 
 import { NextRequest, NextResponse } from 'next/server'
-import { verify, sign } from 'jsonwebtoken'
+import { sign } from 'jsonwebtoken'
 import { nanoid } from 'nanoid'
 import { prisma } from '@/app/lib/database/prisma'
+import { decodeToken, readAuthCookies } from '@/app/lib/services/roleService'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key'
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'fallback-refresh-secret'
@@ -99,32 +100,40 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get current user ID from either token
-    const hostAccessToken = request.cookies.get('hostAccessToken')?.value
-    const guestAccessToken = request.cookies.get('accessToken')?.value
+    // Get current user ID from either token using centralized decodeToken
+    // This tries BOTH JWT_SECRET and GUEST_JWT_SECRET for compatibility
+    const cookies = readAuthCookies(request)
+
+    const hostToken = decodeToken(cookies.hostAccessToken, 'hostAccessToken')
+    const partnerToken = decodeToken(cookies.partnerToken, 'partner_token')
+    const guestToken = decodeToken(cookies.accessToken, 'accessToken')
 
     let userId: string | null = null
 
-    // Try to decode either token to get userId
-    if (hostAccessToken) {
-      try {
-        const decoded = verify(hostAccessToken, JWT_SECRET) as any
-        userId = decoded.userId
-      } catch (err) {
-        // Token invalid or expired
-      }
+    // Try host tokens first
+    if (hostToken.valid && hostToken.userId) {
+      userId = hostToken.userId
+      console.log('[Role Switch] Using hostAccessToken userId:', userId)
     }
 
-    if (!userId && guestAccessToken) {
-      try {
-        const decoded = verify(guestAccessToken, JWT_SECRET) as any
-        userId = decoded.userId
-      } catch (err) {
-        // Token invalid or expired
-      }
+    // Try partner token
+    if (!userId && partnerToken.valid && partnerToken.userId) {
+      userId = partnerToken.userId
+      console.log('[Role Switch] Using partner_token userId:', userId)
+    }
+
+    // Try guest token
+    if (!userId && guestToken.valid && guestToken.userId) {
+      userId = guestToken.userId
+      console.log('[Role Switch] Using accessToken userId:', userId)
     }
 
     if (!userId) {
+      console.error('[Role Switch] No valid token found in cookies:', {
+        hostToken: hostToken.valid ? 'valid' : (hostToken.expired ? 'expired' : 'invalid'),
+        partnerToken: partnerToken.valid ? 'valid' : (partnerToken.expired ? 'expired' : 'invalid'),
+        guestToken: guestToken.valid ? 'valid' : (guestToken.expired ? 'expired' : 'invalid')
+      })
       return NextResponse.json(
         { error: 'Not authenticated' },
         { status: 401 }
