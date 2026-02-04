@@ -2,6 +2,87 @@
 
 ## Recent Fixes (February 2026)
 
+### Choé AI Vehicle Cards Enhancement - DEPLOYED ✅ (Feb 4)
+**Enhanced vehicle display in AI booking assistant with accurate pricing and full photo support**
+
+**Changes:**
+- **Pricing Fixed**: 15% service fee (was 10%), 8.4% tax (Arizona default), tiered deposits:
+  - Standard (under $100/day): $500
+  - Luxury ($100-299/day): $1,000
+  - Exotic ($300+/day): $2,500
+- **Photos**: Expandable cards show ALL available photos in dynamic grid (no more "No photo" placeholders)
+- **Pricing Breakdown**: Subtotal, service fee (15%), taxes (8.4%), deposit, total at checkout
+- **Progress Bar**: Edge-to-edge layout with proper connector lines
+- **Cleaner UX**: Removed redundant text listing — cards show everything visually
+
+**Files Modified:**
+- `app/components/ai-booking/AIVehicleCard.tsx` — Pricing + photo grid
+- `app/components/ai-booking/AIProgressBar.tsx` — Edge-to-edge layout
+- `app/components/ai-booking/AIChatView.tsx` — Pass dates to cards
+- `app/lib/ai-booking/system-prompt.ts` — Remove text listing
+- `app/lib/ai-booking/search-bridge.ts` — Extract all photos
+- `app/lib/ai-booking/types.ts` — Add photos array to VehicleSummary
+
+**Deployment:** Commit `5b8e11e`
+
+---
+
+### Role Switch API Fix - DEPLOYED ✅ (Feb 4)
+**Fixed 401 "Not authenticated" errors when switching between Host and Guest modes**
+
+**Root Cause:** JWT token verification mismatch between APIs:
+- `check-dual-role` used `roleService.decodeToken()` which tries BOTH `JWT_SECRET` and `GUEST_JWT_SECRET`
+- `switch-role` only verified with `JWT_SECRET` — tokens signed with `GUEST_JWT_SECRET` would fail
+
+**Fix:** Updated `/app/api/auth/switch-role/route.ts` to use centralized `decodeToken` from roleService:
+
+```typescript
+import { decodeToken, readAuthCookies } from '@/app/lib/services/roleService'
+
+const cookies = readAuthCookies(request)
+const hostToken = decodeToken(cookies.hostAccessToken, 'hostAccessToken')
+const partnerToken = decodeToken(cookies.partnerToken, 'partner_token')
+const guestToken = decodeToken(cookies.accessToken, 'accessToken')
+
+let userId: string | null = null
+if (hostToken.valid && hostToken.userId) userId = hostToken.userId
+if (!userId && partnerToken.valid && partnerToken.userId) userId = partnerToken.userId
+if (!userId && guestToken.valid && guestToken.userId) userId = guestToken.userId
+```
+
+**Files Modified:**
+- `/app/api/auth/switch-role/route.ts` — Use centralized decodeToken for JWT verification
+- `/app/api/auth/logout/route.ts` — Clear `current_mode` cookie on logout
+
+**Deployment:** Commit `797be3b`
+
+---
+
+### RoleSwitcher UI Update (Feb 4)
+**Changed RoleSwitcher card from pill shape to 8px rounded corners**
+
+- **Before:** `rounded-full` (fully rounded pill shape)
+- **After:** `rounded-lg` (8px border radius, matches website design system)
+
+**File:** `/app/components/RoleSwitcher.tsx`
+- Single-role container: `border rounded-lg`
+- Dual-role container: `border rounded-lg`
+- Dual-role button: `rounded-l-lg` / `rounded-lg`
+
+---
+
+### Known Issue: OAuthAccountNotLinked (Feb 4)
+When attempting Google OAuth login with an email that already exists in database (registered via different method), users get `OAuthAccountNotLinked` error and redirect back to login.
+
+**Example:** `hxris007@gmail.com` — email exists with different auth method
+
+**Solutions:**
+1. User signs in with original method (email/password)
+2. Implement account linking UI to connect OAuth to existing account
+3. Admin manually links accounts in database
+
+---
+
 ### Fleet Banking Pages - DEPLOYED ✅ (Feb 3)
 **Guest Banking + Host Banking Component Refactor**
 
