@@ -73,14 +73,16 @@ function getJWTSecrets(role: string) {
 }
 
 // Helper to create JWT tokens with appropriate secrets
-async function createTokens(userId: string, email: string, role: string, name?: string) {
+// SECURITY FIX: Include status for middleware enforcement
+async function createTokens(userId: string, email: string, role: string, name?: string, status: string = 'ACTIVE') {
   const { accessSecret, refreshSecret, userType } = getJWTSecrets(role)
-  
+
   // Create access token (15 minutes)
-  const accessToken = await new SignJWT({ 
-    userId, 
-    email, 
+  const accessToken = await new SignJWT({
+    userId,
+    email,
     role,
+    status, // Include for runtime enforcement
     name: name || null,
     type: 'access',
     userType // Add user type to token for identification

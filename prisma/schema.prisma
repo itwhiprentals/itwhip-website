@@ -4797,9 +4797,10 @@ enum UserRole {
 
 enum UserStatus {
   ACTIVE
+  SUSPENDED
+  BANNED
   PENDING_DELETION
   DELETED
-  SUSPENDED
 }
 
 enum VehicleCategory {

@@ -1,4 +1,5 @@
 // app/api/auth/login/route.ts
+// SECURITY FIX: Added suspension checks and status in JWT for runtime enforcement
 import { NextRequest, NextResponse } from 'next/server'
 import * as argon2 from 'argon2'
 import bcrypt from 'bcryptjs'
@@ -8,6 +9,7 @@ import db from '@/app/lib/db'
 import { prisma } from '@/app/lib/database/prisma'
 import { loginRateLimit, getClientIp, createRateLimitResponse } from '@/app/lib/rate-limit'
 import { logFailedLogin, logSuccessfulLogin } from '@/app/lib/security/loginMonitor'
+import { checkSuspendedIdentifiers } from '@/app/lib/services/identityResolution'
 
 // Lockout thresholds
 const LOCKOUT_TIERS = [
@@ -184,6 +186,72 @@ export async function POST(request: NextRequest) {
       console.log(`[Login] User ${user.email} logging in with pending deletion`)
     }
 
+    // ✅ STEP 3.8: SECURITY FIX - Check if user is suspended/banned
+    if (userLockout?.status === 'SUSPENDED' || userLockout?.status === 'BANNED') {
+      console.warn(`[Login] BLOCKED: User ${user.email} is ${userLockout.status}`)
+
+      const userAgent = request.headers.get('user-agent') || 'unknown'
+      await logFailedLogin({
+        email: email.toLowerCase(),
+        source: 'guest',
+        reason: `USER_${userLockout.status}`,
+        ip: clientIp,
+        userAgent,
+        metadata: { userId: user.id, status: userLockout.status }
+      })
+
+      // Log to SecurityEvent as well
+      try {
+        await prisma.securityEvent.create({
+          data: {
+            id: nanoid(),
+            type: 'LOGIN_BLOCKED',
+            severity: 'HIGH',
+            sourceIp: clientIp,
+            targetId: email.toLowerCase(),
+            message: `Login blocked - user ${userLockout.status.toLowerCase()}`,
+            details: JSON.stringify({
+              method: 'password',
+              userId: user.id,
+              reason: `USER_${userLockout.status}`,
+              source: 'guest_portal'
+            }),
+            action: 'login_denied',
+            blocked: true,
+            userAgent,
+            timestamp: new Date()
+          }
+        })
+      } catch (e) {
+        console.error('[Login] Security event logging failed:', e)
+      }
+
+      return NextResponse.json(
+        { error: 'Your account has been suspended. Please contact support.' },
+        { status: 403 }
+      )
+    }
+
+    // ✅ STEP 3.9: SECURITY FIX - Check if email is in suspended identifiers
+    const suspensionCheck = await checkSuspendedIdentifiers({ email: email.toLowerCase() })
+    if (suspensionCheck.blocked) {
+      console.warn(`[Login] BLOCKED: Suspended email detected: ${email}`)
+
+      const userAgent = request.headers.get('user-agent') || 'unknown'
+      await logFailedLogin({
+        email: email.toLowerCase(),
+        source: 'guest',
+        reason: 'SUSPENDED_IDENTIFIER',
+        ip: clientIp,
+        userAgent
+      })
+
+      return NextResponse.json(
+        { error: 'Unable to log in at this time. Please contact support.' },
+        { status: 403 }
+      )
+    }
+
     // ✅ STEP 4: Verify password with hybrid approach
     const { valid: passwordValid, needsRehash } = await verifyPassword(password, user.password_hash)
 
@@ -321,11 +389,13 @@ export async function POST(request: NextRequest) {
     const refreshFamily = nanoid()
 
     // Create access token (15 minutes)
+    // SECURITY FIX: Include status for middleware enforcement
     const accessToken = await new SignJWT({
       userId: user.id,
       email: user.email,
       name: user.name,
       role: user.role,
+      status: userLockout?.status || 'ACTIVE', // Include for runtime enforcement
       jti: tokenId
     })
       .setProtectedHeader({ alg: 'HS256' })

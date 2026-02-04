@@ -1,5 +1,6 @@
 // app/api/auth/phone-login/route.ts
 // Phone-based login API - Create or authenticate user via phone number
+// SECURITY FIX: Added suspension check before allowing login
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
@@ -12,6 +13,7 @@ import { getEnhancedLocation, detectImpossibleTravel } from '@/app/lib/security/
 import { detectBot, isLegitimateBot } from '@/app/lib/security/botDetection'
 import { sendEmail } from '@/app/lib/email/sender'
 import { getNewDeviceAlertTemplate } from '@/app/lib/email/templates/new-device-alert'
+import { checkSuspendedIdentifiers } from '@/app/lib/services/identityResolution'
 
 // JWT secrets (must match check-dual-role verification)
 const JWT_SECRET = new TextEncoder().encode(
@@ -22,7 +24,8 @@ const REFRESH_TOKEN_SECRET = new TextEncoder().encode(
 )
 
 // Generate JWT tokens
-async function generateJWTTokens(userId: string, email: string, name: string | null, role: string) {
+// SECURITY FIX: Include user status in JWT for runtime enforcement without DB lookup
+async function generateJWTTokens(userId: string, email: string, name: string | null, role: string, status: string = 'ACTIVE') {
   const now = Math.floor(Date.now() / 1000)
 
   const accessToken = await new SignJWT({
@@ -30,6 +33,7 @@ async function generateJWTTokens(userId: string, email: string, name: string | n
     email,
     name,
     role,
+    status, // SECURITY: Include status for middleware enforcement
     userType: 'guest'
   })
     .setProtectedHeader({ alg: 'HS256' })
@@ -137,6 +141,46 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // ============================================================================
+    // SECURITY FIX: Check if phone is suspended BEFORE allowing login
+    // ============================================================================
+    const suspensionCheck = await checkSuspendedIdentifiers({ phone: verifiedPhone })
+    if (suspensionCheck.blocked) {
+      console.warn(`[Phone Login] BLOCKED: Suspended phone detected: ${verifiedPhone}`)
+
+      // Log the blocked attempt
+      try {
+        await prisma.securityEvent.create({
+          data: {
+            id: nanoid(),
+            type: 'LOGIN_BLOCKED',
+            severity: 'HIGH',
+            sourceIp: clientIp,
+            targetId: verifiedPhone,
+            message: 'Login blocked - suspended phone',
+            details: JSON.stringify({
+              method: 'phone',
+              phone: verifiedPhone,
+              reason: 'SUSPENDED_IDENTIFIER',
+              suspensionReason: suspensionCheck.reason,
+              source: 'guest_portal'
+            }),
+            action: 'login_denied',
+            blocked: true,
+            timestamp: new Date()
+          }
+        })
+      } catch (e) {
+        console.error('[Phone Login] Security event logging failed:', e)
+      }
+
+      // SECURITY: Generic message - don't reveal suspension details
+      return NextResponse.json(
+        { error: 'Unable to log in at this time. Please contact support.' },
+        { status: 403 }
+      )
+    }
+
     // Find or create user by phone number
     let user = await prisma.user.findFirst({
       where: { phone: verifiedPhone }
@@ -145,6 +189,41 @@ export async function POST(request: NextRequest) {
     if (user) {
       // EXISTING USER: Check if email verified
       console.log(`[Phone Login] Existing user found: ${user.id}`)
+
+      // SECURITY FIX: Check if user account is suspended/banned
+      if (user.status === 'SUSPENDED' || user.status === 'BANNED') {
+        console.warn(`[Phone Login] BLOCKED: User ${user.id} is ${user.status}`)
+
+        try {
+          await prisma.securityEvent.create({
+            data: {
+              id: nanoid(),
+              type: 'LOGIN_BLOCKED',
+              severity: 'HIGH',
+              sourceIp: clientIp,
+              targetId: user.email,
+              message: `Login blocked - user ${user.status.toLowerCase()}`,
+              details: JSON.stringify({
+                method: 'phone',
+                phone: verifiedPhone,
+                userId: user.id,
+                reason: `USER_${user.status}`,
+                source: 'guest_portal'
+              }),
+              action: 'login_denied',
+              blocked: true,
+              timestamp: new Date()
+            }
+          })
+        } catch (e) {
+          console.error('[Phone Login] Security event logging failed:', e)
+        }
+
+        return NextResponse.json(
+          { error: 'Your account has been suspended. Please contact support.' },
+          { status: 403 }
+        )
+      }
 
       // Check if email is fake (phone_XXX@itwhip.temp)
       const isFakeEmail = user.email.includes('@itwhip.temp')
@@ -307,12 +386,13 @@ export async function POST(request: NextRequest) {
       console.error('[Phone Login] Security monitoring failed (non-blocking):', securityError)
     }
 
-    // Generate JWT tokens
+    // Generate JWT tokens (includes status for runtime enforcement)
     const { accessToken, refreshToken } = await generateJWTTokens(
       user.id,
       user.email,
       user.name,
-      user.role
+      user.role,
+      user.status || 'ACTIVE'
     )
 
     console.log(`[Phone Login] Login successful for user: ${user.id}`)
