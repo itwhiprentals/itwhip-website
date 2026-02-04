@@ -172,6 +172,7 @@ export async function POST(request: NextRequest) {
       // Also log to LoginAttempt for backwards compatibility
       await prisma.loginAttempt.create({
         data: {
+          id: `la_${Date.now()}_${Math.random().toString(36).substring(7)}`,
           identifier: email,
           userId: host.user.id,
           ipAddress: ip,
@@ -250,6 +251,7 @@ export async function POST(request: NextRequest) {
     // Log successful login to LoginAttempt for backwards compatibility
     await prisma.loginAttempt.create({
       data: {
+        id: `la_${Date.now()}_${Math.random().toString(36).substring(7)}`,
         identifier: email,
         userId: host.user.id,
         ipAddress: ip,
@@ -263,6 +265,7 @@ export async function POST(request: NextRequest) {
     try {
       await prisma.activityLog.create({
         data: {
+          id: `al_${Date.now()}_${Math.random().toString(36).substring(7)}`,
           action: 'LOGIN',
           entityType: 'RentalHost',
           entityId: host.id,
