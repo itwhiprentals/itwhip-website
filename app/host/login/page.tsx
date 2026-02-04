@@ -160,7 +160,14 @@ function HostLoginContent() {
       <OAuthButtonsMinimal roleHint="host" mode="login" />
 
       {/* Email - Expandable */}
-      <EmailLoginExpand mode="login" hostMode />
+      <EmailLoginExpand
+        mode="login"
+        hostMode
+        onGuard={(guardData, email) => {
+          setGuard(guardData)
+          setGuardEmail(email)
+        }}
+      />
 
       {/* Forgot Password Link */}
       <div className="text-center">

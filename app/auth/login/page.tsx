@@ -117,7 +117,7 @@ function LoginContent() {
       <OAuthButtonsMinimal roleHint="guest" mode="login" />
 
       {/* Email - Expandable */}
-      <EmailLoginExpand mode="login" />
+      <EmailLoginExpand mode="login" onGuard={handleGuard} />
 
       {/* Forgot Password Link */}
       <div className="text-center">

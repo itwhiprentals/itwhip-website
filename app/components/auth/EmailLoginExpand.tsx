@@ -3,13 +3,24 @@
 import { useState } from 'react'
 import Link from 'next/link'
 
+interface GuardResponse {
+  type: string
+  title: string
+  message: string
+  actions: {
+    primary: { label: string; url: string }
+    secondary?: { label: string; url: string }
+  }
+}
+
 interface EmailLoginExpandProps {
   mode: 'login' | 'signup'
   hostMode?: boolean
   onSuccess?: () => void
+  onGuard?: (guard: GuardResponse, email: string) => void
 }
 
-export default function EmailLoginExpand({ mode, hostMode = false, onSuccess }: EmailLoginExpandProps) {
+export default function EmailLoginExpand({ mode, hostMode = false, onSuccess, onGuard }: EmailLoginExpandProps) {
   const [expanded, setExpanded] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -48,7 +59,10 @@ export default function EmailLoginExpand({ mode, hostMode = false, onSuccess }: 
     setLoading(true)
 
     try {
-      const endpoint = mode === 'login' ? '/api/auth/login' : '/api/auth/signup'
+      // Host mode uses dedicated host login endpoint for proper cookie handling
+      const endpoint = mode === 'login'
+        ? (hostMode ? '/api/host/login' : '/api/auth/login')
+        : '/api/auth/signup'
       const body = mode === 'login'
         ? { email: formData.email, password: formData.password, roleHint: hostMode ? 'host' : 'guest' }
         : { name: formData.name, email: formData.email, password: formData.password, roleHint: hostMode ? 'host' : 'guest' }
@@ -62,15 +76,22 @@ export default function EmailLoginExpand({ mode, hostMode = false, onSuccess }: 
       const data = await res.json()
 
       if (!res.ok) {
+        // Check for guard response (cross-account type access)
+        if (data.guard && onGuard) {
+          onGuard(data.guard, formData.email)
+          return
+        }
         setError(data.error || 'Something went wrong')
         return
       }
 
-      // Success - redirect
+      // Success - redirect using API-provided redirect URL or fallback
       if (onSuccess) {
         onSuccess()
       } else {
-        window.location.href = hostMode ? '/host' : '/'
+        // Use redirect from API response if available, otherwise use default
+        const redirectUrl = data.redirect || (hostMode ? '/host/dashboard' : '/')
+        window.location.href = redirectUrl
       }
     } catch {
       setError('Something went wrong. Please try again.')
