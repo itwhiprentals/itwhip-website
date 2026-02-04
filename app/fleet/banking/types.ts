@@ -195,6 +195,7 @@ export interface EnhancedRevenueData {
     hostCommissions: number
     insurancePlatformShare: number
     processingFees: number
+    cancellationRevenue: number  // Revenue retained from cancellations
     total: number
   }
   passthroughMoney: {
@@ -203,6 +204,15 @@ export interface EnhancedRevenueData {
     total: number
   }
   grossCollected: number
+  // Cancellation details
+  cancellationDetails?: {
+    totalCancelled: number
+    cancelledCount: number
+    serviceFeeRetained: number
+    nonRefundedSubtotal: number
+    totalRetained: number
+    totalRefunded: number
+  }
 }
 
 // Utility functions

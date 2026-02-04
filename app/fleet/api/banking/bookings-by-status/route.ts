@@ -3,29 +3,10 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
-
-// Calculate refund percentage based on cancellation policy and timing
-function calculateRefundPercent(policy: string, hoursBeforeStart: number): number {
-  switch (policy) {
-    case 'flexible':
-      // Full refund if cancelled 24h+ before
-      return hoursBeforeStart >= 24 ? 100 : 0
-    case 'moderate':
-      // Full refund if cancelled 48h+ before
-      return hoursBeforeStart >= 48 ? 100 : 0
-    case 'strict':
-      // Full refund if cancelled 7 days (168h) before
-      return hoursBeforeStart >= 168 ? 100 : 0
-    case 'super_strict':
-      // No refund ever
-      return 0
-    default:
-      // Default tiered refund policy
-      if (hoursBeforeStart >= 72) return 100
-      if (hoursBeforeStart >= 48) return 50
-      return 0
-  }
-}
+import {
+  calculateCancellationRevenue,
+  calculateCancellationRevenueSummary
+} from '@/app/lib/services/financialCalculator'
 
 export async function GET(request: NextRequest) {
   try {
@@ -89,59 +70,35 @@ export async function GET(request: NextRequest) {
       }
 
       // Calculate cancellation details for CANCELLED bookings
+      // Using centralized financial calculator for bank-grade accuracy
       if (booking.status === 'CANCELLED') {
-        const policy = booking.car?.cancellationPolicy || 'moderate'
-        const cancelledAt = booking.updatedAt || new Date()
-        const startDate = booking.startDate || new Date()
+        const cancellation = calculateCancellationRevenue(booking)
 
-        // Calculate hours before trip start when cancelled
-        const hoursBeforeStart = Math.max(0, (startDate.getTime() - cancelledAt.getTime()) / (1000 * 60 * 60))
-        const refundPercent = calculateRefundPercent(policy, hoursBeforeStart)
-
-        const subtotal = Number(booking.subtotal) || 0
-        const serviceFee = Number(booking.serviceFee) || 0
-
-        // Refund is only on subtotal (not service fee)
-        const refundAmount = subtotal * (refundPercent / 100)
-
-        // Platform retains: service fee + non-refunded portion of subtotal
-        const platformRetained = serviceFee + (subtotal - refundAmount)
-
-        result.cancellationPolicy = policy
-        result.hoursBeforeStart = Math.round(hoursBeforeStart)
-        result.refundPercent = refundPercent
-        result.refundAmount = refundAmount
-        result.platformRetained = platformRetained
-        result.cancelledAt = cancelledAt.toISOString()
-        result.cancellationReason = hoursBeforeStart < 24
-          ? 'Late cancellation (less than 24h notice)'
-          : hoursBeforeStart < 48
-            ? 'Short notice cancellation (less than 48h)'
-            : hoursBeforeStart < 168
-              ? 'Standard cancellation'
-              : 'Early cancellation (7+ days notice)'
+        result.cancellationPolicy = cancellation.policy
+        result.hoursBeforeStart = cancellation.hoursBeforeStart
+        result.refundPercent = cancellation.refundPercent
+        result.refundAmount = cancellation.refundAmount
+        result.platformRetained = cancellation.platformRetained
+        result.cancelledAt = (booking.updatedAt || new Date()).toISOString()
+        result.cancellationReason = cancellation.reason
       }
 
       return result
     })
 
-    // Calculate summary for cancelled bookings
+    // Calculate summary for cancelled bookings using centralized calculator
     let cancellationSummary = null
     if (status === 'CANCELLED') {
-      const totalRefunds = formattedBookings.reduce((sum, b) => sum + (b.refundAmount || 0), 0)
-      const totalPlatformRetained = formattedBookings.reduce((sum, b) => sum + (b.platformRetained || 0), 0)
+      const summary = calculateCancellationRevenueSummary(bookings)
 
       cancellationSummary = {
-        totalBookings: formattedBookings.length,
-        totalOriginalValue: formattedBookings.reduce((sum, b) => sum + b.total, 0),
-        totalRefunds,
-        totalPlatformRetained,
-        byPolicy: {
-          flexible: formattedBookings.filter(b => b.cancellationPolicy === 'flexible').length,
-          moderate: formattedBookings.filter(b => b.cancellationPolicy === 'moderate').length,
-          strict: formattedBookings.filter(b => b.cancellationPolicy === 'strict').length,
-          super_strict: formattedBookings.filter(b => b.cancellationPolicy === 'super_strict').length
-        }
+        totalBookings: summary.cancelledCount,
+        totalOriginalValue: summary.totalCancelled,
+        totalRefunds: summary.totalRefunded,
+        totalPlatformRetained: summary.totalRetained,
+        serviceFeeRetained: summary.serviceFeeRetained,
+        nonRefundedSubtotal: summary.nonRefundedSubtotal,
+        byPolicy: summary.byPolicy
       }
     }
 

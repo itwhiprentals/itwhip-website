@@ -4,6 +4,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
+import { calculateCancellationRevenueSummary } from '@/app/lib/services/financialCalculator'
 
 export async function GET(request: NextRequest) {
   try {
@@ -345,6 +346,34 @@ export async function GET(request: NextRequest) {
       where: { holdBalance: { gt: 0 } }
     })
 
+    // ========================================
+    // NEW: CANCELLATION REVENUE CALCULATION
+    // Using centralized financial calculator for bank-grade accuracy
+    // ========================================
+    const cancelledBookings = await prisma.rentalBooking.findMany({
+      where: { status: 'CANCELLED' },
+      select: {
+        id: true,
+        subtotal: true,
+        serviceFee: true,
+        totalAmount: true,
+        startDate: true,
+        updatedAt: true,
+        car: {
+          select: { cancellationPolicy: true }
+        }
+      }
+    })
+
+    // Use centralized calculation service
+    const cancellationSummary = calculateCancellationRevenueSummary(cancelledBookings, serviceFeeRate)
+    const totalCancellationRevenue = cancellationSummary.totalRetained
+    const totalServiceFeeRetained = cancellationSummary.serviceFeeRetained
+    const totalNonRefundedSubtotal = cancellationSummary.nonRefundedSubtotal
+    const totalRefunded = cancellationSummary.totalRefunded
+    const cancelledCount = cancellationSummary.cancelledCount
+    const totalCancelledAmount = cancellationSummary.totalCancelled
+
     // Helper to get tier name from commission rate
     const getTierFromRate = (rate: number): 'Standard' | 'Gold' | 'Platinum' | 'Diamond' => {
       if (rate <= tier3CommissionRate) return 'Diamond'
@@ -659,14 +688,23 @@ export async function GET(request: NextRequest) {
             hostCommissions,
             insurancePlatformShare: allTimeInsuranceFees * insurancePlatformShare,
             processingFees: processingFeesCollected,
-            total: guestServiceFees + hostCommissions + (allTimeInsuranceFees * insurancePlatformShare) + processingFeesCollected
+            cancellationRevenue: totalCancellationRevenue,
+            total: guestServiceFees + hostCommissions + (allTimeInsuranceFees * insurancePlatformShare) + processingFeesCollected + totalCancellationRevenue
           },
           passthroughMoney: {
             insuranceProviderShare: allTimeInsuranceFees * (1 - insurancePlatformShare),
             taxesCollected: allTimeTaxes,
             total: (allTimeInsuranceFees * (1 - insurancePlatformShare)) + allTimeTaxes
           },
-          grossCollected: allTimeGrossBookingValue
+          grossCollected: allTimeGrossBookingValue,
+          cancellationDetails: {
+            totalCancelled: totalCancelledAmount,
+            cancelledCount,
+            serviceFeeRetained: totalServiceFeeRetained,
+            nonRefundedSubtotal: totalNonRefundedSubtotal,
+            totalRetained: totalCancellationRevenue,
+            totalRefunded
+          }
         }
       }
     })

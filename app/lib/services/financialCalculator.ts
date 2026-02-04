@@ -312,6 +312,267 @@ export function createDefaultCalculator(): FinancialCalculator {
   })
 }
 
+// ========================================
+// CANCELLATION REVENUE TYPES & FUNCTIONS
+// ========================================
+
+/**
+ * Cancellation policy types supported by the platform
+ */
+export type CancellationPolicy = 'flexible' | 'moderate' | 'strict' | 'super_strict' | 'default'
+
+/**
+ * Result of cancellation revenue calculation for a single booking
+ */
+export interface CancellationCalculationResult {
+  subtotal: number
+  serviceFee: number
+  totalAmount: number
+  hoursBeforeStart: number
+  refundPercent: number
+  refundAmount: number
+  platformRetained: number
+  policy: string
+  reason: string
+}
+
+/**
+ * Aggregated cancellation revenue summary
+ */
+export interface CancellationRevenueSummary {
+  totalCancelled: number          // Original total value of cancelled bookings
+  cancelledCount: number          // Number of cancelled bookings
+  serviceFeeRetained: number      // Total service fees retained
+  nonRefundedSubtotal: number     // Total non-refunded subtotals
+  totalRetained: number           // Total platform retained (serviceFee + nonRefundedSubtotal)
+  totalRefunded: number           // Total refunded to guests
+  byPolicy: {
+    flexible: number
+    moderate: number
+    strict: number
+    super_strict: number
+  }
+}
+
+/**
+ * Calculate refund percentage based on cancellation policy and timing
+ *
+ * @param policy - The cancellation policy of the vehicle
+ * @param hoursBeforeStart - Hours between cancellation and trip start
+ * @returns Refund percentage (0-100)
+ */
+export function calculateRefundPercent(
+  policy: string,
+  hoursBeforeStart: number
+): number {
+  // Ensure hours is non-negative
+  const hours = Math.max(0, hoursBeforeStart)
+
+  switch (policy) {
+    case 'flexible':
+      // Full refund if cancelled 24h+ before
+      return hours >= 24 ? 100 : 0
+
+    case 'moderate':
+      // Full refund if cancelled 48h+ before
+      return hours >= 48 ? 100 : 0
+
+    case 'strict':
+      // Full refund if cancelled 7 days (168h) before
+      return hours >= 168 ? 100 : 0
+
+    case 'super_strict':
+      // No refund ever
+      return 0
+
+    default:
+      // Default tiered refund policy
+      if (hours >= 72) return 100
+      if (hours >= 48) return 50
+      return 0
+  }
+}
+
+/**
+ * Get human-readable cancellation reason based on timing
+ *
+ * @param hoursBeforeStart - Hours between cancellation and trip start
+ * @returns Human-readable cancellation reason
+ */
+export function getCancellationReason(hoursBeforeStart: number): string {
+  const hours = Math.max(0, hoursBeforeStart)
+
+  if (hours < 24) {
+    return 'Late cancellation (less than 24h notice)'
+  } else if (hours < 48) {
+    return 'Short notice cancellation (less than 48h)'
+  } else if (hours < 168) {
+    return 'Standard cancellation'
+  } else {
+    return 'Early cancellation (7+ days notice)'
+  }
+}
+
+/**
+ * Safely convert a value to a number, handling Prisma Decimals, strings, etc.
+ *
+ * @param value - The value to convert
+ * @param fallback - Fallback value if conversion fails
+ * @returns The numeric value
+ */
+export function toNumber(value: unknown, fallback: number = 0): number {
+  if (value === null || value === undefined) {
+    return fallback
+  }
+
+  // Handle Prisma Decimal objects
+  if (typeof value === 'object' && 'toNumber' in (value as object)) {
+    try {
+      return (value as { toNumber: () => number }).toNumber()
+    } catch {
+      return fallback
+    }
+  }
+
+  // Handle strings
+  if (typeof value === 'string') {
+    const parsed = parseFloat(value)
+    return isNaN(parsed) ? fallback : parsed
+  }
+
+  // Handle numbers
+  if (typeof value === 'number') {
+    return isNaN(value) ? fallback : value
+  }
+
+  // Try Number conversion as last resort
+  const num = Number(value)
+  return isNaN(num) ? fallback : num
+}
+
+/**
+ * Calculate hours between two dates
+ *
+ * @param startDate - The trip start date
+ * @param cancelledAt - The cancellation date
+ * @returns Hours between dates (minimum 0)
+ */
+export function calculateHoursBetween(
+  startDate: Date | string | null | undefined,
+  cancelledAt: Date | string | null | undefined
+): number {
+  const start = startDate ? new Date(startDate) : new Date()
+  const cancelled = cancelledAt ? new Date(cancelledAt) : new Date()
+
+  const diffMs = start.getTime() - cancelled.getTime()
+  return Math.max(0, diffMs / (1000 * 60 * 60))
+}
+
+/**
+ * Calculate cancellation revenue for a single booking
+ *
+ * @param booking - The booking data
+ * @param serviceFeeRate - Platform service fee rate (default 0.15)
+ * @returns Cancellation calculation result
+ */
+export function calculateCancellationRevenue(
+  booking: {
+    subtotal: unknown
+    serviceFee: unknown
+    totalAmount: unknown
+    startDate: Date | string | null | undefined
+    updatedAt: Date | string | null | undefined
+    car?: { cancellationPolicy?: string | null } | null
+  },
+  serviceFeeRate: number = 0.15
+): CancellationCalculationResult {
+  const subtotal = toNumber(booking.subtotal)
+  const storedServiceFee = toNumber(booking.serviceFee)
+  // Use stored service fee if available, otherwise calculate from subtotal
+  const serviceFee = storedServiceFee > 0 ? storedServiceFee : (subtotal * serviceFeeRate)
+  const totalAmount = toNumber(booking.totalAmount)
+  const policy = booking.car?.cancellationPolicy || 'moderate'
+
+  const hoursBeforeStart = calculateHoursBetween(booking.startDate, booking.updatedAt)
+  const refundPercent = calculateRefundPercent(policy, hoursBeforeStart)
+
+  // Refund is only on subtotal (service fee is always retained)
+  const refundAmount = subtotal * (refundPercent / 100)
+
+  // Platform retains: 100% of service fee + non-refunded portion of subtotal
+  const nonRefundedSubtotal = subtotal - refundAmount
+  const platformRetained = serviceFee + nonRefundedSubtotal
+
+  return {
+    subtotal: Math.round(subtotal * 100) / 100,
+    serviceFee: Math.round(serviceFee * 100) / 100,
+    totalAmount: Math.round(totalAmount * 100) / 100,
+    hoursBeforeStart: Math.round(hoursBeforeStart),
+    refundPercent,
+    refundAmount: Math.round(refundAmount * 100) / 100,
+    platformRetained: Math.round(platformRetained * 100) / 100,
+    policy,
+    reason: getCancellationReason(hoursBeforeStart)
+  }
+}
+
+/**
+ * Calculate aggregated cancellation revenue summary from multiple bookings
+ *
+ * @param bookings - Array of booking data
+ * @param serviceFeeRate - Platform service fee rate (default 0.15)
+ * @returns Aggregated cancellation revenue summary
+ */
+export function calculateCancellationRevenueSummary(
+  bookings: Array<{
+    subtotal: unknown
+    serviceFee: unknown
+    totalAmount: unknown
+    startDate: Date | string | null | undefined
+    updatedAt: Date | string | null | undefined
+    car?: { cancellationPolicy?: string | null } | null
+  }>,
+  serviceFeeRate: number = 0.15
+): CancellationRevenueSummary {
+  let totalCancelled = 0
+  let serviceFeeRetained = 0
+  let nonRefundedSubtotal = 0
+  let totalRefunded = 0
+
+  const byPolicy = {
+    flexible: 0,
+    moderate: 0,
+    strict: 0,
+    super_strict: 0
+  }
+
+  for (const booking of bookings) {
+    const result = calculateCancellationRevenue(booking, serviceFeeRate)
+
+    totalCancelled += result.totalAmount
+    serviceFeeRetained += result.serviceFee
+    nonRefundedSubtotal += (result.subtotal - result.refundAmount)
+    totalRefunded += result.refundAmount
+
+    // Count by policy
+    if (result.policy === 'flexible') byPolicy.flexible++
+    else if (result.policy === 'moderate') byPolicy.moderate++
+    else if (result.policy === 'strict') byPolicy.strict++
+    else if (result.policy === 'super_strict') byPolicy.super_strict++
+    else byPolicy.moderate++ // Default to moderate
+  }
+
+  return {
+    totalCancelled: Math.round(totalCancelled * 100) / 100,
+    cancelledCount: bookings.length,
+    serviceFeeRetained: Math.round(serviceFeeRetained * 100) / 100,
+    nonRefundedSubtotal: Math.round(nonRefundedSubtotal * 100) / 100,
+    totalRetained: Math.round((serviceFeeRetained + nonRefundedSubtotal) * 100) / 100,
+    totalRefunded: Math.round(totalRefunded * 100) / 100,
+    byPolicy
+  }
+}
+
 /**
  * Fetch settings from database and create calculator
  */
