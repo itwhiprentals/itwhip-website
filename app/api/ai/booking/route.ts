@@ -28,6 +28,10 @@ import {
   fetchWeatherContext,
   buildWeatherReply,
 } from '@/app/lib/ai-booking/weather-bridge'
+import {
+  checkAISecurity,
+  createSecurityBlockedResponse,
+} from '@/app/lib/ai-booking/security'
 
 // =============================================================================
 // ANTHROPIC CLIENT
@@ -53,6 +57,16 @@ export async function POST(request: NextRequest) {
         { error: 'Message is required' },
         { status: 400 }
       )
+    }
+
+    // ==========================================================================
+    // SECURITY CHECK - Rate limiting, bot detection, input validation
+    // ==========================================================================
+    const sessionMessageCount = body.session?.messages?.length || 0
+    const securityCheck = await checkAISecurity(request, body.message, sessionMessageCount)
+
+    if (!securityCheck.allowed) {
+      return createSecurityBlockedResponse(securityCheck)
     }
 
     // Initialize or restore session
@@ -270,15 +284,15 @@ function buildBookingSummary(
 ): BookingSummary {
   const numberOfDays = calculateDays(session.startDate!, session.endDate!)
   const subtotal = vehicle.dailyRate * numberOfDays
-  const serviceFee = Math.round(subtotal * 0.15 * 100) / 100
+  const serviceFee = Math.round(subtotal * 0.15 * 100) / 100  // 15% guest service fee
   const taxable = subtotal + serviceFee
-  const estimatedTax = Math.round(taxable * 0.086 * 100) / 100 // ~8.6% avg AZ tax
+  const estimatedTax = Math.round(taxable * 0.084 * 100) / 100 // 8.4% AZ tax
   const estimatedTotal = Math.round((taxable + estimatedTax) * 100) / 100
 
-  // Deposit based on daily rate
-  let depositAmount = 250
-  if (vehicle.dailyRate >= 500) depositAmount = 1000
-  else if (vehicle.dailyRate >= 150) depositAmount = 700
+  // Deposit based on daily rate (matches AIVehicleCard pricing)
+  let depositAmount = 500   // Standard (under $100/day)
+  if (vehicle.dailyRate >= 300) depositAmount = 2500  // Exotic ($300+/day)
+  else if (vehicle.dailyRate >= 100) depositAmount = 1000  // Luxury ($100-299/day)
 
   return {
     vehicle,
