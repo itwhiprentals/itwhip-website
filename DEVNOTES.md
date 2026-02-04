@@ -2,6 +2,28 @@
 
 ## Recent Fixes (February 2026)
 
+### Choé AI Security Layer - DEPLOYED ✅ (Feb 4)
+**Added comprehensive security to prevent AI abuse**
+
+**Security Measures:**
+- **Rate Limiting** (Upstash Redis):
+  - 30 messages per 5 minutes per IP
+  - 500 API calls per day per IP (cost protection)
+  - 50 messages max per session
+- **Bot Detection**: Blocks automated requests (headless browsers, selenium, curl, etc.)
+- **Input Validation**:
+  - 500 character message limit
+  - Prompt injection detection (blocks "ignore previous instructions", jailbreak attempts, etc.)
+- **Security Logging**: Tracks abuse patterns in Redis with 7-day retention
+
+**Files Added/Modified:**
+- `app/lib/ai-booking/security.ts` — New security layer (rate limit, bot detection, validation)
+- `app/api/ai/booking/route.ts` — Integrated security checks + fixed deposit amounts
+
+**Deployment:** Commit `afce62d`
+
+---
+
 ### Choé AI Vehicle Cards Enhancement - DEPLOYED ✅ (Feb 4)
 **Enhanced vehicle display in AI booking assistant with accurate pricing and full photo support**
 
