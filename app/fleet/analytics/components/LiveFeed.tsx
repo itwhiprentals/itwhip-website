@@ -121,7 +121,12 @@ export default function LiveFeed({ views: initialViews, loading = false, timeRan
         const result = await response.json()
         if (result.success) {
           if (append) {
-            setAllViews(prev => [...prev, ...result.data.views])
+            // Deduplicate views by ID to prevent React key errors
+            setAllViews(prev => {
+              const existingIds = new Set(prev.map(v => v.id))
+              const newViews = result.data.views.filter((v: RecentView) => !existingIds.has(v.id))
+              return [...prev, ...newViews]
+            })
           } else {
             setAllViews(result.data.views)
           }
@@ -351,9 +356,9 @@ export default function LiveFeed({ views: initialViews, loading = false, timeRan
         ) : (
           <>
             <div className="space-y-1 max-h-[500px] overflow-y-auto">
-              {allViews.map((view) => (
+              {allViews.map((view, index) => (
                 <button
-                  key={view.id}
+                  key={`${view.id}-${index}`}
                   onClick={() => handleViewClick(view.id)}
                   disabled={loadingDetail === view.id}
                   className={`w-full flex items-start gap-3 p-2 rounded-lg text-left transition-colors ${
