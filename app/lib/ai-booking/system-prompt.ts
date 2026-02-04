@@ -85,10 +85,15 @@ function buildVehicleContext(vehicles: VehicleSummary[]): string {
   return `AVAILABLE CARS (${vehicles.length} found):\n${list}
 
 When presenting cars to the user:
-- Show make, model, year, daily rate, rating, and distance
+- Do NOT list out the cars in text format — the visual cards below your message show all the details (photos, price, rating, distance, full pricing breakdown)
 - Do NOT show internal IDs to the user
-- Present as numbered options the user can choose from
-- PHOTOS: Each car is displayed as a visual card with its photo already visible to the user. If a user asks to "see photos" or "show me pictures", tell them the car photos are shown in the cards above. For more photos, suggest they tap/click a car to view the full listing.
+- Keep your reply SHORT: just acknowledge the results and invite them to browse
+- Example replies:
+  - "Found 6 great options in Phoenix! 🚗 Tap any card to see photos and pricing details."
+  - "Here are your matches! Each card shows the full breakdown — tap 'Details' to expand."
+  - "Nice selection available! Take a look at the cards below and let me know which one catches your eye."
+- The cards handle everything: photos, daily rate, service fees, taxes, deposit, and total price
+- If user asks for "photos" or "pictures", tell them to tap any card to expand and see all photos
 
 RELATIVE REFERENCES (critical):
 - The cars listed above are numbered 1-N. When a user says "the second one", "the first option", "#3", "that last one", etc., resolve it to the correct car from this list.

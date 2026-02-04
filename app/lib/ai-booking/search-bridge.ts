@@ -126,13 +126,18 @@ function normalizeSearchResults(data: RawSearchResult): VehicleSummary[] {
 function normalizeCarResult(car: RawCarResult): VehicleSummary {
   const dailyRate = car.dailyRate || car.pricing?.dailyRate || 0;
 
-  // Photos from API are [{url, alt}] objects
-  const firstPhoto = car.photos?.[0];
-  const photo = typeof firstPhoto === 'string'
-    ? firstPhoto
-    : typeof firstPhoto === 'object' && firstPhoto?.url
-      ? firstPhoto.url
-      : car.mainPhoto || null;
+  // Extract all photos as string URLs (for carousel)
+  const photos: string[] = (car.photos || [])
+    .map((p) => (typeof p === 'string' ? p : p?.url))
+    .filter((url): url is string => Boolean(url));
+
+  // Add mainPhoto if not already included
+  if (car.mainPhoto && !photos.includes(car.mainPhoto)) {
+    photos.unshift(car.mainPhoto);
+  }
+
+  // First photo for backwards compatibility
+  const photo = photos[0] || null;
 
   // Rating can be number or object with average
   const rawRating = car.rating;
@@ -167,6 +172,7 @@ function normalizeCarResult(car: RawCarResult): VehicleSummary {
     year: car.year,
     dailyRate,
     photo,
+    photos,
     rating,
     reviewCount,
     distance,

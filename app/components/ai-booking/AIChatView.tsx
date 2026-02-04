@@ -204,7 +204,12 @@ export default function AIChatView({ onNavigateToBooking, onNavigateToLogin, onC
               animate={{ opacity: 1, y: 0 }}
               transition={springTransition}
             >
-              <VehicleResults vehicles={vehicles} onSelect={handleVehicleSelect} />
+              <VehicleResults
+                vehicles={vehicles}
+                onSelect={handleVehicleSelect}
+                startDate={session?.startDate}
+                endDate={session?.endDate}
+              />
             </motion.div>
           )}
         </AnimatePresence>
@@ -309,9 +314,13 @@ function WelcomeMessage() {
 function VehicleResults({
   vehicles,
   onSelect,
+  startDate,
+  endDate,
 }: {
   vehicles: VehicleSummary[]
   onSelect: (v: VehicleSummary) => void
+  startDate?: string | null
+  endDate?: string | null
 }) {
   return (
     <div className="space-y-2">
@@ -320,6 +329,8 @@ function VehicleResults({
           key={vehicle.id}
           vehicle={vehicle}
           onSelect={onSelect}
+          startDate={startDate}
+          endDate={endDate}
         />
       ))}
     </div>

@@ -1,127 +1,245 @@
 'use client'
 
+import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { IoStar, IoLocationSharp, IoFlash } from 'react-icons/io5'
+import { IoStar, IoLocationSharp, IoFlash, IoChevronDown, IoChevronUp } from 'react-icons/io5'
 import type { VehicleSummary } from '@/app/lib/ai-booking/types'
+
+// Platform fee constants (from app/(guest)/rentals/lib/constants.ts)
+const SERVICE_FEE_RATE = 0.15 // 15% guest service fee
+const TAX_RATE = 0.084 // 8.4% Arizona rental tax (Phoenix default)
+
+// Deposit amounts by car value tier (based on daily rate as proxy for car type)
+const getDeposit = (dailyRate: number): number => {
+  if (dailyRate >= 300) return 2500 // Exotic ($300+/day)
+  if (dailyRate >= 100) return 1000 // Luxury ($100-299/day)
+  return 500 // Standard (under $100/day)
+}
 
 interface AIVehicleCardProps {
   vehicle: VehicleSummary
   onSelect: (vehicle: VehicleSummary) => void
+  /** Start date for pricing calculation (ISO string) */
+  startDate?: string | null
+  /** End date for pricing calculation (ISO string) */
+  endDate?: string | null
 }
 
-export default function AIVehicleCard({ vehicle, onSelect }: AIVehicleCardProps) {
+export default function AIVehicleCard({ vehicle, onSelect, startDate, endDate }: AIVehicleCardProps) {
+  const [expanded, setExpanded] = useState(false)
+
+  // Use photos array if available, fallback to single photo
+  const photos = vehicle.photos?.length > 0
+    ? vehicle.photos
+    : vehicle.photo
+      ? [vehicle.photo]
+      : []
+
+  const mainPhoto = photos[0] || null
+  // Get ALL additional photos (excluding main)
+  const additionalPhotos = photos.slice(1)
+  const hasPhotos = additionalPhotos.length > 0
+
+  // Calculate number of days (default to 1 if no dates)
+  const numberOfDays = calculateDays(startDate, endDate)
+
+  // Calculate pricing
+  const pricing = calculatePricing(vehicle.dailyRate, numberOfDays)
+
+  const toggleExpand = () => {
+    setExpanded(!expanded)
+  }
+
+  // Dynamic grid columns based on photo count
+  const getGridCols = (count: number) => {
+    if (count <= 3) return 'grid-cols-3'
+    if (count <= 4) return 'grid-cols-4'
+    if (count <= 6) return 'grid-cols-3 sm:grid-cols-6'
+    return 'grid-cols-3 sm:grid-cols-6' // 6+ photos: show in rows
+  }
+
   return (
     <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-      <div className="flex">
-        {/* Photo */}
-        <VehiclePhoto photo={vehicle.photo} make={vehicle.make} model={vehicle.model} />
+      {/* Main card row - clickable to expand */}
+      <div
+        onClick={toggleExpand}
+        className="flex cursor-pointer"
+      >
+        {/* Main Photo - static, no carousel */}
+        <div className="w-28 h-24 sm:w-32 sm:h-28 flex-shrink-0 bg-gray-100 dark:bg-gray-700 relative">
+          {mainPhoto ? (
+            <Image
+              src={mainPhoto}
+              alt={`${vehicle.make} ${vehicle.model}`}
+              fill
+              className="object-cover"
+              sizes="128px"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+              No photo
+            </div>
+          )}
+          {/* Photo count badge */}
+          {photos.length > 1 && (
+            <div className="absolute bottom-1.5 right-1.5 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded flex items-center gap-0.5">
+              {expanded ? <IoChevronUp size={10} /> : <IoChevronDown size={10} />}
+              <span>{photos.length}</span>
+            </div>
+          )}
+        </div>
 
         {/* Details */}
         <div className="flex-1 p-3 flex flex-col justify-between">
           <div>
-            <VehicleTitle year={vehicle.year} make={vehicle.make} model={vehicle.model} />
-            <VehicleMeta
-              rating={vehicle.rating}
-              reviewCount={vehicle.reviewCount}
-              distance={vehicle.distance}
-              instantBook={vehicle.instantBook}
-            />
+            <h4 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+              {vehicle.year} {vehicle.make} {vehicle.model}
+            </h4>
+            <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+              {vehicle.rating && (
+                <span className="flex items-center gap-0.5">
+                  <IoStar size={10} className="text-yellow-500" />
+                  {vehicle.rating.toFixed(1)}
+                  {vehicle.reviewCount > 0 && <span>({vehicle.reviewCount})</span>}
+                </span>
+              )}
+              {vehicle.distance && (
+                <span className="flex items-center gap-0.5">
+                  <IoLocationSharp size={10} />
+                  {vehicle.distance}
+                </span>
+              )}
+              {vehicle.instantBook && (
+                <span className="flex items-center gap-0.5 text-primary">
+                  <IoFlash size={10} />
+                  Instant
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center justify-between mt-2">
-            <VehiclePrice dailyRate={vehicle.dailyRate} />
-            <div className="flex items-center gap-1.5">
-              <Link
-                href={`/rentals/cars/${vehicle.id}`}
-                target="_blank"
+            <div>
+              <span className="text-base font-bold text-gray-900 dark:text-white">${vehicle.dailyRate}</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">/day</span>
+            </div>
+            {/* Buttons - stop propagation so they don't trigger expand */}
+            <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={toggleExpand}
                 className="px-2 py-1.5 text-primary text-xs font-medium hover:underline"
               >
-                Details
-              </Link>
+                {expanded ? 'Less' : 'Details'}
+              </button>
               <button
                 onClick={() => onSelect(vehicle)}
                 className="px-3 py-1.5 bg-primary text-white text-xs font-semibold rounded-md hover:bg-primary/90 transition-colors"
               >
-                Select
+                Select to Book
               </button>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  )
-}
 
-function VehiclePhoto({ photo, make, model }: { photo: string | null; make: string; model: string }) {
-  return (
-    <div className="w-28 h-24 sm:w-32 sm:h-28 flex-shrink-0 bg-gray-100 dark:bg-gray-700 relative">
-      {photo && typeof photo === 'string' && photo.length > 0 ? (
-        <Image
-          src={photo}
-          alt={`${make} ${model}`}
-          fill
-          className="object-cover"
-          sizes="128px"
-        />
-      ) : (
-        <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-          No photo
+      {/* Expanded section - photos + pricing details */}
+      {expanded && (
+        <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+          {/* Photo grid - show ALL available photos */}
+          {hasPhotos && (
+            <div className="p-2 border-b border-gray-200 dark:border-gray-700">
+              <div className={`grid ${getGridCols(additionalPhotos.length)} gap-1.5`}>
+                {additionalPhotos.map((photo, i) => (
+                  <div key={i} className="aspect-[4/3] relative rounded overflow-hidden bg-gray-200 dark:bg-gray-700">
+                    <Image
+                      src={photo}
+                      alt={`${vehicle.make} ${vehicle.model} - photo ${i + 2}`}
+                      fill
+                      className="object-cover"
+                      sizes="(min-width: 640px) 80px, 100px"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Pricing breakdown */}
+          <div className="p-3">
+            <h5 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              Estimated Pricing ({numberOfDays} {numberOfDays === 1 ? 'day' : 'days'})
+            </h5>
+            <div className="space-y-1.5 text-xs">
+              <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                <span>${vehicle.dailyRate} × {numberOfDays} {numberOfDays === 1 ? 'day' : 'days'}</span>
+                <span>${pricing.subtotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                <span>Service fee ({(SERVICE_FEE_RATE * 100).toFixed(0)}%)</span>
+                <span>${pricing.serviceFee.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                <span>Taxes ({(TAX_RATE * 100).toFixed(1)}%)</span>
+                <span>${pricing.tax.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                <span>Security deposit (refundable)</span>
+                <span>${pricing.deposit.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between font-semibold text-gray-900 dark:text-white pt-1.5 border-t border-gray-200 dark:border-gray-700">
+                <span>Total at checkout</span>
+                <span>${pricing.total.toFixed(2)}</span>
+              </div>
+            </div>
+
+            {/* View All link */}
+            <div className="mt-3 pt-2 border-t border-gray-200 dark:border-gray-700">
+              <Link
+                href={`/rentals/cars/${vehicle.id}`}
+                target="_blank"
+                className="text-xs text-primary font-medium hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                View Full Listing →
+              </Link>
+            </div>
+          </div>
         </div>
       )}
     </div>
   )
 }
 
-function VehicleTitle({ year, make, model }: { year: number; make: string; model: string }) {
-  return (
-    <h4 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-      {year} {make} {model}
-    </h4>
-  )
+/**
+ * Calculate number of days between dates
+ */
+function calculateDays(startDate?: string | null, endDate?: string | null): number {
+  if (!startDate || !endDate) return 1
+
+  const start = new Date(startDate)
+  const end = new Date(endDate)
+  const diffTime = end.getTime() - start.getTime()
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+  return Math.max(diffDays, 1)
 }
 
-function VehicleMeta({
-  rating,
-  reviewCount,
-  distance,
-  instantBook,
-}: {
-  rating: number | null
-  reviewCount: number
-  distance: string | null
-  instantBook: boolean
-}) {
-  return (
-    <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-      {rating && (
-        <span className="flex items-center gap-0.5">
-          <IoStar size={10} className="text-yellow-500" />
-          {rating.toFixed(1)}
-          {reviewCount > 0 && <span>({reviewCount})</span>}
-        </span>
-      )}
-      {distance && (
-        <span className="flex items-center gap-0.5">
-          <IoLocationSharp size={10} />
-          {distance}
-        </span>
-      )}
-      {instantBook && (
-        <span className="flex items-center gap-0.5 text-primary">
-          <IoFlash size={10} />
-          Instant
-        </span>
-      )}
-    </div>
-  )
-}
+/**
+ * Calculate pricing breakdown using platform constants
+ */
+function calculatePricing(dailyRate: number, days: number) {
+  const subtotal = dailyRate * days
+  const serviceFee = subtotal * SERVICE_FEE_RATE
+  const tax = subtotal * TAX_RATE
+  const deposit = getDeposit(dailyRate)
+  const total = subtotal + serviceFee + tax + deposit
 
-function VehiclePrice({ dailyRate }: { dailyRate: number }) {
-  return (
-    <div>
-      <span className="text-base font-bold text-gray-900 dark:text-white">${dailyRate}</span>
-      <span className="text-xs text-gray-500 dark:text-gray-400">/day</span>
-    </div>
-  )
+  return {
+    subtotal,
+    serviceFee,
+    tax,
+    deposit,
+    total
+  }
 }

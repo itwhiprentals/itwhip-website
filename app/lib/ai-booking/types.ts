@@ -78,6 +78,8 @@ export interface VehicleSummary {
   year: number;
   dailyRate: number;
   photo: string | null;
+  /** All photos for carousel display */
+  photos: string[];
   rating: number | null;
   reviewCount: number;
   distance: string | null;

@@ -35,78 +35,56 @@ export default function AIProgressBar({ state }: AIProgressBarProps) {
   const currentOrder = STATE_ORDER[state] ?? 0
 
   return (
-    <div className="flex items-center justify-between px-2 py-2">
+    <div className="flex items-center py-2 px-3">
       {STEPS.map((step, i) => {
         const stepOrder = STATE_ORDER[step.key] ?? 0
         const isComplete = currentOrder > stepOrder
         const isCurrent = currentOrder === stepOrder
         const Icon = step.icon
+        const isFirst = i === 0
+        const isLast = i === STEPS.length - 1
 
         return (
-          <ProgressStep
-            key={step.key}
-            label={step.label}
-            icon={<Icon size={14} />}
-            isComplete={isComplete}
-            isCurrent={isCurrent}
-            isLast={i === STEPS.length - 1}
-          />
+          <div key={step.key} className={`flex items-center ${isFirst ? '' : 'flex-1'}`}>
+            {/* Connector line before step (except first) */}
+            {!isFirst && (
+              <div
+                className={`
+                  flex-1 h-0.5 mr-1 transition-colors
+                  ${isComplete || isCurrent ? 'bg-primary' : 'bg-gray-200 dark:bg-gray-700'}
+                `}
+              />
+            )}
+            <div className="flex flex-col items-center gap-0.5">
+              <div
+                className={`
+                  w-7 h-7 rounded-full flex items-center justify-center transition-colors
+                  ${isComplete
+                    ? 'bg-primary text-white'
+                    : isCurrent
+                      ? 'bg-primary/10 text-primary ring-2 ring-primary/30'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-400'
+                  }
+                `}
+              >
+                <Icon size={14} />
+              </div>
+              <span
+                className={`
+                  text-[10px] font-medium transition-colors whitespace-nowrap
+                  ${isComplete || isCurrent
+                    ? 'text-primary'
+                    : 'text-gray-400 dark:text-gray-500'
+                  }
+                `}
+              >
+                {step.label}
+              </span>
+            </div>
+          </div>
         )
       })}
     </div>
   )
 }
 
-function ProgressStep({
-  label,
-  icon,
-  isComplete,
-  isCurrent,
-  isLast,
-}: {
-  label: string
-  icon: React.ReactNode
-  isComplete: boolean
-  isCurrent: boolean
-  isLast: boolean
-}) {
-  return (
-    <div className="flex items-center flex-1">
-      <div className="flex flex-col items-center gap-0.5">
-        <div
-          className={`
-            w-7 h-7 rounded-full flex items-center justify-center transition-colors
-            ${isComplete
-              ? 'bg-primary text-white'
-              : isCurrent
-                ? 'bg-primary/10 text-primary ring-2 ring-primary/30'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-400'
-            }
-          `}
-        >
-          {icon}
-        </div>
-        <span
-          className={`
-            text-[10px] font-medium transition-colors
-            ${isComplete || isCurrent
-              ? 'text-primary'
-              : 'text-gray-400 dark:text-gray-500'
-            }
-          `}
-        >
-          {label}
-        </span>
-      </div>
-
-      {!isLast && (
-        <div
-          className={`
-            flex-1 h-0.5 mx-1 mt-[-12px] transition-colors
-            ${isComplete ? 'bg-primary' : 'bg-gray-200 dark:bg-gray-700'}
-          `}
-        />
-      )}
-    </div>
-  )
-}
