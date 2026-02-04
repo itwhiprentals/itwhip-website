@@ -1807,7 +1807,7 @@ model RentalCar {
   trim                       String?
   color                      String
   licensePlate               String?
-  vin                        String?
+  vin                        String?                    @unique // VIN locked to first host - requires support to transfer
   carType                    String
   seats                      Int
   doors                      Int
@@ -1969,7 +1969,6 @@ model RentalCar {
   @@index([titleStatus])
   @@index([totalClaimsCount])
   @@index([vinVerifiedBy])
-  @@index([vin])
 }
 
 model RentalCarPhoto {
@@ -2636,6 +2635,9 @@ model ReviewerProfile {
   @@index([userId])
   @@index([userId, suspensionLevel])
   @@index([warningCount])
+
+  // Identity resolution: Each driver license (state + number) should map to one person
+  @@unique([driverLicenseState, driverLicenseNumber], name: "unique_driver_license")
 }
 
 model Ride {
@@ -2704,6 +2706,43 @@ model SecurityEvent {
   @@index([type])
   @@index([type, severity, timestamp]) // Uptime tracking queries
   @@index([blocked, timestamp]) // Failed request tracking
+}
+
+// Identity Resolution System - 1 Person = 1 Account
+// Links identifiers (phone, email, license, VIN) to a single user account
+model IdentityLink {
+  id              String   @id @default(cuid())
+  userId          String
+  identifierType  String   // 'phone', 'email', 'driver_license', 'vin'
+  identifierValue String   // The actual value (normalized)
+  isPrimary       Boolean  @default(false)
+  verified        Boolean  @default(false)
+  linkedAt        DateTime @default(now())
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([identifierType, identifierValue]) // Each identifier maps to ONE user
+  @@index([userId])
+  @@index([identifierValue])
+  @@index([identifierType, verified])
+}
+
+// Blocklist for suspended identifiers (phone, email, license, VIN)
+// Prevents re-registration with known bad actors' identifiers
+model SuspendedIdentifier {
+  id              String    @id @default(cuid())
+  identifierType  String    // 'phone', 'email', 'driver_license', 'vin'
+  identifierValue String    // Normalized value
+  reason          String    // Why suspended
+  suspendedAt     DateTime  @default(now())
+  suspendedBy     String?   // Admin ID who suspended
+  expiresAt       DateTime? // Optional expiry for temporary suspensions
+  notes           String?   @db.Text // Internal notes
+
+  @@unique([identifierType, identifierValue])
+  @@index([identifierValue])
+  @@index([identifierType])
+  @@index([expiresAt])
 }
 
 model MonitoringAlert {
@@ -2992,6 +3031,7 @@ model User {
   Session                  Session[]
   Hotel                    Hotel?                    @relation(fields: [hotelId], references: [id])
   UserNotificationSettings UserNotificationSettings?
+  identityLinks            IdentityLink[]
 
   @@index([email])
   @@index([hotelId])
