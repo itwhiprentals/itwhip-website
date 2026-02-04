@@ -5,6 +5,7 @@ import { SignJWT } from 'jose'
 import { nanoid } from 'nanoid'
 import db from '@/app/lib/db'
 import { prisma } from '@/app/lib/database/prisma'
+import { resolveIdentity, linkAllIdentifiers, normalizeEmail, normalizePhone } from '@/app/lib/services/identityResolution'
 
 // Generate 6-digit verification code
 function generateVerificationCode(): string {
@@ -136,14 +137,80 @@ export async function POST(request: NextRequest) {
       console.log('Password could be stronger')
     }
 
-    // Check if user already exists
-    const existingUser = await db.getUserByEmail(email.toLowerCase())
-    if (existingUser) {
-      return NextResponse.json(
-        { error: 'An account with this email already exists' },
-        { status: 409 }
-      )
+    // ========================================================================
+    // IDENTITY RESOLUTION - Check for existing accounts or suspensions
+    // ========================================================================
+    const resolution = await resolveIdentity({
+      email: email.toLowerCase(),
+      phone: phone || undefined
+    })
+
+    // Handle blocked (suspended) identifiers
+    if (resolution.action === 'BLOCK_SUSPENDED') {
+      console.log(`[Signup] BLOCKED: Suspended identifier detected for email: ${email}`)
+      // SECURITY: Generic message - don't reveal which identifier triggered the block
+      return NextResponse.json({
+        error: 'Unable to create account',
+        guard: {
+          type: 'suspended-account',
+          title: 'Unable to Create Account',
+          message: 'Your account cannot be created at this time. Please contact support for assistance.',
+          actions: {
+            primary: { label: 'Contact Support', url: '/support' }
+          }
+        }
+      }, { status: 403 })
     }
+
+    // Handle conflict (multiple accounts matched different users)
+    if (resolution.action === 'CONFLICT') {
+      console.log(`[Signup] CONFLICT: Multiple accounts found for identifiers`)
+      return NextResponse.json({
+        error: 'Account conflict detected',
+        guard: {
+          type: 'identity-conflict',
+          title: 'Account Issue Detected',
+          message: resolution.message || 'There was an issue with your account. Please contact support.',
+          actions: {
+            primary: { label: 'Contact Support', url: '/support' }
+          }
+        }
+      }, { status: 409 })
+    }
+
+    // Handle linking to existing account
+    if (resolution.action === 'LINK_TO_EXISTING') {
+      console.log(`[Signup] Existing account found, matched on: ${resolution.matchedIdentifiers.join(', ')}`)
+
+      // If they have the same email, tell them to login
+      if (resolution.matchedIdentifiers.includes('email')) {
+        return NextResponse.json(
+          { error: 'An account with this email already exists. Please sign in instead.' },
+          { status: 409 }
+        )
+      }
+
+      // If matched on phone but different email, we could offer to link
+      // For now, just inform them an account exists with that phone
+      if (resolution.matchedIdentifiers.includes('phone')) {
+        return NextResponse.json({
+          error: 'Account already exists',
+          guard: {
+            type: 'phone-linked',
+            title: 'Phone Already Registered',
+            message: 'This phone number is already linked to an account. Please sign in with the email associated with that account.',
+            actions: {
+              primary: { label: 'Sign In', url: '/auth/login' },
+              secondary: { label: 'Use Different Phone', url: '/auth/signup' }
+            }
+          }
+        }, { status: 409 })
+      }
+    }
+
+    // ========================================================================
+    // CREATE NEW ACCOUNT - No existing matches found
+    // ========================================================================
 
     // Hash the password with Argon2
     const passwordHash = await argon2.hash(password, ARGON2_CONFIG)
@@ -156,6 +223,18 @@ export async function POST(request: NextRequest) {
       phone: phone || null,
       role: 'CLAIMED' // Guest users start as CLAIMED
     })
+
+    // Link identifiers to the new user for identity resolution
+    try {
+      await linkAllIdentifiers(newUser.id, {
+        email: email.toLowerCase(),
+        phone: phone || undefined
+      })
+      console.log(`[Signup] Identity links created for user: ${newUser.id}`)
+    } catch (linkError) {
+      console.error('[Signup] Failed to create identity links:', linkError)
+      // Don't block signup if linking fails
+    }
 
     // Generate email verification code
     const verificationCode = generateVerificationCode()

@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { hash } from 'argon2'
 import { getVehicleSpecData } from '@/app/lib/utils/vehicleSpec'
+import { resolveIdentity, linkAllIdentifiers } from '@/app/lib/services/identityResolution'
 
 // Helper to map NHTSA bodyClass to our carType
 function mapBodyClassToCarType(bodyClass: string | null): string | null {
@@ -126,6 +127,65 @@ export async function POST(request: NextRequest) {
         { error: 'Please enter a valid 5-digit zip code' },
         { status: 400 }
       )
+    }
+
+    // ========================================================================
+    // IDENTITY RESOLUTION - Check for suspensions and existing accounts
+    // ========================================================================
+    const resolution = await resolveIdentity({
+      email: email.toLowerCase(),
+      phone: phone || undefined,
+      vin: vehicleVin || undefined
+    })
+
+    // Handle blocked (suspended) identifiers
+    if (resolution.action === 'BLOCK_SUSPENDED') {
+      console.log(`[Host Signup] BLOCKED: Suspended identifier detected for email: ${email}`)
+      // SECURITY: Generic message - don't reveal which identifier triggered the block
+      return NextResponse.json({
+        error: 'Unable to create account',
+        guard: {
+          type: 'suspended-account',
+          title: 'Unable to Create Account',
+          message: 'Your account cannot be created at this time. Please contact support for assistance.',
+          actions: {
+            primary: { label: 'Contact Support', url: '/support' }
+          }
+        }
+      }, { status: 403 })
+    }
+
+    // Handle conflict (multiple accounts matched different users)
+    if (resolution.action === 'CONFLICT') {
+      console.log(`[Host Signup] CONFLICT: Multiple accounts found for identifiers`)
+      return NextResponse.json({
+        error: 'Account conflict detected',
+        guard: {
+          type: 'identity-conflict',
+          title: 'Account Issue Detected',
+          message: resolution.message || 'There was an issue with your account. Please contact support.',
+          actions: {
+            primary: { label: 'Contact Support', url: '/support' }
+          }
+        }
+      }, { status: 409 })
+    }
+
+    // Handle VIN already linked to another account (for non-OAuth users)
+    if (resolution.action === 'LINK_TO_EXISTING' && resolution.matchedIdentifiers.includes('vin') && !isOAuthUser) {
+      console.log(`[Host Signup] VIN already registered to another account`)
+      return NextResponse.json({
+        error: 'Vehicle already registered',
+        guard: {
+          type: 'vin-linked',
+          title: 'Vehicle Already Registered',
+          message: 'This vehicle (VIN) is already registered on ItWhip. If you recently purchased this vehicle, please contact support to transfer it to your account.',
+          actions: {
+            primary: { label: 'Contact Support', url: '/support' },
+            secondary: { label: 'Use Different Vehicle', url: '/host/signup' }
+          }
+        }
+      }, { status: 409 })
     }
 
     // Check if email already exists in RentalHost
@@ -458,6 +518,21 @@ export async function POST(request: NextRequest) {
         verified: false
       }
     })
+
+    // Link identifiers to the user for identity resolution
+    if (newHost.user?.id) {
+      try {
+        await linkAllIdentifiers(newHost.user.id, {
+          email: email.toLowerCase(),
+          phone: phone || undefined,
+          vin: vehicleVin || undefined
+        })
+        console.log(`[Host Signup] Identity links created for user: ${newHost.user.id}`)
+      } catch (linkError) {
+        console.error('[Host Signup] Failed to create identity links:', linkError)
+        // Don't block signup if linking fails
+      }
+    }
 
     // Return success response
     return NextResponse.json({
