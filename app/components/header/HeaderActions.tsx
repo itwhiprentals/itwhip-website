@@ -1,7 +1,9 @@
 // app/components/header/HeaderActions.tsx
 'use client'
 
-// Right side actions for Header: Theme toggle, Notifications, Sign In, Role Switcher, Mobile Menu
+// Right side actions for Header: Theme toggle, Notifications, Sign In/RoleSwitcher
+// When logged in: Hamburger is integrated into RoleSwitcher pill
+// When logged out: Standalone hamburger button
 
 import Link from 'next/link'
 import {
@@ -58,7 +60,7 @@ export default function HeaderActions({
   onToggleMobileMenu
 }: HeaderActionsProps) {
   return (
-    <div className="flex items-center">
+    <div className="flex items-center gap-1 mr-4">
       {/* Theme Toggle */}
       <button
         onClick={onToggleTheme}
@@ -74,11 +76,11 @@ export default function HeaderActions({
 
       {/* Notifications - Show for logged in users */}
       {isLoggedIn && !isTransitioning && (
-        <div className="ml-2">
+        <>
           {isGuest && <NotificationBell userRole="GUEST" />}
           {isHost && <NotificationBell userRole="HOST" />}
           {isAdmin && <NotificationBell userRole="ADMIN" />}
-        </div>
+        </>
       )}
 
       {/* Sign In Button - Only when not logged in */}
@@ -89,34 +91,51 @@ export default function HeaderActions({
             isHostPage ? '/host/login' :
             '/auth/login'
           }
-          className="ml-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-sm font-medium rounded-lg transition-all transform hover:scale-105 shadow-sm"
+          className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-sm font-medium rounded-lg transition-all transform hover:scale-105 shadow-sm"
         >
           Sign In
         </Link>
       )}
 
-      {/* Role Switcher - stays visible during switching to show spinner */}
+      {/* Role Switcher with integrated hamburger (when logged in) */}
+      {/* Hamburger shows on mobile (lg:hidden) inside the pill */}
       {isLoggedIn && (
-        <div className="ml-3">
-          <RoleSwitcher
-            profilePhoto={profilePhotoUrl}
-            userName={userName}
-          />
-        </div>
+        <>
+          {/* On mobile: show RoleSwitcher with hamburger */}
+          <div className="lg:hidden ml-2 -mr-2">
+            <RoleSwitcher
+              profilePhoto={profilePhotoUrl}
+              userName={userName}
+              showHamburger={true}
+              isMobileMenuOpen={isMobileMenuOpen}
+              onToggleMobileMenu={onToggleMobileMenu}
+            />
+          </div>
+          {/* On desktop: show RoleSwitcher without hamburger */}
+          <div className="hidden lg:block ml-2 -mr-2">
+            <RoleSwitcher
+              profilePhoto={profilePhotoUrl}
+              userName={userName}
+              showHamburger={false}
+            />
+          </div>
+        </>
       )}
 
-      {/* Mobile Menu Toggle - Always rightmost */}
-      <button
-        onClick={onToggleMobileMenu}
-        className="lg:hidden ml-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900"
-        aria-label="Toggle menu"
-      >
-        {isMobileMenuOpen ? (
-          <IoCloseOutline className="w-6 h-6 text-gray-700 dark:text-gray-300" />
-        ) : (
-          <IoMenuOutline className="w-6 h-6 text-gray-700 dark:text-gray-300" />
-        )}
-      </button>
+      {/* Standalone Mobile Menu Toggle - Only when NOT logged in */}
+      {!isLoggedIn && (
+        <button
+          onClick={onToggleMobileMenu}
+          className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900"
+          aria-label="Toggle menu"
+        >
+          {isMobileMenuOpen ? (
+            <IoCloseOutline className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+          ) : (
+            <IoMenuOutline className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+          )}
+        </button>
+      )}
     </div>
   )
 }
