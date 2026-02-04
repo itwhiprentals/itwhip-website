@@ -4,6 +4,19 @@ import { prisma } from '@/app/lib/database/prisma'
 import { SignJWT } from 'jose'
 import { compare } from 'bcryptjs'
 import argon2 from 'argon2'
+import { Ratelimit } from '@upstash/ratelimit'
+import { Redis } from '@upstash/redis'
+
+// SECURITY FIX: Admin login rate limiter - stricter than regular login
+const adminLoginRateLimit = new Ratelimit({
+  redis: new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL!,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+  }),
+  limiter: Ratelimit.slidingWindow(3, '15 m'), // 3 attempts per 15 minutes
+  analytics: true,
+  prefix: 'ratelimit:admin:login',
+})
 
 // Admin-specific JWT secret
 const ADMIN_JWT_SECRET = new TextEncoder().encode(
@@ -46,14 +59,36 @@ async function logAdminAttempt(
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { email, password } = body
-
     // Get request metadata for logging
-    const ipAddress = request.headers.get('x-forwarded-for') || 
-                     request.headers.get('x-real-ip') || 
+    const ipAddress = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+                     request.headers.get('x-real-ip') ||
                      'unknown'
     const userAgent = request.headers.get('user-agent') || 'unknown'
+
+    // SECURITY FIX: Rate limiting - FIRST thing before any processing
+    const { success, remaining, reset } = await adminLoginRateLimit.limit(ipAddress)
+
+    if (!success) {
+      console.warn(`[ADMIN LOGIN] 🚨 Rate limit exceeded for IP: ${ipAddress}`)
+      await logAdminAttempt('rate-limited', false, ipAddress, userAgent, 'RATE_LIMITED')
+
+      return NextResponse.json(
+        {
+          error: 'Too many login attempts. Please try again later.',
+          retryAfter: Math.ceil((reset - Date.now()) / 1000)
+        },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(Math.ceil((reset - Date.now()) / 1000)),
+            'X-RateLimit-Remaining': String(remaining),
+          }
+        }
+      )
+    }
+
+    const body = await request.json()
+    const { email, password } = body
 
     // Validate input
     if (!email || !password) {

@@ -1,18 +1,80 @@
-// app/api/host/cars/[id]/route.ts - ENHANCED WITH ACTIVITY LOGGING
+// app/api/host/cars/[id]/route.ts - ENHANCED WITH ACTIVITY LOGGING + SECURITY FIX
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
-import { headers } from 'next/headers'
+import { headers, cookies } from 'next/headers'
+import { jwtVerify } from 'jose'
 
-// Helper to get host from headers
-async function getHostFromHeaders() {
+// SECURITY FIX: JWT secret for verifying tokens
+const JWT_SECRET = new TextEncoder().encode(
+  process.env.JWT_SECRET || 'your-secret-key'
+)
+
+// SECURITY FIX: Verify host from JWT token, not from spoofable headers
+async function getAuthenticatedHost() {
+  try {
+    const cookieStore = await cookies()
+
+    // Try host-specific tokens first
+    const hostToken = cookieStore.get('hostAccessToken')?.value || cookieStore.get('partner_token')?.value
+
+    if (!hostToken) {
+      return null
+    }
+
+    // Verify the JWT token
+    const { payload } = await jwtVerify(hostToken, JWT_SECRET)
+
+    if (!payload.hostId) {
+      return null
+    }
+
+    const host = await prisma.rentalHost.findUnique({
+      where: { id: payload.hostId as string },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        approvalStatus: true,
+        canEditCalendar: true,
+        minDailyRate: true,
+        maxDailyRate: true,
+        // Insurance fields
+        insuranceActive: true,
+        insuranceType: true,
+        insurancePolicyNumber: true,
+        hostInsuranceProvider: true,
+        hostInsuranceStatus: true,
+        hostInsuranceExpires: true,
+        commercialInsuranceActive: true,
+        commercialInsuranceProvider: true,
+        commercialInsuranceStatus: true,
+        commercialInsuranceExpires: true,
+        p2pInsuranceActive: true,
+        p2pInsuranceProvider: true,
+        p2pInsuranceStatus: true,
+        p2pInsuranceExpires: true,
+      }
+    })
+
+    return host
+  } catch (error) {
+    console.error('Host authentication error:', error)
+    return null
+  }
+}
+
+// DEPRECATED: Old header-based function - kept for reference only
+// DO NOT USE - headers can be spoofed by clients
+async function getHostFromHeaders_DEPRECATED() {
   const headersList = await headers()
   const hostId = headersList.get('x-host-id')
-  
+
   if (!hostId) {
     return null
   }
 
+  // WARNING: This is insecure - hostId from headers can be spoofed!
   const host = await prisma.rentalHost.findUnique({
     where: { id: hostId },
     select: {
@@ -23,7 +85,6 @@ async function getHostFromHeaders() {
       canEditCalendar: true,
       minDailyRate: true,
       maxDailyRate: true,
-      // Insurance fields
       insuranceActive: true,
       insuranceType: true,
       insurancePolicyNumber: true,
@@ -166,7 +227,7 @@ export async function GET(
 ) {
   try {
     const { id: carId } = await params
-    const host = await getHostFromHeaders()
+    const host = await getAuthenticatedHost()
     
     if (!host) {
       return NextResponse.json(
@@ -298,7 +359,7 @@ export async function PUT(
 ) {
   try {
     const { id: carId } = await params
-    const host = await getHostFromHeaders()
+    const host = await getAuthenticatedHost()
     
     if (!host) {
       return NextResponse.json(
@@ -693,7 +754,7 @@ export async function PATCH(
 ) {
   try {
     const { id: carId } = await params
-    const host = await getHostFromHeaders()
+    const host = await getAuthenticatedHost()
     
     if (!host) {
       return NextResponse.json(
@@ -823,7 +884,7 @@ export async function DELETE(
 ) {
   try {
     const { id: carId } = await params
-    const host = await getHostFromHeaders()
+    const host = await getAuthenticatedHost()
     
     if (!host) {
       return NextResponse.json(

@@ -1,18 +1,46 @@
 // app/api/webhooks/smartcar/route.ts
 // Receive webhook events from Smartcar (VERIFY, VEHICLE_STATE, VEHICLE_ERROR)
 // Payload format v4.0 uses signals array with code/group/body
+// SECURITY FIX: Added webhook signature verification
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
-import { createHmac } from 'crypto'
+import { createHmac, timingSafeEqual } from 'crypto'
 
 const SMARTCAR_MANAGEMENT_TOKEN = process.env.SMARTCAR_MANAGEMENT_TOKEN || ''
+const SMARTCAR_WEBHOOK_SECRET = process.env.SMARTCAR_WEBHOOK_SECRET || ''
 
 // Hash challenge for VERIFY handshake
 function hashChallenge(amt: string, challenge: string): string {
   const hmac = createHmac('sha256', amt)
   hmac.update(challenge)
   return hmac.digest('hex')
+}
+
+// SECURITY FIX: Verify webhook signature using timing-safe comparison
+function verifyWebhookSignature(rawBody: string, signature: string): boolean {
+  if (!SMARTCAR_WEBHOOK_SECRET) {
+    console.error('[Smartcar Webhook] Missing SMARTCAR_WEBHOOK_SECRET env var')
+    return false
+  }
+
+  const expectedSignature = createHmac('sha256', SMARTCAR_WEBHOOK_SECRET)
+    .update(rawBody)
+    .digest('hex')
+
+  // Use timing-safe comparison to prevent timing attacks
+  try {
+    const signatureBuffer = Buffer.from(signature, 'hex')
+    const expectedBuffer = Buffer.from(expectedSignature, 'hex')
+
+    if (signatureBuffer.length !== expectedBuffer.length) {
+      return false
+    }
+
+    return timingSafeEqual(signatureBuffer, expectedBuffer)
+  } catch {
+    return false
+  }
 }
 
 // Extract a signal value from the signals array
@@ -31,7 +59,16 @@ interface Signal {
 
 export async function POST(request: NextRequest) {
   try {
-    const payload = await request.json()
+    // SECURITY FIX: Get raw body for signature verification
+    const rawBody = await request.text()
+
+    // Parse payload
+    let payload: any
+    try {
+      payload = JSON.parse(rawBody)
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 })
+    }
 
     if (!payload || !payload.eventType) {
       return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
@@ -41,7 +78,7 @@ export async function POST(request: NextRequest) {
     console.log(`[Smartcar Webhook] eventType: ${eventType}`)
 
     // ============================================
-    // VERIFY - challenge handshake
+    // VERIFY - challenge handshake (no signature check needed)
     // ============================================
     if (eventType === 'VERIFY') {
       const challenge = payload.data?.challenge
@@ -52,6 +89,34 @@ export async function POST(request: NextRequest) {
       console.log('[Smartcar Webhook] VERIFY responded')
       return NextResponse.json({ challenge: hmac })
     }
+
+    // ============================================
+    // SECURITY: Webhook validation for non-VERIFY events
+    // Smartcar relies on:
+    // 1. VERIFY handshake (proves endpoint ownership)
+    // 2. HTTPS-only webhook URLs
+    // 3. We add: vehicle ID validation against our database
+    // ============================================
+
+    // Optional: If SMARTCAR_WEBHOOK_SECRET is configured, verify signature
+    const signature = request.headers.get('sc-signature')
+    if (SMARTCAR_WEBHOOK_SECRET && signature) {
+      if (!verifyWebhookSignature(rawBody, signature)) {
+        console.warn('[Smartcar Webhook] Invalid signature - rejecting webhook')
+        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
+      }
+      console.log('[Smartcar Webhook] Signature verified successfully')
+    }
+
+    // Validate webhook has required structure
+    if (!payload.data?.vehicle?.id) {
+      console.warn('[Smartcar Webhook] Missing vehicle ID in payload')
+      return NextResponse.json({ error: 'Invalid payload structure' }, { status: 400 })
+    }
+
+    // Log webhook metadata for audit trail
+    const webhookMeta = payload.meta || {}
+    console.log(`[Smartcar Webhook] Processing: webhookId=${webhookMeta.webhookId}, mode=${webhookMeta.mode}, signals=${webhookMeta.signalCount}`)
 
     // ============================================
     // VEHICLE_STATE - v4.0 signals format

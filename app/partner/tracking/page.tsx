@@ -184,6 +184,7 @@ export default function TrackingPage() {
   useEffect(() => {
     const smartcarSuccess = searchParams.get('smartcar_success')
     const smartcarError = searchParams.get('smartcar_error')
+    const smartcarCancelled = searchParams.get('smartcar_cancelled')
     const vehiclesConnected = searchParams.get('smartcar_vehicles_connected')
 
     if (smartcarSuccess === 'true') {
@@ -195,6 +196,9 @@ export default function TrackingPage() {
       window.history.replaceState({}, '', '/partner/tracking')
       // Reload Smartcar vehicles
       loadSmartcarVehicles()
+    } else if (smartcarCancelled === 'true') {
+      // User cancelled - just clear URL params, no error notification needed
+      window.history.replaceState({}, '', '/partner/tracking')
     } else if (smartcarError) {
       const errorMessages: Record<string, string> = {
         'access_denied': 'You denied access to your vehicle. Please try again if this was a mistake.',

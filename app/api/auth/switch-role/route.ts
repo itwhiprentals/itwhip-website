@@ -1,6 +1,7 @@
 // app/api/auth/switch-role/route.ts
 // API endpoint to switch between host and guest modes for dual-role users
 // Supports switching to linked accounts via legacyDualId
+// SECURITY FIX: Added session invalidation to prevent session fixation attacks
 
 import { NextRequest, NextResponse } from 'next/server'
 import { sign } from 'jsonwebtoken'
@@ -10,6 +11,31 @@ import { decodeToken, readAuthCookies } from '@/app/lib/services/roleService'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key'
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'fallback-refresh-secret'
+
+// SECURITY FIX: Helper function to invalidate all old session cookies
+function clearAllAuthCookies(response: NextResponse) {
+  const cookiesToClear = [
+    'accessToken',
+    'refreshToken',
+    'hostAccessToken',
+    'hostRefreshToken',
+    'partner_token',
+    'nextauth.session-token',
+    '__Secure-next-auth.session-token'
+  ]
+
+  for (const cookieName of cookiesToClear) {
+    response.cookies.set(cookieName, '', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 0, // Expire immediately
+      path: '/'
+    })
+  }
+
+  console.log('[Role Switch] SECURITY: Cleared all previous session cookies before role switch')
+}
 
 // Helper to generate HOST JWT tokens (same as oauth-redirect)
 function generateHostTokens(host: {
@@ -273,6 +299,10 @@ export async function POST(request: NextRequest) {
         switchedToLinkedAccount: switchingToLinkedUser
       })
 
+      // SECURITY FIX: Clear all existing auth cookies BEFORE setting new ones
+      // This prevents session fixation attacks where user maintains both role sessions
+      clearAllAuthCookies(response)
+
       // Set host cookies
       response.cookies.set('hostAccessToken', tokens.accessToken, {
         httpOnly: true,
@@ -429,6 +459,10 @@ export async function POST(request: NextRequest) {
         switchedToLinkedAccount: switchingToLinkedUser
       })
 
+      // SECURITY FIX: Clear all existing auth cookies BEFORE setting new ones
+      // This prevents session fixation attacks where user maintains both role sessions
+      clearAllAuthCookies(response)
+
       // Set guest cookies
       response.cookies.set('accessToken', tokens.accessToken, {
         httpOnly: true,
@@ -446,21 +480,7 @@ export async function POST(request: NextRequest) {
         path: '/'
       })
 
-      // Clear host cookies - use maxAge: 0 for reliable deletion
-      response.cookies.set('hostAccessToken', '', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 0, // Expire immediately
-        path: '/'
-      })
-      response.cookies.set('hostRefreshToken', '', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 0, // Expire immediately
-        path: '/'
-      })
+      // NOTE: Host cookies already cleared by clearAllAuthCookies() above
 
       // CRITICAL: Set current_mode cookie to explicitly track which mode user is in
       // This is the authoritative source for role detection in check-dual-role

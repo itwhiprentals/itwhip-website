@@ -123,7 +123,7 @@ async function buildAuthOptions(): Promise<NextAuthOptions> {
       GoogleProvider({
         clientId: process.env.GOOGLE_CLIENT_ID!,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-        allowDangerousEmailAccountLinking: true, // Allow linking OAuth to existing email accounts
+        allowDangerousEmailAccountLinking: false, // SECURITY FIX: Require verification before linking OAuth to existing accounts
         authorization: {
           params: {
             prompt: 'consent',

@@ -10,10 +10,10 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-06-20',
 })
 
-// Validation schema
+// SECURITY FIX: Removed amount/deposit from validation - these MUST be calculated server-side
 const paymentIntentSchema = z.object({
-  amount: z.number().positive(), // Amount in cents
-  deposit: z.number().positive(), // Deposit in cents
+  // amount: REMOVED - never trust client-provided amounts
+  // deposit: REMOVED - calculated from booking details
   bookingDetails: z.object({
     carId: z.string(),
     startDate: z.string(),
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { amount, deposit, bookingDetails } = validationResult.data
+    const { bookingDetails } = validationResult.data
 
     // SECURE QUERY - Get car and host details with SELECT
     const car = await prisma.rentalCar.findUnique({
@@ -71,13 +71,21 @@ export async function POST(request: NextRequest) {
         model: true,
         year: true,
         dailyRate: true,
+        weeklyRate: true,
+        monthlyRate: true,
+        weeklyDiscount: true,
+        monthlyDiscount: true,
+        insuranceDaily: true,
+        airportFee: true,
+        hotelFee: true,
+        homeFee: true,
         hostId: true,
+        isActive: true,
         host: {
           select: {
             id: true,
             name: true,
             email: true
-            // Only fields needed for payment processing
           }
         }
       }
@@ -90,15 +98,74 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Calculate platform fee (15-20% of rental amount)
-    const platformFeePercent = 0.15 // 15%
+    // SECURITY FIX: Verify car is active and available
+    if (!car.isActive) {
+      return NextResponse.json(
+        { error: 'Vehicle is not available for booking' },
+        { status: 400 }
+      )
+    }
+
+    // SECURITY FIX: Calculate amount SERVER-SIDE - never trust client
+    const startDate = new Date(bookingDetails.startDate)
+    const endDate = new Date(bookingDetails.endDate)
+    const timeDiff = endDate.getTime() - startDate.getTime()
+    const numberOfDays = Math.ceil(timeDiff / (1000 * 60 * 60 * 24))
+
+    if (numberOfDays < 1) {
+      return NextResponse.json(
+        { error: 'Invalid date range - minimum 1 day' },
+        { status: 400 }
+      )
+    }
+
+    // Calculate rental amount based on ACTUAL car rates
+    const dailyRateCents = Math.round(car.dailyRate * 100)
+    let subtotalCents = dailyRateCents * numberOfDays
+
+    // Apply discounts for longer rentals
+    if (numberOfDays >= 30 && car.monthlyDiscount) {
+      subtotalCents = Math.round(subtotalCents * (1 - car.monthlyDiscount / 100))
+    } else if (numberOfDays >= 7 && car.weeklyDiscount) {
+      subtotalCents = Math.round(subtotalCents * (1 - car.weeklyDiscount / 100))
+    }
+
+    // Add insurance if selected
+    let insuranceCents = 0
+    if (bookingDetails.insurance !== 'none' && car.insuranceDaily) {
+      insuranceCents = Math.round(car.insuranceDaily * 100 * numberOfDays)
+    }
+
+    // Add delivery fee based on delivery type
+    let deliveryFeeCents = 0
+    if (bookingDetails.deliveryType === 'airport' && car.airportFee) {
+      deliveryFeeCents = Math.round(car.airportFee * 100)
+    } else if (bookingDetails.deliveryType === 'hotel' && car.hotelFee) {
+      deliveryFeeCents = Math.round(car.hotelFee * 100)
+    } else if (bookingDetails.deliveryType === 'home' && car.homeFee) {
+      deliveryFeeCents = Math.round(car.homeFee * 100)
+    }
+
+    // Calculate service fee (10% of subtotal)
+    const serviceFeeCents = Math.round(subtotalCents * 0.10)
+
+    // Calculate total amount
+    const amount = subtotalCents + insuranceCents + deliveryFeeCents + serviceFeeCents
+
+    // Calculate deposit (typically 20% of rental or minimum $100)
+    const deposit = Math.max(Math.round(subtotalCents * 0.20), 10000) // Min $100 deposit
+
+    console.log(`[PAYMENT] Server-calculated: ${numberOfDays} days × $${car.dailyRate}/day = $${amount / 100} total`)
+
+    // Calculate platform fee (15% of rental amount)
+    const platformFeePercent = 0.15
     const platformFee = Math.round(amount * platformFeePercent)
     const hostPayout = amount - platformFee
 
     // Check if user has a Stripe customer ID
     let stripeCustomerId = await getOrCreateStripeCustomer(user, session.user.email)
 
-    // Create payment intent with metadata
+    // Create payment intent with metadata - using SERVER-CALCULATED amounts
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amount + deposit, // Total charge (rental + deposit)
       currency: 'usd',
@@ -108,10 +175,18 @@ export async function POST(request: NextRequest) {
         userId: user.id,
         carId: bookingDetails.carId,
         hostId: bookingDetails.hostId,
-        rentalAmount: amount.toString(),
-        depositAmount: deposit.toString(),
-        platformFee: platformFee.toString(),
-        hostPayout: hostPayout.toString(),
+        // SECURITY: All amounts are SERVER-CALCULATED
+        calculatedServerSide: 'true',
+        numberOfDays: numberOfDays.toString(),
+        dailyRate: car.dailyRate.toString(),
+        subtotal: (subtotalCents / 100).toString(),
+        insuranceFee: (insuranceCents / 100).toString(),
+        deliveryFee: (deliveryFeeCents / 100).toString(),
+        serviceFee: (serviceFeeCents / 100).toString(),
+        rentalAmount: (amount / 100).toString(),
+        depositAmount: (deposit / 100).toString(),
+        platformFee: (platformFee / 100).toString(),
+        hostPayout: (hostPayout / 100).toString(),
         startDate: bookingDetails.startDate,
         endDate: bookingDetails.endDate,
         insurance: bookingDetails.insurance,
@@ -151,14 +226,30 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    // Return breakdown so client can display it (but client cannot modify amounts)
     return NextResponse.json({
       clientSecret: paymentIntent.client_secret,
       paymentIntentId: paymentIntent.id,
+      // All amounts in cents for consistency
       amount: amount,
       deposit: deposit,
       total: amount + deposit,
       platformFee: platformFee,
-      hostPayout: hostPayout
+      hostPayout: hostPayout,
+      // SECURITY FIX: Include breakdown calculated server-side
+      breakdown: {
+        numberOfDays,
+        dailyRate: car.dailyRate,
+        subtotal: subtotalCents / 100,
+        insuranceFee: insuranceCents / 100,
+        deliveryFee: deliveryFeeCents / 100,
+        serviceFee: serviceFeeCents / 100,
+        rentalTotal: amount / 100,
+        deposit: deposit / 100,
+        grandTotal: (amount + deposit) / 100
+      },
+      // Flag to indicate these were server-calculated
+      calculatedServerSide: true
     })
 
   } catch (error) {

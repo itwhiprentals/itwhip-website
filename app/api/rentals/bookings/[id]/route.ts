@@ -1,6 +1,129 @@
 // File: app/api/rentals/bookings/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/app/lib/database/prisma'
+import { jwtVerify } from 'jose'
+import { cookies } from 'next/headers'
+
+// SECURITY FIX: Added authentication and ownership verification to prevent IDOR attacks
+
+const JWT_SECRET = new TextEncoder().encode(
+  process.env.JWT_SECRET || 'your-secret-key'
+)
+
+const ADMIN_JWT_SECRET = new TextEncoder().encode(
+  process.env.ADMIN_JWT_SECRET || 'admin-secret-key-change-this'
+)
+
+interface AuthUser {
+  userId: string
+  role: string
+  isAdmin: boolean
+  isHost: boolean
+  hostId?: string
+}
+
+async function getAuthenticatedUser(request: NextRequest): Promise<AuthUser | null> {
+  try {
+    const cookieStore = await cookies()
+
+    // Check admin token first
+    const adminToken = cookieStore.get('adminAccessToken')?.value
+    if (adminToken) {
+      try {
+        const { payload } = await jwtVerify(adminToken, ADMIN_JWT_SECRET)
+        if (payload.type === 'admin' && payload.role === 'ADMIN') {
+          return {
+            userId: payload.userId as string,
+            role: 'ADMIN',
+            isAdmin: true,
+            isHost: false
+          }
+        }
+      } catch {}
+    }
+
+    // Check host token
+    const hostToken = cookieStore.get('hostAccessToken')?.value || cookieStore.get('partner_token')?.value
+    if (hostToken) {
+      try {
+        const { payload } = await jwtVerify(hostToken, JWT_SECRET)
+        return {
+          userId: payload.userId as string,
+          role: 'HOST',
+          isAdmin: false,
+          isHost: true,
+          hostId: payload.hostId as string
+        }
+      } catch {}
+    }
+
+    // Check guest token
+    const guestToken = cookieStore.get('accessToken')?.value
+    if (guestToken) {
+      try {
+        const { payload } = await jwtVerify(guestToken, JWT_SECRET)
+        return {
+          userId: payload.userId as string,
+          role: 'GUEST',
+          isAdmin: false,
+          isHost: false
+        }
+      } catch {}
+    }
+
+    return null
+  } catch (error) {
+    console.error('Auth verification error:', error)
+    return null
+  }
+}
+
+async function verifyBookingOwnership(
+  bookingId: string,
+  user: AuthUser
+): Promise<{ allowed: boolean; booking: any | null; reason?: string }> {
+  // Admins can access any booking
+  if (user.isAdmin) {
+    const booking = await prisma.rentalBooking.findUnique({
+      where: { id: bookingId },
+      select: { id: true, renterId: true, hostId: true }
+    })
+    return { allowed: true, booking }
+  }
+
+  // Fetch booking with ownership info
+  const booking = await prisma.rentalBooking.findUnique({
+    where: { id: bookingId },
+    select: {
+      id: true,
+      renterId: true,
+      hostId: true,
+      car: {
+        select: { hostId: true }
+      }
+    }
+  })
+
+  if (!booking) {
+    return { allowed: false, booking: null, reason: 'Booking not found' }
+  }
+
+  // Hosts can access bookings for their cars
+  if (user.isHost) {
+    const carHostId = booking.car?.hostId
+    if (booking.hostId === user.hostId || carHostId === user.hostId) {
+      return { allowed: true, booking }
+    }
+    return { allowed: false, booking, reason: 'Not your booking' }
+  }
+
+  // Guests can only access their own bookings
+  if (booking.renterId === user.userId) {
+    return { allowed: true, booking }
+  }
+
+  return { allowed: false, booking, reason: 'Not your booking' }
+}
 
 export async function GET(
   request: NextRequest,
@@ -8,7 +131,25 @@ export async function GET(
 ) {
   try {
     const resolvedParams = await params
-    
+
+    // SECURITY FIX: Verify authentication
+    const user = await getAuthenticatedUser(request)
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
+    // SECURITY FIX: Verify ownership before returning booking data
+    const { allowed, reason } = await verifyBookingOwnership(resolvedParams.id, user)
+    if (!allowed) {
+      return NextResponse.json(
+        { error: reason || 'Access denied' },
+        { status: reason === 'Booking not found' ? 404 : 403 }
+      )
+    }
+
     // SECURE QUERY - USE SELECT NOT INCLUDE
     const booking = await prisma.rentalBooking.findUnique({
       where: { id: resolvedParams.id },
@@ -201,8 +342,27 @@ export async function PUT(
 ) {
   try {
     const resolvedParams = await params
+
+    // SECURITY FIX: Verify authentication
+    const user = await getAuthenticatedUser(request)
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
+    // SECURITY FIX: Verify ownership before allowing update
+    const { allowed, reason } = await verifyBookingOwnership(resolvedParams.id, user)
+    if (!allowed) {
+      return NextResponse.json(
+        { error: reason || 'Access denied' },
+        { status: reason === 'Booking not found' ? 404 : 403 }
+      )
+    }
+
     const body = await request.json()
-    
+
     // Only allow updating certain fields
     const allowedUpdates = {
       notes: body.notes,
@@ -245,14 +405,35 @@ export async function DELETE(
 ) {
   try {
     const resolvedParams = await params
-    
+
+    // SECURITY FIX: Verify authentication
+    const user = await getAuthenticatedUser(request)
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
+    // SECURITY FIX: Verify ownership before allowing cancellation
+    const { allowed, reason } = await verifyBookingOwnership(resolvedParams.id, user)
+    if (!allowed) {
+      return NextResponse.json(
+        { error: reason || 'Access denied' },
+        { status: reason === 'Booking not found' ? 404 : 403 }
+      )
+    }
+
+    // Determine who is cancelling based on authenticated user
+    const cancelledBy = user.isAdmin ? 'ADMIN' : user.isHost ? 'HOST' : 'GUEST'
+
     // Only allow cancellation, not actual deletion
     const cancelledBooking = await prisma.rentalBooking.update({
       where: { id: resolvedParams.id },
       data: {
         status: 'CANCELLED',
         cancelledAt: new Date(),
-        cancelledBy: 'GUEST'  // You might want to determine this from auth
+        cancelledBy: cancelledBy
       },
       select: {
         id: true,

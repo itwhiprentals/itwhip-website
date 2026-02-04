@@ -127,16 +127,15 @@ async function subscribeToWebhook(
 
   try {
     // Subscribe to scheduled webhook for location + odometer + fuel + battery
-    const response = await fetch(`${SMARTCAR_API_URL}/vehicles/${smartcarVehicleId}/subscribe`, {
+    // API: POST /vehicles/{vehicle_id}/webhooks/{webhook_id}
+    // Ref: https://smartcar.com/docs/api-reference/webhooks/subscribe-webhook
+    const response = await fetch(`${SMARTCAR_API_URL}/vehicles/${smartcarVehicleId}/webhooks/${SMARTCAR_WEBHOOK_ID}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
         'SC-Unit-System': 'metric'
-      },
-      body: JSON.stringify({
-        webhookId: SMARTCAR_WEBHOOK_ID
-      })
+      }
     })
 
     if (response.ok) {
@@ -184,6 +183,15 @@ export async function GET(request: NextRequest) {
 
   // Handle error from Smartcar
   if (error) {
+    // User cancelled the flow - this is NOT an error, just redirect without error message
+    if (error === 'user_manually_returned_to_application' || error === 'access_denied') {
+      console.log('Smartcar OAuth: User cancelled connection flow')
+      const redirectUrl = new URL(baseRedirectUrl, request.url)
+      redirectUrl.searchParams.set('smartcar_cancelled', 'true')
+      return NextResponse.redirect(redirectUrl)
+    }
+
+    // Actual error - log and show to user
     console.error('Smartcar OAuth error:', error, errorDescription)
     const redirectUrl = new URL(baseRedirectUrl, request.url)
     redirectUrl.searchParams.set('smartcar_error', error)

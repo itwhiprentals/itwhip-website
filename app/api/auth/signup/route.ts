@@ -1,4 +1,5 @@
 // app/api/auth/signup/route.ts
+// SECURITY FIX: Added rate limiting to prevent bot account creation
 import { NextRequest, NextResponse } from 'next/server'
 import * as argon2 from 'argon2'
 import { SignJWT } from 'jose'
@@ -6,10 +7,23 @@ import { nanoid } from 'nanoid'
 import db from '@/app/lib/db'
 import { prisma } from '@/app/lib/database/prisma'
 import { resolveIdentity, linkAllIdentifiers, normalizeEmail, normalizePhone } from '@/app/lib/services/identityResolution'
+import { Ratelimit } from '@upstash/ratelimit'
+import { Redis } from '@upstash/redis'
 
-// Generate 6-digit verification code
+// SECURITY FIX: Signup rate limiter - prevent mass account creation
+const signupRateLimit = new Ratelimit({
+  redis: new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL!,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+  }),
+  limiter: Ratelimit.slidingWindow(5, '1 h'), // 5 signups per hour per IP
+  analytics: true,
+  prefix: 'ratelimit:signup',
+})
+
+// Generate 8-digit verification code (SECURITY FIX: increased from 6)
 function generateVerificationCode(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString()
+  return Math.floor(10000000 + Math.random() * 90000000).toString()
 }
 
 // Get JWT secrets - UPDATED FOR GUEST SEPARATION
@@ -97,6 +111,30 @@ async function createTokens(userId: string, email: string, role: string, name?: 
 
 export async function POST(request: NextRequest) {
   try {
+    // SECURITY FIX: Rate limiting - check FIRST before any processing
+    const ipAddress = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+                     request.headers.get('x-real-ip') ||
+                     'unknown'
+
+    const { success, remaining, reset } = await signupRateLimit.limit(ipAddress)
+
+    if (!success) {
+      console.warn(`[SIGNUP] 🚨 Rate limit exceeded for IP: ${ipAddress}`)
+      return NextResponse.json(
+        {
+          error: 'Too many signup attempts. Please try again later.',
+          retryAfter: Math.ceil((reset - Date.now()) / 1000)
+        },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(Math.ceil((reset - Date.now()) / 1000)),
+            'X-RateLimit-Remaining': String(remaining),
+          }
+        }
+      )
+    }
+
     // Parse request body
     const body = await request.json()
     const { email, password, name, phone, roleHint } = body
