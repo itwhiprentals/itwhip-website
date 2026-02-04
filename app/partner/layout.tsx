@@ -420,58 +420,11 @@ export default function PartnerLayout({
                 <IoNotificationsOutline className="w-6 h-6" />
               </Link>
 
-              {/* Role Switcher - For dual-role users (host + guest) */}
-              <RoleSwitcher />
-
-              {/* Profile Menu */}
-              <div className="relative">
-                <button
-                  onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                  className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                >
-                  <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center">
-                    <IoPersonOutline className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-                  </div>
-                  <IoChevronDownOutline className="w-4 h-4 text-gray-500 hidden sm:block" />
-                </button>
-
-                {/* Profile Dropdown */}
-                {profileMenuOpen && (
-                  <>
-                    <div
-                      className="fixed inset-0 z-40"
-                      onClick={() => setProfileMenuOpen(false)}
-                    />
-                    <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
-                      <div className="p-3 border-b border-gray-200 dark:border-gray-700">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">
-                          {partner?.name}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                          {partner?.email}
-                        </p>
-                      </div>
-                      <div className="p-1">
-                        <Link
-                          href="/partner/settings"
-                          onClick={() => setProfileMenuOpen(false)}
-                          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
-                        >
-                          <IoSettingsOutline className="w-4 h-4" />
-                          Account Settings
-                        </Link>
-                        <button
-                          onClick={handleLogout}
-                          className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
-                        >
-                          <IoLogOutOutline className="w-4 h-4" />
-                          Logout
-                        </button>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
+              {/* Role Switcher - includes avatar, replaces profile menu */}
+              <RoleSwitcher
+                profilePhoto={partner?.profilePhoto}
+                userName={partner?.name}
+              />
             </div>
           </div>
         </header>

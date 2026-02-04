@@ -71,6 +71,15 @@ export async function POST(request: NextRequest) {
       path: '/'
     })
 
+    // Clear current_mode cookie (role indicator)
+    response.cookies.set('current_mode', '', {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 0,
+      path: '/'
+    })
+
     console.log('User logged out successfully, all cookies cleared')
     return response
 
@@ -113,6 +122,15 @@ export async function POST(request: NextRequest) {
       path: '/'
     })
 
+    // Clear current_mode cookie on error too
+    response.cookies.set('current_mode', '', {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 0,
+      path: '/'
+    })
+
     return response
   }
 }
@@ -146,6 +164,15 @@ export async function GET(request: NextRequest) {
   })
 
   response.cookies.set('refresh_token', '', {
+    maxAge: 0,
+    path: '/'
+  })
+
+  // Clear current_mode cookie (role indicator)
+  response.cookies.set('current_mode', '', {
+    httpOnly: false,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
     maxAge: 0,
     path: '/'
   })

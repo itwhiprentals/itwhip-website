@@ -3,80 +3,37 @@
 // Aggressively clears stale/mismatched cookies to prevent role confusion
 
 import { NextRequest, NextResponse } from 'next/server'
-import { verify, JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken'
 import { prisma } from '@/app/lib/database/prisma'
-
-// Support both platform and guest JWT secrets
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key'
-const GUEST_JWT_SECRET = process.env.GUEST_JWT_SECRET || 'fallback-guest-secret-key'
-
-interface DecodedToken {
-  userId: string
-  email?: string
-  hostId?: string
-  [key: string]: unknown
-}
-
-// Helper to safely decode a token - tries both secrets
-function safeDecodeToken(token: string | undefined, name: string): { userId: string | null, valid: boolean, expired: boolean } {
-  if (!token || token.length < 10) {
-    return { userId: null, valid: false, expired: false }
-  }
-
-  // Try platform secret first, then guest secret
-  const secrets = [JWT_SECRET, GUEST_JWT_SECRET]
-
-  for (const secret of secrets) {
-    try {
-      const decoded = verify(token, secret) as DecodedToken
-      // Partner tokens use hostId, guest tokens use userId
-      const userId = decoded.userId || decoded.hostId || null
-      return { userId, valid: true, expired: false }
-    } catch (err) {
-      if (err instanceof TokenExpiredError) {
-        return { userId: null, valid: false, expired: true }
-      }
-      // Continue to next secret if signature doesn't match
-      continue
-    }
-  }
-
-  // If we get here, token is invalid with all secrets
-  console.log(`[Dual-Role Check] ${name} JWT invalid with all secrets`)
-  return { userId: null, valid: false, expired: false }
-}
-
-// Helper to clear a cookie properly (maxAge: 0 is more reliable than delete)
-function clearCookie(response: NextResponse, name: string) {
-  response.cookies.set(name, '', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 0,
-    path: '/'
-  })
-}
+import {
+  decodeToken,
+  clearCookie,
+  getCurrentModeFromCookie,
+  readAuthCookies,
+  COOKIE_NAMES,
+  type RoleMode
+} from '@/app/lib/services/roleService'
 
 export async function GET(request: NextRequest) {
   try {
-    // Get ALL auth-related tokens
-    const hostAccessToken = request.cookies.get('hostAccessToken')?.value
-    const hostRefreshToken = request.cookies.get('hostRefreshToken')?.value
-    const partnerToken = request.cookies.get('partner_token')?.value
-    const guestAccessToken = request.cookies.get('accessToken')?.value
-    const guestRefreshToken = request.cookies.get('refreshToken')?.value
+    // Get ALL auth-related cookies using centralized service
+    const cookies = readAuthCookies(request)
+
+    // CRITICAL: Get the current_mode cookie - this is the authoritative source for role detection
+    // Set by switch-role API when user explicitly switches between host and guest modes
+    const currentModeCookie = getCurrentModeFromCookie(request)
 
     // Debug log
     console.log('[Dual-Role Check] Cookie debug:', {
-      hostAccessToken: hostAccessToken ? `${hostAccessToken.substring(0, 30)}... (${hostAccessToken.length} chars)` : 'EMPTY',
-      partnerToken: partnerToken ? `${partnerToken.substring(0, 30)}... (${partnerToken.length} chars)` : 'EMPTY',
-      guestAccessToken: guestAccessToken ? `${guestAccessToken.substring(0, 30)}... (${guestAccessToken.length} chars)` : 'EMPTY'
+      hostAccessToken: cookies.hostAccessToken ? `${cookies.hostAccessToken.substring(0, 30)}... (${cookies.hostAccessToken.length} chars)` : 'EMPTY',
+      partnerToken: cookies.partnerToken ? `${cookies.partnerToken.substring(0, 30)}... (${cookies.partnerToken.length} chars)` : 'EMPTY',
+      accessToken: cookies.accessToken ? `${cookies.accessToken.substring(0, 30)}... (${cookies.accessToken.length} chars)` : 'EMPTY',
+      currentMode: currentModeCookie || 'NOT_SET'
     })
 
-    // MILITARY GRADE: Decode ALL tokens and track their userIds
-    const hostToken = safeDecodeToken(hostAccessToken, 'hostAccessToken')
-    const partnerTok = safeDecodeToken(partnerToken, 'partner_token')
-    const guestToken = safeDecodeToken(guestAccessToken, 'accessToken')
+    // MILITARY GRADE: Decode ALL tokens and track their userIds using centralized service
+    const hostToken = decodeToken(cookies.hostAccessToken, 'hostAccessToken')
+    const partnerTok = decodeToken(cookies.partnerToken, 'partner_token')
+    const guestToken = decodeToken(cookies.accessToken, 'accessToken')
 
     // Collect all valid userIds
     const tokenUserIds: { source: string, userId: string }[] = []
@@ -95,15 +52,15 @@ export async function GET(request: NextRequest) {
 
     // Clear any expired tokens immediately
     if (hostToken.expired) {
-      cookiesToClear.push('hostAccessToken', 'hostRefreshToken')
+      cookiesToClear.push(COOKIE_NAMES.HOST_ACCESS_TOKEN, COOKIE_NAMES.HOST_REFRESH_TOKEN)
       console.log('[Dual-Role Check] 🧹 Clearing expired hostAccessToken')
     }
     if (partnerTok.expired) {
-      cookiesToClear.push('partner_token')
+      cookiesToClear.push(COOKIE_NAMES.PARTNER_TOKEN)
       console.log('[Dual-Role Check] 🧹 Clearing expired partner_token')
     }
     if (guestToken.expired) {
-      cookiesToClear.push('accessToken', 'refreshToken')
+      cookiesToClear.push(COOKIE_NAMES.ACCESS_TOKEN, COOKIE_NAMES.REFRESH_TOKEN)
       console.log('[Dual-Role Check] 🧹 Clearing expired accessToken')
     }
 
@@ -111,11 +68,12 @@ export async function GET(request: NextRequest) {
     if (tokenUserIds.length === 0) {
       const response = NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
       // Clear all auth cookies on the way out
-      clearCookie(response, 'hostAccessToken')
-      clearCookie(response, 'hostRefreshToken')
-      clearCookie(response, 'partner_token')
-      clearCookie(response, 'accessToken')
-      clearCookie(response, 'refreshToken')
+      clearCookie(response, COOKIE_NAMES.HOST_ACCESS_TOKEN)
+      clearCookie(response, COOKIE_NAMES.HOST_REFRESH_TOKEN)
+      clearCookie(response, COOKIE_NAMES.PARTNER_TOKEN)
+      clearCookie(response, COOKIE_NAMES.ACCESS_TOKEN)
+      clearCookie(response, COOKIE_NAMES.REFRESH_TOKEN)
+      clearCookie(response, COOKIE_NAMES.CURRENT_MODE)
       return response
     }
 
@@ -136,18 +94,18 @@ export async function GET(request: NextRequest) {
       if (guestUserId) {
         // Clear non-guest tokens that don't match
         if (hostToken.userId && hostToken.userId !== guestUserId) {
-          cookiesToClear.push('hostAccessToken', 'hostRefreshToken')
+          cookiesToClear.push(COOKIE_NAMES.HOST_ACCESS_TOKEN, COOKIE_NAMES.HOST_REFRESH_TOKEN)
           console.log('[Dual-Role Check] 🧹 Clearing mismatched hostAccessToken (different user)')
         }
         if (partnerTok.userId && partnerTok.userId !== guestUserId) {
-          cookiesToClear.push('partner_token')
+          cookiesToClear.push(COOKIE_NAMES.PARTNER_TOKEN)
           console.log('[Dual-Role Check] 🧹 Clearing mismatched partner_token (different user)')
         }
       } else {
         // No guest token, keep host/partner
         const hostUserId = hostToken.userId || partnerTok.userId
         if (guestToken.valid && guestToken.userId && guestToken.userId !== hostUserId) {
-          cookiesToClear.push('accessToken', 'refreshToken')
+          cookiesToClear.push(COOKIE_NAMES.ACCESS_TOKEN, COOKIE_NAMES.REFRESH_TOKEN)
           console.log('[Dual-Role Check] 🧹 Clearing mismatched accessToken (different user)')
         }
       }
@@ -158,13 +116,35 @@ export async function GET(request: NextRequest) {
       ? guestToken.userId
       : (hostToken.userId || partnerTok.userId)!
 
-    // Determine current role based on which valid token we're using
-    let currentRole: 'host' | 'guest' | null = null
-    if (guestToken.valid && guestToken.userId === primaryUserId) {
-      currentRole = 'guest'
-    } else if ((hostToken.valid && hostToken.userId === primaryUserId) ||
-               (partnerTok.valid && partnerTok.userId === primaryUserId)) {
+    // Determine current role based on cookies and tokens
+    // CRITICAL: current_mode cookie is the AUTHORITATIVE source (set by switch-role API)
+    let currentRole: RoleMode | null = null
+
+    // Priority 1: Use current_mode cookie if set (explicit user choice from role switcher)
+    if (currentModeCookie === 'host' || currentModeCookie === 'guest') {
+      currentRole = currentModeCookie
+      console.log(`[Dual-Role Check] Using current_mode cookie: ${currentRole}`)
+    }
+    // Priority 2 (fallback for initial login): Check token content
+    // If hostAccessToken is valid, user is in host mode
+    else if (hostToken.valid && hostToken.userId === primaryUserId) {
       currentRole = 'host'
+      console.log('[Dual-Role Check] Fallback: hostAccessToken valid, setting currentRole=host')
+    }
+    // Priority 3: If partner_token is valid, user is in host mode
+    else if (partnerTok.valid && partnerTok.userId === primaryUserId) {
+      currentRole = 'host'
+      console.log('[Dual-Role Check] Fallback: partner_token valid, setting currentRole=host')
+    }
+    // Priority 4: If accessToken is valid AND is a host token (isRentalHost), user is in host mode
+    else if (guestToken.valid && guestToken.userId === primaryUserId && guestToken.isRentalHost) {
+      currentRole = 'host'
+      console.log('[Dual-Role Check] Fallback: accessToken contains host token (isRentalHost=true)')
+    }
+    // Priority 5: If accessToken is valid and is NOT a host token, user is in guest mode
+    else if (guestToken.valid && guestToken.userId === primaryUserId && !guestToken.isRentalHost) {
+      currentRole = 'guest'
+      console.log('[Dual-Role Check] Fallback: accessToken is guest token, setting currentRole=guest')
     }
 
     // Get user data including legacyDualId
@@ -219,11 +199,12 @@ export async function GET(request: NextRequest) {
       console.error('[Dual-Role Check] User not found for userId:', primaryUserId)
       // Clear all cookies - user doesn't exist
       const response = NextResponse.json({ error: 'User not found' }, { status: 404 })
-      clearCookie(response, 'hostAccessToken')
-      clearCookie(response, 'hostRefreshToken')
-      clearCookie(response, 'partner_token')
-      clearCookie(response, 'accessToken')
-      clearCookie(response, 'refreshToken')
+      clearCookie(response, COOKIE_NAMES.HOST_ACCESS_TOKEN)
+      clearCookie(response, COOKIE_NAMES.HOST_REFRESH_TOKEN)
+      clearCookie(response, COOKIE_NAMES.PARTNER_TOKEN)
+      clearCookie(response, COOKIE_NAMES.ACCESS_TOKEN)
+      clearCookie(response, COOKIE_NAMES.REFRESH_TOKEN)
+      clearCookie(response, COOKIE_NAMES.CURRENT_MODE)
       return response
     }
 
@@ -293,14 +274,18 @@ export async function GET(request: NextRequest) {
 
     // ADDITIONAL CHECK: If tokens claim a role the user doesn't have, clear them
     if (currentRole === 'host' && !hasHostProfile) {
-      console.log('[Dual-Role Check] 🧹 User has host tokens but NO host profile - clearing host cookies')
-      cookiesToClear.push('hostAccessToken', 'hostRefreshToken', 'partner_token')
+      console.log('[Dual-Role Check] 🧹 User claims host role but NO host profile - clearing host cookies')
+      cookiesToClear.push(COOKIE_NAMES.HOST_ACCESS_TOKEN, COOKIE_NAMES.HOST_REFRESH_TOKEN, COOKIE_NAMES.PARTNER_TOKEN)
       currentRole = hasGuestProfile ? 'guest' : null
+      // Also clear the current_mode cookie since it's invalid
+      cookiesToClear.push(COOKIE_NAMES.CURRENT_MODE)
     }
     if (currentRole === 'guest' && !hasGuestProfile) {
-      console.log('[Dual-Role Check] 🧹 User has guest tokens but NO guest profile - clearing guest cookies')
-      cookiesToClear.push('accessToken', 'refreshToken')
+      console.log('[Dual-Role Check] 🧹 User claims guest role but NO guest profile - clearing guest cookies')
+      cookiesToClear.push(COOKIE_NAMES.ACCESS_TOKEN, COOKIE_NAMES.REFRESH_TOKEN)
       currentRole = hasHostProfile ? 'host' : null
+      // Also clear the current_mode cookie since it's invalid
+      cookiesToClear.push(COOKIE_NAMES.CURRENT_MODE)
     }
 
     // Build response

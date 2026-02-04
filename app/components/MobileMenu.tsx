@@ -61,8 +61,6 @@ interface MobileMenuProps {
   isHost?: boolean
   isHostPage?: boolean
   hostNavItems?: HostNavItem[]
-  isSwitchingRole?: boolean // TRUE during role switch - sync with header state
-  isLoggingOut?: boolean // TRUE during logout - show loading state
 }
 
 const navigationSections = [
@@ -143,17 +141,12 @@ const guestNavItems = [
 export default function MobileMenu({
   isOpen,
   onClose,
-  handleGetAppClick,
-  handleSearchClick,
   isLoggedIn = false,
   user = null,
-  onProfileClick,
   onLogout,
   isHost = false,
   isHostPage = false,
-  hostNavItems = [],
-  isSwitchingRole = false,
-  isLoggingOut = false
+  hostNavItems = []
 }: MobileMenuProps) {
   const pathname = usePathname()
   const [expandedSection, setExpandedSection] = useState<string | null>(null)
@@ -301,20 +294,8 @@ export default function MobileMenu({
 
         <div className="overflow-y-auto h-[calc(100%-80px)] overscroll-contain">
 
-          {/* Role Switching Banner - Synced with Header */}
-          {isSwitchingRole && (
-            <div className="p-4 bg-blue-100 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800">
-              <div className="flex items-center justify-center space-x-3">
-                <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                  Switching roles...
-                </span>
-              </div>
-            </div>
-          )}
-
           {/* User Profile Section */}
-          {isLoggedIn && user && !isSwitchingRole && (
+          {isLoggedIn && user && (
             <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950 border-b border-gray-200 dark:border-gray-800">
               <div className="flex items-center space-x-3 mb-4">
                 {/* Profile Photo or Initial */}
@@ -701,27 +682,14 @@ export default function MobileMenu({
             <div className="p-4 border-t border-gray-200 dark:border-gray-800">
               <button
                 onClick={() => handleQuickAction(onLogout || (() => {}))}
-                disabled={isLoggingOut}
-                className={`w-full flex items-center justify-center space-x-2 px-4 py-2.5
+                className="w-full flex items-center justify-center space-x-2 px-4 py-2.5
                   rounded-lg transition-all font-medium
                   focus:outline-none focus:ring-2 focus:ring-red-500
-                  ${isLoggingOut
-                    ? 'bg-red-50 dark:bg-red-900/20 text-red-400 cursor-not-allowed'
-                    : 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:scale-[0.98]'
-                  }`}
+                  text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:scale-[0.98]"
                 aria-label="Sign out"
               >
-                {isLoggingOut ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
-                    <span>Signing Out...</span>
-                  </>
-                ) : (
-                  <>
-                    <IoLogOutOutline className="w-5 h-5" aria-hidden="true" />
-                    <span>Sign Out</span>
-                  </>
-                )}
+                <IoLogOutOutline className="w-5 h-5" aria-hidden="true" />
+                <span>Sign Out</span>
               </button>
             </div>
           )}

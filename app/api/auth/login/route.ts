@@ -431,6 +431,16 @@ export async function POST(request: NextRequest) {
       path: '/'
     })
 
+    // ✅ STEP 10.6: Set current_mode cookie for role detection
+    // This is the authoritative source for check-dual-role API
+    response.cookies.set('current_mode', 'guest', {
+      httpOnly: false, // Allow client-side JS to read for instant UI updates
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60, // 7 days
+      path: '/'
+    })
+
     // ✅ STEP 11: Add rate limit headers to response
     response.headers.set('X-RateLimit-Limit', limit.toString())
     response.headers.set('X-RateLimit-Remaining', remaining.toString())

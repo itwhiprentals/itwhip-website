@@ -4,25 +4,19 @@
 import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useRouter, usePathname, useSearchParams } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import {
-  IoSunnyOutline,
-  IoMoonOutline,
-  IoMenuOutline,
-  IoCloseOutline,
   IoChevronDownOutline,
   IoCarOutline,
   IoShieldCheckmarkOutline,
   IoHomeOutline,
   IoCalendarOutline,
   IoWalletOutline,
-  IoPersonOutline,
-  IoLogOutOutline
+  IoPersonOutline
 } from 'react-icons/io5'
 import MobileMenu from './MobileMenu'
 import ProfileModal from '../(guest)/dashboard/modals/ProfileModal'
-import NotificationBell from './notifications/NotificationBell'
-import RoleSwitcher from './RoleSwitcher'
+import HeaderActions from './header/HeaderActions'
 import { useAuth } from '@/app/contexts/AuthContext'
 
 // Desktop Navigation Items
@@ -78,16 +72,9 @@ interface User {
   avatar?: string
 }
 
-interface HeaderProps {
-  handleGetAppClick?: () => void
-  handleSearchClick?: () => void
-}
+interface HeaderProps {}
 
-function HeaderInner({
-  handleGetAppClick = () => {},
-  handleSearchClick = () => {}
-}: HeaderProps = {}) {
-  const router = useRouter()
+function HeaderInner({}: HeaderProps = {}) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
@@ -111,9 +98,6 @@ function HeaderInner({
     user: authUser,
     isLoading: isCheckingAuth,
     isSwitchingRole,
-    hasBothProfiles,
-    currentRole,
-    logout: contextLogout,
     refreshAuth
   } = useAuth()
 
@@ -135,13 +119,10 @@ function HeaderInner({
   const [scrolled, setScrolled] = useState(false)
   const [showProfileModal, setShowProfileModal] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
-  const [profileImageError, setProfileImageError] = useState(false)
-  const [showProfileDropdown, setShowProfileDropdown] = useState(false)
 
   // Check if we're on specific pages
   const isHostPage = pathname?.startsWith('/host/')
   const isAdminPage = pathname?.startsWith('/admin/')
-  const isGuestPage = pathname?.startsWith('/dashboard') || pathname?.startsWith('/profile') || pathname?.startsWith('/messages')
 
   // Override isLoggedIn display when guard screen is active
   // User should appear logged out until they choose an action on the guard screen
@@ -241,27 +222,12 @@ function HeaderInner({
     window.location.href = redirectUrl
   }
 
-  const handleProfileClick = () => {
-    if (isHost) {
-      router.push('/host/profile')
-    } else if (isAdmin) {
-      router.push('/admin/profile')
-    } else if (isGuest) {
-      router.push('/profile')
-    } else {
-      setShowProfileModal(true)
-    }
-  }
-
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement
       if (!target.closest('.nav-dropdown')) {
         setActiveDropdown(null)
-      }
-      if (!target.closest('.profile-dropdown')) {
-        setShowProfileDropdown(false)
       }
     }
 
@@ -286,11 +252,6 @@ function HeaderInner({
 
   // Get profile photo - prioritize profilePhoto over avatar
   const profilePhotoUrl = user?.profilePhoto || user?.avatar
-
-  // Reset image error state when user or photo URL changes
-  useEffect(() => {
-    setProfileImageError(false)
-  }, [profilePhotoUrl])
 
   return (
     <>
@@ -416,177 +377,39 @@ function HeaderInner({
                 </div>
               )}
 
-              {/* Host Badge */}
-              {isHostPage && isHost && (
-                <div className="hidden lg:flex items-center space-x-2 ml-4">
-                  <div className="flex items-center space-x-2 px-3 py-1.5 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
-                    <IoCarOutline className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                    <span className="text-sm font-medium text-purple-600 dark:text-purple-400">Host Mode</span>
-                  </div>
-                </div>
-              )}
             </div>
             
-            {/* Right side - Actions */}
-            <div className="flex items-center space-x-2">
-              {/* Theme Toggle */}
-              <button
-                onClick={toggleTheme}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors"
-                aria-label="Toggle theme"
-              >
-                {isDarkMode ? (
-                  <IoSunnyOutline className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                ) : (
-                  <IoMoonOutline className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                )}
-              </button>
-
-              {/* ✅ FIXED: Notifications - Show correct bell based on user type */}
-              {/* Hide when transitioning (auth check or role switch) or guard is active */}
-              {showAsLoggedIn && !isTransitioning && (
-                <>
-                  {isGuest && <NotificationBell userRole="GUEST" />}
-                  {isHost && <NotificationBell userRole="HOST" />}
-                  {isAdmin && <NotificationBell userRole="ADMIN" />}
-                </>
-              )}
-
-              {/* Role Switcher - Only for dual-role users */}
-              {/* Hide when transitioning or guard screen is active */}
-              {showAsLoggedIn && !isTransitioning && <RoleSwitcher />}
-
-              {/* Show loading spinner during role switch */}
-              {isSwitchingRole && (
-                <div className="flex items-center space-x-2 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                  <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                  <span className="text-sm font-medium text-blue-600 dark:text-blue-400">Switching...</span>
-                </div>
-              )}
-
-              {/* Profile/Sign In Button */}
-              {/* Show Sign In when guard is active (showAsLoggedIn is false) */}
-              {/* Hide during role switch to prevent confusion */}
-              {/* Show logout loading indicator when logging out */}
-              {/* Show subtle loading during initial auth check */}
-              {isLoggingOut ? (
-                <div className="flex items-center space-x-2 px-3 py-1.5 bg-red-100 dark:bg-red-900/20 rounded-lg">
-                  <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
-                  <span className="text-sm font-medium text-red-600 dark:text-red-400">Signing out...</span>
-                </div>
-              ) : isCheckingAuth ? (
-                // Show subtle loading indicator during auth check
-                <div className="p-2">
-                  <div className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
-                </div>
-              ) : !isSwitchingRole && (
-                <div>
-                  {showAsLoggedIn && user ? (
-                    <div className="profile-dropdown relative">
-                      <button
-                        onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                        className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors"
-                        aria-label="Account menu"
-                      >
-                        <div className="relative">
-                          {profilePhotoUrl && !profileImageError ? (
-                            <div className="w-7 h-7 rounded-full overflow-hidden bg-white border-2 border-green-500 shadow-sm">
-                              <img
-                                src={profilePhotoUrl}
-                                alt={user.name || 'Profile'}
-                                className="w-full h-full object-contain"
-                                style={{ transform: 'scale(1.15) translateY(0.5px)', transformOrigin: 'center center' }}
-                                onError={() => setProfileImageError(true)}
-                              />
-                            </div>
-                          ) : (
-                            <div className={`w-7 h-7 ${
-                              isAdmin ? 'bg-gradient-to-br from-red-500 to-red-600' :
-                              isHost ? 'bg-gradient-to-br from-purple-500 to-purple-600' :
-                              'bg-gradient-to-br from-green-500 to-blue-600'
-                            } rounded-full flex items-center justify-center text-white font-bold text-xs border-2 border-green-500 shadow-sm`}>
-                              {user.name ? user.name[0].toUpperCase() : 'U'}
-                            </div>
-                          )}
-                        </div>
-                      </button>
-
-                      {/* Profile Dropdown Menu */}
-                      {showProfileDropdown && (
-                        <div className="absolute top-full right-0 mt-2 w-48 rounded-xl shadow-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 py-2 overflow-hidden z-50">
-                          <button
-                            onClick={() => {
-                              setShowProfileDropdown(false)
-                              handleProfileClick()
-                            }}
-                            className="w-full flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                          >
-                            <IoPersonOutline className="w-4 h-4" />
-                            <span>Profile</span>
-                          </button>
-                          <div className="border-t border-gray-200 dark:border-gray-800 my-1" />
-                          <button
-                            onClick={() => {
-                              setShowProfileDropdown(false)
-                              handleLogout()
-                            }}
-                            className="w-full flex items-center space-x-3 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                          >
-                            <IoLogOutOutline className="w-4 h-4" />
-                            <span>Sign Out</span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <Link
-                      href={
-                        isAdminPage ? '/admin/auth/login' :
-                        isHostPage ? '/host/login' :
-                        '/auth/login'
-                      }
-                      className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-sm font-medium rounded-lg transition-all transform hover:scale-105 shadow-sm"
-                    >
-                      Sign In
-                    </Link>
-                  )}
-                </div>
-              )}
-
-              {/* Mobile Menu Toggle */}
-              <button
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900"
-                aria-label="Toggle menu"
-              >
-                {isMobileMenuOpen ? (
-                  <IoCloseOutline className="w-6 h-6 text-gray-700 dark:text-gray-300" />
-                ) : (
-                  <IoMenuOutline className="w-6 h-6 text-gray-700 dark:text-gray-300" />
-                )}
-              </button>
-            </div>
+            {/* Right side - Actions Component */}
+            <HeaderActions
+              isDarkMode={isDarkMode}
+              onToggleTheme={toggleTheme}
+              isLoggedIn={showAsLoggedIn}
+              isTransitioning={isTransitioning}
+              isCheckingAuth={isCheckingAuth}
+              isGuest={isGuest}
+              isHost={isHost}
+              isAdmin={isAdmin}
+              isHostPage={isHostPage}
+              isAdminPage={isAdminPage}
+              profilePhotoUrl={profilePhotoUrl}
+              userName={user?.name}
+              isMobileMenuOpen={isMobileMenuOpen}
+              onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            />
           </div>
         </div>
       </nav>
 
       {/* Mobile Menu */}
-      {/* Pass showAsLoggedIn to hide logged-in state when guard is active */}
-      {/* Pass isSwitchingRole to sync loading state with header */}
       <MobileMenu
         isOpen={isMobileMenuOpen}
         onClose={() => setIsMobileMenuOpen(false)}
-        handleGetAppClick={handleGetAppClick}
-        handleSearchClick={handleSearchClick}
         isLoggedIn={showAsLoggedIn && !isSwitchingRole}
         user={showAsLoggedIn && !isSwitchingRole ? user : null}
-        onProfileClick={handleProfileClick}
         onLogout={handleLogout}
         isHost={isHost && !isSwitchingRole}
         isHostPage={isHostPage}
         hostNavItems={hostNavItems}
-        isSwitchingRole={isSwitchingRole}
-        isLoggingOut={isLoggingOut}
       />
 
       {/* Profile Modal - Deprecated for guests, they go to /profile now */}

@@ -298,7 +298,18 @@ export async function POST(request: NextRequest) {
         path: '/'
       })
 
+      // CRITICAL: Set current_mode cookie to explicitly track which mode user is in
+      // This is the authoritative source for role detection in check-dual-role
+      response.cookies.set('current_mode', 'host', {
+        httpOnly: false, // Allow client-side JS to read for instant UI updates
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60, // 7 days
+        path: '/'
+      })
+
       console.log('[Role Switch] Switched to host mode for user:', tokenUserId)
+      console.log('[Role Switch] Set current_mode=host cookie')
       return response
 
     } else if (targetRole === 'guest') {
@@ -426,24 +437,35 @@ export async function POST(request: NextRequest) {
         path: '/'
       })
 
-      // Clear host cookies - use expires in the past for immediate deletion
+      // Clear host cookies - use maxAge: 0 for reliable deletion
       response.cookies.set('hostAccessToken', '', {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        expires: new Date(0), // Expire immediately (past date)
+        maxAge: 0, // Expire immediately
         path: '/'
       })
       response.cookies.set('hostRefreshToken', '', {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        expires: new Date(0), // Expire immediately (past date)
+        maxAge: 0, // Expire immediately
+        path: '/'
+      })
+
+      // CRITICAL: Set current_mode cookie to explicitly track which mode user is in
+      // This is the authoritative source for role detection in check-dual-role
+      response.cookies.set('current_mode', 'guest', {
+        httpOnly: false, // Allow client-side JS to read for instant UI updates
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60, // 7 days
         path: '/'
       })
 
       console.log('[Role Switch] Switched to guest mode for user:', targetUser.id)
       console.log('[Role Switch] Cleared hostAccessToken and hostRefreshToken cookies')
+      console.log('[Role Switch] Set current_mode=guest cookie')
       return response
     }
 

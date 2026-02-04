@@ -357,6 +357,16 @@ export async function POST(request: NextRequest) {
       path: '/'
     })
 
+    // Set current_mode cookie for role detection
+    // This is the authoritative source for check-dual-role API
+    response.cookies.set('current_mode', 'host', {
+      httpOnly: false, // Allow client-side JS to read for instant UI updates
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60, // 7 days
+      path: '/'
+    })
+
     return response
 
   } catch (error) {
@@ -538,7 +548,8 @@ export async function DELETE(request: NextRequest) {
       'refreshToken',
       'partner_token',
       'guestAccessToken',
-      'guestRefreshToken'
+      'guestRefreshToken',
+      'current_mode'  // Clear role indicator on logout
     ]
 
     const cookieOptions = {
