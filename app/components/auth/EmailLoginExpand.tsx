@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
+import PasswordInput from './PasswordInput'
 
 interface GuardResponse {
   type: string
@@ -157,36 +157,22 @@ export default function EmailLoginExpand({ mode, hostMode = false, onSuccess, on
           />
         </div>
 
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Password
-          </label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            value={formData.password}
-            onChange={handleChange}
-            placeholder="••••••••"
-            className="w-full px-3 py-2.5 bg-white dark:bg-gray-800/50 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-        </div>
+        <PasswordInput
+          id="password"
+          name="password"
+          value={formData.password}
+          onChange={handleChange}
+          label="Password"
+        />
 
         {mode === 'signup' && (
-          <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Confirm Password
-            </label>
-            <input
-              id="confirmPassword"
-              name="confirmPassword"
-              type="password"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              placeholder="••••••••"
-              className="w-full px-3 py-2.5 bg-white dark:bg-gray-800/50 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
+          <PasswordInput
+            id="confirmPassword"
+            name="confirmPassword"
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            label="Confirm Password"
+          />
         )}
 
         <button
@@ -207,17 +193,6 @@ export default function EmailLoginExpand({ mode, hostMode = false, onSuccess, on
             mode === 'login' ? 'Sign In' : 'Create Account'
           )}
         </button>
-
-        {mode === 'login' && (
-          <div className="text-center">
-            <Link
-              href={hostMode ? '/host/forgot-password' : '/auth/forgot-password'}
-              className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-            >
-              Forgot password?
-            </Link>
-          </div>
-        )}
 
         <button
           type="button"
