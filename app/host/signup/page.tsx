@@ -430,7 +430,7 @@ function HostSignupContent() {
               />
             </div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Become a Host
+              Host/Partner Application
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
               Start earning by sharing your vehicle
@@ -450,10 +450,15 @@ function HostSignupContent() {
                 <span className="text-xs text-gray-600 dark:text-gray-400 mt-2 font-medium">Info</span>
               </div>
 
-              {/* Connector 1-2 */}
-              <div className={`w-12 h-1 mx-2 transition-all ${
-                currentStep >= 2 ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-700'
-              }`}></div>
+              {/* Arrow Connector 1-2 */}
+              <div className="flex items-center mx-2">
+                <div className={`w-8 h-0.5 transition-all ${
+                  currentStep >= 2 ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'
+                }`}></div>
+                <div className={`w-0 h-0 border-t-[5px] border-t-transparent border-b-[5px] border-b-transparent transition-all ${
+                  currentStep >= 2 ? 'border-l-[8px] border-l-green-500' : 'border-l-[8px] border-l-gray-300 dark:border-l-gray-600'
+                }`}></div>
+              </div>
 
               {/* Step 2 Circle */}
               <div className="flex flex-col items-center">
@@ -465,12 +470,17 @@ function HostSignupContent() {
                 <span className="text-xs text-gray-600 dark:text-gray-400 mt-2 font-medium">{formData.hostRole === 'manage' ? 'Role' : 'Vehicle'}</span>
               </div>
 
-              {/* Connector 2-3 and Step 3 - only show if not manage-only */}
+              {/* Arrow Connector 2-3 and Step 3 - only show if not manage-only */}
               {formData.hostRole !== 'manage' && (
                 <>
-                  <div className={`w-12 h-1 mx-2 transition-all ${
-                    currentStep >= 3 ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-700'
-                  }`}></div>
+                  <div className="flex items-center mx-2">
+                    <div className={`w-8 h-0.5 transition-all ${
+                      currentStep >= 3 ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'
+                    }`}></div>
+                    <div className={`w-0 h-0 border-t-[5px] border-t-transparent border-b-[5px] border-b-transparent transition-all ${
+                      currentStep >= 3 ? 'border-l-[8px] border-l-green-500' : 'border-l-[8px] border-l-gray-300 dark:border-l-gray-600'
+                    }`}></div>
+                  </div>
 
                   {/* Step 3 Circle */}
                   <div className="flex flex-col items-center">
@@ -1041,16 +1051,6 @@ function HostSignupContent() {
                 </Link>
               </p>
             </div>
-
-            {/* Renter Signup Link */}
-            <div className="mt-4 pt-4">
-              <Link
-                href="/auth/signup"
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800/50 text-gray-800 dark:text-gray-200 font-medium rounded-lg transition-colors border border-gray-300 dark:border-gray-600 text-sm"
-              >
-                Looking to rent a car? Sign up as Guest →
-              </Link>
-            </div>
           </div>
 
           {/* Benefits */}
@@ -1058,7 +1058,7 @@ function HostSignupContent() {
             <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4 text-center">
               Why host with ItWhip?
             </h3>
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 items-center md:items-start">
               <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
                 <IoCheckmarkCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
                 <span>Earn up to 90% of each rental</span>
@@ -1076,6 +1076,21 @@ function HostSignupContent() {
                 <span>You control pricing &amp; availability</span>
               </div>
             </div>
+
+          </div>
+
+          {/* Mini Footer */}
+          <div className="mt-8 pb-4 text-center">
+            <p className="text-xs text-gray-500 dark:text-gray-500">
+              By continuing, you agree to our{' '}
+              <Link href="/terms" className="underline hover:text-gray-700 dark:hover:text-gray-300">
+                Terms of Service
+              </Link>{' '}
+              and{' '}
+              <Link href="/privacy" className="underline hover:text-gray-700 dark:hover:text-gray-300">
+                Privacy Policy
+              </Link>
+            </p>
           </div>
         </div>
       </div>

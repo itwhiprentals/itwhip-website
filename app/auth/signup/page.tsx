@@ -10,8 +10,8 @@ import EmailLoginExpand from '@/app/components/auth/EmailLoginExpand'
 export default function SignupPage() {
   return (
     <AuthPageLayout
-      title="Create Account"
-      subtitle="Sign up to start booking cars"
+      title="Create a Guest Account"
+      subtitle="Sign up to start booking cars and manage your trips"
     >
       {/* Phone - Primary */}
       <PhoneLoginButton mode="signup" />
@@ -25,18 +25,18 @@ export default function SignupPage() {
       {/* Login Link */}
       <div className="pt-4 text-center">
         <p className="text-gray-600 dark:text-gray-400 text-sm">
-          Already have an account?{' '}
+          Already have a Guest account?{' '}
           <Link href="/auth/login" className="text-green-600 dark:text-green-400 hover:underline font-medium">
             Sign in
           </Link>
         </p>
       </div>
 
-      {/* Host Portal Link */}
+      {/* Host Portal Link - Apple Card Style */}
       <div className="pt-4">
         <Link
           href="/host/signup"
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800/50 text-gray-800 dark:text-gray-200 font-medium rounded-lg transition-colors border border-gray-300 dark:border-gray-600 text-sm"
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-black hover:bg-gray-900 text-white font-medium rounded-lg transition-colors border border-gray-700 text-sm"
         >
           Want to list your car? Join as a Host →
         </Link>

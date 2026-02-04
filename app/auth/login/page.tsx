@@ -102,7 +102,7 @@ function LoginContent() {
   }
 
   return (
-    <AuthPageLayout subtitle="Sign in to book cars and manage your trips">
+    <AuthPageLayout subtitle="Sign into your Guest account to book cars and manage your trips">
       {/* Error Alert */}
       {error && (
         <div className="p-3 bg-red-500/10 border border-red-500/50 rounded-lg mb-2">
@@ -129,7 +129,7 @@ function LoginContent() {
       {/* Signup Link */}
       <div className="pt-4 text-center">
         <p className="text-gray-600 dark:text-gray-400 text-sm">
-          Don't have an account?{' '}
+          Don't have a Guest account?{' '}
           <Link href="/auth/signup" className="text-green-600 dark:text-green-400 hover:underline font-medium">
             Sign up
           </Link>
