@@ -56,6 +56,14 @@ interface AlertSettings {
   updatedAt: string
 }
 
+interface CommissionTier {
+  name: string
+  minVehicles: number
+  maxVehicles: number | null
+  rate: number
+  hostKeeps: number
+}
+
 interface PlatformSettings {
   global: {
     defaultTaxRate: number
@@ -65,6 +73,21 @@ interface PlatformSettings {
     minorDamageMax: number
     moderateDamageMax: number
     majorDamageMin: number
+  }
+  commissionTiers: {
+    defaultCommissionRate: number
+    tier1VehicleThreshold: number
+    tier1CommissionRate: number
+    tier2VehicleThreshold: number
+    tier2CommissionRate: number
+    tier3VehicleThreshold: number
+    tier3CommissionRate: number
+    tiers: CommissionTier[]
+  }
+  processingFees: {
+    processingFeePercent: number
+    processingFeeFixed: number
+    insurancePlatformShare: number
   }
   host: {
     standardPayoutDelay: number
@@ -127,10 +150,12 @@ interface PlatformSettings {
   }
 }
 
-type TabKey = 'global' | 'taxes' | 'host' | 'partner' | 'guest' | 'insurance' | 'deposits' | 'tripCharges' | 'alerts'
+type TabKey = 'global' | 'commissionTiers' | 'processingFees' | 'taxes' | 'host' | 'partner' | 'guest' | 'insurance' | 'deposits' | 'tripCharges' | 'alerts'
 
 const TABS: { key: TabKey; label: string; icon: string }[] = [
   { key: 'global', label: 'Global', icon: 'G' },
+  { key: 'commissionTiers', label: 'Commission', icon: '%' },
+  { key: 'processingFees', label: 'Fees', icon: 'F' },
   { key: 'taxes', label: 'Taxes', icon: 'T' },
   { key: 'host', label: 'Host', icon: 'H' },
   { key: 'partner', label: 'Partner', icon: 'P' },
@@ -532,12 +557,282 @@ export default function FleetSettingsPage() {
               </div>
 
               <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg mt-4">
-                <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-2">Commission Structure (Not Editable Here)</h4>
-                <div className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
-                  <p><strong>Host Type A (Own Car):</strong> 40% no insurance / 75% P2P insurance / 90% commercial</p>
-                  <p><strong>Host Type B (Recruiter):</strong> Platform takes 10% of their referral earnings</p>
-                  <p><strong>Partners:</strong> 25% → 20% → 15% → 10% (based on fleet size)</p>
+                <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-2">Commission Structure</h4>
+                <p className="text-sm text-blue-700 dark:text-blue-300">
+                  Configure commission tiers in the <strong>Commission</strong> tab.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Commission Tiers Tab */}
+          {activeTab === 'commissionTiers' && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Commission Tiers</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  Platform commission based on host fleet size. Larger fleets get lower commission rates.
+                </p>
+              </div>
+
+              {/* Tier Summary Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {(settings.commissionTiers?.tiers || []).map((tier, idx) => (
+                  <div
+                    key={tier.name}
+                    className={`p-4 rounded-lg border ${
+                      idx === 0 ? 'bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600' :
+                      idx === 1 ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-700' :
+                      idx === 2 ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-300 dark:border-purple-700' :
+                      'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700'
+                    }`}
+                  >
+                    <h3 className={`font-bold text-lg ${
+                      idx === 0 ? 'text-gray-800 dark:text-gray-200' :
+                      idx === 1 ? 'text-yellow-800 dark:text-yellow-200' :
+                      idx === 2 ? 'text-purple-800 dark:text-purple-200' :
+                      'text-blue-800 dark:text-blue-200'
+                    }`}>
+                      {tier.name}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                      {tier.minVehicles}{tier.maxVehicles ? `-${tier.maxVehicles}` : '+'} vehicles
+                    </p>
+                    <div className="mt-3 space-y-1">
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                        {(tier.rate * 100).toFixed(0)}%
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Platform takes</p>
+                      <p className="text-sm text-green-600 dark:text-green-400 font-medium">
+                        Host keeps {(tier.hostKeeps * 100).toFixed(0)}%
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Editable Settings */}
+              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Edit Tier Thresholds</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Standard Rate (%)
+                    </label>
+                    <input
+                      type="number"
+                      step="1"
+                      defaultValue={((settings.commissionTiers?.defaultCommissionRate || 0.25) * 100).toFixed(0)}
+                      onChange={(e) => handleChange('defaultCommissionRate', parseFloat(e.target.value) / 100)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">0-9 vehicles</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Gold Threshold
+                    </label>
+                    <input
+                      type="number"
+                      defaultValue={settings.commissionTiers?.tier1VehicleThreshold || 10}
+                      onChange={(e) => handleChange('tier1VehicleThreshold', parseInt(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Min vehicles for Gold</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Gold Rate (%)
+                    </label>
+                    <input
+                      type="number"
+                      step="1"
+                      defaultValue={((settings.commissionTiers?.tier1CommissionRate || 0.20) * 100).toFixed(0)}
+                      onChange={(e) => handleChange('tier1CommissionRate', parseFloat(e.target.value) / 100)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Platinum Threshold
+                    </label>
+                    <input
+                      type="number"
+                      defaultValue={settings.commissionTiers?.tier2VehicleThreshold || 50}
+                      onChange={(e) => handleChange('tier2VehicleThreshold', parseInt(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Min vehicles for Platinum</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Platinum Rate (%)
+                    </label>
+                    <input
+                      type="number"
+                      step="1"
+                      defaultValue={((settings.commissionTiers?.tier2CommissionRate || 0.15) * 100).toFixed(0)}
+                      onChange={(e) => handleChange('tier2CommissionRate', parseFloat(e.target.value) / 100)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Diamond Threshold
+                    </label>
+                    <input
+                      type="number"
+                      defaultValue={settings.commissionTiers?.tier3VehicleThreshold || 100}
+                      onChange={(e) => handleChange('tier3VehicleThreshold', parseInt(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Min vehicles for Diamond</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Diamond Rate (%)
+                    </label>
+                    <input
+                      type="number"
+                      step="1"
+                      defaultValue={((settings.commissionTiers?.tier3CommissionRate || 0.10) * 100).toFixed(0)}
+                      onChange={(e) => handleChange('tier3CommissionRate', parseFloat(e.target.value) / 100)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
                 </div>
+              </div>
+
+              {/* Example Calculation */}
+              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                <h4 className="font-medium text-green-800 dark:text-green-200 mb-2">Example: $500 Rental (Standard Tier)</h4>
+                <div className="text-sm text-green-700 dark:text-green-300 space-y-1">
+                  <p>Host Gross: $500.00</p>
+                  <p>Platform Fee (25%): -$125.00</p>
+                  <p>Processing Fee: -$1.50</p>
+                  <p className="font-bold">Host Net Payout: $373.50</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Processing Fees Tab */}
+          {activeTab === 'processingFees' && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Processing Fees</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  Fees charged for payment processing and insurance revenue sharing.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Payout Processing</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Processing Fee (%)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        defaultValue={((settings.processingFees?.processingFeePercent || 0.035) * 100).toFixed(1)}
+                        onChange={(e) => handleChange('processingFeePercent', parseFloat(e.target.value) / 100)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Stripe fee percentage (3.5%)</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Fixed Processing Fee ($)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        defaultValue={(settings.processingFees?.processingFeeFixed || 1.50).toFixed(2)}
+                        onChange={(e) => handleChange('processingFeeFixed', parseFloat(e.target.value))}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Fixed fee per payout ($1.50)</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Insurance Revenue</h3>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Platform Insurance Share (%)
+                    </label>
+                    <input
+                      type="number"
+                      step="1"
+                      defaultValue={((settings.processingFees?.insurancePlatformShare || 0.30) * 100).toFixed(0)}
+                      onChange={(e) => handleChange('insurancePlatformShare', parseFloat(e.target.value) / 100)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Platform keeps this % of insurance fees (30%)</p>
+                  </div>
+                  <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      <strong>Basic:</strong> ${settings.insurance?.basicInsuranceDaily || 15}/day<br/>
+                      <strong>Premium:</strong> ${settings.insurance?.premiumInsuranceDaily || 25}/day
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Fee Summary</h3>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Guest Service Fee</span>
+                      <span className="font-medium text-gray-900 dark:text-white">
+                        {((settings.global?.serviceFeeRate || 0.15) * 100).toFixed(0)}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Processing %</span>
+                      <span className="font-medium text-gray-900 dark:text-white">
+                        {((settings.processingFees?.processingFeePercent || 0.035) * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Fixed Fee</span>
+                      <span className="font-medium text-gray-900 dark:text-white">
+                        ${(settings.processingFees?.processingFeeFixed || 1.50).toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Insurance Share</span>
+                      <span className="font-medium text-gray-900 dark:text-white">
+                        {((settings.processingFees?.insurancePlatformShare || 0.30) * 100).toFixed(0)}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Revenue Breakdown Example */}
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-2">Platform Revenue Example: $500 Rental + $75 Insurance (5 days)</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-blue-700 dark:text-blue-300">
+                  <div>
+                    <p className="font-semibold mb-1">Guest Service Fee</p>
+                    <p>$500 × 15% = $75.00</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold mb-1">Host Commission (25%)</p>
+                    <p>$500 × 25% = $125.00</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold mb-1">Insurance Share (30%)</p>
+                    <p>$75 × 30% = $22.50</p>
+                  </div>
+                </div>
+                <p className="mt-3 font-bold text-blue-800 dark:text-blue-200">
+                  Total Platform Revenue: $222.50
+                </p>
               </div>
             </div>
           )}

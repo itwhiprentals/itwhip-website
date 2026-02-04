@@ -90,11 +90,13 @@ export async function GET(
       .map((b: any) => b.stripePaymentMethodId)
       .filter(Boolean)
 
-    // Mark locked payment methods
+    // Mark locked payment methods (locked for active bookings)
+    // Note: Claim-based locking is determined after claims are fetched
     stripePaymentMethods = stripePaymentMethods.map(pm => ({
       ...pm,
       isLocked: lockedPaymentMethodIds.includes(pm.id),
-      lockedForBooking: activeBookings.find((b: any) => b.stripePaymentMethodId === pm.id)?.bookingCode
+      lockedForBooking: activeBookings.find((b: any) => b.stripePaymentMethodId === pm.id)?.bookingCode,
+      isLockedForClaim: false // Will be updated after claims fetch
     }))
 
     // Aggregate charges
@@ -142,6 +144,51 @@ export async function GET(
       take: 10
     })
 
+    // Fetch claims against this guest
+    const claimsAgainstGuest = await prisma.claim.findMany({
+      where: {
+        booking: { reviewerId: guestId },
+        status: { in: ['PENDING', 'UNDER_REVIEW', 'APPROVED', 'GUEST_RESPONDED'] }
+      },
+      include: {
+        booking: {
+          include: {
+            car: { select: { year: true, make: true, model: true } },
+            host: { select: { name: true } }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    })
+
+    // Map claims to response format
+    const activeClaims = claimsAgainstGuest.map((claim: any) => ({
+      id: claim.id,
+      type: claim.type,
+      status: claim.status,
+      estimatedCost: Number(claim.estimatedCost || 0),
+      approvedAmount: claim.approvedAmount ? Number(claim.approvedAmount) : null,
+      deductible: Number(claim.deductible || 500),
+      guestResponseDeadline: claim.guestResponseDeadline?.toISOString() || null,
+      bookingCode: claim.booking?.bookingCode || '',
+      carDetails: claim.booking?.car
+        ? `${claim.booking.car.year} ${claim.booking.car.make} ${claim.booking.car.model}`
+        : 'Unknown Vehicle',
+      hostName: claim.booking?.host?.name || 'Unknown Host'
+    }))
+
+    const totalClaimAmount = activeClaims.reduce(
+      (sum: number, c: any) => sum + (c.approvedAmount || c.estimatedCost), 0
+    )
+
+    // Mark payment methods as locked if there are active claims
+    if (activeClaims.length > 0) {
+      stripePaymentMethods = stripePaymentMethods.map(pm => ({
+        ...pm,
+        isLockedForClaim: true // Lock all payment methods when there's an active claim
+      }))
+    }
+
     // Build response
     const response = {
       guest: {
@@ -171,8 +218,11 @@ export async function GET(
         hasPendingCharges: pendingCharges.length > 0,
         hasDisputedCharges: disputedCharges.length > 0,
         hasPendingRefunds: pendingRefunds.length > 0,
-        hasLockedPaymentMethod: lockedPaymentMethodIds.length > 0
+        hasLockedPaymentMethod: lockedPaymentMethodIds.length > 0,
+        hasActiveClaim: activeClaims.length > 0
       },
+      activeClaims,
+      totalClaimAmount,
       recentActivity: [
         ...pendingCharges.slice(0, 5).map((c: any) => ({
           type: 'charge_pending',

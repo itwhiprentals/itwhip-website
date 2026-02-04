@@ -7,21 +7,36 @@ import {
   IoLockClosedOutline
 } from 'react-icons/io5'
 import { BankingData, TabType, formatCurrency } from '../types'
+import { ClaimAlertBanner } from './ClaimAlertBanner'
 
 interface BankingAlertsProps {
   data: BankingData
+  totalClaimAmount?: number
   onTabChange: (tab: TabType) => void
 }
 
-export function BankingAlerts({ data, onTabChange }: BankingAlertsProps) {
-  const { alerts, summary } = data
+export function BankingAlerts({ data, totalClaimAmount = 0, onTabChange }: BankingAlertsProps) {
+  const { alerts, summary, activeClaims = [] } = data
 
-  if (!alerts.hasPendingCharges && !alerts.hasDisputedCharges && !alerts.hasLockedPaymentMethod) {
+  const hasAnyAlert = alerts.hasPendingCharges ||
+    alerts.hasDisputedCharges ||
+    alerts.hasLockedPaymentMethod ||
+    alerts.hasActiveClaim
+
+  if (!hasAnyAlert) {
     return null
   }
 
   return (
-    <div className="space-y-2 mb-6">
+    <div className="space-y-3 mb-6">
+      {/* Claims alert - highest priority */}
+      {alerts.hasActiveClaim && activeClaims.length > 0 && (
+        <ClaimAlertBanner
+          activeClaims={activeClaims}
+          totalClaimAmount={totalClaimAmount}
+        />
+      )}
+
       {alerts.hasPendingCharges && (
         <div className="flex items-center gap-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
           <IoWarningOutline className="w-5 h-5 text-red-600 dark:text-red-400" />

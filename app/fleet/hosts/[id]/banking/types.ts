@@ -8,6 +8,14 @@ export interface BankingData {
     email: string
     approvalStatus: string
     hostType: string
+    createdAt?: string
+  }
+  earnings: {
+    tier: string
+    insuranceTier: string
+    hostCommissionPercent: number
+    platformCommissionPercent: number
+    payoutHoldDays: number
   }
   stripeConnect: {
     accountId: string | null
@@ -28,7 +36,10 @@ export interface BankingData {
     hold: number
     negative: number
     availableForPayout: number
+    pendingRecovery?: number
+    pendingClaimsCount?: number
   }
+  pendingClaims?: PendingClaim[]
   subscription: {
     tier: string
     status: string
@@ -97,6 +108,21 @@ export interface HostCharge {
   status: string
   chargedBy: string
   createdAt: string
+}
+
+export interface PendingClaim {
+  id: string
+  type: string
+  status: string
+  approvedAmount: number
+  recoveredFromGuest: number
+  pendingAmount: number
+  recoveryStatus: string | null
+  guestResponseDeadline: string | null
+  createdAt: string
+  bookingCode: string
+  carDetails: string
+  guestName: string
 }
 
 export interface ChargeFormData {

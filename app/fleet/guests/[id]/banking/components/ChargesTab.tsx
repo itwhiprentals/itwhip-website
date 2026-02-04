@@ -77,7 +77,7 @@ function PendingChargeCard({ charge, actionLoading, onChargeNow, onWaiveCharge }
         </span>
       </div>
       {/* Charge Breakdown */}
-      <div className="grid grid-cols-3 gap-2 text-sm mb-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 sm:gap-2 text-sm mb-3">
         {charge.mileageCharge > 0 && <span>Mileage: {formatCurrency(charge.mileageCharge)}</span>}
         {charge.fuelCharge > 0 && <span>Fuel: {formatCurrency(charge.fuelCharge)}</span>}
         {charge.lateCharge > 0 && <span>Late: {formatCurrency(charge.lateCharge)}</span>}
@@ -86,17 +86,17 @@ function PendingChargeCard({ charge, actionLoading, onChargeNow, onWaiveCharge }
         {charge.otherCharges > 0 && <span>Other: {formatCurrency(charge.otherCharges)}</span>}
       </div>
       {/* Actions */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         <button
           onClick={() => onChargeNow(charge.id)}
           disabled={actionLoading === charge.id}
-          className="px-3 py-1.5 text-sm bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-50"
+          className="min-h-[44px] px-4 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-50"
         >
           {actionLoading === charge.id ? 'Processing...' : 'Charge Now'}
         </button>
         <button
           onClick={() => onWaiveCharge(charge)}
-          className="px-3 py-1.5 text-sm bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-lg"
+          className="min-h-[44px] px-4 py-2 text-sm bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-lg"
         >
           Waive
         </button>

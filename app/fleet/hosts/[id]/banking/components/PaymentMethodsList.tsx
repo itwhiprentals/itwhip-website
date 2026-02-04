@@ -6,9 +6,21 @@ import { PaymentMethod } from '../types'
 
 interface PaymentMethodsListProps {
   paymentMethods: PaymentMethod[]
+  hasStripeConnect?: boolean
+  hasStripeCustomer?: boolean
 }
 
-export function PaymentMethodsList({ paymentMethods }: PaymentMethodsListProps) {
+export function PaymentMethodsList({
+  paymentMethods,
+  hasStripeConnect = false,
+  hasStripeCustomer = false
+}: PaymentMethodsListProps) {
+  // Don't show anything if no Stripe accounts - payment methods require Stripe
+  if (!hasStripeConnect && !hasStripeCustomer) {
+    return null
+  }
+
+  // Don't show if no payment methods
   if (paymentMethods.length === 0) {
     return null
   }

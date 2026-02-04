@@ -123,7 +123,7 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Group settings by category matching the 7 tabs in Settings UI
+    // Group settings by category matching the tabs in Settings UI
     const grouped = {
       global: {
         defaultTaxRate: settings.defaultTaxRate,
@@ -133,6 +133,51 @@ export async function GET(request: NextRequest) {
         minorDamageMax: settings.minorDamageMax,
         moderateDamageMax: settings.moderateDamageMax,
         majorDamageMin: settings.majorDamageMin
+      },
+      commissionTiers: {
+        defaultCommissionRate: (settings as any).defaultCommissionRate ?? 0.25,
+        tier1VehicleThreshold: (settings as any).tier1VehicleThreshold ?? 10,
+        tier1CommissionRate: (settings as any).tier1CommissionRate ?? 0.20,
+        tier2VehicleThreshold: (settings as any).tier2VehicleThreshold ?? 50,
+        tier2CommissionRate: (settings as any).tier2CommissionRate ?? 0.15,
+        tier3VehicleThreshold: (settings as any).tier3VehicleThreshold ?? 100,
+        tier3CommissionRate: (settings as any).tier3CommissionRate ?? 0.10,
+        // Formatted tier summary for UI
+        tiers: [
+          {
+            name: 'Standard',
+            minVehicles: 0,
+            maxVehicles: ((settings as any).tier1VehicleThreshold ?? 10) - 1,
+            rate: (settings as any).defaultCommissionRate ?? 0.25,
+            hostKeeps: 1 - ((settings as any).defaultCommissionRate ?? 0.25)
+          },
+          {
+            name: 'Gold',
+            minVehicles: (settings as any).tier1VehicleThreshold ?? 10,
+            maxVehicles: ((settings as any).tier2VehicleThreshold ?? 50) - 1,
+            rate: (settings as any).tier1CommissionRate ?? 0.20,
+            hostKeeps: 1 - ((settings as any).tier1CommissionRate ?? 0.20)
+          },
+          {
+            name: 'Platinum',
+            minVehicles: (settings as any).tier2VehicleThreshold ?? 50,
+            maxVehicles: ((settings as any).tier3VehicleThreshold ?? 100) - 1,
+            rate: (settings as any).tier2CommissionRate ?? 0.15,
+            hostKeeps: 1 - ((settings as any).tier2CommissionRate ?? 0.15)
+          },
+          {
+            name: 'Diamond',
+            minVehicles: (settings as any).tier3VehicleThreshold ?? 100,
+            maxVehicles: null,
+            rate: (settings as any).tier3CommissionRate ?? 0.10,
+            hostKeeps: 1 - ((settings as any).tier3CommissionRate ?? 0.10)
+          }
+        ]
+      },
+      processingFees: {
+        processingFeePercent: (settings as any).processingFeePercent ?? 0.035,
+        processingFeeFixed: (settings as any).processingFeeFixed ?? 1.50,
+        insurancePlatformShare: (settings as any).insurancePlatformShare ?? 0.30
       },
       host: {
         standardPayoutDelay: settings.standardPayoutDelay,
@@ -251,7 +296,12 @@ export async function PATCH(request: NextRequest) {
       'petHairFee', 'lostKeyFee', 'defaultDepositPercent', 'minDeposit', 'maxDeposit',
       'insuranceDiscountPct', 'standardPayoutDelay', 'newHostPayoutDelay', 'minimumPayout',
       'instantPayoutFee', 'guestSignupBonus', 'hostSignupBonus', 'referralBonus',
-      'bonusExpirationDays', 'minorDamageMax', 'moderateDamageMax', 'majorDamageMin'
+      'bonusExpirationDays', 'minorDamageMax', 'moderateDamageMax', 'majorDamageMin',
+      // Commission tiers
+      'defaultCommissionRate', 'tier1VehicleThreshold', 'tier1CommissionRate',
+      'tier2VehicleThreshold', 'tier2CommissionRate', 'tier3VehicleThreshold', 'tier3CommissionRate',
+      // Processing fees
+      'processingFeePercent', 'processingFeeFixed', 'insurancePlatformShare'
     ]
 
     for (const field of numericFields) {
@@ -264,7 +314,14 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Validate percentage fields (0-1)
-    const percentFields = ['defaultTaxRate', 'platformCommission', 'partnerMinCommission', 'partnerMaxCommission', 'defaultDepositPercent', 'insuranceDiscountPct', 'instantPayoutFee']
+    const percentFields = [
+      'defaultTaxRate', 'platformCommission', 'partnerMinCommission', 'partnerMaxCommission',
+      'defaultDepositPercent', 'insuranceDiscountPct', 'instantPayoutFee',
+      // Commission rates
+      'defaultCommissionRate', 'tier1CommissionRate', 'tier2CommissionRate', 'tier3CommissionRate',
+      // Processing fees
+      'processingFeePercent', 'insurancePlatformShare'
+    ]
     for (const field of percentFields) {
       if (updates[field] !== undefined && (updates[field] < 0 || updates[field] > 1)) {
         return NextResponse.json(

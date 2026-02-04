@@ -1,17 +1,29 @@
 // app/fleet/guests/[id]/banking/components/PaymentMethodsTab.tsx
 'use client'
 
-import { IoLockClosedOutline } from 'react-icons/io5'
 import { BankingData, formatDate, getBrandIcon } from '../types'
+import { LockedPaymentMethodBadge } from './LockedPaymentMethodBadge'
 
 interface PaymentMethodsTabProps {
   data: BankingData
 }
 
 export function PaymentMethodsTab({ data }: PaymentMethodsTabProps) {
+  const hasActiveClaim = data.alerts?.hasActiveClaim || false
+
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Payment Methods</h3>
+
+      {/* Claim warning if cards are locked */}
+      {hasActiveClaim && (
+        <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+          <p className="text-sm text-red-700 dark:text-red-300">
+            All payment methods are locked due to active claim(s). Guest cannot remove cards until claims are resolved.
+          </p>
+        </div>
+      )}
+
       {data.paymentMethods.length === 0 ? (
         <p className="text-gray-500 dark:text-gray-400 text-center py-12">No payment methods on file</p>
       ) : (
@@ -29,17 +41,17 @@ export function PaymentMethodsTab({ data }: PaymentMethodsTabProps) {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap justify-end">
                 {pm.isDefault && (
                   <span className="px-2 py-1 text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 rounded-full">
                     DEFAULT
                   </span>
                 )}
-                {pm.isLocked && (
-                  <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full flex items-center gap-1">
-                    <IoLockClosedOutline className="w-3 h-3" />
-                    LOCKED
-                  </span>
+                {pm.isLockedForClaim && (
+                  <LockedPaymentMethodBadge reason="claim" />
+                )}
+                {pm.isLocked && !pm.isLockedForClaim && (
+                  <LockedPaymentMethodBadge reason="booking" bookingCode={pm.lockedForBooking} />
                 )}
               </div>
             </div>

@@ -3490,6 +3490,22 @@ model PlatformSettings {
   maxBonusPercentage       Float    @default(0.25)
   partnerDirectRefundLimit Float    @default(250)
 
+  // Commission Tiers (by fleet size)
+  defaultCommissionRate    Float    @default(0.25)   // Standard (0-9 vehicles) = 25%
+  tier1VehicleThreshold    Int      @default(10)     // Gold starts at 10 vehicles
+  tier1CommissionRate      Float    @default(0.20)   // Gold = 20%
+  tier2VehicleThreshold    Int      @default(50)     // Platinum starts at 50 vehicles
+  tier2CommissionRate      Float    @default(0.15)   // Platinum = 15%
+  tier3VehicleThreshold    Int      @default(100)    // Diamond starts at 100 vehicles
+  tier3CommissionRate      Float    @default(0.10)   // Diamond = 10%
+
+  // Processing Fees
+  processingFeePercent     Float    @default(0.035)  // 3.5%
+  processingFeeFixed       Float    @default(1.50)   // $1.50 fixed per payout
+
+  // Insurance Platform Share
+  insurancePlatformShare   Float    @default(0.30)   // Platform keeps 30% of insurance fees
+
   @@map("platform_settings")
 }
 

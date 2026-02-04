@@ -16,22 +16,22 @@ export function OverviewTab({ data }: OverviewTabProps) {
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
-          <p className="text-sm text-gray-500 dark:text-gray-400">Total Spent</p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(data.summary.totalSpent)}</p>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+        <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3 sm:p-4">
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Total Spent</p>
+          <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(data.summary.totalSpent)}</p>
         </div>
-        <div className={`rounded-lg p-4 ${data.summary.pendingChargesCount > 0 ? 'bg-red-50 dark:bg-red-900/20' : 'bg-gray-50 dark:bg-gray-900/50'}`}>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Pending Charges</p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(data.summary.pendingChargesAmount)}</p>
+        <div className={`rounded-lg p-3 sm:p-4 ${data.summary.pendingChargesCount > 0 ? 'bg-red-50 dark:bg-red-900/20' : 'bg-gray-50 dark:bg-gray-900/50'}`}>
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Pending Charges</p>
+          <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(data.summary.pendingChargesAmount)}</p>
         </div>
-        <div className={`rounded-lg p-4 ${data.summary.disputedChargesCount > 0 ? 'bg-yellow-50 dark:bg-yellow-900/20' : 'bg-gray-50 dark:bg-gray-900/50'}`}>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Disputed</p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(data.summary.disputedChargesAmount)}</p>
+        <div className={`rounded-lg p-3 sm:p-4 ${data.summary.disputedChargesCount > 0 ? 'bg-yellow-50 dark:bg-yellow-900/20' : 'bg-gray-50 dark:bg-gray-900/50'}`}>
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Disputed</p>
+          <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(data.summary.disputedChargesAmount)}</p>
         </div>
-        <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
-          <p className="text-sm text-gray-500 dark:text-gray-400">Wallet Balance</p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(data.wallet.totalBalance)}</p>
+        <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 sm:p-4">
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Wallet Balance</p>
+          <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(data.wallet.totalBalance)}</p>
         </div>
       </div>
 

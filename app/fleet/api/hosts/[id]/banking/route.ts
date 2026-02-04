@@ -5,8 +5,33 @@ import { prisma } from '@/app/lib/database/prisma'
 import Stripe from 'stripe'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-11-20.acacia'
+  apiVersion: '2024-11-20.acacia' as any
 })
+
+// Earnings tier commission rates
+// BASIC: Platform covers insurance, host gets 40%
+// STANDARD: Host has P2P insurance, gets 75%
+// PREMIUM: Host has commercial insurance, gets 90%
+function getHostCommissionPercent(tier: string): number {
+  switch (tier) {
+    case 'PREMIUM': return 90
+    case 'STANDARD': return 75
+    case 'BASIC':
+    default: return 40
+  }
+}
+
+function getPlatformCommissionPercent(tier: string): number {
+  return 100 - getHostCommissionPercent(tier)
+}
+
+// New hosts (< 30 days) have 7-day payout hold, established hosts have 3-day hold
+function isNewHost(createdAt: Date | null): boolean {
+  if (!createdAt) return true
+  const thirtyDaysAgo = new Date()
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+  return new Date(createdAt) > thirtyDaysAgo
+}
 
 export async function GET(
   request: NextRequest,
@@ -33,7 +58,12 @@ export async function GET(
         email: true,
         approvalStatus: true,
         hostType: true,
-        
+        createdAt: true,
+
+        // Earnings & Commission
+        earningsTier: true,
+        insuranceTier: true,
+
         // Stripe Connect (for receiving payouts)
         stripeConnectAccountId: true,
         stripeAccountStatus: true,
@@ -136,6 +166,57 @@ export async function GET(
       )
     }
 
+    // ========================================================================
+    // ✅ FETCH PENDING CLAIMS FOR THIS HOST (pending recovery amounts)
+    // ========================================================================
+
+    const pendingClaims = await prisma.claim.findMany({
+      where: {
+        hostId: id,
+        status: { in: ['APPROVED', 'GUEST_RESPONDED'] },
+        // Only include claims that haven't been fully recovered
+        OR: [
+          { recoveryStatus: null },
+          { recoveryStatus: { in: ['PENDING', 'PARTIAL'] } }
+        ]
+      },
+      select: {
+        id: true,
+        type: true,
+        status: true,
+        approvedAmount: true,
+        recoveredFromGuest: true,
+        recoveryStatus: true,
+        guestResponseDeadline: true,
+        createdAt: true,
+        booking: {
+          select: {
+            bookingCode: true,
+            car: {
+              select: {
+                year: true,
+                make: true,
+                model: true
+              }
+            },
+            reviewerProfile: {
+              select: {
+                name: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    })
+
+    // Calculate pending recovery totals
+    const pendingRecovery = pendingClaims.reduce((sum, claim) => {
+      const approved = Number(claim.approvedAmount) || 0
+      const recovered = Number(claim.recoveredFromGuest) || 0
+      return sum + (approved - recovered)
+    }, 0)
+
     // Fetch additional Stripe Connect data if account exists
     let stripeConnectData = null
     if (host.stripeConnectAccountId) {
@@ -198,7 +279,17 @@ export async function GET(
           name: host.name,
           email: host.email,
           approvalStatus: host.approvalStatus,
-          hostType: host.hostType
+          hostType: host.hostType,
+          createdAt: host.createdAt
+        },
+        earnings: {
+          tier: host.earningsTier || 'BASIC',
+          insuranceTier: host.insuranceTier || 'PLATFORM',
+          // Commission rates based on insurance tier
+          hostCommissionPercent: getHostCommissionPercent(host.earningsTier || 'BASIC'),
+          platformCommissionPercent: getPlatformCommissionPercent(host.earningsTier || 'BASIC'),
+          // Payout hold period: 7 days for new hosts (< 30 days), 3 days for established
+          payoutHoldDays: isNewHost(host.createdAt) ? 7 : 3
         },
         stripeConnect: {
           accountId: host.stripeConnectAccountId,
@@ -218,8 +309,26 @@ export async function GET(
           pending: host.pendingBalance || 0,
           hold: host.holdBalance || 0,
           negative: host.negativeBalance || 0,
-          availableForPayout: stats.availableForPayout
+          availableForPayout: stats.availableForPayout,
+          pendingRecovery,
+          pendingClaimsCount: pendingClaims.length
         },
+        pendingClaims: pendingClaims.map(claim => ({
+          id: claim.id,
+          type: claim.type,
+          status: claim.status,
+          approvedAmount: Number(claim.approvedAmount) || 0,
+          recoveredFromGuest: Number(claim.recoveredFromGuest) || 0,
+          pendingAmount: (Number(claim.approvedAmount) || 0) - (Number(claim.recoveredFromGuest) || 0),
+          recoveryStatus: claim.recoveryStatus,
+          guestResponseDeadline: claim.guestResponseDeadline,
+          createdAt: claim.createdAt,
+          bookingCode: claim.booking?.bookingCode || '',
+          carDetails: claim.booking?.car
+            ? `${claim.booking.car.year} ${claim.booking.car.make} ${claim.booking.car.model}`
+            : 'Unknown Vehicle',
+          guestName: claim.booking?.reviewerProfile?.name || 'Guest'
+        })),
         subscription: {
           tier: host.subscriptionTier,
           status: host.subscriptionStatus,

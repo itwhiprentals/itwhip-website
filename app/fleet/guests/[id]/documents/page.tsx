@@ -63,6 +63,10 @@ interface Guest {
   documentsVerified: boolean
   documentVerifiedAt: string | null
   documentVerifiedBy: string | null
+  // Stripe Identity verification
+  stripeIdentityStatus: string | null
+  stripeIdentitySessionId: string | null
+  stripeIdentityVerifiedAt: string | null
 }
 
 export default function GuestDocumentsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -481,6 +485,89 @@ export default function GuestDocumentsPage({ params }: { params: Promise<{ id: s
           </div>
         </div>
 
+        {/* Stripe Identity Status Section */}
+        {guest.stripeIdentityStatus && (
+          <div className={`mb-6 rounded-lg p-4 border-2 ${
+            guest.stripeIdentityStatus === 'verified'
+              ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700'
+              : guest.stripeIdentityStatus === 'pending' || guest.stripeIdentityStatus === 'processing'
+              ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700'
+              : guest.stripeIdentityStatus === 'requires_input'
+              ? 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700'
+              : 'bg-gray-50 dark:bg-gray-900/20 border-gray-300 dark:border-gray-700'
+          }`}>
+            <div className="flex items-start gap-3">
+              <IoFingerPrintOutline className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
+                guest.stripeIdentityStatus === 'verified'
+                  ? 'text-green-600 dark:text-green-400'
+                  : guest.stripeIdentityStatus === 'pending' || guest.stripeIdentityStatus === 'processing'
+                  ? 'text-blue-600 dark:text-blue-400'
+                  : guest.stripeIdentityStatus === 'requires_input'
+                  ? 'text-red-600 dark:text-red-400'
+                  : 'text-gray-600 dark:text-gray-400'
+              }`} />
+              <div className="flex-1">
+                <h3 className={`font-semibold text-sm sm:text-base ${
+                  guest.stripeIdentityStatus === 'verified'
+                    ? 'text-green-900 dark:text-green-100'
+                    : guest.stripeIdentityStatus === 'pending' || guest.stripeIdentityStatus === 'processing'
+                    ? 'text-blue-900 dark:text-blue-100'
+                    : guest.stripeIdentityStatus === 'requires_input'
+                    ? 'text-red-900 dark:text-red-100'
+                    : 'text-gray-900 dark:text-gray-100'
+                }`}>
+                  Stripe Identity: {guest.stripeIdentityStatus === 'verified' ? 'Verified ✓' :
+                    guest.stripeIdentityStatus === 'pending' ? 'Pending' :
+                    guest.stripeIdentityStatus === 'processing' ? 'Processing...' :
+                    guest.stripeIdentityStatus === 'requires_input' ? 'Failed / Needs Retry' :
+                    guest.stripeIdentityStatus}
+                </h3>
+                <p className={`text-xs sm:text-sm mt-1 ${
+                  guest.stripeIdentityStatus === 'verified'
+                    ? 'text-green-800 dark:text-green-300'
+                    : guest.stripeIdentityStatus === 'pending' || guest.stripeIdentityStatus === 'processing'
+                    ? 'text-blue-800 dark:text-blue-300'
+                    : guest.stripeIdentityStatus === 'requires_input'
+                    ? 'text-red-800 dark:text-red-300'
+                    : 'text-gray-800 dark:text-gray-300'
+                }`}>
+                  {guest.stripeIdentityStatus === 'verified'
+                    ? `Identity verified via Stripe${guest.stripeIdentityVerifiedAt ? ` on ${formatDate(guest.stripeIdentityVerifiedAt)}` : ''}`
+                    : guest.stripeIdentityStatus === 'pending'
+                    ? 'Guest has started verification but not completed it yet'
+                    : guest.stripeIdentityStatus === 'processing'
+                    ? 'Stripe is reviewing the submitted documents'
+                    : guest.stripeIdentityStatus === 'requires_input'
+                    ? 'Verification failed - guest needs to try again with valid documents'
+                    : 'Unknown status'}
+                </p>
+                {guest.stripeIdentitySessionId && (
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-mono">
+                    Session: {guest.stripeIdentitySessionId.slice(0, 20)}...
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Show when NO Stripe Identity session exists */}
+        {!guest.stripeIdentityStatus && !guest.documentsVerified && (
+          <div className="mb-6 bg-gray-50 dark:bg-gray-900/20 border-2 border-gray-300 dark:border-gray-700 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <IoFingerPrintOutline className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm sm:text-base">
+                  Stripe Identity: Not Started
+                </h3>
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  Guest has not started Stripe Identity verification. Use Admin Override below if manual verification is needed.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Admin Override Section */}
         <div className="mb-6 bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-300 dark:border-amber-700 rounded-lg p-4">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -523,14 +610,24 @@ export default function GuestDocumentsPage({ params }: { params: Promise<{ id: s
             <div className="flex items-start">
               <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 mr-3 flex-shrink-0" />
               <div>
-                <h3 className="font-semibold text-green-800 dark:text-green-200">Documents Verified</h3>
+                <h3 className="font-semibold text-green-800 dark:text-green-200">
+                  {guest.stripeIdentityStatus === 'verified' ? 'Identity Verified via Stripe' :
+                   guest.documentVerifiedBy === 'fleet-admin' ? 'Verified via Admin Override' :
+                   'Documents Verified'}
+                </h3>
                 <p className="text-sm text-green-700 dark:text-green-300 mt-1">
-                  All required documents verified
-                  {guest.documentVerifiedAt && (
-                    <> on {formatDate(guest.documentVerifiedAt)}</>
-                  )}
-                  {guest.documentVerifiedBy && (
-                    <> by {guest.documentVerifiedBy}</>
+                  {guest.stripeIdentityStatus === 'verified' ? (
+                    <>Driver's license and selfie verified via Stripe Identity{guest.stripeIdentityVerifiedAt && <> on {formatDate(guest.stripeIdentityVerifiedAt)}</>}</>
+                  ) : (
+                    <>
+                      All required documents verified
+                      {guest.documentVerifiedAt && (
+                        <> on {formatDate(guest.documentVerifiedAt)}</>
+                      )}
+                      {guest.documentVerifiedBy && (
+                        <> by {guest.documentVerifiedBy}</>
+                      )}
+                    </>
                   )}
                 </p>
               </div>

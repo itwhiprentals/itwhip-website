@@ -30,7 +30,9 @@ export interface BankingData {
     hasDisputedCharges: boolean
     hasPendingRefunds: boolean
     hasLockedPaymentMethod: boolean
+    hasActiveClaim: boolean
   }
+  activeClaims: ActiveClaim[]
   recentActivity: RecentActivity[]
   charges: {
     pending: Charge[]
@@ -53,6 +55,7 @@ export interface PaymentMethod {
   isDefault: boolean
   isLocked: boolean
   lockedForBooking?: string
+  isLockedForClaim?: boolean
 }
 
 export interface RecentActivity {
@@ -100,6 +103,19 @@ export interface ActiveBooking {
   startDate: string
   endDate: string
   paymentMethodId: string
+}
+
+export interface ActiveClaim {
+  id: string
+  type: string
+  status: string
+  estimatedCost: number
+  approvedAmount: number | null
+  deductible: number
+  guestResponseDeadline: string | null
+  bookingCode: string
+  carDetails: string
+  hostName: string
 }
 
 export type TabType = 'overview' | 'payment-methods' | 'charges' | 'refunds' | 'wallet' | 'disputes'

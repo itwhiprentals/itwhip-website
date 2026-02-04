@@ -67,21 +67,21 @@ function DisputeCard({ charge, actionLoading, onResolveDispute }: DisputeCardPro
         <button
           onClick={() => onResolveDispute(charge.id, 'charge_anyway')}
           disabled={actionLoading === charge.id}
-          className="px-3 py-1.5 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg disabled:opacity-50"
+          className="min-h-[44px] px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg disabled:opacity-50"
         >
           Charge Anyway
         </button>
         <button
           onClick={() => onResolveDispute(charge.id, 'waive', 'Dispute accepted')}
           disabled={actionLoading === charge.id}
-          className="px-3 py-1.5 text-sm bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-50"
+          className="min-h-[44px] px-4 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-50"
         >
           Accept & Waive
         </button>
         <button
           onClick={() => onResolveDispute(charge.id, 'escalate', 'Escalated for review')}
           disabled={actionLoading === charge.id}
-          className="px-3 py-1.5 text-sm bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-lg disabled:opacity-50"
+          className="min-h-[44px] px-4 py-2 text-sm bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-lg disabled:opacity-50"
         >
           Escalate
         </button>

@@ -16,14 +16,15 @@ import {
   QuickActions,
   StripeConnectCard,
   StripeCustomerCard,
-  SubscriptionCard,
   PayoutConfigCard,
   PaymentMethodsList,
   RecentChargesTable,
   ChargeHostModal,
   HoldFundsModal,
   ForcePayoutModal,
-  SuspendPayoutsModal
+  SuspendPayoutsModal,
+  PendingRecoveryCard,
+  NoPayoutMethodAlert
 } from './components'
 
 export default function HostBankingPage({ params }: { params: Promise<{ id: string }> }) {
@@ -286,6 +287,30 @@ export default function HostBankingPage({ params }: { params: Promise<{ id: stri
 
         <BalanceCards balances={bankingData.balances} />
 
+        {/* Pending Claims Recovery Card */}
+        {bankingData.pendingClaims && bankingData.pendingClaims.length > 0 && (
+          <div className="mb-6">
+            <PendingRecoveryCard
+              pendingRecovery={bankingData.balances.pendingRecovery || 0}
+              pendingClaimsCount={bankingData.balances.pendingClaimsCount || 0}
+              pendingClaims={bankingData.pendingClaims}
+              onViewClaim={(claimId) => window.open(`/fleet/claims/${claimId}`, '_blank')}
+            />
+          </div>
+        )}
+
+        {/* No Payout Method Alert */}
+        {bankingData.stripeConnect.accountId &&
+         !bankingData.stripeConnect.payoutsEnabled && (
+          <div className="mb-6">
+            <NoPayoutMethodAlert
+              hostName={bankingData.host.name}
+              hasPendingBalance={bankingData.balances.current > 0}
+              pendingAmount={bankingData.balances.current}
+            />
+          </div>
+        )}
+
         <QuickActions
           data={bankingData}
           onChargeHost={handleOpenChargeModal}
@@ -298,11 +323,14 @@ export default function HostBankingPage({ params }: { params: Promise<{ id: stri
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <StripeConnectCard stripeConnect={bankingData.stripeConnect} />
           <StripeCustomerCard stripeCustomer={bankingData.stripeCustomer} />
-          <SubscriptionCard subscription={bankingData.subscription} />
-          <PayoutConfigCard payout={bankingData.payout} />
+          <PayoutConfigCard payout={bankingData.payout} earnings={bankingData.earnings} />
         </div>
 
-        <PaymentMethodsList paymentMethods={bankingData.paymentMethods} />
+        <PaymentMethodsList
+          paymentMethods={bankingData.paymentMethods}
+          hasStripeConnect={!!bankingData.stripeConnect.accountId}
+          hasStripeCustomer={!!bankingData.stripeCustomer.customerId}
+        />
         <RecentChargesTable recentCharges={bankingData.recentCharges} />
       </div>
 

@@ -2,8 +2,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/app/lib/database/prisma';
 
-// ========== ✅ NEW: ESG EVENT HOOK IMPORT ==========
+// ========== ✅ ESG EVENT HOOK IMPORT ==========
 import { handleClaimApproved } from '@/app/lib/esg/event-hooks'
+
+// ========== ✅ GUEST NOTIFICATION EMAIL IMPORT ==========
+import { sendClaimNotificationGuestEmail } from '@/app/lib/services/claimEmailService'
 
 export async function POST(
   request: NextRequest,
@@ -72,6 +75,47 @@ export async function POST(
           accountHoldAppliedAt: new Date(),
         }
       });
+    }
+
+    // ========================================================================
+    // ✅ SEND NOTIFICATION EMAIL TO GUEST
+    // ========================================================================
+
+    if (existingClaim.booking.reviewerProfile?.email) {
+      try {
+        const guestResponseDeadline = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
+        const carDetails = `${existingClaim.booking.car.year} ${existingClaim.booking.car.make} ${existingClaim.booking.car.model}`
+
+        const emailResult = await sendClaimNotificationGuestEmail(
+          existingClaim.booking.reviewerProfile.email,
+          {
+            guestName: existingClaim.booking.reviewerProfile.firstName || 'Guest',
+            claimId: params.id,
+            bookingCode: existingClaim.booking.bookingCode || '',
+            carDetails,
+            incidentDate: existingClaim.incidentDate?.toISOString() || new Date().toISOString(),
+            estimatedCost: parseFloat(approvedAmount),
+            claimType: existingClaim.type,
+            responseDeadline: guestResponseDeadline,
+            deductibleAmount: Number(existingClaim.deductible) || 0,
+            depositHeld: Number(existingClaim.booking.securityDepositHeld) || 0,
+          }
+        )
+
+        // Track notification sent
+        if (emailResult.success) {
+          await prisma.claim.update({
+            where: { id: params.id },
+            data: { guestNotifiedAt: new Date() }
+          })
+          console.log('✅ Guest notified of claim approval:', existingClaim.booking.reviewerProfile.email)
+        } else {
+          console.error('❌ Failed to send guest notification email:', emailResult.error)
+        }
+      } catch (emailError) {
+        // Don't fail claim approval if email fails - log and continue
+        console.error('❌ Error sending guest notification:', emailError)
+      }
     }
 
     // Create audit log

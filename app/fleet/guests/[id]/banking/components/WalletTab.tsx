@@ -24,18 +24,18 @@ export function WalletTab({ data, onAddBonus }: WalletTabProps) {
       </div>
 
       {/* Balance Cards */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 text-center">
           <p className="text-sm text-gray-600 dark:text-gray-400">Credits</p>
-          <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{formatCurrency(data.wallet.creditBalance)}</p>
+          <p className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400">{formatCurrency(data.wallet.creditBalance)}</p>
         </div>
         <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 text-center">
           <p className="text-sm text-gray-600 dark:text-gray-400">Bonus</p>
-          <p className="text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(data.wallet.bonusBalance)}</p>
+          <p className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(data.wallet.bonusBalance)}</p>
         </div>
         <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 text-center">
           <p className="text-sm text-gray-600 dark:text-gray-400">Deposit Wallet</p>
-          <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{formatCurrency(data.wallet.depositWalletBalance)}</p>
+          <p className="text-xl sm:text-2xl font-bold text-purple-600 dark:text-purple-400">{formatCurrency(data.wallet.depositWalletBalance)}</p>
         </div>
       </div>
 

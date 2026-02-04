@@ -252,7 +252,7 @@ export default function FleetDashboard() {
 
           {/* Banking */}
           <Link
-            href={`/fleet/hosts?key=${apiKey}&tab=banking`}
+            href={`/fleet/banking?key=${apiKey}`}
             className="px-4 py-3 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
           >
             <IoWalletOutline className="text-2xl group-hover:scale-110 transition-transform" />
