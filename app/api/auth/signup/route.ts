@@ -382,7 +382,8 @@ If you didn't create an account, please ignore this email.
         userType // Include user type in response
       },
       accessToken,
-      requiresVerification: true // Flag for frontend to redirect to verification page
+      requiresVerification: true, // Flag for frontend to redirect to verification page
+      redirect: '/dashboard' // Guest signup goes to dashboard
     }, { status: 201 })
 
     // Set refresh token as httpOnly cookie

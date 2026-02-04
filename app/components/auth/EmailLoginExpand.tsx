@@ -90,7 +90,7 @@ export default function EmailLoginExpand({ mode, hostMode = false, onSuccess, on
         onSuccess()
       } else {
         // Use redirect from API response if available, otherwise use default
-        const redirectUrl = data.redirect || (hostMode ? '/host/dashboard' : '/')
+        const redirectUrl = data.redirect || (hostMode ? '/host/dashboard' : '/dashboard')
         window.location.href = redirectUrl
       }
     } catch {

@@ -393,7 +393,8 @@ export async function POST(request: NextRequest) {
         email: user.email,
         name: user.name,
         role: user.role
-      }
+      },
+      redirect: '/dashboard' // Guest login goes to dashboard
     })
 
     // Set secure HTTP-only cookies
