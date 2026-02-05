@@ -20,7 +20,8 @@ import { format, formatDistanceToNow } from 'date-fns'
 // Types
 interface PartnerAgreement {
   id: string
-  businessName: string
+  name: string  // Prospect name (from HostProspect)
+  email: string // Prospect email
   hostAgreementUrl: string
   hostAgreementName: string | null
   agreementValidationScore: number | null
@@ -38,7 +39,7 @@ interface BookingAgreement {
   agreementViewedAt: string | null
   agreementSignedAt: string | null
   agreementExpiresAt: string | null
-  guest: { name: string; email: string } | null
+  renter: { name: string; email: string } | null  // Changed from guest to renter
   car: {
     make: string
     model: string
@@ -325,8 +326,9 @@ function PartnerAgreementsTab({ data }: { data: ESignData['partnerAgreements'] |
                   <tr key={agreement.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
                       <div className="font-medium text-gray-900">
-                        {agreement.businessName || 'Unnamed Partner'}
+                        {agreement.name || 'Unnamed Prospect'}
                       </div>
+                      <div className="text-xs text-gray-500">{agreement.email}</div>
                     </td>
                     <td className="px-4 py-3">
                       <a
@@ -504,10 +506,10 @@ function BookingAgreementsTab({ data }: { data: ESignData['bookingAgreements'] |
                   <tr key={agreement.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
                       <div className="font-medium text-gray-900">
-                        {agreement.guest?.name || 'Unknown Guest'}
+                        {agreement.renter?.name || 'Unknown Renter'}
                       </div>
                       <div className="text-sm text-gray-500">
-                        {agreement.guest?.email || ''}
+                        {agreement.renter?.email || ''}
                       </div>
                     </td>
                     <td className="px-4 py-3">

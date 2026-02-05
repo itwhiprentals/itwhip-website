@@ -2,7 +2,7 @@
 // Fleet API for E-Sign and Agreement Management
 
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/app/lib/prisma'
+import { prisma } from '@/app/lib/database/prisma'
 
 const FLEET_KEY = 'phoenix-fleet-2847'
 
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     const monthStart = new Date(todayStart)
     monthStart.setMonth(monthStart.getMonth() - 1)
 
-    // Partner Onboarding Agreement Stats
+    // Partner Onboarding Agreement Stats (from HostProspect - recruited hosts)
     const [
       totalPartnerAgreements,
       validatedAgreements,
@@ -33,34 +33,35 @@ export async function GET(request: NextRequest) {
       pendingValidation,
       recentPartnerAgreements,
     ] = await Promise.all([
-      // Total hosts with uploaded agreements
-      prisma.rentalHost.count({
+      // Total prospects with uploaded agreements
+      prisma.hostProspect.count({
         where: { hostAgreementUrl: { not: null } }
       }),
       // Agreements that passed validation (score >= 40)
-      prisma.rentalHost.count({
+      prisma.hostProspect.count({
         where: {
           agreementValidationScore: { gte: 40 }
         }
       }),
       // Average validation score
-      prisma.rentalHost.aggregate({
+      prisma.hostProspect.aggregate({
         where: { agreementValidationScore: { not: null } },
         _avg: { agreementValidationScore: true }
       }),
       // Agreements pending validation (uploaded but no score)
-      prisma.rentalHost.count({
+      prisma.hostProspect.count({
         where: {
           hostAgreementUrl: { not: null },
           agreementValidationScore: null
         }
       }),
       // Recent partner agreement uploads
-      prisma.rentalHost.findMany({
+      prisma.hostProspect.findMany({
         where: { hostAgreementUrl: { not: null } },
         select: {
           id: true,
-          businessName: true,
+          name: true,
+          email: true,
           hostAgreementUrl: true,
           hostAgreementName: true,
           agreementValidationScore: true,
@@ -75,7 +76,7 @@ export async function GET(request: NextRequest) {
       })
     ])
 
-    // Booking Agreement Stats
+    // Booking Agreement Stats (from RentalBooking)
     const [
       totalBookingAgreements,
       signedAgreements,
@@ -85,31 +86,31 @@ export async function GET(request: NextRequest) {
       recentBookingAgreements,
     ] = await Promise.all([
       // Total bookings with agreements sent
-      prisma.booking.count({
+      prisma.rentalBooking.count({
         where: { agreementStatus: { not: 'not_sent' } }
       }),
       // Signed agreements
-      prisma.booking.count({
+      prisma.rentalBooking.count({
         where: { agreementStatus: 'signed' }
       }),
       // Pending signatures
-      prisma.booking.count({
+      prisma.rentalBooking.count({
         where: { agreementStatus: { in: ['sent', 'viewed'] } }
       }),
       // Expired agreements
-      prisma.booking.count({
+      prisma.rentalBooking.count({
         where: {
           agreementExpiresAt: { lt: now },
           agreementStatus: { not: 'signed' }
         }
       }),
       // Agreements by status
-      prisma.booking.groupBy({
+      prisma.rentalBooking.groupBy({
         by: ['agreementStatus'],
         _count: true
       }),
       // Recent booking agreements
-      prisma.booking.findMany({
+      prisma.rentalBooking.findMany({
         where: { agreementStatus: { not: 'not_sent' } },
         select: {
           id: true,
@@ -118,7 +119,7 @@ export async function GET(request: NextRequest) {
           agreementViewedAt: true,
           agreementSignedAt: true,
           agreementExpiresAt: true,
-          guest: {
+          renter: {
             select: { name: true, email: true }
           },
           car: {
