@@ -141,8 +141,8 @@ function normalizeSearchResults(data: RawSearchResult): VehicleSummary[] {
     return true;
   });
 
-  // Take top 6 results for AI display
-  return unique.slice(0, 6).map(normalizeCarResult);
+  // Take top 12 results for AI display
+  return unique.slice(0, 12).map(normalizeCarResult);
 }
 
 function normalizeCarResult(car: RawCarResult): VehicleSummary {

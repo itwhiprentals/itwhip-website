@@ -203,7 +203,7 @@ export async function executeTools(
           content: vehicles.length > 0
             ? JSON.stringify({
                 found: vehicles.length,
-                vehicles: vehicles.slice(0, 6).map(v => ({
+                vehicles: vehicles.slice(0, 12).map(v => ({
                   id: v.id,
                   name: `${v.year} ${v.make} ${v.model}`,
                   dailyRate: v.dailyRate,
