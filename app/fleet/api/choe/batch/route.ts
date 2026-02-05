@@ -3,7 +3,6 @@
 // Supports: conversation summaries, quality scoring, training data extraction
 
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyFleetAccess } from '@/app/lib/auth/fleetAuth'
 import {
   createConversationSummaryBatch,
   createQualityScoringBatch,
@@ -16,13 +15,15 @@ import {
   getSuccessfulConversationsForTraining,
 } from '@/app/lib/ai-booking/batch-analytics'
 
+const FLEET_KEY = 'phoenix-fleet-2847'
+
 // =============================================================================
 // GET /fleet/api/choe/batch - List batch jobs or get specific job status
 // =============================================================================
 
 export async function GET(request: NextRequest) {
-  const auth = await verifyFleetAccess(request)
-  if (!auth.authorized) {
+  const key = request.nextUrl.searchParams.get('key')
+  if (key !== FLEET_KEY) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -67,8 +68,8 @@ interface BatchCreateRequest {
 }
 
 export async function POST(request: NextRequest) {
-  const auth = await verifyFleetAccess(request)
-  if (!auth.authorized) {
+  const key = request.nextUrl.searchParams.get('key')
+  if (key !== FLEET_KEY) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -147,8 +148,8 @@ export async function POST(request: NextRequest) {
 // =============================================================================
 
 export async function DELETE(request: NextRequest) {
-  const auth = await verifyFleetAccess(request)
-  if (!auth.authorized) {
+  const key = request.nextUrl.searchParams.get('key')
+  if (key !== FLEET_KEY) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
