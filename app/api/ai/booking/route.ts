@@ -134,29 +134,36 @@ const BOOKING_OUTPUT_SCHEMA = {
       additionalProperties: false,
     },
     action: {
-      type: 'string',
-      enum: ['HANDOFF_TO_PAYMENT', 'NEEDS_LOGIN', 'NEEDS_VERIFICATION', 'HIGH_RISK_REVIEW', 'START_OVER', 'NONE'],
-      description: 'Special action to trigger, or NONE for normal flow',
+      anyOf: [
+        { type: 'string', enum: ['HANDOFF_TO_PAYMENT', 'NEEDS_LOGIN', 'NEEDS_VERIFICATION', 'HIGH_RISK_REVIEW', 'START_OVER'] },
+        { type: 'null' }
+      ],
+      description: 'Special action to trigger, or null for normal flow',
     },
     searchQuery: {
-      type: ['object', 'null'],
-      properties: {
-        location: { type: 'string' },
-        carType: { type: 'string' },
-        pickupDate: { type: 'string' },
-        returnDate: { type: 'string' },
-        pickupTime: { type: 'string' },
-        returnTime: { type: 'string' },
-        make: { type: 'string' },
-        priceMin: { type: 'number' },
-        priceMax: { type: 'number' },
-        seats: { type: 'number' },
-        transmission: { type: 'string' },
-        noDeposit: { type: 'boolean' },
-        instantBook: { type: 'boolean' },
-        vehicleType: { type: 'string', enum: ['RENTAL', 'RIDESHARE'] },
-      },
-      additionalProperties: false,
+      anyOf: [
+        {
+          type: 'object',
+          properties: {
+            location: { type: 'string' },
+            carType: { type: 'string' },
+            pickupDate: { type: 'string' },
+            returnDate: { type: 'string' },
+            pickupTime: { type: 'string' },
+            returnTime: { type: 'string' },
+            make: { type: 'string' },
+            priceMin: { type: 'number' },
+            priceMax: { type: 'number' },
+            seats: { type: 'number' },
+            transmission: { type: 'string' },
+            noDeposit: { type: 'boolean' },
+            instantBook: { type: 'boolean' },
+            vehicleType: { type: 'string', enum: ['RENTAL', 'RIDESHARE'] },
+          },
+          additionalProperties: false,
+        },
+        { type: 'null' }
+      ],
     },
   },
   required: ['reply', 'nextState', 'extractedData', 'action', 'searchQuery'],
@@ -164,10 +171,11 @@ const BOOKING_OUTPUT_SCHEMA = {
 } as const
 
 // Check if model supports structured outputs (Claude 4.5 only)
-// TEMPORARILY DISABLED for debugging - always use legacy text-based approach
+// NOTE: Structured outputs GA but anyOf patterns still cause Anthropic 500 errors
+// Keeping disabled until Anthropic fixes nullable field handling
 function supportsStructuredOutputs(modelId: string): boolean {
   // return modelId.includes('4-5') || modelId.includes('4.5')
-  return false // Force legacy mode for debugging
+  return false // Disabled: anyOf with null causes API 500 errors
 }
 
 // Parse structured output (guaranteed valid JSON from Claude 4.5)
@@ -176,8 +184,8 @@ function parseStructuredResponse(raw: string): ReturnType<typeof parseClaudeResp
     const parsed = JSON.parse(raw)
     // Map nextState string to BookingState enum
     const nextState = parsed.nextState as BookingState || BookingState.INIT
-    // Convert 'NONE' action to null for normal flow
-    const action = parsed.action === 'NONE' ? null : (parsed.action || null)
+    // Handle both null and 'NONE' for backward compatibility
+    const action = (parsed.action === 'NONE' || parsed.action === null) ? null : (parsed.action || null)
     return {
       reply: parsed.reply || "I'm here to help you find a car!",
       nextState,
@@ -456,6 +464,7 @@ export async function POST(request: NextRequest) {
     // Call Claude with DB settings, prompt caching, and structured outputs
     const client = getClient()
     const useStructuredOutputs = supportsStructuredOutputs(modelConfig.modelId)
+    console.log('[CHOÉ DEBUG] Model ID:', modelConfig.modelId, '| Structured outputs:', useStructuredOutputs)
 
     // Build request options
     const requestOptions: Parameters<typeof client.messages.create>[0] = {
