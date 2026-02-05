@@ -2,6 +2,49 @@
 
 ## Recent Fixes (February 2026)
 
+### Choé AI Streaming + Fleet Dashboard - DEPLOYED ✅ (Feb 4)
+**Added advanced AI features and fleet admin dashboard**
+
+**New Features:**
+1. **Streaming Responses (SSE)** - Real-time text delivery at `/api/ai/booking/stream`
+2. **Tool Use (Function Calling)** - AI uses tools: search_vehicles, get_weather, select_vehicle, update_booking_details
+3. **Token Counting API** - Pre-validation and context trimming for long conversations
+4. **Message Batches API** - 50% cost reduction for bulk analytics processing
+5. **Extended Thinking** - Complex query detection for road trips, comparisons
+
+**UI Updates:**
+- **AIVehicleCard**: Year+Make on top row, Model below, proper badge logic
+- **Rideshare badge** (orange): For Uber/DoorDash/Instacart vehicles (`vehicleType='RIDESHARE'`)
+- **Instant badge** (emerald): For regular rentals with instant booking (`vehicleType='RENTAL'` + `instantBook=true`)
+- **Button**: "Select to Book" with underlined "Details" link inside
+- **Input**: Rounded corners (`rounded-lg`)
+
+**Fleet Dashboard (`/fleet/choe`):**
+- Overview: Quick stats, usage chart, recent conversations
+- Conversations: List with detail view, message history
+- Settings: Model config, rate limits, feature flags, vehicle type preferences
+- Security: Threat metrics, event log
+- Analytics: Conversion funnel, cost breakdown, batch jobs UI, tool usage
+
+**New Files:**
+- `app/api/ai/booking/stream/route.ts` - Streaming endpoint
+- `app/lib/ai-booking/tools.ts` - Tool definitions and execution
+- `app/lib/ai-booking/token-counting.ts` - Context management
+- `app/lib/ai-booking/batch-analytics.ts` - Batch API integration
+- `app/lib/ai-booking/extended-thinking.ts` - Complex query detection
+- `app/hooks/useStreamingChat.ts` - React hook for SSE
+- `app/components/ai-booking/AIChatViewStreaming.tsx` - Streaming UI
+- `app/fleet/choe/*` - Fleet admin dashboard
+- `app/fleet/api/choe/*` - Fleet API routes
+
+**Database:** Added ChoeAISettings, ChoeAIConversation, ChoeAIMessage, ChoeAISecurityEvent, ChoeAIDailyStats models
+
+**Test Page:** `/test-streaming` for comparing streaming vs legacy modes
+
+**Deployment:** Commit `4bbbe8e`
+
+---
+
 ### Choé AI Deposit System Fix + No-Deposit Filter - DEPLOYED ✅ (Feb 4)
 **Fixed incorrect deposit amounts in Choé AI to use actual hybrid deposit system**
 
