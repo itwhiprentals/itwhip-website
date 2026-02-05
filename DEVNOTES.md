@@ -2,6 +2,39 @@
 
 ## Recent Fixes (February 2026)
 
+### Phase 7: Choé Modular Architecture + Fleet Settings - DEPLOYED ✅ (Feb 5)
+**Refactored Choé AI backend into modular architecture with 21 new files**
+
+**New Modular Structure (`app/lib/ai-booking/`):**
+- `prompts/` - 7 files: identity.ts, state-flow.ts, vehicle-handling.ts, behavior.ts, response-schema.ts, examples.ts, index.ts
+- `filters/` - 7 files: no-deposit.ts, price-range.ts, vehicle-type.ts, make-model.ts, features.ts, location.ts, index.ts
+- `validators/` - 4 files: date-validator.ts, location-validator.ts, message-validator.ts, index.ts
+- `detection/` - 3 files: intent-detection.ts, fallback.ts, index.ts
+
+**3-Layer No-Deposit Fallback System:**
+1. **Layer 1**: Claude JSON output (`searchQuery.noDeposit: true`) - sometimes fails
+2. **Layer 2**: Intent detection from message (`wantsNoDeposit()` regex) - backup
+3. **Layer 3**: Prisma WHERE clause applies actual filter
+
+**New ChoeAISettings Fields (7 added):**
+- Advanced AI: `streamingEnabled`, `extendedThinkingEnabled`, `toolUseEnabled`, `batchAnalyticsEnabled`
+- Vehicle Preferences: `preferRideshare`, `preferNoDeposit`, `showVehicleTypeBadges`
+
+**Fleet Dashboard Updates:**
+- Settings tab: All toggles now functional (wired to database)
+- Advanced AI Features section: Streaming, Tool Use, Extended Thinking, Batch Analytics
+- Vehicle Type Preferences: Rideshare priority, No-Deposit priority, Type badges
+
+**response-schema.ts Improvements:**
+- Added CRITICAL FILTER RULES at top of prompt
+- All examples include location + dates (prevents omission)
+- Added FULL_RESPONSE_EXAMPLES with complete JSON responses
+- Removed phantom `delivery: "airport"` field
+
+**Deployment:** Commit `a4db2eb`
+
+---
+
 ### Choé AI Streaming + Fleet Dashboard - DEPLOYED ✅ (Feb 4)
 **Added advanced AI features and fleet admin dashboard**
 
