@@ -2,6 +2,26 @@
 
 ## Recent Fixes (February 2026)
 
+### Phase 7c/7d: Modular Code Cleanup - DEPLOYED ✅ (Feb 5)
+**Removed duplicate code and wired up existing modular utilities**
+
+**Changes:**
+1. **state-machine.ts cleanup:**
+   - Removed duplicate date validation functions (isValidDate, isFutureDate, isValidDateRange, calculateDays)
+   - Now imports from `validators/date-validator.ts` (more robust implementations)
+   - Re-exports for backward compatibility with existing imports
+
+2. **Progressive fallback in route.ts:**
+   - Replaced simple 1-tier fallback with 4-tier progressive fallback
+   - Uses `createFallbackQueries()` from `detection/fallback.ts`
+   - Progressively loosens filters: price → carType → make → location-only
+   - Preserves user's noDeposit preference through fallback levels
+   - Added debug logging for fallback level tracking
+
+**Deployment:** Commit `65f227e`
+
+---
+
 ### Phase 7: Choé Modular Architecture + Fleet Settings - DEPLOYED ✅ (Feb 5)
 **Refactored Choé AI backend into modular architecture with 21 new files**
 
