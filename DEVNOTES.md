@@ -2,6 +2,42 @@
 
 ## Recent Fixes (February 2026)
 
+### Choé AI Deposit System Fix + No-Deposit Filter - DEPLOYED ✅ (Feb 4)
+**Fixed incorrect deposit amounts in Choé AI to use actual hybrid deposit system**
+
+**Problems Fixed:**
+1. **Deposit amounts were wrong** - AIVehicleCard used hardcoded calculation ($500/$1000/$2500) that didn't match actual system
+2. **No deposit filter didn't work** - Users couldn't search for cars with $0 deposit
+3. **Vehicle cards not displaying** - Cards only showed when state was exactly `COLLECTING_VEHICLE`
+
+**Changes:**
+- **Search API** (`/api/rentals/search`): Added noDeposit filter using hybrid system (per-vehicle OR host-level settings)
+- **Search API**: Added deposit fields to response: `vehicleDepositMode`, `customDepositAmount`, `noDeposit`, host deposit settings
+- **Search API**: Uses `getActualDeposit(car)` for correct deposit in results
+- **search-bridge.ts**: Extracts `depositAmount` from API, fallback uses correct rate-based tiers (<$150=$250, $150-500=$700, >$500=$1000)
+- **AIVehicleCard.tsx**: Uses `vehicle.depositAmount` directly (no more hardcoded calculation)
+- **AIChatView.tsx**: Fixed vehicle card display condition (shows cards when not confirming + no vehicle selected)
+- **booking route.ts**: Added `wantsNoDeposit()` detection + forces noDeposit filter when user asks for "no deposit" cars
+- **system-prompt.ts**: Enhanced instructions for Claude to recognize no-deposit requests
+
+**Hybrid Deposit System (from booking-pricing.ts):**
+```
+Per-vehicle mode (vehicleDepositMode='individual'):
+  - noDeposit=true → $0
+  - customDepositAmount → use it
+  - else → rate-based fallback
+
+Global mode (default):
+  - host.requireDeposit=false → $0
+  - host.makeDeposits[car.make] → use it
+  - host.depositAmount → use it
+  - else → rate-based fallback
+```
+
+**Deployment:** Commit `1c3928a`
+
+---
+
 ### Choé AI Security Layer - DEPLOYED ✅ (Feb 4)
 **Added comprehensive security to prevent AI abuse**
 
