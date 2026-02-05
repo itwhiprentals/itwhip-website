@@ -134,9 +134,9 @@ const BOOKING_OUTPUT_SCHEMA = {
       additionalProperties: false,
     },
     action: {
-      type: ['string', 'null'],
-      enum: ['HANDOFF_TO_PAYMENT', 'NEEDS_LOGIN', 'NEEDS_VERIFICATION', 'HIGH_RISK_REVIEW', 'START_OVER', null],
-      description: 'Special action to trigger, or null for normal flow',
+      type: 'string',
+      enum: ['HANDOFF_TO_PAYMENT', 'NEEDS_LOGIN', 'NEEDS_VERIFICATION', 'HIGH_RISK_REVIEW', 'START_OVER', 'NONE'],
+      description: 'Special action to trigger, or NONE for normal flow',
     },
     searchQuery: {
       type: ['object', 'null'],
@@ -164,8 +164,10 @@ const BOOKING_OUTPUT_SCHEMA = {
 } as const
 
 // Check if model supports structured outputs (Claude 4.5 only)
+// TEMPORARILY DISABLED for debugging - always use legacy text-based approach
 function supportsStructuredOutputs(modelId: string): boolean {
-  return modelId.includes('4-5') || modelId.includes('4.5')
+  // return modelId.includes('4-5') || modelId.includes('4.5')
+  return false // Force legacy mode for debugging
 }
 
 // Parse structured output (guaranteed valid JSON from Claude 4.5)
@@ -174,11 +176,13 @@ function parseStructuredResponse(raw: string): ReturnType<typeof parseClaudeResp
     const parsed = JSON.parse(raw)
     // Map nextState string to BookingState enum
     const nextState = parsed.nextState as BookingState || BookingState.INIT
+    // Convert 'NONE' action to null for normal flow
+    const action = parsed.action === 'NONE' ? null : (parsed.action || null)
     return {
       reply: parsed.reply || "I'm here to help you find a car!",
       nextState,
       extractedData: parsed.extractedData || {},
-      action: parsed.action || null,
+      action,
       searchQuery: parsed.searchQuery || null,
     }
   } catch {
@@ -738,7 +742,19 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(response)
   } catch (error) {
-    console.error('[ai-booking] Error:', error instanceof Error ? error.message : error, error instanceof Error ? error.stack : '')
+    // Log full error details for debugging
+    console.error('[ai-booking] Error:', error)
+    if (error instanceof Error) {
+      console.error('[ai-booking] Error message:', error.message)
+      console.error('[ai-booking] Error stack:', error.stack)
+    }
+    // Log Anthropic API error details if available
+    if (error && typeof error === 'object' && 'status' in error) {
+      console.error('[ai-booking] Anthropic API status:', (error as { status: number }).status)
+    }
+    if (error && typeof error === 'object' && 'error' in error) {
+      console.error('[ai-booking] Anthropic API error body:', JSON.stringify((error as { error: unknown }).error))
+    }
 
     // Specific error for missing API key
     if (error instanceof Error && error.message.includes('ANTHROPIC_API_KEY')) {
@@ -746,6 +762,18 @@ export async function POST(request: NextRequest) {
         { error: 'AI service not configured' },
         { status: 503 }
       )
+    }
+
+    // Handle Anthropic API errors with more detail
+    if (error && typeof error === 'object' && 'status' in error) {
+      const apiError = error as { status: number; message?: string }
+      if (apiError.status === 500) {
+        console.error('[ai-booking] Anthropic returned 500 - internal server error on their end')
+        return NextResponse.json(
+          { error: 'AI service temporarily unavailable. Please try again in a moment.' },
+          { status: 503 }
+        )
+      }
     }
 
     return NextResponse.json(

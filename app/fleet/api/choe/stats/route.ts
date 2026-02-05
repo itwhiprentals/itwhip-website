@@ -199,20 +199,45 @@ async function getDailyStatsForRange(range: string) {
 async function getToolUsageStats(): Promise<Record<string, number>> {
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
 
-  // Count searches using the existing searchPerformed field
-  const searchCount = await prisma.choeAIMessage.count({
+  // Fetch all messages with toolsUsed in the last 30 days
+  const messagesWithTools = await prisma.choeAIMessage.findMany({
     where: {
       createdAt: { gte: thirtyDaysAgo },
-      searchPerformed: true,
+      NOT: { toolsUsed: { equals: Prisma.JsonNull } },
     },
+    select: { toolsUsed: true },
   })
 
-  // TODO: Add toolsUsed field to schema to track other tools
-  // For now, estimate based on searchPerformed
-  return {
-    search_vehicles: searchCount,
-    get_weather: 0, // Not tracked yet
-    select_vehicle: 0, // Not tracked yet
-    update_booking_details: 0, // Not tracked yet
+  // Count each tool from the toolsUsed JSON array
+  const toolCounts: Record<string, number> = {
+    search_vehicles: 0,
+    get_weather: 0,
+    select_vehicle: 0,
+    update_booking_details: 0,
   }
+
+  for (const msg of messagesWithTools) {
+    const tools = msg.toolsUsed as string[] | null
+    if (tools && Array.isArray(tools)) {
+      for (const tool of tools) {
+        if (tool in toolCounts) {
+          toolCounts[tool]++
+        }
+      }
+    }
+  }
+
+  // Also count from searchPerformed for older messages (backward compatibility)
+  // Only count if there are no toolsUsed entries yet for search
+  if (toolCounts.search_vehicles === 0) {
+    const searchCount = await prisma.choeAIMessage.count({
+      where: {
+        createdAt: { gte: thirtyDaysAgo },
+        searchPerformed: true,
+      },
+    })
+    toolCounts.search_vehicles = searchCount
+  }
+
+  return toolCounts
 }

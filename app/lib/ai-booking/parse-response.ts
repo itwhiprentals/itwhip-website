@@ -82,8 +82,9 @@ function validateAndNormalize(parsed: Record<string, unknown>): ClaudeBookingOut
       : {}
   );
 
-  // Validate action
-  const action = isValidAction(parsed.action) ? (parsed.action as ClaudeBookingOutput['action']) : null;
+  // Validate action (convert 'NONE' to null)
+  const rawAction = parsed.action === 'NONE' ? null : parsed.action;
+  const action = isValidAction(rawAction) ? (rawAction as ClaudeBookingOutput['action']) : null;
 
   // Validate searchQuery
   const searchQuery = normalizeSearchQuery(parsed.searchQuery);
@@ -96,7 +97,7 @@ function isValidState(state: unknown): boolean {
 }
 
 function isValidAction(action: unknown): boolean {
-  if (action === null || action === undefined) return true;
+  if (action === null || action === undefined || action === 'NONE') return true;
   const validActions = ['HANDOFF_TO_PAYMENT', 'NEEDS_LOGIN', 'NEEDS_VERIFICATION', 'HIGH_RISK_REVIEW', 'START_OVER'];
   return typeof action === 'string' && validActions.includes(action);
 }

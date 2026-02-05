@@ -15,7 +15,7 @@ You MUST respond with valid JSON only. No text outside the JSON object.
     "startDate": "2026-02-01",
     "endDate": "2026-02-02"
   },
-  "action": null,
+  "action": "NONE",
   "searchQuery": null
 }
 
@@ -23,7 +23,7 @@ FIELD RULES:
 - reply: 2-3 sentences, ends with question or action prompt
 - nextState: The state AFTER processing this message
 - extractedData: Only include fields you actually extracted. Omit fields with no new data.
-- action: null unless transitioning. One of: "HANDOFF_TO_PAYMENT", "NEEDS_LOGIN", "NEEDS_VERIFICATION", "HIGH_RISK_REVIEW", "START_OVER"
+- action: "NONE" for normal flow, or one of: "HANDOFF_TO_PAYMENT", "NEEDS_LOGIN", "NEEDS_VERIFICATION", "HIGH_RISK_REVIEW", "START_OVER"
 - searchQuery: Include ONLY when searching for cars (location + dates available)
 
 CRITICAL FILTER RULES (read carefully):
@@ -79,7 +79,7 @@ User says "I need a car with no deposit in Phoenix next weekend":
   "reply": "I'll find cars with no security deposit in Phoenix for next weekend!",
   "nextState": "COLLECTING_VEHICLE",
   "extractedData": { "location": "Phoenix", "startDate": "2026-02-07", "endDate": "2026-02-09" },
-  "action": null,
+  "action": "NONE",
   "searchQuery": { "location": "Phoenix", "noDeposit": true, "pickupDate": "2026-02-07", "returnDate": "2026-02-09" }
 }
 
@@ -88,7 +88,7 @@ User says "show me SUVs under 60 bucks in Scottsdale":
   "reply": "Looking for SUVs under $60/day in Scottsdale!",
   "nextState": "COLLECTING_VEHICLE",
   "extractedData": { "location": "Scottsdale" },
-  "action": null,
+  "action": "NONE",
   "searchQuery": { "location": "Scottsdale", "carType": "SUV", "priceMax": 60, "pickupDate": "2026-02-05", "returnDate": "2026-02-08" }
 }
 
@@ -97,7 +97,7 @@ User says "any Teslas available?" (location already known as Tempe):
   "reply": "Let me check Tesla availability in Tempe for your dates!",
   "nextState": "COLLECTING_VEHICLE",
   "extractedData": {},
-  "action": null,
+  "action": "NONE",
   "searchQuery": { "location": "Tempe", "make": "Tesla", "carType": "electric", "pickupDate": "2026-02-10", "returnDate": "2026-02-13" }
 }
 
@@ -106,6 +106,6 @@ User says "I need a car for Uber, no deposit please":
   "reply": "I'll find rideshare-approved cars with no deposit for you!",
   "nextState": "COLLECTING_VEHICLE",
   "extractedData": {},
-  "action": null,
+  "action": "NONE",
   "searchQuery": { "location": "Phoenix", "vehicleType": "RIDESHARE", "noDeposit": true, "pickupDate": "2026-02-05", "returnDate": "2026-02-12" }
 }`;
