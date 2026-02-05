@@ -43,6 +43,7 @@ export default function ChoeAdminPage() {
   const [settings, setSettings] = useState<ChoeAISettings | null>(null)
   const [securityEvents, setSecurityEvents] = useState<SecurityEventSummary[]>([])
   const [securityStats, setSecurityStats] = useState<ChoeSecurityResponse['stats'] | null>(null)
+  const [toolUsage, setToolUsage] = useState<Record<string, number> | null>(null)
 
   // Settings edit state
   const [editingSettings, setEditingSettings] = useState<Partial<ChoeAISettings>>({})
@@ -66,6 +67,7 @@ export default function ChoeAdminPage() {
         setStats(data.data)
         setLiveMetrics(data.liveMetrics)
         setDailyStats(data.dailyStats || [])
+        setToolUsage(data.toolUsage || null)
       }
 
       if (activeTab === 'conversations') {
@@ -936,22 +938,30 @@ function AnalyticsTab({
       {/* Tool Usage */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Tool Usage</h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">AI function calling breakdown across all conversations</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">AI function calling breakdown (last 30 days)</p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">-</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">
+              {toolUsage?.search_vehicles?.toLocaleString() ?? '-'}
+            </div>
             <div className="text-sm text-gray-500 dark:text-gray-400">search_vehicles</div>
           </div>
           <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">-</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">
+              {toolUsage?.get_weather?.toLocaleString() ?? '-'}
+            </div>
             <div className="text-sm text-gray-500 dark:text-gray-400">get_weather</div>
           </div>
           <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">-</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">
+              {toolUsage?.select_vehicle?.toLocaleString() ?? '-'}
+            </div>
             <div className="text-sm text-gray-500 dark:text-gray-400">select_vehicle</div>
           </div>
           <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">-</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">
+              {toolUsage?.update_booking_details?.toLocaleString() ?? '-'}
+            </div>
             <div className="text-sm text-gray-500 dark:text-gray-400">update_booking</div>
           </div>
         </div>

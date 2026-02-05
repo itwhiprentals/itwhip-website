@@ -4980,6 +4980,7 @@ model ChoeAIMessage {
   responseTimeMs   Int?
   searchPerformed  Boolean            @default(false)
   vehiclesReturned Int                @default(0)
+  toolsUsed        Json?              // Array of tool names: ["search_vehicles", "get_weather"]
 
   createdAt        DateTime           @default(now())
 

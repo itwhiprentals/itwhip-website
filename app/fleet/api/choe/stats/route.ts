@@ -3,6 +3,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/app/lib/database/prisma'
+import { Prisma } from '@prisma/client'
 
 const FLEET_KEY = 'phoenix-fleet-2847'
 
@@ -39,6 +40,7 @@ export async function GET(request: NextRequest) {
       messagesLastHour,
       todayCost,
       dailyStatsRaw,
+      toolUsageStats,
     ] = await Promise.all([
       // Today's stats
       getStatsForPeriod(todayStart, now),
@@ -68,6 +70,8 @@ export async function GET(request: NextRequest) {
       }),
       // Daily stats for chart (based on range)
       getDailyStatsForRange(range),
+      // Tool usage stats (last 30 days)
+      getToolUsageStats(),
     ])
 
     return NextResponse.json({
@@ -84,6 +88,7 @@ export async function GET(request: NextRequest) {
         currentCostToday: todayCost?.estimatedCostUsd?.toNumber() || 0,
       },
       dailyStats: dailyStatsRaw,
+      toolUsage: toolUsageStats,
     })
   } catch (error) {
     console.error('[Choé Stats API] Error:', error)
@@ -188,4 +193,36 @@ async function getDailyStatsForRange(range: string) {
     bookings: stat.bookingsFromChoe,
     revenue: stat.revenueFromChoe.toNumber(),
   }))
+}
+
+async function getToolUsageStats(): Promise<Record<string, number>> {
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+
+  const messages = await prisma.choeAIMessage.findMany({
+    where: {
+      createdAt: { gte: thirtyDaysAgo },
+      toolsUsed: { not: Prisma.DbNull },
+    },
+    select: { toolsUsed: true },
+  })
+
+  const toolCounts: Record<string, number> = {
+    search_vehicles: 0,
+    get_weather: 0,
+    select_vehicle: 0,
+    update_booking_details: 0,
+  }
+
+  for (const msg of messages) {
+    const tools = msg.toolsUsed as string[] | null
+    if (tools && Array.isArray(tools)) {
+      for (const tool of tools) {
+        if (tool in toolCounts) {
+          toolCounts[tool]++
+        }
+      }
+    }
+  }
+
+  return toolCounts
 }

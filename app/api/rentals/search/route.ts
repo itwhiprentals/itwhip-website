@@ -6,6 +6,7 @@ import { checkAvailability } from '@/lib/utils/availability'
 import { getLocationByName, ALL_ARIZONA_LOCATIONS } from '@/lib/data/arizona-locations'
 import { getTaxRate } from '@/app/(guest)/rentals/lib/arizona-taxes'
 import { getActualDeposit } from '@/app/(guest)/rentals/lib/booking-pricing'
+import { buildSearchWhereClause, type SearchRouteFilters } from '@/app/lib/ai-booking/filters'
 
 // Default search radius in miles
 const DEFAULT_RADIUS_MILES = 25
@@ -73,102 +74,39 @@ export async function GET(request: NextRequest) {
     }
 
     // ============================================================================
-    // STEP 2: BUILD BASE QUERY WITH BOUNDING BOX PRE-FILTER
+    // STEP 2: BUILD QUERY USING FILTERS MODULE
     // ============================================================================
-    
-    const whereClause: any = {
-      isActive: true,
-      // CRITICAL: Only show cars from APPROVED hosts
-      host: {
-        approvalStatus: 'APPROVED'
-      }
+
+    // Get make parameter
+    const make = searchParams.get('make')
+
+    // Build filter params for the filters module
+    const filterParams: SearchRouteFilters = {
+      instantBook,
+      carType: carType && carType !== 'all' ? carType : undefined,
+      make: make || undefined,
+      priceMin: priceMin ? parseFloat(priceMin) : undefined,
+      priceMax: priceMax ? parseFloat(priceMax) : undefined,
+      transmission: transmission && transmission !== 'all' ? transmission : undefined,
+      seats: seats && seats !== 'all' ? parseInt(seats) : undefined,
+      delivery,
+      noDeposit: noDepositOnly,
     }
 
-    // If exact city is specified, filter by city name (case-insensitive)
+    // Build where clause using filters module (includes base conditions)
+    const whereClause: any = buildSearchWhereClause(filterParams)
+
+    // Add location-based filtering (specific to search route, not in filters module)
     if (exactCity) {
       whereClause.city = { equals: exactCity, mode: 'insensitive' }
     } else if (searchCoordinates) {
       // Use bounding box to pre-filter cars (optimization)
       const boundingBox = getBoundingBox(searchCoordinates, radiusMiles)
-
       whereClause.AND = [
+        ...(whereClause.AND || []),
         { latitude: { gte: boundingBox.minLat, lte: boundingBox.maxLat } },
         { longitude: { gte: boundingBox.minLng, lte: boundingBox.maxLng } }
       ]
-    }
-
-    // Add other filters
-    if (instantBook) whereClause.instantBook = true
-    if (carType && carType !== 'all') {
-      // Special handling for electric - include cars with electric fuelType (e.g., Tesla Model S with carType='SEDAN')
-      if (carType.toLowerCase() === 'electric') {
-        whereClause.OR = [
-          { carType: { equals: 'ELECTRIC', mode: 'insensitive' } },
-          { fuelType: { in: ['electric', 'ELECTRIC', 'Electric'] } }
-        ]
-      } else if (carType.toLowerCase() === 'luxury') {
-        // Special handling for luxury - match luxury brand makes (not a carType in DB)
-        const luxuryMakes = ['Mercedes-Benz', 'BMW', 'Audi', 'Porsche', 'Lexus', 'Cadillac', 'Bentley', 'Rolls-Royce', 'Maserati', 'Jaguar', 'Land Rover', 'Range Rover', 'Infiniti', 'Acura', 'Genesis', 'Lincoln']
-        whereClause.OR = luxuryMakes.map(make => ({ make: { equals: make, mode: 'insensitive' as const } }))
-      } else if (carType.toLowerCase() === 'sports') {
-        // Special handling for sports - match sports car makes/types
-        const sportsMakes = ['Porsche', 'Ferrari', 'Lamborghini', 'McLaren', 'Aston Martin', 'Lotus', 'Corvette']
-        whereClause.OR = [
-          { carType: { equals: 'SPORTS', mode: 'insensitive' } },
-          { carType: { equals: 'COUPE', mode: 'insensitive' } },
-          { carType: { equals: 'EXOTIC', mode: 'insensitive' } },
-          ...sportsMakes.map(make => ({ make: { equals: make, mode: 'insensitive' as const } }))
-        ]
-      } else {
-        // Case-insensitive carType matching for all other types
-        whereClause.carType = { equals: carType.toUpperCase(), mode: 'insensitive' }
-      }
-    }
-
-    // Make filter (case-insensitive)
-    const make = searchParams.get('make')
-    if (make) {
-      whereClause.make = { equals: make, mode: 'insensitive' }
-    }
-
-    if (priceMin || priceMax) {
-      whereClause.dailyRate = {}
-      if (priceMin) whereClause.dailyRate.gte = parseFloat(priceMin)
-      if (priceMax) whereClause.dailyRate.lte = parseFloat(priceMax)
-    }
-
-    // Transmission filter (case-insensitive)
-    if (transmission && transmission !== 'all') {
-      whereClause.transmission = { equals: transmission, mode: 'insensitive' }
-    }
-
-    // Seats filter (minimum seats)
-    if (seats && seats !== 'all') {
-      const minSeats = parseInt(seats)
-      if (!isNaN(minSeats)) {
-        whereClause.seats = { gte: minSeats }
-      }
-    }
-
-    // Delivery filters
-    if (delivery.includes('airport')) whereClause.airportPickup = true
-    if (delivery.includes('hotel')) whereClause.hotelDelivery = true
-    if (delivery.includes('home')) whereClause.homeDelivery = true
-
-    // No deposit filter - uses hybrid system (per-vehicle OR host-level)
-    console.log('[SEARCH DEBUG] noDepositOnly param:', noDepositOnly)
-    if (noDepositOnly) {
-      console.log('[SEARCH DEBUG] Applying no-deposit filter to whereClause')
-      // Cars with no deposit can be:
-      // 1. Per-vehicle mode with noDeposit=true
-      // 2. Global mode where host.requireDeposit=false
-      whereClause.OR = [
-        ...(whereClause.OR || []),
-        { vehicleDepositMode: 'individual', noDeposit: true },
-        { vehicleDepositMode: { not: 'individual' }, host: { requireDeposit: false } },
-        { vehicleDepositMode: null, host: { requireDeposit: false } }
-      ]
-      console.log('[SEARCH DEBUG] whereClause.OR:', JSON.stringify(whereClause.OR))
     }
 
     // ============================================================================

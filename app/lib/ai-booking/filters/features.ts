@@ -66,7 +66,7 @@ export function applyTransmissionFilter(
 }
 
 /**
- * Apply delivery filter (airport, hotel, etc.)
+ * Apply delivery filter (airport, hotel, home)
  */
 export function applyDeliveryFilter(
   where: Prisma.RentalCarWhereInput,
@@ -74,31 +74,46 @@ export function applyDeliveryFilter(
 ): Prisma.RentalCarWhereInput {
   if (!delivery) return where;
 
-  const normalized = delivery.toLowerCase();
+  const normalized = delivery.toLowerCase().trim();
 
   if (normalized === 'airport') {
-    return {
-      ...where,
-      deliverToAirport: true,
-    };
+    return { ...where, airportPickup: true };
   }
 
   if (normalized === 'hotel') {
-    return {
-      ...where,
-      deliverToHotel: true,
-    };
+    return { ...where, hotelDelivery: true };
   }
 
-  // Generic delivery option
+  if (normalized === 'home') {
+    return { ...where, homeDelivery: true };
+  }
+
+  // Generic delivery option - any of the three
   return {
     ...where,
     OR: [
       ...(where.OR || []),
-      { deliverToAirport: true },
-      { deliverToHotel: true },
+      { airportPickup: true },
+      { hotelDelivery: true },
+      { homeDelivery: true },
     ],
   };
+}
+
+/**
+ * Apply multiple delivery filters from array (for search route)
+ */
+export function applyMultipleDeliveryFilters(
+  where: Prisma.RentalCarWhereInput,
+  deliveryOptions: string[]
+): Prisma.RentalCarWhereInput {
+  if (!deliveryOptions || deliveryOptions.length === 0) return where;
+
+  let result = where;
+  if (deliveryOptions.includes('airport')) result = { ...result, airportPickup: true };
+  if (deliveryOptions.includes('hotel')) result = { ...result, hotelDelivery: true };
+  if (deliveryOptions.includes('home')) result = { ...result, homeDelivery: true };
+  return result;
 }
 
 /**

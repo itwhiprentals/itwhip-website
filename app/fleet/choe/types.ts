@@ -24,6 +24,8 @@ export interface ChoeStatsResponse {
     messagesLastHour: number
     currentCostToday: number
   }
+  dailyStats?: DailyChartData[]
+  toolUsage?: Record<string, number>
 }
 
 export interface ChoeStatsSnapshot {

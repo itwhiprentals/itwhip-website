@@ -251,7 +251,7 @@ async function logMessage(
   content: string,
   tokensUsed: number = 0,
   responseTimeMs?: number,
-  searchPerformed: boolean = false,
+  toolsUsed: string[] = [],
   vehiclesReturned: number = 0
 ): Promise<void> {
   if (conversationId.startsWith('temp-')) return
@@ -264,8 +264,9 @@ async function logMessage(
         content,
         tokensUsed,
         responseTimeMs: responseTimeMs || null,
-        searchPerformed,
+        searchPerformed: toolsUsed.includes('search_vehicles'),
         vehiclesReturned,
+        toolsUsed: toolsUsed.length > 0 ? toolsUsed : null,
       }
     })
   } catch (error) {
@@ -400,8 +401,8 @@ export async function POST(request: NextRequest) {
         const reply = buildWeatherReply(weatherData);
         session = addMessage(session, 'assistant', reply);
 
-        // Log assistant message (no tokens used for weather-only response)
-        await logMessage(conversationId, 'assistant', reply, 0)
+        // Log assistant message with get_weather tool tracked
+        await logMessage(conversationId, 'assistant', reply, 0, undefined, ['get_weather'], 0)
         await updateConversationStats(conversationId, session, 0, 0)
 
         return NextResponse.json({
@@ -511,13 +512,13 @@ export async function POST(request: NextRequest) {
       parsed.searchQuery = applyIntentsToQuery({ location: session.location }, detectedIntents)
     }
 
-    // Track if search was performed
-    let searchPerformed = false
+    // Track tools used in this turn
+    let toolsUsed: string[] = []
     let vehiclesReturned = 0
 
     // If Claude wants to search, do it now
     if (parsed.searchQuery) {
-      searchPerformed = true
+      toolsUsed.push('search_vehicles')
 
       // Apply detected intents to searchQuery (fills gaps Claude missed)
       parsed.searchQuery = applyIntentsToQuery(parsed.searchQuery, detectedIntents)
@@ -624,9 +625,17 @@ export async function POST(request: NextRequest) {
     // Calculate response time
     const responseTimeMs = Date.now() - startTime
 
+    // Track additional tools based on extracted data
+    if (parsed.extractedData.vehicleId) {
+      toolsUsed.push('select_vehicle')
+    }
+    if (parsed.extractedData.startDate || parsed.extractedData.endDate || parsed.extractedData.location) {
+      toolsUsed.push('update_booking_details')
+    }
+
     // Log assistant message to database
     if (conversationId) {
-      await logMessage(conversationId, 'assistant', parsed.reply, totalTokensUsed, responseTimeMs, searchPerformed, vehiclesReturned)
+      await logMessage(conversationId, 'assistant', parsed.reply, totalTokensUsed, responseTimeMs, toolsUsed, vehiclesReturned)
     }
 
     // Build booking summary if confirming (using DB pricing settings)

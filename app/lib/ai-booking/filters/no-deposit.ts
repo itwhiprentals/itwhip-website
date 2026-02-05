@@ -27,10 +27,8 @@ export function applyNoDepositFilter(
       ...existingOR,
       // Per-vehicle deposit setting (vehicleDepositMode = 'individual')
       { vehicleDepositMode: 'individual', noDeposit: true },
-      // Host-level setting (vehicleDepositMode = 'host' or other non-individual)
-      { vehicleDepositMode: { not: 'individual' }, host: { requireDeposit: false } },
-      // Legacy/null mode - fall back to host setting
-      { vehicleDepositMode: null, host: { requireDeposit: false } },
+      // Host/global mode - check host's requireDeposit setting
+      { vehicleDepositMode: { in: ['global', 'host'] }, host: { requireDeposit: false } },
     ],
   };
 }

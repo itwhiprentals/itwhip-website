@@ -8,7 +8,7 @@ import { applyNoDepositFilter } from './no-deposit';
 import { applyPriceFilter } from './price-range';
 import { applyVehicleTypeFilter, applyRideshareFilter } from './vehicle-type';
 import { applyMakeFilter, applyModelFilter, normalizeMake } from './make-model';
-import { applyFeaturesFilter, applyInstantBookFilter, applySeatsFilter, applyTransmissionFilter, applyDeliveryFilter } from './features';
+import { applyFeaturesFilter, applyInstantBookFilter, applySeatsFilter, applyTransmissionFilter, applyDeliveryFilter, applyMultipleDeliveryFilters } from './features';
 import { normalizeLocation, isValidArizonaCity, extractCityName, VALID_ARIZONA_CITIES } from './location';
 
 // Re-export individual filters for direct imports
@@ -16,7 +16,7 @@ export { applyNoDepositFilter } from './no-deposit';
 export { applyPriceFilter } from './price-range';
 export { applyVehicleTypeFilter, applyRideshareFilter } from './vehicle-type';
 export { applyMakeFilter, applyModelFilter, normalizeMake } from './make-model';
-export { applyFeaturesFilter, applyInstantBookFilter, applySeatsFilter, applyTransmissionFilter, applyDeliveryFilter } from './features';
+export { applyFeaturesFilter, applyInstantBookFilter, applySeatsFilter, applyTransmissionFilter, applyDeliveryFilter, applyMultipleDeliveryFilters } from './features';
 export { normalizeLocation, isValidArizonaCity, extractCityName, VALID_ARIZONA_CITIES } from './location';
 
 /**
@@ -72,6 +72,47 @@ export function buildExtendedWhereClause(options: ExtendedSearchOptions): Prisma
   if (options.vehicleType) {
     where = applyRideshareFilter(where, options.vehicleType);
   }
+
+  return where;
+}
+
+/**
+ * Interface for search route filters (accepts delivery as array)
+ */
+export interface SearchRouteFilters {
+  instantBook?: boolean;
+  carType?: string;
+  make?: string;
+  priceMin?: number;
+  priceMax?: number;
+  transmission?: string;
+  seats?: number;
+  delivery?: string[];  // Array of delivery options
+  noDeposit?: boolean;
+}
+
+/**
+ * Build where clause specifically for the /api/rentals/search route
+ * Handles delivery as string array (multiple options)
+ */
+export function buildSearchWhereClause(filters: SearchRouteFilters): Prisma.RentalCarWhereInput {
+  // Start with base conditions
+  let where: Prisma.RentalCarWhereInput = {
+    isActive: true,
+    host: {
+      approvalStatus: 'APPROVED',
+    },
+  };
+
+  // Apply filters in order
+  where = applyInstantBookFilter(where, filters.instantBook);
+  where = applyVehicleTypeFilter(where, filters.carType);
+  where = applyMakeFilter(where, filters.make);
+  where = applyPriceFilter(where, filters.priceMin, filters.priceMax);
+  where = applyTransmissionFilter(where, filters.transmission);
+  where = applySeatsFilter(where, filters.seats);
+  where = applyMultipleDeliveryFilters(where, filters.delivery || []);
+  where = applyNoDepositFilter(where, filters.noDeposit);
 
   return where;
 }
