@@ -39,6 +39,9 @@ import {
   hasFilters,
   wantsNoDeposit,
   wantsLowestPrice,
+  createFallbackQueries,
+  shouldTryFallback,
+  getFallbackLevel,
 } from '@/app/lib/ai-booking/detection'
 import prisma from '@/app/lib/database/prisma'
 import {
@@ -526,10 +529,17 @@ export async function POST(request: NextRequest) {
       vehicles = await searchVehicles(parsed.searchQuery)
       console.log('[CHOÉ DEBUG] Search returned', vehicles?.length, 'vehicles')
 
-      // Fallback: if filtered search returned 0 results, retry without filters
-      if (vehicles.length === 0 && hasFilters(parsed.searchQuery)) {
-        const fallbackQuery = { location: parsed.searchQuery.location, pickupDate: parsed.searchQuery.pickupDate, returnDate: parsed.searchQuery.returnDate, pickupTime: parsed.searchQuery.pickupTime, returnTime: parsed.searchQuery.returnTime }
-        vehicles = await searchVehicles(fallbackQuery)
+      // Progressive fallback: if filtered search returned 0 results, try progressively looser filters
+      if (vehicles.length === 0 && shouldTryFallback(vehicles, parsed.searchQuery)) {
+        const fallbacks = createFallbackQueries(parsed.searchQuery)
+        for (const fallbackQuery of fallbacks) {
+          vehicles = await searchVehicles(fallbackQuery)
+          if (vehicles.length > 0) {
+            const level = getFallbackLevel(parsed.searchQuery, fallbackQuery)
+            console.log(`[CHOÉ DEBUG] Fallback level ${level} returned ${vehicles.length} vehicles`)
+            break
+          }
+        }
       }
 
       vehiclesReturned = vehicles.length

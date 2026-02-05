@@ -9,6 +9,17 @@ import {
   ClaudeBookingOutput,
 } from './types';
 
+// Import date validators from dedicated module (avoid duplication)
+import {
+  isValidDate,
+  isFutureDate,
+  isValidDateRange,
+  calculateDays,
+} from './validators/date-validator';
+
+// Re-export for backward compatibility with existing imports
+export { isValidDate, isFutureDate, isValidDateRange, calculateDays };
+
 // =============================================================================
 // DEFAULT SESSION
 // =============================================================================
@@ -104,31 +115,8 @@ export function addMessage(
 // VALIDATION
 // =============================================================================
 
-/** Check if a date string is valid ISO date */
-export function isValidDate(dateStr: string): boolean {
-  const d = new Date(dateStr);
-  return !isNaN(d.getTime()) && dateStr.match(/^\d{4}-\d{2}-\d{2}$/) !== null;
-}
-
-/** Check if date is in the future (Arizona time) */
-export function isFutureDate(dateStr: string): boolean {
-  const now = new Date();
-  const date = new Date(dateStr + 'T00:00:00-07:00'); // Arizona is UTC-7
-  return date > now;
-}
-
-/** Check if return date is after start date */
-export function isValidDateRange(start: string, end: string): boolean {
-  return new Date(end) >= new Date(start);
-}
-
-/** Calculate number of rental days */
-export function calculateDays(startDate: string, endDate: string): number {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  const diff = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-  return Math.max(diff, 1);
-}
+// Note: isValidDate, isFutureDate, isValidDateRange, calculateDays are imported
+// from ./validators/date-validator.ts and re-exported above for backward compatibility
 
 /** Validate session has minimum required data for a given state */
 export function validateForState(
