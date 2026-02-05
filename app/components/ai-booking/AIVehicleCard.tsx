@@ -10,13 +10,6 @@ import type { VehicleSummary } from '@/app/lib/ai-booking/types'
 const SERVICE_FEE_RATE = 0.15 // 15% guest service fee
 const TAX_RATE = 0.084 // 8.4% Arizona rental tax (Phoenix default)
 
-// Deposit amounts by car value tier (based on daily rate as proxy for car type)
-const getDeposit = (dailyRate: number): number => {
-  if (dailyRate >= 300) return 2500 // Exotic ($300+/day)
-  if (dailyRate >= 100) return 1000 // Luxury ($100-299/day)
-  return 500 // Standard (under $100/day)
-}
-
 interface AIVehicleCardProps {
   vehicle: VehicleSummary
   onSelect: (vehicle: VehicleSummary) => void
@@ -44,8 +37,8 @@ export default function AIVehicleCard({ vehicle, onSelect, startDate, endDate }:
   // Calculate number of days (default to 1 if no dates)
   const numberOfDays = calculateDays(startDate, endDate)
 
-  // Calculate pricing
-  const pricing = calculatePricing(vehicle.dailyRate, numberOfDays)
+  // Calculate pricing using actual deposit from vehicle data
+  const pricing = calculatePricing(vehicle.dailyRate, numberOfDays, vehicle.depositAmount)
 
   const toggleExpand = () => {
     setExpanded(!expanded)
@@ -226,20 +219,19 @@ function calculateDays(startDate?: string | null, endDate?: string | null): numb
 }
 
 /**
- * Calculate pricing breakdown using platform constants
+ * Calculate pricing breakdown using platform constants and actual deposit
  */
-function calculatePricing(dailyRate: number, days: number) {
+function calculatePricing(dailyRate: number, days: number, depositAmount: number) {
   const subtotal = dailyRate * days
   const serviceFee = subtotal * SERVICE_FEE_RATE
   const tax = subtotal * TAX_RATE
-  const deposit = getDeposit(dailyRate)
-  const total = subtotal + serviceFee + tax + deposit
+  const total = subtotal + serviceFee + tax + depositAmount
 
   return {
     subtotal,
     serviceFee,
     tax,
-    deposit,
+    deposit: depositAmount,
     total
   }
 }

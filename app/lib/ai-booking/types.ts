@@ -87,6 +87,8 @@ export interface VehicleSummary {
   instantBook: boolean;
   seats: number | null;
   transmission: string | null;
+  /** Actual deposit from hybrid system (per-vehicle or host settings) */
+  depositAmount: number;
 }
 
 // =============================================================================
@@ -142,6 +144,7 @@ export interface SearchQuery {
   priceMax?: number;
   seats?: number;
   transmission?: string;
+  noDeposit?: boolean;  // Filter for cars with no security deposit
 }
 
 // =============================================================================

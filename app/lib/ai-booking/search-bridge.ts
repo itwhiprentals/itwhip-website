@@ -17,6 +17,8 @@ export async function searchVehicles(
     // Always use production URL — avoids localhost self-call deadlock in dev
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://itwhip.com';
     const url = `${baseUrl}/api/rentals/search?${params.toString()}`;
+    console.log('[SEARCH-BRIDGE DEBUG] Query:', JSON.stringify(query));
+    console.log('[SEARCH-BRIDGE DEBUG] URL:', url);
 
     const response = await fetch(url, {
       method: 'GET',
@@ -67,6 +69,7 @@ function buildSearchParams(query: SearchQuery): URLSearchParams {
   if (query.priceMax) params.set('priceMax', String(query.priceMax));
   if (query.seats) params.set('seats', String(query.seats));
   if (query.transmission) params.set('transmission', query.transmission);
+  if (query.noDeposit) params.set('noDeposit', 'true');
 
   return params;
 }
@@ -100,6 +103,19 @@ interface RawCarResult {
   instantBook?: boolean;
   seats?: number;
   transmission?: string;
+  // Deposit from search API (calculated using getActualDeposit)
+  depositAmount?: number;
+  requirements?: { deposit?: number };
+}
+
+/**
+ * Fallback deposit calculation - matches booking-pricing.ts getCarClassAndDefaultDeposit
+ * Used when search API doesn't return depositAmount
+ */
+function getDefaultDeposit(dailyRate: number): number {
+  if (dailyRate < 150) return 250    // Economy
+  if (dailyRate < 500) return 700    // Luxury
+  return 1000                         // Exotic
 }
 
 /** Normalize search API response into VehicleSummary array */
@@ -165,6 +181,9 @@ function normalizeCarResult(car: RawCarResult): VehicleSummary {
       ? `${Math.round(car.distance)} mi`
       : car.distance || null;
 
+  // Use actual deposit from search API, fallback to rate-based calculation
+  const depositAmount = car.depositAmount ?? car.requirements?.deposit ?? getDefaultDeposit(dailyRate);
+
   return {
     id: car.id,
     make: car.make,
@@ -180,5 +199,6 @@ function normalizeCarResult(car: RawCarResult): VehicleSummary {
     instantBook: car.instantBook || false,
     seats: car.seats || null,
     transmission: car.transmission || null,
+    depositAmount,
   };
 }

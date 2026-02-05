@@ -138,9 +138,31 @@ export async function POST(request: NextRequest) {
     // Parse structured response
     const parsed = parseClaudeResponse(rawText)
 
+    // Force a search if user asks for no-deposit cars but Claude didn't create a searchQuery
+    const userWantsNoDeposit = wantsNoDeposit(body.message)
+    console.log('[CHOÉ DEBUG] User message:', body.message)
+    console.log('[CHOÉ DEBUG] Wants no deposit:', userWantsNoDeposit)
+    console.log('[CHOÉ DEBUG] Session location:', session.location)
+    console.log('[CHOÉ DEBUG] Claude searchQuery:', JSON.stringify(parsed.searchQuery))
+
+    if (!parsed.searchQuery && userWantsNoDeposit && session.location) {
+      console.log('[CHOÉ DEBUG] Forcing new searchQuery with noDeposit')
+      parsed.searchQuery = {
+        location: session.location,
+        noDeposit: true,
+      }
+    }
+
     // If Claude wants to search, do it now
     if (parsed.searchQuery) {
+      // Force noDeposit filter if user asked for it (Claude sometimes misses this)
+      if (userWantsNoDeposit && !parsed.searchQuery.noDeposit) {
+        console.log('[CHOÉ DEBUG] Injecting noDeposit into existing searchQuery')
+        parsed.searchQuery.noDeposit = true
+      }
+      console.log('[CHOÉ DEBUG] Final searchQuery:', JSON.stringify(parsed.searchQuery))
       vehicles = await searchVehicles(parsed.searchQuery)
+      console.log('[CHOÉ DEBUG] Search returned', vehicles?.length, 'vehicles')
 
       // Fallback: if filtered search returned 0 results, retry without filters
       if (vehicles.length === 0 && hasFilters(parsed.searchQuery)) {
@@ -289,11 +311,6 @@ function buildBookingSummary(
   const estimatedTax = Math.round(taxable * 0.084 * 100) / 100 // 8.4% AZ tax
   const estimatedTotal = Math.round((taxable + estimatedTax) * 100) / 100
 
-  // Deposit based on daily rate (matches AIVehicleCard pricing)
-  let depositAmount = 500   // Standard (under $100/day)
-  if (vehicle.dailyRate >= 300) depositAmount = 2500  // Exotic ($300+/day)
-  else if (vehicle.dailyRate >= 100) depositAmount = 1000  // Luxury ($100-299/day)
-
   return {
     vehicle,
     location: session.location!,
@@ -307,7 +324,7 @@ function buildBookingSummary(
     serviceFee,
     estimatedTax,
     estimatedTotal,
-    depositAmount,
+    depositAmount: vehicle.depositAmount,  // Use actual deposit from vehicle data
   }
 }
 
@@ -353,10 +370,15 @@ function getSuggestions(state: BookingState): string[] {
 // =============================================================================
 
 function hasFilters(query: import('@/app/lib/ai-booking/types').SearchQuery): boolean {
-  return !!(query.make || query.carType || query.priceMin || query.priceMax || query.seats || query.transmission)
+  return !!(query.make || query.carType || query.priceMin || query.priceMax || query.seats || query.transmission || query.noDeposit)
 }
 
 function wantsLowestPrice(message: string): boolean {
   const lower = message.toLowerCase()
   return /\b(cheapest|cheapest|budget|lowest price|most affordable|under \$|least expensive)\b/.test(lower)
+}
+
+function wantsNoDeposit(message: string): boolean {
+  const lower = message.toLowerCase()
+  return /\b(no deposit|without deposit|zero deposit|\$0 deposit|no security deposit|deposit.?free)\b/.test(lower)
 }

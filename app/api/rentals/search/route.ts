@@ -5,6 +5,7 @@ import { calculateDistance, getBoundingBox } from '@/lib/utils/distance'
 import { checkAvailability } from '@/lib/utils/availability'
 import { getLocationByName, ALL_ARIZONA_LOCATIONS } from '@/lib/data/arizona-locations'
 import { getTaxRate } from '@/app/(guest)/rentals/lib/arizona-taxes'
+import { getActualDeposit } from '@/app/(guest)/rentals/lib/booking-pricing'
 
 // Default search radius in miles
 const DEFAULT_RADIUS_MILES = 25
@@ -34,6 +35,7 @@ export async function GET(request: NextRequest) {
     const seats = searchParams.get('seats')
     const features = searchParams.get('features')?.split(',').filter(Boolean) || []
     const delivery = searchParams.get('delivery')?.split(',').filter(Boolean) || []
+    const noDepositOnly = searchParams.get('noDeposit') === 'true'
 
     // ============================================================================
     // STEP 1: DETERMINE SEARCH LOCATION COORDINATES
@@ -153,6 +155,22 @@ export async function GET(request: NextRequest) {
     if (delivery.includes('hotel')) whereClause.hotelDelivery = true
     if (delivery.includes('home')) whereClause.homeDelivery = true
 
+    // No deposit filter - uses hybrid system (per-vehicle OR host-level)
+    console.log('[SEARCH DEBUG] noDepositOnly param:', noDepositOnly)
+    if (noDepositOnly) {
+      console.log('[SEARCH DEBUG] Applying no-deposit filter to whereClause')
+      // Cars with no deposit can be:
+      // 1. Per-vehicle mode with noDeposit=true
+      // 2. Global mode where host.requireDeposit=false
+      whereClause.OR = [
+        ...(whereClause.OR || []),
+        { vehicleDepositMode: 'individual', noDeposit: true },
+        { vehicleDepositMode: { not: 'individual' }, host: { requireDeposit: false } },
+        { vehicleDepositMode: null, host: { requireDeposit: false } }
+      ]
+      console.log('[SEARCH DEBUG] whereClause.OR:', JSON.stringify(whereClause.OR))
+    }
+
     // ============================================================================
     // STEP 3: FETCH CARS WITH RELATED DATA
     // ============================================================================
@@ -207,19 +225,28 @@ export async function GET(request: NextRequest) {
         maxTripDuration: true,
         insuranceIncluded: true,
         insuranceDaily: true,
-        
+
+        // Deposit settings (per-vehicle mode)
+        vehicleDepositMode: true,
+        customDepositAmount: true,
+        noDeposit: true,
+
         // Stats
         rating: true,
         totalTrips: true,
-        
-        // Host - LIMITED PUBLIC FIELDS
+
+        // Host - LIMITED PUBLIC FIELDS + DEPOSIT SETTINGS
         host: {
           select: {
             name: true,
             profilePhoto: true,
             responseRate: true,
             responseTime: true,
-            isVerified: true
+            isVerified: true,
+            // Deposit settings for hybrid system
+            requireDeposit: true,
+            depositAmount: true,
+            makeDeposits: true
           }
         },
         
@@ -543,10 +570,12 @@ export async function GET(request: NextRequest) {
               : `${availabilityInfo.availableDays} of ${availabilityInfo.totalDays} days available`
         } : null,
         cancellationPolicy: 'MODERATE',
+        // Calculate actual deposit using hybrid system (per-vehicle OR host-level settings)
+        depositAmount: getActualDeposit(car),
         requirements: {
           minAge: 21,
           license: '2+ years',
-          deposit: 500,
+          deposit: getActualDeposit(car),  // Use actual deposit instead of hardcoded 500
           advanceNotice: car.advanceNotice || 2,
           minDuration: car.minTripDuration || 1,
           maxDuration: car.maxTripDuration || 30

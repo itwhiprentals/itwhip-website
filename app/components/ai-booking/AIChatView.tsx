@@ -196,9 +196,9 @@ export default function AIChatView({ onNavigateToBooking, onNavigateToLogin, onC
           </motion.div>
         ))}
 
-        {/* Vehicle cards */}
+        {/* Vehicle cards - show when we have results and not in confirmation state */}
         <AnimatePresence>
-          {vehicles && vehicles.length > 0 && session?.state === BookingState.COLLECTING_VEHICLE && (
+          {vehicles && vehicles.length > 0 && session?.state !== BookingState.CONFIRMING && !session?.vehicleId && (
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
