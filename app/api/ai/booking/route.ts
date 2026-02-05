@@ -305,7 +305,7 @@ async function updateConversationStats(
         estimatedCost: { increment: estimatedCost },
         lastActivityAt: new Date(),
         ...(outcome && { outcome }),
-        ...(session.vehicleId && { vehicleId: session.vehicleId }),
+        // vehicleId tracked in session, not in DB (field not in schema)
       }
     })
   } catch (error) {
@@ -510,7 +510,9 @@ export async function POST(request: NextRequest) {
     console.log('[CHOÉ DEBUG] Claude searchQuery:', JSON.stringify(parsed.searchQuery))
 
     // If no searchQuery but user has strong intents and we have location, create one
-    if (!parsed.searchQuery && session.location && (detectedIntents.noDeposit || detectedIntents.instantBook || detectedIntents.luxury || detectedIntents.electric || detectedIntents.suv || detectedIntents.rideshare)) {
+    // BUT don't create if we already have vehicles (user is asking about existing results)
+    const hasPreviousVehicles = body.previousVehicles && body.previousVehicles.length > 0
+    if (!parsed.searchQuery && session.location && !hasPreviousVehicles && (detectedIntents.noDeposit || detectedIntents.instantBook || detectedIntents.luxury || detectedIntents.electric || detectedIntents.suv || detectedIntents.rideshare)) {
       console.log('[CHOÉ DEBUG] Creating searchQuery from detected intents')
       parsed.searchQuery = applyIntentsToQuery({ location: session.location }, detectedIntents)
     }

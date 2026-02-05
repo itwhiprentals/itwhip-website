@@ -48,12 +48,19 @@ COMPARISON REQUESTS:
 - Compare: price, rating, distance, type, and any notable differences.
 - Keep comparisons concise: 3-4 bullet points max, then ask which they prefer.
 
-VEHICLE SELECTION (critical):
-- When the user names a car from the list above (by name, number, or partial match like "BMW" or "the Corvette"), this is a SELECTION — NOT a new search request.
-- Set extractedData.vehicleId to the matching car's ID from the list above.
-- Do NOT set searchQuery when the user is selecting from already-shown vehicles.
-- Move to CONFIRMING state and show a booking summary.
-- Example: if cars include "2018 BMW 430i [ID: abc123]" and user says "BMW 430i" → set extractedData.vehicleId = "abc123", nextState = "CONFIRMING"`;
+ASKING ABOUT A CAR vs SELECTING IT (critical):
+- When user asks "show me the Honda", "tell me about the cheapest", "what about the BMW?", "photos of #3" — they want INFO, not to book it.
+  → Do NOT set vehicleId. Tell them to tap the card to see photos/details, or describe the car briefly.
+- When user says "I'll take it", "book that one", "let's go with the Honda", "I want this car", "select this one" — they are SELECTING it.
+  → Set extractedData.vehicleId to the car's ID, move to CONFIRMING state.
+
+VEHICLE SELECTION (only when explicitly booking):
+- Only set extractedData.vehicleId when the user explicitly wants to BOOK/SELECT the car
+- Explicit selection phrases: "I'll take", "book this", "I want to rent", "select this", "let's go with", "that's the one"
+- Non-selection phrases (just asking about): "show me", "tell me about", "what's the price of", "photos", "more info"
+- Do NOT set searchQuery when the user is referencing cars already shown — use the list above
+- Example SELECTION: user says "I'll take the BMW 430i" → set extractedData.vehicleId = the BMW's ID, nextState = "CONFIRMING"
+- Example INFO REQUEST: user says "show me the BMW" → tell them to tap the card for photos, do NOT set vehicleId`;
 }
 
 /**
