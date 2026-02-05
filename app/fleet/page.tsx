@@ -317,16 +317,25 @@ export default function FleetDashboard() {
           {/* Choé AI */}
           <Link
             href={`/fleet/choe?key=${apiKey}`}
-            className="px-4 py-3 bg-gradient-to-br from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group relative overflow-hidden"
+            className="px-4 py-3 bg-gradient-to-br from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group overflow-visible"
           >
             <Image
               src="/images/choe-logo.png"
               alt="Choé"
-              width={96}
-              height={96}
-              className="group-hover:scale-110 transition-transform rounded"
+              width={72}
+              height={72}
+              className="group-hover:scale-110 transition-transform -my-6"
             />
             <span className="text-sm font-medium">Choé AI</span>
+          </Link>
+
+          {/* E-Sign */}
+          <Link
+            href={`/fleet/esign?key=${apiKey}`}
+            className="px-4 py-3 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
+          >
+            <IoDocumentTextOutline className="text-2xl group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-medium">E-Sign</span>
           </Link>
 
           {/* Settings */}
