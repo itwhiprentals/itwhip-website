@@ -45,6 +45,15 @@ export default function ChoeAdminPage() {
   const [securityStats, setSecurityStats] = useState<ChoeSecurityResponse['stats'] | null>(null)
   const [toolUsage, setToolUsage] = useState<Record<string, number> | null>(null)
 
+  // Anthropic Admin API usage data
+  const [anthropicUsage, setAnthropicUsage] = useState<{
+    configured: boolean
+    today: { tokens: number; cost: number; requests: number }
+    week: { tokens: number; cost: number; requests: number }
+    month: { tokens: number; cost: number; requests: number }
+    cacheSavings: number
+  } | null>(null)
+
   // Settings edit state
   const [editingSettings, setEditingSettings] = useState<Partial<ChoeAISettings>>({})
   const [savingSettings, setSavingSettings] = useState(false)
@@ -68,6 +77,22 @@ export default function ChoeAdminPage() {
         setLiveMetrics(data.liveMetrics)
         setDailyStats(data.dailyStats || [])
         setToolUsage(data.toolUsage || null)
+
+        // Fetch Anthropic Admin API usage (if configured)
+        try {
+          const usageRes = await fetch(`/fleet/api/choe/anthropic-usage?key=${apiKey}&view=quick`)
+          if (usageRes.ok) {
+            const usageData = await usageRes.json()
+            if (usageData.success) {
+              setAnthropicUsage({
+                configured: usageData.configured,
+                ...usageData.data,
+              })
+            }
+          }
+        } catch (e) {
+          console.log('[Choe Dashboard] Anthropic Admin API not available')
+        }
       }
 
       if (activeTab === 'conversations') {
@@ -243,7 +268,7 @@ export default function ChoeAdminPage() {
       {!loading && (
         <>
           {activeTab === 'overview' && stats && (
-            <OverviewTab stats={stats} dailyStats={dailyStats} conversations={conversations} />
+            <OverviewTab stats={stats} dailyStats={dailyStats} conversations={conversations} anthropicUsage={anthropicUsage} />
           )}
 
           {activeTab === 'conversations' && (
@@ -286,10 +311,18 @@ function OverviewTab({
   stats,
   dailyStats,
   conversations,
+  anthropicUsage,
 }: {
   stats: ChoeStatsResponse['data']
   dailyStats: { date: string; conversations: number; cost: number }[]
   conversations: ConversationSummary[]
+  anthropicUsage: {
+    configured: boolean
+    today: { tokens: number; cost: number; requests: number }
+    week: { tokens: number; cost: number; requests: number }
+    month: { tokens: number; cost: number; requests: number }
+    cacheSavings: number
+  } | null
 }) {
   return (
     <div className="space-y-6">
@@ -318,6 +351,54 @@ function OverviewTab({
           highlight
         />
       </div>
+
+      {/* Anthropic Admin API Usage */}
+      {anthropicUsage?.configured && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Anthropic API Usage</h3>
+            <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-1 rounded-full">
+              Admin API Connected
+            </span>
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="text-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <p className="text-xs text-gray-500 dark:text-gray-400">Today</p>
+              <p className="text-lg font-bold text-gray-900 dark:text-white">
+                ${anthropicUsage.today.cost.toFixed(4)}
+              </p>
+              <p className="text-xs text-gray-400">
+                {anthropicUsage.today.tokens.toLocaleString()} tokens
+              </p>
+            </div>
+            <div className="text-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <p className="text-xs text-gray-500 dark:text-gray-400">This Week</p>
+              <p className="text-lg font-bold text-gray-900 dark:text-white">
+                ${anthropicUsage.week.cost.toFixed(4)}
+              </p>
+              <p className="text-xs text-gray-400">
+                {anthropicUsage.week.requests} requests
+              </p>
+            </div>
+            <div className="text-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <p className="text-xs text-gray-500 dark:text-gray-400">This Month</p>
+              <p className="text-lg font-bold text-gray-900 dark:text-white">
+                ${anthropicUsage.month.cost.toFixed(4)}
+              </p>
+              <p className="text-xs text-gray-400">
+                {anthropicUsage.month.tokens.toLocaleString()} tokens
+              </p>
+            </div>
+            <div className="text-center p-3 bg-purple-50 dark:bg-purple-900/30 rounded-lg">
+              <p className="text-xs text-purple-600 dark:text-purple-400">Cache Savings</p>
+              <p className="text-lg font-bold text-purple-600 dark:text-purple-400">
+                ${anthropicUsage.cacheSavings.toFixed(4)}
+              </p>
+              <p className="text-xs text-purple-400">~90% on cached</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Usage Chart Placeholder */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">

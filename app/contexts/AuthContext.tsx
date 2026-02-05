@@ -327,26 +327,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }))
   }, [])
 
-  // Initial auth check on mount
-  // Only retry if user appears logged out (cookies may not be immediately available after OAuth)
+  // Track if user successfully authenticated (used by retry logic)
+  const isAuthenticatedRef = useRef(false)
+
+  // Update ref when state changes
+  useEffect(() => {
+    isAuthenticatedRef.current = state.isLoggedIn
+  }, [state.isLoggedIn])
+
+  // Initial auth check on mount with progressive retry for mobile cookie timing
+  // Mobile Safari/Chrome sometimes delay cookie availability after OAuth redirect
   useEffect(() => {
     refreshAuth()
 
-    // Retry auth check after 500ms ONLY if:
-    // 1. Initial check completed AND
-    // 2. User appears logged out (might be cookie timing issue after OAuth)
-    const retryTimeout = setTimeout(() => {
-      // Only retry if we got a logged-out result and haven't successfully authenticated
-      if (initialCheckDoneRef.current && !state.isLoggedIn) {
-        console.log('[AuthContext] Retrying auth check (initial check found no session)')
-        // Reset the flag to allow the retry
-        refreshInProgressRef.current = false
-        refreshAuth()
-      }
-    }, 500)
+    // Progressive retry schedule: 300ms, 800ms, 1500ms
+    // Each retry only fires if still not authenticated
+    const retryDelays = [300, 800, 1500]
+    const timeouts: NodeJS.Timeout[] = []
 
-    return () => clearTimeout(retryTimeout)
-  }, [refreshAuth]) // Note: state.isLoggedIn not in deps - we only want to check once
+    retryDelays.forEach((delay, index) => {
+      const timeout = setTimeout(() => {
+        // Check using ref (current value) not stale closure
+        if (initialCheckDoneRef.current && !isAuthenticatedRef.current) {
+          console.log(`[AuthContext] Retry #${index + 1} at ${delay}ms (no session found)`)
+          refreshInProgressRef.current = false
+          refreshAuth()
+        }
+      }, delay)
+      timeouts.push(timeout)
+    })
+
+    return () => timeouts.forEach(t => clearTimeout(t))
+  }, [refreshAuth])
 
   // Re-check auth when window regains focus (handles external login/logout)
   // Debounced to prevent rapid re-checks when switching between windows
