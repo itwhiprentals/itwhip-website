@@ -59,8 +59,8 @@ export default function VehicleCard({ vehicle, onSelect, startDate, endDate }: V
         onClick={toggleExpand}
         className="flex cursor-pointer"
       >
-        {/* Main Photo - static, no carousel */}
-        <div className="w-28 h-24 sm:w-32 sm:h-28 flex-shrink-0 bg-gray-100 dark:bg-gray-700 relative">
+        {/* Main Photo - landscape rectangle */}
+        <div className="w-28 sm:w-32 aspect-[4/3] flex-shrink-0 bg-gray-100 dark:bg-gray-700 relative">
           {mainPhoto ? (
             <Image
               src={mainPhoto}
@@ -84,13 +84,24 @@ export default function VehicleCard({ vehicle, onSelect, startDate, endDate }: V
         </div>
 
         {/* Details */}
-        <div className="flex-1 p-3 flex flex-col justify-between">
+        <div className="flex-1 px-2 py-1.5 flex flex-col justify-between">
           {/* Top row: Year Make + Badge */}
           <div>
             <div className="flex items-center justify-between">
-              <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
-                {vehicle.year} {vehicle.make}
-              </h4>
+              <div className="flex items-center gap-1.5">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
+                  {vehicle.year} {vehicle.make}
+                </h4>
+                {vehicle.rating && (
+                  <span className="flex items-center gap-0.5 text-xs text-gray-500 dark:text-gray-400">
+                    <IoStar size={10} className="text-yellow-500" />
+                    {vehicle.rating.toFixed(1)}
+                  </span>
+                )}
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  {vehicle.trips > 0 ? `(Trips ${vehicle.trips})` : '(New Listing)'}
+                </span>
+              </div>
               {/* Badge priority: Rideshare > No Deposit > Instant */}
               {vehicle.vehicleType?.toUpperCase() === 'RIDESHARE' ? (
                 <span className="flex items-center gap-0.5 text-[10px] font-bold text-white bg-orange-500 px-1.5 py-0.5 rounded">
@@ -111,16 +122,12 @@ export default function VehicleCard({ vehicle, onSelect, startDate, endDate }: V
             {/* Model on second line */}
             <p className="text-xs text-gray-600 dark:text-gray-300 truncate">{vehicle.model}</p>
 
-            {/* Stars, trips, distance */}
-            <div className="flex items-center gap-2 mt-1.5 text-xs text-gray-500 dark:text-gray-400">
-              {vehicle.rating && (
-                <span className="flex items-center gap-0.5">
-                  <IoStar size={10} className="text-yellow-500" />
-                  {vehicle.rating.toFixed(1)}
+            {/* Location, distance */}
+            <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-gray-400 flex-wrap">
+              {vehicle.location && (
+                <span className="text-gray-600 dark:text-gray-300">
+                  {vehicle.location.includes(',') ? vehicle.location : `${vehicle.location}, AZ`}
                 </span>
-              )}
-              {vehicle.trips > 0 && (
-                <span>(Trips {vehicle.trips})</span>
               )}
               {vehicle.distance && (
                 <span className="flex items-center gap-0.5">
@@ -132,7 +139,7 @@ export default function VehicleCard({ vehicle, onSelect, startDate, endDate }: V
           </div>
 
           {/* Bottom row: Price + Button */}
-          <div className="flex items-center justify-between mt-2">
+          <div className="flex items-center justify-between w-full">
             <div>
               <span className="text-base font-bold text-gray-900 dark:text-white">${vehicle.dailyRate}</span>
               <span className="text-xs text-gray-500 dark:text-gray-400">/day</span>
