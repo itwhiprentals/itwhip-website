@@ -25,32 +25,32 @@ const CAR_TYPE_MAPPINGS: Record<string, Prisma.RentalCarWhereInput> = {
     make: 'Tesla',
   },
 
-  // Body types
+  // Body types (uses carType field in DB)
   suv: {
     OR: [
-      { bodyType: { contains: 'suv', mode: 'insensitive' } },
-      { bodyType: { contains: 'crossover', mode: 'insensitive' } },
+      { carType: { contains: 'suv', mode: 'insensitive' } },
+      { carType: { contains: 'crossover', mode: 'insensitive' } },
     ],
   },
   sedan: {
-    bodyType: { contains: 'sedan', mode: 'insensitive' },
+    carType: { contains: 'sedan', mode: 'insensitive' },
   },
   truck: {
     OR: [
-      { bodyType: { contains: 'truck', mode: 'insensitive' } },
-      { bodyType: { contains: 'pickup', mode: 'insensitive' } },
+      { carType: { contains: 'truck', mode: 'insensitive' } },
+      { carType: { contains: 'pickup', mode: 'insensitive' } },
     ],
   },
   convertible: {
-    bodyType: { contains: 'convertible', mode: 'insensitive' },
+    carType: { contains: 'convertible', mode: 'insensitive' },
   },
   coupe: {
-    bodyType: { contains: 'coupe', mode: 'insensitive' },
+    carType: { contains: 'coupe', mode: 'insensitive' },
   },
   van: {
     OR: [
-      { bodyType: { contains: 'van', mode: 'insensitive' } },
-      { bodyType: { contains: 'minivan', mode: 'insensitive' } },
+      { carType: { contains: 'van', mode: 'insensitive' } },
+      { carType: { contains: 'minivan', mode: 'insensitive' } },
     ],
   },
 
@@ -71,7 +71,7 @@ const CAR_TYPE_MAPPINGS: Record<string, Prisma.RentalCarWhereInput> = {
   // Sports/exotic
   sports: {
     OR: [
-      { bodyType: { contains: 'sports', mode: 'insensitive' } },
+      { carType: { contains: 'sports', mode: 'insensitive' } },
       { make: { in: ['Porsche', 'Ferrari', 'Lamborghini', 'McLaren', 'Corvette'] } },
     ],
   },
@@ -107,10 +107,10 @@ export function applyVehicleTypeFilter(
   const mapping = CAR_TYPE_MAPPINGS[normalizedType];
 
   if (!mapping) {
-    // If no mapping found, try as a body type contains search
+    // If no mapping found, try as a carType contains search
     return {
       ...where,
-      bodyType: { contains: carType, mode: 'insensitive' },
+      carType: { contains: carType, mode: 'insensitive' },
     };
   }
 

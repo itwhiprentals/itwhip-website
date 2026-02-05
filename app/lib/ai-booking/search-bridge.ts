@@ -25,8 +25,11 @@ export async function searchVehicles(
 ): Promise<VehicleSummary[]> {
   try {
     const params = buildSearchParams(query);
-    // Always use production URL — avoids localhost self-call deadlock in dev
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://itwhip.com';
+    // Use localhost in development, production URL otherwise
+    const isDev = process.env.NODE_ENV === 'development';
+    const baseUrl = isDev
+      ? 'http://localhost:3000'
+      : (process.env.NEXT_PUBLIC_SITE_URL || 'https://itwhip.com');
     const url = `${baseUrl}/api/rentals/search?${params.toString()}`;
     console.log('[SEARCH-BRIDGE DEBUG] Query:', JSON.stringify(query));
     console.log('[SEARCH-BRIDGE DEBUG] URL:', url);
