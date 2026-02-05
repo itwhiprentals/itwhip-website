@@ -55,6 +55,13 @@ import {
   getPricingConfig,
   getFeatureFlags,
 } from '@/app/lib/ai-booking/choe-settings'
+import { countAndValidateTokens } from '@/app/lib/ai-booking/token-counting'
+import {
+  detectComplexQuery,
+  supportsExtendedThinking,
+  getExtendedThinkingConfig,
+  enhancePromptForThinking,
+} from '@/app/lib/ai-booking/extended-thinking'
 
 // =============================================================================
 // COST CALCULATION (with prompt caching support)
@@ -456,7 +463,7 @@ export async function POST(request: NextRequest) {
     })
 
     // Build conversation history for Claude
-    const claudeMessages = session.messages.map((m) => ({
+    let claudeMessages: Anthropic.MessageParam[] = session.messages.map((m) => ({
       role: m.role as 'user' | 'assistant',
       content: m.content,
     }))
@@ -464,21 +471,57 @@ export async function POST(request: NextRequest) {
     // Call Claude with DB settings, prompt caching, and structured outputs
     const client = getClient()
     const useStructuredOutputs = supportsStructuredOutputs(modelConfig.modelId)
-    console.log('[CHOÉ DEBUG] Model ID:', modelConfig.modelId, '| Structured outputs:', useStructuredOutputs)
+
+    // ==========================================================================
+    // TOKEN COUNTING - Validate context size before API call
+    // ==========================================================================
+    const tokenResult = await countAndValidateTokens(
+      client,
+      modelConfig.modelId,
+      systemPrompt,
+      claudeMessages
+    )
+
+    if (tokenResult.needsTrimming && tokenResult.trimmedMessages) {
+      console.log(`[CHOÉ DEBUG] Context trimmed: ${tokenResult.inputTokens} tokens, kept ${tokenResult.trimmedMessages.length} messages`)
+      claudeMessages = tokenResult.trimmedMessages
+    }
+
+    // ==========================================================================
+    // EXTENDED THINKING - Detect complexity and enable thinking for complex queries
+    // ==========================================================================
+    const complexityAnalysis = detectComplexQuery(body.message)
+    const modelHasThinking = supportsExtendedThinking(modelConfig.modelId)
+    const thinkingConfig = getExtendedThinkingConfig(complexityAnalysis.score, modelHasThinking)
+
+    console.log('[CHOÉ DEBUG] Model ID:', modelConfig.modelId, '| Structured outputs:', useStructuredOutputs, '| Complexity:', complexityAnalysis.score, '| Thinking:', thinkingConfig.enabled)
+
+    // Enhance prompt if thinking is enabled
+    const finalSystemPrompt = thinkingConfig.enabled
+      ? enhancePromptForThinking(systemPrompt)
+      : systemPrompt
 
     // Build request options
     const requestOptions: Parameters<typeof client.messages.create>[0] = {
       model: modelConfig.modelId,
-      max_tokens: modelConfig.maxTokens,
+      max_tokens: thinkingConfig.enabled ? 16000 : modelConfig.maxTokens,
       // Use array format with cache_control for prompt caching (5-min TTL)
       system: [
         {
           type: 'text' as const,
-          text: systemPrompt,
+          text: finalSystemPrompt,
           cache_control: { type: 'ephemeral' as const },
         },
       ],
       messages: claudeMessages,
+      // Add extended thinking for complex queries (Claude 4.5 Sonnet/Opus only)
+      ...(thinkingConfig.enabled && {
+        // @ts-expect-error - thinking is a new API feature
+        thinking: {
+          type: 'enabled',
+          budget_tokens: thinkingConfig.budgetTokens,
+        },
+      }),
     }
 
     // Add structured outputs for Claude 4.5 models (guarantees valid JSON)
@@ -586,7 +629,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Call Claude again with vehicle context (or with 0-result context)
-      const enrichedPrompt = buildSystemPrompt({
+      const enrichedPromptBase = buildSystemPrompt({
         session,
         isLoggedIn: !!body.userId,
         isVerified: false,
@@ -595,6 +638,11 @@ export async function POST(request: NextRequest) {
         location: session.location,
       })
 
+      // Apply thinking enhancement if enabled
+      const enrichedPrompt = thinkingConfig.enabled
+        ? enhancePromptForThinking(enrichedPromptBase)
+        : enrichedPromptBase
+
       const noResultsNote = vehicles.length === 0
         ? ` No exact matches were found for the filters (make/type/price/seats). Show the user what IS available nearby, or suggest broadening their search.`
         : ''
@@ -602,7 +650,7 @@ export async function POST(request: NextRequest) {
       // Build enriched request options
       const enrichedRequestOptions: Parameters<typeof client.messages.create>[0] = {
         model: modelConfig.modelId,
-        max_tokens: modelConfig.maxTokens,
+        max_tokens: thinkingConfig.enabled ? 16000 : modelConfig.maxTokens,
         // Use array format with cache_control for prompt caching
         system: [
           {
@@ -611,6 +659,14 @@ export async function POST(request: NextRequest) {
             cache_control: { type: 'ephemeral' as const },
           },
         ],
+        // Add extended thinking for complex queries
+        ...(thinkingConfig.enabled && {
+          // @ts-expect-error - thinking is a new API feature
+          thinking: {
+            type: 'enabled',
+            budget_tokens: thinkingConfig.budgetTokens,
+          },
+        }),
         messages: [
           ...claudeMessages,
           {

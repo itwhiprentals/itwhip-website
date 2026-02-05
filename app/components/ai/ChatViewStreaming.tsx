@@ -99,11 +99,33 @@ export default function ChatViewStreaming({
     }
   }, [session?.messages.length, vehicles, summary, currentText])
 
-  // Send message handler
+  // Send message handler - optimistically add user message immediately
   const handleSendMessage = useCallback((message: string) => {
+    // Optimistically add user message to session so it appears immediately
+    const updatedSession: BookingSession = persistedSession
+      ? {
+          ...persistedSession,
+          messages: [...persistedSession.messages, { role: 'user' as const, content: message }],
+        }
+      : {
+          sessionId: `session-${Date.now()}`,
+          state: BookingState.INIT,
+          messages: [{ role: 'user' as const, content: message }],
+          location: null,
+          locationId: null,
+          startDate: null,
+          endDate: null,
+          startTime: null,
+          endTime: null,
+          vehicleType: null,
+          vehicleId: null,
+        }
+
+    setPersistedSession(updatedSession)
+
     sendMessage({
       message,
-      session: persistedSession,
+      session: persistedSession, // Send original session to backend
       previousVehicles: persistedVehicles,
     })
   }, [sendMessage, persistedSession, persistedVehicles])
@@ -205,9 +227,9 @@ export default function ChatViewStreaming({
           )}
         </AnimatePresence>
 
-        {/* Vehicle cards */}
+        {/* Vehicle cards - persist for scroll-back (hide only during CONFIRMING when summary shows) */}
         <AnimatePresence>
-          {vehicles && vehicles.length > 0 && session?.state !== BookingState.CONFIRMING && !session?.vehicleId && (
+          {vehicles && vehicles.length > 0 && session?.state !== BookingState.CONFIRMING && (
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}

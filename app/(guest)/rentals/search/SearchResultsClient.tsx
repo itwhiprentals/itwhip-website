@@ -20,7 +20,7 @@ import { format, parseISO } from 'date-fns'
 import { MapContainer } from './components/MapContainer'
 import RentalSearchCard from '@/app/(guest)/components/hero/RentalSearchWidget'
 import CompactCarCard from '@/app/components/cards/CompactCarCard'
-import { ChatView } from '@/app/components/ai'
+import { ChatViewStreaming } from '@/app/components/ai'
 
 // Loading skeleton component - compact style
 function CarCardSkeleton() {
@@ -414,7 +414,7 @@ export default function SearchResultsClient({
       {/* AI Search Mode — full screen chat experience */}
       {searchMode === 'ai' && (
         <div className="fixed inset-0 z-50 bg-gray-50 dark:bg-gray-900" style={{ height: '100dvh' }}>
-          <ChatView
+          <ChatViewStreaming
             onNavigateToBooking={(vehicleId, startDate, endDate) => {
               router.push(`/rentals/${vehicleId}?startDate=${startDate}&endDate=${endDate}`)
             }}

@@ -5,6 +5,17 @@
 import { SearchQuery, VehicleSummary } from './types';
 
 // =============================================================================
+// HELPER FUNCTIONS
+// =============================================================================
+
+/**
+ * Extract just the city name from location strings like "Phoenix, AZ" or "Phoenix"
+ */
+function extractCityName(location: string): string {
+  return location.split(',')[0].trim();
+}
+
+// =============================================================================
 // SEARCH FOR VEHICLES
 // =============================================================================
 
@@ -46,8 +57,10 @@ export async function searchVehicles(
 function buildSearchParams(query: SearchQuery): URLSearchParams {
   const params = new URLSearchParams();
 
-  // Default location to Phoenix if not specified
-  params.set('location', query.location || 'Phoenix, AZ');
+  // Use 'city' param for exact city match (not 'location' which does radius search)
+  // This ensures cars shown are ONLY from the requested city
+  const cityName = extractCityName(query.location || 'Phoenix, AZ');
+  params.set('city', cityName);
 
   if (query.carType) params.set('carType', query.carType);
 
@@ -126,23 +139,21 @@ function getDefaultDeposit(dailyRate: number): number {
 
 /** Normalize search API response into VehicleSummary array */
 function normalizeSearchResults(data: RawSearchResult): VehicleSummary[] {
-  // Combine city + nearby results, city first
-  const allCars = [
-    ...(data.carsInCity || []),
-    ...(data.nearbyCars || []),
-    ...(data.results || []),
-  ];
+  // ONLY use carsInCity for exact city match - do NOT include nearby cars
+  // This ensures users see ONLY cars from their requested city
+  const carsInRequestedCity = data.carsInCity || data.results || [];
 
-  // Deduplicate by ID
+  // Deduplicate by ID (shouldn't be duplicates, but safety check)
   const seen = new Set<string>();
-  const unique = allCars.filter((car) => {
+  const unique = carsInRequestedCity.filter((car) => {
     if (seen.has(car.id)) return false;
     seen.add(car.id);
     return true;
   });
 
-  // Take top 12 results for AI display
-  return unique.slice(0, 12).map(normalizeCarResult);
+  // Show all available cars (no arbitrary limit like "12")
+  // Reasonable max for display performance: 20 cars
+  return unique.slice(0, 20).map(normalizeCarResult);
 }
 
 function normalizeCarResult(car: RawCarResult): VehicleSummary {

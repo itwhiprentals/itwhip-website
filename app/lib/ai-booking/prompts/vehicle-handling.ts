@@ -26,17 +26,26 @@ export function buildVehicleContext(vehicles: VehicleSummary[]): string {
 
   return `AVAILABLE CARS (${vehicles.length} found):\n${list}
 
-When presenting cars to the user:
-- Do NOT list out the cars in text format — the visual cards below your message show all the details (photos, price, rating, distance, full pricing breakdown)
-- Do NOT show internal IDs to the user
-- Keep your reply SHORT: just acknowledge the results and invite them to browse
-- Example replies:
-  - "Found 6 great options in Phoenix! 🚗 Tap any card to see photos and pricing details."
-  - "Here are your matches! Each card shows the full breakdown — tap 'Details' to expand."
-  - "Nice selection available! Take a look at the cards below and let me know which one catches your eye."
-- The cards handle everything: photos, daily rate, service fees, taxes, deposit, and total price
-- If user asks for "photos" or "pictures", tell them to tap any card to expand and see all photos
-- If a car has "No Deposit", highlight this as a benefit when relevant!
+CRITICAL PRESENTATION RULES (follow exactly):
+1. NEVER list cars in text format — no bullet points, no numbered lists, no "Budget-friendly:" sections
+2. NEVER mention specific car counts like "12 cars" or "6 options" — just say "great options" or "here's what's available"
+3. NEVER describe individual cars in your message — the visual cards below handle ALL details
+4. Keep your reply to ONE short sentence, then a simple question
+5. The cards show: photos, price, rating, distance, fees, taxes, deposit — you don't need to repeat any of this
+
+GOOD replies (follow these patterns):
+- "Here's what's available in Phoenix! What catches your eye?"
+- "Great options for your dates! Which one interests you?"
+- "Take a look at these! Any questions about a specific car?"
+- "Your search results are ready! What's your budget range?"
+
+BAD replies (NEVER do these):
+- "I found 12 cars available..." ❌
+- "Here's what we've got: Budget-friendly: Honda Accord $29/day..." ❌
+- "The cheapest is the Honda at $29, or the BMW at $79..." ❌
+
+If user asks for "photos" or "pictures", tell them to tap any card to see photos.
+If a car has "No Deposit", you can briefly mention that great options with no deposit are available.
 
 RELATIVE REFERENCES (critical):
 - The cars listed above are numbered 1-N. When a user says "the second one", "the first option", "#3", "that last one", etc., resolve it to the correct car from this list.

@@ -17,6 +17,7 @@ import {
   calculateDays,
 } from '@/app/lib/ai-booking/state-machine'
 import { buildSystemPrompt } from '@/app/lib/ai-booking/system-prompt'
+import { parseClaudeResponse } from '@/app/lib/ai-booking/parse-response'
 import { assessBookingRisk } from '@/app/lib/ai-booking/risk-bridge'
 import { checkAISecurity } from '@/app/lib/ai-booking/security'
 import prisma from '@/app/lib/database/prisma'
@@ -359,12 +360,15 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
       let currentText = ''
       let stopReason: string | null = null
 
+      // Buffer the response - don't stream raw JSON to frontend
+      // Claude outputs JSON which we need to parse first
       for await (const event of streamResponse) {
         if (event.type === 'content_block_delta') {
           const delta = event.delta
           if ('text' in delta && delta.text) {
             currentText += delta.text
-            await sse.sendEvent('text', { text: delta.text })
+            // DON'T send raw text - it's JSON that needs parsing
+            // The frontend shows a "thinking" indicator instead
           }
         } else if (event.type === 'message_delta') {
           stopReason = event.delta.stop_reason
@@ -392,6 +396,14 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
         if (searchedVehicles) {
           vehicles = searchedVehicles
           await sse.sendEvent('vehicles', { vehicles })
+
+          // CRITICAL: Rebuild system prompt with vehicles so Claude sees presentation rules
+          systemPrompt = buildSystemPrompt({
+            session: updatedSession,
+            isLoggedIn: !!body.userId,
+            isVerified: false,
+            vehicles: searchedVehicles,
+          })
         }
 
         session = updatedSession
@@ -406,9 +418,25 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
       continueLoop = false
     }
 
-    // Update session state
-    session.state = computeNextState(session)
-    session = addMessage(session, 'assistant', fullReply)
+    // Parse Claude's JSON response to extract the reply and other fields
+    const parsed = parseClaudeResponse(fullReply)
+
+    // Update session with extracted data
+    if (parsed.extractedData) {
+      if (parsed.extractedData.location) session.location = parsed.extractedData.location
+      if (parsed.extractedData.startDate) session.startDate = parsed.extractedData.startDate
+      if (parsed.extractedData.endDate) session.endDate = parsed.extractedData.endDate
+      if (parsed.extractedData.startTime) session.startTime = parsed.extractedData.startTime
+      if (parsed.extractedData.endTime) session.endTime = parsed.extractedData.endTime
+      if (parsed.extractedData.vehicleType) session.vehicleType = parsed.extractedData.vehicleType
+      if (parsed.extractedData.vehicleId) session.vehicleId = parsed.extractedData.vehicleId
+    }
+
+    // Update session state - use parsed.nextState or compute from session
+    session.state = parsed.nextState || computeNextState(session)
+
+    // Add only the reply text to session (not raw JSON)
+    session = addMessage(session, 'assistant', parsed.reply)
 
     // Build booking summary if confirming
     const pricingConfig = await getPricingConfig()
@@ -420,9 +448,9 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
       }
     }
 
-    // Risk assessment
-    let action: string | null = null
-    if (session.state === BookingState.CONFIRMING && summary && featureFlags.riskAssessmentEnabled) {
+    // Risk assessment - use parsed.action or compute from risk assessment
+    let action: string | null = parsed.action
+    if (!action && session.state === BookingState.CONFIRMING && summary && featureFlags.riskAssessmentEnabled) {
       if (!body.userId) {
         action = 'NEEDS_LOGIN'
       } else {
