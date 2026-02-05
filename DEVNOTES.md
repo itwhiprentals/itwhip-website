@@ -2,6 +2,38 @@
 
 ## Recent Fixes (February 2026)
 
+### Choé Dashboard Fixes - DEPLOYED ✅ (Feb 5)
+**Fixed stats calculation, model validation, and conversation detail view**
+
+**Issues Fixed:**
+1. **Cost showing $0.0000** - Rounding was too aggressive for small values
+   - Changed from 2 decimal places to 4 decimal places
+   - 8,991 tokens now correctly shows ~$0.0090 (at $1/M rate)
+
+2. **Model validation 400 errors** - Claude 4.5 models weren't in allowed list
+   - Added: `claude-haiku-4-5-20251001`, `claude-sonnet-4-5-20250929`, `claude-opus-4-5-20251101`
+
+3. **toolUsage ReferenceError** - AnalyticsTab used variable without receiving it as prop
+   - Added toolUsage to component props interface
+
+4. **AuditLog hash chaining error** - Complex compliance logging blocked saves
+   - Removed inline AuditLog.create (requires hash chaining implementation)
+   - Replaced with console.log for now
+
+5. **Conversation detail modal** - Now shows full message history for debugging
+   - Messages section with user/Choé conversation flow
+   - Search indicators on messages that triggered vehicle searches
+   - Timeline showing key events
+
+**Files Modified:**
+- `app/fleet/api/choe/route.ts` - Model validation + AuditLog removal
+- `app/fleet/api/choe/stats/route.ts` - Cost calculation + toolUsage fix
+- `app/fleet/choe/page.tsx` - Conversation detail + toolUsage prop
+
+**Deployment:** Commit `3cf924a`
+
+---
+
 ### Phase 7c/7d: Modular Code Cleanup - DEPLOYED ✅ (Feb 5)
 **Removed duplicate code and wired up existing modular utilities**
 
