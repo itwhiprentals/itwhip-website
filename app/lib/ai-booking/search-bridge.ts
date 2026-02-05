@@ -70,6 +70,8 @@ function buildSearchParams(query: SearchQuery): URLSearchParams {
   if (query.seats) params.set('seats', String(query.seats));
   if (query.transmission) params.set('transmission', query.transmission);
   if (query.noDeposit) params.set('noDeposit', 'true');
+  if (query.instantBook) params.set('instantBook', 'true');
+  if (query.vehicleType) params.set('vehicleType', query.vehicleType);
 
   return params;
 }

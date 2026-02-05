@@ -142,7 +142,7 @@ export interface ClaudeBookingOutput {
 
 export interface SearchQuery {
   location?: string;
-  carType?: string;
+  carType?: string;           // Body type: SUV, sedan, luxury, sports, electric
   pickupDate?: string;
   returnDate?: string;
   pickupTime?: string;
@@ -152,7 +152,9 @@ export interface SearchQuery {
   priceMax?: number;
   seats?: number;
   transmission?: string;
-  noDeposit?: boolean;  // Filter for cars with no security deposit
+  noDeposit?: boolean;        // Filter for cars with no security deposit
+  instantBook?: boolean;      // Filter for instant book cars
+  vehicleType?: 'RENTAL' | 'RIDESHARE';  // Filter for rideshare-approved vehicles
 }
 
 // =============================================================================

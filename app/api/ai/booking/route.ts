@@ -33,6 +33,13 @@ import {
   checkAISecurity,
   createSecurityBlockedResponse,
 } from '@/app/lib/ai-booking/security'
+import {
+  detectAllIntents,
+  applyIntentsToQuery,
+  hasFilters,
+  wantsNoDeposit,
+  wantsLowestPrice,
+} from '@/app/lib/ai-booking/detection'
 import prisma from '@/app/lib/database/prisma'
 import {
   getChoeSettings,
@@ -138,6 +145,8 @@ const BOOKING_OUTPUT_SCHEMA = {
         seats: { type: 'number' },
         transmission: { type: 'string' },
         noDeposit: { type: 'boolean' },
+        instantBook: { type: 'boolean' },
+        vehicleType: { type: 'string', enum: ['RENTAL', 'RIDESHARE'] },
       },
       additionalProperties: false,
     },
@@ -481,19 +490,25 @@ export async function POST(request: NextRequest) {
       ? parseStructuredResponse(rawText)
       : parseClaudeResponse(rawText)
 
-    // Force a search if user asks for no-deposit cars but Claude didn't create a searchQuery
-    const userWantsNoDeposit = wantsNoDeposit(body.message)
+    // ==========================================================================
+    // LAYER 2: INTENT DETECTION (fills gaps when Claude misses filters)
+    // ==========================================================================
+    // 3-Layer Fallback System:
+    //   Layer 1: Claude sets searchQuery fields (sometimes fails)
+    //   Layer 2: Intent detection from user message (this code)
+    //   Layer 3: Prisma WHERE clause applies actual filter
+    // ==========================================================================
+
+    const detectedIntents = detectAllIntents(body.message)
     console.log('[CHOÉ DEBUG] User message:', body.message)
-    console.log('[CHOÉ DEBUG] Wants no deposit:', userWantsNoDeposit)
+    console.log('[CHOÉ DEBUG] Detected intents:', JSON.stringify(detectedIntents))
     console.log('[CHOÉ DEBUG] Session location:', session.location)
     console.log('[CHOÉ DEBUG] Claude searchQuery:', JSON.stringify(parsed.searchQuery))
 
-    if (!parsed.searchQuery && userWantsNoDeposit && session.location) {
-      console.log('[CHOÉ DEBUG] Forcing new searchQuery with noDeposit')
-      parsed.searchQuery = {
-        location: session.location,
-        noDeposit: true,
-      }
+    // If no searchQuery but user has strong intents and we have location, create one
+    if (!parsed.searchQuery && session.location && (detectedIntents.noDeposit || detectedIntents.instantBook || detectedIntents.luxury || detectedIntents.electric || detectedIntents.suv || detectedIntents.rideshare)) {
+      console.log('[CHOÉ DEBUG] Creating searchQuery from detected intents')
+      parsed.searchQuery = applyIntentsToQuery({ location: session.location }, detectedIntents)
     }
 
     // Track if search was performed
@@ -504,12 +519,9 @@ export async function POST(request: NextRequest) {
     if (parsed.searchQuery) {
       searchPerformed = true
 
-      // Force noDeposit filter if user asked for it (Claude sometimes misses this)
-      if (userWantsNoDeposit && !parsed.searchQuery.noDeposit) {
-        console.log('[CHOÉ DEBUG] Injecting noDeposit into existing searchQuery')
-        parsed.searchQuery.noDeposit = true
-      }
-      console.log('[CHOÉ DEBUG] Final searchQuery:', JSON.stringify(parsed.searchQuery))
+      // Apply detected intents to searchQuery (fills gaps Claude missed)
+      parsed.searchQuery = applyIntentsToQuery(parsed.searchQuery, detectedIntents)
+      console.log('[CHOÉ DEBUG] Final searchQuery after intent injection:', JSON.stringify(parsed.searchQuery))
       vehicles = await searchVehicles(parsed.searchQuery)
       console.log('[CHOÉ DEBUG] Search returned', vehicles?.length, 'vehicles')
 
@@ -777,17 +789,5 @@ function getSuggestions(state: BookingState): string[] {
 // =============================================================================
 // SEARCH FILTER HELPERS
 // =============================================================================
-
-function hasFilters(query: import('@/app/lib/ai-booking/types').SearchQuery): boolean {
-  return !!(query.make || query.carType || query.priceMin || query.priceMax || query.seats || query.transmission || query.noDeposit)
-}
-
-function wantsLowestPrice(message: string): boolean {
-  const lower = message.toLowerCase()
-  return /\b(cheapest|cheapest|budget|lowest price|most affordable|under \$|least expensive)\b/.test(lower)
-}
-
-function wantsNoDeposit(message: string): boolean {
-  const lower = message.toLowerCase()
-  return /\b(no deposit|without deposit|zero deposit|\$0 deposit|no security deposit|deposit.?free)\b/.test(lower)
-}
+// Now imported from @/app/lib/ai-booking/detection:
+// - detectAllIntents, applyIntentsToQuery, hasFilters, wantsNoDeposit, wantsLowestPrice

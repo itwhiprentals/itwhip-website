@@ -4899,6 +4899,17 @@ model ChoeAISettings {
   riskAssessmentEnabled  Boolean  @default(true)
   anonymousAccessEnabled Boolean  @default(true)
 
+  // Advanced AI Features
+  streamingEnabled          Boolean  @default(true)
+  extendedThinkingEnabled   Boolean  @default(true)
+  toolUseEnabled            Boolean  @default(true)
+  batchAnalyticsEnabled     Boolean  @default(true)
+
+  // Vehicle Type Preferences
+  preferRideshare           Boolean  @default(false)
+  preferNoDeposit           Boolean  @default(false)
+  showVehicleTypeBadges     Boolean  @default(true)
+
   // A/B Testing
   experimentId           String?
   experimentConfig       Json?

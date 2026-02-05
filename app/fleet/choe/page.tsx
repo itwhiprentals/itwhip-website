@@ -651,30 +651,26 @@ function SettingsTab({
           <ToggleSettingWithDescription
             label="Streaming"
             description="Real-time text streaming via SSE"
-            checked={true}
-            onChange={() => {}}
-            disabled
+            checked={getValue('streamingEnabled')}
+            onChange={v => onChange('streamingEnabled', v)}
           />
           <ToggleSettingWithDescription
             label="Tool Use"
             description="Function calling for search & actions"
-            checked={true}
-            onChange={() => {}}
-            disabled
+            checked={getValue('toolUseEnabled')}
+            onChange={v => onChange('toolUseEnabled', v)}
           />
           <ToggleSettingWithDescription
             label="Extended Thinking"
             description="Deep reasoning for complex queries"
-            checked={true}
-            onChange={() => {}}
-            disabled
+            checked={getValue('extendedThinkingEnabled')}
+            onChange={v => onChange('extendedThinkingEnabled', v)}
           />
           <ToggleSettingWithDescription
             label="Batch Analytics"
             description="50% cost reduction for bulk processing"
-            checked={true}
-            onChange={() => {}}
-            disabled
+            checked={getValue('batchAnalyticsEnabled')}
+            onChange={v => onChange('batchAnalyticsEnabled', v)}
           />
         </div>
       </SettingsSection>
@@ -695,8 +691,8 @@ function SettingsTab({
             </p>
             <ToggleSetting
               label="Prioritize in results"
-              checked={false}
-              onChange={() => {}}
+              checked={getValue('preferRideshare')}
+              onChange={v => onChange('preferRideshare', v)}
             />
           </div>
           <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
@@ -708,9 +704,9 @@ function SettingsTab({
               Traditional peer-to-peer rentals. Daily/weekend rentals with standard pricing.
             </p>
             <ToggleSetting
-              label="Show instant badge"
-              checked={true}
-              onChange={() => {}}
+              label="Show type badges"
+              checked={getValue('showVehicleTypeBadges')}
+              onChange={v => onChange('showVehicleTypeBadges', v)}
             />
           </div>
           <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
@@ -723,8 +719,8 @@ function SettingsTab({
             </p>
             <ToggleSetting
               label="Prioritize no-deposit"
-              checked={false}
-              onChange={() => {}}
+              checked={getValue('preferNoDeposit')}
+              onChange={v => onChange('preferNoDeposit', v)}
             />
           </div>
         </div>
