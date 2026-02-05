@@ -43,6 +43,11 @@
 
 **Deployment:** Commit `4bbbe8e`
 
+**Follow-up Fix (Feb 4):**
+- Fixed batch API auth error (`verifyFleetAccess` → inline key check)
+- Increased Choé logo 3x in Fleet Management Hub (32→96px)
+- Commit `8a21ede`
+
 ---
 
 ### Choé AI Deposit System Fix + No-Deposit Filter - DEPLOYED ✅ (Feb 4)
