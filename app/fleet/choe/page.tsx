@@ -270,7 +270,7 @@ export default function ChoeAdminPage() {
           )}
 
           {activeTab === 'analytics' && stats && (
-            <AnalyticsTab stats={stats} dailyStats={dailyStats} />
+            <AnalyticsTab stats={stats} dailyStats={dailyStats} toolUsage={toolUsage} />
           )}
         </>
       )}
@@ -375,7 +375,19 @@ function ConversationsTab({
   apiKey: string
 }) {
   const [selectedConv, setSelectedConv] = useState<string | null>(null)
-  const [convDetail, setConvDetail] = useState<ConversationSummary & { messages?: unknown[] } | null>(null)
+  const [convDetail, setConvDetail] = useState<ConversationSummary & {
+    messages?: {
+      id: string
+      role: string
+      content: string
+      tokensUsed: number
+      responseTimeMs: number | null
+      searchPerformed: boolean
+      vehiclesReturned: number
+      createdAt: string
+    }[]
+    timeline?: { timestamp: string; event: string; details?: string }[]
+  } | null>(null)
 
   const loadConvDetail = async (id: string) => {
     setSelectedConv(id)
@@ -494,6 +506,76 @@ function ConversationsTab({
                   <dd className="font-medium text-gray-900 dark:text-white">{Math.round(convDetail.duration / 60)} min</dd>
                 </div>
               </dl>
+
+              {/* Messages Section */}
+              {convDetail.messages && convDetail.messages.length > 0 && (
+                <div className="mt-6">
+                  <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                    Conversation ({convDetail.messages.length} messages)
+                  </h4>
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {convDetail.messages.map((msg) => (
+                      <div
+                        key={msg.id}
+                        className={`p-3 rounded-lg ${
+                          msg.role === 'user'
+                            ? 'bg-blue-50 dark:bg-blue-900/20 ml-8'
+                            : 'bg-gray-50 dark:bg-gray-700/50 mr-8'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className={`text-xs font-medium ${
+                            msg.role === 'user'
+                              ? 'text-blue-600 dark:text-blue-400'
+                              : 'text-purple-600 dark:text-purple-400'
+                          }`}>
+                            {msg.role === 'user' ? 'User' : 'Choé'}
+                          </span>
+                          <div className="flex items-center gap-2 text-xs text-gray-400">
+                            {msg.searchPerformed && (
+                              <span className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-1.5 py-0.5 rounded">
+                                🔍 {msg.vehiclesReturned} cars
+                              </span>
+                            )}
+                            {msg.tokensUsed > 0 && (
+                              <span>{msg.tokensUsed} tokens</span>
+                            )}
+                            {msg.responseTimeMs && (
+                              <span>{msg.responseTimeMs}ms</span>
+                            )}
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
+                          {msg.content}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Timeline Section */}
+              {convDetail.timeline && convDetail.timeline.length > 0 && (
+                <div className="mt-6">
+                  <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Timeline</h4>
+                  <div className="space-y-2">
+                    {convDetail.timeline.map((event, i) => (
+                      <div key={i} className="flex items-start gap-3 text-sm">
+                        <div className="w-2 h-2 mt-1.5 rounded-full bg-gray-400" />
+                        <div>
+                          <span className="font-medium text-gray-900 dark:text-white">{event.event}</span>
+                          {event.details && (
+                            <span className="text-gray-500 ml-2">{event.details}</span>
+                          )}
+                          <span className="text-gray-400 text-xs ml-2">
+                            {new Date(event.timestamp).toLocaleTimeString()}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
             <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-end">
               <button
@@ -838,9 +920,11 @@ function SecurityTab({
 function AnalyticsTab({
   stats,
   dailyStats,
+  toolUsage,
 }: {
   stats: ChoeStatsResponse['data']
   dailyStats: { date: string; conversations: number; cost: number }[]
+  toolUsage: Record<string, number> | null
 }) {
   return (
     <div className="space-y-6">

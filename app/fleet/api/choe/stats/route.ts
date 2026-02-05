@@ -142,8 +142,9 @@ async function getStatsForPeriod(from: Date, to: Date) {
   const abandoned = messageStats.find(s => s.outcome === 'ABANDONED')?._count.id || 0
   const tokens = conversationStats._sum.totalTokens || 0
 
-  // Estimate cost based on tokens (Haiku rate)
-  const estimatedCost = (tokens / 1_000_000) * 0.25
+  // Estimate cost based on tokens (Haiku 4.5 rate: $1/M input, or old Haiku 3.5: $0.25/M)
+  // Use higher rate to be conservative
+  const estimatedCost = (tokens / 1_000_000) * 1.0
 
   return {
     conversations: total,
@@ -151,7 +152,7 @@ async function getStatsForPeriod(from: Date, to: Date) {
     abandoned,
     messages: Math.round((conversationStats._avg.messageCount || 0) * total),
     tokens,
-    estimatedCost: Math.round(estimatedCost * 100) / 100,
+    estimatedCost: Math.round(estimatedCost * 10000) / 10000, // 4 decimal places for small values
     conversionRate: total > 0 ? Math.round((completed / total) * 100) : 0,
     avgMessagesPerConv: Math.round((conversationStats._avg.messageCount || 0) * 10) / 10,
     avgResponseTimeMs: 0, // TODO: Calculate from messages
@@ -198,31 +199,20 @@ async function getDailyStatsForRange(range: string) {
 async function getToolUsageStats(): Promise<Record<string, number>> {
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
 
-  const messages = await prisma.choeAIMessage.findMany({
+  // Count searches using the existing searchPerformed field
+  const searchCount = await prisma.choeAIMessage.count({
     where: {
       createdAt: { gte: thirtyDaysAgo },
-      toolsUsed: { not: Prisma.DbNull },
+      searchPerformed: true,
     },
-    select: { toolsUsed: true },
   })
 
-  const toolCounts: Record<string, number> = {
-    search_vehicles: 0,
-    get_weather: 0,
-    select_vehicle: 0,
-    update_booking_details: 0,
+  // TODO: Add toolsUsed field to schema to track other tools
+  // For now, estimate based on searchPerformed
+  return {
+    search_vehicles: searchCount,
+    get_weather: 0, // Not tracked yet
+    select_vehicle: 0, // Not tracked yet
+    update_booking_details: 0, // Not tracked yet
   }
-
-  for (const msg of messages) {
-    const tools = msg.toolsUsed as string[] | null
-    if (tools && Array.isArray(tools)) {
-      for (const tool of tools) {
-        if (tool in toolCounts) {
-          toolCounts[tool]++
-        }
-      }
-    }
-  }
-
-  return toolCounts
 }
