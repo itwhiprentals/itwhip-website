@@ -16,7 +16,10 @@
 - **AIVehicleCard**: Year+Make on top row, Model below, proper badge logic
 - **Rideshare badge** (orange): For Uber/DoorDash/Instacart vehicles (`vehicleType='RIDESHARE'`)
 - **Instant badge** (emerald): For regular rentals with instant booking (`vehicleType='RENTAL'` + `instantBook=true`)
-- **Button**: "Select to Book" with underlined "Details" link inside
+- **No Deposit badge** (blue): For cars with `depositAmount === 0`
+- **Button**: Clean "Select to Book" button (card is clickable for details)
+- **Trips display**: Shows "(Trips X)" next to star rating
+- **View Full Listing**: Fixed URL from `/rentals/cars/{id}` to `/rentals/{id}`
 - **Input**: Rounded corners (`rounded-lg`)
 
 **Fleet Dashboard (`/fleet/choe`):**
@@ -47,6 +50,13 @@
 - Fixed batch API auth error (`verifyFleetAccess` → inline key check)
 - Increased Choé logo 3x in Fleet Management Hub (32→96px)
 - Commit `8a21ede`
+
+**AIVehicleCard UX Update (Feb 4):**
+- Removed "Details" link from button (card is clickable to expand)
+- Fixed "View Full Listing" 404 → correct URL `/rentals/{id}`
+- Added trips display: "(Trips X)" after star rating
+- Added "No Deposit" blue badge for $0 deposit cars
+- Commit `543eef3`
 
 ---
 
