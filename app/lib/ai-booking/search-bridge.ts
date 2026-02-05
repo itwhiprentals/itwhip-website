@@ -107,6 +107,9 @@ interface RawCarResult {
   // Deposit from search API (calculated using getActualDeposit)
   depositAmount?: number;
   requirements?: { deposit?: number };
+  // Trips count
+  trips?: number;
+  totalTrips?: number;
 }
 
 /**
@@ -185,6 +188,9 @@ function normalizeCarResult(car: RawCarResult): VehicleSummary {
   // Use actual deposit from search API, fallback to rate-based calculation
   const depositAmount = car.depositAmount ?? car.requirements?.deposit ?? getDefaultDeposit(dailyRate);
 
+  // Trips count from search API
+  const trips = car.trips || car.totalTrips || 0;
+
   return {
     id: car.id,
     make: car.make,
@@ -195,6 +201,7 @@ function normalizeCarResult(car: RawCarResult): VehicleSummary {
     photos,
     rating,
     reviewCount,
+    trips,
     distance,
     location: locationStr,
     instantBook: car.instantBook || false,

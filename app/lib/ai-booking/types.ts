@@ -86,6 +86,8 @@ export interface VehicleSummary {
   photos: string[];
   rating: number | null;
   reviewCount: number;
+  /** Total completed trips for this vehicle */
+  trips: number;
   distance: string | null;
   location: string;
   instantBook: boolean;

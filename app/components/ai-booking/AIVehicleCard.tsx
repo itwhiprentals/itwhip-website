@@ -91,14 +91,17 @@ export default function AIVehicleCard({ vehicle, onSelect, startDate, endDate }:
               <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
                 {vehicle.year} {vehicle.make}
               </h4>
-              {/* Rideshare badge (orange) - for Uber/Lyft vehicles */}
+              {/* Badge priority: Rideshare > No Deposit > Instant */}
               {vehicle.vehicleType?.toUpperCase() === 'RIDESHARE' ? (
                 <span className="flex items-center gap-0.5 text-[10px] font-bold text-white bg-orange-500 px-1.5 py-0.5 rounded">
                   <IoCarSportOutline size={10} />
                   Rideshare
                 </span>
+              ) : vehicle.depositAmount === 0 ? (
+                <span className="text-[10px] font-bold text-white bg-blue-500 px-1.5 py-0.5 rounded">
+                  No Deposit
+                </span>
               ) : vehicle.instantBook && (
-                /* Instant badge (emerald) - for regular rentals with instant booking */
                 <span className="flex items-center gap-0.5 text-[10px] font-bold text-white bg-emerald-500 px-1.5 py-0.5 rounded">
                   <IoFlash size={10} />
                   Instant
@@ -108,14 +111,16 @@ export default function AIVehicleCard({ vehicle, onSelect, startDate, endDate }:
             {/* Model on second line */}
             <p className="text-xs text-gray-600 dark:text-gray-300 truncate">{vehicle.model}</p>
 
-            {/* Stars, trips, distance - moved down */}
+            {/* Stars, trips, distance */}
             <div className="flex items-center gap-2 mt-1.5 text-xs text-gray-500 dark:text-gray-400">
               {vehicle.rating && (
                 <span className="flex items-center gap-0.5">
                   <IoStar size={10} className="text-yellow-500" />
                   {vehicle.rating.toFixed(1)}
-                  {vehicle.reviewCount > 0 && <span>({vehicle.reviewCount})</span>}
                 </span>
+              )}
+              {vehicle.trips > 0 && (
+                <span>(Trips {vehicle.trips})</span>
               )}
               {vehicle.distance && (
                 <span className="flex items-center gap-0.5">
@@ -132,24 +137,15 @@ export default function AIVehicleCard({ vehicle, onSelect, startDate, endDate }:
               <span className="text-base font-bold text-gray-900 dark:text-white">${vehicle.dailyRate}</span>
               <span className="text-xs text-gray-500 dark:text-gray-400">/day</span>
             </div>
-            {/* Button with Details underneath - stop propagation so they don't trigger expand */}
+            {/* Select button - card click expands */}
             <button
               onClick={(e) => {
                 e.stopPropagation()
                 onSelect(vehicle)
               }}
-              className="px-3 py-1 bg-primary text-white text-xs font-semibold rounded-lg hover:bg-primary/90 transition-colors flex flex-col items-center"
+              className="px-3 py-1.5 bg-primary text-white text-xs font-semibold rounded-lg hover:bg-primary/90 transition-colors"
             >
-              <span>Select to Book</span>
-              <span
-                onClick={(e) => {
-                  e.stopPropagation()
-                  toggleExpand()
-                }}
-                className="text-[9px] font-normal underline opacity-80 hover:opacity-100"
-              >
-                {expanded ? 'Less' : 'Details'}
-              </span>
+              Select to Book
             </button>
           </div>
         </div>
@@ -208,7 +204,7 @@ export default function AIVehicleCard({ vehicle, onSelect, startDate, endDate }:
             {/* View All link */}
             <div className="mt-3 pt-2 border-t border-gray-200 dark:border-gray-700">
               <Link
-                href={`/rentals/cars/${vehicle.id}`}
+                href={`/rentals/${vehicle.id}`}
                 target="_blank"
                 className="text-xs text-primary font-medium hover:underline"
                 onClick={(e) => e.stopPropagation()}
