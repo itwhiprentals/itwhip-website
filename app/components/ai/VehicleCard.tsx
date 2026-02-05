@@ -59,15 +59,15 @@ export default function VehicleCard({ vehicle, onSelect, startDate, endDate }: V
         onClick={toggleExpand}
         className="flex cursor-pointer"
       >
-        {/* Main Photo - landscape rectangle */}
-        <div className="w-28 sm:w-32 aspect-[4/3] flex-shrink-0 bg-gray-100 dark:bg-gray-700 relative">
+        {/* Main Photo - wide rectangle */}
+        <div className="w-32 sm:w-36 aspect-[3/2] flex-shrink-0 bg-gray-100 dark:bg-gray-700 relative">
           {mainPhoto ? (
             <Image
               src={mainPhoto}
               alt={`${vehicle.make} ${vehicle.model}`}
               fill
               className="object-cover"
-              sizes="128px"
+              sizes="144px"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
