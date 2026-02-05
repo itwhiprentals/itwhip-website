@@ -5,8 +5,10 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
+    "build:local": "NODE_OPTIONS='--max-old-space-size=4096' prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
+    "typecheck": "NODE_OPTIONS='--max-old-space-size=4096' tsc --noEmit",
     "postinstall": "prisma generate"
   },
   "dependencies": {
