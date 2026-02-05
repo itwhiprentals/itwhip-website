@@ -2,6 +2,40 @@
 
 ## Recent Fixes (February 2026)
 
+### Fleet Dashboard + AI Stability - DEPLOYED ✅ (Feb 5)
+**Security events, batch analytics, and AI booking stability**
+
+**Changes:**
+1. **Security Events Detail Modal** - Click any security event to see full details
+   - Shows event type, severity, IP, timestamps
+   - Detection details: reasons array, user agent, confidence score
+   - Raw JSON for debugging
+
+2. **Batch Analytics Functional** - Buttons now work
+   - Create Summary Batch - analyzes conversations for insights
+   - Create Quality Batch - scores AI response quality
+   - Shows job status, progress, cost savings (50% discount)
+
+3. **Tool Usage Metrics** - Now shows actual data from database
+   - Counts from `toolsUsed` JSON field in ChoeAIMessage
+   - Shows: search_vehicles, get_weather, select_vehicle, update_booking_details
+
+4. **AI Booking Stability** - Fixed Anthropic 500 errors
+   - Disabled structured outputs (JSON schema causing API errors)
+   - Using legacy text-based approach for reliability
+   - Better error logging for debugging
+
+**Files Modified:**
+- `app/fleet/choe/page.tsx` - Security modal + batch buttons + tool display
+- `app/fleet/api/choe/stats/route.ts` - Tool usage aggregation
+- `app/api/ai/booking/route.ts` - Disabled structured outputs + error handling
+- `app/lib/ai-booking/parse-response.ts` - Handle 'NONE' action
+- `app/lib/ai-booking/prompts/response-schema.ts` - Use 'NONE' instead of null
+
+**Deployment:** Commit `088f025`
+
+---
+
 ### Choé Dashboard Fixes - DEPLOYED ✅ (Feb 5)
 **Fixed stats calculation, model validation, and conversation detail view**
 
