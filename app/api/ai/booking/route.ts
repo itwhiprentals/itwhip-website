@@ -110,6 +110,58 @@ function calculateCostSimple(tokens: number, model: string): number {
 }
 
 // =============================================================================
+// MULTI-TURN CACHING HELPER
+// =============================================================================
+
+/**
+ * Add cache_control to conversation messages for multi-turn caching
+ * Strategy: Cache the second-to-last user message so the conversation prefix is cached
+ * This saves ~90% on tokens for repeated conversation context
+ * See: https://platform.claude.com/docs/en/build-with-claude/prompt-caching
+ */
+function addCacheControlToMessages(
+  messages: Anthropic.MessageParam[]
+): Anthropic.MessageParam[] {
+  // Need at least 4 messages for caching to be beneficial (2 user + 2 assistant turns)
+  if (messages.length < 4) return messages
+
+  // Find the second-to-last user message
+  let userMessageCount = 0
+  let targetIndex = -1
+
+  for (let i = messages.length - 1; i >= 0; i--) {
+    if (messages[i].role === 'user') {
+      userMessageCount++
+      if (userMessageCount === 2) {
+        targetIndex = i
+        break
+      }
+    }
+  }
+
+  if (targetIndex === -1) return messages
+
+  // Add cache_control to the target message
+  // Content must be array of blocks for cache_control to work
+  return messages.map((m, i) => {
+    if (i === targetIndex) {
+      const textContent = typeof m.content === 'string' ? m.content : ''
+      return {
+        role: m.role,
+        content: [
+          {
+            type: 'text' as const,
+            text: textContent,
+            cache_control: { type: 'ephemeral' as const },
+          },
+        ],
+      }
+    }
+    return m
+  })
+}
+
+// =============================================================================
 // STRUCTURED OUTPUT SCHEMA
 // =============================================================================
 
@@ -463,10 +515,14 @@ export async function POST(request: NextRequest) {
     })
 
     // Build conversation history for Claude
-    let claudeMessages: Anthropic.MessageParam[] = session.messages.map((m) => ({
-      role: m.role as 'user' | 'assistant',
-      content: m.content,
-    }))
+    // Build messages for Claude with multi-turn caching
+    // Add cache_control to second-to-last user message for conversation prefix caching
+    let claudeMessages: Anthropic.MessageParam[] = addCacheControlToMessages(
+      session.messages.map((m) => ({
+        role: m.role as 'user' | 'assistant',
+        content: m.content,
+      }))
+    )
 
     // Call Claude with DB settings, prompt caching, and structured outputs
     const client = getClient()

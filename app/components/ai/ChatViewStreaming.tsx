@@ -38,6 +38,7 @@ export default function ChatViewStreaming({
 }: ChatViewStreamingProps) {
   const [persistedSession, setPersistedSession] = useState<BookingSession | null>(null)
   const [persistedVehicles, setPersistedVehicles] = useState<VehicleSummary[] | null>(null)
+  const [isLoadingSession, setIsLoadingSession] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // Use streaming hook
@@ -74,25 +75,45 @@ export default function ChatViewStreaming({
   const session = streamSession || persistedSession
   const vehicles = streamVehicles || persistedVehicles
 
-  // Restore from localStorage after hydration
+  // Load conversation from database on mount (using sessionId from localStorage)
   useEffect(() => {
-    try {
-      const savedSession = localStorage.getItem('itwhip-ai-session')
-      if (savedSession) setPersistedSession(JSON.parse(savedSession))
-      const savedVehicles = localStorage.getItem('itwhip-ai-vehicles')
-      if (savedVehicles) setPersistedVehicles(JSON.parse(savedVehicles))
-    } catch { /* ignore */ }
+    async function loadConversation() {
+      try {
+        const savedSessionId = localStorage.getItem('itwhip-ai-session-id')
+        if (!savedSessionId) {
+          setIsLoadingSession(false)
+          return
+        }
+
+        const response = await fetch(`/api/ai/booking/conversation/${savedSessionId}`)
+        if (response.ok) {
+          const data = await response.json()
+          if (data.success && data.data) {
+            setPersistedSession(data.data.session)
+            // Vehicles aren't persisted in DB yet, load from localStorage as fallback
+            const savedVehicles = localStorage.getItem('itwhip-ai-vehicles')
+            if (savedVehicles) setPersistedVehicles(JSON.parse(savedVehicles))
+          }
+        }
+      } catch (error) {
+        console.warn('[ChatViewStreaming] Failed to load conversation:', error)
+      } finally {
+        setIsLoadingSession(false)
+      }
+    }
+    loadConversation()
   }, [])
 
-  // Persist session and vehicles to localStorage
+  // Persist only sessionId to localStorage (full state is in database)
   useEffect(() => {
-    if (persistedSession) {
-      localStorage.setItem('itwhip-ai-session', JSON.stringify(persistedSession))
+    if (persistedSession?.sessionId) {
+      localStorage.setItem('itwhip-ai-session-id', persistedSession.sessionId)
     }
-  }, [persistedSession])
+  }, [persistedSession?.sessionId])
 
+  // Persist vehicles to localStorage (until we add vehicle storage to DB)
   useEffect(() => {
-    if (persistedVehicles) {
+    if (persistedVehicles && persistedVehicles.length > 0) {
       localStorage.setItem('itwhip-ai-vehicles', JSON.stringify(persistedVehicles))
     }
   }, [persistedVehicles])
@@ -144,7 +165,7 @@ export default function ChatViewStreaming({
     resetStream()
     setPersistedSession(null)
     setPersistedVehicles(null)
-    localStorage.removeItem('itwhip-ai-session')
+    localStorage.removeItem('itwhip-ai-session-id')
     localStorage.removeItem('itwhip-ai-vehicles')
   }, [resetStream])
 
@@ -174,6 +195,20 @@ export default function ChatViewStreaming({
   const hasMessages = messages.length > 0
 
   const springTransition = { type: 'spring' as const, stiffness: 300, damping: 30 }
+
+  // Show loading state while restoring session from database
+  if (isLoadingSession) {
+    return (
+      <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900 items-center justify-center">
+        <div className="flex gap-1">
+          <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+          <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+          <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+        </div>
+        <p className="text-xs text-gray-500 mt-2">Restoring your conversation...</p>
+      </div>
+    )
+  }
 
   return (
     <motion.div

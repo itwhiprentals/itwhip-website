@@ -4940,6 +4940,11 @@ model ChoeAIConversation {
   messageCount    Int       @default(0)
   location        String?
   vehicleType     String?
+  vehicleId       String?   // Selected vehicle ID
+  startDate       String?   // Pickup date (ISO format)
+  endDate         String?   // Return date (ISO format)
+  startTime       String?   // Pickup time (HH:mm format)
+  endTime         String?   // Return time (HH:mm format)
   outcome         String?   // COMPLETED, ABANDONED, BLOCKED, CONVERTED
 
   // Token & Cost Tracking
