@@ -322,8 +322,8 @@ export default function FleetDashboard() {
             <Image
               src="/images/choe-logo.png"
               alt="Choé"
-              width={32}
-              height={32}
+              width={96}
+              height={96}
               className="group-hover:scale-110 transition-transform rounded"
             />
             <span className="text-sm font-medium">Choé AI</span>
