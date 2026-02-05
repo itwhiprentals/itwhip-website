@@ -93,14 +93,15 @@ interface RawCarResult {
   pricing?: { dailyRate?: number };
   photos?: Array<string | { url: string; alt?: string }>;
   mainPhoto?: string;
-  rating?: number;
+  rating?: number | { average?: number; count?: number };
   averageRating?: number;
   reviewCount?: number;
   totalReviews?: number;
   distance?: string | number;
   city?: string;
-  location?: string;
+  location?: string | { city?: string; distanceText?: string };
   instantBook?: boolean;
+  vehicleType?: 'RENTAL' | 'RIDESHARE' | null;
   seats?: number;
   transmission?: string;
   // Deposit from search API (calculated using getActualDeposit)
@@ -197,6 +198,7 @@ function normalizeCarResult(car: RawCarResult): VehicleSummary {
     distance,
     location: locationStr,
     instantBook: car.instantBook || false,
+    vehicleType: car.vehicleType || null,
     seats: car.seats || null,
     transmission: car.transmission || null,
     depositAmount,

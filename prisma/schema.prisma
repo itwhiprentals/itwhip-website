@@ -4851,3 +4851,185 @@ enum WarningCategory {
   DOCUMENTATION_ISSUES
   OTHER
 }
+
+// =============================================================================
+// CHOÉ AI - Settings & Configuration (choe.cloud)
+// =============================================================================
+
+model ChoeAISettings {
+  id                     String   @id @default("global")
+
+  // Model Settings (Claude 4.5 Haiku is recommended default)
+  modelId                String   @default("claude-haiku-4-5-20251001")
+  maxTokens              Int      @default(1024)
+  temperature            Float    @default(0.7)
+
+  // Pricing
+  serviceFeePercent      Float    @default(0.15)
+  taxRateDefault         Float    @default(0.084)
+
+  // Rate Limits - Authenticated
+  messagesPerWindow      Int      @default(30)
+  rateLimitWindowMins    Int      @default(5)
+  dailyApiLimit          Int      @default(100)
+  sessionMessageLimit    Int      @default(30)
+  maxMessageLength       Int      @default(200)
+
+  // Rate Limits - Anonymous
+  anonymousTimeSeconds   Int      @default(900)
+  anonymousMaxMessages   Int      @default(30)
+
+  // Risk Thresholds
+  highRiskThreshold      Int      @default(61)
+  verificationThreshold  Int      @default(31)
+  anonymousUserPoints    Int      @default(30)
+  unverifiedUserPoints   Int      @default(20)
+  highValuePoints        Int      @default(20)
+  exoticVehiclePoints    Int      @default(25)
+
+  // Personality
+  brandName              String   @default("Choé")
+  enableEmojis           Boolean  @default(true)
+  serviceRegions         Json     @default("[\"Phoenix\",\"Scottsdale\",\"Tempe\",\"Mesa\",\"Chandler\",\"Sedona\",\"Tucson\",\"Flagstaff\"]")
+  suggestionChips        Json?
+
+  // Feature Flags
+  enabled                Boolean  @default(true)
+  weatherEnabled         Boolean  @default(true)
+  riskAssessmentEnabled  Boolean  @default(true)
+  anonymousAccessEnabled Boolean  @default(true)
+
+  // A/B Testing
+  experimentId           String?
+  experimentConfig       Json?
+
+  updatedAt              DateTime @updatedAt
+  updatedBy              String?
+
+  @@map("choe_ai_settings")
+}
+
+// =============================================================================
+// CHOÉ AI - Conversation Tracking
+// =============================================================================
+
+model ChoeAIConversation {
+  id              String    @id @default(cuid())
+  sessionId       String    @unique
+
+  // User Context
+  userId          String?
+  visitorId       String?   // Fingerprint for anonymous users
+  ipAddress       String
+
+  isAuthenticated Boolean   @default(false)
+
+  // Conversation State
+  state           String    @default("INIT")
+  messageCount    Int       @default(0)
+  location        String?
+  vehicleType     String?
+  outcome         String?   // COMPLETED, ABANDONED, BLOCKED, CONVERTED
+
+  // Token & Cost Tracking
+  totalTokens     Int       @default(0)
+  estimatedCost   Decimal   @db.Decimal(10, 6)
+
+  // Conversion Tracking
+  authPromptedAt  DateTime?
+  convertedAt     DateTime?
+
+  // Booking Attribution
+  bookingId       String?
+  bookingValue    Decimal?  @db.Decimal(10, 2)
+
+  // Timestamps
+  startedAt       DateTime  @default(now())
+  lastActivityAt  DateTime  @default(now())
+  completedAt     DateTime?
+
+  // Relations
+  messages        ChoeAIMessage[]
+
+  @@index([visitorId, startedAt])
+  @@index([userId, startedAt])
+  @@index([outcome, startedAt])
+  @@index([sessionId])
+  @@map("choe_ai_conversations")
+}
+
+model ChoeAIMessage {
+  id               String             @id @default(cuid())
+  conversationId   String
+  conversation     ChoeAIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  role             String             // user | assistant
+  content          String             @db.Text
+  tokensUsed       Int                @default(0)
+  responseTimeMs   Int?
+  searchPerformed  Boolean            @default(false)
+  vehiclesReturned Int                @default(0)
+
+  createdAt        DateTime           @default(now())
+
+  @@index([conversationId])
+  @@index([createdAt])
+  @@map("choe_ai_messages")
+}
+
+// =============================================================================
+// CHOÉ AI - Security Events
+// =============================================================================
+
+model ChoeAISecurityEvent {
+  id          String   @id @default(cuid())
+  eventType   String   // rate_limit, bot_detected, prompt_injection
+  severity    String   @default("INFO") // INFO, WARNING, CRITICAL
+  ipAddress   String
+  visitorId   String?  // Fingerprint for tracking abuse patterns
+  sessionId   String?
+  details     Json?
+  blocked     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([eventType, createdAt])
+  @@index([ipAddress, createdAt])
+  @@index([visitorId, createdAt])
+  @@map("choe_ai_security_events")
+}
+
+// =============================================================================
+// CHOÉ AI - Daily Aggregated Stats
+// =============================================================================
+
+model ChoeAIDailyStats {
+  id                  String   @id @default(cuid())
+  date                DateTime @db.Date @unique
+
+  // Conversation Metrics
+  totalConversations  Int      @default(0)
+  completedCount      Int      @default(0)
+  abandonedCount      Int      @default(0)
+  totalMessages       Int      @default(0)
+  totalTokens         Int      @default(0)
+  estimatedCostUsd    Decimal  @db.Decimal(10, 4) @default(0)
+
+  // Security Metrics
+  rateLimitHits       Int      @default(0)
+  botsBlocked         Int      @default(0)
+  avgResponseTimeMs   Int      @default(0)
+
+  // Conversion Tracking
+  anonymousSessions   Int      @default(0)
+  authPromptsShown    Int      @default(0)
+  conversions         Int      @default(0)
+
+  // Revenue Attribution
+  bookingsFromChoe    Int      @default(0)
+  revenueFromChoe     Decimal  @db.Decimal(10, 2) @default(0)
+
+  createdAt           DateTime @default(now())
+
+  @@index([date])
+  @@map("choe_ai_daily_stats")
+}

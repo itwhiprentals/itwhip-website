@@ -1,10 +1,13 @@
 // app/lib/ai-booking/security.ts
 // Security layer for Choé AI booking assistant
+// Uses database settings from ChoeAISettings table
 
 import { Ratelimit } from '@upstash/ratelimit'
 import { Redis } from '@upstash/redis'
 import { detectBot } from '@/app/lib/security/botDetection'
 import { NextRequest, NextResponse } from 'next/server'
+import prisma from '@/app/lib/database/prisma'
+import { getRateLimitConfig, isChoeEnabled } from './choe-settings'
 
 // =============================================================================
 // REDIS CLIENT (shared with other rate limiters)
@@ -16,10 +19,50 @@ const redis = new Redis({
 })
 
 // =============================================================================
-// RATE LIMITERS FOR AI CHAT
+// DYNAMIC RATE LIMITERS (created based on DB settings)
 // =============================================================================
 
-// Per-IP limit: 30 messages per 5 minutes (generous but protective)
+// Cache for rate limiters to avoid recreating on every request
+let cachedRateLimiters: {
+  chat: Ratelimit
+  daily: Ratelimit
+  config: { messagesPerWindow: number; rateLimitWindowMins: number; dailyApiLimit: number }
+} | null = null
+
+async function getRateLimiters() {
+  const config = await getRateLimitConfig()
+
+  // Check if we need to recreate limiters (config changed)
+  if (
+    cachedRateLimiters &&
+    cachedRateLimiters.config.messagesPerWindow === config.messagesPerWindow &&
+    cachedRateLimiters.config.rateLimitWindowMins === config.rateLimitWindowMins &&
+    cachedRateLimiters.config.dailyApiLimit === config.dailyApiLimit
+  ) {
+    return cachedRateLimiters
+  }
+
+  // Create new rate limiters with current DB settings
+  cachedRateLimiters = {
+    chat: new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(config.messagesPerWindow, `${config.rateLimitWindowMins} m`),
+      analytics: true,
+      prefix: 'ratelimit:ai-chat',
+    }),
+    daily: new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(config.dailyApiLimit, '24 h'),
+      analytics: true,
+      prefix: 'ratelimit:ai-daily',
+    }),
+    config,
+  }
+
+  return cachedRateLimiters
+}
+
+// Legacy exports for backwards compatibility (deprecated)
 export const aiChatRateLimit = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(30, '5 m'),
@@ -27,7 +70,6 @@ export const aiChatRateLimit = new Ratelimit({
   prefix: 'ratelimit:ai-chat',
 })
 
-// Per-session limit: 100 messages per hour (prevents runaway sessions)
 export const aiSessionRateLimit = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(100, '1 h'),
@@ -35,7 +77,6 @@ export const aiSessionRateLimit = new Ratelimit({
   prefix: 'ratelimit:ai-session',
 })
 
-// Daily cost protection: 500 API calls per day per IP
 export const aiDailyRateLimit = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(500, '24 h'),
@@ -44,11 +85,11 @@ export const aiDailyRateLimit = new Ratelimit({
 })
 
 // =============================================================================
-// SECURITY CONFIGURATION
+// SECURITY CONFIGURATION (fallback defaults, overridden by DB)
 // =============================================================================
 
 export const AI_SECURITY_CONFIG = {
-  // Message limits
+  // Message limits (now loaded from DB)
   MAX_MESSAGE_LENGTH: 500,        // Max chars per message
   MAX_SESSION_MESSAGES: 50,       // Max messages per session before reset
 
@@ -99,10 +140,27 @@ export interface AISecurityCheckResult {
 export async function checkAISecurity(
   request: NextRequest,
   message: string,
-  sessionMessageCount: number
+  sessionMessageCount: number,
+  visitorId?: string,
+  sessionId?: string
 ): Promise<AISecurityCheckResult> {
   const ip = getClientIp(request)
   const userAgent = request.headers.get('user-agent') || ''
+
+  // ==========================================================================
+  // 0. CHECK IF CHOÉ IS ENABLED
+  // ==========================================================================
+  const enabled = await isChoeEnabled()
+  if (!enabled) {
+    return {
+      allowed: false,
+      reason: 'AI assistant is temporarily unavailable. Please use classic search.',
+    }
+  }
+
+  // Get rate limit config from database
+  const rateLimitConfig = await getRateLimitConfig()
+  const rateLimiters = await getRateLimiters()
 
   // ==========================================================================
   // 1. BOT DETECTION
@@ -113,7 +171,7 @@ export async function checkAISecurity(
       confidence: botCheck.confidence,
       reasons: botCheck.reasons,
       userAgent,
-    })
+    }, visitorId, sessionId, true)
     return {
       allowed: false,
       reason: 'Automated requests are not allowed',
@@ -121,11 +179,11 @@ export async function checkAISecurity(
   }
 
   // ==========================================================================
-  // 2. RATE LIMITING (per-IP)
+  // 2. RATE LIMITING (per-IP) - Uses DB settings
   // ==========================================================================
-  const ipLimit = await aiChatRateLimit.limit(ip)
+  const ipLimit = await rateLimiters.chat.limit(ip)
   if (!ipLimit.success) {
-    await logSecurityEvent('rate_limit_exceeded', ip, { type: 'ip' })
+    await logSecurityEvent('rate_limit', ip, { type: 'ip' }, visitorId, sessionId, true)
     return {
       allowed: false,
       reason: 'Too many requests. Please wait a moment.',
@@ -137,11 +195,11 @@ export async function checkAISecurity(
   }
 
   // ==========================================================================
-  // 3. DAILY LIMIT CHECK
+  // 3. DAILY LIMIT CHECK - Uses DB settings
   // ==========================================================================
-  const dailyLimit = await aiDailyRateLimit.limit(ip)
+  const dailyLimit = await rateLimiters.daily.limit(ip)
   if (!dailyLimit.success) {
-    await logSecurityEvent('daily_limit_exceeded', ip, {})
+    await logSecurityEvent('rate_limit', ip, { type: 'daily' }, visitorId, sessionId, true)
     return {
       allowed: false,
       reason: 'Daily limit reached. Please try again tomorrow.',
@@ -153,21 +211,21 @@ export async function checkAISecurity(
   }
 
   // ==========================================================================
-  // 4. MESSAGE LENGTH CHECK
+  // 4. MESSAGE LENGTH CHECK - Uses DB settings
   // ==========================================================================
-  if (message.length > AI_SECURITY_CONFIG.MAX_MESSAGE_LENGTH) {
-    await logSecurityEvent('message_too_long', ip, { length: message.length })
+  if (message.length > rateLimitConfig.maxMessageLength) {
+    await logSecurityEvent('message_length', ip, { length: message.length }, visitorId, sessionId, false)
     return {
       allowed: false,
-      reason: `Message too long. Please keep it under ${AI_SECURITY_CONFIG.MAX_MESSAGE_LENGTH} characters.`,
+      reason: `Message too long. Please keep it under ${rateLimitConfig.maxMessageLength} characters.`,
     }
   }
 
   // ==========================================================================
-  // 5. SESSION MESSAGE LIMIT
+  // 5. SESSION MESSAGE LIMIT - Uses DB settings
   // ==========================================================================
-  if (sessionMessageCount >= AI_SECURITY_CONFIG.MAX_SESSION_MESSAGES) {
-    await logSecurityEvent('session_limit', ip, { count: sessionMessageCount })
+  if (sessionMessageCount >= rateLimitConfig.sessionMessageLimit) {
+    await logSecurityEvent('session_limit', ip, { count: sessionMessageCount }, visitorId, sessionId, false)
     return {
       allowed: false,
       reason: 'Session limit reached. Please start a new conversation.',
@@ -177,13 +235,12 @@ export async function checkAISecurity(
   // ==========================================================================
   // 6. PROMPT INJECTION DETECTION
   // ==========================================================================
-  const lowerMessage = message.toLowerCase()
   for (const pattern of AI_SECURITY_CONFIG.BLOCKED_PATTERNS) {
     if (pattern.test(message)) {
-      await logSecurityEvent('prompt_injection_attempt', ip, {
+      await logSecurityEvent('prompt_injection', ip, {
         pattern: pattern.toString(),
         message: message.substring(0, 100),
-      })
+      }, visitorId, sessionId, true)
       return {
         allowed: false,
         reason: "I can only help with car rentals. What kind of vehicle are you looking for?",
@@ -222,20 +279,42 @@ function getClientIp(request: NextRequest): string {
 }
 
 async function logSecurityEvent(
-  event: string,
+  eventType: string,
   ip: string,
-  details: Record<string, unknown>
+  details: Record<string, unknown>,
+  visitorId?: string,
+  sessionId?: string,
+  blocked: boolean = false
 ): Promise<void> {
   try {
-    // Log to Redis for real-time monitoring
-    const key = `ai-security:${event}:${new Date().toISOString().split('T')[0]}`
+    // Determine severity based on event type
+    let severity: 'INFO' | 'WARNING' | 'CRITICAL' = 'INFO'
+    if (eventType === 'prompt_injection' || eventType === 'bot_detected') {
+      severity = 'CRITICAL'
+    } else if (eventType === 'rate_limit' || eventType === 'session_limit') {
+      severity = 'WARNING'
+    }
+
+    // Log to Redis for real-time monitoring (legacy)
+    const key = `ai-security:${eventType}:${new Date().toISOString().split('T')[0]}`
     await redis.hincrby(key, ip, 1)
     await redis.expire(key, 86400 * 7) // Keep 7 days
 
-    // Console log for immediate visibility
-    console.warn(`[AI-SECURITY] ${event}`, { ip, ...details })
+    // Log to database for persistent audit (ChoeAISecurityEvent table)
+    await prisma.choeAISecurityEvent.create({
+      data: {
+        eventType,
+        severity,
+        ipAddress: ip,
+        visitorId: visitorId || null,
+        sessionId: sessionId || null,
+        details: details as object,
+        blocked,
+      }
+    })
 
-    // TODO: Could also write to SecurityEvent table for persistent audit log
+    // Console log for immediate visibility
+    console.warn(`[AI-SECURITY] ${eventType}`, { ip, severity, blocked, ...details })
   } catch (error) {
     console.error('[AI-SECURITY] Failed to log event:', error)
   }

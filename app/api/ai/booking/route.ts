@@ -1,5 +1,6 @@
 // app/api/ai/booking/route.ts
 // AI Booking endpoint — orchestrates Claude + search + risk assessment
+// Uses database settings from ChoeAISettings table
 
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
@@ -32,6 +33,142 @@ import {
   checkAISecurity,
   createSecurityBlockedResponse,
 } from '@/app/lib/ai-booking/security'
+import prisma from '@/app/lib/database/prisma'
+import {
+  getChoeSettings,
+  getModelConfig,
+  getPricingConfig,
+  getFeatureFlags,
+} from '@/app/lib/ai-booking/choe-settings'
+
+// =============================================================================
+// COST CALCULATION (with prompt caching support)
+// =============================================================================
+
+const COST_PER_1M_TOKENS: Record<string, number> = {
+  // Claude 4.5 Series (2025)
+  'claude-haiku-4-5-20251001': 1,
+  'claude-sonnet-4-5-20250929': 3,
+  'claude-opus-4-5-20251101': 15,
+  // Claude 3.5 Series (Legacy)
+  'claude-3-5-haiku-20241022': 0.25,
+  'claude-3-5-sonnet-20241022': 3,
+  'claude-3-opus-20240229': 15,
+}
+
+// Cached tokens cost 90% less
+const CACHE_DISCOUNT = 0.1
+
+function calculateCost(
+  inputTokens: number,
+  outputTokens: number,
+  model: string,
+  cachedTokens: number = 0
+): number {
+  const inputCostPer1M = COST_PER_1M_TOKENS[model] || 1
+  const outputCostPer1M = inputCostPer1M * 5 // Output is 5x input cost
+
+  // Regular input tokens (non-cached)
+  const regularInputTokens = inputTokens - cachedTokens
+  const inputCost = (regularInputTokens / 1_000_000) * inputCostPer1M
+
+  // Cached tokens (90% discount)
+  const cacheCost = (cachedTokens / 1_000_000) * inputCostPer1M * CACHE_DISCOUNT
+
+  // Output tokens
+  const outputCost = (outputTokens / 1_000_000) * outputCostPer1M
+
+  return inputCost + cacheCost + outputCost
+}
+
+// Simple cost calculation for backwards compatibility
+function calculateCostSimple(tokens: number, model: string): number {
+  const costPer1M = COST_PER_1M_TOKENS[model] || 1
+  return (tokens / 1_000_000) * costPer1M
+}
+
+// =============================================================================
+// STRUCTURED OUTPUT SCHEMA
+// =============================================================================
+
+// JSON Schema for ClaudeBookingOutput - guarantees valid responses
+const BOOKING_OUTPUT_SCHEMA = {
+  type: 'object',
+  properties: {
+    reply: {
+      type: 'string',
+      description: 'The conversational response to show the user',
+    },
+    nextState: {
+      type: 'string',
+      enum: ['INIT', 'COLLECTING_LOCATION', 'COLLECTING_DATES', 'COLLECTING_VEHICLE', 'CONFIRMING', 'CHECKING_AUTH', 'READY_FOR_PAYMENT'],
+      description: 'The booking state to transition to',
+    },
+    extractedData: {
+      type: 'object',
+      properties: {
+        location: { type: 'string' },
+        locationId: { type: 'string' },
+        startDate: { type: 'string', description: 'ISO date format YYYY-MM-DD' },
+        endDate: { type: 'string', description: 'ISO date format YYYY-MM-DD' },
+        startTime: { type: 'string', description: 'Time in HH:mm format' },
+        endTime: { type: 'string', description: 'Time in HH:mm format' },
+        vehicleType: { type: 'string' },
+        vehicleId: { type: 'string' },
+      },
+      additionalProperties: false,
+    },
+    action: {
+      type: ['string', 'null'],
+      enum: ['HANDOFF_TO_PAYMENT', 'NEEDS_LOGIN', 'NEEDS_VERIFICATION', 'HIGH_RISK_REVIEW', 'START_OVER', null],
+      description: 'Special action to trigger, or null for normal flow',
+    },
+    searchQuery: {
+      type: ['object', 'null'],
+      properties: {
+        location: { type: 'string' },
+        carType: { type: 'string' },
+        pickupDate: { type: 'string' },
+        returnDate: { type: 'string' },
+        pickupTime: { type: 'string' },
+        returnTime: { type: 'string' },
+        make: { type: 'string' },
+        priceMin: { type: 'number' },
+        priceMax: { type: 'number' },
+        seats: { type: 'number' },
+        transmission: { type: 'string' },
+        noDeposit: { type: 'boolean' },
+      },
+      additionalProperties: false,
+    },
+  },
+  required: ['reply', 'nextState', 'extractedData', 'action', 'searchQuery'],
+  additionalProperties: false,
+} as const
+
+// Check if model supports structured outputs (Claude 4.5 only)
+function supportsStructuredOutputs(modelId: string): boolean {
+  return modelId.includes('4-5') || modelId.includes('4.5')
+}
+
+// Parse structured output (guaranteed valid JSON from Claude 4.5)
+function parseStructuredResponse(raw: string): ReturnType<typeof parseClaudeResponse> {
+  try {
+    const parsed = JSON.parse(raw)
+    // Map nextState string to BookingState enum
+    const nextState = parsed.nextState as BookingState || BookingState.INIT
+    return {
+      reply: parsed.reply || "I'm here to help you find a car!",
+      nextState,
+      extractedData: parsed.extractedData || {},
+      action: parsed.action || null,
+      searchQuery: parsed.searchQuery || null,
+    }
+  } catch {
+    // Fallback to legacy parser if JSON parse fails (shouldn't happen with structured outputs)
+    return parseClaudeResponse(raw)
+  }
+}
 
 // =============================================================================
 // ANTHROPIC CLIENT
@@ -44,10 +181,152 @@ const getClient = () => {
 }
 
 // =============================================================================
+// DATABASE HELPERS (defined before POST for clarity)
+// =============================================================================
+
+/**
+ * Create or update a conversation record in the database
+ */
+async function upsertConversation(
+  session: BookingSession,
+  userId?: string | null,
+  visitorId?: string | null,
+  ipAddress: string = '127.0.0.1'
+): Promise<string> {
+  try {
+    const existing = await prisma.choeAIConversation.findUnique({
+      where: { sessionId: session.sessionId }
+    })
+
+    if (existing) {
+      await prisma.choeAIConversation.update({
+        where: { sessionId: session.sessionId },
+        data: {
+          state: session.state,
+          location: session.location,
+          vehicleType: session.vehicleType,
+          lastActivityAt: new Date(),
+          messageCount: session.messages.length,
+        }
+      })
+      return existing.id
+    }
+
+    const conversation = await prisma.choeAIConversation.create({
+      data: {
+        sessionId: session.sessionId,
+        userId: userId || null,
+        visitorId: visitorId || null,
+        ipAddress,
+        isAuthenticated: !!userId,
+        state: session.state,
+        messageCount: 0,
+        location: session.location,
+        estimatedCost: 0,
+      }
+    })
+
+    return conversation.id
+  } catch (error) {
+    console.error('[ai-booking] Failed to upsert conversation:', error)
+    return `temp-${session.sessionId}`
+  }
+}
+
+/**
+ * Log a message to the database
+ */
+async function logMessage(
+  conversationId: string,
+  role: 'user' | 'assistant',
+  content: string,
+  tokensUsed: number = 0,
+  responseTimeMs?: number,
+  searchPerformed: boolean = false,
+  vehiclesReturned: number = 0
+): Promise<void> {
+  if (conversationId.startsWith('temp-')) return
+
+  try {
+    await prisma.choeAIMessage.create({
+      data: {
+        conversationId,
+        role,
+        content,
+        tokensUsed,
+        responseTimeMs: responseTimeMs || null,
+        searchPerformed,
+        vehiclesReturned,
+      }
+    })
+  } catch (error) {
+    console.error('[ai-booking] Failed to log message:', error)
+  }
+}
+
+/**
+ * Update conversation statistics
+ */
+async function updateConversationStats(
+  conversationId: string,
+  session: BookingSession,
+  totalTokens: number,
+  estimatedCost: number
+): Promise<void> {
+  if (conversationId.startsWith('temp-')) return
+
+  try {
+    let outcome: string | null = null
+    if (session.state === BookingState.READY_FOR_PAYMENT) {
+      outcome = 'COMPLETED'
+    }
+
+    await prisma.choeAIConversation.update({
+      where: { id: conversationId },
+      data: {
+        state: session.state,
+        messageCount: session.messages.length,
+        location: session.location,
+        vehicleType: session.vehicleType,
+        totalTokens: { increment: totalTokens },
+        estimatedCost: { increment: estimatedCost },
+        lastActivityAt: new Date(),
+        ...(outcome && { outcome }),
+        ...(session.vehicleId && { vehicleId: session.vehicleId }),
+      }
+    })
+  } catch (error) {
+    console.error('[ai-booking] Failed to update conversation stats:', error)
+  }
+}
+
+/**
+ * Track when an auth prompt is shown
+ */
+async function trackAuthPrompt(conversationId: string): Promise<void> {
+  if (conversationId.startsWith('temp-')) return
+
+  try {
+    await prisma.choeAIConversation.update({
+      where: { id: conversationId },
+      data: {
+        authPromptedAt: new Date(),
+      }
+    })
+  } catch (error) {
+    console.error('[ai-booking] Failed to track auth prompt:', error)
+  }
+}
+
+// =============================================================================
 // POST /api/ai/booking
 // =============================================================================
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now()
+  let conversationId: string | null = null
+  let totalTokensUsed = 0
+
   try {
     const body = (await request.json()) as AIBookingRequest
 
@@ -60,10 +339,22 @@ export async function POST(request: NextRequest) {
     }
 
     // ==========================================================================
+    // LOAD SETTINGS FROM DATABASE
+    // ==========================================================================
+    const modelConfig = await getModelConfig()
+    const featureFlags = await getFeatureFlags()
+
+    // ==========================================================================
     // SECURITY CHECK - Rate limiting, bot detection, input validation
     // ==========================================================================
     const sessionMessageCount = body.session?.messages?.length || 0
-    const securityCheck = await checkAISecurity(request, body.message, sessionMessageCount)
+    const securityCheck = await checkAISecurity(
+      request,
+      body.message,
+      sessionMessageCount,
+      body.visitorId ?? undefined,
+      body.session?.sessionId
+    )
 
     if (!securityCheck.allowed) {
       return createSecurityBlockedResponse(securityCheck)
@@ -72,20 +363,38 @@ export async function POST(request: NextRequest) {
     // Initialize or restore session
     let session: BookingSession = body.session || createInitialSession()
 
+    // ==========================================================================
+    // CREATE/UPDATE CONVERSATION IN DATABASE
+    // ==========================================================================
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+               request.headers.get('x-real-ip') ||
+               request.headers.get('cf-connecting-ip') ||
+               '127.0.0.1'
+
+    conversationId = await upsertConversation(session, body.userId, body.visitorId, ip)
+
     // Add user message to history
     session = addMessage(session, 'user', body.message)
+
+    // Log user message to database
+    await logMessage(conversationId, 'user', body.message, 0)
 
     // Use previously returned vehicles if available (for selection step)
     let vehicles: VehicleSummary[] | null = body.previousVehicles || null
     let weather = undefined
 
     // Direct weather question — answer without calling Claude (cost optimization)
-    if (isDirectWeatherQuestion(body.message)) {
+    if (isDirectWeatherQuestion(body.message) && featureFlags.weatherEnabled) {
       const city = extractCityFromWeatherQuestion(body.message) || session.location || 'phoenix';
       const weatherData = await fetchWeatherContext(city);
       if (weatherData) {
         const reply = buildWeatherReply(weatherData);
         session = addMessage(session, 'assistant', reply);
+
+        // Log assistant message (no tokens used for weather-only response)
+        await logMessage(conversationId, 'assistant', reply, 0)
+        await updateConversationStats(conversationId, session, 0, 0)
+
         return NextResponse.json({
           reply,
           session,
@@ -99,6 +408,7 @@ export async function POST(request: NextRequest) {
 
     // Check weather relevance for vehicle recommendations (before calling Claude)
     if (
+      featureFlags.weatherEnabled &&
       isWeatherRelevant(body.message) &&
       session.location
     ) {
@@ -120,14 +430,45 @@ export async function POST(request: NextRequest) {
       content: m.content,
     }))
 
-    // Call Claude Haiku
+    // Call Claude with DB settings, prompt caching, and structured outputs
     const client = getClient()
-    const claudeResponse = await client.messages.create({
-      model: 'claude-3-5-haiku-20241022',
-      max_tokens: 1024,
-      system: systemPrompt,
+    const useStructuredOutputs = supportsStructuredOutputs(modelConfig.modelId)
+
+    // Build request options
+    const requestOptions: Parameters<typeof client.messages.create>[0] = {
+      model: modelConfig.modelId,
+      max_tokens: modelConfig.maxTokens,
+      // Use array format with cache_control for prompt caching (5-min TTL)
+      system: [
+        {
+          type: 'text' as const,
+          text: systemPrompt,
+          cache_control: { type: 'ephemeral' as const },
+        },
+      ],
       messages: claudeMessages,
-    })
+    }
+
+    // Add structured outputs for Claude 4.5 models (guarantees valid JSON)
+    if (useStructuredOutputs) {
+      // @ts-expect-error - output_config is a new API feature
+      requestOptions.output_config = {
+        format: {
+          type: 'json_schema',
+          schema: BOOKING_OUTPUT_SCHEMA,
+        },
+      }
+    }
+
+    const claudeResponse = await client.messages.create(requestOptions) as Anthropic.Message
+
+    // Track token usage with cache awareness
+    const inputTokens = claudeResponse.usage?.input_tokens || 0
+    const outputTokens = claudeResponse.usage?.output_tokens || 0
+    // @ts-expect-error - cache_read_input_tokens exists on responses when caching is used
+    const cachedTokens = claudeResponse.usage?.cache_read_input_tokens || 0
+    totalTokensUsed += inputTokens + outputTokens
+    let totalCachedTokens = cachedTokens
 
     // Extract text from Claude's response
     const rawText = claudeResponse.content
@@ -135,8 +476,10 @@ export async function POST(request: NextRequest) {
       .map((block) => (block as { type: 'text'; text: string }).text)
       .join('')
 
-    // Parse structured response
-    const parsed = parseClaudeResponse(rawText)
+    // Parse structured response (simplified for structured outputs, fallback for legacy models)
+    const parsed = useStructuredOutputs
+      ? parseStructuredResponse(rawText)
+      : parseClaudeResponse(rawText)
 
     // Force a search if user asks for no-deposit cars but Claude didn't create a searchQuery
     const userWantsNoDeposit = wantsNoDeposit(body.message)
@@ -153,8 +496,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Track if search was performed
+    let searchPerformed = false
+    let vehiclesReturned = 0
+
     // If Claude wants to search, do it now
     if (parsed.searchQuery) {
+      searchPerformed = true
+
       // Force noDeposit filter if user asked for it (Claude sometimes misses this)
       if (userWantsNoDeposit && !parsed.searchQuery.noDeposit) {
         console.log('[CHOÉ DEBUG] Injecting noDeposit into existing searchQuery')
@@ -169,6 +518,8 @@ export async function POST(request: NextRequest) {
         const fallbackQuery = { location: parsed.searchQuery.location, pickupDate: parsed.searchQuery.pickupDate, returnDate: parsed.searchQuery.returnDate, pickupTime: parsed.searchQuery.pickupTime, returnTime: parsed.searchQuery.returnTime }
         vehicles = await searchVehicles(fallbackQuery)
       }
+
+      vehiclesReturned = vehicles.length
 
       // Sort by price if user asked for cheapest/budget
       if (vehicles.length > 0 && wantsLowestPrice(body.message)) {
@@ -188,10 +539,18 @@ export async function POST(request: NextRequest) {
         ? ` No exact matches were found for the filters (make/type/price/seats). Show the user what IS available nearby, or suggest broadening their search.`
         : ''
 
-      const enrichedResponse = await client.messages.create({
-        model: 'claude-3-5-haiku-20241022',
-        max_tokens: 1024,
-        system: enrichedPrompt,
+      // Build enriched request options
+      const enrichedRequestOptions: Parameters<typeof client.messages.create>[0] = {
+        model: modelConfig.modelId,
+        max_tokens: modelConfig.maxTokens,
+        // Use array format with cache_control for prompt caching
+        system: [
+          {
+            type: 'text' as const,
+            text: enrichedPrompt,
+            cache_control: { type: 'ephemeral' as const },
+          },
+        ],
         messages: [
           ...claudeMessages,
           {
@@ -207,14 +566,37 @@ export async function POST(request: NextRequest) {
               : 'What do you have instead?',
           },
         ],
-      })
+      }
+
+      // Add structured outputs for Claude 4.5 models
+      if (useStructuredOutputs) {
+        // @ts-expect-error - output_config is a new API feature
+        enrichedRequestOptions.output_config = {
+          format: {
+            type: 'json_schema',
+            schema: BOOKING_OUTPUT_SCHEMA,
+          },
+        }
+      }
+
+      const enrichedResponse = await client.messages.create(enrichedRequestOptions) as Anthropic.Message
+
+      // Track enriched response tokens with cache awareness
+      const enrichedInputTokens = enrichedResponse.usage?.input_tokens || 0
+      const enrichedOutputTokens = enrichedResponse.usage?.output_tokens || 0
+      // @ts-expect-error - cache_read_input_tokens exists on responses when caching is used
+      const enrichedCachedTokens = enrichedResponse.usage?.cache_read_input_tokens || 0
+      totalTokensUsed += enrichedInputTokens + enrichedOutputTokens
+      totalCachedTokens += enrichedCachedTokens
 
       const enrichedText = enrichedResponse.content
         .filter((block) => block.type === 'text')
         .map((block) => (block as { type: 'text'; text: string }).text)
         .join('')
 
-      const enrichedParsed = parseClaudeResponse(enrichedText)
+      const enrichedParsed = useStructuredOutputs
+        ? parseStructuredResponse(enrichedText)
+        : parseClaudeResponse(enrichedText)
       parsed.reply = enrichedParsed.reply
       if (enrichedParsed.nextState) {
         parsed.nextState = enrichedParsed.nextState
@@ -227,7 +609,16 @@ export async function POST(request: NextRequest) {
     // Add AI reply to history
     session = addMessage(session, 'assistant', parsed.reply)
 
-    // Build booking summary if confirming
+    // Calculate response time
+    const responseTimeMs = Date.now() - startTime
+
+    // Log assistant message to database
+    if (conversationId) {
+      await logMessage(conversationId, 'assistant', parsed.reply, totalTokensUsed, responseTimeMs, searchPerformed, vehiclesReturned)
+    }
+
+    // Build booking summary if confirming (using DB pricing settings)
+    const pricingConfig = await getPricingConfig()
     let summary: BookingSummary | null = null
     if (
       session.state === BookingState.CONFIRMING &&
@@ -236,19 +627,25 @@ export async function POST(request: NextRequest) {
     ) {
       const selectedVehicle = vehicles.find((v) => v.id === session.vehicleId)
       if (selectedVehicle && session.startDate && session.endDate) {
-        summary = buildBookingSummary(session, selectedVehicle)
+        summary = buildBookingSummary(session, selectedVehicle, pricingConfig)
       }
     }
 
     // Risk assessment at confirmation
+    const featureFlags2 = await getFeatureFlags()
     let action = parsed.action
     if (
       session.state === BookingState.CONFIRMING &&
       summary &&
-      !action
+      !action &&
+      featureFlags2.riskAssessmentEnabled
     ) {
       if (!body.userId) {
         action = 'NEEDS_LOGIN'
+        // Track auth prompt
+        if (conversationId) {
+          await trackAuthPrompt(conversationId)
+        }
       } else {
         const risk = await assessBookingRisk({
           session,
@@ -262,6 +659,13 @@ export async function POST(request: NextRequest) {
           action = risk.action
         }
       }
+    }
+
+    // Update conversation stats in database
+    if (conversationId) {
+      const settings = await getChoeSettings()
+      const cost = calculateCostSimple(totalTokensUsed, settings.modelId)
+      await updateConversationStats(conversationId, session, totalTokensUsed, cost)
     }
 
     // Build suggestion chips based on current state
@@ -302,13 +706,18 @@ export async function POST(request: NextRequest) {
 
 function buildBookingSummary(
   session: BookingSession,
-  vehicle: VehicleSummary
+  vehicle: VehicleSummary,
+  pricingConfig?: { serviceFeePercent: number; taxRateDefault: number }
 ): BookingSummary {
   const numberOfDays = calculateDays(session.startDate!, session.endDate!)
   const subtotal = vehicle.dailyRate * numberOfDays
-  const serviceFee = Math.round(subtotal * 0.15 * 100) / 100  // 15% guest service fee
+
+  const serviceFeePercent = pricingConfig?.serviceFeePercent ?? 0.15
+  const taxRate = pricingConfig?.taxRateDefault ?? 0.084
+
+  const serviceFee = Math.round(subtotal * serviceFeePercent * 100) / 100
   const taxable = subtotal + serviceFee
-  const estimatedTax = Math.round(taxable * 0.084 * 100) / 100 // 8.4% AZ tax
+  const estimatedTax = Math.round(taxable * taxRate * 100) / 100
   const estimatedTotal = Math.round((taxable + estimatedTax) * 100) / 100
 
   return {
@@ -324,7 +733,7 @@ function buildBookingSummary(
     serviceFee,
     estimatedTax,
     estimatedTotal,
-    depositAmount: vehicle.depositAmount,  // Use actual deposit from vehicle data
+    depositAmount: vehicle.depositAmount,
   }
 }
 
@@ -366,7 +775,7 @@ function getSuggestions(state: BookingState): string[] {
 }
 
 // =============================================================================
-// SEARCH FILTER CHECK
+// SEARCH FILTER HELPERS
 // =============================================================================
 
 function hasFilters(query: import('@/app/lib/ai-booking/types').SearchQuery): boolean {

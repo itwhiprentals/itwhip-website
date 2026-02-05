@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import {
   IoPersonOutline,
   IoShieldCheckmarkOutline,
@@ -311,6 +312,21 @@ export default function FleetDashboard() {
           >
             <IoMailOutline className="text-2xl group-hover:scale-110 transition-transform" />
             <span className="text-sm font-medium">Emails</span>
+          </Link>
+
+          {/* Choé AI */}
+          <Link
+            href={`/fleet/choe?key=${apiKey}`}
+            className="px-4 py-3 bg-gradient-to-br from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group relative overflow-hidden"
+          >
+            <Image
+              src="/images/choe-logo.png"
+              alt="Choé"
+              width={32}
+              height={32}
+              className="group-hover:scale-110 transition-transform rounded"
+            />
+            <span className="text-sm font-medium">Choé AI</span>
           </Link>
 
           {/* Settings */}

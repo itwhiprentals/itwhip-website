@@ -13,8 +13,16 @@ import {
 // DEFAULT SESSION
 // =============================================================================
 
+/** Generate a unique session ID */
+function generateSessionId(): string {
+  const timestamp = Date.now().toString(36)
+  const random = Math.random().toString(36).substring(2, 10)
+  return `choe_${timestamp}_${random}`
+}
+
 export function createInitialSession(): BookingSession {
   return {
+    sessionId: generateSessionId(),
     state: BookingState.INIT,
     location: null,
     locationId: null,
@@ -62,9 +70,11 @@ export function applyExtractedData(
   const computed = computeNextState(updated);
   updated.state = computed;
 
-  // Override: if Claude says START_OVER action, reset
+  // Override: if Claude says START_OVER action, reset (preserve sessionId)
   if (output.action === 'START_OVER') {
-    return createInitialSession();
+    const newSession = createInitialSession()
+    newSession.sessionId = session.sessionId // Keep same session ID for tracking
+    return newSession
   }
 
   return updated;

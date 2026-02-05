@@ -1,0 +1,175 @@
+// app/fleet/api/choe/batch/route.ts
+// API endpoint for batch analytics jobs (50% cost reduction)
+// Supports: conversation summaries, quality scoring, training data extraction
+
+import { NextRequest, NextResponse } from 'next/server'
+import { verifyFleetAccess } from '@/app/lib/auth/fleetAuth'
+import {
+  createConversationSummaryBatch,
+  createQualityScoringBatch,
+  createTrainingDataBatch,
+  checkBatchStatus,
+  getBatchResults,
+  cancelBatch,
+  listBatchJobs,
+  getRecentConversationsForAnalytics,
+  getSuccessfulConversationsForTraining,
+} from '@/app/lib/ai-booking/batch-analytics'
+
+// =============================================================================
+// GET /fleet/api/choe/batch - List batch jobs or get specific job status
+// =============================================================================
+
+export async function GET(request: NextRequest) {
+  const auth = await verifyFleetAccess(request)
+  if (!auth.authorized) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const { searchParams } = new URL(request.url)
+  const batchId = searchParams.get('batchId')
+  const action = searchParams.get('action')
+
+  try {
+    // Get results for a specific batch
+    if (batchId && action === 'results') {
+      const results = await getBatchResults(batchId)
+      return NextResponse.json({ results })
+    }
+
+    // Get status for a specific batch
+    if (batchId) {
+      const status = await checkBatchStatus(batchId)
+      return NextResponse.json(status)
+    }
+
+    // List all recent batch jobs
+    const jobs = await listBatchJobs(20)
+    return NextResponse.json({ jobs })
+
+  } catch (error) {
+    console.error('[batch-api] GET error:', error)
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Failed to fetch batch info' },
+      { status: 500 }
+    )
+  }
+}
+
+// =============================================================================
+// POST /fleet/api/choe/batch - Create a new batch job
+// =============================================================================
+
+interface BatchCreateRequest {
+  type: 'summary' | 'quality' | 'training'
+  hoursAgo?: number
+  limit?: number
+}
+
+export async function POST(request: NextRequest) {
+  const auth = await verifyFleetAccess(request)
+  if (!auth.authorized) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  try {
+    const body = (await request.json()) as BatchCreateRequest
+    const { type, hoursAgo = 24, limit = 100 } = body
+
+    let batchId: string
+    let conversationCount: number
+
+    switch (type) {
+      case 'summary': {
+        const conversations = await getRecentConversationsForAnalytics(hoursAgo, limit)
+        if (conversations.length === 0) {
+          return NextResponse.json(
+            { error: 'No conversations found for analysis' },
+            { status: 404 }
+          )
+        }
+        conversationCount = conversations.length
+        batchId = await createConversationSummaryBatch(conversations)
+        break
+      }
+
+      case 'quality': {
+        const conversations = await getRecentConversationsForAnalytics(hoursAgo, limit)
+        if (conversations.length === 0) {
+          return NextResponse.json(
+            { error: 'No conversations found for quality scoring' },
+            { status: 404 }
+          )
+        }
+        conversationCount = conversations.length
+        batchId = await createQualityScoringBatch(conversations)
+        break
+      }
+
+      case 'training': {
+        const conversations = await getSuccessfulConversationsForTraining(limit)
+        if (conversations.length === 0) {
+          return NextResponse.json(
+            { error: 'No successful conversations found for training data' },
+            { status: 404 }
+          )
+        }
+        conversationCount = conversations.length
+        batchId = await createTrainingDataBatch(conversations)
+        break
+      }
+
+      default:
+        return NextResponse.json(
+          { error: 'Invalid batch type. Use: summary, quality, or training' },
+          { status: 400 }
+        )
+    }
+
+    return NextResponse.json({
+      batchId,
+      type,
+      conversationCount,
+      message: `Batch job created. Processing ${conversationCount} conversations at 50% cost.`,
+    })
+
+  } catch (error) {
+    console.error('[batch-api] POST error:', error)
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Failed to create batch job' },
+      { status: 500 }
+    )
+  }
+}
+
+// =============================================================================
+// DELETE /fleet/api/choe/batch - Cancel a batch job
+// =============================================================================
+
+export async function DELETE(request: NextRequest) {
+  const auth = await verifyFleetAccess(request)
+  if (!auth.authorized) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const { searchParams } = new URL(request.url)
+  const batchId = searchParams.get('batchId')
+
+  if (!batchId) {
+    return NextResponse.json(
+      { error: 'batchId is required' },
+      { status: 400 }
+    )
+  }
+
+  try {
+    await cancelBatch(batchId)
+    return NextResponse.json({ success: true, message: `Batch ${batchId} cancelled` })
+  } catch (error) {
+    console.error('[batch-api] DELETE error:', error)
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Failed to cancel batch' },
+      { status: 500 }
+    )
+  }
+}

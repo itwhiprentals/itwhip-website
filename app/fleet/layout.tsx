@@ -186,6 +186,12 @@ function InternalLayoutContent({
                     Monitoring
                   </Link>
                   <Link
+                    href="/fleet/choe"
+                    className="px-2.5 py-1.5 rounded-md text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors whitespace-nowrap font-medium"
+                  >
+                    Choé AI
+                  </Link>
+                  <Link
                     href="/fleet/settings"
                     className="px-2.5 py-1.5 rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
                   >
@@ -305,6 +311,13 @@ function InternalLayoutContent({
                     className="px-3 py-2 rounded-md text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
                   >
                     Monitoring
+                  </Link>
+                  <Link
+                    href="/fleet/choe"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-3 py-2 rounded-md text-sm text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 font-medium"
+                  >
+                    Choé AI
                   </Link>
                   <Link
                     href="/fleet/settings"

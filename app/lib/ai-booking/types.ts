@@ -21,6 +21,8 @@ export enum BookingState {
 // =============================================================================
 
 export interface BookingSession {
+  /** Unique session identifier for tracking */
+  sessionId: string;
   state: BookingState;
   location: string | null;
   locationId: string | null;
@@ -47,6 +49,8 @@ export interface AIBookingRequest {
   message: string;
   session: BookingSession;
   userId?: string | null;
+  /** Browser fingerprint for anonymous user tracking */
+  visitorId?: string | null;
   /** Pass back vehicles from previous response so Claude can reference them */
   previousVehicles?: VehicleSummary[] | null;
 }
@@ -85,6 +89,8 @@ export interface VehicleSummary {
   distance: string | null;
   location: string;
   instantBook: boolean;
+  /** Vehicle type: RENTAL (regular) or RIDESHARE (for Uber/Lyft drivers) */
+  vehicleType: 'RENTAL' | 'RIDESHARE' | null;
   seats: number | null;
   transmission: string | null;
   /** Actual deposit from hybrid system (per-vehicle or host settings) */

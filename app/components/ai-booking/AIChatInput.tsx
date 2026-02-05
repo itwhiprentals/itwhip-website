@@ -78,13 +78,13 @@ export default function AIChatInput({
           onKeyDown={handleKeyDown}
           placeholder="Type your message..."
           disabled={disabled}
-          className="flex-1 px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary disabled:opacity-50 transition-colors"
+          className="flex-1 px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary disabled:opacity-50 transition-colors"
         />
 
         <button
           onClick={handleSubmit}
           disabled={disabled || !value.trim()}
-          className="flex-shrink-0 p-2.5 bg-primary text-white rounded-full hover:bg-primary/90 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="flex-shrink-0 p-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
           <IoSend size={16} />
         </button>

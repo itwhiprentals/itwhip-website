@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { IoStar, IoLocationSharp, IoFlash, IoChevronDown, IoChevronUp } from 'react-icons/io5'
+import { IoStar, IoLocationSharp, IoFlash, IoChevronDown, IoChevronUp, IoCarSportOutline } from 'react-icons/io5'
 import type { VehicleSummary } from '@/app/lib/ai-booking/types'
 
 // Platform fee constants (from app/(guest)/rentals/lib/constants.ts)
@@ -85,11 +85,31 @@ export default function AIVehicleCard({ vehicle, onSelect, startDate, endDate }:
 
         {/* Details */}
         <div className="flex-1 p-3 flex flex-col justify-between">
+          {/* Top row: Year Make + Badge */}
           <div>
-            <h4 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-              {vehicle.year} {vehicle.make} {vehicle.model}
-            </h4>
-            <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
+                {vehicle.year} {vehicle.make}
+              </h4>
+              {/* Rideshare badge (orange) - for Uber/Lyft vehicles */}
+              {vehicle.vehicleType?.toUpperCase() === 'RIDESHARE' ? (
+                <span className="flex items-center gap-0.5 text-[10px] font-bold text-white bg-orange-500 px-1.5 py-0.5 rounded">
+                  <IoCarSportOutline size={10} />
+                  Rideshare
+                </span>
+              ) : vehicle.instantBook && (
+                /* Instant badge (emerald) - for regular rentals with instant booking */
+                <span className="flex items-center gap-0.5 text-[10px] font-bold text-white bg-emerald-500 px-1.5 py-0.5 rounded">
+                  <IoFlash size={10} />
+                  Instant
+                </span>
+              )}
+            </div>
+            {/* Model on second line */}
+            <p className="text-xs text-gray-600 dark:text-gray-300 truncate">{vehicle.model}</p>
+
+            {/* Stars, trips, distance - moved down */}
+            <div className="flex items-center gap-2 mt-1.5 text-xs text-gray-500 dark:text-gray-400">
               {vehicle.rating && (
                 <span className="flex items-center gap-0.5">
                   <IoStar size={10} className="text-yellow-500" />
@@ -103,35 +123,34 @@ export default function AIVehicleCard({ vehicle, onSelect, startDate, endDate }:
                   {vehicle.distance}
                 </span>
               )}
-              {vehicle.instantBook && (
-                <span className="flex items-center gap-0.5 text-primary">
-                  <IoFlash size={10} />
-                  Instant
-                </span>
-              )}
             </div>
           </div>
 
+          {/* Bottom row: Price + Button */}
           <div className="flex items-center justify-between mt-2">
             <div>
               <span className="text-base font-bold text-gray-900 dark:text-white">${vehicle.dailyRate}</span>
               <span className="text-xs text-gray-500 dark:text-gray-400">/day</span>
             </div>
-            {/* Buttons - stop propagation so they don't trigger expand */}
-            <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-              <button
-                onClick={toggleExpand}
-                className="px-2 py-1.5 text-primary text-xs font-medium hover:underline"
+            {/* Button with Details underneath - stop propagation so they don't trigger expand */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onSelect(vehicle)
+              }}
+              className="px-3 py-1 bg-primary text-white text-xs font-semibold rounded-lg hover:bg-primary/90 transition-colors flex flex-col items-center"
+            >
+              <span>Select to Book</span>
+              <span
+                onClick={(e) => {
+                  e.stopPropagation()
+                  toggleExpand()
+                }}
+                className="text-[9px] font-normal underline opacity-80 hover:opacity-100"
               >
                 {expanded ? 'Less' : 'Details'}
-              </button>
-              <button
-                onClick={() => onSelect(vehicle)}
-                className="px-3 py-1.5 bg-primary text-white text-xs font-semibold rounded-md hover:bg-primary/90 transition-colors"
-              >
-                Select to Book
-              </button>
-            </div>
+              </span>
+            </button>
           </div>
         </div>
       </div>
