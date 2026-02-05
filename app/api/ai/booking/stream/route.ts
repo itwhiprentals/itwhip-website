@@ -122,7 +122,6 @@ async function updateConversationStats(
         estimatedCost: { increment: estimatedCost },
         lastActivityAt: new Date(),
         ...(outcome && { outcome }),
-        ...(session.vehicleId && { vehicleId: session.vehicleId }),
       }
     })
   } catch (error) {

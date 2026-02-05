@@ -57,7 +57,10 @@ export default function ChatViewStreaming({
   } = useStreamingChat({
     onComplete: (response) => {
       setPersistedSession(response.session)
-      setPersistedVehicles(response.vehicles)
+      // Only update vehicles if new ones returned (don't clear existing)
+      if (response.vehicles && response.vehicles.length > 0) {
+        setPersistedVehicles(response.vehicles)
+      }
     },
   })
 

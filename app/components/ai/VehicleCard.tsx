@@ -53,7 +53,7 @@ export default function VehicleCard({ vehicle, onSelect, startDate, endDate }: V
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-[8px] overflow-hidden hover:shadow-md transition-shadow">
       {/* Main card row - clickable to expand */}
       <div
         onClick={toggleExpand}
@@ -118,7 +118,7 @@ export default function VehicleCard({ vehicle, onSelect, startDate, endDate }: V
             </div>
             {/* Model + Trips on second line */}
             <p className="text-[11px] text-gray-600 dark:text-gray-300 truncate">
-              {vehicle.model} · {vehicle.trips > 0 ? `${vehicle.trips} trips` : 'New'}
+              {vehicle.model} · {vehicle.trips > 0 ? `(Trips ${vehicle.trips})` : '(New)'}
             </p>
 
             {/* Location, distance */}
@@ -143,15 +143,15 @@ export default function VehicleCard({ vehicle, onSelect, startDate, endDate }: V
               <span className="text-[15px] font-bold text-gray-900 dark:text-white">${vehicle.dailyRate}</span>
               <span className="text-[11px] text-gray-500 dark:text-gray-400">/day</span>
             </div>
-            {/* Book button - card click expands */}
+            {/* Select to Book button - card click expands */}
             <button
               onClick={(e) => {
                 e.stopPropagation()
                 onSelect(vehicle)
               }}
-              className="px-3 py-1 bg-primary text-white text-[11px] font-semibold rounded-lg hover:bg-primary/90 transition-colors"
+              className="px-2.5 py-1 bg-primary text-white text-[10px] font-semibold rounded hover:bg-primary/90 transition-colors"
             >
-              Book
+              Select to Book
             </button>
           </div>
         </div>

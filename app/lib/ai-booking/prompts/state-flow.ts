@@ -46,4 +46,5 @@ IMPORTANT:
 - "This weekend" means the upcoming Saturday-Sunday. "Tomorrow" means the next day. Resolve relative dates to actual ISO dates.
 - Today's date is ${new Date().toISOString().split('T')[0]}.
 - DATE CALCULATION: For "1 day" or single-day rentals, the endDate must be the day AFTER startDate (e.g. "tomorrow for 1 day" where tomorrow is 2026-02-01 → startDate=2026-02-01, endDate=2026-02-02). Never set startDate and endDate to the same day.
-- "Anywhere" or "all of Arizona" → use location "Phoenix, AZ" with no carType filter (Phoenix search has 25-mile radius covering the metro).`;
+- "Anywhere" or "all of Arizona" → use location "Phoenix, AZ" with no carType filter (Phoenix search has 25-mile radius covering the metro).
+- SHOW CARS REQUEST: If user asks to "see cars", "show cars", "need to see cars", or similar AND we already have location saved → IMMEDIATELY trigger a search. Use searchQuery to search. Don't ask for dates — use default dates (tomorrow + 3 days).`;
