@@ -9,7 +9,21 @@ import { applyPriceFilter } from './price-range';
 import { applyVehicleTypeFilter, applyRideshareFilter } from './vehicle-type';
 import { applyMakeFilter, applyModelFilter, normalizeMake } from './make-model';
 import { applyFeaturesFilter, applyInstantBookFilter, applySeatsFilter, applyTransmissionFilter, applyDeliveryFilter, applyMultipleDeliveryFilters } from './features';
-import { normalizeLocation, isValidArizonaCity, extractCityName, VALID_ARIZONA_CITIES } from './location';
+import {
+  normalizeLocation,
+  isValidArizonaCity,
+  extractCityName,
+  VALID_ARIZONA_CITIES,
+  PHOENIX_METRO,
+  TUCSON_METRO,
+  ACTIVE_MARKETS,
+  INACTIVE_MARKETS,
+  isSameMetro,
+  getMetroArea,
+  hasActiveInventory,
+  getNearestMarket,
+  getMetroContext,
+} from './location';
 
 // Re-export individual filters for direct imports
 export { applyNoDepositFilter } from './no-deposit';
@@ -17,7 +31,23 @@ export { applyPriceFilter } from './price-range';
 export { applyVehicleTypeFilter, applyRideshareFilter } from './vehicle-type';
 export { applyMakeFilter, applyModelFilter, normalizeMake } from './make-model';
 export { applyFeaturesFilter, applyInstantBookFilter, applySeatsFilter, applyTransmissionFilter, applyDeliveryFilter, applyMultipleDeliveryFilters } from './features';
-export { normalizeLocation, isValidArizonaCity, extractCityName, VALID_ARIZONA_CITIES } from './location';
+
+// Re-export location utilities and constants
+export {
+  normalizeLocation,
+  isValidArizonaCity,
+  extractCityName,
+  VALID_ARIZONA_CITIES,
+  PHOENIX_METRO,
+  TUCSON_METRO,
+  ACTIVE_MARKETS,
+  INACTIVE_MARKETS,
+  isSameMetro,
+  getMetroArea,
+  hasActiveInventory,
+  getNearestMarket,
+  getMetroContext,
+} from './location';
 
 /**
  * Build complete Prisma where clause from search query

@@ -2,12 +2,12 @@
 
 import { IoSparkles, IoSearch } from 'react-icons/io5'
 
-interface AISearchToggleProps {
+interface SearchToggleProps {
   mode: 'normal' | 'ai'
   onToggle: (mode: 'normal' | 'ai') => void
 }
 
-export default function AISearchToggle({ mode, onToggle }: AISearchToggleProps) {
+export default function SearchToggle({ mode, onToggle }: SearchToggleProps) {
   return (
     <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-lg">
       <button

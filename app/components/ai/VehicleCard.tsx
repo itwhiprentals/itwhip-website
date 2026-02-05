@@ -10,7 +10,7 @@ import type { VehicleSummary } from '@/app/lib/ai-booking/types'
 const SERVICE_FEE_RATE = 0.15 // 15% guest service fee
 const TAX_RATE = 0.084 // 8.4% Arizona rental tax (Phoenix default)
 
-interface AIVehicleCardProps {
+interface VehicleCardProps {
   vehicle: VehicleSummary
   onSelect: (vehicle: VehicleSummary) => void
   /** Start date for pricing calculation (ISO string) */
@@ -19,7 +19,7 @@ interface AIVehicleCardProps {
   endDate?: string | null
 }
 
-export default function AIVehicleCard({ vehicle, onSelect, startDate, endDate }: AIVehicleCardProps) {
+export default function VehicleCard({ vehicle, onSelect, startDate, endDate }: VehicleCardProps) {
   const [expanded, setExpanded] = useState(false)
 
   // Use photos array if available, fallback to single photo

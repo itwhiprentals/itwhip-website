@@ -9,17 +9,17 @@ import {
 } from 'react-icons/io5'
 import type { BookingSummary } from '@/app/lib/ai-booking/types'
 
-interface AIBookingSummaryProps {
+interface BookingSummaryProps {
   summary: BookingSummary
   onConfirm: () => void
   onChangeVehicle: () => void
 }
 
-export default function AIBookingSummary({
+export default function BookingSummaryCard({
   summary,
   onConfirm,
   onChangeVehicle,
-}: AIBookingSummaryProps) {
+}: BookingSummaryProps) {
   return (
     <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
       <SummaryHeader vehicle={summary.vehicle} />

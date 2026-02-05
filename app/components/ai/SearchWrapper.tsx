@@ -2,14 +2,14 @@
 
 import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import AISearchToggle from './AISearchToggle'
-import AIChatView from './AIChatView'
+import SearchToggle from './SearchToggle'
+import ChatView from './ChatView'
 
-interface AISearchWrapperProps {
+interface SearchWrapperProps {
   children: React.ReactNode
 }
 
-export default function AISearchWrapper({ children }: AISearchWrapperProps) {
+export default function SearchWrapper({ children }: SearchWrapperProps) {
   const searchParams = useSearchParams()
   const [mode, setMode] = useState<'normal' | 'ai'>(
     searchParams.get('mode') === 'ai' ? 'ai' : 'normal'
@@ -28,7 +28,7 @@ export default function AISearchWrapper({ children }: AISearchWrapperProps) {
     <div>
       {/* AI Toggle */}
       <div className="flex justify-center mb-4">
-        <AISearchToggle mode={mode} onToggle={setMode} />
+        <SearchToggle mode={mode} onToggle={setMode} />
       </div>
 
       {/* Normal search (filters + grid) */}
@@ -37,7 +37,7 @@ export default function AISearchWrapper({ children }: AISearchWrapperProps) {
       {/* AI search */}
       {mode === 'ai' && (
         <div className="max-w-2xl mx-auto" style={{ height: 'calc(100vh - 280px)', minHeight: '500px' }}>
-          <AIChatView
+          <ChatView
             onNavigateToBooking={handleNavigateToBooking}
             onNavigateToLogin={handleNavigateToLogin}
           />

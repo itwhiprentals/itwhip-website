@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { IoSend, IoRefresh } from 'react-icons/io5'
 
-interface AIChatInputProps {
+interface ChatInputProps {
   onSend: (message: string) => void
   onReset: () => void
   suggestions: string[]
@@ -11,13 +11,13 @@ interface AIChatInputProps {
   hasMessages: boolean
 }
 
-export default function AIChatInput({
+export default function ChatInput({
   onSend,
   onReset,
   suggestions,
   disabled,
   hasMessages,
-}: AIChatInputProps) {
+}: ChatInputProps) {
   const [value, setValue] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 

@@ -43,6 +43,11 @@ import {
   shouldTryFallback,
   getFallbackLevel,
 } from '@/app/lib/ai-booking/detection'
+import {
+  hasActiveInventory,
+  getNearestMarket,
+  extractCityName,
+} from '@/app/lib/ai-booking/filters'
 import prisma from '@/app/lib/database/prisma'
 import {
   getChoeSettings,
@@ -428,13 +433,14 @@ export async function POST(request: NextRequest) {
       weather = await fetchWeatherContext(session.location) || undefined
     }
 
-    // Build system prompt — include previous vehicles so Claude can reference them
+    // Build system prompt — include previous vehicles and location context
     const systemPrompt = buildSystemPrompt({
       session,
       isLoggedIn: !!body.userId,
       isVerified: false, // TODO: check actual verification status
       vehicles: vehicles || undefined,
       weather,
+      location: session.location,
     })
 
     // Build conversation history for Claude
@@ -528,6 +534,21 @@ export async function POST(request: NextRequest) {
       // Apply detected intents to searchQuery (fills gaps Claude missed)
       parsed.searchQuery = applyIntentsToQuery(parsed.searchQuery, detectedIntents)
       console.log('[CHOÉ DEBUG] Final searchQuery after intent injection:', JSON.stringify(parsed.searchQuery))
+
+      // Check if requested location has active inventory
+      const searchLocation = parsed.searchQuery.location || session.location
+      if (searchLocation && !hasActiveInventory(searchLocation)) {
+        const nearestInfo = getNearestMarket(searchLocation)
+        const cityName = extractCityName(searchLocation)
+        console.log(`[CHOÉ DEBUG] No inventory in ${cityName}, nearest: ${nearestInfo?.nearest}`)
+
+        // Redirect search to nearest active market
+        if (nearestInfo && nearestInfo.nearest) {
+          parsed.searchQuery.location = `${nearestInfo.nearest}, AZ`
+          // Claude will explain this in the reply via location context in system prompt
+        }
+      }
+
       vehicles = await searchVehicles(parsed.searchQuery)
       console.log('[CHOÉ DEBUG] Search returned', vehicles?.length, 'vehicles')
 
@@ -558,6 +579,7 @@ export async function POST(request: NextRequest) {
         isVerified: false,
         vehicles: vehicles.length > 0 ? vehicles : undefined,
         weather,
+        location: session.location,
       })
 
       const noResultsNote = vehicles.length === 0

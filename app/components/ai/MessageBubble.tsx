@@ -2,13 +2,13 @@
 
 import Image from 'next/image'
 
-interface AIMessageBubbleProps {
+interface MessageBubbleProps {
   role: 'user' | 'assistant'
   content: string
   isStreaming?: boolean
 }
 
-export default function AIMessageBubble({ role, content, isStreaming }: AIMessageBubbleProps) {
+export default function MessageBubble({ role, content, isStreaming }: MessageBubbleProps) {
   if (role === 'user') {
     return <UserBubble content={content} />
   }

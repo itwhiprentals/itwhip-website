@@ -3,27 +3,27 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
-import AIMessageBubble from './AIMessageBubble'
-import AIVehicleCard from './AIVehicleCard'
-import AIProgressBar from './AIProgressBar'
-import AIBookingSummary from './AIBookingSummary'
-import AIChatInput from './AIChatInput'
+import MessageBubble from './MessageBubble'
+import VehicleCard from './VehicleCard'
+import ProgressBar from './ProgressBar'
+import BookingSummary from './BookingSummary'
+import ChatInput from './ChatInput'
 import type {
   BookingSession,
   AIBookingResponse,
   VehicleSummary,
-  BookingSummary,
+  BookingSummary as BookingSummaryType,
   BookingAction,
 } from '@/app/lib/ai-booking/types'
 import { BookingState } from '@/app/lib/ai-booking/types'
 
-interface AIChatViewProps {
+interface ChatViewProps {
   onNavigateToBooking?: (vehicleId: string, startDate: string, endDate: string) => void
   onNavigateToLogin?: () => void
   onClassicSearch?: () => void
 }
 
-export default function AIChatView({ onNavigateToBooking, onNavigateToLogin, onClassicSearch }: AIChatViewProps) {
+export default function ChatView({ onNavigateToBooking, onNavigateToLogin, onClassicSearch }: ChatViewProps) {
   const [session, setSession] = useState<BookingSession | null>(null)
   const [vehicles, setVehicles] = useState<VehicleSummary[] | null>(null)
 
@@ -36,7 +36,7 @@ export default function AIChatView({ onNavigateToBooking, onNavigateToLogin, onC
       if (savedVehicles) setVehicles(JSON.parse(savedVehicles))
     } catch { /* ignore */ }
   }, [])
-  const [summary, setSummary] = useState<BookingSummary | null>(null)
+  const [summary, setSummary] = useState<BookingSummaryType | null>(null)
   const [action, setAction] = useState<BookingAction | null>(null)
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
@@ -168,7 +168,7 @@ export default function AIChatView({ onNavigateToBooking, onNavigateToLogin, onC
             transition={springTransition}
             className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden"
           >
-            <AIProgressBar state={session.state} />
+            <ProgressBar state={session.state} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -192,7 +192,7 @@ export default function AIChatView({ onNavigateToBooking, onNavigateToLogin, onC
             animate={{ opacity: 1, y: 0 }}
             transition={{ ...springTransition, delay: i === messages.length - 1 ? 0.05 : 0 }}
           >
-            <AIMessageBubble role={msg.role} content={msg.content} />
+            <MessageBubble role={msg.role} content={msg.content} />
           </motion.div>
         ))}
 
@@ -222,7 +222,7 @@ export default function AIChatView({ onNavigateToBooking, onNavigateToLogin, onC
               animate={{ opacity: 1, y: 0 }}
               transition={springTransition}
             >
-              <AIBookingSummary
+              <BookingSummary
                 summary={summary}
                 onConfirm={handleConfirm}
                 onChangeVehicle={handleChangeVehicle}
@@ -263,7 +263,7 @@ export default function AIChatView({ onNavigateToBooking, onNavigateToLogin, onC
 
       {/* Input — sticky at bottom, keyboard pushes it up via env(safe-area-inset-bottom) */}
       <div style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-        <AIChatInput
+        <ChatInput
           onSend={sendMessage}
           onReset={handleReset}
           suggestions={suggestions}
@@ -325,7 +325,7 @@ function VehicleResults({
   return (
     <div className="space-y-2">
       {vehicles.map((vehicle) => (
-        <AIVehicleCard
+        <VehicleCard
           key={vehicle.id}
           vehicle={vehicle}
           onSelect={onSelect}

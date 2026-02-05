@@ -1,8 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import AIChatViewStreaming from '@/app/components/ai-booking/AIChatViewStreaming'
-import AIChatView from '@/app/components/ai-booking/AIChatView'
+import { ChatViewStreaming, ChatView } from '@/app/components/ai'
 
 export default function TestStreamingPage() {
   const [mode, setMode] = useState<'streaming' | 'legacy'>('streaming')
@@ -36,7 +35,7 @@ export default function TestStreamingPage() {
       {/* Chat View */}
       <div className="pt-16 h-screen">
         {mode === 'streaming' ? (
-          <AIChatViewStreaming
+          <ChatViewStreaming
             onNavigateToBooking={(id, start, end) => {
               console.log('Navigate to booking:', { id, start, end })
               alert(`Would navigate to booking: ${id}`)
@@ -51,7 +50,7 @@ export default function TestStreamingPage() {
             }}
           />
         ) : (
-          <AIChatView
+          <ChatView
             onNavigateToBooking={(id, start, end) => {
               console.log('Navigate to booking:', { id, start, end })
               alert(`Would navigate to booking: ${id}`)

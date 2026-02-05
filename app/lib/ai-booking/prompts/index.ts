@@ -9,6 +9,12 @@ import { buildVehicleContext, buildWeatherContext } from './vehicle-handling';
 import { PERSONALITY_RULES, OFF_TOPIC_RULES, ALLOWED_QUESTIONS } from './behavior';
 import { RESPONSE_FORMAT, SEARCH_QUERY_EXAMPLES, FULL_RESPONSE_EXAMPLES } from './response-schema';
 import { getExamplesForPrompt } from './examples';
+import {
+  SERVICE_AREA_CONTEXT,
+  DEFAULT_DATES_BEHAVIOR,
+  buildLocationContext,
+  getActiveMarketsContext,
+} from './location-context';
 
 // Re-export individual sections for direct imports if needed
 export { IDENTITY } from './identity';
@@ -17,6 +23,12 @@ export { buildVehicleContext, buildWeatherContext } from './vehicle-handling';
 export { PERSONALITY_RULES, OFF_TOPIC_RULES, ALLOWED_QUESTIONS } from './behavior';
 export { RESPONSE_FORMAT, SEARCH_QUERY_EXAMPLES, FULL_RESPONSE_EXAMPLES } from './response-schema';
 export { EXAMPLE_CONVERSATIONS, getExamplesForPrompt } from './examples';
+export {
+  SERVICE_AREA_CONTEXT,
+  DEFAULT_DATES_BEHAVIOR,
+  buildLocationContext,
+  getActiveMarketsContext,
+} from './location-context';
 
 /**
  * Parameters for building the system prompt
@@ -27,6 +39,7 @@ export interface PromptContext {
   isVerified: boolean;
   vehicles?: VehicleSummary[];
   weather?: WeatherContext;
+  location?: string | null;
 }
 
 /**
@@ -34,15 +47,18 @@ export interface PromptContext {
  * Combines all sections based on current context
  */
 export function buildSystemPrompt(params: PromptContext): string {
-  const { session, isLoggedIn, isVerified, vehicles, weather } = params;
+  const { session, isLoggedIn, isVerified, vehicles, weather, location } = params;
 
   return [
     IDENTITY,
+    SERVICE_AREA_CONTEXT,
+    buildLocationContext(location ?? session.location),
     buildStateContext(session),
     buildUserContext(isLoggedIn, isVerified),
     vehicles?.length ? buildVehicleContext(vehicles) : '',
     weather ? buildWeatherContext(weather) : '',
     BOOKING_SEQUENCE,
+    DEFAULT_DATES_BEHAVIOR,
     PERSONALITY_RULES,
     OFF_TOPIC_RULES,
     ALLOWED_QUESTIONS,

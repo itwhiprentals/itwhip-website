@@ -9,7 +9,7 @@ import {
 } from 'react-icons/io5'
 import { BookingState } from '@/app/lib/ai-booking/types'
 
-interface AIProgressBarProps {
+interface ProgressBarProps {
   state: BookingState
 }
 
@@ -31,7 +31,7 @@ const STATE_ORDER: Record<string, number> = {
   [BookingState.READY_FOR_PAYMENT]: 5,
 }
 
-export default function AIProgressBar({ state }: AIProgressBarProps) {
+export default function ProgressBar({ state }: ProgressBarProps) {
   const currentOrder = STATE_ORDER[state] ?? 0
 
   return (
@@ -42,7 +42,6 @@ export default function AIProgressBar({ state }: AIProgressBarProps) {
         const isCurrent = currentOrder === stepOrder
         const Icon = step.icon
         const isFirst = i === 0
-        const isLast = i === STEPS.length - 1
 
         return (
           <div key={step.key} className={`flex items-center ${isFirst ? '' : 'flex-1'}`}>
@@ -87,4 +86,3 @@ export default function AIProgressBar({ state }: AIProgressBarProps) {
     </div>
   )
 }
-

@@ -157,3 +157,41 @@ function stateOrder(state: BookingState): number {
   };
   return order[state] ?? 0;
 }
+
+// =============================================================================
+// DEFAULT DATES
+// =============================================================================
+
+/**
+ * Generate default dates for search when user hasn't specified
+ * Returns tomorrow + 3 days as a reasonable default rental period
+ */
+export function getDefaultDates(): { startDate: string; endDate: string } {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const endDate = new Date(tomorrow);
+  endDate.setDate(endDate.getDate() + 3);
+
+  return {
+    startDate: tomorrow.toISOString().split('T')[0],
+    endDate: endDate.toISOString().split('T')[0],
+  };
+}
+
+/**
+ * Check if a message suggests user wants default dates
+ * e.g., "just show me", "doesn't matter", "any dates", "whatever works"
+ */
+export function wantsDefaultDates(message: string): boolean {
+  const patterns = [
+    /\bjust show\b/i,
+    /\bdoesn'?t matter\b/i,
+    /\bany date/i,
+    /\bwhatever\b/i,
+    /\bflexible\b/i,
+    /\bdon'?t care\b/i,
+    /\bwhen.?ever\b/i,
+  ];
+  return patterns.some(p => p.test(message));
+}
