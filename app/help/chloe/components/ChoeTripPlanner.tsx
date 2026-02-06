@@ -253,7 +253,7 @@ export function ChoeTripPlanner() {
             <div className={`flex-1 flex items-center justify-center gap-2 text-xs ${
               isDarkTerminal ? 'text-[#666]' : 'text-gray-500'
             }`}>
-              <Image src="/images/choe-logo.png" alt="Choé" width={20} height={20} className="rounded" />
+              <Image src="/images/choe-logo.png" alt="Choé" width={32} height={32} className="rounded" />
               <span>choé trip-planner</span>
             </div>
             {/* Dark/Light toggle */}
