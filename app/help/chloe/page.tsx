@@ -64,7 +64,7 @@ export default function ChoeHelpPage() {
       {/* Global styles for Choé page */}
       <ChoeStyles />
 
-      <div className="choe-page min-h-screen bg-white dark:bg-[#0f0f0f] transition-colors">
+      <div className="choe-page min-h-screen bg-white dark:bg-[#0f0f0f] transition-colors overflow-x-hidden">
         <Header />
 
         {/* Hero Section */}
