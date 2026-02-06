@@ -2,6 +2,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import Image from 'next/image'
 import {
   IoPhonePortraitOutline,
   IoCarOutline,
@@ -190,9 +191,7 @@ export function ChoeAuto() {
               ? 'bg-[#252525] border-[#333]'
               : 'bg-gray-100 border-gray-200'
           }`}>
-            <div className="w-10 h-10 rounded-lg bg-[#e87040]/15 flex items-center justify-center">
-              <IoMicOutline className="w-5 h-5 text-[#e87040]" />
-            </div>
+            <Image src="/images/choe-logo.png" alt="Choé" width={40} height={40} className="rounded-lg" />
             <div className="flex-1">
               <span className={`font-bold text-sm sm:text-base ${isDarkCard ? 'text-white' : 'text-gray-900'}`}>
                 Voice Commands While Driving

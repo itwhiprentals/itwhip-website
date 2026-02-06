@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import {
   IoAirplaneOutline,
   IoBedOutline,
@@ -252,7 +253,7 @@ export function ChoeTripPlanner() {
             <div className={`flex-1 flex items-center justify-center gap-2 text-xs ${
               isDarkTerminal ? 'text-[#666]' : 'text-gray-500'
             }`}>
-              <IoTerminalOutline className="w-4 h-4" />
+              <Image src="/images/choe-logo.png" alt="Choé" width={20} height={20} className="rounded" />
               <span>choé trip-planner</span>
             </div>
             {/* Dark/Light toggle */}
