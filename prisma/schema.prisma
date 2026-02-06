@@ -1748,6 +1748,27 @@ model RentalBooking {
   signerIpAddress            String?
   signerName                 String?
   signerUserAgent            String?
+
+  // ===== FLEET-FIRST APPROVAL SYSTEM =====
+  fleetStatus                String                @default("PENDING") // PENDING, APPROVED, REJECTED, NEEDS_INFO
+  fleetReviewedBy            String?
+  fleetReviewedAt            DateTime?
+  fleetNotes                 String?               @db.Text
+  hostNotifiedAt             DateTime?             // Only set when host is notified after Fleet approval
+
+  // ===== AI VERIFICATION FIELDS =====
+  aiLicenseVerified          Boolean               @default(false)
+  aiLicenseConfidence        Float?                // 0-100 confidence score
+  aiLicenseData              Json?                 // Extracted DL data: name, dob, expiry, etc.
+  aiFraudScore               Int?                  // AI-calculated fraud score
+  aiFraudFlags               Json?                 // Array of fraud indicators
+  aiVerifiedAt               DateTime?
+
+  // ===== AUTO-LOGIN TOKEN (for visitors) =====
+  autoLoginToken             String?               @unique
+  autoLoginExpiresAt         DateTime?
+  verificationSource         String?               // BOOKING_FLOW, ONBOARDING, STRIPE
+
   BookingSession             BookingSession?
   ChargeAdjustment           ChargeAdjustment[]
   Claim                      Claim[]
@@ -1794,6 +1815,59 @@ model RentalBooking {
   @@index([tripEndRequestStatus])
   @@index([tripStatus])
   @@index([verificationStatus])
+  @@index([fleetStatus])
+  @@index([autoLoginToken])
+  @@index([fleetReviewedBy])
+
+  // Relations to new booking models
+  bookingDocuments           BookingDocument[]
+  tripPhotos                 TripPhoto[]
+}
+
+// ===== BOOKING DOCUMENT MODEL =====
+// Stores uploaded documents for verification (DL, insurance, selfie)
+model BookingDocument {
+  id            String         @id @default(cuid())
+  bookingId     String
+  booking       RentalBooking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  type          String         // LICENSE_FRONT, LICENSE_BACK, INSURANCE, SELFIE
+  url           String
+  uploadedAt    DateTime       @default(now())
+  verifiedAt    DateTime?
+  verifiedBy    String?        // Fleet admin who verified
+  aiAnalysis    Json?          // AI extraction results
+
+  @@index([bookingId])
+  @@index([type])
+  @@map("booking_documents")
+}
+
+// ===== TRIP PHOTO MODEL =====
+// Stores trip start/end photos uploaded by GUEST (industry standard)
+model TripPhoto {
+  id            String         @id @default(cuid())
+  bookingId     String
+  booking       RentalBooking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  phase         String         // START, END
+  type          String         // EXTERIOR_FRONT, EXTERIOR_BACK, EXTERIOR_LEFT, EXTERIOR_RIGHT
+                               // INTERIOR_FRONT, INTERIOR_BACK, DASHBOARD, ODOMETER, FUEL_GAUGE, DAMAGE
+  uploadedBy    String         // GUEST ID (guests upload trip photos)
+  url           String
+  uploadedAt    DateTime       @default(now())
+
+  // AI Analysis
+  aiAnalysis    Json?          // { odometer: 45123, fuelLevel: 0.75, damageDetected: false }
+
+  // GPS Verification (ensures guest is at vehicle)
+  gpsLatitude   Float?
+  gpsLongitude  Float?
+  gpsVerified   Boolean        @default(false) // Within 100m of vehicle location
+
+  @@index([bookingId, phase])
+  @@index([uploadedBy])
+  @@map("trip_photos")
 }
 
 model RentalCar {
