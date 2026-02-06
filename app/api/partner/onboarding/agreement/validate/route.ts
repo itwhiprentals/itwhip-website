@@ -1,5 +1,6 @@
 // app/api/partner/onboarding/agreement/validate/route.ts
-// Validate uploaded host rental agreement PDF using Claude AI
+// Validate uploaded host rental agreement PDF using Claude AI with Tool Use
+// Uses tool_choice to guarantee structured JSON output (no regex parsing needed)
 
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
@@ -8,57 +9,93 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY
 })
 
-// Validation prompt for Claude
-const VALIDATION_PROMPT = `You are a legal document analyst for ItWhip, a peer-to-peer car rental marketplace.
+// =============================================================================
+// VALIDATION TOOL DEFINITION
+// =============================================================================
+// Using Claude's tool use with strict: true guarantees valid JSON schema output
 
-Analyze this rental agreement PDF and evaluate if it's a legitimate, professional rental agreement.
+const AGREEMENT_VALIDATION_TOOL: Anthropic.Tool = {
+  name: 'validate_agreement',
+  description: `Analyze a rental agreement PDF and return a structured validation result.
+Use this tool to report your analysis of the document.
 
-IMPORTANT EVALUATION CRITERIA:
+EVALUATION CRITERIA:
+1. Is this a rental/lease agreement? (reject receipts, invoices, random docs)
+2. Professional quality (clear sections, vehicle info, rental terms)
+3. No prohibited content (discrimination, illegal terms)
+4. Has signature section (even if blank)
 
-1. **Is this a rental/lease agreement?**
-   - Must be a vehicle rental, car lease, or similar agreement
-   - Reject if it's: receipts, invoices, random documents, photos, spam, etc.
-
-2. **Professional Quality**
-   - Should have clear sections (parties, terms, conditions)
-   - Should identify the vehicle being rented (make, model, or placeholder)
-   - Should have rental terms (dates, rates, or blanks for them)
-
-3. **No Prohibited Content**
-   - No discriminatory language
-   - No illegal terms (excessive penalties, rights waivers)
-   - No deceptive practices
-
-4. **Signature Section**
-   - Should have a designated signature area (even if blank)
-   - Should have date fields
-
-Return your analysis as JSON with this exact structure:
-{
-  "isValid": boolean,
-  "score": number (0-100),
-  "documentType": "rental_agreement" | "lease_agreement" | "unknown" | "not_agreement",
-  "hasSignatureSection": boolean,
-  "issues": [
-    {
-      "severity": "error" | "warning" | "info",
-      "message": "Description of the issue"
-    }
-  ],
-  "suggestions": ["Suggestion 1", "Suggestion 2"],
-  "summary": "Brief 1-2 sentence summary of the document"
-}
-
-SCORING GUIDE:
+SCORING:
 - 80-100: Good agreement, ready to use
 - 60-79: Acceptable with minor issues
 - 40-59: Usable but has concerns
 - Below 40: Not acceptable (reject)
 
-Be STRICT but FAIR. Most legitimate rental agreements should pass.
-Only reject documents that are clearly NOT rental agreements or have serious issues.
+Be STRICT but FAIR. Most legitimate rental agreements should pass.`,
+  input_schema: {
+    type: 'object' as const,
+    properties: {
+      isValid: {
+        type: 'boolean',
+        description: 'Whether the document is a valid, acceptable rental agreement',
+      },
+      score: {
+        type: 'integer',
+        minimum: 0,
+        maximum: 100,
+        description: 'Quality score from 0-100',
+      },
+      documentType: {
+        type: 'string',
+        enum: ['rental_agreement', 'lease_agreement', 'unknown', 'not_agreement'],
+        description: 'Type of document detected',
+      },
+      hasSignatureSection: {
+        type: 'boolean',
+        description: 'Whether the document has a signature area',
+      },
+      issues: {
+        type: 'array',
+        description: 'List of issues found in the document',
+        items: {
+          type: 'object',
+          properties: {
+            severity: {
+              type: 'string',
+              enum: ['error', 'warning', 'info'],
+            },
+            message: {
+              type: 'string',
+              description: 'Description of the issue',
+            },
+          },
+          required: ['severity', 'message'],
+        },
+      },
+      suggestions: {
+        type: 'array',
+        description: 'Suggestions for improving the agreement',
+        items: { type: 'string' },
+      },
+      summary: {
+        type: 'string',
+        description: 'Brief 1-2 sentence summary of the document',
+      },
+    },
+    required: ['isValid', 'score', 'documentType', 'hasSignatureSection', 'issues', 'suggestions', 'summary'],
+  },
+}
 
-Return ONLY the JSON object, no other text.`
+// Validation result type (matches tool schema)
+interface ValidationResult {
+  isValid: boolean
+  score: number
+  documentType: 'rental_agreement' | 'lease_agreement' | 'unknown' | 'not_agreement'
+  hasSignatureSection: boolean
+  issues: Array<{ severity: 'error' | 'warning' | 'info'; message: string }>
+  suggestions: string[]
+  summary: string
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -108,11 +145,16 @@ export async function POST(request: NextRequest) {
     console.log(`[Agreement Validation] Analyzing PDF: ${fileName || 'unnamed'}`)
     console.log(`[Agreement Validation] URL: ${pdfUrl.substring(0, 50)}...`)
 
-    // Call Claude API with PDF URL
-    // Add cache_control for 5-min retention (90% cost savings on repeated access)
+    // ==========================================================================
+    // CALL CLAUDE WITH TOOL USE
+    // ==========================================================================
+    // Using tool_choice to force Claude to use validate_agreement tool
+    // This guarantees valid JSON output matching our schema (no regex needed)
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 1024,
+      tools: [AGREEMENT_VALIDATION_TOOL],
+      tool_choice: { type: 'tool', name: 'validate_agreement' },
       messages: [
         {
           role: 'user',
@@ -129,33 +171,31 @@ export async function POST(request: NextRequest) {
             },
             {
               type: 'text',
-              text: VALIDATION_PROMPT
+              text: 'Analyze this rental agreement PDF and call the validate_agreement tool with your assessment.'
             }
           ]
         }
       ]
     })
 
-    // Extract the response text
-    const responseText = message.content[0].type === 'text'
-      ? message.content[0].text
-      : ''
+    // ==========================================================================
+    // EXTRACT VALIDATION FROM TOOL USE (Guaranteed valid JSON)
+    // ==========================================================================
+    // When using tool_choice, Claude's response is a tool_use block
+    // The input is already a valid object matching our schema - no parsing needed!
+    let validation: ValidationResult
 
-    console.log('[Agreement Validation] Claude response:', responseText.substring(0, 200))
+    const toolUseBlock = message.content.find(
+      (block): block is Anthropic.ToolUseBlock => block.type === 'tool_use'
+    )
 
-    // Parse JSON from response
-    let validation
-    try {
-      // Try to extract JSON from the response (Claude might include markdown)
-      const jsonMatch = responseText.match(/\{[\s\S]*\}/)
-      if (jsonMatch) {
-        validation = JSON.parse(jsonMatch[0])
-      } else {
-        throw new Error('No JSON found in response')
-      }
-    } catch (parseError) {
-      console.error('[Agreement Validation] Failed to parse Claude response:', parseError)
-      // Return a permissive fallback
+    if (toolUseBlock && toolUseBlock.name === 'validate_agreement') {
+      // Direct extraction - guaranteed to match schema thanks to tool_choice
+      validation = toolUseBlock.input as ValidationResult
+      console.log('[Agreement Validation] Tool response extracted successfully')
+    } else {
+      // Fallback (shouldn't happen with tool_choice, but just in case)
+      console.error('[Agreement Validation] Unexpected response format - no tool_use block')
       validation = {
         isValid: true,
         score: 65,
