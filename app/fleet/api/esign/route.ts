@@ -119,6 +119,7 @@ export async function GET(request: NextRequest) {
           agreementViewedAt: true,
           agreementSignedAt: true,
           agreementExpiresAt: true,
+          agreementSignedPdfUrl: true,  // Include signed PDF URL for viewing
           renter: {
             select: { name: true, email: true }
           },
