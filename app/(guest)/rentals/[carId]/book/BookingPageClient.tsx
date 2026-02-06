@@ -2226,9 +2226,11 @@ export default function BookingPageClient({ carId }: { carId: string }) {
             <div className="text-sm">
               <p className="font-medium text-amber-900 dark:text-amber-100 mb-2">Important Booking Information</p>
               <ul className="space-y-1 text-xs text-amber-800 dark:text-amber-200">
-                <li>• <strong>Secure identity verification:</strong> We use Stripe Identity to verify your driver's license and match your selfie for your protection</li>
-                <li>• <strong>No charges until approved:</strong> Your card is securely saved but won't be charged until the host approves your booking</li>
-                <li>• <strong>Peer-to-peer rental:</strong> You're renting directly from a verified vehicle owner through our trusted platform</li>
+                <li>• <strong>Book without an account:</strong> Complete your booking as a guest - we&apos;ll create your account automatically using your driver&apos;s license info</li>
+                <li>• <strong>Quick verification:</strong> Upload your driver&apos;s license for instant verification - no redirects or lengthy forms{' '}
+                  <a href="/help/identity-verification" className="text-amber-700 dark:text-amber-300 underline hover:no-underline">Learn more</a>
+                </li>
+                <li>• <strong>No charges until approved:</strong> Your card is securely saved but won&apos;t be charged until the host approves your booking</li>
               </ul>
             </div>
           </div>
@@ -2710,18 +2712,15 @@ export default function BookingPageClient({ carId }: { carId: string }) {
         
         {/* Identity Verification Section */}
         <div ref={documentsRef} className="bg-white dark:bg-gray-800 rounded-lg p-6 mb-4 shadow-sm border border-gray-300 dark:border-gray-600">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-1 flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <IoShieldCheckmarkOutline className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             Verify Your Identity
-            {(userProfile?.documentsVerified || userProfile?.stripeIdentityStatus === 'verified') && (
+            {(userProfile?.documentsVerified || userProfile?.stripeIdentityStatus === 'verified' || aiVerificationResult?.passed) && (
               <span className="ml-2 text-sm text-green-600 dark:text-green-400 font-normal">
                 ✓ Verified
               </span>
             )}
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-            Verify once, instant bookings forever + unlock your $250 Credit and Bonus
-          </p>
 
           {/* 🔐 NOT LOGGED IN - VERIFY FIRST, ACCOUNT LATER */}
           {sessionStatus === 'unauthenticated' ? (
@@ -3290,135 +3289,6 @@ export default function BookingPageClient({ carId }: { carId: string }) {
               </span>
             </div>
           </div>
-          )}
-
-          {/* ========== INSURANCE CARD (OPTIONAL) - Collapsed by default per Baymard ========== */}
-          {/* Show verified state if insurance is verified */}
-          {userProfile?.insuranceVerified ? (
-            <div className="mb-6 p-4 border-2 border-green-500 bg-green-50 dark:bg-green-900/10 rounded-lg">
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <IoCheckmarkCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">Insurance Verified</p>
-                </div>
-                <p className="text-sm text-gray-700 dark:text-gray-300">
-                  {userProfile.insuranceProvider || 'Insurance on file'}
-                </p>
-              </div>
-              <div className="mt-3 flex items-center justify-center gap-2 bg-green-100 dark:bg-green-900/30 px-3 py-2 rounded text-xs">
-                <span className="text-green-700 dark:text-green-300">
-                  50% deposit discount applied! Your deposit is ${(savedBookingDetails?.pricing?.deposit || 0) / 2}
-                </span>
-              </div>
-            </div>
-          ) : insuranceUploaded ? (
-            /* Show uploaded state if insurance was uploaded this session */
-            <div className="mb-6 p-4 border-2 border-green-500 bg-green-50 dark:bg-green-900/10 rounded-lg">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center bg-green-500">
-                    <IoCheckmarkOutline className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">Insurance Card Uploaded</p>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">Pending verification</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <a
-                    href={insurancePhotoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
-                  >
-                    <IoEyeOutline className="w-4 h-4" />
-                    View
-                  </a>
-                  <input
-                    ref={insuranceInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0]
-                      if (file) handleFileUpload(file, 'insurance')
-                    }}
-                    className="hidden"
-                  />
-                  <button
-                    onClick={() => insuranceInputRef.current?.click()}
-                    disabled={isUploading}
-                    className="px-3 py-1.5 bg-gray-200 text-gray-700 text-xs rounded hover:bg-gray-300 transition-colors disabled:opacity-50"
-                  >
-                    Replace
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : (
-            /* Collapsed by default - show expandable link */
-            <div className="mb-6">
-              {!showInsuranceUpload ? (
-                /* Collapsed state - just a link, centered on mobile */
-                <div className="flex justify-center">
-                  <button
-                    onClick={() => setShowInsuranceUpload(true)}
-                    className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline transition-colors text-center"
-                  >
-                    Have your own auto insurance? Upload to save 50% on deposit →
-                  </button>
-                </div>
-              ) : (
-                /* Expanded state - show upload UI */
-                <div className="p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-100 dark:bg-gray-700">
-                        <IoDocumentTextOutline className="w-5 h-5 text-gray-400" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">
-                          Insurance Card
-                          <span className="text-xs font-normal text-gray-500 dark:text-gray-400 ml-1">(Optional)</span>
-                        </p>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">
-                          Upload for 50% deposit discount
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => setShowInsuranceUpload(false)}
-                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                    >
-                      <IoCloseCircleOutline className="w-5 h-5" />
-                    </button>
-                  </div>
-
-                  <input
-                    ref={insuranceInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0]
-                      if (file) handleFileUpload(file, 'insurance')
-                    }}
-                    className="hidden"
-                  />
-
-                  <button
-                    onClick={() => insuranceInputRef.current?.click()}
-                    disabled={isUploading}
-                    className="w-full py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:border-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    <IoCameraOutline className="w-5 h-5" />
-                    {isUploading ? 'Uploading...' : 'Click to upload insurance card'}
-                  </button>
-
-                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 text-center">
-                    JPG, PNG or PDF • Max 10MB
-                  </p>
-                </div>
-              )}
-            </div>
           )}
 
           {/* Price Summary - Credits/Bonus/Deposit Wallet applied inline below */}

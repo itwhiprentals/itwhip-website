@@ -1,6 +1,6 @@
 // app/(guest)/rentals/[carId]/book/components/VisitorIdentityVerify.tsx
-// AI-powered DL verification for visitors (not logged in)
-// Uses Claude Vision for quick verification (~$0.02) instead of Stripe Identity ($1.50)
+// Quick DL verification for visitors (not logged in)
+// Used for booking onboarding - full Stripe Identity verification happens post-booking
 
 'use client'
 
@@ -8,7 +8,6 @@ import { useState, useRef } from 'react'
 import {
   IoCloudUploadOutline,
   IoCheckmarkCircle,
-  IoWarningOutline,
   IoIdCardOutline,
   IoPersonOutline,
   IoShieldCheckmarkOutline,
@@ -177,19 +176,7 @@ export function VisitorIdentityVerify({
   const isVerified = verificationResult?.passed
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-      <div className="flex items-center gap-2 mb-4">
-        <IoIdCardOutline className="text-xl text-orange-500" />
-        <h3 className="font-semibold text-gray-900 dark:text-white">
-          Verify Your Identity
-        </h3>
-        {isVerified && (
-          <span className="ml-auto flex items-center gap-1 text-green-600 text-sm">
-            <IoCheckmarkCircle className="text-lg" />
-            Verified
-          </span>
-        )}
-      </div>
+    <div>
 
       {/* Already verified */}
       {isVerified ? (
@@ -207,9 +194,6 @@ export function VisitorIdentityVerify({
                   <p>Expires: {verificationResult.data.expiration}</p>
                 </div>
               )}
-              <p className="text-xs text-green-600 dark:text-green-400 mt-2">
-                Confidence: {((verificationResult?.confidence || 0) * 100).toFixed(0)}%
-              </p>
             </div>
             <button
               onClick={resetVerification}
@@ -224,7 +208,7 @@ export function VisitorIdentityVerify({
         <>
           {/* Upload instructions */}
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-            Upload photos of your driver's license for quick AI verification.
+            Upload photos of your driver&apos;s license for quick verification.
           </p>
 
           {/* Upload grid */}
@@ -391,7 +375,7 @@ export function VisitorIdentityVerify({
 
           {/* Info text */}
           <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-3">
-            AI verification takes just a few seconds. Your data is encrypted and secure.
+            Verification takes just a few seconds. Your data is encrypted and secure.
           </p>
         </>
       )}
