@@ -348,9 +348,15 @@ function WelcomeMessage() {
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
         Find your perfect ride
       </h3>
-      <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs mx-auto">
+      <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs mx-auto mb-3">
         Tell me what you&apos;re looking for and I&apos;ll find the best car for you in Arizona.
       </p>
+      <a
+        href="/help/chloe"
+        className="text-[10px] text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 underline underline-offset-2"
+      >
+        Learn about Choé
+      </a>
     </div>
   )
 }

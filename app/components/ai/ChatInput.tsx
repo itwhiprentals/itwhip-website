@@ -89,6 +89,13 @@ export default function ChatInput({
           <IoSend size={16} />
         </button>
       </div>
+
+      {/* Disclaimer */}
+      <div className="text-center pb-2">
+        <p className="text-[9px] text-gray-400 dark:text-gray-500">
+          Choé can make mistakes. Verify booking details before confirming.
+        </p>
+      </div>
     </div>
   )
 }
