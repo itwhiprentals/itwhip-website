@@ -49,6 +49,9 @@ import RentalAgreementModal from '@/app/(guest)/rentals/components/modals/Rental
 import InsuranceRequirementsModal from '@/app/(guest)/rentals/components/modals/InsuranceRequirementsModal'
 import TrustSafetyModal from '@/app/(guest)/rentals/components/modals/TrustSafetyModal'
 
+// Import Phase 14 booking UI components
+import { VisitorIdentityVerify, GuestIdentityVerify, InsurancePill } from './components'
+
 // Stripe Payment Element for Apple Pay, Google Pay, and Card payments
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
@@ -322,6 +325,23 @@ export default function BookingPageClient({ carId }: { carId: string }) {
     type: 'guest' | 'host' | null
     verified: boolean
     email: string
+  } | null>(null)
+
+  // Phase 14: AI-powered DL verification for visitors (replaces Stripe $1.50 check with ~$0.02 AI check)
+  const [aiVerificationResult, setAiVerificationResult] = useState<{
+    success: boolean
+    passed: boolean
+    data?: {
+      name: string
+      dob: string
+      licenseNumber: string
+      expiration: string
+      state: string
+      isExpired: boolean
+    }
+    confidence?: number
+    redFlags?: string[]
+    error?: string
   } | null>(null)
   
   // Payment form states
@@ -972,7 +992,8 @@ export default function BookingPageClient({ carId }: { carId: string }) {
     }
 
     // ✅ Check if identity is verified (for non-logged-in users OR users without verification)
-    const userIsVerified = userProfile?.documentsVerified || userProfile?.stripeIdentityStatus === 'verified'
+    // Phase 14: Also check AI verification for visitors (aiVerificationResult.passed)
+    const userIsVerified = userProfile?.documentsVerified || userProfile?.stripeIdentityStatus === 'verified' || aiVerificationResult?.passed
     if (!userIsVerified && sessionStatus === 'unauthenticated') {
       return { allowed: false }  // No reason - user sees Verify Identity section
     }
@@ -1083,10 +1104,11 @@ export default function BookingPageClient({ carId }: { carId: string }) {
   // VALIDATION CHECKS
   // ============================================
   
-  // Check if identity is verified (Stripe Identity or manual documents)
+  // Check if identity is verified (Stripe Identity, manual documents, or Phase 14 AI verification)
   // Note: Booking insurance is REQUIRED (validated in checkBookingEligibility)
   // Personal insurance card upload is OPTIONAL (for deposit discount)
-  const isIdentityVerified = userProfile?.documentsVerified || userProfile?.stripeIdentityStatus === 'verified'
+  // Phase 14: Also check AI verification for visitors (aiVerificationResult.passed)
+  const isIdentityVerified = userProfile?.documentsVerified || userProfile?.stripeIdentityStatus === 'verified' || aiVerificationResult?.passed
   
   // Check if this is a $0 booking (credits/discounts cover full amount + deposit)
   // Stripe requires minimum $0.50, so anything below that is effectively free
@@ -2750,7 +2772,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                 </div>
               )}
 
-              {/* Main verification card */}
+              {/* Main verification card - Phase 14: AI-powered DL verification */}
               {!existingAccountInfo?.exists && (
                 <>
                   {/* Show message if driver info not complete */}
@@ -2763,20 +2785,6 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                     </div>
                   ) : (
                     <>
-                      <div className="flex items-start space-x-3 mb-4">
-                        <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-                          <IoShieldCheckmarkOutline className="w-5 h-5 text-gray-400" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">
-                            Quick Identity Check
-                          </p>
-                          <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
-                            Takes ~2 minutes • Verify once, book forever
-                          </p>
-                        </div>
-                      </div>
-
                       {/* Using email from Primary Driver Info */}
                       <div className={`mb-4 p-3 rounded-lg ${
                         emailValidation.isValid
@@ -2816,96 +2824,18 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                         )}
                       </div>
 
-                      {/* Verification steps */}
-                      <ul className="text-xs text-gray-500 dark:text-gray-400 mb-4 space-y-1">
-                        <li className="flex items-center gap-1.5">
-                          <span className="w-4 h-4 rounded-full border border-gray-300 dark:border-gray-500 flex items-center justify-center text-[8px]">1</span>
-                          Photo of Driver&apos;s License (front & back)
-                        </li>
-                        <li className="flex items-center gap-1.5">
-                          <span className="w-4 h-4 rounded-full border border-gray-300 dark:border-gray-500 flex items-center justify-center text-[8px]">2</span>
-                          Selfie to match your ID
-                        </li>
-                        <li className="flex items-center gap-1.5">
-                          <span className="w-4 h-4 rounded-full border border-gray-300 dark:border-gray-500 flex items-center justify-center text-[8px]">3</span>
-                          Instant verification via Stripe
-                        </li>
-                      </ul>
-
-                      {identityError && (
-                        <p className="text-xs text-red-600 dark:text-red-400 mb-3">
-                          {identityError}
-                        </p>
-                      )}
-
-                      {/* Verify button */}
-                      <button
-                        onClick={async () => {
-                          // Use the email validation system
-                          if (!driverEmail || !emailValidation.isValid) {
-                            if (emailValidation.suggestion) {
-                              setIdentityError(`Email typo detected: ${emailValidation.suggestion}`)
-                            } else if (emailValidation.error) {
-                              setIdentityError(emailValidation.error)
-                            } else {
-                              setIdentityError('Please enter a valid email in Primary Driver Information')
-                            }
-                            return
-                          }
-
-                          setIsVerifyingIdentity(true)
-                          setIdentityError(null)
-
-                          try {
-                            const response = await fetch('/api/identity/verify-guest', {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({
-                                email: driverEmail,
-                                returnUrl: `${window.location.origin}/rentals/${carId}/book`,
-                                carId
-                              })
-                            })
-
-                            const data = await response.json()
-
-                            // Check if existing account was found
-                            if (data.existingAccount) {
-                              setExistingAccountInfo({
-                                exists: true,
-                                type: data.accountType,
-                                verified: data.verified || false,
-                                email: data.email
-                              })
-                              setIsVerifyingIdentity(false)
-                              return
-                            }
-
-                            if (!response.ok) {
-                              throw new Error(data.error || 'Failed to start verification')
-                            }
-
-                            // Redirect to Stripe Identity verification
-                            if (data.url) {
-                              window.location.href = data.url
-                            }
-                          } catch (err) {
-                            setIdentityError(err instanceof Error ? err.message : 'Failed to start verification')
-                            setIsVerifyingIdentity(false)
+                      {/* Phase 14: AI-powered DL verification (~$0.02 instead of $1.50 Stripe) */}
+                      <VisitorIdentityVerify
+                        onVerificationComplete={(result) => {
+                          setAiVerificationResult(result)
+                          if (result.passed && result.data) {
+                            // Store DL data for booking submission
+                            console.log('[Booking] AI DL verification passed:', result.data)
                           }
                         }}
-                        disabled={isVerifyingIdentity}
-                        className="w-full px-4 py-2.5 bg-black text-white text-sm rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                      >
-                        {isVerifyingIdentity ? (
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <>
-                            <IoShieldCheckmarkOutline className="w-4 h-4" />
-                            <span>Verify My Identity</span>
-                          </>
-                        )}
-                      </button>
+                        driverName={`${driverFirstName} ${driverLastName}`.trim()}
+                        disabled={!emailValidation.isValid}
+                      />
                     </>
                   )}
 
@@ -3173,7 +3103,14 @@ export default function BookingPageClient({ carId }: { carId: string }) {
             </>
           )}
         </div>
-        
+
+        {/* Phase 14: Insurance Pill - Prompts users to upload insurance for deposit discount */}
+        <InsurancePill
+          userProfile={userProfile}
+          isLoggedIn={sessionStatus === 'authenticated'}
+          disabled={!isIdentityVerified}
+        />
+
         {/* Payment Section */}
         <div
           ref={paymentRef}
