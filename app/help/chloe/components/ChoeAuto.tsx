@@ -41,13 +41,13 @@ const voiceCommands = [
 ]
 
 export function ChoeAuto() {
-  const [isInView, setIsInView] = useState(false)
   const [hasAnimated, setHasAnimated] = useState(false)
   const [isDarkCard, setIsDarkCard] = useState(true)
   const [currentCommand, setCurrentCommand] = useState(-1)
   const [typedCommand, setTypedCommand] = useState('')
   const [showResponse, setShowResponse] = useState<boolean[]>([false, false, false])
   const [isComplete, setIsComplete] = useState(false)
+  const [animationTrigger, setAnimationTrigger] = useState(0)
   const sectionRef = useRef<HTMLElement>(null)
 
   // Intersection observer
@@ -55,8 +55,8 @@ export function ChoeAuto() {
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting && !hasAnimated) {
-          setIsInView(true)
           setHasAnimated(true)
+          setAnimationTrigger(1)
         }
       },
       { threshold: 0.3 }
@@ -71,7 +71,7 @@ export function ChoeAuto() {
 
   // Start animation sequence
   useEffect(() => {
-    if (!isInView) return
+    if (animationTrigger === 0) return
 
     // Start first command after a short delay
     const startTimeout = setTimeout(() => {
@@ -79,7 +79,7 @@ export function ChoeAuto() {
     }, 500)
 
     return () => clearTimeout(startTimeout)
-  }, [isInView])
+  }, [animationTrigger])
 
   // Typing animation for current command
   useEffect(() => {
@@ -123,11 +123,8 @@ export function ChoeAuto() {
     setTypedCommand('')
     setShowResponse([false, false, false])
     setIsComplete(false)
-    setHasAnimated(false)
-    setTimeout(() => {
-      setIsInView(true)
-      setHasAnimated(true)
-    }, 100)
+    // Trigger animation restart with new trigger value
+    setAnimationTrigger(prev => prev + 1)
   }
 
   return (

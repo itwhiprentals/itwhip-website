@@ -46,9 +46,9 @@ export function ChoeTripPlanner() {
   const [carIndex, setCarIndex] = useState(0)
   const [dinnerIndex, setDinnerIndex] = useState(0)
   const [showReady, setShowReady] = useState(false)
-  const [isInView, setIsInView] = useState(false)
   const [hasAnimated, setHasAnimated] = useState(false)
   const [isDarkTerminal, setIsDarkTerminal] = useState(true)
+  const [animationTrigger, setAnimationTrigger] = useState(0)
   const sectionRef = useRef<HTMLElement>(null)
 
   // Reset animation to replay
@@ -63,12 +63,8 @@ export function ChoeTripPlanner() {
     setCarIndex(0)
     setDinnerIndex(0)
     setShowReady(false)
-    setHasAnimated(false)
-    // Trigger animation restart
-    setTimeout(() => {
-      setIsInView(true)
-      setHasAnimated(true)
-    }, 100)
+    // Trigger animation restart with new trigger value
+    setAnimationTrigger(prev => prev + 1)
   }
 
   // Intersection observer to trigger animation when in view
@@ -76,8 +72,8 @@ export function ChoeTripPlanner() {
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting && !hasAnimated) {
-          setIsInView(true)
           setHasAnimated(true)
+          setAnimationTrigger(1)
         }
       },
       { threshold: 0.3 }
@@ -92,7 +88,7 @@ export function ChoeTripPlanner() {
 
   // Typing animation
   useEffect(() => {
-    if (!isInView) return
+    if (animationTrigger === 0) return
 
     let i = 0
     const typeInterval = setInterval(() => {
@@ -106,7 +102,7 @@ export function ChoeTripPlanner() {
     }, 35)
 
     return () => clearInterval(typeInterval)
-  }, [isInView])
+  }, [animationTrigger])
 
   // Thinking dots animation
   useEffect(() => {
