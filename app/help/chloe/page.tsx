@@ -9,6 +9,7 @@ import {
   ChoeHero,
   ChoeAbout,
   ChoeHowItWorks,
+  ChoeShowcase,
   ChoeFeatures,
   ChoeTripPlanner,
   ChoeCommerce,
@@ -75,6 +76,9 @@ export default function ChoeHelpPage() {
 
         {/* How it works - 7 step flow */}
         <ChoeHowItWorks />
+
+        {/* Screenshots showing Choé in action */}
+        <ChoeShowcase />
 
         {/* Smart Features Grid */}
         <ChoeFeatures />
