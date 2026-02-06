@@ -23,7 +23,12 @@ import {
   IoRocketOutline,
   IoLockClosedOutline,
   IoFingerPrintOutline,
-  IoServerOutline
+  IoServerOutline,
+  IoLinkOutline,
+  IoDownloadOutline,
+  IoTrashOutline,
+  IoWarningOutline,
+  IoSwapHorizontalOutline
 } from 'react-icons/io5'
 
 export const metadata: Metadata = {
@@ -598,6 +603,165 @@ export default function GuestAccountPage() {
                     Stripe is PCI-DSS Level 1 certified (highest security standard). You can request deletion of your data anytime by contacting support.
                   </p>
                 </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Account Linking */}
+        <section className="py-8 bg-white dark:bg-gray-800">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="mb-6">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <IoLinkOutline className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500 flex-shrink-0" />
+                Account Linking
+              </h2>
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1 pl-7 sm:pl-8">Connect your guest and host accounts</p>
+            </div>
+
+            <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
+              <div className="flex items-start gap-4 mb-4">
+                <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <IoSwapHorizontalOutline className="w-6 h-6 text-purple-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Switch Between Guest & Host</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Are you also a host on ItWhip? Link your guest and host accounts to seamlessly switch between roles.
+                    Use the role switcher in the header to toggle between your guest profile (for booking cars) and your host dashboard (for managing your fleet).
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center gap-2 mb-2">
+                    <IoPersonOutline className="w-5 h-5 text-orange-600" />
+                    <h4 className="font-medium text-gray-900 dark:text-white text-sm">One Identity</h4>
+                  </div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    Since one driver&apos;s license equals one person, you can only link one host account to your guest profile and vice versa.
+                  </p>
+                </div>
+
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center gap-2 mb-2">
+                    <IoCarSportOutline className="w-5 h-5 text-blue-600" />
+                    <h4 className="font-medium text-gray-900 dark:text-white text-sm">Why Hosts Need Guest Accounts</h4>
+                  </div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    Hosts cannot book cars with their host account. To rent a vehicle, hosts must use a linked guest account under the same identity.
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                <p className="text-sm text-blue-800 dark:text-blue-200">
+                  <strong>How to link:</strong> Go to your profile Settings → Account Linking, enter your other account&apos;s email, and verify with a code sent to that email.
+                  Once linked, you&apos;ll see a role switcher appear in the header.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Data Export & Account Deletion */}
+        <section className="py-8">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="mb-6">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <IoDocumentTextOutline className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500 flex-shrink-0" />
+                Your Data & Privacy Rights
+              </h2>
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1 pl-7 sm:pl-8">Export your data or delete your account anytime</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Download My Data */}
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
+                <div className="flex items-start gap-3 mb-4">
+                  <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <IoDownloadOutline className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-sm sm:text-base text-gray-900 dark:text-white mb-1">Download My Data</h3>
+                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                      Export a PDF containing all your account information:
+                    </p>
+                  </div>
+                </div>
+                <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1.5 ml-13 mb-4">
+                  <li className="flex items-start gap-2">
+                    <IoCheckmarkCircle className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <span>Profile information (name, email, phone)</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <IoCheckmarkCircle className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <span>Complete booking history</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <IoCheckmarkCircle className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <span>Reviews you&apos;ve written</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <IoCheckmarkCircle className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <span>Saved payment methods (masked)</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <IoCheckmarkCircle className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <span>Login history & active sessions</span>
+                  </li>
+                </ul>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Find this in: <strong>Profile → Settings → Download My Data</strong>
+                </p>
+              </div>
+
+              {/* Delete Account */}
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
+                <div className="flex items-start gap-3 mb-4">
+                  <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <IoTrashOutline className="w-5 h-5 text-red-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-sm sm:text-base text-gray-900 dark:text-white mb-1">Delete Account</h3>
+                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                      Permanently delete your account if you no longer need it.
+                    </p>
+                  </div>
+                </div>
+                <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3 border border-amber-200 dark:border-amber-800 mb-4">
+                  <div className="flex items-start gap-2">
+                    <IoWarningOutline className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs font-medium text-amber-800 dark:text-amber-200">30-Day Grace Period</p>
+                      <p className="text-xs text-amber-700 dark:text-amber-300">
+                        Your account is scheduled for deletion, not immediately removed. Changed your mind? Simply log in within 30 days to cancel.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1.5 mb-4">
+                  <li className="flex items-start gap-2">
+                    <IoCheckmarkCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                    <span>Profile & personal information deleted</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <IoCheckmarkCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                    <span>Booking history & trip records removed</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <IoCheckmarkCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                    <span>Saved payment methods cleared</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <IoCheckmarkCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                    <span>Uploaded documents purged</span>
+                  </li>
+                </ul>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Find this in: <strong>Profile → Settings → Danger Zone</strong>
+                </p>
               </div>
             </div>
           </div>
