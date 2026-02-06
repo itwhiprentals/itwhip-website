@@ -63,6 +63,10 @@ import {
   getExtendedThinkingConfig,
   enhancePromptForThinking,
 } from '@/app/lib/ai-booking/extended-thinking'
+import {
+  BOOKING_TOOLS,
+  executeTools,
+} from '@/app/lib/ai-booking/tools'
 
 // =============================================================================
 // COST CALCULATION (with prompt caching support)
@@ -488,36 +492,43 @@ export async function POST(request: NextRequest) {
     let vehicles: VehicleSummary[] | null = body.previousVehicles || null
     let weather = undefined
 
-    // Direct weather question — answer without calling Claude (cost optimization)
-    if (isDirectWeatherQuestion(body.message) && featureFlags.weatherEnabled) {
-      const city = extractCityFromWeatherQuestion(body.message) || session.location || 'phoenix';
-      const weatherData = await fetchWeatherContext(city);
-      if (weatherData) {
-        const reply = buildWeatherReply(weatherData);
-        session = addMessage(session, 'assistant', reply);
+    // ==========================================================================
+    // WEATHER HANDLING (when tool calling disabled, use hardcoded fallback)
+    // ==========================================================================
+    // When toolUseEnabled=true, Claude will call get_weather tool via agentic loop.
+    // When toolUseEnabled=false, we handle weather directly here for cost savings.
+    if (!featureFlags.toolUseEnabled) {
+      // Direct weather question — answer without calling Claude (cost optimization)
+      if (isDirectWeatherQuestion(body.message) && featureFlags.weatherEnabled) {
+        const city = extractCityFromWeatherQuestion(body.message) || session.location || 'phoenix';
+        const weatherData = await fetchWeatherContext(city);
+        if (weatherData) {
+          const reply = buildWeatherReply(weatherData);
+          session = addMessage(session, 'assistant', reply);
 
-        // Log assistant message with get_weather tool tracked
-        await logMessage(conversationId, 'assistant', reply, 0, undefined, ['get_weather'], 0)
-        await updateConversationStats(conversationId, session, 0, 0)
+          // Log assistant message with get_weather tool tracked
+          await logMessage(conversationId, 'assistant', reply, 0, undefined, ['get_weather'], 0)
+          await updateConversationStats(conversationId, session, 0, 0)
 
-        return NextResponse.json({
-          reply,
-          session,
-          vehicles: body.previousVehicles || null,
-          summary: null,
-          action: null,
-          suggestions: getSuggestions(session.state),
-        } satisfies AIBookingResponse);
+          return NextResponse.json({
+            reply,
+            session,
+            vehicles: body.previousVehicles || null,
+            summary: null,
+            action: null,
+            suggestions: getSuggestions(session.state),
+          } satisfies AIBookingResponse);
+        }
       }
-    }
 
-    // Check weather relevance for vehicle recommendations (before calling Claude)
-    if (
-      featureFlags.weatherEnabled &&
-      isWeatherRelevant(body.message) &&
-      session.location
-    ) {
-      weather = await fetchWeatherContext(session.location) || undefined
+      // Check weather relevance for vehicle recommendations (before calling Claude)
+      if (
+        featureFlags.weatherEnabled &&
+        isWeatherRelevant(body.message) &&
+        session.location
+      ) {
+        weather = await fetchWeatherContext(session.location) || undefined
+      }
     }
 
     // Build system prompt — include previous vehicles and location context
@@ -574,6 +585,7 @@ export async function POST(request: NextRequest) {
       : systemPrompt
 
     // Build request options
+    const useToolCalling = featureFlags.toolUseEnabled && !thinkingConfig.enabled // Tool use not compatible with extended thinking
     const requestOptions: Parameters<typeof client.messages.create>[0] = {
       model: modelConfig.modelId,
       max_tokens: thinkingConfig.enabled ? 16000 : modelConfig.maxTokens,
@@ -586,6 +598,8 @@ export async function POST(request: NextRequest) {
         },
       ],
       messages: claudeMessages,
+      // Add tools for agentic search/weather (when enabled and not using thinking)
+      ...(useToolCalling && { tools: BOOKING_TOOLS }),
       // Add extended thinking for complex queries (Claude 4.5 Sonnet/Opus only)
       ...(thinkingConfig.enabled && {
         // @ts-expect-error - thinking is a new API feature
@@ -595,6 +609,8 @@ export async function POST(request: NextRequest) {
         },
       }),
     }
+
+    console.log('[CHOÉ DEBUG] Tool calling:', useToolCalling ? 'ENABLED' : 'disabled')
 
     // Add structured outputs for Claude 4.5 models (guarantees valid JSON)
     if (useStructuredOutputs) {
@@ -607,17 +623,106 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const claudeResponse = await client.messages.create(requestOptions) as Anthropic.Message
+    let claudeResponse = await client.messages.create(requestOptions) as Anthropic.Message
 
     // Track token usage with cache awareness
-    const inputTokens = claudeResponse.usage?.input_tokens || 0
-    const outputTokens = claudeResponse.usage?.output_tokens || 0
+    let inputTokens = claudeResponse.usage?.input_tokens || 0
+    let outputTokens = claudeResponse.usage?.output_tokens || 0
     // @ts-expect-error - cache_read_input_tokens exists on responses when caching is used
-    const cachedTokens = claudeResponse.usage?.cache_read_input_tokens || 0
+    let cachedTokens = claudeResponse.usage?.cache_read_input_tokens || 0
     totalTokensUsed += inputTokens + outputTokens
     let totalCachedTokens = cachedTokens
 
-    // Extract text from Claude's response
+    // Track tools used in this turn
+    let toolsUsed: string[] = []
+    let weatherFromTool: unknown = null
+
+    // ==========================================================================
+    // AGENTIC TOOL LOOP - Claude decides when to call search/weather
+    // ==========================================================================
+    if (useToolCalling) {
+      let loopCount = 0
+      const MAX_TOOL_LOOPS = 5 // Prevent infinite loops
+
+      while (claudeResponse.stop_reason === 'tool_use' && loopCount < MAX_TOOL_LOOPS) {
+        loopCount++
+        console.log(`[CHOÉ DEBUG] Tool loop iteration ${loopCount}, stop_reason:`, claudeResponse.stop_reason)
+
+        // Extract tool use blocks from response
+        const toolUseBlocks = claudeResponse.content.filter(
+          (block): block is Anthropic.ToolUseBlock => block.type === 'tool_use'
+        )
+
+        if (toolUseBlocks.length === 0) break
+
+        // Log which tools are being called
+        const toolNames = toolUseBlocks.map(t => t.name)
+        console.log('[CHOÉ DEBUG] Claude called tools:', toolNames.join(', '))
+        toolsUsed.push(...toolNames)
+
+        // Execute all tools
+        const toolResult = await executeTools(toolUseBlocks, session)
+
+        // Capture results from tools
+        if (toolResult.vehicles && toolResult.vehicles.length > 0) {
+          vehicles = toolResult.vehicles
+          console.log('[CHOÉ DEBUG] Tool search returned', vehicles.length, 'vehicles')
+        }
+        if (toolResult.weather) {
+          weatherFromTool = toolResult.weather
+          weather = toolResult.weather
+        }
+        session = toolResult.updatedSession
+
+        // Add assistant response (with tool_use) to messages
+        claudeMessages.push({
+          role: 'assistant',
+          content: claudeResponse.content,
+        })
+
+        // Add tool results to messages
+        claudeMessages.push({
+          role: 'user',
+          content: toolResult.results.map(r => ({
+            type: 'tool_result' as const,
+            tool_use_id: r.tool_use_id,
+            content: r.content,
+          })),
+        })
+
+        // Call Claude again with tool results
+        const toolLoopOptions: Parameters<typeof client.messages.create>[0] = {
+          model: modelConfig.modelId,
+          max_tokens: modelConfig.maxTokens,
+          system: [
+            {
+              type: 'text' as const,
+              text: finalSystemPrompt,
+              cache_control: { type: 'ephemeral' as const },
+            },
+          ],
+          messages: claudeMessages,
+          tools: BOOKING_TOOLS,
+        }
+
+        claudeResponse = await client.messages.create(toolLoopOptions) as Anthropic.Message
+
+        // Track additional token usage
+        const loopInput = claudeResponse.usage?.input_tokens || 0
+        const loopOutput = claudeResponse.usage?.output_tokens || 0
+        // @ts-expect-error - cache_read_input_tokens exists on responses when caching is used
+        const loopCached = claudeResponse.usage?.cache_read_input_tokens || 0
+        totalTokensUsed += loopInput + loopOutput
+        totalCachedTokens += loopCached
+        inputTokens += loopInput
+        outputTokens += loopOutput
+        cachedTokens += loopCached
+      }
+
+      console.log('[CHOÉ DEBUG] Tool loop finished after', loopCount, 'iterations, final stop_reason:', claudeResponse.stop_reason)
+    }
+
+    // Extract text from Claude's final response
     const rawText = claudeResponse.content
       .filter((block) => block.type === 'text')
       .map((block) => (block as { type: 'text'; text: string }).text)
@@ -651,12 +756,13 @@ export async function POST(request: NextRequest) {
       parsed.searchQuery = applyIntentsToQuery({ location: session.location }, detectedIntents)
     }
 
-    // Track tools used in this turn
-    let toolsUsed: string[] = []
-    let vehiclesReturned = 0
+    // Track vehicle count for logging
+    let vehiclesReturned = vehicles?.length || 0
 
-    // If Claude wants to search, do it now
-    if (parsed.searchQuery) {
+    // ==========================================================================
+    // LEGACY FALLBACK: Hardcoded search when tool calling is disabled
+    // ==========================================================================
+    if (!useToolCalling && parsed.searchQuery) {
       toolsUsed.push('search_vehicles')
 
       // Apply detected intents to searchQuery (fills gaps Claude missed)
