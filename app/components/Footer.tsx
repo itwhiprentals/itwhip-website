@@ -143,6 +143,11 @@ export default function Footer() {
             </h4>
             <ul className="space-y-1.5">
               <li>
+                <Link href="/help/host-account" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Host Account
+                </Link>
+              </li>
+              <li>
                 <Link href="/list-your-car" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
                   List Your Car
                 </Link>

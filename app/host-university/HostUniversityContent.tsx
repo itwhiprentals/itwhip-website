@@ -310,6 +310,32 @@ export default function HostUniversityContent() {
           </div>
         </section>
 
+        {/* Helpful Resources */}
+        <section className="py-12 bg-gray-100 dark:bg-gray-900">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
+              Helpful Resources
+            </h2>
+            <div className="grid md:grid-cols-3 gap-6">
+              <Link href="/help/host-account" className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700 hover:border-amber-500 transition-colors group">
+                <IoDocumentTextOutline className="w-8 h-8 text-amber-500 mb-3" />
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-amber-600 transition-colors">Host Account Guide</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Everything about your host dashboard, tiers, payouts, and protection.</p>
+              </Link>
+              <Link href="/host-protection" className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700 hover:border-amber-500 transition-colors group">
+                <IoShieldCheckmarkOutline className="w-8 h-8 text-amber-500 mb-3" />
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-amber-600 transition-colors">Host Protection</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">$1M liability coverage, Mileage Forensics, and claims process.</p>
+              </Link>
+              <Link href="/insurance-guide" className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700 hover:border-amber-500 transition-colors group">
+                <IoCashOutline className="w-8 h-8 text-amber-500 mb-3" />
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-amber-600 transition-colors">Insurance Guide</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Understanding coverage options and how to maximize your protection.</p>
+              </Link>
+            </div>
+          </div>
+        </section>
+
         {/* CTA Section */}
         <section className="py-12">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -329,10 +355,10 @@ export default function HostUniversityContent() {
                   Become a Host
                 </Link>
                 <Link
-                  href="/host-benefits"
+                  href="/help/host-account"
                   className="inline-flex items-center gap-2 px-8 py-4 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700 transition-colors border border-amber-400"
                 >
-                  Learn More
+                  Host Account Guide
                   <IoArrowForwardOutline className="w-5 h-5" />
                 </Link>
               </div>
