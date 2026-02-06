@@ -900,6 +900,18 @@ export async function POST(request: NextRequest) {
     // Apply extracted data to session
     session = applyExtractedData(session, parsed)
 
+    // FALLBACK: Extract vehicleId from user message if Claude didn't set it
+    // Format: "I'll take the 2024 Honda Accord [id:cm...]"
+    if (!session.vehicleId && body.message) {
+      const idMatch = body.message.match(/\[id:([^\]]+)\]/)
+      if (idMatch && idMatch[1]) {
+        console.log('[ai-booking] Extracted vehicleId from user message:', idMatch[1])
+        session.vehicleId = idMatch[1]
+        // Update state to CONFIRMING since we have a vehicle selection
+        session.state = BookingState.CONFIRMING
+      }
+    }
+
     // Add AI reply to history
     session = addMessage(session, 'assistant', parsed.reply)
 

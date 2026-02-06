@@ -169,9 +169,11 @@ export default function ChatViewStreaming({
     localStorage.removeItem('itwhip-ai-vehicles')
   }, [resetStream])
 
-  // Vehicle select handler
+  // Vehicle select handler - include vehicleId for reliable extraction
   const handleVehicleSelect = useCallback((vehicle: VehicleSummary) => {
-    handleSendMessage(`I'll take the ${vehicle.year} ${vehicle.make} ${vehicle.model}`)
+    // Include vehicleId in message so Claude can extract it reliably
+    // Format: "I'll take the 2024 Honda Accord [id:cm...]"
+    handleSendMessage(`I'll take the ${vehicle.year} ${vehicle.make} ${vehicle.model} [id:${vehicle.id}]`)
   }, [handleSendMessage])
 
   // Action handlers

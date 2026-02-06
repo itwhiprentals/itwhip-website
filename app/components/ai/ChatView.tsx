@@ -119,8 +119,11 @@ export default function ChatView({ onNavigateToBooking, onNavigateToLogin, onCla
     localStorage.removeItem('itwhip-ai-vehicles')
   }, [])
 
+  // Vehicle select handler - include vehicleId for reliable extraction
   const handleVehicleSelect = useCallback((vehicle: VehicleSummary) => {
-    sendMessage(`I'll take the ${vehicle.year} ${vehicle.make} ${vehicle.model}`)
+    // Include vehicleId in message so Claude can extract it reliably
+    // Format: "I'll take the 2024 Honda Accord [id:cm...]"
+    sendMessage(`I'll take the ${vehicle.year} ${vehicle.make} ${vehicle.model} [id:${vehicle.id}]`)
   }, [sendMessage])
 
   const handleConfirm = useCallback(() => {
