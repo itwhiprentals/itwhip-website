@@ -1,8 +1,8 @@
 // app/help/chloe/components/ChoeTips.tsx
 'use client'
 
+import Image from 'next/image'
 import { tips } from '../data/tips'
-import { IoSparklesOutline } from 'react-icons/io5'
 
 // Warm colors for sticky-note style
 const warmColors = [
@@ -22,9 +22,7 @@ export function ChoeTips() {
 
       <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-lg bg-gradient-to-br from-[#e87040]/20 to-[#d4a574]/20 border border-[#e87040]/20 mb-4">
-            <IoSparklesOutline className="w-8 h-8 text-[#e87040]" />
-          </div>
+          <Image src="/images/choe-logo.png" alt="Choé" width={64} height={64} className="rounded-lg mb-4" />
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
             Tips for Best Results
           </h2>

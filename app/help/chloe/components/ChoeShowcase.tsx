@@ -85,8 +85,8 @@ export function ChoeShowcase() {
               </div>
 
               {/* Label */}
-              <div className="text-center mt-2 sm:mt-2.5">
-                <h3 className="font-bold text-sm sm:text-base text-gray-900 dark:text-white mb-0.5">
+              <div className="text-center mt-1">
+                <h3 className="font-bold text-sm sm:text-base text-gray-900 dark:text-white">
                   {screenshot.title}
                 </h3>
                 <p className="text-xs sm:text-sm text-gray-500 dark:text-[#666]">

@@ -2,6 +2,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import {
   IoCodeSlashOutline,
   IoExtensionPuzzleOutline,
@@ -104,7 +105,7 @@ export function ChoeDeveloper() {
               <div className="w-3 h-3 rounded-full bg-[#27ca3f]" />
             </div>
             <div className="flex-1 flex items-center justify-center gap-2 text-xs text-gray-500 dark:text-[#666]">
-              <IoPricetagOutline className="w-4 h-4" />
+              <Image src="/images/choe-logo.png" alt="Choé" width={20} height={20} className="rounded" />
               <span>choé pricing --list</span>
             </div>
           </div>
