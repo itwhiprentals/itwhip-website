@@ -111,7 +111,10 @@ function buildSearchParams(query: SearchQuery): URLSearchParams {
   // These should NOT use exact city match - instead use central Phoenix coordinates for radius search
   const location = query.location || 'Phoenix, AZ';
   const locationLower = location.toLowerCase().trim();
-  const isStatewideSearch = /^(arizona|az|anywhere|everywhere|all\s*(of\s*)?arizona)$/i.test(locationLower);
+
+  // Extract city part (before comma) for statewide detection
+  const cityPart = locationLower.split(',')[0].trim();
+  const isStatewideSearch = /^(arizona|az|anywhere|everywhere|all\s*(of\s*)?arizona|statewide)$/i.test(cityPart);
 
   if (isStatewideSearch) {
     // Statewide search: use location param with Phoenix center and large radius
