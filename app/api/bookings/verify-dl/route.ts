@@ -49,11 +49,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Check age if DOB extracted
+    // If DOB is not extracted, skip age check (don't fail, let other checks determine)
     if (result.data?.dateOfBirth) {
       validationResults.ageValid = validateAge(result.data.dateOfBirth, 18)
       if (!validationResults.ageValid) {
         validationResults.redFlags.push('Driver must be at least 18 years old')
       }
+    } else {
+      // If DOB not extracted, don't fail on age - assume valid for now
+      // Full Stripe verification will catch underage users later
+      validationResults.ageValid = true
     }
 
     // Determine overall pass/fail

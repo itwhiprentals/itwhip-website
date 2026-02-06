@@ -113,12 +113,22 @@ export function VisitorIdentityVerify({
 
       const data = await response.json()
 
+      // Map API response fields to component expected format
+      // API returns: quickVerifyPassed, validation.allRedFlags
+      // Component expects: passed, redFlags
       const result: VerificationResult = {
-        success: response.ok,
-        passed: data.passed || false,
-        data: data.data,
+        success: response.ok && data.success,
+        passed: data.quickVerifyPassed || false,
+        data: data.data ? {
+          name: data.data.fullName || '',
+          dob: data.data.dateOfBirth || '',
+          licenseNumber: data.data.licenseNumber || '',
+          expiration: data.data.expirationDate || '',
+          state: data.data.stateOrCountry || '',
+          isExpired: data.validation?.isExpired || false
+        } : undefined,
         confidence: data.confidence,
-        redFlags: data.redFlags,
+        redFlags: data.validation?.allRedFlags || data.validation?.redFlags || [],
         error: data.error
       }
 
