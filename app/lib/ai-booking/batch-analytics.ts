@@ -255,8 +255,12 @@ export async function getBatchResults(batchId: string): Promise<Array<{
     }
   }
 
+  // Count successes and failures
+  const successCount = results.filter(r => !r.error).length
+  const failedCount = results.filter(r => r.error).length
+
   // Update batch job in database
-  await updateBatchJobComplete(batchId, results.length)
+  await updateBatchJobComplete(batchId, successCount, failedCount)
 
   return results
 }
@@ -296,8 +300,11 @@ export async function listBatchJobs(limit: number = 20): Promise<Array<{
 }
 
 // =============================================================================
-// DATABASE HELPERS
+// DATABASE HELPERS - Persist to ClaudeBatchJob table
 // =============================================================================
+
+// Cost per 1M tokens (Haiku) - batch is 50% cheaper
+const BATCH_COST_PER_1M = 0.5 // 50% of $1/M = $0.50/M
 
 async function storeBatchJob(
   batchId: string,
@@ -305,23 +312,81 @@ async function storeBatchJob(
   requestCount: number
 ): Promise<void> {
   try {
-    // Store in a simple key-value format in Redis or use existing stats table
-    // For now, log to console - can add DB table later if needed
+    // Estimate cost (avg ~500 tokens per request)
+    const estimatedTokens = requestCount * 500
+    const estimatedCost = (estimatedTokens / 1_000_000) * BATCH_COST_PER_1M
+
+    await prisma.claudeBatchJob.create({
+      data: {
+        batchId,
+        type: jobType,
+        status: 'processing',
+        totalRequests: requestCount,
+        estimatedCost,
+        expiresAt: new Date(Date.now() + 29 * 24 * 60 * 60 * 1000), // Results expire in 29 days
+      },
+    })
+
     console.log(`[batch-analytics] Created batch job: ${batchId} (${jobType}, ${requestCount} requests)`)
   } catch (error) {
     console.error('[batch-analytics] Failed to store batch job:', error)
+    // Don't throw - logging failure shouldn't block batch creation
   }
 }
 
 async function updateBatchJobComplete(
   batchId: string,
-  resultCount: number
+  successCount: number,
+  failedCount: number = 0
 ): Promise<void> {
   try {
-    console.log(`[batch-analytics] Batch job complete: ${batchId} (${resultCount} results)`)
+    await prisma.claudeBatchJob.update({
+      where: { batchId },
+      data: {
+        status: 'ended',
+        completedCount: successCount,
+        failedCount,
+        completedAt: new Date(),
+      },
+    })
+
+    console.log(`[batch-analytics] Batch job complete: ${batchId} (${successCount} succeeded, ${failedCount} failed)`)
   } catch (error) {
     console.error('[batch-analytics] Failed to update batch job:', error)
   }
+}
+
+/**
+ * Update batch job from Anthropic API status
+ */
+export async function syncBatchJobStatus(batchId: string): Promise<void> {
+  try {
+    const client = getClient()
+    const batch = await client.messages.batches.retrieve(batchId)
+
+    await prisma.claudeBatchJob.update({
+      where: { batchId },
+      data: {
+        status: batch.processing_status,
+        completedCount: batch.request_counts.succeeded,
+        failedCount: batch.request_counts.errored,
+        resultsUrl: batch.results_url || null,
+        completedAt: batch.ended_at ? new Date(batch.ended_at) : null,
+      },
+    })
+  } catch (error) {
+    console.error(`[batch-analytics] Failed to sync batch ${batchId}:`, error)
+  }
+}
+
+/**
+ * Get batch jobs from database (not Anthropic API)
+ */
+export async function getStoredBatchJobs(limit: number = 20) {
+  return prisma.claudeBatchJob.findMany({
+    orderBy: { createdAt: 'desc' },
+    take: limit,
+  })
 }
 
 // =============================================================================

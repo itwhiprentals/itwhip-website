@@ -7,7 +7,7 @@ import { IDENTITY } from './identity';
 import { buildStateContext, buildUserContext, BOOKING_SEQUENCE } from './state-flow';
 import { buildVehicleContext, buildWeatherContext } from './vehicle-handling';
 import { PERSONALITY_RULES, OFF_TOPIC_RULES, ALLOWED_QUESTIONS } from './behavior';
-import { RESPONSE_FORMAT, SEARCH_QUERY_EXAMPLES, FULL_RESPONSE_EXAMPLES } from './response-schema';
+import { RESPONSE_FORMAT, SEARCH_QUERY_EXAMPLES, FULL_RESPONSE_EXAMPLES, VEHICLE_SELECTION_EXAMPLES } from './response-schema';
 import { getExamplesForPrompt } from './examples';
 import {
   SERVICE_AREA_CONTEXT,
@@ -21,7 +21,7 @@ export { IDENTITY } from './identity';
 export { buildStateContext, buildUserContext, BOOKING_SEQUENCE } from './state-flow';
 export { buildVehicleContext, buildWeatherContext } from './vehicle-handling';
 export { PERSONALITY_RULES, OFF_TOPIC_RULES, ALLOWED_QUESTIONS } from './behavior';
-export { RESPONSE_FORMAT, SEARCH_QUERY_EXAMPLES, FULL_RESPONSE_EXAMPLES } from './response-schema';
+export { RESPONSE_FORMAT, SEARCH_QUERY_EXAMPLES, FULL_RESPONSE_EXAMPLES, VEHICLE_SELECTION_EXAMPLES } from './response-schema';
 export { EXAMPLE_CONVERSATIONS, getExamplesForPrompt } from './examples';
 export {
   SERVICE_AREA_CONTEXT,
@@ -50,21 +50,28 @@ export function buildSystemPrompt(params: PromptContext): string {
   const { session, isLoggedIn, isVerified, vehicles, weather, location } = params;
 
   return [
+    // 1. Identity & role
     IDENTITY,
+    // 2. Context data at top (per long context tips - put data above instructions)
     SERVICE_AREA_CONTEXT,
     buildLocationContext(location ?? session.location),
     buildStateContext(session),
     buildUserContext(isLoggedIn, isVerified),
     vehicles?.length ? buildVehicleContext(vehicles) : '',
     weather ? buildWeatherContext(weather) : '',
+    // 3. Instructions & workflow
     BOOKING_SEQUENCE,
     DEFAULT_DATES_BEHAVIOR,
+    // 4. Behavior rules
     PERSONALITY_RULES,
     OFF_TOPIC_RULES,
     ALLOWED_QUESTIONS,
-    RESPONSE_FORMAT,
+    // 5. Examples (multishot prompting - per documentation)
     SEARCH_QUERY_EXAMPLES,
     FULL_RESPONSE_EXAMPLES,
+    VEHICLE_SELECTION_EXAMPLES,  // NEW: Critical for vehicle selection vs info requests
+    // 6. Output format at bottom (per long context tips - query/format last)
+    RESPONSE_FORMAT,
   ]
     .filter(Boolean)
     .join('\n\n');

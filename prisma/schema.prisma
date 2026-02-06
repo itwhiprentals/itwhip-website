@@ -5050,3 +5050,38 @@ model ChoeAIDailyStats {
   @@index([date])
   @@map("choe_ai_daily_stats")
 }
+
+// =============================================================================
+// CLAUDE BATCH JOBS
+// Track Anthropic Message Batches API jobs for 50% cost savings
+// =============================================================================
+
+model ClaudeBatchJob {
+  id              String   @id @default(cuid())
+  batchId         String   @unique  // Anthropic batch ID (msgbatch_xxx)
+  type            String   // 'agreement_validation' | 'conversation_summary' | 'quality_analysis'
+  status          String   @default("processing") // processing | ended | canceled | expired
+
+  // Request tracking
+  totalRequests   Int
+  completedCount  Int      @default(0)
+  failedCount     Int      @default(0)
+
+  // Results
+  resultsUrl      String?  // URL to download results (valid for 29 days)
+  errorMessage    String?  // If batch failed
+
+  // Cost tracking (50% savings vs real-time)
+  estimatedCost   Decimal? @db.Decimal(10, 4)
+  actualCost      Decimal? @db.Decimal(10, 4)
+  costSavings     Decimal? @db.Decimal(10, 4)
+
+  // Timestamps
+  createdAt       DateTime @default(now())
+  completedAt     DateTime?
+  expiresAt       DateTime? // Results expire after 29 days
+
+  @@index([type, status])
+  @@index([status, createdAt])
+  @@map("claude_batch_jobs")
+}

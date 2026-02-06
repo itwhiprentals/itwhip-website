@@ -100,28 +100,39 @@ function getStatusColor(status: string): string {
   }
 }
 
-// PDF Viewer Modal Component
+// PDF Viewer Modal Component with optional AI Analysis Panel
 function PdfViewerModal({
   isOpen,
   onClose,
   pdfUrl,
   title,
+  validationScore,
+  validationSummary,
 }: {
   isOpen: boolean
   onClose: () => void
   pdfUrl: string | null
   title: string
+  validationScore?: number | null
+  validationSummary?: string | null
 }) {
   if (!isOpen || !pdfUrl) return null
 
+  const hasAnalysis = validationScore !== undefined && validationScore !== null
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3">
             <IoDocumentText className="w-5 h-5 text-indigo-500" />
             <h3 className="font-semibold text-gray-900 dark:text-white truncate">{title}</h3>
+            {hasAnalysis && (
+              <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${getScoreBg(validationScore)} ${getScoreColor(validationScore)}`}>
+                Score: {validationScore}/100
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <a
@@ -141,13 +152,107 @@ function PdfViewerModal({
             </button>
           </div>
         </div>
-        {/* PDF Embed */}
-        <div className="flex-1 p-2">
-          <iframe
-            src={`${pdfUrl}#toolbar=1&navpanes=0`}
-            className="w-full h-full rounded border border-gray-200 dark:border-gray-700"
-            title={title}
-          />
+
+        {/* Content: PDF + Analysis Panel (if available) */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* PDF Embed */}
+          <div className={`flex-1 p-2 ${hasAnalysis ? 'lg:w-2/3' : 'w-full'}`}>
+            <iframe
+              src={`${pdfUrl}#toolbar=1&navpanes=0`}
+              className="w-full h-full rounded border border-gray-200 dark:border-gray-700"
+              title={title}
+            />
+          </div>
+
+          {/* AI Analysis Panel */}
+          {hasAnalysis && (
+            <div className="hidden lg:flex lg:w-1/3 flex-col border-l border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-2 text-gray-900 dark:text-white">
+                  <IoSparkles className="w-5 h-5 text-indigo-500" />
+                  <h4 className="font-semibold">AI Analysis</h4>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {/* Score Breakdown */}
+                <div className={`p-4 rounded-lg ${getScoreBg(validationScore)}`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Validation Score</span>
+                    <span className={`text-2xl font-bold ${getScoreColor(validationScore)}`}>
+                      {validationScore}
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div
+                      className={`h-2 rounded-full transition-all ${
+                        validationScore >= 80 ? 'bg-emerald-500' :
+                        validationScore >= 60 ? 'bg-yellow-500' :
+                        validationScore >= 40 ? 'bg-orange-500' : 'bg-red-500'
+                      }`}
+                      style={{ width: `${validationScore}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    <span>0</span>
+                    <span>40</span>
+                    <span>60</span>
+                    <span>80</span>
+                    <span>100</span>
+                  </div>
+                </div>
+
+                {/* Score Legend */}
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded-full bg-emerald-500" />
+                    <span className="text-gray-600 dark:text-gray-400">80-100: Excellent</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                    <span className="text-gray-600 dark:text-gray-400">60-79: Good</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded-full bg-orange-500" />
+                    <span className="text-gray-600 dark:text-gray-400">40-59: Needs Review</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded-full bg-red-500" />
+                    <span className="text-gray-600 dark:text-gray-400">0-39: Rejected</span>
+                  </div>
+                </div>
+
+                {/* Summary */}
+                {validationSummary && (
+                  <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <h5 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Summary</h5>
+                    <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                      {validationSummary}
+                    </p>
+                  </div>
+                )}
+
+                {/* Status Badge */}
+                <div className={`p-3 rounded-lg flex items-center gap-2 ${
+                  validationScore >= 40
+                    ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
+                    : 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                }`}>
+                  {validationScore >= 40 ? (
+                    <>
+                      <IoCheckmarkCircle className="w-5 h-5" />
+                      <span className="text-sm font-medium">Agreement Approved</span>
+                    </>
+                  ) : (
+                    <>
+                      <IoAlertCircle className="w-5 h-5" />
+                      <span className="text-sm font-medium">Agreement Needs Review</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -163,16 +268,27 @@ export default function ESignDashboard() {
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'partner' | 'booking'>('booking')
 
-  // PDF Viewer state
-  const [pdfModal, setPdfModal] = useState<{ isOpen: boolean; url: string | null; title: string }>({
+  // PDF Viewer state (with optional validation data for AI Analysis Panel)
+  const [pdfModal, setPdfModal] = useState<{
+    isOpen: boolean
+    url: string | null
+    title: string
+    validationScore?: number | null
+    validationSummary?: string | null
+  }>({
     isOpen: false,
     url: null,
     title: '',
   })
 
-  const openPdfViewer = (url: string | null, title: string) => {
+  const openPdfViewer = (
+    url: string | null,
+    title: string,
+    validationScore?: number | null,
+    validationSummary?: string | null
+  ) => {
     if (url) {
-      setPdfModal({ isOpen: true, url, title })
+      setPdfModal({ isOpen: true, url, title, validationScore, validationSummary })
     }
   }
 
@@ -251,6 +367,8 @@ export default function ESignDashboard() {
         onClose={closePdfViewer}
         pdfUrl={pdfModal.url}
         title={pdfModal.title}
+        validationScore={pdfModal.validationScore}
+        validationSummary={pdfModal.validationSummary}
       />
 
       {/* Header */}
@@ -330,7 +448,7 @@ function PartnerAgreementsTab({
   onViewPdf,
 }: {
   data: ESignData['partnerAgreements'] | undefined
-  onViewPdf: (url: string | null, title: string) => void
+  onViewPdf: (url: string | null, title: string, validationScore?: number | null, validationSummary?: string | null) => void
 }) {
   if (!data) return null
 
@@ -424,7 +542,12 @@ function PartnerAgreementsTab({
                     </td>
                     <td className="px-4 py-3">
                       <button
-                        onClick={() => onViewPdf(agreement.hostAgreementUrl, agreement.hostAgreementName || 'Partner Agreement')}
+                        onClick={() => onViewPdf(
+                          agreement.hostAgreementUrl,
+                          agreement.hostAgreementName || 'Partner Agreement',
+                          agreement.agreementValidationScore,
+                          agreement.agreementValidationSummary
+                        )}
                         className="flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline text-sm"
                       >
                         <IoEye className="w-4 h-4" />
@@ -501,7 +624,12 @@ function PartnerAgreementsTab({
                 </p>
                 <div className="flex items-center justify-between">
                   <button
-                    onClick={() => onViewPdf(agreement.hostAgreementUrl, agreement.hostAgreementName || 'Partner Agreement')}
+                    onClick={() => onViewPdf(
+                      agreement.hostAgreementUrl,
+                      agreement.hostAgreementName || 'Partner Agreement',
+                      agreement.agreementValidationScore,
+                      agreement.agreementValidationSummary
+                    )}
                     className="flex items-center gap-1 text-blue-600 dark:text-blue-400 text-sm"
                   >
                     <IoEye className="w-4 h-4" />

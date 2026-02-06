@@ -166,6 +166,8 @@ function addCacheControlToMessages(
 // =============================================================================
 
 // JSON Schema for ClaudeBookingOutput - guarantees valid responses
+// NOTE: Using optional fields instead of anyOf for action/searchQuery
+// because anyOf with null caused Anthropic 500 errors
 const BOOKING_OUTPUT_SCHEMA = {
   type: 'object',
   properties: {
@@ -192,49 +194,44 @@ const BOOKING_OUTPUT_SCHEMA = {
       },
       additionalProperties: false,
     },
+    // CHANGED: Made optional instead of nullable (removed anyOf pattern)
     action: {
-      anyOf: [
-        { type: 'string', enum: ['HANDOFF_TO_PAYMENT', 'NEEDS_LOGIN', 'NEEDS_VERIFICATION', 'HIGH_RISK_REVIEW', 'START_OVER'] },
-        { type: 'null' }
-      ],
-      description: 'Special action to trigger, or null for normal flow',
+      type: 'string',
+      enum: ['HANDOFF_TO_PAYMENT', 'NEEDS_LOGIN', 'NEEDS_VERIFICATION', 'HIGH_RISK_REVIEW', 'START_OVER'],
+      description: 'Optional action to trigger (omit for normal flow)',
     },
+    // CHANGED: Made optional instead of nullable (removed anyOf pattern)
     searchQuery: {
-      anyOf: [
-        {
-          type: 'object',
-          properties: {
-            location: { type: 'string' },
-            carType: { type: 'string' },
-            pickupDate: { type: 'string' },
-            returnDate: { type: 'string' },
-            pickupTime: { type: 'string' },
-            returnTime: { type: 'string' },
-            make: { type: 'string' },
-            priceMin: { type: 'number' },
-            priceMax: { type: 'number' },
-            seats: { type: 'number' },
-            transmission: { type: 'string' },
-            noDeposit: { type: 'boolean' },
-            instantBook: { type: 'boolean' },
-            vehicleType: { type: 'string', enum: ['RENTAL', 'RIDESHARE'] },
-          },
-          additionalProperties: false,
-        },
-        { type: 'null' }
-      ],
+      type: 'object',
+      description: 'Optional search parameters (omit if no search needed)',
+      properties: {
+        location: { type: 'string' },
+        carType: { type: 'string' },
+        pickupDate: { type: 'string' },
+        returnDate: { type: 'string' },
+        pickupTime: { type: 'string' },
+        returnTime: { type: 'string' },
+        make: { type: 'string' },
+        priceMin: { type: 'number' },
+        priceMax: { type: 'number' },
+        seats: { type: 'number' },
+        transmission: { type: 'string' },
+        noDeposit: { type: 'boolean' },
+        instantBook: { type: 'boolean' },
+        vehicleType: { type: 'string', enum: ['RENTAL', 'RIDESHARE'] },
+      },
+      additionalProperties: false,
     },
   },
-  required: ['reply', 'nextState', 'extractedData', 'action', 'searchQuery'],
+  // CHANGED: action and searchQuery are now optional (not in required)
+  required: ['reply', 'nextState', 'extractedData'],
   additionalProperties: false,
 } as const
 
 // Check if model supports structured outputs (Claude 4.5 only)
-// NOTE: Structured outputs GA but anyOf patterns still cause Anthropic 500 errors
-// Keeping disabled until Anthropic fixes nullable field handling
+// ENABLED: Removed anyOf patterns, using optional fields instead
 function supportsStructuredOutputs(modelId: string): boolean {
-  // return modelId.includes('4-5') || modelId.includes('4.5')
-  return false // Disabled: anyOf with null causes API 500 errors
+  return modelId.includes('4-5') || modelId.includes('4.5')
 }
 
 // Parse structured output (guaranteed valid JSON from Claude 4.5)
@@ -243,14 +240,20 @@ function parseStructuredResponse(raw: string): ReturnType<typeof parseClaudeResp
     const parsed = JSON.parse(raw)
     // Map nextState string to BookingState enum
     const nextState = parsed.nextState as BookingState || BookingState.INIT
-    // Handle both null and 'NONE' for backward compatibility
-    const action = (parsed.action === 'NONE' || parsed.action === null) ? null : (parsed.action || null)
+    // Handle undefined (optional field), null, and 'NONE' for backward compatibility
+    const action = (!parsed.action || parsed.action === 'NONE' || parsed.action === null)
+      ? null
+      : parsed.action
+    // Handle undefined searchQuery (now an optional field)
+    const searchQuery = parsed.searchQuery && Object.keys(parsed.searchQuery).length > 0
+      ? parsed.searchQuery
+      : null
     return {
       reply: parsed.reply || "I'm here to help you find a car!",
       nextState,
       extractedData: parsed.extractedData || {},
       action,
-      searchQuery: parsed.searchQuery || null,
+      searchQuery,
     }
   } catch {
     // Fallback to legacy parser if JSON parse fails (shouldn't happen with structured outputs)

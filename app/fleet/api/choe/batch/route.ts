@@ -13,6 +13,8 @@ import {
   listBatchJobs,
   getRecentConversationsForAnalytics,
   getSuccessfulConversationsForTraining,
+  getStoredBatchJobs,
+  syncBatchJobStatus,
 } from '@/app/lib/ai-booking/batch-analytics'
 
 const FLEET_KEY = 'phoenix-fleet-2847'
@@ -38,15 +40,39 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ results })
     }
 
+    // Sync and get status for a specific batch
+    if (batchId && action === 'sync') {
+      await syncBatchJobStatus(batchId)
+      const status = await checkBatchStatus(batchId)
+      return NextResponse.json({ synced: true, ...status })
+    }
+
     // Get status for a specific batch
     if (batchId) {
       const status = await checkBatchStatus(batchId)
       return NextResponse.json(status)
     }
 
-    // List all recent batch jobs
-    const jobs = await listBatchJobs(20)
-    return NextResponse.json({ jobs })
+    // Get source of jobs
+    const source = searchParams.get('source')
+
+    // List jobs from database (persisted)
+    if (source === 'db') {
+      const storedJobs = await getStoredBatchJobs(20)
+      return NextResponse.json({ jobs: storedJobs, source: 'database' })
+    }
+
+    // List jobs from Anthropic API (live status)
+    const apiJobs = await listBatchJobs(20)
+
+    // Also get stored jobs for cost tracking
+    const storedJobs = await getStoredBatchJobs(20)
+
+    return NextResponse.json({
+      jobs: apiJobs,
+      storedJobs,
+      source: 'api+database'
+    })
 
   } catch (error) {
     console.error('[batch-api] GET error:', error)

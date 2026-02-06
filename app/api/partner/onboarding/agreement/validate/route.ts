@@ -109,6 +109,7 @@ export async function POST(request: NextRequest) {
     console.log(`[Agreement Validation] URL: ${pdfUrl.substring(0, 50)}...`)
 
     // Call Claude API with PDF URL
+    // Add cache_control for 5-min retention (90% cost savings on repeated access)
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 1024,
@@ -121,7 +122,10 @@ export async function POST(request: NextRequest) {
               source: {
                 type: 'url',
                 url: pdfUrl
-              }
+              },
+              // Cache PDF for 5+ minutes - saves 90% on re-analysis
+              // @ts-expect-error - cache_control is a new API feature for documents
+              cache_control: { type: 'ephemeral' }
             },
             {
               type: 'text',
@@ -171,11 +175,19 @@ export async function POST(request: NextRequest) {
     // Log validation result
     console.log(`[Agreement Validation] Result: isValid=${validation.isValid}, score=${validation.score}`)
 
+    // Track cache usage for cost monitoring
+    // @ts-expect-error - cache_read_input_tokens exists when caching is used
+    const cachedTokens = message.usage?.cache_read_input_tokens || 0
+    const inputTokens = message.usage?.input_tokens || 0
+    const outputTokens = message.usage?.output_tokens || 0
+
     return NextResponse.json({
       success: true,
       validation,
       aiValidated: true,
-      tokensUsed: message.usage?.input_tokens + message.usage?.output_tokens
+      tokensUsed: inputTokens + outputTokens,
+      cachedTokens, // Shows how many tokens were served from cache (90% cheaper)
+      cacheHit: cachedTokens > 0
     })
 
   } catch (error: unknown) {

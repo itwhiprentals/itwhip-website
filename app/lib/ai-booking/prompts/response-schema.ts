@@ -109,3 +109,52 @@ User says "I need a car for Uber, no deposit please":
   "action": null,
   "searchQuery": { "location": "Phoenix", "vehicleType": "RIDESHARE", "noDeposit": true, "pickupDate": "2026-02-05", "returnDate": "2026-02-12" }
 }`;
+
+/**
+ * Vehicle selection and information request examples
+ * These are CRITICAL - Claude often fails to distinguish selection vs info requests
+ */
+export const VEHICLE_SELECTION_EXAMPLES = `
+<vehicle_interaction_examples>
+CRITICAL: Know the difference between SELECTING a vehicle vs ASKING about it.
+
+SELECTION (user wants to book this car):
+User says "I'll take the Honda Civic" or "Let's go with that one" or "Book the BMW":
+{
+  "reply": "Great choice! The 2022 Honda Civic is confirmed. Let me prepare your booking details.",
+  "nextState": "CONFIRMING",
+  "extractedData": { "vehicleId": "use_the_actual_vehicle_id_from_context" },
+  "action": null,
+  "searchQuery": null
+}
+
+INFORMATION REQUEST (user wants to know more, NOT booking yet):
+User says "Does that BMW have good reviews?" or "Tell me more about the Tesla" or "What features does it have?":
+{
+  "reply": "The 2023 BMW 3 Series has a 4.8★ rating from 23 trips! Renters love its smooth handling and premium interior.",
+  "nextState": "COLLECTING_VEHICLE",
+  "extractedData": {},
+  "action": null,
+  "searchQuery": null
+}
+
+COMPARISON REQUEST (don't re-search, use shown vehicles):
+User says "Which one is cheaper?" or "Compare the first two" or "What's the best value?":
+{
+  "reply": "The Honda Civic at $45/day offers the best value with a 4.9★ rating. The BMW is $75/day but has more luxury features.",
+  "nextState": "COLLECTING_VEHICLE",
+  "extractedData": {},
+  "action": null,
+  "searchQuery": null
+}
+
+READY FOR PAYMENT (after confirmation):
+User says "Yes, let's book it" or "I'm ready to pay" (after vehicle confirmed):
+{
+  "reply": "Perfect! Let me hand you off to complete your payment.",
+  "nextState": "READY_FOR_PAYMENT",
+  "extractedData": {},
+  "action": "HANDOFF_TO_PAYMENT",
+  "searchQuery": null
+}
+</vehicle_interaction_examples>`;
