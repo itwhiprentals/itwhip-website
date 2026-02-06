@@ -2,6 +2,44 @@
 
 ## Recent Fixes (February 2026)
 
+### Calculator Tool Chaining + PTC Support - DEPLOYED ✅ (Feb 5)
+**Fixed calculator → search chaining and added Programmatic Tool Calling support**
+
+**Problem Fixed:**
+- Calculator tool worked (`$464 / 4 = $116/day`) but Claude didn't automatically search with the result
+- Instead of searching, Claude asked "Where in Arizona do you need it?" even when location was known
+- Previous filters (noDeposit, carType) were dropped after calculator
+
+**Solution (Multi-Layer):**
+
+1. **TOOL CHAINING Prompt Instructions** - Added explicit instructions to chain calculator → search immediately
+2. **PRESERVE PREVIOUS FILTERS Section** - Keep noDeposit, carType, location across searches
+3. **Model-Aware PTC Support** - Sonnet/Opus get full Programmatic Tool Calling, Haiku uses regular tools
+
+**Technical Details:**
+- `supportsPTC()` - Detects if model supports PTC (Haiku doesn't)
+- `getToolsForModel()` - Returns appropriate tools config per model
+- Calculator description now includes "IMMEDIATELY call search_vehicles with the result"
+- Added rate limit detection + helpful UX (Classic Search / Login options)
+
+**Files Modified:**
+- `app/lib/ai-booking/prompts/response-schema.ts` - TOOL CHAINING + PRESERVE PREVIOUS FILTERS
+- `app/lib/ai-booking/tools.ts` - PTC support with model detection
+- `app/api/ai/booking/stream/route.ts` - Conditional PTC API usage
+- `app/components/ai/ChatViewStreaming.tsx` - Calculator tool label + rate limit UX
+- `app/components/ai/ChatView.tsx` - Rate limit handling
+- `app/hooks/useStreamingChat.ts` - Rate limit detection
+
+**Test Result:** ✅
+- Input: "$155 for 4 days, no deposit, anywhere"
+- Calculator: 155 ÷ 4 = $38.75/day max
+- Search: Executed with `priceMax: 38` AND `noDeposit: true` (filters preserved!)
+- Found: 2015 Honda Accord at $29/day with zero deposit = $143.14 total (under budget!)
+
+**Deployment:** Commit `4e0e2c6`
+
+---
+
 ### Fleet Dashboard + AI Stability - DEPLOYED ✅ (Feb 5)
 **Security events, batch analytics, and AI booking stability**
 
