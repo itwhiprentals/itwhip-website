@@ -120,11 +120,13 @@ function buildSearchParams(query: SearchQuery): URLSearchParams {
     // Statewide search: use location param with Phoenix center and large radius
     params.set('location', 'Phoenix, AZ');
     params.set('radius', '150'); // 150 miles covers most of Arizona metro areas
-    console.log('[SEARCH-BRIDGE DEBUG] Statewide search detected, using Phoenix center with 150mi radius');
+    console.log('[SEARCH-BRIDGE DEBUG] Statewide search detected, using 150mi radius');
   } else {
-    // Specific city: use exact city match
-    const cityName = extractCityName(location);
-    params.set('city', cityName);
+    // Specific city: use radius search (25mi default) to include nearby cities
+    // e.g., "Phoenix" will also find cars in Goodyear, Tempe, Mesa, etc.
+    params.set('location', location);
+    params.set('radius', '25');
+    console.log(`[SEARCH-BRIDGE DEBUG] City search: ${location} with 25mi radius`);
   }
 
   if (query.carType) params.set('carType', query.carType);
