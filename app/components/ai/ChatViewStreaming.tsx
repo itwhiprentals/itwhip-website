@@ -59,15 +59,10 @@ export default function ChatViewStreaming({
   } = useStreamingChat({
     onComplete: (response) => {
       setPersistedSession(response.session)
-      // APPEND new vehicles to existing (for comparing across searches)
+      // REPLACE vehicles when a new search is performed
+      // This ensures filter changes (e.g., "no deposit") show ONLY matching cars
       if (response.vehicles && response.vehicles.length > 0) {
-        setPersistedVehicles(prev => {
-          if (!prev) return response.vehicles
-          // Combine and dedupe by ID (new results first, then existing)
-          const existingIds = new Set(response.vehicles!.map(v => v.id))
-          const uniqueExisting = prev.filter(v => !existingIds.has(v.id))
-          return [...response.vehicles!, ...uniqueExisting]
-        })
+        setPersistedVehicles(response.vehicles)
       }
     },
   })

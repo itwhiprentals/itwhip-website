@@ -107,10 +107,22 @@ export async function searchVehicles(
 function buildSearchParams(query: SearchQuery): URLSearchParams {
   const params = new URLSearchParams();
 
-  // Use 'city' param for exact city match (not 'location' which does radius search)
-  // This ensures cars shown are ONLY from the requested city
-  const cityName = extractCityName(query.location || 'Phoenix, AZ');
-  params.set('city', cityName);
+  // Handle statewide searches: "Arizona", "AZ", "anywhere", "everywhere", etc.
+  // These should NOT use exact city match - instead use central Phoenix coordinates for radius search
+  const location = query.location || 'Phoenix, AZ';
+  const locationLower = location.toLowerCase().trim();
+  const isStatewideSearch = /^(arizona|az|anywhere|everywhere|all\s*(of\s*)?arizona)$/i.test(locationLower);
+
+  if (isStatewideSearch) {
+    // Statewide search: use location param with Phoenix center and large radius
+    params.set('location', 'Phoenix, AZ');
+    params.set('radius', '150'); // 150 miles covers most of Arizona metro areas
+    console.log('[SEARCH-BRIDGE DEBUG] Statewide search detected, using Phoenix center with 150mi radius');
+  } else {
+    // Specific city: use exact city match
+    const cityName = extractCityName(location);
+    params.set('city', cityName);
+  }
 
   if (query.carType) params.set('carType', query.carType);
 
@@ -189,13 +201,19 @@ function getDefaultDeposit(dailyRate: number): number {
 
 /** Normalize search API response into VehicleSummary array */
 function normalizeSearchResults(data: RawSearchResult): VehicleSummary[] {
-  // ONLY use carsInCity for exact city match - do NOT include nearby cars
-  // This ensures users see ONLY cars from their requested city
-  const carsInRequestedCity = data.carsInCity || data.results || [];
+  // Combine carsInCity and nearbyCars for comprehensive results
+  // This ensures statewide searches include all matching cars
+  const allCars = [
+    ...(data.carsInCity || []),
+    ...(data.nearbyCars || []),
+  ];
 
-  // Deduplicate by ID (shouldn't be duplicates, but safety check)
+  // Fall back to flat results if grouped data isn't available
+  const carsToProcess = allCars.length > 0 ? allCars : (data.results || []);
+
+  // Deduplicate by ID
   const seen = new Set<string>();
-  const unique = carsInRequestedCity.filter((car) => {
+  const unique = carsToProcess.filter((car) => {
     if (seen.has(car.id)) return false;
     seen.add(car.id);
     return true;

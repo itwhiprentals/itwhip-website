@@ -206,17 +206,26 @@ export const BOOKING_TOOLS: Anthropic.Tool[] = [
   },
   {
     name: 'calculator',
-    description: 'Calculate arithmetic expressions. ALWAYS use this when user mentions a total budget for multiple days (e.g., "$350 for 4 days" → calculate 350/4 to get max daily rate). After calculating, IMMEDIATELY call search_vehicles with the result as priceMax. Never do math in your head.',
+    description: `Calculate arithmetic expressions. ALWAYS use this for ANY math - never do math in your head.
+
+Common calculations:
+1. BUDGET → DAILY RATE: "$350 for 4 days" → calculate("350 / 4") = $87.50/day → use as priceMax
+2. TOTAL CHECKOUT (with deposit): (rate × days × 1.234) + deposit
+   - Honda $29 × 3 days + $0 deposit = calculate("29 * 3 * 1.234 + 0") = $107.36
+   - BMW $79 × 3 days + $500 deposit = calculate("79 * 3 * 1.234 + 500") = $792.46
+3. BUDGET CHECK: Does car fit budget? calculate("(rate * days * 1.234) + deposit") ≤ budget?
+
+CRITICAL: Always include depositAmount in total calculations! Check the car's deposit in AVAILABLE CARS list.`,
     input_schema: {
       type: 'object' as const,
       properties: {
         expression: {
           type: 'string',
-          description: 'The mathematical expression to evaluate (e.g., "350 / 4" for budget per day, "89 * 3" for total cost)',
+          description: 'The mathematical expression to evaluate (e.g., "350 / 4" for budget per day, "29 * 7 * 1.234" for total cost with fees)',
         },
         purpose: {
           type: 'string',
-          description: 'What this calculation is for (e.g., "max daily rate from $350 budget / 4 days")',
+          description: 'What this calculation is for (e.g., "total cost for Honda Accord $29/day × 7 days with fees")',
         },
       },
       required: ['expression'],

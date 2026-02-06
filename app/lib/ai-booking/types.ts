@@ -33,6 +33,11 @@ export interface BookingSession {
   vehicleType: string | null; // "Tesla", "SUV", "Luxury", etc.
   vehicleId: string | null;
   messages: ChatMessage[];
+
+  /** User's maximum TOTAL budget (not daily rate) - used for filtering vehicle cards */
+  maxTotalBudget?: number | null;
+  /** Number of rental days (for total cost calculation) */
+  rentalDays?: number | null;
 }
 
 export interface ChatMessage {

@@ -44,6 +44,8 @@ export function createInitialSession(): BookingSession {
     vehicleType: null,
     vehicleId: null,
     messages: [],
+    maxTotalBudget: null,
+    rentalDays: null,
   };
 }
 

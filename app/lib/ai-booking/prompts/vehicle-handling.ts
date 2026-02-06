@@ -17,7 +17,8 @@ export function buildVehicleContext(vehicles: VehicleSummary[]): string {
         (v.trips > 0 ? ` · ${v.trips} trips` : '') +
         (v.distance ? ` · ${v.distance}` : '') +
         ` · ${v.location}` +
-        (v.depositAmount === 0 ? ' · No Deposit' : '') +
+        ` · Deposit: $${v.depositAmount}` +  // Always show deposit amount
+        (v.depositAmount === 0 ? ' (No Deposit!)' : ' (refundable)') +
         (v.instantBook ? ' · Instant Book' : '') +
         (v.vehicleType === 'RIDESHARE' ? ' · Rideshare' : '') +
         ` [ID: ${v.id}]`

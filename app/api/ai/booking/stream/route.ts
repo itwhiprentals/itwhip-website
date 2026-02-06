@@ -473,15 +473,22 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
       const finalMessage = await streamResponse.finalMessage()
       totalTokensUsed += (finalMessage.usage?.input_tokens || 0) + (finalMessage.usage?.output_tokens || 0)
 
+      // Cast content to a common type for processing
+      // Both beta and regular APIs return similar content block structures
+      const contentBlocks = finalMessage.content as Array<{ type: string; name?: string; input?: unknown; caller?: unknown }>
+
+      // Debug logging for response issues
+      console.log(`[ai-booking-stream] Stop reason: ${stopReason}, Text length: ${currentText.length}, Tool blocks: ${contentBlocks.filter((b: { type: string }) => b.type === 'tool_use').length}`)
+
       // Handle both regular tool_use and PTC (Programmatic Tool Calling) tool_use
       // PTC tool calls have a caller field: { type: 'code_execution_20250825', tool_id: '...' }
-      const completeToolUses = finalMessage.content.filter(
-        (block): block is Anthropic.ToolUseBlock => block.type === 'tool_use'
+      const completeToolUses = contentBlocks.filter(
+        (block: { type: string }): block is Anthropic.ToolUseBlock => block.type === 'tool_use'
       )
 
       // Check for server_tool_use (code execution) blocks
-      const serverToolUses = finalMessage.content.filter(
-        (block) => block.type === 'server_tool_use'
+      const serverToolUses = contentBlocks.filter(
+        (block: { type: string }) => block.type === 'server_tool_use'
       )
 
       // Log PTC usage for debugging
@@ -493,17 +500,17 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
       if (completeToolUses.length > 0 && stopReason === 'tool_use') {
         // Check if any tools came from PTC (code execution)
         const ptcToolCalls = completeToolUses.filter(
-          (t) => 'caller' in t && (t.caller as { type?: string })?.type === 'code_execution_20250825'
+          (t: Anthropic.ToolUseBlock & { caller?: { type?: string } }) => t.caller?.type === 'code_execution_20250825'
         )
         if (ptcToolCalls.length > 0) {
           console.log(`[ai-booking-stream] PTC: ${ptcToolCalls.length} programmatic tool call(s)`)
         }
 
         await sse.sendEvent('tool_use', {
-          tools: completeToolUses.map(t => ({
+          tools: completeToolUses.map((t: Anthropic.ToolUseBlock & { caller?: { type?: string } }) => ({
             name: t.name,
             input: t.input,
-            isPTC: 'caller' in t && (t.caller as { type?: string })?.type === 'code_execution_20250825',
+            isPTC: t.caller?.type === 'code_execution_20250825',
           })),
         })
 
@@ -512,8 +519,60 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
           session
         )
 
+        // BUDGET EXTRACTION: Check if calculator was called with budget/days pattern
+        for (const toolUse of completeToolUses) {
+          if (toolUse.name === 'calculator') {
+            const input = toolUse.input as { expression?: string; purpose?: string }
+            if (input.expression) {
+              // Detect "TOTAL / DAYS" pattern (e.g., "350 / 4" or "600/5")
+              const divMatch = input.expression.match(/^\s*(\d+(?:\.\d+)?)\s*\/\s*(\d+)\s*$/)
+              if (divMatch) {
+                const totalBudget = parseFloat(divMatch[1])
+                const days = parseInt(divMatch[2])
+                console.log(`[ai-booking-stream] Budget detected: $${totalBudget} total for ${days} days`)
+                updatedSession.maxTotalBudget = totalBudget
+                updatedSession.rentalDays = days
+              }
+            }
+          }
+        }
+
         if (searchedVehicles) {
-          vehicles = searchedVehicles
+          // BUDGET FILTERING: Only show cars that fit user's total budget
+          let filteredVehicles = searchedVehicles
+
+          // Also set rentalDays from session dates if not already set
+          if (!updatedSession.rentalDays && updatedSession.startDate && updatedSession.endDate) {
+            updatedSession.rentalDays = calculateDays(updatedSession.startDate, updatedSession.endDate)
+          }
+
+          if (updatedSession.maxTotalBudget && updatedSession.rentalDays) {
+            const budget = updatedSession.maxTotalBudget
+            const days = updatedSession.rentalDays
+            const feeMultiplier = 1.234 // 15% service + 8.4% tax
+
+            filteredVehicles = searchedVehicles.filter(v => {
+              const total = (v.dailyRate * days * feeMultiplier) + v.depositAmount
+              return total <= budget
+            })
+
+            console.log(`[ai-booking-stream] Budget filter: ${searchedVehicles.length} → ${filteredVehicles.length} cars (budget: $${budget}, ${days} days)`)
+
+            // Fallback: If no cars fit, show top 3 cheapest with warning
+            if (filteredVehicles.length === 0) {
+              filteredVehicles = searchedVehicles
+                .slice()
+                .sort((a, b) => {
+                  const totalA = (a.dailyRate * days * feeMultiplier) + a.depositAmount
+                  const totalB = (b.dailyRate * days * feeMultiplier) + b.depositAmount
+                  return totalA - totalB
+                })
+                .slice(0, 3)
+              console.log(`[ai-booking-stream] No cars fit budget, showing 3 cheapest options`)
+            }
+          }
+
+          vehicles = filteredVehicles
           await sse.sendEvent('vehicles', { vehicles })
 
           // CRITICAL: Rebuild system prompt with vehicles so Claude sees presentation rules
@@ -521,13 +580,13 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
             session: updatedSession,
             isLoggedIn: !!body.userId,
             isVerified: false,
-            vehicles: searchedVehicles,
+            vehicles: filteredVehicles,
           })
         }
 
         session = updatedSession
 
-        claudeMessages.push({ role: 'assistant', content: finalMessage.content })
+        claudeMessages.push({ role: 'assistant', content: contentBlocks as Anthropic.ContentBlockParam[] })
         claudeMessages.push({ role: 'user', content: results })
 
         continue
@@ -538,7 +597,15 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
     }
 
     // Parse Claude's JSON response to extract the reply and other fields
+    console.log(`[ai-booking-stream] Raw response (first 200 chars): ${fullReply.slice(0, 200)}`)
     const parsed = parseClaudeResponse(fullReply)
+    console.log(`[ai-booking-stream] Parsed reply: "${parsed.reply.slice(0, 100)}..."`)
+
+    // Safety check: ensure we have a valid reply
+    if (!parsed.reply || parsed.reply.length === 0) {
+      console.error('[ai-booking-stream] Empty reply after parsing!')
+      parsed.reply = "Let me check that for you. Could you tell me which car you're interested in?"
+    }
 
     // Update session with extracted data
     if (parsed.extractedData) {
