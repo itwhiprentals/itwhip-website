@@ -52,6 +52,7 @@ export default function ChatViewStreaming({
     action,
     suggestions,
     error,
+    isRateLimited,
     toolsInUse,
     sendMessage,
     reset: resetStream,
@@ -338,7 +339,7 @@ export default function ChatViewStreaming({
           )}
         </AnimatePresence>
 
-        {/* Error message */}
+        {/* Error message or rate limit prompt */}
         <AnimatePresence>
           {error && (
             <motion.div
@@ -347,7 +348,15 @@ export default function ChatViewStreaming({
               exit={{ opacity: 0 }}
               transition={springTransition}
             >
-              <ErrorMessage error={error} />
+              {isRateLimited ? (
+                <RateLimitPrompt
+                  error={error}
+                  onClassicSearch={onClassicSearch}
+                  onLogin={onNavigateToLogin}
+                />
+              ) : (
+                <ErrorMessage error={error} />
+              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -489,14 +498,21 @@ function ThinkingIndicator({
     get_weather: 'Checking weather',
     select_vehicle: 'Selecting vehicle',
     update_booking_details: 'Updating details',
+    calculator: 'Calculating',
   }
 
   const currentTool = toolsInUse[0]
   const label = currentTool ? toolLabels[currentTool.name] || 'Processing' : 'Thinking'
 
   return (
-    <div className="flex gap-2">
-      <Image src="/images/choe-logo.png" alt="Choé" width={28} height={28} className="rounded-md flex-shrink-0" />
+    <div className="flex gap-2 items-start">
+      <Image
+        src="/images/choe-logo.png"
+        alt="Choé"
+        width={96}
+        height={28}
+        className="flex-shrink-0 h-7 w-auto rounded-md object-contain"
+      />
       <div className="px-4 py-3 bg-gray-100 dark:bg-gray-800 rounded-2xl rounded-bl-sm">
         <div className="flex items-center gap-2">
           {isThinking && currentTool && (
@@ -515,10 +531,69 @@ function ThinkingIndicator({
 
 function ErrorMessage({ error }: { error: string }) {
   return (
-    <div className="flex gap-2">
-      <Image src="/images/choe-logo.png" alt="Choé" width={28} height={28} className="rounded-md flex-shrink-0" />
+    <div className="flex gap-2 items-start">
+      <Image
+        src="/images/choe-logo.png"
+        alt="Choé"
+        width={96}
+        height={28}
+        className="flex-shrink-0 h-7 w-auto rounded-md object-contain"
+      />
       <div className="px-4 py-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl rounded-bl-sm">
         <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+      </div>
+    </div>
+  )
+}
+
+function RateLimitPrompt({
+  error,
+  onClassicSearch,
+  onLogin,
+}: {
+  error: string
+  onClassicSearch?: () => void
+  onLogin?: () => void
+}) {
+  return (
+    <div className="space-y-3">
+      {/* Error message bubble */}
+      <div className="flex gap-2 items-start">
+        <Image
+          src="/images/choe-logo.png"
+          alt="Choé"
+          width={96}
+          height={28}
+          className="flex-shrink-0 h-7 w-auto rounded-md object-contain"
+        />
+        <div className="px-4 py-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl rounded-bl-sm">
+          <p className="text-sm text-amber-700 dark:text-amber-300">{error}</p>
+        </div>
+      </div>
+
+      {/* Options card */}
+      <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+        <p className="text-sm text-amber-800 dark:text-amber-200 mb-3 text-center">
+          You can still browse cars using our classic search, or log in for higher limits.
+        </p>
+        <div className="flex gap-2 justify-center">
+          {onClassicSearch && (
+            <button
+              onClick={onClassicSearch}
+              className="px-4 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-semibold rounded-lg hover:bg-gray-700 dark:hover:bg-gray-200 transition-colors"
+            >
+              Classic Search
+            </button>
+          )}
+          {onLogin && (
+            <button
+              onClick={onLogin}
+              className="px-4 py-2 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary/90 transition-colors"
+            >
+              Log In
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )

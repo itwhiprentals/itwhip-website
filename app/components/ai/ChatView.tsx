@@ -65,8 +65,12 @@ export default function ChatView({ onNavigateToBooking, onNavigateToLogin, onCla
     }
   }, [session?.messages.length, vehicles, summary])
 
+  // Track rate limit state separately (not a real BookingAction)
+  const [isRateLimited, setIsRateLimited] = useState(false)
+
   const sendMessage = useCallback(async (message: string) => {
     setLoading(true)
+    setIsRateLimited(false) // Reset on new message
 
     try {
       const res = await fetch('/api/ai/booking', {
@@ -78,6 +82,27 @@ export default function ChatView({ onNavigateToBooking, onNavigateToLogin, onCla
           previousVehicles: vehicles,
         }),
       })
+
+      // Handle rate limit (429) with helpful options
+      if (res.status === 429) {
+        const errorData = await res.json()
+        setSession((prev) => {
+          if (!prev) return prev
+          return {
+            ...prev,
+            messages: [
+              ...prev.messages,
+              {
+                role: 'assistant' as const,
+                content: errorData.error || 'Rate limit reached.',
+                timestamp: Date.now(),
+              },
+            ],
+          }
+        })
+        setIsRateLimited(true)
+        return
+      }
 
       if (!res.ok) throw new Error('Request failed')
 
@@ -247,6 +272,22 @@ export default function ChatView({ onNavigateToBooking, onNavigateToLogin, onCla
           )}
         </AnimatePresence>
 
+        {/* Rate limit prompt with options */}
+        <AnimatePresence>
+          {isRateLimited && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={springTransition}
+            >
+              <RateLimitPrompt
+                onClassicSearch={onClassicSearch}
+                onLogin={onNavigateToLogin}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Loading indicator */}
         <AnimatePresence>
           {loading && (
@@ -384,14 +425,54 @@ function ActionPrompt({
 
 function TypingIndicator() {
   return (
-    <div className="flex gap-2">
-      <Image src="/images/choe-logo.png" alt="Choé" width={28} height={28} className="rounded-md flex-shrink-0" />
+    <div className="flex gap-2 items-start">
+      <Image
+        src="/images/choe-logo.png"
+        alt="Choé"
+        width={96}
+        height={28}
+        className="flex-shrink-0 h-7 w-auto rounded-md object-contain"
+      />
       <div className="px-4 py-3 bg-gray-100 dark:bg-gray-800 rounded-2xl rounded-bl-sm">
         <div className="flex gap-1">
           <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
           <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
           <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
         </div>
+      </div>
+    </div>
+  )
+}
+
+function RateLimitPrompt({
+  onClassicSearch,
+  onLogin,
+}: {
+  onClassicSearch?: () => void
+  onLogin?: () => void
+}) {
+  return (
+    <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+      <p className="text-sm text-amber-800 dark:text-amber-200 mb-3 text-center">
+        You can still browse cars using our classic search, or log in for higher limits.
+      </p>
+      <div className="flex gap-2 justify-center">
+        {onClassicSearch && (
+          <button
+            onClick={onClassicSearch}
+            className="px-4 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-semibold rounded-lg hover:bg-gray-700 dark:hover:bg-gray-200 transition-colors"
+          >
+            Classic Search
+          </button>
+        )}
+        {onLogin && (
+          <button
+            onClick={onLogin}
+            className="px-4 py-2 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            Log In
+          </button>
+        )}
       </div>
     </div>
   )

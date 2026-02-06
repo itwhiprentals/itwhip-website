@@ -3,14 +3,83 @@
 // Extracted for modularity and reusability
 
 import Anthropic from '@anthropic-ai/sdk'
-import { searchVehicles, SearchQuery } from './search-bridge'
+import { searchVehicles } from './search-bridge'
+import type { SearchQuery } from './types'
 import { fetchWeatherContext } from './weather-bridge'
 import { BookingSession, VehicleSummary } from './types'
+
+// =============================================================================
+// SAFE CALCULATOR
+// =============================================================================
+
+/**
+ * Safely evaluate a mathematical expression
+ * Only allows numbers and basic operators (+, -, *, /, parentheses)
+ * Prevents code injection by using regex validation
+ */
+function safeCalculate(expression: string): number | string {
+  // Remove whitespace and validate characters
+  const cleaned = expression.replace(/\s/g, '')
+
+  // Only allow: digits, decimal points, and operators
+  if (!/^[\d.+\-*/()]+$/.test(cleaned)) {
+    return 'Error: Invalid characters in expression'
+  }
+
+  // Prevent empty expressions
+  if (!cleaned || cleaned.length === 0) {
+    return 'Error: Empty expression'
+  }
+
+  try {
+    // Use Function constructor for safer evaluation than eval
+    // This creates an isolated scope
+    const calculate = new Function(`return (${cleaned})`)
+    const result = calculate()
+
+    // Validate result is a number
+    if (typeof result !== 'number' || !isFinite(result)) {
+      return 'Error: Invalid result'
+    }
+
+    // Round to 2 decimal places for currency
+    return Math.round(result * 100) / 100
+  } catch {
+    return 'Error: Could not evaluate expression'
+  }
+}
 
 // =============================================================================
 // TOOL DEFINITIONS
 // =============================================================================
 
+// Extended tool type with allowed_callers for Programmatic Tool Calling (PTC)
+interface PTCTool extends Anthropic.Tool {
+  allowed_callers?: string[]
+}
+
+// Code execution tool for Programmatic Tool Calling
+export const CODE_EXECUTION_TOOL = {
+  type: 'code_execution_20250825' as const,
+  name: 'code_execution',
+}
+
+// Models that support Programmatic Tool Calling (PTC)
+// NOTE: Haiku does NOT support PTC, only code execution
+const PTC_SUPPORTED_MODELS = [
+  'claude-opus-4-6',
+  'claude-sonnet-4-5-20250929',
+  'claude-opus-4-5-20251101',
+]
+
+/**
+ * Check if a model supports Programmatic Tool Calling
+ */
+export function supportsPTC(modelId: string): boolean {
+  return PTC_SUPPORTED_MODELS.some(m => modelId.includes(m.replace('claude-', '')))
+}
+
+// Base booking tools without allowed_callers (for Haiku and non-PTC models)
 export const BOOKING_TOOLS: Anthropic.Tool[] = [
   {
     name: 'search_vehicles',
@@ -135,7 +204,54 @@ export const BOOKING_TOOLS: Anthropic.Tool[] = [
       },
     },
   },
+  {
+    name: 'calculator',
+    description: 'Calculate arithmetic expressions. ALWAYS use this when user mentions a total budget for multiple days (e.g., "$350 for 4 days" → calculate 350/4 to get max daily rate). After calculating, IMMEDIATELY call search_vehicles with the result as priceMax. Never do math in your head.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        expression: {
+          type: 'string',
+          description: 'The mathematical expression to evaluate (e.g., "350 / 4" for budget per day, "89 * 3" for total cost)',
+        },
+        purpose: {
+          type: 'string',
+          description: 'What this calculation is for (e.g., "max daily rate from $350 budget / 4 days")',
+        },
+      },
+      required: ['expression'],
+    },
+  },
 ]
+
+/**
+ * Get tools with PTC (allowed_callers) enabled for models that support it
+ * For Haiku and other non-PTC models, returns regular tools
+ */
+export function getToolsForModel(modelId: string): (typeof CODE_EXECUTION_TOOL | PTCTool)[] {
+  if (!supportsPTC(modelId)) {
+    // Haiku and other non-PTC models: use regular tools without allowed_callers
+    return BOOKING_TOOLS
+  }
+
+  // Sonnet/Opus: add code_execution tool and allowed_callers
+  const ptcTools: PTCTool[] = BOOKING_TOOLS.map(tool => ({
+    ...tool,
+    allowed_callers: ['code_execution_20250825'],
+  }))
+
+  return [CODE_EXECUTION_TOOL, ...ptcTools]
+}
+
+// Legacy function for backwards compatibility
+export function getAllToolsWithPTC(): (typeof CODE_EXECUTION_TOOL | PTCTool)[] {
+  // Returns PTC-enabled tools (use getToolsForModel for model-aware selection)
+  const ptcTools: PTCTool[] = BOOKING_TOOLS.map(tool => ({
+    ...tool,
+    allowed_callers: ['code_execution_20250825'],
+  }))
+  return [CODE_EXECUTION_TOOL, ...ptcTools]
+}
 
 // =============================================================================
 // TOOL RESULT TYPE
@@ -189,6 +305,21 @@ export async function executeTools(
 
         vehicles = await searchVehicles(searchQuery)
 
+        // FALLBACK: If 0 results, automatically expand to Phoenix metro
+        let expandedSearch = false
+        const requestedLocation = input.location as string
+        if (vehicles.length === 0 && requestedLocation) {
+          const expandedQuery: SearchQuery = {
+            ...searchQuery,
+            location: 'Phoenix, AZ', // Expand to main metro area
+          }
+          vehicles = await searchVehicles(expandedQuery)
+          if (vehicles.length > 0) {
+            expandedSearch = true
+            console.log(`[tools] Expanded search from ${requestedLocation} to Phoenix, found ${vehicles.length} vehicles`)
+          }
+        }
+
         // Update session with search context
         if (input.location) updatedSession.location = input.location as string
         if (input.pickupDate) updatedSession.startDate = input.pickupDate as string
@@ -203,6 +334,9 @@ export async function executeTools(
           content: vehicles.length > 0
             ? JSON.stringify({
                 found: vehicles.length,
+                expandedSearch,
+                originalLocation: expandedSearch ? requestedLocation : undefined,
+                expandedTo: expandedSearch ? 'Phoenix metro area' : undefined,
                 vehicles: vehicles.slice(0, 12).map(v => ({
                   id: v.id,
                   name: `${v.year} ${v.make} ${v.model}`,
@@ -210,10 +344,12 @@ export async function executeTools(
                   depositAmount: v.depositAmount,
                   seats: v.seats,
                   transmission: v.transmission,
-                  features: v.features?.slice(0, 3),
+                  location: v.location,
+                  vehicleType: v.vehicleType,
+                  instantBook: v.instantBook,
                 })),
               })
-            : JSON.stringify({ found: 0, message: 'No vehicles found matching criteria. Suggest broadening the search.' }),
+            : JSON.stringify({ found: 0, message: 'No vehicles available in Phoenix metro area for these dates.' }),
         })
         break
       }
@@ -254,6 +390,29 @@ export async function executeTools(
           type: 'tool_result',
           tool_use_id: toolUse.id,
           content: JSON.stringify({ updated: true, details: input }),
+        })
+        break
+      }
+
+      case 'calculator': {
+        const expression = input.expression as string
+        const purpose = input.purpose as string | undefined
+        const result = safeCalculate(expression)
+
+        console.log(`[tools] Calculator: ${expression} = ${result}${purpose ? ` (${purpose})` : ''}`)
+
+        results.push({
+          type: 'tool_result',
+          tool_use_id: toolUse.id,
+          content: JSON.stringify({
+            expression,
+            result,
+            purpose,
+            // Provide guidance on how to use the result
+            usage: typeof result === 'number'
+              ? `Use ${Math.floor(result)} as priceMax for search_vehicles if this was a budget calculation`
+              : 'Calculation error - ask user to clarify'
+          }),
         })
         break
       }

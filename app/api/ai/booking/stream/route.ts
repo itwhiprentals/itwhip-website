@@ -27,7 +27,7 @@ import {
   getPricingConfig,
   getFeatureFlags,
 } from '@/app/lib/ai-booking/choe-settings'
-import { BOOKING_TOOLS, executeTools } from '@/app/lib/ai-booking/tools'
+import { BOOKING_TOOLS, executeTools, getToolsForModel, supportsPTC } from '@/app/lib/ai-booking/tools'
 import { countAndValidateTokens } from '@/app/lib/ai-booking/token-counting'
 import { calculateCostSimple } from '@/app/lib/ai-booking/cost'
 import {
@@ -257,14 +257,28 @@ interface SSEWriter {
 
 function createSSEWriter(writer: WritableStreamDefaultWriter<Uint8Array>): SSEWriter {
   const encoder = new TextEncoder()
+  let closed = false
 
   return {
     sendEvent: async (event: string, data: unknown) => {
-      const message = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`
-      await writer.write(encoder.encode(message))
+      if (closed) return
+      try {
+        const message = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`
+        await writer.write(encoder.encode(message))
+      } catch (error) {
+        // Stream may have been closed by client
+        closed = true
+        console.log('[ai-booking-stream] Stream write failed, likely client disconnected')
+      }
     },
     close: async () => {
-      await writer.close()
+      if (closed) return
+      closed = true
+      try {
+        await writer.close()
+      } catch {
+        // Already closed, ignore
+      }
     },
   }
 }
@@ -395,22 +409,48 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
       })
     }
 
-    // Agentic loop
+    // Agentic loop with Programmatic Tool Calling (PTC) support for Sonnet/Opus
+    // For Haiku, use regular tool calling without PTC
+    // PTC allows Claude to write Python code that chains tools together
+    // e.g., calculator → search_vehicles in a single execution
     let continueLoop = true
+    const modelSupportsPTC = supportsPTC(modelConfig.modelId)
+    const toolsToUse = getToolsForModel(modelConfig.modelId)
+
+    console.log(`[ai-booking-stream] Model: ${modelConfig.modelId}, PTC supported: ${modelSupportsPTC}`)
+
     while (continueLoop) {
-      const streamResponse = client.messages.stream({
-        model: modelConfig.modelId,
-        max_tokens: modelConfig.maxTokens,
-        system: [
-          {
-            type: 'text' as const,
-            text: systemPrompt,
-            cache_control: { type: 'ephemeral' as const },
-          },
-        ],
-        messages: claudeMessages,
-        tools: BOOKING_TOOLS,
-      })
+      // Use beta API only for PTC-supported models (Sonnet/Opus)
+      // For Haiku, use regular messages.stream without beta headers
+      const streamResponse = modelSupportsPTC
+        ? client.beta.messages.stream({
+            model: modelConfig.modelId,
+            max_tokens: modelConfig.maxTokens,
+            // Beta headers for Programmatic Tool Calling
+            betas: ['code-execution-2025-08-25', 'advanced-tool-use-2025-11-20'],
+            system: [
+              {
+                type: 'text' as const,
+                text: systemPrompt,
+                cache_control: { type: 'ephemeral' as const },
+              },
+            ],
+            messages: claudeMessages,
+            tools: toolsToUse as Anthropic.Tool[],
+          })
+        : client.messages.stream({
+            model: modelConfig.modelId,
+            max_tokens: modelConfig.maxTokens,
+            system: [
+              {
+                type: 'text' as const,
+                text: systemPrompt,
+                cache_control: { type: 'ephemeral' as const },
+              },
+            ],
+            messages: claudeMessages,
+            tools: BOOKING_TOOLS,
+          })
 
       let currentText = ''
       let stopReason: string | null = null
@@ -433,14 +473,38 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
       const finalMessage = await streamResponse.finalMessage()
       totalTokensUsed += (finalMessage.usage?.input_tokens || 0) + (finalMessage.usage?.output_tokens || 0)
 
+      // Handle both regular tool_use and PTC (Programmatic Tool Calling) tool_use
+      // PTC tool calls have a caller field: { type: 'code_execution_20250825', tool_id: '...' }
       const completeToolUses = finalMessage.content.filter(
         (block): block is Anthropic.ToolUseBlock => block.type === 'tool_use'
       )
 
-      // Execute tools if needed
+      // Check for server_tool_use (code execution) blocks
+      const serverToolUses = finalMessage.content.filter(
+        (block) => block.type === 'server_tool_use'
+      )
+
+      // Log PTC usage for debugging
+      if (serverToolUses.length > 0) {
+        console.log('[ai-booking-stream] PTC: Code execution in use')
+      }
+
+      // Execute tools if needed (works for both regular and PTC tool calls)
       if (completeToolUses.length > 0 && stopReason === 'tool_use') {
+        // Check if any tools came from PTC (code execution)
+        const ptcToolCalls = completeToolUses.filter(
+          (t) => 'caller' in t && (t.caller as { type?: string })?.type === 'code_execution_20250825'
+        )
+        if (ptcToolCalls.length > 0) {
+          console.log(`[ai-booking-stream] PTC: ${ptcToolCalls.length} programmatic tool call(s)`)
+        }
+
         await sse.sendEvent('tool_use', {
-          tools: completeToolUses.map(t => ({ name: t.name, input: t.input })),
+          tools: completeToolUses.map(t => ({
+            name: t.name,
+            input: t.input,
+            isPTC: 'caller' in t && (t.caller as { type?: string })?.type === 'code_execution_20250825',
+          })),
         })
 
         const { results, vehicles: searchedVehicles, updatedSession } = await executeTools(

@@ -23,6 +23,7 @@ interface StreamingState {
   action: BookingAction | null
   suggestions: string[]
   error: string | null
+  isRateLimited: boolean
   toolsInUse: Array<{ name: string; input: unknown }>
 }
 
@@ -66,6 +67,7 @@ export function useStreamingChat(options: StreamingOptions = {}) {
     action: null,
     suggestions: [],
     error: null,
+    isRateLimited: false,
     toolsInUse: [],
   })
 
@@ -93,6 +95,7 @@ export function useStreamingChat(options: StreamingOptions = {}) {
       isThinking: false,
       currentText: '',
       error: null,
+      isRateLimited: false,
       toolsInUse: [],
     }))
 
@@ -109,6 +112,20 @@ export function useStreamingChat(options: StreamingOptions = {}) {
         }),
         signal: abortController.signal,
       })
+
+      // Handle rate limit (429) separately
+      if (response.status === 429) {
+        const errorData = await response.json().catch(() => ({ error: 'Rate limit reached' }))
+        setState(prev => ({
+          ...prev,
+          isStreaming: false,
+          isThinking: false,
+          error: errorData.error || 'Daily limit reached. Please try again tomorrow.',
+          isRateLimited: true,
+        }))
+        options.onError?.(errorData.error || 'Rate limit reached')
+        return
+      }
 
       if (!response.ok) {
         throw new Error('Failed to connect to AI service')
@@ -214,11 +231,16 @@ export function useStreamingChat(options: StreamingOptions = {}) {
 
           case 'error': {
             const { error } = data as { error: string }
+            // Detect rate limit errors from message content
+            const isRateLimit = error.toLowerCase().includes('limit') ||
+                               error.toLowerCase().includes('rate') ||
+                               error.toLowerCase().includes('try again tomorrow')
             setState(prev => ({
               ...prev,
               isStreaming: false,
               isThinking: false,
               error,
+              isRateLimited: isRateLimit,
             }))
             options.onError?.(error)
             break
@@ -268,6 +290,7 @@ export function useStreamingChat(options: StreamingOptions = {}) {
       action: null,
       suggestions: [],
       error: null,
+      isRateLimited: false,
       toolsInUse: [],
     })
   }, [cancel])
