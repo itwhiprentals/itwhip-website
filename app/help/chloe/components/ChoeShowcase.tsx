@@ -60,14 +60,15 @@ export function ChoeShowcase() {
             >
               {/* Phone frame */}
               <div className="relative mx-auto max-w-[200px] sm:max-w-[220px] lg:max-w-[240px]">
-                {/* Screenshot with subtle shadow */}
-                <div className="relative rounded-[24px] sm:rounded-[28px] overflow-hidden shadow-2xl shadow-black/20 dark:shadow-black/40 ring-1 ring-gray-200 dark:ring-[#333] group-hover:shadow-[#e87040]/20 transition-shadow duration-300">
+                {/* Screenshot with drop shadow (follows transparent shape) */}
+                <div className="relative">
                   <Image
                     src={screenshot.src}
                     alt={screenshot.alt}
                     width={540}
                     height={960}
-                    className="w-full h-auto group-hover:scale-[1.02] transition-transform duration-500"
+                    className="w-full h-auto group-hover:scale-[1.02] transition-transform duration-500 drop-shadow-2xl"
+                    style={{ filter: 'drop-shadow(0 25px 40px rgba(0, 0, 0, 0.25))' }}
                     quality={90}
                   />
                 </div>
