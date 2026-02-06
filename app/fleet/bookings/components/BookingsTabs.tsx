@@ -10,12 +10,14 @@ interface BookingsTabsProps {
     needsAttention: number
     todayBookings: number
     totalBookings: number
+    pendingReview: number
   }
 }
 
 export function BookingsTabs({ activeTab, onTabChange, stats }: BookingsTabsProps) {
   const tabs = [
     { id: 'all', label: 'All Bookings', count: stats.totalBookings },
+    { id: 'pending_review', label: 'Pending Review', count: stats.pendingReview, highlight: stats.pendingReview > 0 },
     { id: 'pending_verification', label: 'Pending Verification', count: stats.pendingVerification, highlight: stats.pendingVerification > 0 },
     { id: 'active', label: 'Active Trips', count: stats.activeBookings },
     { id: 'needs_attention', label: 'Needs Attention', count: stats.needsAttention, highlight: stats.needsAttention > 0 },

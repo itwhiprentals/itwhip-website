@@ -37,7 +37,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Tab-based filters
-    if (tab === 'pending_verification') {
+    if (tab === 'pending_review') {
+      where.fleetStatus = 'PENDING'
+      where.paymentStatus = 'AUTHORIZED'
+    } else if (tab === 'pending_verification') {
       where.verificationStatus = 'PENDING'
       where.status = { in: ['PENDING', 'CONFIRMED'] }
     } else if (tab === 'active') {
@@ -250,7 +253,7 @@ export async function GET(request: NextRequest) {
     }))
 
     // Get stats for dashboard
-    const [pendingVerification, activeBookings, needsAttention, todayBookings] = await Promise.all([
+    const [pendingVerification, activeBookings, needsAttention, todayBookings, pendingReview] = await Promise.all([
       prisma.rentalBooking.count({
         where: { verificationStatus: 'PENDING', status: { in: ['PENDING', 'CONFIRMED'] } }
       }),
@@ -273,6 +276,10 @@ export async function GET(request: NextRequest) {
             { endDate: { gte: new Date(new Date().setHours(0,0,0,0)), lte: new Date(new Date().setHours(23,59,59,999)) } }
           ]
         }
+      }),
+      // Pending Fleet Review (fleetStatus = PENDING with payment authorized)
+      prisma.rentalBooking.count({
+        where: { fleetStatus: 'PENDING', paymentStatus: 'AUTHORIZED' }
       })
     ])
 
@@ -291,7 +298,8 @@ export async function GET(request: NextRequest) {
         activeBookings,
         needsAttention,
         todayBookings,
-        totalBookings: totalCount
+        totalBookings: totalCount,
+        pendingReview
       }
     })
 

@@ -159,6 +159,9 @@ export interface BookingStats {
   pendingVerification: number
   activeBookings: number
   completedToday: number
+  needsAttention: number
+  todayBookings: number
+  pendingReview: number
 }
 
 export interface BookingActionPayload {
