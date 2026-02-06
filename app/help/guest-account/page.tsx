@@ -20,7 +20,10 @@ import {
   IoHelpCircleOutline,
   IoSparklesOutline,
   IoCardOutline,
-  IoRocketOutline
+  IoRocketOutline,
+  IoLockClosedOutline,
+  IoFingerPrintOutline,
+  IoServerOutline
 } from 'react-icons/io5'
 
 export const metadata: Metadata = {
@@ -441,6 +444,161 @@ export default function GuestAccountPage() {
                 Have your own auto insurance? Upload it to your account and get <strong>50% off your security deposit</strong> on every booking.
                 That&apos;s money back in your pocket!
               </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Payment Security */}
+        <section className="py-8 bg-white dark:bg-gray-800">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="mb-6">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <IoLockClosedOutline className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500 flex-shrink-0" />
+                Payment Security
+              </h2>
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1 pl-7 sm:pl-8">How we protect your payment information</p>
+            </div>
+
+            <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
+              <div className="flex items-start gap-4 mb-4">
+                <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <IoCardOutline className="w-6 h-6 text-purple-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Powered by Stripe</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    All payments are processed through <strong>Stripe</strong> - the same payment platform used by Amazon, Google, and millions of businesses worldwide.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center gap-2 mb-2">
+                    <IoLockClosedOutline className="w-5 h-5 text-emerald-600" />
+                    <h4 className="font-medium text-gray-900 dark:text-white text-sm">We Never Store Card Data</h4>
+                  </div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    Your card numbers, CVV, and sensitive payment details go directly to Stripe. We never see or store this information on our servers.
+                  </p>
+                </div>
+
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center gap-2 mb-2">
+                    <IoServerOutline className="w-5 h-5 text-blue-600" />
+                    <h4 className="font-medium text-gray-900 dark:text-white text-sm">What We Store</h4>
+                  </div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    We only store a Stripe customer ID to link your payment methods. Card details remain securely with Stripe, PCI-DSS compliant and encrypted.
+                  </p>
+                </div>
+
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center gap-2 mb-2">
+                    <IoShieldCheckmarkOutline className="w-5 h-5 text-amber-600" />
+                    <h4 className="font-medium text-gray-900 dark:text-white text-sm">Authorization Holds</h4>
+                  </div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    When booking, we authorize (hold) funds but don&apos;t charge until host approval. If declined, the hold is released automatically.
+                  </p>
+                </div>
+
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center gap-2 mb-2">
+                    <IoWalletOutline className="w-5 h-5 text-purple-600" />
+                    <h4 className="font-medium text-gray-900 dark:text-white text-sm">Secure Deposits</h4>
+                  </div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    Security deposits are held by Stripe, not us. After your trip with no issues, deposits are released back to your card automatically.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Identity & Data Storage */}
+        <section className="py-8">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="mb-6">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <IoFingerPrintOutline className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500 flex-shrink-0" />
+                Identity & Data Storage
+              </h2>
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1 pl-7 sm:pl-8">How we handle your personal information</p>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <div className="p-4 sm:p-6">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  Your privacy matters. Here&apos;s exactly what we store and what remains with our secure partners:
+                </p>
+
+                <div className="space-y-4">
+                  {/* What ItWhip Stores */}
+                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                    <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-2 flex items-center gap-2">
+                      <IoServerOutline className="w-5 h-5" />
+                      What ItWhip Stores
+                    </h4>
+                    <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1.5">
+                      <li className="flex items-start gap-2">
+                        <IoCheckmarkCircle className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                        <span><strong>Basic profile info:</strong> Name, email, phone number from your account</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <IoCheckmarkCircle className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                        <span><strong>Driver&apos;s license data:</strong> Name, license number, expiration date, state (for booking verification)</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <IoCheckmarkCircle className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                        <span><strong>Booking history:</strong> Past trips, reviews, and preferences</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <IoCheckmarkCircle className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                        <span><strong>Verification status:</strong> Whether you&apos;ve completed identity verification</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  {/* What Stripe Stores */}
+                  <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
+                    <h4 className="font-semibold text-purple-800 dark:text-purple-200 mb-2 flex items-center gap-2">
+                      <IoLockClosedOutline className="w-5 h-5" />
+                      What Stripe Stores (Not ItWhip)
+                    </h4>
+                    <ul className="text-sm text-purple-700 dark:text-purple-300 space-y-1.5">
+                      <li className="flex items-start gap-2">
+                        <IoCheckmarkCircle className="w-4 h-4 text-purple-500 flex-shrink-0 mt-0.5" />
+                        <span><strong>Full card details:</strong> Card numbers, expiration, CVV - all encrypted</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <IoCheckmarkCircle className="w-4 h-4 text-purple-500 flex-shrink-0 mt-0.5" />
+                        <span><strong>Identity documents:</strong> Full DL images and selfie from Stripe Identity verification</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <IoCheckmarkCircle className="w-4 h-4 text-purple-500 flex-shrink-0 mt-0.5" />
+                        <span><strong>Biometric data:</strong> Selfie facial matching for identity verification</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <IoCheckmarkCircle className="w-4 h-4 text-purple-500 flex-shrink-0 mt-0.5" />
+                        <span><strong>Transaction history:</strong> Full payment records and receipts</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Security Note */}
+              <div className="bg-gray-100 dark:bg-gray-900 p-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex items-start gap-3">
+                  <IoShieldCheckmarkOutline className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                    <strong className="text-gray-900 dark:text-white">Your data is protected.</strong> We use encryption at rest and in transit.
+                    Stripe is PCI-DSS Level 1 certified (highest security standard). You can request deletion of your data anytime by contacting support.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </section>

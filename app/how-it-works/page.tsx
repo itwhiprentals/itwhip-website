@@ -107,17 +107,17 @@ export default function HowItWorksPage() {
       cta: { text: 'Start Application', link: '/host/signup' }
     },
     {
-      icon: IoShieldCheckmarkOutline,
-      title: 'Choose Your Insurance Tier',
-      description: 'Pick your tier based on the insurance you bring. More coverage = higher earnings.',
+      icon: IoTrendingUpOutline,
+      title: 'Grow Your Fleet',
+      description: 'More vehicles = higher earnings. Commission tiers reward larger fleets.',
       details: [
-        'BASIC (40%): We provide all insurance',
-        'STANDARD (75%): You bring P2P insurance',
-        'PREMIUM (90%): You bring commercial insurance',
-        '$1M liability on all tiers',
-        'Platform insurance always backs you up'
+        'Standard (75%): 1-9 vehicles',
+        'Gold (80%): 10-49 vehicles',
+        'Platinum (85%): 50-99 vehicles',
+        'Diamond (90%): 100+ vehicles',
+        '$1M liability included on all tiers'
       ],
-      cta: { text: 'View Insurance Details', link: '/insurance-guide' }
+      cta: { text: 'View Commission Tiers', link: '/host-protection' }
     },
     {
       icon: IoCashOutline,
@@ -225,7 +225,7 @@ export default function HowItWorksPage() {
     {
       icon: IoTrendingUpOutline,
       title: 'Earn Up to 90%',
-      description: 'Keep 40-90% of each rental based on your insurance tier. You choose your earnings.',
+      description: 'Keep 75-90% of each rental based on your fleet size. Larger fleets earn more.',
       highlight: '$600-3,000/month average',
       link: '/host-protection'
     },
@@ -301,33 +301,42 @@ export default function HowItWorksPage() {
     }
   ]
 
-  const insuranceTiers = [
-    {
-      tier: 'BASIC',
-      percentage: '40%',
-      color: 'gray',
-      insurance: 'Platform Insurance',
-      deductible: '$2,500',
-      description: 'No insurance needed from you. We handle everything.',
-      best: 'New hosts, occasional renters'
-    },
+  const commissionTiers = [
     {
       tier: 'STANDARD',
-      percentage: '75%',
-      color: 'amber',
-      insurance: 'P2P Insurance',
-      deductible: '$1,500',
-      description: 'You bring peer-to-peer coverage, your insurance is primary.',
-      best: 'Hosts with Getaround, State Farm P2P'
+      hostKeeps: '75%',
+      platformTakes: '25%',
+      color: 'gray',
+      vehicles: '1-9 vehicles',
+      description: 'Perfect for getting started with your first car.',
+      best: 'New hosts, single car owners'
     },
     {
-      tier: 'PREMIUM',
-      percentage: '90%',
+      tier: 'GOLD',
+      hostKeeps: '80%',
+      platformTakes: '20%',
+      color: 'amber',
+      vehicles: '10-49 vehicles',
+      description: 'Growing your fleet unlocks better rates.',
+      best: 'Established hosts expanding'
+    },
+    {
+      tier: 'PLATINUM',
+      hostKeeps: '85%',
+      platformTakes: '15%',
+      color: 'purple',
+      vehicles: '50-99 vehicles',
+      description: 'Serious fleet operators with premium benefits.',
+      best: 'Professional fleet managers'
+    },
+    {
+      tier: 'DIAMOND',
+      hostKeeps: '90%',
+      platformTakes: '10%',
       color: 'emerald',
-      insurance: 'Commercial Insurance',
-      deductible: '$1,000',
-      description: 'You bring commercial auto insurance, maximum earnings.',
-      best: 'Fleet operators, serious hosts'
+      vehicles: '100+ vehicles',
+      description: 'Maximum earnings for our largest partners.',
+      best: 'Enterprise fleet operators'
     }
   ]
 
@@ -429,13 +438,13 @@ export default function HowItWorksPage() {
       category: 'guest'
     },
     {
-      question: 'How do the insurance tiers work?',
-      answer: 'Your earnings are determined by the insurance you bring: BASIC (40%) - we provide all coverage, STANDARD (75%) - you bring P2P insurance like State Farm or Getaround coverage, PREMIUM (90%) - you bring commercial auto insurance. Higher tiers also get lower deductibles ($2,500 → $1,500 → $1,000).',
+      question: 'How do the commission tiers work?',
+      answer: 'Your earnings are based on your fleet size: Standard (75%) for 1-9 vehicles, Gold (80%) for 10-49 vehicles, Platinum (85%) for 50-99 vehicles, and Diamond (90%) for 100+ vehicles. All tiers include $1M liability coverage.',
       category: 'host'
     },
     {
       question: 'How much can I earn?',
-      answer: 'Earnings vary by vehicle and tier. At the 90% tier: Economy cars average $800-1,400/month, standard vehicles $1,200-2,000/month, luxury $2,000-4,000/month based on 15-20 rental days. Use our earnings calculator to estimate your specific vehicle.',
+      answer: 'Earnings vary by vehicle and tier. At the 90% tier: Economy cars average $800-1,400/month, standard vehicles $1,200-2,000/month, luxury $2,000-4,000/month based on 15-20 rental days. Growing your fleet gets you to higher tiers faster.',
       category: 'host'
     },
     {
@@ -509,13 +518,30 @@ export default function HowItWorksPage() {
               </div>
 
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-                Rent Cars From Local Owners
-                <span className="block text-purple-600 mt-2">In Phoenix, Arizona</span>
+                {activeTab === 'guest' && (
+                  <>
+                    Rent Cars From Local Owners
+                    <span className="block text-purple-600 mt-2">In Phoenix, Arizona</span>
+                  </>
+                )}
+                {activeTab === 'host' && (
+                  <>
+                    Earn Money With Your Car
+                    <span className="block text-purple-600 mt-2">Become an ItWhip Host</span>
+                  </>
+                )}
+                {activeTab === 'fleet' && (
+                  <>
+                    Build Your Fleet Business
+                    <span className="block text-purple-600 mt-2">No Vehicle Required</span>
+                  </>
+                )}
               </h1>
 
               <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 mb-8">
-                Skip the rental counter. Connect directly with local hosts.
-                Fully insured, transparent pricing, hosts earn up to 90%.
+                {activeTab === 'guest' && 'Skip the rental counter. Connect directly with local hosts. Fully insured, transparent pricing.'}
+                {activeTab === 'host' && 'List your car and earn up to 90%. Larger fleets get lower commission rates.'}
+                {activeTab === 'fleet' && 'Earn commission on every booking without owning a vehicle. Build and manage your fleet network.'}
               </p>
 
               {/* Tab Selector */}
@@ -627,74 +653,77 @@ export default function HowItWorksPage() {
           </div>
         </section>
 
-        {/* Insurance Tiers Section - Host Only */}
+        {/* Commission Tiers Section - Host Only */}
         {activeTab === 'host' && (
-          <section className="py-8 sm:py-10 bg-gray-100 dark:bg-gray-900">
+          <section className="py-6 sm:py-8 bg-gray-100 dark:bg-gray-900">
             <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="text-center mb-8">
-                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                  Choose Your Earnings Tier
+              <div className="text-center mb-6">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                  Your Commission Tier
                 </h2>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Your earnings are determined by the insurance you bring
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Larger fleets earn more. Commission based on vehicles in your fleet.
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                {insuranceTiers.map((tier, idx) => (
-                  <div 
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {commissionTiers.map((tier, idx) => (
+                  <div
                     key={idx}
-                    className={`relative rounded-lg p-6 border-2 shadow-xl ${
-                      tier.color === 'emerald' 
-                        ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-500'
+                    className={`relative rounded-lg p-4 border shadow-lg ${
+                      tier.color === 'emerald'
+                        ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-400'
                         : tier.color === 'amber'
-                        ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-500'
+                        ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-400'
+                        : tier.color === 'purple'
+                        ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-400'
                         : 'bg-white dark:bg-gray-800 border-gray-300'
                     }`}
                   >
                     {tier.color === 'amber' && (
-                      <div className="absolute -top-3 right-4 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-lg">
+                      <div className="absolute -top-2 right-2 bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded">
                         POPULAR
                       </div>
                     )}
-                    <div className={`text-sm font-bold mb-2 ${
+                    <div className={`text-xs font-bold mb-1 ${
                       tier.color === 'emerald' ? 'text-emerald-600'
                       : tier.color === 'amber' ? 'text-amber-600'
+                      : tier.color === 'purple' ? 'text-purple-600'
                       : 'text-gray-600'
                     }`}>
-                      {tier.tier} TIER
+                      {tier.tier}
                     </div>
-                    <div className={`text-4xl font-black mb-1 ${
+                    <div className={`text-2xl font-black mb-0.5 ${
                       tier.color === 'emerald' ? 'text-emerald-600'
                       : tier.color === 'amber' ? 'text-amber-600'
-                      : 'text-gray-600'
+                      : tier.color === 'purple' ? 'text-purple-600'
+                      : 'text-gray-700 dark:text-gray-300'
                     }`}>
-                      {tier.percentage}
+                      {tier.hostKeeps}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400 mb-3">You Keep</div>
-                    <div className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                      {tier.insurance}
+                    <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">You Keep</div>
+                    <div className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      {tier.vehicles}
                     </div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-tight">
                       {tier.description}
                     </p>
-                    <div className="text-xs text-gray-600 dark:text-gray-400">
-                      Deductible: {tier.deductible}
-                    </div>
-                    <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                      <div className="text-xs text-gray-600 dark:text-gray-400">Best for:</div>
-                      <div className="text-xs font-medium text-gray-700 dark:text-gray-300">{tier.best}</div>
-                    </div>
                   </div>
                 ))}
               </div>
 
-              <div className="text-center mt-6">
-                <Link 
-                  href="/insurance-guide"
-                  className="inline-flex items-center text-purple-600 hover:text-purple-700 font-medium"
+              <div className="mt-4 bg-green-50 dark:bg-green-900/20 rounded-lg p-3 border border-green-200 dark:border-green-800">
+                <p className="text-xs text-green-800 dark:text-green-300 text-center">
+                  <strong>$1M liability coverage</strong> included on all tiers. Add your own insurance for extra protection.
+                </p>
+              </div>
+
+              <div className="text-center mt-4">
+                <Link
+                  href="/host-protection"
+                  className="inline-flex items-center text-sm text-purple-600 hover:text-purple-700 font-medium"
                 >
-                  Learn more about insurance tiers
+                  Learn more about host protection
                   <IoArrowForwardOutline className="w-4 h-4 ml-1" />
                 </Link>
               </div>
