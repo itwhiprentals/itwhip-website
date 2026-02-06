@@ -22,7 +22,9 @@ export function ChoeTips() {
 
       <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <Image src="/images/choe-logo.png" alt="Choé" width={64} height={64} className="rounded-lg mb-4" />
+          <div className="flex justify-center mb-4">
+            <Image src="/images/choe-logo.png" alt="Choé" width={72} height={72} className="rounded-lg" />
+          </div>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
             Tips for Best Results
           </h2>

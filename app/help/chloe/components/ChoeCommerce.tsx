@@ -84,28 +84,31 @@ export function ChoeCommerce() {
           </p>
         </div>
 
-        {/* Pipeline visualization */}
-        <div className="bg-white dark:bg-[#1a1a1a] rounded-lg p-5 sm:p-6 border border-gray-300 dark:border-[#333] mb-10">
-          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
-            {pipelineSteps.map((step, index) => (
-              <div key={step.label} className="flex items-center gap-2 sm:gap-3">
-                <span
-                  className="text-xs sm:text-sm px-3 py-2 rounded-lg font-medium whitespace-nowrap"
-                  style={{
-                    backgroundColor: `${step.color}15`,
-                    color: step.color,
-                    borderWidth: 1,
-                    borderColor: `${step.color}30`
-                  }}
-                >
-                  {step.label}
-                </span>
-                {index < pipelineSteps.length - 1 && (
-                  <IoArrowForwardOutline className="w-4 h-4 text-gray-300 dark:text-[#333] hidden sm:block" />
-                )}
+        {/* Pipeline visualization - 6 step cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-10">
+          {pipelineSteps.map((step, index) => (
+            <div
+              key={step.label}
+              className="relative bg-white dark:bg-[#1a1a1a] rounded-lg p-4 border border-gray-300 dark:border-[#333] hover:border-[#e87040]/40 transition-all text-center"
+            >
+              {/* Step number badge */}
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold mx-auto mb-3"
+                style={{ backgroundColor: step.color }}
+              >
+                {index + 1}
               </div>
-            ))}
-          </div>
+              <p className="text-xs font-medium text-gray-700 dark:text-[#a8a8a8]">
+                {step.label}
+              </p>
+              {/* Connector arrow */}
+              {index < pipelineSteps.length - 1 && (
+                <div className="absolute top-1/2 -right-2 transform -translate-y-1/2 hidden lg:block">
+                  <IoArrowForwardOutline className="w-4 h-4 text-gray-300 dark:text-[#444]" />
+                </div>
+              )}
+            </div>
+          ))}
         </div>
 
         {/* Verticals Grid */}
