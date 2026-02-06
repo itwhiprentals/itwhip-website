@@ -17,7 +17,7 @@ const warmAccents = [
 
 export function ChoeFeatures() {
   return (
-    <section className="py-10 sm:py-14 bg-gray-50 dark:bg-[#0f0f0f] relative border-t border-gray-200 dark:border-[#222]">
+    <section className="py-10 sm:py-14 bg-gray-50 dark:bg-[#0f0f0f] relative border-t border-gray-300 dark:border-[#222]">
       {/* Subtle background texture */}
       <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.02]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)', backgroundSize: '24px 24px' }} />
 
@@ -39,7 +39,7 @@ export function ChoeFeatures() {
             return (
               <div
                 key={feature.id}
-                className="group bg-white dark:bg-[#1a1a1a] rounded-lg p-5 sm:p-6 border border-gray-200 dark:border-[#333] hover:border-[#e87040]/40 transition-all duration-300 hover:shadow-lg hover:shadow-[#e87040]/10 dark:hover:shadow-[#e87040]/5 choe-animate-in"
+                className="group bg-white dark:bg-[#1a1a1a] rounded-lg p-5 sm:p-6 border border-gray-300 dark:border-[#333] hover:border-[#e87040]/40 transition-all duration-300 hover:shadow-lg hover:shadow-[#e87040]/10 dark:hover:shadow-[#e87040]/5 choe-animate-in"
                 style={{ animationDelay: `${index * 60}ms` }}
               >
                 <div className="flex items-start gap-5">

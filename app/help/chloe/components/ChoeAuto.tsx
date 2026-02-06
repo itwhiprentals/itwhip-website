@@ -129,7 +129,7 @@ export function ChoeAuto() {
   }
 
   return (
-    <section ref={sectionRef} className="py-10 sm:py-14 bg-gray-50 dark:bg-[#0f0f0f] relative overflow-hidden border-t border-gray-200 dark:border-[#222]">
+    <section ref={sectionRef} className="py-10 sm:py-14 bg-gray-50 dark:bg-[#0f0f0f] relative overflow-hidden border-t border-gray-300 dark:border-[#222]">
       {/* Ambient car dashboard glow */}
       <div className="absolute top-0 left-0 w-full h-48 bg-gradient-to-b from-[#e87040]/5 dark:from-[#e87040]/5 to-transparent" />
       <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-[#e87040]/5 dark:bg-[#e87040]/8 rounded-full blur-[120px]" />
@@ -161,7 +161,7 @@ export function ChoeAuto() {
               className="relative group choe-animate-in"
               style={{ animationDelay: `${index * 100}ms` }}
             >
-              <div className="bg-white dark:bg-[#1a1a1a] rounded-lg p-4 sm:p-6 border border-gray-200 dark:border-[#333] hover:border-[#e87040]/40 transition-all text-center">
+              <div className="bg-white dark:bg-[#1a1a1a] rounded-lg p-4 sm:p-6 border border-gray-300 dark:border-[#333] hover:border-[#e87040]/40 transition-all text-center">
                 <device.icon className="w-10 h-10 sm:w-12 sm:h-12 text-[#e87040] mx-auto mb-3 group-hover:scale-110 transition-transform" />
                 <h3 className="font-bold text-sm sm:text-base text-gray-900 dark:text-white mb-1">
                   {device.label}

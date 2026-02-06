@@ -44,14 +44,14 @@ const privacyPoints = [
 
 export function ChoeSecurity() {
   return (
-    <section className="py-10 sm:py-14 bg-gray-50 dark:bg-[#0f0f0f] relative overflow-hidden border-t border-gray-200 dark:border-[#222]">
+    <section className="py-10 sm:py-14 bg-gray-50 dark:bg-[#0f0f0f] relative overflow-hidden border-t border-gray-300 dark:border-[#222]">
       {/* Steel vault aesthetic - subtle metallic sheen */}
       <div className="absolute inset-0 bg-gradient-to-br from-gray-100 via-gray-50 to-gray-100 dark:from-[#1a1a1a] dark:via-[#0f0f0f] dark:to-[#1a1a1a]" />
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-gray-300/30 dark:bg-[#333]/20 rounded-full blur-[100px]" />
 
       <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-lg bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-lg bg-white dark:bg-[#1a1a1a] border border-gray-300 dark:border-[#333] mb-4">
             <IoShieldCheckmarkOutline className="w-8 h-8 text-[#e87040]" />
           </div>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
@@ -67,7 +67,7 @@ export function ChoeSecurity() {
           {securityLayers.map((layer, index) => (
             <div
               key={layer.title}
-              className="group bg-white dark:bg-[#1a1a1a] rounded-lg p-5 border border-gray-200 dark:border-[#333] hover:border-gray-400 dark:hover:border-[#666] transition-all choe-animate-in"
+              className="group bg-white dark:bg-[#1a1a1a] rounded-lg p-5 border border-gray-300 dark:border-[#333] hover:border-gray-400 dark:hover:border-[#666] transition-all choe-animate-in"
               style={{ animationDelay: `${index * 80}ms` }}
             >
               <div className="flex items-start gap-4">
@@ -88,9 +88,9 @@ export function ChoeSecurity() {
         </div>
 
         {/* Privacy Card - vault door aesthetic */}
-        <div className="bg-white dark:bg-[#1a1a1a] rounded-lg p-6 sm:p-8 border border-gray-200 dark:border-[#333] relative overflow-hidden mb-8">
+        <div className="bg-white dark:bg-[#1a1a1a] rounded-lg p-6 sm:p-8 border border-gray-300 dark:border-[#333] relative overflow-hidden mb-8">
           {/* Subtle vault pattern */}
-          <div className="absolute top-0 right-0 w-32 h-32 border border-gray-200 dark:border-[#333] rounded-full opacity-20" style={{ transform: 'translate(50%, -50%)' }} />
+          <div className="absolute top-0 right-0 w-32 h-32 border border-gray-300 dark:border-[#333] rounded-full opacity-20" style={{ transform: 'translate(50%, -50%)' }} />
 
           <div className="relative">
             <div className="flex items-center gap-3 mb-5">
@@ -112,7 +112,7 @@ export function ChoeSecurity() {
         </div>
 
         {/* Infrastructure Note */}
-        <div className="flex items-start gap-4 p-5 bg-white dark:bg-[#1a1a1a] rounded-lg border border-gray-200 dark:border-[#333]">
+        <div className="flex items-start gap-4 p-5 bg-white dark:bg-[#1a1a1a] rounded-lg border border-gray-300 dark:border-[#333]">
           <div className="w-10 h-10 bg-gray-100 dark:bg-[#252525] rounded-lg flex items-center justify-center flex-shrink-0">
             <IoServerOutline className="w-5 h-5 text-gray-500 dark:text-[#666]" />
           </div>

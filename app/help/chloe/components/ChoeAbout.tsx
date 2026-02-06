@@ -39,7 +39,7 @@ const aboutPoints = [
 
 export function ChoeAbout() {
   return (
-    <section className="py-10 sm:py-14 bg-gray-50 dark:bg-[#0f0f0f] relative border-t border-gray-200 dark:border-[#222]">
+    <section className="py-10 sm:py-14 bg-gray-50 dark:bg-[#0f0f0f] relative border-t border-gray-300 dark:border-[#222]">
       {/* Subtle gradient background */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-gray-100/50 dark:via-[#1a1a1a]/50 to-transparent" />
 
@@ -59,7 +59,7 @@ export function ChoeAbout() {
           {aboutPoints.map((point, index) => (
             <div
               key={point.title}
-              className="group bg-white dark:bg-[#1a1a1a] rounded-lg p-6 border border-gray-200 dark:border-[#333] hover:border-[#e87040]/40 transition-all duration-300 hover:shadow-lg hover:shadow-[#e87040]/10 dark:hover:shadow-[#e87040]/5 choe-animate-in"
+              className="group bg-white dark:bg-[#1a1a1a] rounded-lg p-6 border border-gray-300 dark:border-[#333] hover:border-[#e87040]/40 transition-all duration-300 hover:shadow-lg hover:shadow-[#e87040]/10 dark:hover:shadow-[#e87040]/5 choe-animate-in"
               style={{ animationDelay: `${index * 100}ms` }}
             >
               <div className="flex items-start gap-4">

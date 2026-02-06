@@ -16,7 +16,7 @@ const warmColors = [
 
 export function ChoeTips() {
   return (
-    <section className="py-10 sm:py-14 bg-white dark:bg-[#0f0f0f] relative overflow-hidden border-t border-gray-200 dark:border-[#222]">
+    <section className="py-10 sm:py-14 bg-white dark:bg-[#0f0f0f] relative overflow-hidden border-t border-gray-300 dark:border-[#222]">
       {/* Warm ambient glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-[#d4a574]/5 dark:bg-[#d4a574]/5 rounded-full blur-[100px]" />
 
@@ -54,7 +54,7 @@ export function ChoeTips() {
                     <p className="text-sm text-gray-600 dark:text-[#a8a8a8] mb-3 leading-relaxed">
                       {tip.description}
                     </p>
-                    <div className="bg-white dark:bg-[#1a1a1a] rounded-lg px-3 py-2 border border-gray-200 dark:border-[#333]">
+                    <div className="bg-white dark:bg-[#1a1a1a] rounded-lg px-3 py-2 border border-gray-300 dark:border-[#333]">
                       <code className="text-xs text-[#e87040] font-mono line-clamp-1">
                         {tip.example}
                       </code>

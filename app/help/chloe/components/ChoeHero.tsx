@@ -68,7 +68,7 @@ export function ChoeHero() {
 
           {/* Pronunciation */}
           <p className="text-lg sm:text-xl text-gray-600 dark:text-[#a8a8a8] mb-6 choe-animate-in choe-delay-2">
-            Pronounced <span className="font-semibold text-gray-900 dark:text-white bg-gray-100 dark:bg-[#1a1a1a] px-2.5 py-1 rounded-lg border border-gray-200 dark:border-[#333]">&quot;Kow-We&quot;</span>
+            Pronounced <span className="font-semibold text-gray-900 dark:text-white bg-gray-100 dark:bg-[#1a1a1a] px-2.5 py-1 rounded-lg border border-gray-300 dark:border-[#333]">&quot;Kow-We&quot;</span>
           </p>
 
           {/* Tagline */}
@@ -78,17 +78,17 @@ export function ChoeHero() {
 
           {/* Quick Stats */}
           <div className="grid grid-cols-3 gap-4 sm:gap-6 max-w-xl mx-auto mb-10 choe-animate-in choe-delay-4">
-            <div className="group bg-white dark:bg-[#1a1a1a] rounded-lg p-4 sm:p-5 border border-gray-200 dark:border-[#333] hover:border-[#e87040]/50 transition-all hover:shadow-lg hover:shadow-[#e87040]/10 dark:hover:shadow-[#e87040]/5">
+            <div className="group bg-white dark:bg-[#1a1a1a] rounded-lg p-4 sm:p-5 border border-gray-300 dark:border-[#333] hover:border-[#e87040]/50 transition-all hover:shadow-lg hover:shadow-[#e87040]/10 dark:hover:shadow-[#e87040]/5">
               <IoTimeOutline className="w-7 h-7 sm:w-8 sm:h-8 text-[#e87040] mx-auto mb-2 group-hover:scale-110 transition-transform" />
               <div className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">24/7</div>
               <div className="text-xs sm:text-sm text-gray-500 dark:text-[#666]">Available</div>
             </div>
-            <div className="group bg-white dark:bg-[#1a1a1a] rounded-lg p-4 sm:p-5 border border-gray-200 dark:border-[#333] hover:border-[#e87040]/50 transition-all hover:shadow-lg hover:shadow-[#e87040]/10 dark:hover:shadow-[#e87040]/5">
+            <div className="group bg-white dark:bg-[#1a1a1a] rounded-lg p-4 sm:p-5 border border-gray-300 dark:border-[#333] hover:border-[#e87040]/50 transition-all hover:shadow-lg hover:shadow-[#e87040]/10 dark:hover:shadow-[#e87040]/5">
               <IoFlashOutline className="w-7 h-7 sm:w-8 sm:h-8 text-[#ff7f50] mx-auto mb-2 group-hover:scale-110 transition-transform" />
               <div className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Instant</div>
               <div className="text-xs sm:text-sm text-gray-500 dark:text-[#666]">Search</div>
             </div>
-            <div className="group bg-white dark:bg-[#1a1a1a] rounded-lg p-4 sm:p-5 border border-gray-200 dark:border-[#333] hover:border-[#e87040]/50 transition-all hover:shadow-lg hover:shadow-[#e87040]/10 dark:hover:shadow-[#e87040]/5">
+            <div className="group bg-white dark:bg-[#1a1a1a] rounded-lg p-4 sm:p-5 border border-gray-300 dark:border-[#333] hover:border-[#e87040]/50 transition-all hover:shadow-lg hover:shadow-[#e87040]/10 dark:hover:shadow-[#e87040]/5">
               <IoLocationOutline className="w-7 h-7 sm:w-8 sm:h-8 text-[#d4a574] mx-auto mb-2 group-hover:scale-110 transition-transform" />
               <div className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Arizona</div>
               <div className="text-xs sm:text-sm text-gray-500 dark:text-[#666]">Expert</div>

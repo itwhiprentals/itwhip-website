@@ -210,7 +210,7 @@ export function ChoeTripPlanner() {
   const isSearching = (index: number, finalIndex: number) => index < finalIndex
 
   return (
-    <section ref={sectionRef} className="py-10 sm:py-14 bg-white dark:bg-[#0f0f0f] relative overflow-hidden border-t border-gray-200 dark:border-[#222]">
+    <section ref={sectionRef} className="py-10 sm:py-14 bg-white dark:bg-[#0f0f0f] relative overflow-hidden border-t border-gray-300 dark:border-[#222]">
       {/* Background accents */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#e87040]/5 dark:bg-[#e87040]/10 rounded-full blur-[150px]" />
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#d4a574]/5 dark:bg-[#d4a574]/10 rounded-full blur-[120px]" />
@@ -394,7 +394,7 @@ export function ChoeTripPlanner() {
           {tripFeatures.map((feature, index) => (
             <div
               key={feature.label}
-              className="group bg-white dark:bg-[#1a1a1a] rounded-lg p-4 border border-gray-200 dark:border-[#333] hover:border-[#e87040]/40 transition-all text-center choe-animate-in"
+              className="group bg-white dark:bg-[#1a1a1a] rounded-lg p-4 border border-gray-300 dark:border-[#333] hover:border-[#e87040]/40 transition-all text-center choe-animate-in"
               style={{ animationDelay: `${index * 50}ms` }}
             >
               <feature.icon className="w-6 h-6 text-[#e87040] mx-auto mb-2 group-hover:scale-110 transition-transform" />

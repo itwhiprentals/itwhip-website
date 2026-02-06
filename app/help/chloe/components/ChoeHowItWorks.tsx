@@ -5,7 +5,7 @@ import { workflowSteps } from '../data/workflow'
 
 export function ChoeHowItWorks() {
   return (
-    <section className="py-10 sm:py-14 bg-white dark:bg-[#0f0f0f] relative overflow-hidden border-t border-gray-200 dark:border-[#222]">
+    <section className="py-10 sm:py-14 bg-white dark:bg-[#0f0f0f] relative overflow-hidden border-t border-gray-300 dark:border-[#222]">
       {/* Subtle accent glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-[#e87040]/5 rounded-full blur-[100px]" />
 
@@ -89,7 +89,7 @@ export function ChoeHowItWorks() {
                   </div>
 
                   {/* Content */}
-                  <div className="flex-1 bg-white dark:bg-[#1a1a1a] rounded-lg p-4 border border-gray-200 dark:border-[#333]">
+                  <div className="flex-1 bg-white dark:bg-[#1a1a1a] rounded-lg p-4 border border-gray-300 dark:border-[#333]">
                     <h3 className="font-bold text-base text-gray-900 dark:text-white mb-1">
                       {step.title}
                     </h3>
@@ -97,7 +97,7 @@ export function ChoeHowItWorks() {
                       {step.description}
                     </p>
                     {step.example && (
-                      <div className="bg-gray-50 dark:bg-[#252525] rounded-lg px-3 py-2 border border-gray-200 dark:border-[#333]">
+                      <div className="bg-gray-50 dark:bg-[#252525] rounded-lg px-3 py-2 border border-gray-300 dark:border-[#333]">
                         <code className="text-xs text-[#e87040] font-mono">
                           {step.example}
                         </code>

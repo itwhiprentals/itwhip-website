@@ -62,14 +62,14 @@ const pipelineSteps = [
 
 export function ChoeCommerce() {
   return (
-    <section className="py-10 sm:py-14 bg-gray-50 dark:bg-[#0f0f0f] relative overflow-hidden border-t border-gray-200 dark:border-[#222]">
+    <section className="py-10 sm:py-14 bg-gray-50 dark:bg-[#0f0f0f] relative overflow-hidden border-t border-gray-300 dark:border-[#222]">
       {/* Background glow */}
       <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[#e87040]/5 dark:bg-[#e87040]/8 rounded-full blur-[120px]" />
 
       <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Badge */}
         <div className="flex justify-center mb-6">
-          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-lg bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] text-[#d4a574] text-xs font-bold uppercase tracking-wider">
+          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-lg bg-white dark:bg-[#1a1a1a] border border-gray-300 dark:border-[#333] text-[#d4a574] text-xs font-bold uppercase tracking-wider">
             <IoSparklesOutline className="w-4 h-4" />
             The Vision
           </span>
@@ -85,7 +85,7 @@ export function ChoeCommerce() {
         </div>
 
         {/* Pipeline visualization */}
-        <div className="bg-white dark:bg-[#1a1a1a] rounded-lg p-5 sm:p-6 border border-gray-200 dark:border-[#333] mb-10">
+        <div className="bg-white dark:bg-[#1a1a1a] rounded-lg p-5 sm:p-6 border border-gray-300 dark:border-[#333] mb-10">
           <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
             {pipelineSteps.map((step, index) => (
               <div key={step.label} className="flex items-center gap-2 sm:gap-3">
@@ -113,7 +113,7 @@ export function ChoeCommerce() {
           {verticals.map((vertical, index) => (
             <div
               key={vertical.label}
-              className="group bg-white dark:bg-[#1a1a1a] rounded-lg p-5 border border-gray-200 dark:border-[#333] hover:border-[#e87040]/40 transition-all choe-animate-in"
+              className="group bg-white dark:bg-[#1a1a1a] rounded-lg p-5 border border-gray-300 dark:border-[#333] hover:border-[#e87040]/40 transition-all choe-animate-in"
               style={{ animationDelay: `${index * 60}ms` }}
             >
               <div className="flex items-center justify-between mb-4">

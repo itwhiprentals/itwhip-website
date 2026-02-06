@@ -33,7 +33,7 @@ const screenshots = [
 
 export function ChoeShowcase() {
   return (
-    <section className="py-10 sm:py-14 bg-gradient-to-b from-white via-gray-50 to-white dark:from-[#0f0f0f] dark:via-[#1a1a1a] dark:to-[#0f0f0f] relative overflow-hidden border-t border-gray-200 dark:border-[#222]">
+    <section className="py-10 sm:py-14 bg-gradient-to-b from-white via-gray-50 to-white dark:from-[#0f0f0f] dark:via-[#1a1a1a] dark:to-[#0f0f0f] relative overflow-hidden border-t border-gray-300 dark:border-[#222]">
       {/* Background accent */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] bg-[#e87040]/5 dark:bg-[#e87040]/10 rounded-full blur-[120px]" />
 

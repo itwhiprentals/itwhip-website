@@ -11,7 +11,7 @@ import {
 
 export function ChoeCTA() {
   return (
-    <section className="py-10 sm:py-14 relative overflow-hidden border-t border-gray-200 dark:border-[#222]">
+    <section className="py-10 sm:py-14 relative overflow-hidden border-t border-gray-300 dark:border-[#222]">
       {/* Arizona Sunset Gradient Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-[#c94c24] via-[#e87040] to-[#ff7f50]" />
 
