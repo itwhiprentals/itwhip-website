@@ -183,19 +183,47 @@ export async function getPricingConfig(): Promise<{
 }
 
 /**
- * Get feature flags
+ * Get feature flags (basic + advanced AI features)
  */
 export async function getFeatureFlags(): Promise<{
+  // Basic feature flags
   enabled: boolean
   weatherEnabled: boolean
   riskAssessmentEnabled: boolean
   anonymousAccessEnabled: boolean
+  // Advanced AI features
+  streamingEnabled: boolean
+  toolUseEnabled: boolean
+  extendedThinkingEnabled: boolean
+  batchAnalyticsEnabled: boolean
 }> {
   const settings = await getChoeSettings()
   return {
+    // Basic
     enabled: settings.enabled,
     weatherEnabled: settings.weatherEnabled,
     riskAssessmentEnabled: settings.riskAssessmentEnabled,
     anonymousAccessEnabled: settings.anonymousAccessEnabled,
+    // Advanced AI
+    streamingEnabled: settings.streamingEnabled,
+    toolUseEnabled: settings.toolUseEnabled,
+    extendedThinkingEnabled: settings.extendedThinkingEnabled,
+    batchAnalyticsEnabled: settings.batchAnalyticsEnabled,
+  }
+}
+
+/**
+ * Get vehicle type preferences
+ */
+export async function getVehiclePreferences(): Promise<{
+  preferRideshare: boolean
+  preferNoDeposit: boolean
+  showVehicleTypeBadges: boolean
+}> {
+  const settings = await getChoeSettings()
+  return {
+    preferRideshare: settings.preferRideshare,
+    preferNoDeposit: settings.preferNoDeposit,
+    showVehicleTypeBadges: settings.showVehicleTypeBadges,
   }
 }

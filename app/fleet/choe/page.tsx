@@ -20,6 +20,7 @@ import {
 } from 'react-icons/io5'
 import { CHOE_TABS, CHOE_COLORS, OUTCOME_COLORS, SEVERITY_COLORS, MODEL_OPTIONS, DEFAULT_SETTINGS } from './constants'
 import type { ChoeStatsResponse, ChoeConversationListResponse, ChoeSecurityResponse, ConversationSummary, SecurityEventSummary, ChoeAISettings } from './types'
+import { ToggleSetting, ToggleSettingCard, FeatureCard } from './components'
 
 // =============================================================================
 // MAIN COMPONENT
@@ -813,29 +814,32 @@ function SettingsTab({
           Control streaming responses, tool use, and other advanced AI capabilities.
         </p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <ToggleSettingWithDescription
+          <ToggleSettingCard
             label="Streaming"
             description="Real-time text streaming via SSE"
             checked={getValue('streamingEnabled')}
             onChange={v => onChange('streamingEnabled', v)}
           />
-          <ToggleSettingWithDescription
+          <ToggleSettingCard
             label="Tool Use"
             description="Function calling for search & actions"
             checked={getValue('toolUseEnabled')}
             onChange={v => onChange('toolUseEnabled', v)}
+            color="blue"
           />
-          <ToggleSettingWithDescription
+          <ToggleSettingCard
             label="Extended Thinking"
             description="Deep reasoning for complex queries"
             checked={getValue('extendedThinkingEnabled')}
             onChange={v => onChange('extendedThinkingEnabled', v)}
+            color="green"
           />
-          <ToggleSettingWithDescription
+          <ToggleSettingCard
             label="Batch Analytics"
             description="50% cost reduction for bulk processing"
             checked={getValue('batchAnalyticsEnabled')}
             onChange={v => onChange('batchAnalyticsEnabled', v)}
+            color="orange"
           />
         </div>
       </SettingsSection>
@@ -846,48 +850,30 @@ function SettingsTab({
           Configure how Choé handles different vehicle types in search results.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="w-3 h-3 rounded-full bg-orange-500" />
-              <span className="font-medium text-gray-900 dark:text-white">Rideshare</span>
-            </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-              For Uber, DoorDash, Instacart drivers. Weekly/monthly rentals with mileage packages.
-            </p>
-            <ToggleSetting
-              label="Prioritize in results"
-              checked={getValue('preferRideshare')}
-              onChange={v => onChange('preferRideshare', v)}
-            />
-          </div>
-          <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="w-3 h-3 rounded-full bg-emerald-500" />
-              <span className="font-medium text-gray-900 dark:text-white">Rental (Instant)</span>
-            </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-              Traditional peer-to-peer rentals. Daily/weekend rentals with standard pricing.
-            </p>
-            <ToggleSetting
-              label="Show type badges"
-              checked={getValue('showVehicleTypeBadges')}
-              onChange={v => onChange('showVehicleTypeBadges', v)}
-            />
-          </div>
-          <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="w-3 h-3 rounded-full bg-blue-500" />
-              <span className="font-medium text-gray-900 dark:text-white">No Deposit</span>
-            </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-              Highlight vehicles with no security deposit for budget-conscious renters.
-            </p>
-            <ToggleSetting
-              label="Prioritize no-deposit"
-              checked={getValue('preferNoDeposit')}
-              onChange={v => onChange('preferNoDeposit', v)}
-            />
-          </div>
+          <FeatureCard
+            title="Rideshare"
+            description="For Uber, DoorDash, Instacart drivers. Weekly/monthly rentals with mileage packages."
+            indicatorColor="orange"
+            toggleLabel="Prioritize in results"
+            checked={getValue('preferRideshare')}
+            onChange={v => onChange('preferRideshare', v)}
+          />
+          <FeatureCard
+            title="Rental (Instant)"
+            description="Traditional peer-to-peer rentals. Daily/weekend rentals with standard pricing."
+            indicatorColor="emerald"
+            toggleLabel="Show type badges"
+            checked={getValue('showVehicleTypeBadges')}
+            onChange={v => onChange('showVehicleTypeBadges', v)}
+          />
+          <FeatureCard
+            title="No Deposit"
+            description="Highlight vehicles with no security deposit for budget-conscious renters."
+            indicatorColor="blue"
+            toggleLabel="Prioritize no-deposit"
+            checked={getValue('preferNoDeposit')}
+            onChange={v => onChange('preferNoDeposit', v)}
+          />
         </div>
       </SettingsSection>
 
@@ -1415,66 +1401,6 @@ function SettingsSection({ title, children }: { title: string; children: React.R
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{title}</h3>
       {children}
-    </div>
-  )
-}
-
-function ToggleSetting({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string
-  checked: boolean
-  onChange: (v: boolean) => void
-}) {
-  return (
-    <label className="flex items-center gap-3 cursor-pointer">
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        onClick={() => onChange(!checked)}
-        className={`relative w-11 h-6 rounded-full transition-colors ${checked ? 'bg-purple-600' : 'bg-gray-300 dark:bg-gray-600'}`}
-      >
-        <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${checked ? 'translate-x-5' : ''}`} />
-      </button>
-      <span className="text-sm text-gray-700 dark:text-gray-300">{label}</span>
-    </label>
-  )
-}
-
-function ToggleSettingWithDescription({
-  label,
-  description,
-  checked,
-  onChange,
-  disabled,
-}: {
-  label: string
-  description: string
-  checked: boolean
-  onChange: (v: boolean) => void
-  disabled?: boolean
-}) {
-  return (
-    <div className={`p-3 border border-gray-200 dark:border-gray-700 rounded-lg ${disabled ? 'opacity-60' : ''}`}>
-      <label className="flex items-center gap-3 cursor-pointer">
-        <button
-          type="button"
-          role="switch"
-          aria-checked={checked}
-          onClick={() => !disabled && onChange(!checked)}
-          disabled={disabled}
-          className={`relative w-11 h-6 rounded-full transition-colors ${checked ? 'bg-purple-600' : 'bg-gray-300 dark:bg-gray-600'} ${disabled ? 'cursor-not-allowed' : ''}`}
-        >
-          <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${checked ? 'translate-x-5' : ''}`} />
-        </button>
-        <div>
-          <span className="text-sm font-medium text-gray-900 dark:text-white">{label}</span>
-          <p className="text-xs text-gray-500 dark:text-gray-400">{description}</p>
-        </div>
-      </label>
     </div>
   )
 }

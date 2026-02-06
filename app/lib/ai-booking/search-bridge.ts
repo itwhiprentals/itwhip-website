@@ -5,6 +5,16 @@
 import { SearchQuery, VehicleSummary } from './types';
 
 // =============================================================================
+// TYPES
+// =============================================================================
+
+export interface VehiclePreferences {
+  preferRideshare: boolean;
+  preferNoDeposit: boolean;
+  showVehicleTypeBadges: boolean;
+}
+
+// =============================================================================
 // HELPER FUNCTIONS
 // =============================================================================
 
@@ -15,13 +25,43 @@ function extractCityName(location: string): string {
   return location.split(',')[0].trim();
 }
 
+/**
+ * Sort vehicles based on preferences
+ * Prioritizes: no-deposit first (if enabled), then rideshare (if enabled), then by price
+ */
+function sortByPreferences(vehicles: VehicleSummary[], prefs: VehiclePreferences): VehicleSummary[] {
+  return [...vehicles].sort((a, b) => {
+    // Priority 1: No deposit vehicles (if preferred)
+    if (prefs.preferNoDeposit) {
+      const aNoDeposit = (a.depositAmount ?? 0) === 0;
+      const bNoDeposit = (b.depositAmount ?? 0) === 0;
+      if (aNoDeposit !== bNoDeposit) {
+        return aNoDeposit ? -1 : 1;
+      }
+    }
+
+    // Priority 2: Rideshare vehicles (if preferred)
+    if (prefs.preferRideshare) {
+      const aRideshare = a.vehicleType === 'RIDESHARE';
+      const bRideshare = b.vehicleType === 'RIDESHARE';
+      if (aRideshare !== bRideshare) {
+        return aRideshare ? -1 : 1;
+      }
+    }
+
+    // Priority 3: Sort by daily rate (lowest first)
+    return (a.dailyRate || 0) - (b.dailyRate || 0);
+  });
+}
+
 // =============================================================================
 // SEARCH FOR VEHICLES
 // =============================================================================
 
 /** Search available vehicles using the existing rental search API */
 export async function searchVehicles(
-  query: SearchQuery
+  query: SearchQuery,
+  preferences?: VehiclePreferences
 ): Promise<VehicleSummary[]> {
   try {
     const params = buildSearchParams(query);
@@ -46,7 +86,14 @@ export async function searchVehicles(
     }
 
     const data = await response.json();
-    return normalizeSearchResults(data);
+    const results = normalizeSearchResults(data);
+
+    // Apply vehicle preferences sorting if provided
+    if (preferences) {
+      return sortByPreferences(results, preferences);
+    }
+
+    return results;
   } catch (error) {
     console.error('[ai-booking] Search error:', error);
     return [];

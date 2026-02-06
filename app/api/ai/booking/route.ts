@@ -54,6 +54,7 @@ import {
   getModelConfig,
   getPricingConfig,
   getFeatureFlags,
+  getVehiclePreferences,
 } from '@/app/lib/ai-booking/choe-settings'
 import { countAndValidateTokens } from '@/app/lib/ai-booking/token-counting'
 import {
@@ -435,6 +436,18 @@ export async function POST(request: NextRequest) {
     // ==========================================================================
     const modelConfig = await getModelConfig()
     const featureFlags = await getFeatureFlags()
+    const vehiclePrefs = await getVehiclePreferences()
+
+    // ==========================================================================
+    // CHECK ANONYMOUS ACCESS
+    // ==========================================================================
+    if (!featureFlags.anonymousAccessEnabled && !body.userId) {
+      return NextResponse.json({
+        reply: "Hi! Please sign in to chat with Choé. I'm here to help you find the perfect rental car once you're logged in! 🚗",
+        action: 'NEEDS_LOGIN',
+        session: body.session || createInitialSession(),
+      })
+    }
 
     // ==========================================================================
     // SECURITY CHECK - Rate limiting, bot detection, input validation
@@ -664,14 +677,14 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      vehicles = await searchVehicles(parsed.searchQuery)
+      vehicles = await searchVehicles(parsed.searchQuery, vehiclePrefs)
       console.log('[CHOÉ DEBUG] Search returned', vehicles?.length, 'vehicles')
 
       // Progressive fallback: if filtered search returned 0 results, try progressively looser filters
       if (vehicles.length === 0 && shouldTryFallback(vehicles, parsed.searchQuery)) {
         const fallbacks = createFallbackQueries(parsed.searchQuery)
         for (const fallbackQuery of fallbacks) {
-          vehicles = await searchVehicles(fallbackQuery)
+          vehicles = await searchVehicles(fallbackQuery, vehiclePrefs)
           if (vehicles.length > 0) {
             const level = getFallbackLevel(parsed.searchQuery, fallbackQuery)
             console.log(`[CHOÉ DEBUG] Fallback level ${level} returned ${vehicles.length} vehicles`)
