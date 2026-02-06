@@ -99,6 +99,11 @@ export default function Footer() {
             </h4>
             <ul className="space-y-1.5">
               <li>
+                <Link href="/help/guest-account" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Guest Account
+                </Link>
+              </li>
+              <li>
                 <Link href="/rentals/budget" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
                   Budget Cars
                 </Link>
@@ -116,11 +121,6 @@ export default function Footer() {
               <li>
                 <Link href="/trip-planner" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
                   Trip Planner
-                </Link>
-              </li>
-              <li>
-                <Link href="/switch-from-turo" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Switch from Turo
                 </Link>
               </li>
               <li>
@@ -148,6 +148,11 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/switch-from-turo" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  Switch from Turo
+                </Link>
+              </li>
+              <li>
                 <Link href="/host-university" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
                   Host University
                 </Link>
@@ -165,11 +170,6 @@ export default function Footer() {
               <li>
                 <Link href="/insurance-guide" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
                   Insurance Guide
-                </Link>
-              </li>
-              <li>
-                <Link href="/host-requirements" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Host Requirements
                 </Link>
               </li>
               <li>

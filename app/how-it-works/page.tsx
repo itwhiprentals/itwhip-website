@@ -177,6 +177,13 @@ export default function HowItWorksPage() {
 
   const guestBenefits = [
     {
+      icon: IoPersonOutline,
+      title: 'Guest Account Benefits',
+      description: 'Auto-created account with your booking. Track reservations, earn credits, unlock bonuses, and enjoy instant bookings.',
+      highlight: 'One account, endless benefits',
+      link: '/help/guest-account'
+    },
+    {
       icon: IoPeopleOutline,
       title: 'Rent From Real People',
       description: 'Connect directly with local Phoenix car owners. Better cars, better prices, better experience.',
@@ -731,6 +738,16 @@ export default function HowItWorksPage() {
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Guests who verify personal auto insurance get 50% off security deposits on all rentals.
                 </p>
+              </div>
+
+              <div className="mt-4 text-center">
+                <Link
+                  href="/help/guest-account"
+                  className="inline-flex items-center text-purple-600 hover:text-purple-700 font-medium"
+                >
+                  Learn more about Guest Account benefits
+                  <IoArrowForwardOutline className="w-4 h-4 ml-1" />
+                </Link>
               </div>
             </div>
           </section>

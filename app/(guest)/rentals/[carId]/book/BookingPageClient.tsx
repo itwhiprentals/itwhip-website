@@ -2226,10 +2226,10 @@ export default function BookingPageClient({ carId }: { carId: string }) {
             <div className="text-sm">
               <p className="font-medium text-amber-900 dark:text-amber-100 mb-2">Important Booking Information</p>
               <ul className="space-y-1 text-xs text-amber-800 dark:text-amber-200">
-                <li>• <strong>Book without an account:</strong> Complete your booking as a guest - we&apos;ll create your account automatically using your driver&apos;s license info</li>
-                <li>• <strong>Quick verification:</strong> Upload your driver&apos;s license for instant verification - no redirects or lengthy forms{' '}
-                  <a href="/help/identity-verification" className="text-amber-700 dark:text-amber-300 underline hover:no-underline">Learn more</a>
+                <li>• <strong>Book without an account:</strong> Complete your booking as a guest - we&apos;ll create your account automatically using your driver&apos;s license info{' '}
+                  <a href="/help/guest-account" className="text-amber-700 dark:text-amber-300 underline hover:no-underline">Learn more</a>
                 </li>
+                <li>• <strong>Quick verification:</strong> Upload your driver&apos;s license for instant verification - no redirects or lengthy forms</li>
                 <li>• <strong>No charges until approved:</strong> Your card is securely saved but won&apos;t be charged until the host approves your booking</li>
               </ul>
             </div>
