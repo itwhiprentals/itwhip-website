@@ -1,7 +1,7 @@
 // app/help/chloe/page.tsx
 // Comprehensive help page about Choé AI assistant - SaaS Landing Page Design
 
-import { Metadata } from 'next'
+import { Metadata, Viewport } from 'next'
 import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
 import {
@@ -20,6 +20,14 @@ import {
   ChoeFAQs,
   ChoeCTA
 } from './components'
+
+// Override status bar color to match Choé page theme
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#0f0f0f' },
+  ],
+}
 
 export const metadata: Metadata = {
   title: 'Meet Choé | AI Car Booking Assistant | ItWhip',

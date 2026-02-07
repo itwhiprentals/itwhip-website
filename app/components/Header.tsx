@@ -123,6 +123,7 @@ function HeaderInner({}: HeaderProps = {}) {
   // Check if we're on specific pages
   const isHostPage = pathname?.startsWith('/host/')
   const isAdminPage = pathname?.startsWith('/admin/')
+  const isChoePage = pathname?.startsWith('/help/chloe')
 
   // Override isLoggedIn display when guard screen is active
   // User should appear logged out until they choose an action on the guard screen
@@ -267,36 +268,50 @@ function HeaderInner({}: HeaderProps = {}) {
                 href={
                   isAdmin ? '/admin/dashboard' :
                   isHost && isHostPage ? '/host/dashboard' :
+                  isChoePage ? '/help/chloe' :
                   isGuest ? '/dashboard' :
                   '/'
                 }
                 className="flex items-center mr-4 group"
               >
-                <div className="flex flex-col items-center -ml-2">
-                  <div className="relative top-[0.2px] w-7 h-7 rounded-full overflow-hidden bg-white dark:bg-gray-800">
-                    {/* Light mode logo */}
+                {isChoePage ? (
+                  <div className="-ml-2 -my-2">
                     <Image
-                      src="/logo.png"
-                      alt="ItWhip"
-                      fill
-                      className="object-contain group-hover:opacity-80 transition-opacity dark:hidden"
-                      style={{ transform: 'scale(1.15) translateY(0.5px)', transformOrigin: 'center center' }}
-                      priority
-                    />
-                    {/* Dark mode logo */}
-                    <Image
-                      src="/logo-white.png"
-                      alt="ItWhip"
-                      fill
-                      className="object-contain group-hover:opacity-80 transition-opacity hidden dark:block"
-                      style={{ transform: 'scale(1.15) translateY(0.5px)', transformOrigin: 'center center' }}
+                      src="/images/choe-logo.png"
+                      alt="Choé"
+                      width={300}
+                      height={87}
+                      className="h-[60px] w-auto group-hover:opacity-80 transition-opacity"
                       priority
                     />
                   </div>
-                  <span className="text-[8px] text-gray-700 dark:text-gray-300 tracking-widest uppercase font-medium mt-0.5">
-                    {isAdmin ? 'ADMIN PORTAL' : (isHost && isHostPage) ? 'HOST PORTAL' : 'ITWHIP RIDES'}
-                  </span>
-                </div>
+                ) : (
+                  <div className="flex flex-col items-center -ml-2">
+                    <div className="relative top-[0.2px] w-7 h-7 rounded-full overflow-hidden bg-white dark:bg-gray-800">
+                      {/* Light mode logo */}
+                      <Image
+                        src="/logo.png"
+                        alt="ItWhip"
+                        fill
+                        className="object-contain group-hover:opacity-80 transition-opacity dark:hidden"
+                        style={{ transform: 'scale(1.15) translateY(0.5px)', transformOrigin: 'center center' }}
+                        priority
+                      />
+                      {/* Dark mode logo */}
+                      <Image
+                        src="/logo-white.png"
+                        alt="ItWhip"
+                        fill
+                        className="object-contain group-hover:opacity-80 transition-opacity hidden dark:block"
+                        style={{ transform: 'scale(1.15) translateY(0.5px)', transformOrigin: 'center center' }}
+                        priority
+                      />
+                    </div>
+                    <span className="text-[8px] text-gray-700 dark:text-gray-300 tracking-widest uppercase font-medium mt-0.5">
+                      {isAdmin ? 'ADMIN PORTAL' : (isHost && isHostPage) ? 'HOST PORTAL' : 'ITWHIP RIDES'}
+                    </span>
+                  </div>
+                )}
               </Link>
 
               {/* Desktop Navigation - Show for non-admin and non-host pages */}

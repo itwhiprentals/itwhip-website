@@ -84,6 +84,39 @@ export function ChoeStyles() {
         animation: choe-float 6s ease-in-out infinite;
       }
 
+      /* Header blends seamlessly with Choé page theme */
+      .choe-page > nav {
+        background-color: #ffffff !important;
+        border-bottom-color: var(--choe-border-subtle) !important;
+      }
+
+      .dark .choe-page > nav {
+        background-color: #0f0f0f !important;
+        border-bottom-color: #222222 !important;
+      }
+
+      /* Header dropdown menus match Choé theme */
+      .choe-page .nav-dropdown > div {
+        background-color: #ffffff !important;
+        border-color: var(--choe-border-subtle) !important;
+      }
+
+      .dark .choe-page .nav-dropdown > div {
+        background-color: #1a1a1a !important;
+        border-color: #333333 !important;
+      }
+
+      /* Nav hover states match Choé palette */
+      .dark .choe-page > nav button:hover,
+      .dark .choe-page > nav a:hover {
+        background-color: #1a1a1a !important;
+      }
+
+      /* Dropdown item hover */
+      .dark .choe-page .nav-dropdown a:hover {
+        background-color: #252525 !important;
+      }
+
       /* Smooth transitions for theme switching */
       .choe-page * {
         transition-property: background-color, border-color, color;
