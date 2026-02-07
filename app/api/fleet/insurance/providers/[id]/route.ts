@@ -81,11 +81,12 @@ function validateVehicleRules(rules: any) {
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const provider = await prisma.insuranceProvider.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       include: {
         policies: {
           take: 10,
@@ -152,9 +153,10 @@ export async function GET(
  */
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const body = await req.json()
     const {
       name,
@@ -227,7 +229,7 @@ export async function PATCH(
     if (isPrimary === true) {
       await prisma.insuranceProvider.updateMany({
         where: { 
-          id: { not: params.id },
+          id: { not: id },
           isPrimary: true
         },
         data: { isPrimary: false }
@@ -236,7 +238,7 @@ export async function PATCH(
 
     // Update provider
     const provider = await prisma.insuranceProvider.update({
-      where: { id: params.id },
+      where: { id: id },
       data: {
         ...(name && { name }),
         ...(type && { type }),
@@ -269,7 +271,7 @@ export async function PATCH(
 
     // If vehicle rules were updated, check if any cars need re-evaluation
     if (vehicleRules) {
-      await reevaluateVehicleEligibility(params.id)
+      await reevaluateVehicleEligibility(id)
     }
 
     // Log the update
@@ -277,7 +279,7 @@ export async function PATCH(
       data: {
         adminId: 'SYSTEM', // Replace with actual admin ID from auth
         action: 'UPDATE_PROVIDER',
-        targetId: params.id,
+        targetId: id,
         targetType: 'InsuranceProvider',
         details: {
           updatedFields: Object.keys(body),
@@ -306,13 +308,14 @@ export async function PATCH(
  */
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     // Check if provider has active policies
     const activePolicies = await prisma.insurancePolicy.count({
       where: {
-        providerId: params.id,
+        providerId: id,
         status: 'ACTIVE'
       }
     })
@@ -329,7 +332,7 @@ export async function DELETE(
 
     // Soft delete by setting inactive
     const provider = await prisma.insuranceProvider.update({
-      where: { id: params.id },
+      where: { id: id },
       data: { 
         isActive: false,
         isPrimary: false

@@ -5,12 +5,12 @@ import { prisma } from '@/app/lib/database/prisma'
 
 export async function GET(
  request: Request,
- { params }: { params: { id: string } }
+ { params }: { params: Promise<{ id: string }> }
 ) {
  try {
    // TODO: Add admin authentication check here
-   
-   const bookingId = params.id
+
+   const { id: bookingId } = await params
 
    // Get booking with all related data
    const booking = await prisma.rentalBooking.findUnique({
@@ -181,12 +181,12 @@ export async function GET(
 // Flag damage on a trip
 export async function POST(
  request: Request,
- { params }: { params: { id: string } }
+ { params }: { params: Promise<{ id: string }> }
 ) {
  try {
    // TODO: Add admin authentication check here
-   
-   const bookingId = params.id
+
+   const { id: bookingId } = await params
    const body = await request.json()
    const { damageReported, damageDescription } = body
 

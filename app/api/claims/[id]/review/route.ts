@@ -5,9 +5,10 @@ import prisma from '@/app/lib/database/prisma';
 // PATCH /api/claims/[id]/review - Admin reviews claim (approve/deny)
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const body = await request.json();
     const {
       status,
@@ -35,7 +36,7 @@ export async function PATCH(
 
     // Get existing claim
     const existing = await prisma.claim.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       include: {
         booking: true,
         policy: true
@@ -74,7 +75,7 @@ export async function PATCH(
 
     // Update claim
     const claim = await prisma.claim.update({
-      where: { id: params.id },
+      where: { id: id },
       data: {
         status,
         reviewedBy,

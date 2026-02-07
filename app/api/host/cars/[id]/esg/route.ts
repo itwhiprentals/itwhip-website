@@ -253,10 +253,10 @@ function getVehicleRecommendations(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const carId = params.id
+    const { id: carId } = await params
 
     // Verify vehicle exists
     const car = await prisma.rentalCar.findUnique({

@@ -4,10 +4,11 @@ import { validateToken } from '@/app/lib/auth/guest-tokens'
 
 export async function GET(
  request: NextRequest,
- { params }: { params: { token: string } }
+ { params }: { params: Promise<{ token: string }> }
 ) {
  try {
-   const { token: guestToken, booking, email } = await validateToken(params.token)
+   const { token: tokenValue } = await params
+   const { token: guestToken, booking, email } = await validateToken(tokenValue)
    
    // Return booking details for guest dashboard
    return NextResponse.json({
@@ -76,11 +77,12 @@ export async function GET(
 // Handle POST for token refresh
 export async function POST(
  request: NextRequest,
- { params }: { params: { token: string } }
+ { params }: { params: Promise<{ token: string }> }
 ) {
  try {
+   const { token: tokenValue } = await params
    const { refreshToken } = await import('@/app/lib/auth/guest-tokens')
-   const newToken = await refreshToken(params.token)
+   const newToken = await refreshToken(tokenValue)
    
    const newDashboardUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/rentals/dashboard/guest/${newToken}`
    

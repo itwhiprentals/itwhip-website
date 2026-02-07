@@ -21,11 +21,12 @@ async function getHostFromHeaders() {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string; photoId: string } }
+  { params }: { params: Promise<{ id: string; photoId: string }> }
 ) {
   try {
+    const { id: carId, photoId } = await params
     const host = await getHostFromHeaders()
-    
+
     if (!host) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -40,8 +41,6 @@ export async function POST(
         { status: 403 }
       )
     }
-
-    const { id: carId, photoId } = params
 
     // Verify the car belongs to the host
     const car = await prisma.rentalCar.findFirst({
@@ -169,19 +168,18 @@ export async function POST(
 // GET endpoint to check current hero photo
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string; photoId: string }> }
 ) {
   try {
+    const { id: carId } = await params
     const host = await getHostFromHeaders()
-    
+
     if (!host) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
-
-    const { id: carId } = params
 
     // Verify the car belongs to the host
     const car = await prisma.rentalCar.findFirst({

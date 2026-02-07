@@ -4,9 +4,10 @@ import prisma from '@/app/lib/database/prisma';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const { searchParams } = new URL(request.url);
     const key = searchParams.get('key');
 
@@ -16,7 +17,7 @@ export async function GET(
 
     // ✅ ENHANCED: Added inspectionPhotos and review to booking include
     const claim = await prisma.claim.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       include: {
         booking: {
           include: {

@@ -7,9 +7,10 @@ import { handleClaimDenied } from '@/app/lib/esg/event-hooks'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const { searchParams } = new URL(request.url);
     const key = searchParams.get('key');
 
@@ -29,7 +30,7 @@ export async function POST(
 
     // Get claim with vehicle details
     const existingClaim = await prisma.claim.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       include: {
         booking: {
           include: {
@@ -46,7 +47,7 @@ export async function POST(
 
     // Update claim with denial
     const claim = await prisma.claim.update({
-      where: { id: params.id },
+      where: { id: id },
       data: {
         status: 'DENIED',
         reviewedBy,
@@ -80,9 +81,9 @@ export async function POST(
         userAgent: request.headers.get('user-agent') || 'unknown',
         action: 'DENY_CLAIM',
         resource: 'Claim',
-        resourceId: params.id,
+        resourceId: id,
         details: {
-          claimId: params.id,
+          claimId: id,
           bookingId: existingClaim.bookingId,
           denialReason,
           reviewNotes,
@@ -99,7 +100,7 @@ export async function POST(
     
     try {
       await handleClaimDenied(existingClaim.booking.host.id, {
-        claimId: params.id,
+        claimId: id,
         bookingId: existingClaim.bookingId,
         claimType: existingClaim.type,
         denialReason
@@ -107,7 +108,7 @@ export async function POST(
 
       console.log('✅ ESG claim denial event triggered:', {
         hostId: existingClaim.booking.host.id,
-        claimId: params.id,
+        claimId: id,
         claimType: existingClaim.type,
         denialReason
       })

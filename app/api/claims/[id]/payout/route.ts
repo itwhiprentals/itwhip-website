@@ -5,9 +5,10 @@ import prisma from '@/app/lib/database/prisma';
 // POST /api/claims/[id]/payout - Process payout to host
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const body = await request.json();
     const {
       processedBy,
@@ -27,7 +28,7 @@ export async function POST(
 
     // Get existing claim
     const claim = await prisma.claim.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       include: {
         booking: {
           select: {
@@ -92,7 +93,7 @@ export async function POST(
 
     // Update claim with payout info
     const updatedClaim = await prisma.claim.update({
-      where: { id: params.id },
+      where: { id: id },
       data: {
         status: 'PAID',
         paidToHost: new Date(),

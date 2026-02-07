@@ -7,28 +7,28 @@ import { prisma } from '@/app/lib/database/prisma'
 // RULE: Only ONE insurance can be ACTIVE at a time
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: hostId } = await params
+
     // Check for fleet key authentication
     const fleetKey = request.headers.get('x-fleet-key')
-    
+
     if (fleetKey !== 'phoenix-fleet-2847') {
       return NextResponse.json(
         { error: 'Unauthorized. Fleet access required.' },
         { status: 401 }
       )
     }
-    
+
     // For logging purposes, use fleet admin
-    const admin = { 
+    const admin = {
       id: 'fleet-admin',
       email: 'admin@itwhip.com',
       name: 'Fleet Admin',
       role: 'ADMIN'
     }
-    
-    const hostId = params.id
     const body = await request.json()
     const { action, reason, insuranceType = 'P2P' } = body
     
@@ -412,27 +412,27 @@ export async function POST(
 // DELETE - Delete/remove host insurance (P2P or Commercial)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: hostId } = await params
+
     // Check for fleet key authentication
     const fleetKey = request.headers.get('x-fleet-key')
-    
+
     if (fleetKey !== 'phoenix-fleet-2847') {
       return NextResponse.json(
         { error: 'Unauthorized. Fleet access required.' },
         { status: 401 }
       )
     }
-    
-    const admin = { 
+
+    const admin = {
       id: 'fleet-admin',
       email: 'admin@itwhip.com',
       name: 'Fleet Admin',
       role: 'ADMIN'
     }
-    
-    const hostId = params.id
     const body = await request.json()
     const { insuranceType = 'P2P' } = body
     

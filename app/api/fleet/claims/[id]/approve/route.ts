@@ -10,9 +10,10 @@ import { sendClaimNotificationGuestEmail } from '@/app/lib/services/claimEmailSe
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const { searchParams } = new URL(request.url);
     const key = searchParams.get('key');
 
@@ -32,7 +33,7 @@ export async function POST(
 
     // Get claim with booking details
     const existingClaim = await prisma.claim.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       include: {
         booking: {
           include: {
@@ -50,7 +51,7 @@ export async function POST(
 
     // Update claim with approval
     const claim = await prisma.claim.update({
-      where: { id: params.id },
+      where: { id: id },
       data: {
         status: 'APPROVED',
         approvedAmount: parseFloat(approvedAmount),
@@ -71,7 +72,7 @@ export async function POST(
         data: {
           accountOnHold: true,
           accountHoldReason: 'Active insurance claim pending resolution',
-          accountHoldClaimId: params.id,
+          accountHoldClaimId: id,
           accountHoldAppliedAt: new Date(),
         }
       });
@@ -90,7 +91,7 @@ export async function POST(
           existingClaim.booking.reviewerProfile.email,
           {
             guestName: existingClaim.booking.reviewerProfile.firstName || 'Guest',
-            claimId: params.id,
+            claimId: id,
             bookingCode: existingClaim.booking.bookingCode || '',
             carDetails,
             incidentDate: existingClaim.incidentDate?.toISOString() || new Date().toISOString(),
@@ -105,7 +106,7 @@ export async function POST(
         // Track notification sent
         if (emailResult.success) {
           await prisma.claim.update({
-            where: { id: params.id },
+            where: { id: id },
             data: { guestNotifiedAt: new Date() }
           })
           console.log('✅ Guest notified of claim approval:', existingClaim.booking.reviewerProfile.email)
@@ -129,10 +130,10 @@ export async function POST(
         userAgent: request.headers.get('user-agent') || 'unknown',
         action: 'APPROVE_CLAIM',
         resource: 'Claim',
-        resourceId: params.id,
+        resourceId: id,
         amount: parseFloat(approvedAmount),
         details: {
-          claimId: params.id,
+          claimId: id,
           bookingId: existingClaim.bookingId,
           approvedAmount: parseFloat(approvedAmount),
           reviewNotes,
@@ -149,7 +150,7 @@ export async function POST(
     
     try {
       await handleClaimApproved(existingClaim.booking.host.id, {
-        claimId: params.id,
+        claimId: id,
         bookingId: existingClaim.bookingId,
         claimType: existingClaim.type,
         approvedAmount: parseFloat(approvedAmount),
@@ -158,7 +159,7 @@ export async function POST(
 
       console.log('✅ ESG claim approval event triggered:', {
         hostId: existingClaim.booking.host.id,
-        claimId: params.id,
+        claimId: id,
         approvedAmount: parseFloat(approvedAmount),
         claimType: existingClaim.type
       })

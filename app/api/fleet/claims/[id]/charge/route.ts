@@ -24,9 +24,10 @@ interface ChargeClaimBody {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     // Verify fleet access
     const key = request.nextUrl.searchParams.get('key')
     if (key !== 'phoenix-fleet-2847') {
@@ -60,7 +61,7 @@ export async function POST(
 
     // Fetch claim with all related data
     const claim = await prisma.claim.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       include: {
         booking: {
           include: {
@@ -169,10 +170,10 @@ export async function POST(
           userAgent: request.headers.get('user-agent') || 'unknown',
           action: 'charge_guest_for_claim',
           resource: 'Claim',
-          resourceId: params.id,
+          resourceId: id,
           amount,
           details: {
-            claimId: params.id,
+            claimId: id,
             guestId: guestProfile.id,
             chargeType,
             error: chargeResult.error,
@@ -255,7 +256,7 @@ export async function POST(
     }
 
     const updatedClaim = await prisma.claim.update({
-      where: { id: params.id },
+      where: { id: id },
       data: {
         recoveredFromGuest: newRecoveredTotal,
         recoveryStatus,
@@ -294,11 +295,11 @@ export async function POST(
         userAgent: request.headers.get('user-agent') || 'unknown',
         action: 'charge_guest_for_claim',
         resource: 'Claim',
-        resourceId: params.id,
+        resourceId: id,
         amount,
         currency: 'USD',
         details: {
-          claimId: params.id,
+          claimId: id,
           bookingId: claim.bookingId,
           guestId: guestProfile.id,
           guestEmail: guestProfile.email,

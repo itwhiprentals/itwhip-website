@@ -22,11 +22,12 @@ async function getHostFromHeaders() {
 // DELETE endpoint to remove a photo
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; photoId: string } }
+  { params }: { params: Promise<{ id: string; photoId: string }> }
 ) {
   try {
+    const { id: carId, photoId } = await params
     const host = await getHostFromHeaders()
-    
+
     if (!host) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -41,8 +42,6 @@ export async function DELETE(
         { status: 403 }
       )
     }
-
-    const { id: carId, photoId } = params
 
     // Verify the car belongs to the host
     const car = await prisma.rentalCar.findFirst({
@@ -213,19 +212,18 @@ export async function DELETE(
 // GET endpoint to fetch a specific photo
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string; photoId: string } }
+  { params }: { params: Promise<{ id: string; photoId: string }> }
 ) {
   try {
+    const { id: carId, photoId } = await params
     const host = await getHostFromHeaders()
-    
+
     if (!host) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
-
-    const { id: carId, photoId } = params
 
     // Verify the car belongs to the host
     const car = await prisma.rentalCar.findFirst({
@@ -281,11 +279,12 @@ export async function GET(
 // PUT endpoint to update photo details (caption, order)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string; photoId: string } }
+  { params }: { params: Promise<{ id: string; photoId: string }> }
 ) {
   try {
+    const { id: carId, photoId } = await params
     const host = await getHostFromHeaders()
-    
+
     if (!host) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -301,7 +300,6 @@ export async function PUT(
       )
     }
 
-    const { id: carId, photoId } = params
     const body = await request.json()
     const { caption, order } = body
 

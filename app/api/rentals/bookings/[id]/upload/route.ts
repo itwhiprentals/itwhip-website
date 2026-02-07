@@ -14,10 +14,10 @@ cloudinary.config({
 // POST /api/rentals/bookings/[id]/upload - Upload file for booking
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const bookingId = params.id
+    const { id: bookingId } = await params
 
     // Get auth token if available
     const token = request.cookies.get('auth-token')?.value || 

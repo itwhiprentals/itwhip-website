@@ -10,11 +10,12 @@ import { validatePricingRules } from '@/lib/insurance-utils'
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const provider = await prisma.insuranceProvider.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       select: {
         id: true,
         name: true,
@@ -57,9 +58,10 @@ export async function GET(
  */
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const body = await req.json()
     const { pricingRules, effectiveDate, reason, changedBy, notifyAffectedParties } = body
 
@@ -92,7 +94,7 @@ export async function POST(
 
     // Get current provider
     const provider = await prisma.insuranceProvider.findUnique({
-      where: { id: params.id }
+      where: { id: id }
     })
 
     if (!provider) {
@@ -118,7 +120,7 @@ export async function POST(
 
         if (oldRate !== newRate) {
           rateChanges.push({
-            providerId: params.id,
+            providerId: id,
             tier,
             vehicleClass,
             oldRate,
@@ -133,7 +135,7 @@ export async function POST(
 
     // Update provider rates
     const updatedProvider = await prisma.insuranceProvider.update({
-      where: { id: params.id },
+      where: { id: id },
       data: { pricingRules: newRates }
     })
 
@@ -147,7 +149,7 @@ export async function POST(
     // Get affected bookings (future bookings with this provider)
     const affectedBookings = await prisma.insurancePolicy.count({
       where: {
-        providerId: params.id,
+        providerId: id,
         status: 'ACTIVE',
         effectiveDate: {
           gte: effectiveDate ? new Date(effectiveDate) : new Date()
@@ -192,9 +194,10 @@ export async function POST(
  */
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const body = await req.json()
     const { vehicleClass, tier, newRate, reason, changedBy } = body
 
@@ -207,7 +210,7 @@ export async function PATCH(
 
     // Get current provider
     const provider = await prisma.insuranceProvider.findUnique({
-      where: { id: params.id }
+      where: { id: id }
     })
 
     if (!provider) {
@@ -225,14 +228,14 @@ export async function PATCH(
 
     // Update provider
     const updatedProvider = await prisma.insuranceProvider.update({
-      where: { id: params.id },
+      where: { id: id },
       data: { pricingRules }
     })
 
     // Create rate history
     await prisma.insuranceRateHistory.create({
       data: {
-        providerId: params.id,
+        providerId: id,
         tier,
         vehicleClass,
         oldRate,
