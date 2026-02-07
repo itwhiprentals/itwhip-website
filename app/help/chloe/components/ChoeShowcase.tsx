@@ -3,7 +3,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { IoPhonePortraitOutline, IoSparklesOutline } from 'react-icons/io5'
+import { IoSparklesOutline } from 'react-icons/io5'
 
 const screenshots = [
   {
@@ -40,9 +40,7 @@ export function ChoeShowcase() {
 
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-10 sm:mb-14">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-lg bg-[#e87040]/10 border border-[#e87040]/20 mb-4">
-            <IoPhonePortraitOutline className="w-7 h-7 text-[#e87040]" />
-          </div>
+          <Image src="/images/choe-logo.png" alt="Choé" width={200} height={58} className="h-[60px] w-auto mx-auto mb-1" />
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
             See Choé in Action
           </h2>
