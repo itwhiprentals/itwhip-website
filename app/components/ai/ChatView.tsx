@@ -305,8 +305,8 @@ export default function ChatView({ onNavigateToBooking, onNavigateToLogin, onCla
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input — sticky at bottom, keyboard pushes it up via env(safe-area-inset-bottom) */}
-      <div style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+      {/* Input */}
+      <div className="bg-white dark:bg-gray-900">
         <ChatInput
           onSend={sendMessage}
           onReset={handleReset}

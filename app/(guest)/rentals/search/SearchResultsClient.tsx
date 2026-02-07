@@ -82,6 +82,27 @@ export default function SearchResultsClient({
     setSearchMode(modeParam === 'ai' ? 'ai' : 'normal')
   }, [modeParam])
 
+  // Lock body scroll when AI chat is fullscreen to prevent scroll bleed-through
+  useEffect(() => {
+    if (searchMode === 'ai') {
+      document.body.style.overflow = 'hidden'
+      document.body.style.position = 'fixed'
+      document.body.style.width = '100%'
+      document.body.style.height = '100%'
+    } else {
+      document.body.style.overflow = ''
+      document.body.style.position = ''
+      document.body.style.width = ''
+      document.body.style.height = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+      document.body.style.position = ''
+      document.body.style.width = ''
+      document.body.style.height = ''
+    }
+  }, [searchMode])
+
   const [cars, setCars] = useState<any[]>(initialCars)
   const [carsInCity, setCarsInCity] = useState<any[]>(initialCarsInCity)
   const [nearbyCars, setNearbyCars] = useState<any[]>(initialNearbyCars)
@@ -413,7 +434,7 @@ export default function SearchResultsClient({
     <div className="bg-gray-50 dark:bg-gray-900">
       {/* AI Search Mode — full screen chat experience */}
       {searchMode === 'ai' && (
-        <div className="fixed inset-0 z-50 bg-gray-50 dark:bg-gray-900" style={{ height: '100dvh' }}>
+        <div className="fixed inset-0 z-50 h-[100dvh] bg-white dark:bg-gray-900 overflow-hidden overscroll-contain touch-none">
           <ChatViewStreaming
             onNavigateToBooking={(vehicleId, startDate, endDate) => {
               router.push(`/rentals/${vehicleId}?startDate=${startDate}&endDate=${endDate}`)

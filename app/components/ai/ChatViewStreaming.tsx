@@ -213,7 +213,7 @@ export default function ChatViewStreaming({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={springTransition}
-      className="flex flex-col h-full bg-gray-50 dark:bg-gray-900 overflow-hidden"
+      className="flex flex-col h-[100dvh] bg-white dark:bg-gray-900 overflow-hidden"
     >
       {/* Header */}
       <ChatHeader onClassicSearch={onClassicSearch} />
@@ -234,7 +234,7 @@ export default function ChatViewStreaming({
       </AnimatePresence>
 
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-3">
         {!hasMessages && (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -360,7 +360,7 @@ export default function ChatViewStreaming({
       </div>
 
       {/* Input */}
-      <div style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+      <div className="bg-white dark:bg-gray-900">
         <ChatInput
           onSend={handleSendMessage}
           onReset={handleReset}

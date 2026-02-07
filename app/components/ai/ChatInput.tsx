@@ -69,7 +69,7 @@ export default function ChatInput({
   }
 
   return (
-    <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+    <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 pb-safe">
       {/* Suggestion chips */}
       {suggestions.length > 0 && !hasMessages && (
         <SuggestionChips

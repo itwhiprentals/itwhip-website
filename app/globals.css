@@ -2,10 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Safe area inset for iOS status bar integration */
+/* Safe area insets for iOS status bar / home indicator */
 @supports (padding-top: env(safe-area-inset-top)) {
   .pt-safe {
     padding-top: env(safe-area-inset-top);
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }
 
