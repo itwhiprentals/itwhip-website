@@ -2,7 +2,8 @@
 'use client'
 
 import Image from 'next/image'
-import { IoPhonePortraitOutline } from 'react-icons/io5'
+import Link from 'next/link'
+import { IoPhonePortraitOutline, IoSparklesOutline } from 'react-icons/io5'
 
 const screenshots = [
   {
@@ -34,8 +35,8 @@ const screenshots = [
 export function ChoeShowcase() {
   return (
     <section className="py-10 sm:py-14 bg-gradient-to-b from-white via-gray-50 to-white dark:from-[#0f0f0f] dark:via-[#1a1a1a] dark:to-[#0f0f0f] relative overflow-hidden border-t border-gray-300 dark:border-[#222]">
-      {/* Background accent */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] bg-[#e87040]/5 dark:bg-[#e87040]/10 rounded-full blur-[120px]" />
+      {/* Background accent - responsive sizing to prevent mobile overflow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] sm:w-[500px] sm:h-[400px] lg:w-[800px] lg:h-[600px] bg-[#e87040]/5 dark:bg-[#e87040]/10 rounded-full blur-[80px] sm:blur-[100px] lg:blur-[120px]" />
 
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-10 sm:mb-14">
@@ -45,9 +46,16 @@ export function ChoeShowcase() {
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
             See Choé in Action
           </h2>
-          <p className="text-base sm:text-lg text-gray-600 dark:text-[#a8a8a8] max-w-xl mx-auto">
+          <p className="text-base sm:text-lg text-gray-600 dark:text-[#a8a8a8] max-w-xl mx-auto mb-6">
             From conversation to confirmed booking in under a minute
           </p>
+          <Link
+            href="/rentals/search?mode=ai"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#c94c24] to-[#e87040] text-white font-bold rounded-lg hover:opacity-90 transition-opacity shadow-lg shadow-[#e87040]/20"
+          >
+            <IoSparklesOutline className="w-5 h-5" />
+            Try Choé Now
+          </Link>
         </div>
 
         {/* Phone mockups grid */}

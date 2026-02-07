@@ -3,6 +3,18 @@
 import { useState, useRef, useEffect } from 'react'
 import { IoSend, IoRefresh } from 'react-icons/io5'
 
+// Rotating placeholder examples showing what Choé can do
+const placeholderExamples = [
+  'SUV in Phoenix under $50/day...',
+  'No deposit cars in Scottsdale...',
+  'Tesla for next weekend...',
+  'Cheap car for 4 days, $300 budget...',
+  'Convertible for a date night...',
+  'Something spacious for 6 people...',
+  'Luxury car in Tempe...',
+  'Car with airport delivery...',
+]
+
 interface ChatInputProps {
   onSend: (message: string) => void
   onReset: () => void
@@ -19,7 +31,16 @@ export default function ChatInput({
   hasMessages,
 }: ChatInputProps) {
   const [value, setValue] = useState('')
+  const [placeholderIndex, setPlaceholderIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  // Rotate placeholder text every 2 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPlaceholderIndex((prev) => (prev + 1) % placeholderExamples.length)
+    }, 2000)
+    return () => clearInterval(interval)
+  }, [])
 
   // Only focus after user has sent their first message (not on initial mount)
   const hasSentMessage = useRef(false)
@@ -76,15 +97,15 @@ export default function ChatInput({
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Type your message..."
+          placeholder={placeholderExamples[placeholderIndex]}
           disabled={disabled}
-          className="flex-1 px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary disabled:opacity-50 transition-colors"
+          className="flex-1 px-4 py-2.5 bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-400 dark:border-blue-500 rounded-lg text-sm text-gray-900 dark:text-white placeholder-blue-400/70 dark:placeholder-blue-400/50 focus:outline-none focus:ring-2 focus:ring-blue-400/40 focus:border-blue-500 disabled:opacity-50 transition-colors shadow-sm shadow-blue-200/50 dark:shadow-blue-900/30"
         />
 
         <button
           onClick={handleSubmit}
           disabled={disabled || !value.trim()}
-          className="flex-shrink-0 p-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="flex-shrink-0 p-2.5 bg-[#3D9970] text-white rounded-lg hover:bg-[#2E8B57] disabled:opacity-30 disabled:cursor-not-allowed transition-colors shadow-sm shadow-[#3D9970]/30"
         >
           <IoSend size={16} />
         </button>

@@ -355,7 +355,7 @@ function WelcomeMessage() {
         href="/help/chloe"
         className="text-[10px] text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 underline underline-offset-2"
       >
-        Learn about Choé
+        Learn about ChoéAI
       </a>
     </div>
   )
