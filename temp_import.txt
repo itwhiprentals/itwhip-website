@@ -1,1 +1,0 @@
-import { getApprovalEmailTemplate } from '@/app/lib/email-templates/approval'
