@@ -1,5 +1,60 @@
 # ItWhip Development Notes
 
+## In Progress (February 2026)
+
+### In-Chat Checkout Pipeline (Choé) - Phases 1-4 Complete ✅ (Feb 7)
+**Full booking pipeline inside Choé AI chat — no redirects**
+
+Users select a car in Choé, then complete the entire booking flow in-chat:
+Insurance → Delivery → Add-ons → Grand Total → Stripe Payment → Confirmation Receipt
+
+**Phase 1: Types + APIs + Hook**
+
+New Types (`app/lib/ai-booking/types.ts`):
+- `CheckoutStep` enum (IDLE → INSURANCE → DELIVERY → ADDONS → REVIEW → PAYMENT → PROCESSING → CONFIRMED → FAILED → CANCELLED)
+- `InsuranceTierOption`, `DeliveryOption`, `AddOnOption`, `AddOnItem`
+- `CheckoutState`, `GrandTotal`, `BookingConfirmation`
+
+Database:
+- `PendingCheckout` model — 15-minute date soft-lock with `checkoutSessionId`
+- Migration: `20260207163514_add_pending_checkout_for_choe_booking`
+
+API Endpoints:
+- `POST /api/ai/booking/checkout/init` — Returns insurance tiers, delivery options, add-ons, deposit; creates checkoutSessionId + date soft-lock
+- `PATCH /api/ai/booking/checkout/update` — Persists selections server-side (validates userId owns session), extends TTL
+- `POST /api/ai/booking/checkout/payment-intent` — Creates Stripe PaymentIntent from server-stored selections (client NEVER sends amounts)
+- `POST /api/ai/booking/checkout/confirm` — Verifies payment, checks availability, creates RentalBooking, releases soft-lock
+
+Hook (`app/hooks/useCheckout.ts`):
+- Actions: `initCheckout`, `selectInsurance`, `selectDelivery`, `toggleAddOn`, `goBack`, `proceedToReview`, `proceedToPayment`, `confirmBooking`, `cancelCheckout`
+- `computeGrandTotal()` pure function for display-only totals (rental + 15% service fee + insurance + delivery + add-ons + city tax + deposit)
+- 3DS redirect persistence via sessionStorage
+
+**Phase 2: UI Card Components** — Complete ✅
+- `InsuranceCard.tsx` — 4 tier selection (MINIMUM/BASIC/PREMIUM/LUXURY), compact mode with Edit, deposit increase warning
+- `DeliveryCard.tsx` — Pickup/Airport/Hotel/Home options with fees, compact mode
+- `AddOnsCard.tsx` — Toggle switches for Refuel ($75), Extra Driver ($50/day), Extra Miles ($295), VIP ($150/day)
+
+**Phase 3: Payment + Confirmation Cards** — Complete ✅
+- `GrandTotalCard.tsx` — Full pricing breakdown with "Pay Now" button
+- `PaymentCard.tsx` — Stripe `<PaymentElement>` with Apple Pay/Google Pay, wrapped in CheckoutErrorBoundary
+- `CheckoutErrorBoundary.tsx` — React Error Boundary for Stripe.js failures (ad blockers, network)
+- `ConfirmationCard.tsx` — Success receipt with booking reference, vehicle photo, payment details
+
+**Phase 4: Wire into ChatViewStreaming** — Complete ✅
+- `ChatViewStreaming.tsx` — Integrated `useCheckout` hook, renders checkout cards based on `CheckoutStep`
+- "Confirm & Book" button starts checkout pipeline (no longer sends message)
+- `HANDOFF_TO_PAYMENT` action starts checkout instead of navigating away
+- Compact summaries of completed steps shown above active step
+- Vehicle cards and booking summary hidden during checkout
+- `ProgressBar.tsx` — Accepts `checkoutStep` prop, "Pay" step activates/completes during checkout
+- `BookingSummary.tsx` — Button text changed to "Continue to Checkout"
+- `index.ts` — Barrel exports for all 7 new checkout components
+
+**Phase 5: Email + Edge Cases** — Pending
+
+---
+
 ## Recent Fixes (February 2026)
 
 ### Calculator Tool Chaining + PTC Support - DEPLOYED ✅ (Feb 5)

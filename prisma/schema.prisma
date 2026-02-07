@@ -5159,3 +5159,33 @@ model ClaudeBatchJob {
   @@index([status, createdAt])
   @@map("claude_batch_jobs")
 }
+
+// =============================================================================
+// CHOÉ AI - Pending Checkout (date soft-lock for in-chat booking pipeline)
+// =============================================================================
+
+model PendingCheckout {
+  id                  String   @id @default(cuid())
+  checkoutSessionId   String   @unique
+  vehicleId           String
+  startDate           DateTime @db.Date
+  endDate             DateTime @db.Date
+  userId              String?
+  visitorId           String?
+
+  // Server-side selections (client never sends amounts)
+  selectedInsurance   String?  // MINIMUM | BASIC | PREMIUM | LUXURY
+  selectedDelivery    String?  // pickup | airport | hotel | home
+  selectedAddOns      Json?    // string[] of add-on IDs
+
+  // Lifecycle
+  status              String   @default("active") // active | completed | expired | cancelled
+  expiresAt           DateTime // 15-minute TTL
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([vehicleId, startDate, endDate, status])
+  @@index([expiresAt, status])
+  @@index([userId])
+  @@map("pending_checkouts")
+}

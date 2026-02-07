@@ -7,10 +7,12 @@ import {
   IoCheckmarkCircle,
   IoCard,
 } from 'react-icons/io5'
-import { BookingState } from '@/app/lib/ai-booking/types'
+import { BookingState, CheckoutStep } from '@/app/lib/ai-booking/types'
 
 interface ProgressBarProps {
   state: BookingState
+  /** When set, the "Pay" step reflects checkout progress */
+  checkoutStep?: CheckoutStep
 }
 
 const STEPS = [
@@ -31,8 +33,15 @@ const STATE_ORDER: Record<string, number> = {
   [BookingState.READY_FOR_PAYMENT]: 5,
 }
 
-export default function ProgressBar({ state }: ProgressBarProps) {
-  const currentOrder = STATE_ORDER[state] ?? 0
+export default function ProgressBar({ state, checkoutStep }: ProgressBarProps) {
+  // When in checkout, override to show "Pay" step as active/complete
+  let currentOrder = STATE_ORDER[state] ?? 0
+  if (checkoutStep) {
+    // Checkout active → "Pay" step (order 5) is active
+    currentOrder = 5
+    // Checkout confirmed → "Pay" step is complete (go past 5)
+    if (checkoutStep === CheckoutStep.CONFIRMED) currentOrder = 6
+  }
 
   return (
     <div className="flex items-center py-2 px-3">

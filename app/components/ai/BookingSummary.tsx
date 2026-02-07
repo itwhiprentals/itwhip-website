@@ -157,7 +157,7 @@ function SummaryActions({
         onClick={onConfirm}
         className="flex-1 px-3 py-2 text-xs font-semibold text-white bg-primary rounded-md hover:bg-primary/90 transition-colors"
       >
-        Confirm & Book
+        Continue to Checkout
       </button>
     </div>
   )

@@ -174,3 +174,108 @@ export interface WeatherContext {
   description: string;
   forecast?: string;
 }
+
+// =============================================================================
+// CHECKOUT PIPELINE (deterministic — no AI, driven by useCheckout hook)
+// =============================================================================
+
+export enum CheckoutStep {
+  IDLE = 'IDLE',
+  INSURANCE = 'INSURANCE',
+  DELIVERY = 'DELIVERY',
+  ADDONS = 'ADDONS',
+  REVIEW = 'REVIEW',
+  PAYMENT = 'PAYMENT',
+  PROCESSING = 'PROCESSING',
+  CONFIRMED = 'CONFIRMED',
+  FAILED = 'FAILED',
+  CANCELLED = 'CANCELLED',
+}
+
+/** Insurance tier option returned by checkout/init */
+export interface InsuranceTierOption {
+  tier: 'MINIMUM' | 'BASIC' | 'PREMIUM' | 'LUXURY';
+  dailyPremium: number;
+  totalPremium: number;
+  coverage: {
+    liability: number;
+    collision: number | 'vehicle_value';
+    deductible: number;
+    description: string;
+  };
+  /** MINIMUM tier increases the security deposit */
+  increasedDeposit: number | null;
+}
+
+/** Delivery option returned by checkout/init */
+export interface DeliveryOption {
+  type: 'pickup' | 'airport' | 'hotel' | 'home';
+  label: string;
+  fee: number;
+  available: boolean;
+}
+
+/** Add-on option returned by checkout/init */
+export interface AddOnOption {
+  id: 'refuelService' | 'additionalDriver' | 'extraMiles' | 'vipConcierge';
+  label: string;
+  description: string;
+  price: number;
+  perDay: boolean;
+  selected: boolean;
+}
+
+/** Individual add-on line item in the grand total breakdown */
+export interface AddOnItem {
+  id: string;
+  label: string;
+  /** Calculated total: flat fee or perDay * days */
+  amount: number;
+}
+
+/**
+ * Full checkout state managed by useCheckout hook.
+ * NOTE: grandTotal is NOT stored here — it's computed via computeGrandTotal() in the hook.
+ * The server breakdown from payment-intent is the billing source of truth.
+ */
+export interface CheckoutState {
+  step: CheckoutStep;
+  /** Server-side session ID threaded through all APIs to prevent tampering */
+  checkoutSessionId: string | null;
+  vehicleId: string;
+  summary: BookingSummary;
+  insuranceOptions: InsuranceTierOption[];
+  selectedInsurance: 'MINIMUM' | 'BASIC' | 'PREMIUM' | 'LUXURY' | null;
+  deliveryOptions: DeliveryOption[];
+  /** null forces explicit selection (no default) */
+  selectedDelivery: 'pickup' | 'airport' | 'hotel' | 'home' | null;
+  addOns: AddOnOption[];
+  clientSecret: string | null;
+  paymentIntentId: string | null;
+  bookingConfirmation: BookingConfirmation | null;
+  error: string | null;
+}
+
+/** Display-only grand total computed from current CheckoutState */
+export interface GrandTotal {
+  rental: number;
+  serviceFee: number;
+  insurance: number;
+  delivery: number;
+  addOns: AddOnItem[];
+  addOnsTotal: number;
+  tax: number;
+  taxRate: string;
+  deposit: number;
+  total: number;
+}
+
+export interface BookingConfirmation {
+  bookingId: string;
+  referenceCode: string;
+  vehicle: { year: number; make: string; model: string; photo: string | null };
+  dates: { start: string; end: string; days: number };
+  total: number;
+  paymentLast4: string;
+  paymentBrand: string;
+}

@@ -8,14 +8,21 @@ import VehicleCard from './VehicleCard'
 import ProgressBar from './ProgressBar'
 import BookingSummary from './BookingSummary'
 import ChatInput from './ChatInput'
+import InsuranceCard from './InsuranceCard'
+import DeliveryCard from './DeliveryCard'
+import AddOnsCard from './AddOnsCard'
+import GrandTotalCard from './GrandTotalCard'
+import PaymentCard from './PaymentCard'
+import ConfirmationCard from './ConfirmationCard'
 import { useStreamingChat } from '@/app/hooks/useStreamingChat'
+import { useCheckout } from '@/app/hooks/useCheckout'
 import type {
   BookingSession,
   VehicleSummary,
   BookingSummary as BookingSummaryType,
   BookingAction,
 } from '@/app/lib/ai-booking/types'
-import { BookingState } from '@/app/lib/ai-booking/types'
+import { BookingState, CheckoutStep } from '@/app/lib/ai-booking/types'
 
 // =============================================================================
 // TYPES
@@ -40,6 +47,9 @@ export default function ChatViewStreaming({
   const [persistedVehicles, setPersistedVehicles] = useState<VehicleSummary[] | null>(null)
   const [isLoadingSession, setIsLoadingSession] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  // Checkout pipeline (deterministic — independent from AI conversation)
+  const checkout = useCheckout()
 
   // Use streaming hook
   const {
@@ -123,20 +133,31 @@ export default function ChatViewStreaming({
       }
       hasInteracted.current = true
     }
-  }, [session?.messages.length, vehicles, summary, currentText])
+  }, [session?.messages.length, vehicles, summary, currentText, checkout.state.step])
+
+  // Detect checkout cancellation keywords
+  const isCancelIntent = useCallback((msg: string) => {
+    return /\b(cancel|start over|nevermind|never mind|go back to search|stop checkout|quit checkout|abort)\b/i.test(msg)
+  }, [])
 
   // Send message handler - optimistically add user message immediately
   const handleSendMessage = useCallback((message: string) => {
+    // If user wants to cancel during checkout, cancel the pipeline
+    if (isInCheckout && isCancelIntent(message)) {
+      checkout.cancelCheckout()
+      // Still send the message to Claude so it can respond naturally
+    }
+
     // Optimistically add user message to session so it appears immediately
     const updatedSession: BookingSession = persistedSession
       ? {
           ...persistedSession,
-          messages: [...persistedSession.messages, { role: 'user' as const, content: message }],
+          messages: [...persistedSession.messages, { role: 'user' as const, content: message, timestamp: Date.now() }],
         }
       : {
           sessionId: `session-${Date.now()}`,
           state: BookingState.INIT,
-          messages: [{ role: 'user' as const, content: message }],
+          messages: [{ role: 'user' as const, content: message, timestamp: Date.now() }],
           location: null,
           locationId: null,
           startDate: null,
@@ -161,9 +182,10 @@ export default function ChatViewStreaming({
     resetStream()
     setPersistedSession(null)
     setPersistedVehicles(null)
+    checkout.resetCheckout()
     localStorage.removeItem('itwhip-ai-session-id')
     localStorage.removeItem('itwhip-ai-vehicles')
-  }, [resetStream])
+  }, [resetStream, checkout])
 
   // Vehicle select handler - include vehicleId for reliable extraction
   const handleVehicleSelect = useCallback((vehicle: VehicleSummary) => {
@@ -172,10 +194,12 @@ export default function ChatViewStreaming({
     handleSendMessage(`I'll take the ${vehicle.year} ${vehicle.make} ${vehicle.model} [id:${vehicle.id}]`)
   }, [handleSendMessage])
 
-  // Action handlers
+  // Action handlers — "Confirm & Book" now starts the in-chat checkout pipeline
   const handleConfirm = useCallback(() => {
-    handleSendMessage('Yes, confirm the booking')
-  }, [handleSendMessage])
+    if (summary) {
+      checkout.initCheckout(summary)
+    }
+  }, [summary, checkout])
 
   const handleChangeVehicle = useCallback(() => {
     handleSendMessage('Show me other cars')
@@ -184,13 +208,15 @@ export default function ChatViewStreaming({
   const handleAction = useCallback(() => {
     if (action === 'NEEDS_LOGIN' && onNavigateToLogin) {
       onNavigateToLogin()
-    } else if (action === 'HANDOFF_TO_PAYMENT' && session && onNavigateToBooking) {
-      onNavigateToBooking(session.vehicleId!, session.startDate!, session.endDate!)
+    } else if (action === 'HANDOFF_TO_PAYMENT' && summary) {
+      // Start in-chat checkout instead of navigating away
+      checkout.initCheckout(summary)
     }
-  }, [action, session, onNavigateToLogin, onNavigateToBooking])
+  }, [action, summary, onNavigateToLogin, checkout])
 
   const messages = session?.messages || []
   const hasMessages = messages.length > 0
+  const isInCheckout = checkout.state.step !== CheckoutStep.IDLE && checkout.state.step !== CheckoutStep.CANCELLED
 
   const springTransition = { type: 'spring' as const, stiffness: 300, damping: 30 }
 
@@ -228,7 +254,7 @@ export default function ChatViewStreaming({
             transition={springTransition}
             className="flex-shrink-0 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden"
           >
-            <ProgressBar state={session.state} />
+            <ProgressBar state={session.state} checkoutStep={isInCheckout ? checkout.state.step : undefined} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -269,9 +295,9 @@ export default function ChatViewStreaming({
           )}
         </AnimatePresence>
 
-        {/* Vehicle cards - persist for scroll-back (hide only during CONFIRMING when summary shows) */}
+        {/* Vehicle cards - persist for scroll-back (hide during CONFIRMING/checkout) */}
         <AnimatePresence>
-          {vehicles && vehicles.length > 0 && session?.state !== BookingState.CONFIRMING && (
+          {vehicles && vehicles.length > 0 && session?.state !== BookingState.CONFIRMING && !isInCheckout && (
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
@@ -287,9 +313,9 @@ export default function ChatViewStreaming({
           )}
         </AnimatePresence>
 
-        {/* Booking summary */}
+        {/* Booking summary — hide once checkout starts */}
         <AnimatePresence>
-          {summary && session?.state === BookingState.CONFIRMING && (
+          {summary && session?.state === BookingState.CONFIRMING && !isInCheckout && (
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
@@ -304,9 +330,141 @@ export default function ChatViewStreaming({
           )}
         </AnimatePresence>
 
-        {/* Action buttons */}
+        {/* ============================================================= */}
+        {/* CHECKOUT PIPELINE CARDS (deterministic, no AI)                 */}
+        {/* ============================================================= */}
+        <AnimatePresence mode="wait">
+          {isInCheckout && (
+            <motion.div
+              key={checkout.state.step}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={springTransition}
+              className="space-y-2"
+            >
+              {/* Compact summaries of completed steps */}
+              {checkout.state.step !== CheckoutStep.INSURANCE &&
+                checkout.state.step !== CheckoutStep.CONFIRMED &&
+                checkout.state.selectedInsurance && (
+                <InsuranceCard
+                  options={checkout.state.insuranceOptions}
+                  selected={checkout.state.selectedInsurance}
+                  onSelect={checkout.selectInsurance}
+                  onBack={checkout.state.step !== CheckoutStep.PAYMENT && checkout.state.step !== CheckoutStep.PROCESSING ? checkout.goBack : undefined}
+                  compact
+                />
+              )}
+              {checkout.state.step !== CheckoutStep.INSURANCE &&
+                checkout.state.step !== CheckoutStep.DELIVERY &&
+                checkout.state.step !== CheckoutStep.CONFIRMED &&
+                checkout.state.selectedDelivery && (
+                <DeliveryCard
+                  options={checkout.state.deliveryOptions}
+                  selected={checkout.state.selectedDelivery}
+                  onSelect={checkout.selectDelivery}
+                  onBack={checkout.state.step !== CheckoutStep.PAYMENT && checkout.state.step !== CheckoutStep.PROCESSING ? checkout.goBack : undefined}
+                  compact
+                />
+              )}
+              {checkout.state.step !== CheckoutStep.INSURANCE &&
+                checkout.state.step !== CheckoutStep.DELIVERY &&
+                checkout.state.step !== CheckoutStep.ADDONS &&
+                checkout.state.step !== CheckoutStep.CONFIRMED && (
+                <AddOnsCard
+                  addOns={checkout.state.addOns}
+                  numberOfDays={checkout.state.summary?.numberOfDays || 1}
+                  onToggle={checkout.toggleAddOn}
+                  onContinue={checkout.proceedToReview}
+                  onBack={checkout.state.step !== CheckoutStep.PAYMENT && checkout.state.step !== CheckoutStep.PROCESSING ? checkout.goBack : undefined}
+                  compact
+                />
+              )}
+
+              {/* Active step card */}
+              {checkout.state.step === CheckoutStep.INSURANCE && (
+                <InsuranceCard
+                  options={checkout.state.insuranceOptions}
+                  selected={checkout.state.selectedInsurance}
+                  onSelect={checkout.selectInsurance}
+                />
+              )}
+
+              {checkout.state.step === CheckoutStep.DELIVERY && (
+                <DeliveryCard
+                  options={checkout.state.deliveryOptions}
+                  selected={checkout.state.selectedDelivery}
+                  onSelect={checkout.selectDelivery}
+                />
+              )}
+
+              {checkout.state.step === CheckoutStep.ADDONS && (
+                <AddOnsCard
+                  addOns={checkout.state.addOns}
+                  numberOfDays={checkout.state.summary?.numberOfDays || 1}
+                  onToggle={checkout.toggleAddOn}
+                  onContinue={checkout.proceedToReview}
+                />
+              )}
+
+              {checkout.state.step === CheckoutStep.REVIEW && checkout.grandTotal && (
+                <GrandTotalCard
+                  grandTotal={checkout.grandTotal}
+                  numberOfDays={checkout.state.summary?.numberOfDays || 1}
+                  dailyRate={checkout.state.summary?.dailyRate || 0}
+                  onPay={checkout.proceedToPayment}
+                  onBack={checkout.goBack}
+                  isLoading={checkout.isLoading}
+                />
+              )}
+
+              {checkout.state.step === CheckoutStep.PAYMENT && checkout.state.clientSecret && checkout.grandTotal && (
+                <PaymentCard
+                  clientSecret={checkout.state.clientSecret}
+                  total={checkout.grandTotal.total}
+                  onSuccess={checkout.confirmBooking}
+                  onBack={checkout.goBack}
+                />
+              )}
+
+              {checkout.state.step === CheckoutStep.PROCESSING && (
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 text-center">
+                  <div className="flex gap-1 justify-center mb-2">
+                    <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Confirming your booking...</p>
+                </div>
+              )}
+
+              {checkout.state.step === CheckoutStep.CONFIRMED && checkout.state.bookingConfirmation && (
+                <ConfirmationCard
+                  confirmation={checkout.state.bookingConfirmation}
+                  onNewSearch={handleReset}
+                />
+              )}
+
+              {checkout.state.step === CheckoutStep.FAILED && (
+                <div className="bg-white dark:bg-gray-800 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                  <p className="text-sm text-red-600 dark:text-red-400 mb-2">
+                    {checkout.state.error || 'Something went wrong. Please try again.'}
+                  </p>
+                  <button
+                    onClick={checkout.goBack}
+                    className="text-xs text-primary hover:text-primary/80 font-medium"
+                  >
+                    Go Back
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Action buttons — hide during checkout */}
         <AnimatePresence>
-          {action && (
+          {action && !isInCheckout && (
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
