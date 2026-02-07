@@ -139,6 +139,9 @@ export function useStreamingChat(options: StreamingOptions = {}) {
       const decoder = new TextDecoder()
       let buffer = ''
       let fullText = ''
+      // Keep event type/data outside the read loop so they survive chunk boundaries
+      let eventType = ''
+      let eventData = ''
 
       while (true) {
         const { done, value } = await reader.read()
@@ -149,9 +152,6 @@ export function useStreamingChat(options: StreamingOptions = {}) {
         // Process complete SSE events
         const lines = buffer.split('\n')
         buffer = lines.pop() || '' // Keep incomplete line in buffer
-
-        let eventType = ''
-        let eventData = ''
 
         for (const line of lines) {
           if (line.startsWith('event: ')) {

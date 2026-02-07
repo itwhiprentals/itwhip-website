@@ -20,7 +20,7 @@ import { format, parseISO } from 'date-fns'
 import { MapContainer } from './components/MapContainer'
 import RentalSearchCard from '@/app/(guest)/components/hero/RentalSearchWidget'
 import CompactCarCard from '@/app/components/cards/CompactCarCard'
-import { ChatViewStreaming } from '@/app/components/ai'
+import Link from 'next/link'
 
 // Loading skeleton component - compact style
 function CarCardSkeleton() {
@@ -74,23 +74,6 @@ export default function SearchResultsClient({
 
   // Check for view parameter from URL
   const viewParam = searchParams.get('view')
-  const modeParam = searchParams.get('mode')
-  const [searchMode, setSearchMode] = useState<'normal' | 'ai'>(modeParam === 'ai' ? 'ai' : 'normal')
-
-  // Sync searchMode with URL param changes (e.g. navigating to ?mode=ai while already on page)
-  useEffect(() => {
-    setSearchMode(modeParam === 'ai' ? 'ai' : 'normal')
-  }, [modeParam])
-
-  // Lock body scroll when AI chat is fullscreen
-  useEffect(() => {
-    if (searchMode === 'ai') {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
-    }
-    return () => { document.body.style.overflow = '' }
-  }, [searchMode])
 
   const [cars, setCars] = useState<any[]>(initialCars)
   const [carsInCity, setCarsInCity] = useState<any[]>(initialCarsInCity)
@@ -421,23 +404,6 @@ export default function SearchResultsClient({
 
   return (
     <div className="bg-gray-50 dark:bg-gray-900">
-      {/* AI Search Mode — full screen chat experience */}
-      {searchMode === 'ai' && (
-        <div className="fixed inset-0 z-50 h-[100dvh] bg-white dark:bg-gray-900 overflow-hidden overscroll-contain">
-          <ChatViewStreaming
-            onNavigateToBooking={(vehicleId, startDate, endDate) => {
-              router.push(`/rentals/${vehicleId}?startDate=${startDate}&endDate=${endDate}`)
-            }}
-            onNavigateToLogin={() => {
-              router.push('/login?redirect=/rentals/search')
-            }}
-            onClassicSearch={() => setSearchMode('normal')}
-          />
-        </div>
-      )}
-
-      {/* Normal Search Mode */}
-      {searchMode === 'normal' && <>
 
       {/* Search Widget - Hidden on map view for more space */}
       {!showMap && (
@@ -445,7 +411,7 @@ export default function SearchResultsClient({
           <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
             <RentalSearchCard
               onSearch={handleSearchUpdate}
-              onAISearch={() => setSearchMode('ai')}
+              onAISearch={() => router.push('/choe')}
               variant="compact"
               initialLocation={location}
               initialPickupDate={pickupDate}
@@ -542,13 +508,13 @@ export default function SearchResultsClient({
               </button>
 
               {/* AI Search Button */}
-              <button
-                onClick={() => setSearchMode('ai')}
+              <Link
+                href="/choe"
                 className="h-10 px-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-700 rounded-lg text-sm font-medium hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors flex items-center gap-2 whitespace-nowrap"
               >
                 <IoSparklesOutline className="w-4 h-4" />
                 Try Choé
-              </button>
+              </Link>
 
               {/* Sort Dropdown */}
               <div className="relative ml-auto">
@@ -762,7 +728,6 @@ export default function SearchResultsClient({
         </div>
       )}
 
-      </>}
     </div>
   )
 }

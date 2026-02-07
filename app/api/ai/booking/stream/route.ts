@@ -414,12 +414,15 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
     // PTC allows Claude to write Python code that chains tools together
     // e.g., calculator → search_vehicles in a single execution
     let continueLoop = true
+    let loopCount = 0
+    const MAX_TOOL_LOOPS = 5
     const modelSupportsPTC = supportsPTC(modelConfig.modelId)
     const toolsToUse = getToolsForModel(modelConfig.modelId)
 
     console.log(`[ai-booking-stream] Model: ${modelConfig.modelId}, PTC supported: ${modelSupportsPTC}`)
 
-    while (continueLoop) {
+    while (continueLoop && loopCount < MAX_TOOL_LOOPS) {
+      loopCount++
       // Use beta API only for PTC-supported models (Sonnet/Opus)
       // For Haiku, use regular messages.stream without beta headers
       const streamResponse = modelSupportsPTC
@@ -594,6 +597,12 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
 
       fullReply = currentText
       continueLoop = false
+    }
+
+    // Safety: if loop hit max iterations without a text reply, use a fallback
+    if (loopCount >= MAX_TOOL_LOOPS && !fullReply) {
+      console.error(`[ai-booking-stream] Hit max tool loop iterations (${MAX_TOOL_LOOPS})`)
+      fullReply = '{"reply":"Sorry, that took too long! Could you try rephrasing your request?","nextState":"COLLECTING_DATES"}'
     }
 
     // Parse Claude's JSON response to extract the reply and other fields

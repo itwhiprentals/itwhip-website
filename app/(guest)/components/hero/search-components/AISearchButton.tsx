@@ -19,7 +19,7 @@ export default function AISearchButton({ variant = 'desktop', onActivate }: AISe
     if (onActivate) {
       onActivate()
     } else {
-      router.push('/rentals/search?mode=ai')
+      router.push('/choe')
     }
   }
 

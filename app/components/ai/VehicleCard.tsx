@@ -9,6 +9,8 @@ import type { VehicleSummary } from '@/app/lib/ai-booking/types'
 // Platform fee constants (from app/(guest)/rentals/lib/constants.ts)
 const SERVICE_FEE_RATE = 0.15 // 15% guest service fee
 const TAX_RATE = 0.084 // 8.4% Arizona rental tax (Phoenix default)
+const INSURANCE_DAILY_ESTIMATE = 0.12 // ~12% of daily rate, min $8/day (Basic tier estimate)
+const INSURANCE_MIN_DAILY = 8 // Minimum daily insurance cost
 
 interface VehicleCardProps {
   vehicle: VehicleSummary
@@ -198,6 +200,10 @@ export default function VehicleCard({ vehicle, onSelect, startDate, endDate }: V
                 <span>${pricing.tax.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                <span>Insurance (est., Basic)</span>
+                <span>${pricing.insuranceEstimate.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-gray-600 dark:text-gray-400">
                 <span>Security deposit (refundable)</span>
                 <span>${pricing.deposit.toFixed(2)}</span>
               </div>
@@ -246,12 +252,15 @@ function calculatePricing(dailyRate: number, days: number, depositAmount: number
   const subtotal = dailyRate * days
   const serviceFee = subtotal * SERVICE_FEE_RATE
   const tax = subtotal * TAX_RATE
-  const total = subtotal + serviceFee + tax + depositAmount
+  const insuranceDaily = Math.max(Math.round(dailyRate * INSURANCE_DAILY_ESTIMATE), INSURANCE_MIN_DAILY)
+  const insuranceEstimate = insuranceDaily * days
+  const total = subtotal + serviceFee + tax + insuranceEstimate + depositAmount
 
   return {
     subtotal,
     serviceFee,
     tax,
+    insuranceEstimate,
     deposit: depositAmount,
     total
   }

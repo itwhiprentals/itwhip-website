@@ -106,14 +106,23 @@ function DetailRow({
 }
 
 function PriceBreakdown({ summary }: { summary: BookingSummary }) {
+  // Insurance estimate: ~12% of daily rate, min $8/day (Basic tier)
+  const insuranceDaily = Math.max(Math.round(summary.dailyRate * 0.12), 8)
+  const insuranceEstimate = insuranceDaily * summary.numberOfDays
+  const totalAtCheckout = summary.estimatedTotal + insuranceEstimate + summary.depositAmount
+
   return (
     <div className="px-3 pb-3 border-t border-gray-100 dark:border-gray-700 pt-3">
       <PriceLine label={`$${summary.dailyRate} × ${summary.numberOfDays} day${summary.numberOfDays > 1 ? 's' : ''}`} amount={summary.subtotal} />
-      <PriceLine label="Service fee" amount={summary.serviceFee} />
-      <PriceLine label="Estimated tax" amount={summary.estimatedTax} />
+      <PriceLine label="Service fee (15%)" amount={summary.serviceFee} />
+      <PriceLine label="Estimated tax (8.4%)" amount={summary.estimatedTax} />
+      <PriceLine label="Insurance (est., Basic)" amount={insuranceEstimate} />
+      {summary.depositAmount > 0 && (
+        <PriceLine label="Security deposit (refundable)" amount={summary.depositAmount} />
+      )}
       <div className="flex justify-between mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
-        <span className="text-sm font-bold text-gray-900 dark:text-white">Estimated Total</span>
-        <span className="text-sm font-bold text-gray-900 dark:text-white">${summary.estimatedTotal.toFixed(2)}</span>
+        <span className="text-sm font-bold text-gray-900 dark:text-white">Total at checkout</span>
+        <span className="text-sm font-bold text-gray-900 dark:text-white">${totalAtCheckout.toFixed(2)}</span>
       </div>
     </div>
   )

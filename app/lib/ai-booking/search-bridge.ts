@@ -122,11 +122,10 @@ function buildSearchParams(query: SearchQuery): URLSearchParams {
     params.set('radius', '150'); // 150 miles covers most of Arizona metro areas
     console.log('[SEARCH-BRIDGE DEBUG] Statewide search detected, using 150mi radius');
   } else {
-    // Specific city: use radius search (25mi default) to include nearby cities
-    // e.g., "Phoenix" will also find cars in Goodyear, Tempe, Mesa, etc.
-    params.set('location', location);
-    params.set('radius', '25');
-    console.log(`[SEARCH-BRIDGE DEBUG] City search: ${location} with 25mi radius`);
+    // Specific city: use exact city match so "Phoenix" only returns Phoenix cars
+    const cityName = extractCityName(location);
+    params.set('city', cityName);
+    console.log(`[SEARCH-BRIDGE DEBUG] City search: exact match for "${cityName}"`);
   }
 
   if (query.carType) params.set('carType', query.carType);
@@ -224,9 +223,10 @@ function normalizeSearchResults(data: RawSearchResult): VehicleSummary[] {
     return true;
   });
 
-  // Show all available cars (no arbitrary limit like "12")
-  // Reasonable max for display performance: 20 cars
-  return unique.slice(0, 20).map(normalizeCarResult);
+  // Normalize, sort by rating (highest first), then cap at 20
+  const normalized = unique.map(normalizeCarResult);
+  normalized.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+  return normalized.slice(0, 20);
 }
 
 function normalizeCarResult(car: RawCarResult): VehicleSummary {
