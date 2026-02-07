@@ -48,24 +48,11 @@ export default function GuestLayout({
     return !RENTAL_SUB_ROUTES.includes(firstSegment)
   })()
 
-  const handleGetAppClick = () => {
-    // Handle get app click
-    console.log('Get app clicked')
-  }
-
-  const handleSearchClick = () => {
-    // Handle search click
-    console.log('Search clicked')
-  }
-
   return (
     <>
       {/* Hide Header on mobile for car detail pages */}
       <div className={isCarDetailPage ? 'hidden sm:block' : ''}>
-        <Header
-          handleGetAppClick={handleGetAppClick}
-          handleSearchClick={handleSearchClick}
-        />
+        <Header />
       </div>
 
       {/* Remove top padding on mobile for car detail pages */}

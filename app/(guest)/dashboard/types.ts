@@ -19,6 +19,7 @@ export interface SuspensionInfo {
     canBookLuxury?: boolean
     canBookPremium?: boolean
     requiresManualApproval?: boolean
+    guestId?: string
   }
   
   export interface ModerationAction {

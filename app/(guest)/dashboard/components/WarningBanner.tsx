@@ -3,11 +3,12 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { 
-  SuspensionInfo, 
-  WARNING_CATEGORY_CONFIG, 
+import {
+  SuspensionInfo,
+  WARNING_CATEGORY_CONFIG,
   RESTRICTION_CONFIG,
-  RestrictionType 
+  RestrictionType,
+  WarningCategory
 } from '../types'
 import AppealBottomSheet from '@/app/components/moderation/AppealBottomSheet'
 
@@ -117,7 +118,7 @@ export default function WarningBanner({
   if (!suspensionLevel && activeWarningCount > 0) {
     console.log('[WarningBanner] ✅ Showing warning banner - Active warnings:', activeWarningCount)
     
-    const warningCategory = latestWarning?.warningCategory
+    const warningCategory = latestWarning?.warningCategory as WarningCategory | undefined
     const categoryConfig = warningCategory ? WARNING_CATEGORY_CONFIG[warningCategory] : null
     const severityColor = activeWarningCount === 1 ? 'yellow' : activeWarningCount === 2 ? 'orange' : 'red'
 

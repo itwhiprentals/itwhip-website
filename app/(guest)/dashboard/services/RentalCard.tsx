@@ -379,7 +379,7 @@ export default function RentalCard({
 
   // Calculate total cost
   const calculateTotalCost = () => {
-    if (!selectedVehicle) return { subtotal: 0, insurance: 0, extras: 0, delivery: 0, tax: 0, total: 0 }
+    if (!selectedVehicle) return { subtotal: 0, insuranceCost: 0, extrasCost: 0, deliveryFee: 0, tax: 0, total: 0 }
     
     const days = calculateDays()
     const subtotal = calculateRentalCost(selectedVehicle, days)
@@ -399,9 +399,9 @@ export default function RentalCard({
     
     return {
       subtotal,
-      insurance: insuranceCost,
-      extras: extrasCost,
-      delivery: deliveryFee,
+      insuranceCost,
+      extrasCost,
+      deliveryFee,
       tax,
       total
     }
@@ -450,10 +450,15 @@ export default function RentalCard({
         dropoffDate: dropoffDateTime.date,
         dropoffTime: dropoffDateTime.time,
         days,
+        driver: driverInfo,
+        subtotal: costs.subtotal,
+        insuranceCost: costs.insuranceCost,
+        extrasCost: costs.extrasCost,
+        deliveryFee: costs.deliveryFee,
+        tax: costs.tax,
+        total: costs.total,
         insurance: selectedInsurance,
         extras: extras.filter(e => e.selected),
-        driver: driverInfo,
-        ...costs,
         paymentMethod: isAtHotel ? 'roomCharge' : 'card',
         roomNumber: isAtHotel ? 'Room 412' : undefined
       }
@@ -672,19 +677,19 @@ export default function RentalCard({
                 <span className="text-gray-600">
                   {selectedInsurance.charAt(0).toUpperCase() + selectedInsurance.slice(1)} Insurance
                 </span>
-                <span className="text-gray-900">${costs.insurance.toFixed(2)}</span>
+                <span className="text-gray-900">${costs.insuranceCost.toFixed(2)}</span>
               </div>
             )}
-            {costs.extras > 0 && (
+            {costs.extrasCost > 0 && (
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Extras</span>
-                <span className="text-gray-900">${costs.extras.toFixed(2)}</span>
+                <span className="text-gray-900">${costs.extrasCost.toFixed(2)}</span>
               </div>
             )}
-            {costs.delivery > 0 && (
+            {costs.deliveryFee > 0 && (
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Hotel Delivery</span>
-                <span className="text-gray-900">${costs.delivery.toFixed(2)}</span>
+                <span className="text-gray-900">${costs.deliveryFee.toFixed(2)}</span>
               </div>
             )}
             <div className="flex justify-between text-sm">
