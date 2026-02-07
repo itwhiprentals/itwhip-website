@@ -352,7 +352,7 @@ function WelcomeMessage() {
         Tell me what you&apos;re looking for and I&apos;ll find the best car for you in Arizona.
       </p>
       <a
-        href="/help/chloe"
+        href="/help/choe"
         className="text-[10px] text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 underline underline-offset-2"
       >
         Learn about ChoéAI

@@ -300,7 +300,7 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/help/chloe" className="text-xs md:text-sm text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 font-medium transition-colors">
+                <Link href="/help/choe" className="text-xs md:text-sm text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 font-medium transition-colors">
                   Choé AI →
                 </Link>
               </li>

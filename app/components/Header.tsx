@@ -123,7 +123,7 @@ function HeaderInner({}: HeaderProps = {}) {
   // Check if we're on specific pages
   const isHostPage = pathname?.startsWith('/host/')
   const isAdminPage = pathname?.startsWith('/admin/')
-  const isChoePage = pathname?.startsWith('/help/chloe')
+  const isChoePage = pathname?.startsWith('/help/choe')
 
   // Override isLoggedIn display when guard screen is active
   // User should appear logged out until they choose an action on the guard screen
@@ -268,7 +268,7 @@ function HeaderInner({}: HeaderProps = {}) {
                 href={
                   isAdmin ? '/admin/dashboard' :
                   isHost && isHostPage ? '/host/dashboard' :
-                  isChoePage ? '/help/chloe' :
+                  isChoePage ? '/help/choe' :
                   isGuest ? '/dashboard' :
                   '/'
                 }
