@@ -28,8 +28,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [user, setUser] = useState<UserData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-
   // Check authentication on mount
   useEffect(() => {
     checkAuth()
@@ -58,15 +56,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     } finally {
       setIsLoading(false)
     }
-  }
-
-  // Header handlers
-  const handleGetAppClick = () => {
-    window.open('https://apps.apple.com/app/itwhip', '_blank')
-  }
-
-  const handleSearchClick = () => {
-    router.push('/rentals/search')
   }
 
   // Loading state
@@ -112,12 +101,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   // Main layout - CLEAN, NO HOTEL CONTEXT PROVIDER
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
-      <Header
-        isMobileMenuOpen={isMobileMenuOpen}
-        setIsMobileMenuOpen={setIsMobileMenuOpen}
-        handleGetAppClick={handleGetAppClick}
-        handleSearchClick={handleSearchClick}
-      />
+      <Header />
 
       <main className="mt-14 md:mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-8">

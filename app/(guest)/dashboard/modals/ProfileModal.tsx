@@ -34,7 +34,6 @@ import {
   IoHelpCircleOutline,
   IoChevronForward
 } from 'react-icons/io5'
-import { useHotel } from '../components/HotelContext'
 import { useRouter } from 'next/navigation'
 
 // Types
@@ -218,7 +217,6 @@ export default function ProfileModal({
   onUpdate
 }: ProfileModalProps) {
   const router = useRouter()
-  const { user } = useHotel()
   
   // State
   const [activeTab, setActiveTab] = useState<TabType>('profile')

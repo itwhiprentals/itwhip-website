@@ -655,7 +655,7 @@ export default function GuestDashboard() {
       // Set suspension info
       if (dashboardData.profile) {
         const suspensionInfo: SuspensionInfo = {
-          suspensionLevel: dashboardData.profile.suspensionLevel,
+          suspensionLevel: dashboardData.profile.suspensionLevel as SuspensionInfo['suspensionLevel'],
           suspendedAt: dashboardData.profile.suspendedUntil,
           suspendedReason: null,
           suspendedBy: null,
@@ -1242,7 +1242,7 @@ export default function GuestDashboard() {
 
           // Priority 3: Show warning/suspension banner
           if (state.suspensionInfo &&
-              (state.suspensionInfo.activeWarningCount > 0 || state.suspensionInfo.suspensionLevel)) {
+              ((state.suspensionInfo.activeWarningCount ?? 0) > 0 || state.suspensionInfo.suspensionLevel)) {
             return (
               <WarningBanner
                 suspensionInfo={state.suspensionInfo}

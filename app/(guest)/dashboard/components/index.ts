@@ -1,13 +1,14 @@
 // app/(guest)/dashboard/components/index.ts
-// Central export file for all dashboard components
+// Central export file for dashboard components
 
-// Core components
-export { default as AICommandStrip } from './AICommandStrip'
-export { default as ActiveServices } from './ActiveServices'
-export { default as HotelMiniStore } from './HotelMiniStore'
-export { default as ServiceGrid } from './ServiceGrid'
-export { default as SmartSidebar } from './SmartSidebar'
-export { default as TripTimeline } from './TripTimeline'
+// Rental car components
+export { default as RentalBookingsSection } from './RentalBookingsSection'
+export { default as WarningBanner } from './WarningBanner'
+export { default as AppealModal } from './AppealModal'
+export { default as AppealStatusBanner } from './AppealStatusBanner'
+export { default as GoodStandingBanner } from './GoodStandingBanner'
+export { default as VerificationAlert } from './VerificationAlert'
+export { default as RestrictionGuard } from './RestrictionGuard'
 
 // Context and hooks
 export {
@@ -19,45 +20,3 @@ export {
   type VehicleFeatures,
   type RentalInventoryItem
 } from './RentalContext'
-
-// Legacy exports for backwards compatibility
-export {
-  RentalContext as HotelContext,
-  RentalProvider as HotelProvider,
-  useRental as useHotel
-} from './RentalContext'
-
-// Re-export component prop types for external use
-export type {
-  ServiceGridProps,
-  Service,
-  ServiceStatus
-} from './ServiceGrid'
-
-export type {
-  ActiveServicesProps,
-  ActiveService
-} from './ActiveServices'
-
-export type {
-  HotelMiniStoreProps,
-  StoreItem,
-  StoreCategory
-} from './HotelMiniStore'
-
-export type {
-  SmartSidebarProps,
-  SidebarWidget
-} from './SmartSidebar'
-
-export type {
-  TripTimelineProps,
-  TimelineEvent,
-  TimelineStatus
-} from './TripTimeline'
-
-export type {
-  AICommandStripProps,
-  AICommand,
-  CommandAction
-} from './AICommandStrip'
