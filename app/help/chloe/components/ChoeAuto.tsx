@@ -191,7 +191,7 @@ export function ChoeAuto() {
               ? 'bg-[#252525] border-[#333]'
               : 'bg-gray-100 border-gray-200'
           }`}>
-            <Image src="/images/choe-logo.png" alt="Choé" width={56} height={56} className="rounded-lg" />
+            <Image src="/images/choe-logo.png" alt="Choé" width={150} height={44} className="h-[44px] w-auto -my-1" />
             <div className="flex-1">
               <span className={`font-bold text-sm sm:text-base ${isDarkCard ? 'text-white' : 'text-gray-900'}`}>
                 Voice Commands While Driving

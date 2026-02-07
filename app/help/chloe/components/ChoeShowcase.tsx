@@ -34,14 +34,14 @@ const screenshots = [
 
 export function ChoeShowcase() {
   return (
-    <section className="py-10 sm:py-14 bg-gradient-to-b from-white via-gray-50 to-white dark:from-[#0f0f0f] dark:via-[#1a1a1a] dark:to-[#0f0f0f] relative overflow-hidden border-t border-gray-300 dark:border-[#222]">
+    <section className="pt-0 pb-10 sm:pb-14 bg-gradient-to-b from-white via-gray-50 to-white dark:from-[#0f0f0f] dark:via-[#1a1a1a] dark:to-[#0f0f0f] relative border-t border-gray-300 dark:border-[#222]">
       {/* Background accent - responsive sizing to prevent mobile overflow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] sm:w-[500px] sm:h-[400px] lg:w-[800px] lg:h-[600px] bg-[#e87040]/5 dark:bg-[#e87040]/10 rounded-full blur-[80px] sm:blur-[100px] lg:blur-[120px]" />
 
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-10 sm:mb-14">
-          <Image src="/images/choe-logo.png" alt="Choé" width={200} height={58} className="h-[60px] w-auto mx-auto mb-1" />
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
+          <Image src="/images/choe-logo.png" alt="Choé" width={300} height={87} className="h-[90px] w-auto mx-auto -mb-5" />
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-1 tracking-tight">
             See Choé in Action
           </h2>
           <p className="text-base sm:text-lg text-gray-600 dark:text-[#a8a8a8] max-w-xl mx-auto mb-6">
@@ -75,7 +75,7 @@ export function ChoeShowcase() {
                     height={960}
                     className="w-full h-auto group-hover:scale-[1.02] transition-transform duration-500"
                     style={{
-                      filter: 'drop-shadow(0 20px 25px rgba(0, 0, 0, 0.3)) drop-shadow(0 40px 50px rgba(0, 0, 0, 0.15))'
+                      filter: 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15)) drop-shadow(0 8px 16px rgba(0, 0, 0, 0.08))'
                     }}
                     quality={90}
                   />

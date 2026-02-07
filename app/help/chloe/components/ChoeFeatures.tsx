@@ -2,6 +2,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { features } from '../data/features'
 import { IoChevronDownOutline } from 'react-icons/io5'
 
@@ -25,13 +26,14 @@ export function ChoeFeatures() {
   }
 
   return (
-    <section className="py-10 sm:py-14 bg-gray-50 dark:bg-[#0f0f0f] relative border-t border-gray-300 dark:border-[#222]">
+    <section className="pt-0 pb-10 sm:pb-14 bg-gray-50 dark:bg-[#0f0f0f] relative border-t border-gray-300 dark:border-[#222]">
       {/* Subtle background texture */}
       <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.02]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)', backgroundSize: '24px 24px' }} />
 
       <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
+          <Image src="/images/choe-logo.png" alt="Choé" width={300} height={87} className="h-[90px] w-auto mx-auto -mb-5" />
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-1 tracking-tight">
             Smart Features
           </h2>
           <p className="text-base sm:text-lg text-gray-600 dark:text-[#a8a8a8]">

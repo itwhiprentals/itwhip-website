@@ -1,18 +1,17 @@
 // app/help/chloe/components/ChoeFAQs.tsx
 'use client'
 
+import Image from 'next/image'
 import { faqs } from '../data/faqs'
-import { IoHelpCircleOutline, IoChevronDownOutline } from 'react-icons/io5'
+import { IoChevronDownOutline } from 'react-icons/io5'
 
 export function ChoeFAQs() {
   return (
-    <section className="py-10 sm:py-14 bg-gray-50 dark:bg-[#0f0f0f] relative border-t border-gray-300 dark:border-[#222]">
+    <section className="pt-0 pb-10 sm:pb-14 bg-gray-50 dark:bg-[#0f0f0f] relative border-t border-gray-300 dark:border-[#222]">
       <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-lg bg-white dark:bg-[#1a1a1a] border border-gray-300 dark:border-[#333] mb-4">
-            <IoHelpCircleOutline className="w-8 h-8 text-[#e87040]" />
-          </div>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
+          <Image src="/images/choe-logo.png" alt="Choé" width={300} height={87} className="h-[90px] w-auto mx-auto -mb-5" />
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-1 tracking-tight">
             Frequently Asked Questions
           </h2>
           <p className="text-base sm:text-lg text-gray-600 dark:text-[#a8a8a8]">

@@ -105,8 +105,8 @@ export function ChoeDeveloper() {
               <div className="w-3 h-3 rounded-full bg-[#27ca3f]" />
             </div>
             <div className="flex-1 flex items-center justify-center gap-2 text-sm font-medium text-gray-600 dark:text-[#a8a8a8]">
-              <Image src="/images/choe-logo.png" alt="Choé" width={28} height={28} className="rounded" />
-              <span>Choé Pricing</span>
+              <Image src="/images/choe-logo.png" alt="Choé" width={100} height={29} className="h-[28px] w-auto" />
+              <span>Pricing</span>
             </div>
           </div>
 
