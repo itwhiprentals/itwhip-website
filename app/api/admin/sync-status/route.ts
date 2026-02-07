@@ -242,7 +242,7 @@ function generateRecommendations(data: {
   
   if (data.orphanedReviews > 0) {
     recommendations.push(`⚠️ Found ${data.orphanedReviews} reviews not linked to bookings`)
-    recommendations.push('🔧 Run: npx tsx scripts/sync-reviews-to-bookings.ts')
+    recommendations.push('🔧 Review sync needed — check admin dashboard for manual sync options')
   }
   
   if (data.reviewersWithUser < data.totalReviewers) {
@@ -253,7 +253,7 @@ function generateRecommendations(data: {
   
   if (data.orphanedReviews === 0 && data.reviewersWithUser === data.totalReviewers) {
     recommendations.push('✅ Sync appears complete!')
-    recommendations.push('🔍 Run verification: npx tsx scripts/verify-sync-results.ts')
+    recommendations.push('🔍 Verify sync results in admin dashboard')
   }
   
   return recommendations
