@@ -218,15 +218,15 @@ export default function ChatViewStreaming({
       {/* Header */}
       <ChatHeader onClassicSearch={onClassicSearch} />
 
-      {/* Progress bar */}
+      {/* Progress bar — only shows once Choé detects intent (past INIT state) */}
       <AnimatePresence>
-        {session && (
+        {session && session.state !== BookingState.INIT && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={springTransition}
-            className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden"
+            className="flex-shrink-0 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden"
           >
             <ProgressBar state={session.state} />
           </motion.div>
@@ -360,7 +360,7 @@ export default function ChatViewStreaming({
       </div>
 
       {/* Input */}
-      <div className="bg-white dark:bg-gray-900">
+      <div className="flex-shrink-0 bg-white dark:bg-gray-900">
         <ChatInput
           onSend={handleSendMessage}
           onReset={handleReset}
@@ -379,7 +379,7 @@ export default function ChatViewStreaming({
 
 function ChatHeader({ onClassicSearch }: { onClassicSearch?: () => void }) {
   return (
-    <div className="flex items-center justify-between px-4 pb-2 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+    <div className="flex-shrink-0 flex items-center justify-between px-4 pb-2 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
       <div className="-mt-4">
         <Image src="/images/choe-logo.png" alt="Choé" width={300} height={87} className="h-[83px] w-auto" />
         <span className="text-[9px] text-gray-400 block -mt-7">ItWhip Search Studio</span>
