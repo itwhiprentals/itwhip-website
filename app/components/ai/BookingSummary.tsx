@@ -106,8 +106,9 @@ function DetailRow({
 }
 
 function PriceBreakdown({ summary }: { summary: BookingSummary }) {
-  // Insurance estimate: ~12% of daily rate, min $8/day (Basic tier)
-  const insuranceDaily = Math.max(Math.round(summary.dailyRate * 0.12), 8)
+  // Use real insurance rate from InsuranceProvider if available, fall back to estimate
+  const hasRealInsurance = summary.vehicle.insuranceBasicDaily != null
+  const insuranceDaily = summary.vehicle.insuranceBasicDaily ?? Math.max(Math.round(summary.dailyRate * 0.12), 8)
   const insuranceEstimate = insuranceDaily * summary.numberOfDays
   const totalAtCheckout = summary.estimatedTotal + insuranceEstimate + summary.depositAmount
 
@@ -116,7 +117,7 @@ function PriceBreakdown({ summary }: { summary: BookingSummary }) {
       <PriceLine label={`$${summary.dailyRate} × ${summary.numberOfDays} day${summary.numberOfDays > 1 ? 's' : ''}`} amount={summary.subtotal} />
       <PriceLine label="Service fee (15%)" amount={summary.serviceFee} />
       <PriceLine label="Estimated tax (8.4%)" amount={summary.estimatedTax} />
-      <PriceLine label="Insurance (est., Basic)" amount={insuranceEstimate} />
+      <PriceLine label={`Insurance (${hasRealInsurance ? 'Basic' : 'est., Basic'})`} amount={insuranceEstimate} />
       {summary.depositAmount > 0 && (
         <PriceLine label="Security deposit (refundable)" amount={summary.depositAmount} />
       )}

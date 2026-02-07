@@ -295,5 +295,6 @@ function normalizeCarResult(car: RawCarResult): VehicleSummary {
     seats: car.seats || null,
     transmission: car.transmission || null,
     depositAmount,
+    insuranceBasicDaily: null, // Populated by stream route with real InsuranceProvider data
   };
 }

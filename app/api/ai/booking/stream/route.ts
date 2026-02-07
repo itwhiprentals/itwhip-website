@@ -219,6 +219,69 @@ function buildBookingSummary(
 }
 
 // =============================================================================
+// INSURANCE PRICING HELPERS
+// =============================================================================
+
+interface InsurancePricingBracket {
+  MINIMUM: number
+  BASIC: number
+  PREMIUM: number
+  LUXURY: number
+}
+
+interface InsurancePricingRules {
+  under25k: InsurancePricingBracket
+  '25to50k': InsurancePricingBracket
+  '50to100k': InsurancePricingBracket
+  over100k: InsurancePricingBracket
+}
+
+/**
+ * Fetch insurance pricing rules from the primary active InsuranceProvider.
+ * Called ONCE per request and reused for all vehicles.
+ */
+async function fetchInsurancePricingRules(): Promise<InsurancePricingRules | null> {
+  try {
+    const provider = await prisma.insuranceProvider.findFirst({
+      where: { isPrimary: true, isActive: true },
+      select: { pricingRules: true },
+    })
+    return (provider?.pricingRules as InsurancePricingRules) ?? null
+  } catch (error) {
+    console.error('[ai-booking-stream] Failed to fetch insurance pricing:', error)
+    return null
+  }
+}
+
+/**
+ * Get the Basic tier daily insurance rate based on daily rental rate.
+ * Uses daily rate as a proxy for vehicle value bracket:
+ *   < $150/day → under25k (economy)
+ *   $150-$500/day → 25to50k (mid-range/luxury)
+ *   > $500/day → 50to100k (exotic/high-end)
+ */
+function getBasicDailyRate(rules: InsurancePricingRules, dailyRate: number): number {
+  if (dailyRate < 150) return rules.under25k?.BASIC ?? 15
+  if (dailyRate < 500) return rules['25to50k']?.BASIC ?? 30
+  return rules['50to100k']?.BASIC ?? 50
+}
+
+/**
+ * Attach real insurance rates to vehicles from InsuranceProvider pricing rules.
+ * If no pricing rules available, leaves insuranceBasicDaily as null (frontend falls back to estimate).
+ */
+async function attachInsurancePricing(
+  vehicles: VehicleSummary[],
+  pricingRules: InsurancePricingRules | null
+): Promise<void> {
+  if (!pricingRules) return
+
+  for (const v of vehicles) {
+    v.insuranceBasicDaily = getBasicDailyRate(pricingRules, v.dailyRate)
+  }
+}
+
+// =============================================================================
 // SUGGESTION CHIPS
 // =============================================================================
 
@@ -321,6 +384,9 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
     // Load settings
     const modelConfig = await getModelConfig()
     const featureFlags = await getFeatureFlags()
+
+    // Fetch insurance pricing rules ONCE per request (for attaching real rates to vehicles)
+    const insurancePricingRules = await fetchInsurancePricingRules()
 
     // Security check
     const sessionMessageCount = body.session?.messages?.length || 0
@@ -574,6 +640,9 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
               console.log(`[ai-booking-stream] No cars fit budget, showing 3 cheapest options`)
             }
           }
+
+          // Attach real insurance pricing from InsuranceProvider
+          await attachInsurancePricing(filteredVehicles, insurancePricingRules)
 
           vehicles = filteredVehicles
           await sse.sendEvent('vehicles', { vehicles })

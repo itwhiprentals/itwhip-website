@@ -497,6 +497,7 @@ function ThinkingIndicator({
   const toolLabels: Record<string, string> = {
     search_vehicles: 'Searching cars',
     get_weather: 'Checking weather',
+    get_reviews: 'Reading reviews',
     select_vehicle: 'Selecting vehicle',
     update_booking_details: 'Updating details',
     calculator: 'Calculating',

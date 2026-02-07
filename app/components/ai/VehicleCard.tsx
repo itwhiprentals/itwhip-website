@@ -40,7 +40,7 @@ export default function VehicleCard({ vehicle, onSelect, startDate, endDate }: V
   const numberOfDays = calculateDays(startDate, endDate)
 
   // Calculate pricing using actual deposit from vehicle data
-  const pricing = calculatePricing(vehicle.dailyRate, numberOfDays, vehicle.depositAmount)
+  const pricing = calculatePricing(vehicle.dailyRate, numberOfDays, vehicle.depositAmount, vehicle.insuranceBasicDaily)
 
   const toggleExpand = () => {
     setExpanded(!expanded)
@@ -200,7 +200,7 @@ export default function VehicleCard({ vehicle, onSelect, startDate, endDate }: V
                 <span>${pricing.tax.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-gray-600 dark:text-gray-400">
-                <span>Insurance (est., Basic)</span>
+                <span>Insurance ({vehicle.insuranceBasicDaily ? 'Basic' : 'est., Basic'})</span>
                 <span>${pricing.insuranceEstimate.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-gray-600 dark:text-gray-400">
@@ -248,11 +248,12 @@ function calculateDays(startDate?: string | null, endDate?: string | null): numb
 /**
  * Calculate pricing breakdown using platform constants and actual deposit
  */
-function calculatePricing(dailyRate: number, days: number, depositAmount: number) {
+function calculatePricing(dailyRate: number, days: number, depositAmount: number, insuranceBasicDaily: number | null) {
   const subtotal = dailyRate * days
   const serviceFee = subtotal * SERVICE_FEE_RATE
   const tax = subtotal * TAX_RATE
-  const insuranceDaily = Math.max(Math.round(dailyRate * INSURANCE_DAILY_ESTIMATE), INSURANCE_MIN_DAILY)
+  // Use real insurance rate from InsuranceProvider if available, fall back to estimate
+  const insuranceDaily = insuranceBasicDaily ?? Math.max(Math.round(dailyRate * INSURANCE_DAILY_ESTIMATE), INSURANCE_MIN_DAILY)
   const insuranceEstimate = insuranceDaily * days
   const total = subtotal + serviceFee + tax + insuranceEstimate + depositAmount
 

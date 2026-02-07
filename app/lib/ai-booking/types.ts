@@ -102,6 +102,8 @@ export interface VehicleSummary {
   transmission: string | null;
   /** Actual deposit from hybrid system (per-vehicle or host settings) */
   depositAmount: number;
+  /** Real daily insurance rate for Basic tier (from InsuranceProvider pricing rules) */
+  insuranceBasicDaily: number | null;
 }
 
 // =============================================================================

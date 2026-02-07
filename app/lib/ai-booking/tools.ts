@@ -7,6 +7,7 @@ import { searchVehicles } from './search-bridge'
 import type { SearchQuery } from './types'
 import { fetchWeatherContext } from './weather-bridge'
 import { BookingSession, VehicleSummary } from './types'
+import prisma from '@/app/lib/database/prisma'
 
 // =============================================================================
 // SAFE CALCULATOR
@@ -205,6 +206,20 @@ export const BOOKING_TOOLS: Anthropic.Tool[] = [
     },
   },
   {
+    name: 'get_reviews',
+    description: 'Get guest reviews for a specific vehicle. Call when user asks about reviews, ratings, what renters think, or whether a car is good.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        vehicleId: {
+          type: 'string',
+          description: 'The vehicle ID from the AVAILABLE CARS list (the [ID: ...] value)',
+        },
+      },
+      required: ['vehicleId'],
+    },
+  },
+  {
     name: 'calculator',
     description: `Calculate arithmetic expressions. ALWAYS use this for ANY math - never do math in your head.
 
@@ -400,6 +415,61 @@ export async function executeTools(
           tool_use_id: toolUse.id,
           content: JSON.stringify({ updated: true, details: input }),
         })
+        break
+      }
+
+      case 'get_reviews': {
+        const vehicleId = input.vehicleId as string
+        try {
+          const reviews = await prisma.rentalReview.findMany({
+            where: { carId: vehicleId, isVisible: true },
+            orderBy: { rating: 'desc' },
+            take: 5,
+            select: {
+              rating: true,
+              title: true,
+              comment: true,
+              createdAt: true,
+              isVerified: true,
+              reviewerProfile: {
+                select: { name: true },
+              },
+            },
+          })
+
+          // Get aggregate stats
+          const stats = await prisma.rentalReview.aggregate({
+            where: { carId: vehicleId, isVisible: true },
+            _avg: { rating: true },
+            _count: true,
+          })
+
+          const formattedReviews = reviews.map(r => ({
+            rating: r.rating,
+            title: r.title || null,
+            comment: r.comment ? r.comment.slice(0, 300) : null,
+            reviewer: r.reviewerProfile?.name?.split(' ')[0] || 'Guest', // First name only
+            verified: r.isVerified,
+            date: r.createdAt.toISOString().split('T')[0],
+          }))
+
+          results.push({
+            type: 'tool_result',
+            tool_use_id: toolUse.id,
+            content: JSON.stringify({
+              averageRating: stats._avg.rating ? Math.round(stats._avg.rating * 10) / 10 : null,
+              totalReviews: stats._count,
+              reviews: formattedReviews,
+            }),
+          })
+        } catch (error) {
+          console.error('[tools] get_reviews error:', error)
+          results.push({
+            type: 'tool_result',
+            tool_use_id: toolUse.id,
+            content: JSON.stringify({ averageRating: null, totalReviews: 0, reviews: [] }),
+          })
+        }
         break
       }
 

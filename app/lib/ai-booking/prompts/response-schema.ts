@@ -176,9 +176,20 @@ User says "I'll take the Honda Civic" or "Let's go with that one" or "Book the B
 }
 
 INFORMATION REQUEST (user wants to know more, NOT booking yet):
-User says "Does that BMW have good reviews?" or "Tell me more about the Tesla" or "What features does it have?":
+User says "Tell me more about the Tesla" or "What features does it have?":
 {
-  "reply": "The 2023 BMW 3 Series has a 4.8★ rating from 23 trips! Renters love its smooth handling and premium interior.",
+  "reply": "The 2023 Tesla Model 3 has great range and Autopilot! Tap the card to see all photos.",
+  "nextState": "COLLECTING_VEHICLE",
+  "extractedData": {},
+  "action": null,
+  "searchQuery": null
+}
+
+REVIEW REQUEST (call get_reviews tool first, then cite real reviews):
+User says "Does the BMW have good reviews?" or "What do renters say?":
+→ Call get_reviews tool with the vehicle's ID, then respond with actual data:
+{
+  "reply": "The 2023 BMW 3 Series has a 4.8★ rating from 23 reviews! Sarah said 'Super clean and drove perfectly.' Mike loved the handling.",
   "nextState": "COLLECTING_VEHICLE",
   "extractedData": {},
   "action": null,
