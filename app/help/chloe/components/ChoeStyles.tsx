@@ -84,6 +84,14 @@ export function ChoeStyles() {
         animation: choe-float 6s ease-in-out infinite;
       }
 
+      /* iOS Safari bottom bar picks up body background — match Choé theme */
+      body:has(.choe-page) {
+        background-color: #ffffff !important;
+      }
+      html.dark body:has(.choe-page) {
+        background-color: #0f0f0f !important;
+      }
+
       /* Header blends seamlessly with Choé page theme */
       .choe-page > nav {
         background-color: #ffffff !important;
