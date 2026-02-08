@@ -8,15 +8,10 @@ import {
   getUsageSummary,
 } from '@/app/lib/ai-booking/anthropic-admin';
 
-const FLEET_KEY = 'phoenix-fleet-2847';
-
-function validateApiKey(request: NextRequest): boolean {
-  const key = request.nextUrl.searchParams.get('key');
-  return key === FLEET_KEY;
-}
+import { validateFleetKey } from '../auth';
 
 export async function GET(request: NextRequest) {
-  if (!validateApiKey(request)) {
+  if (!validateFleetKey(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

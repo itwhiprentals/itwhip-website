@@ -4,8 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/app/lib/database/prisma'
 import type { Prisma } from '@prisma/client'
-
-const FLEET_KEY = 'phoenix-fleet-2847'
+import { validateFleetKey } from '../auth'
 const DEFAULT_LIMIT = 25
 const MAX_LIMIT = 100
 
@@ -15,9 +14,7 @@ const MAX_LIMIT = 100
 
 export async function GET(request: NextRequest) {
   try {
-    // Validate API key
-    const key = request.nextUrl.searchParams.get('key')
-    if (key !== FLEET_KEY) {
+    if (!validateFleetKey(request)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

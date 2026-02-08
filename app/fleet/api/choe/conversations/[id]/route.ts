@@ -3,8 +3,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/app/lib/database/prisma'
-
-const FLEET_KEY = 'phoenix-fleet-2847'
+import { validateFleetKey } from '../../auth'
 
 // =============================================================================
 // GET - Get Single Conversation with Messages
@@ -15,9 +14,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Validate API key
-    const key = request.nextUrl.searchParams.get('key')
-    if (key !== FLEET_KEY) {
+    if (!validateFleetKey(request)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

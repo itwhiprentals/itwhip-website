@@ -939,13 +939,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Risk assessment at confirmation
-    const featureFlags2 = await getFeatureFlags()
     let action = parsed.action
     if (
       session.state === BookingState.CONFIRMING &&
       summary &&
       !action &&
-      featureFlags2.riskAssessmentEnabled
+      featureFlags.riskAssessmentEnabled
     ) {
       if (!body.userId) {
         action = 'NEEDS_LOGIN'

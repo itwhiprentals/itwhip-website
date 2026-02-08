@@ -4,8 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/app/lib/database/prisma'
 import { Prisma } from '@prisma/client'
-
-const FLEET_KEY = 'phoenix-fleet-2847'
+import { validateFleetKey } from '../auth'
 
 // =============================================================================
 // GET - Fetch Choé AI Stats
@@ -13,9 +12,7 @@ const FLEET_KEY = 'phoenix-fleet-2847'
 
 export async function GET(request: NextRequest) {
   try {
-    // Validate API key
-    const key = request.nextUrl.searchParams.get('key')
-    if (key !== FLEET_KEY) {
+    if (!validateFleetKey(request)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -109,10 +106,10 @@ async function getStatsForPeriod(from: Date, to: Date) {
     messageStats,
     bookingStats,
   ] = await Promise.all([
-    // Conversation aggregates
+    // Conversation aggregates — count conversations ACTIVE in this period
     prisma.choeAIConversation.aggregate({
       where: {
-        startedAt: { gte: from, lte: to }
+        lastActivityAt: { gte: from, lte: to }
       },
       _count: { id: true },
       _sum: { totalTokens: true },
@@ -122,14 +119,14 @@ async function getStatsForPeriod(from: Date, to: Date) {
     prisma.choeAIConversation.groupBy({
       by: ['outcome'],
       where: {
-        startedAt: { gte: from, lte: to }
+        lastActivityAt: { gte: from, lte: to }
       },
       _count: { id: true },
     }),
     // Booking stats
     prisma.choeAIConversation.aggregate({
       where: {
-        startedAt: { gte: from, lte: to },
+        lastActivityAt: { gte: from, lte: to },
         bookingId: { not: null },
       },
       _count: { id: true },

@@ -627,7 +627,8 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
           if (updatedSession.maxTotalBudget && updatedSession.rentalDays) {
             const budget = updatedSession.maxTotalBudget
             const days = updatedSession.rentalDays
-            const feeMultiplier = 1.234 // 15% service + 8.4% tax
+            const pricingForBudget = await getPricingConfig()
+            const feeMultiplier = (1 + pricingForBudget.serviceFeePercent) * (1 + pricingForBudget.taxRateDefault) // e.g. 1.15 * 1.084 = 1.2466
 
             filteredVehicles = searchedVehicles.filter(v => {
               const total = (v.dailyRate * days * feeMultiplier) + v.depositAmount

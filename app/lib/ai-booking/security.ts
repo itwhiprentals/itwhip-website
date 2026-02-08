@@ -62,36 +62,14 @@ async function getRateLimiters() {
   return cachedRateLimiters
 }
 
-// Legacy exports for backwards compatibility (deprecated)
-export const aiChatRateLimit = new Ratelimit({
-  redis,
-  limiter: Ratelimit.slidingWindow(30, '5 m'),
-  analytics: true,
-  prefix: 'ratelimit:ai-chat',
-})
-
-export const aiSessionRateLimit = new Ratelimit({
-  redis,
-  limiter: Ratelimit.slidingWindow(100, '1 h'),
-  analytics: true,
-  prefix: 'ratelimit:ai-session',
-})
-
-export const aiDailyRateLimit = new Ratelimit({
-  redis,
-  limiter: Ratelimit.slidingWindow(500, '24 h'),
-  analytics: true,
-  prefix: 'ratelimit:ai-daily',
-})
-
 // =============================================================================
 // SECURITY CONFIGURATION (fallback defaults, overridden by DB)
 // =============================================================================
 
 export const AI_SECURITY_CONFIG = {
-  // Message limits (now loaded from DB)
-  MAX_MESSAGE_LENGTH: 500,        // Max chars per message
-  MAX_SESSION_MESSAGES: 50,       // Max messages per session before reset
+  // Fallback limits (DB settings take priority via getRateLimitConfig())
+  MAX_MESSAGE_LENGTH: 200,        // Max chars per message (matches DB default)
+  MAX_SESSION_MESSAGES: 30,       // Max messages per session (matches DB default)
 
   // Suspicious patterns (potential prompt injection)
   BLOCKED_PATTERNS: [

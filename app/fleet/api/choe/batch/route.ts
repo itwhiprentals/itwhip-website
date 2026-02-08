@@ -17,15 +17,14 @@ import {
   syncBatchJobStatus,
 } from '@/app/lib/ai-booking/batch-analytics'
 
-const FLEET_KEY = 'phoenix-fleet-2847'
+import { validateFleetKey } from '../auth'
 
 // =============================================================================
 // GET /fleet/api/choe/batch - List batch jobs or get specific job status
 // =============================================================================
 
 export async function GET(request: NextRequest) {
-  const key = request.nextUrl.searchParams.get('key')
-  if (key !== FLEET_KEY) {
+  if (!validateFleetKey(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -94,8 +93,7 @@ interface BatchCreateRequest {
 }
 
 export async function POST(request: NextRequest) {
-  const key = request.nextUrl.searchParams.get('key')
-  if (key !== FLEET_KEY) {
+  if (!validateFleetKey(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -174,8 +172,7 @@ export async function POST(request: NextRequest) {
 // =============================================================================
 
 export async function DELETE(request: NextRequest) {
-  const key = request.nextUrl.searchParams.get('key')
-  if (key !== FLEET_KEY) {
+  if (!validateFleetKey(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
