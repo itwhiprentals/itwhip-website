@@ -81,6 +81,7 @@ export async function POST(
     // Create admin notification
     await prisma.adminNotification.create({
       data: {
+        id: crypto.randomUUID(),
         type: 'HOST_APPROVED',
         title: `Host Approved: ${host.name}`,
         message: `${host.name} (${host.email}) has been approved as a rental host`,
@@ -91,7 +92,8 @@ export async function POST(
           approvedBy: adminId,
           vehicleCount: host.cars.length
         },
-        priority: 'LOW'
+        priority: 'LOW',
+        updatedAt: new Date()
       }
     })
 

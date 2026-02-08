@@ -348,16 +348,18 @@ export async function POST(request: NextRequest) {
     // ✅ FIX: Changed 'title' to 'subject' and updated fields
     const notification = await prisma.hostNotification.create({
       data: {
+        id: crypto.randomUUID(),
         hostId: host.id,
         type: 'TEST_NOTIFICATION',
         category: 'GENERAL',
-        subject: 'Test Notification',    
+        subject: 'Test Notification',
         message: 'This is a test notification for development purposes.',
         status: 'SENT',
         priority: 'LOW',
         actionRequired: false as any,
         sentAt: new Date(),
-        inAppShown: true
+        inAppShown: true,
+        updatedAt: new Date()
       }
     })
     

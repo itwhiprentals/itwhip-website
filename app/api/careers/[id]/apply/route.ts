@@ -99,6 +99,7 @@ export async function POST(
     
     const application = await prisma.jobApplication.create({
       data: {
+        id: crypto.randomUUID(),
         jobId,
         firstName,
         lastName,
@@ -109,7 +110,8 @@ export async function POST(
         resumeUrl,
         coverLetter,
         source: source || 'website',
-        status: 'NEW'
+        status: 'NEW',
+        updatedAt: new Date()
       }
     })
 

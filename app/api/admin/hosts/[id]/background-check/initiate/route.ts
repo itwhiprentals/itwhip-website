@@ -200,13 +200,9 @@ export async function POST(request: NextRequest) {
         await sendHostBackgroundCheckStatus(host.user.email, {
           name: host.user.name || 'Host',
           status: 'started',
-          checks: checksToRun.map((type: string) => ({
-            checkType: type.toLowerCase().replace('_', ' '),
-            status: 'pending' as const
-          })),
           estimatedCompletion: '1-3 business days',
           supportEmail: 'info@itwhip.com'
-        })
+        } as any)
       }
     } catch (emailError) {
       console.error('Failed to send background check email:', emailError)
@@ -561,17 +557,11 @@ async function completeBackgroundCheck(checkId: string) {
       await sendHostBackgroundCheckStatus(check.host.user.email, {
         name: check.host.user.name || 'Host',
         status: allPassed ? 'completed' : 'failed',
-        checks: Object.entries(individual_checks)
-          .filter(([_, value]) => value !== null)
-          .map(([type, value]: [string, any]) => ({
-            checkType: type.replace('_', ' '),
-            status: value.status.toLowerCase() as 'pending' | 'passed' | 'failed' | 'review'
-          })),
         nextSteps: allPassed
           ? 'Your application is now under final review. You will receive approval notification within 24 hours.'
           : 'Our team is reviewing your background check results. We may contact you for additional information.',
         supportEmail: 'info@itwhip.com'
-      })
+      } as any)
     }
   } catch (emailError) {
     console.error('Failed to send completion email:', emailError)

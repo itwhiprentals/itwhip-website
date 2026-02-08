@@ -27,6 +27,7 @@ export interface TouchState {
     private touchState: TouchState
     private rafId: number | null = null
     private lastY: number = 0
+    private lastX: number = 0
     private lastTime: number = 0
     
     // Thresholds
@@ -103,7 +104,7 @@ export interface TouchState {
       }
       
       // Determine if scrolling vertically or horizontally
-      if (!this.touchState.isScrolling && Math.abs(deltaY) > TAP_THRESHOLD) {
+      if (!this.touchState.isScrolling && Math.abs(deltaY) > this.TAP_THRESHOLD) {
         this.touchState.isScrolling = true
         
         // Prevent default if dragging vertically (for bottom sheet)

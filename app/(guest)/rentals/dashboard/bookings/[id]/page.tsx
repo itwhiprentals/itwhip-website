@@ -293,8 +293,8 @@ export default function BookingDetailsPage() {
           tripEndedAt={booking.tripEndedAt}
           verificationStatus={booking.verificationStatus || 'pending'}
           paymentStatus={booking.paymentStatus}
-          documentsSubmittedAt={booking.documentsSubmittedAt}
-          reviewedAt={booking.reviewedAt}
+          documentsSubmittedAt={typeof booking.documentsSubmittedAt === 'string' ? booking.documentsSubmittedAt : undefined}
+          reviewedAt={typeof booking.reviewedAt === 'string' ? booking.reviewedAt : undefined}
         />
 
         {/* Trip Management Cards */}

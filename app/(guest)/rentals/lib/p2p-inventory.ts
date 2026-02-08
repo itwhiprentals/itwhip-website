@@ -369,7 +369,6 @@ export async function createP2PBooking(data: {
       startTime: data.startTime,
       endTime: data.endTime,
       pickupLocation: data.pickupLocation || car.address,
-      dropoffLocation: data.dropoffLocation || car.address,
       totalPrice,
       serviceFee,
       hostEarnings,
@@ -378,7 +377,7 @@ export async function createP2PBooking(data: {
       specialRequests: data.specialRequests,
       insuranceType: data.insuranceType || 'BASIC',
       extras: data.extras?.join(',') || null
-    },
+    } as any,
     include: {
       car: {
         include: {
@@ -414,6 +413,7 @@ export async function updateCarAvailability(
         customPrice: price
       },
       create: {
+        id: crypto.randomUUID(),
         carId,
         date,
         isAvailable: available,

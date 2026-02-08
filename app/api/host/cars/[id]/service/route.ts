@@ -108,11 +108,11 @@ export async function POST(
     // Check if car has active claim
     const activeClaim = await prisma.claim.findFirst({
       where: {
-        carId: carId,
+        carId: carId as any,
         status: {
           in: ['PENDING_REVIEW', 'UNDER_REVIEW', 'APPROVED'] as any
         }
-      }
+      } as any
     })
 
     if (activeClaim) {

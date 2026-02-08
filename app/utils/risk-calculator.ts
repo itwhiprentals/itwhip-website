@@ -84,15 +84,16 @@ export function calculateBookingRisk(
   let totalScore = 0
 
   // 1. EMAIL RISK FACTORS
-  if (emailValidation.riskScore > 0) {
+  const emailVal = emailValidation as any
+  if (emailVal.riskScore > 0) {
     factors.push({
       category: 'email',
-      factor: `Email risk score: ${emailValidation.riskScore}`,
-      impact: Math.floor(emailValidation.riskScore * 0.3), // 30% weight
-      severity: emailValidation.riskLevel as any
+      factor: `Email risk score: ${emailVal.riskScore}`,
+      impact: Math.floor(emailVal.riskScore * 0.3), // 30% weight
+      severity: emailVal.riskLevel as any
     })
-    totalScore += Math.floor(emailValidation.riskScore * 0.3)
-    flags.push(...emailValidation.flags)
+    totalScore += Math.floor(emailVal.riskScore * 0.3)
+    flags.push(...(emailVal.flags || []))
   }
 
   // 2. SESSION BEHAVIOR FACTORS

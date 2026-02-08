@@ -75,6 +75,13 @@ export default function PriceBreakdown({
   const [showDetails, setShowDetails] = useState(false)
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null)
 
+  // Resolve pricing fields with fallbacks for optional convenience aliases
+  const pricingSubtotal = pricing.subtotal ?? pricing.basePrice ?? 0
+  const pricingDiscount = pricing.discount ?? 0
+  const pricingServiceFee = pricing.serviceFee ?? pricing.serviceFeeAmount ?? 0
+  const pricingTaxes = pricing.taxes ?? pricing.taxAmount ?? 0
+  const pricingTotal = pricing.total ?? pricing.totalAmount ?? 0
+
   // Calculate insurance cost
   const insuranceCosts = {
     none: 0,
@@ -123,12 +130,12 @@ export default function PriceBreakdown({
             </span>
           </div>
           <span className="font-medium text-gray-900 dark:text-white">
-            ${pricing.subtotal.toFixed(2)}
+            ${pricingSubtotal.toFixed(2)}
           </span>
         </div>
 
         {/* Discount if applicable */}
-        {pricing.discount > 0 && (
+        {pricingDiscount > 0 && (
           <div className="flex justify-between items-center text-green-600">
             <div className="flex items-center">
               <IoCheckmarkCircleOutline className="w-5 h-5 mr-2" />
@@ -137,7 +144,7 @@ export default function PriceBreakdown({
               </span>
             </div>
             <span className="font-medium">
-              -${pricing.discount.toFixed(2)}
+              -${pricingDiscount.toFixed(2)}
             </span>
           </div>
         )}
@@ -288,7 +295,7 @@ export default function PriceBreakdown({
             </button>
           </div>
           <span className="text-gray-700 dark:text-gray-300">
-            ${pricing.serviceFee.toFixed(2)}
+            ${pricingServiceFee.toFixed(2)}
           </span>
         </div>
 
@@ -314,7 +321,7 @@ export default function PriceBreakdown({
             </button>
           </div>
           <span className="text-gray-700 dark:text-gray-300">
-            ${pricing.taxes.toFixed(2)}
+            ${pricingTaxes.toFixed(2)}
           </span>
         </div>
       </div>
@@ -327,10 +334,10 @@ export default function PriceBreakdown({
           </span>
           <div className="text-right">
             <div className="text-2xl font-bold text-amber-600">
-              ${(pricing.total + insuranceCost + extrasCost + deliveryFee).toFixed(2)}
+              ${(pricingTotal + insuranceCost + extrasCost + deliveryFee).toFixed(2)}
             </div>
             <div className="text-sm text-gray-500 dark:text-gray-400">
-              ${((pricing.total + insuranceCost + extrasCost + deliveryFee) / numberOfDays).toFixed(2)}/day
+              ${((pricingTotal + insuranceCost + extrasCost + deliveryFee) / numberOfDays).toFixed(2)}/day
             </div>
           </div>
         </div>
@@ -398,43 +405,49 @@ export function PriceBreakdownSimple({
   numberOfDays: number
   className?: string
 }) {
+  const simpleSubtotal = pricing.subtotal ?? pricing.basePrice ?? 0
+  const simpleDiscount = pricing.discount ?? 0
+  const simpleServiceFee = pricing.serviceFee ?? pricing.serviceFeeAmount ?? 0
+  const simpleTaxes = pricing.taxes ?? pricing.taxAmount ?? 0
+  const simpleTotal = pricing.total ?? pricing.totalAmount ?? 0
+
   return (
     <div className={`space-y-2 ${className}`}>
       <div className="flex justify-between text-sm">
         <span className="text-gray-600 dark:text-gray-400">
-          ${(pricing.subtotal / numberOfDays).toFixed(0)} × {numberOfDays} days
+          ${(simpleSubtotal / numberOfDays).toFixed(0)} × {numberOfDays} days
         </span>
         <span className="text-gray-700 dark:text-gray-300">
-          ${pricing.subtotal.toFixed(2)}
+          ${simpleSubtotal.toFixed(2)}
         </span>
       </div>
-      
-      {pricing.discount > 0 && (
+
+      {simpleDiscount > 0 && (
         <div className="flex justify-between text-sm text-green-600">
           <span>Discount</span>
-          <span>-${pricing.discount.toFixed(2)}</span>
+          <span>-${simpleDiscount.toFixed(2)}</span>
         </div>
       )}
-      
+
       <div className="flex justify-between text-sm">
         <span className="text-gray-600 dark:text-gray-400">Service fee</span>
         <span className="text-gray-700 dark:text-gray-300">
-          ${pricing.serviceFee.toFixed(2)}
+          ${simpleServiceFee.toFixed(2)}
         </span>
       </div>
-      
+
       <div className="flex justify-between text-sm">
         <span className="text-gray-600 dark:text-gray-400">Taxes</span>
         <span className="text-gray-700 dark:text-gray-300">
-          ${pricing.taxes.toFixed(2)}
+          ${simpleTaxes.toFixed(2)}
         </span>
       </div>
-      
+
       <div className="pt-2 border-t dark:border-gray-700">
         <div className="flex justify-between">
           <span className="font-semibold">Total</span>
           <span className="font-bold text-amber-600">
-            ${pricing.total.toFixed(2)}
+            ${simpleTotal.toFixed(2)}
           </span>
         </div>
       </div>

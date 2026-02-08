@@ -161,7 +161,7 @@ export class MarkerManager {
         
         this.map!.easeTo({
           center: (features[0].geometry as any).coordinates,
-          zoom: zoom
+          zoom: zoom ?? undefined
         })
       })
     })
@@ -171,7 +171,7 @@ export class MarkerManager {
   
   public setHandlers(clickHandler: (car: Car) => void, hoverHandler?: (car: Car | null) => void) {
     this.clickHandler = clickHandler
-    this.hoverHandler = hoverHandler || null
+    this.hoverHandler = hoverHandler ?? undefined as any
   }
   
   public updateMarkers(cars: Car[], selectedCarId?: string | null) {
@@ -394,7 +394,7 @@ export class MarkerManager {
     
     this.markers.forEach((markerData, carId) => {
       const car = this.cars.get(carId)
-      if (car && bounds.contains([car.location.lng, car.location.lat])) {
+      if (car && bounds && bounds.contains([car.location.lng, car.location.lat])) {
         visibleIds.push(carId)
       }
     })

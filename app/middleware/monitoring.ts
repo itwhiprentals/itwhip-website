@@ -378,7 +378,7 @@ export async function monitoringMiddleware(
       // Log response
       if (!options?.skipLogging && sample) {
         const logLevelValue: string = statusCode >= 500 ? 'error' :
-                        statusCode >= 400 ? 'warn' : 'info'
+                        statusCode >= 400 ? 'warn' : 'info';
 
         (logger as any)[logLevelValue]('Request completed', {
           requestId,

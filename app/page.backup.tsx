@@ -121,7 +121,6 @@ export default function HomePage() {
   if (userType === 'rider') {
     return (
       <main className="min-h-screen bg-white dark:bg-black">
-        {/* @ts-expect-error - legacy backup props */}
         <Header
           isMobileMenuOpen={isMobileMenuOpen}
           setIsMobileMenuOpen={setIsMobileMenuOpen}
@@ -143,7 +142,6 @@ export default function HomePage() {
   if (userType === 'hotel') {
     return (
       <main className="min-h-screen bg-white dark:bg-black">
-        {/* @ts-expect-error - legacy backup props */}
         <Header
           isMobileMenuOpen={isMobileMenuOpen}
           setIsMobileMenuOpen={setIsMobileMenuOpen}

@@ -42,7 +42,7 @@ export function MapListToggle({ view, onViewChange }: MapListToggleProps) {
 // app/(guest)/rentals/search/components/MapSidebar.tsx
 'use client'
 
-import { useState } from 'react'
+import { useState as useStateSidebar } from 'react'
 import Link from 'next/link'
 import { 
   IoCarOutline, 
@@ -70,7 +70,7 @@ export function MapSidebar({
   rentalDays,
   isLoading = false 
 }: MapSidebarProps) {
-  const [sortBy, setSortBy] = useState('distance')
+  const [sortBy, setSortBy] = useStateSidebar('distance')
   
   // Sort cars based on selection
   const sortedCars = [...cars].sort((a, b) => {
@@ -215,9 +215,9 @@ export function MapSidebar({
 // app/(guest)/rentals/search/components/MapContainer.tsx
 'use client'
 
-import { useState } from 'react'
+import { useState as useStateContainer } from 'react'
 import dynamic from 'next/dynamic'
-import { MapSidebar } from './MapSidebar'
+import { MapSidebar as MapSidebarComponent } from './MapSidebar'
 
 // Dynamically import map to avoid SSR issues with Mapbox
 const CarMapView = dynamic(() => import('./CarMapView'), {
@@ -245,9 +245,9 @@ export function MapContainer({
   rentalDays,
   isLoading = false 
 }: MapContainerProps) {
-  const [selectedCar, setSelectedCar] = useState<any | null>(null)
-  const [hoveredCar, setHoveredCar] = useState<any | null>(null)
-  const [showSidebar, setShowSidebar] = useState(true)
+  const [selectedCar, setSelectedCar] = useStateContainer<any | null>(null)
+  const [hoveredCar, setHoveredCar] = useStateContainer<any | null>(null)
+  const [showSidebar, setShowSidebar] = useStateContainer(true)
   
   // Transform cars to have location data (you'll need to add this to your actual data)
   const carsWithLocation = cars.map(car => ({
@@ -265,7 +265,7 @@ export function MapContainer({
       {/* Sidebar */}
       {showSidebar && (
         <div className="w-full md:w-96 lg:w-[420px] border-r border-gray-200 dark:border-gray-700">
-          <MapSidebar
+          <MapSidebarComponent
             cars={carsWithLocation}
             selectedCar={selectedCar}
             onCarSelect={setSelectedCar}

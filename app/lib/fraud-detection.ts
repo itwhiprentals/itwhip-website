@@ -205,7 +205,7 @@ export async function performFraudCheck(request: FraudCheckRequest): Promise<Fra
       vpnDetected: ipLookup.vpn || false,
       proxyDetected: ipLookup.proxy || false
     },
-    emailValidation
+    emailValidation as any
   )
   
   // 9. Add velocity risk to total score

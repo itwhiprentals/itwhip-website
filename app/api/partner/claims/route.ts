@@ -207,11 +207,8 @@ export async function POST(request: NextRequest) {
         carId: { in: vehicleIds }
       },
       include: {
-        car: {
-          include: {
-            InsurancePolicy: true
-          }
-        }
+        car: true,
+        InsurancePolicy: true
       }
     })
 
@@ -228,6 +225,7 @@ export async function POST(request: NextRequest) {
     // Create the claim
     const claim = await prisma.claim.create({
       data: {
+        id: crypto.randomUUID(),
         policyId,
         bookingId,
         hostId: partner.id,
@@ -236,7 +234,8 @@ export async function POST(request: NextRequest) {
         description,
         incidentDate: new Date(incidentDate),
         estimatedCost: estimatedCost ? parseFloat(estimatedCost) : 0,
-        status: 'PENDING'
+        status: 'PENDING',
+        updatedAt: new Date()
       }
     })
 

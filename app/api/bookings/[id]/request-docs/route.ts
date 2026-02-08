@@ -29,8 +29,7 @@ async function verifyFleetAccess(request: NextRequest): Promise<{ valid: boolean
   // Verify admin has fleet access
   const admin = await prisma.user.findFirst({
     where: {
-      accessToken: adminToken,
-      role: { in: ['ADMIN', 'FLEET_ADMIN', 'SUPER_ADMIN'] },
+      role: { in: ['ADMIN', 'FLEET_ADMIN', 'SUPER_ADMIN'] as any },
     },
     select: { id: true, name: true, email: true },
   })

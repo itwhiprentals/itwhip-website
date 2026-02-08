@@ -527,7 +527,7 @@ export default function SimilarCars({
         })
         
         const sortedCars = carsWithScores
-          .sort((a, b) => (b.similarityScore || 0) - (a.similarityScore || 0))
+          .sort((a: any, b: any) => (b.similarityScore || 0) - (a.similarityScore || 0))
           .slice(0, 8)
         
         setSimilarCars(sortedCars)
@@ -612,7 +612,7 @@ export default function SimilarCars({
             <CarCarousel
               cars={hostCars}
               scrollId="host-cars-container"
-              currentLocation={location || userLocation}
+              currentLocation={location ?? userLocation ?? undefined}
               currentCarPrice={dailyRate}
             />
           )}
@@ -638,7 +638,7 @@ export default function SimilarCars({
             <CarCarousel
               cars={similarCars}
               scrollId="similar-cars-container"
-              currentLocation={location || userLocation}
+              currentLocation={location ?? userLocation ?? undefined}
               currentCarPrice={dailyRate}
             />
           )}

@@ -50,6 +50,7 @@ export async function POST(
     // Create audit log
     await prisma.auditLog.create({
       data: {
+        id: crypto.randomUUID(),
         category: 'PARTNER_MANAGEMENT' as any,
         eventType: 'document_verified',
         severity: 'INFO',

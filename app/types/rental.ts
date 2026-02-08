@@ -285,6 +285,16 @@ import type {
     totalAmount: number
     depositAmount: number
     amadeusMarkup?: number // Your markup on Amadeus cars
+    // Convenience aliases used by PriceBreakdown components
+    subtotal?: number
+    discount?: number
+    serviceFee?: number
+    taxes?: number
+    total?: number
+    breakdown?: {
+      youngDriverFee?: number
+      [key: string]: number | undefined
+    }
   }
   
   // ============================================================================

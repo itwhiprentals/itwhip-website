@@ -505,7 +505,7 @@ MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1234567890...
           status: data.status,
           errors: data.errors
         }
-      })
+      } as any)
     } catch (error) {
       logger.error('Failed to log validation', { error })
     }

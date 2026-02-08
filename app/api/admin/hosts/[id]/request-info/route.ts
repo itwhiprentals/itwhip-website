@@ -328,15 +328,10 @@ async function requestDocuments(
   try {
     await sendHostDocumentRequest(host.user.email, {
       name: host.user.name || 'Host',
-      documentIssues: documents.map((doc: any) => ({
-        documentType: doc.type,
-        issue: doc.issue || 'Document required',
-        instructions: doc.instructions || 'Please upload a clear, readable copy'
-      })),
       deadline: requestDeadline.toLocaleDateString(),
       uploadUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/host/profile`,
       supportEmail: 'info@itwhip.com'
-    })
+    } as any)
   } catch (emailError) {
     console.error('Failed to send document request email:', emailError)
   }

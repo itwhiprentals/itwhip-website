@@ -219,7 +219,7 @@ export const PolicyFooter: React.FC<PolicyFooterProps> = ({ booking }) => {
       </div>
 
       {/* New RentalAgreementModal with proper props for dashboard context */}
-      <RentalAgreementModal 
+      <RentalAgreementModal
         isOpen={showRentalAgreement}
         onClose={() => setShowRentalAgreement(false)}
         carDetails={{
@@ -227,21 +227,21 @@ export const PolicyFooter: React.FC<PolicyFooterProps> = ({ booking }) => {
           make: booking.car.make,
           model: booking.car.model,
           year: booking.car.year,
-          carType: booking.car.carType,
+          carType: booking.car.carType || 'standard',
           seats: booking.car.seats,
-          dailyRate: booking.car.dailyRate,
+          dailyRate: booking.car.dailyRate || 0,
           rating: booking.car.rating,
           totalTrips: booking.car.totalTrips,
           address: booking.pickupLocation,
           host: booking.host ? {
             name: booking.host.name,
-            profilePhoto: booking.host.profilePhoto,
+            profilePhoto: booking.host.profilePhoto ?? undefined,
             responseTime: booking.host.responseTime
           } : undefined
         }}
         bookingDetails={{
           carId: booking.car.id,
-          carClass: booking.car.carType,
+          carClass: booking.car.carType || 'standard',
           startDate: booking.startDate,
           endDate: booking.endDate,
           startTime: booking.startTime,
@@ -256,9 +256,9 @@ export const PolicyFooter: React.FC<PolicyFooterProps> = ({ booking }) => {
             vipConcierge: false
           },
           pricing: {
-            days: booking.numberOfDays,
-            dailyRate: booking.car.dailyRate,
-            basePrice: booking.subtotal,
+            days: booking.numberOfDays || 0,
+            dailyRate: booking.car.dailyRate || 0,
+            basePrice: booking.subtotal || 0,
             insurancePrice: booking.insuranceFee || 0,
             deliveryFee: booking.deliveryFee,
             serviceFee: booking.serviceFee,
@@ -274,18 +274,18 @@ export const PolicyFooter: React.FC<PolicyFooterProps> = ({ booking }) => {
           }
         }}
         guestDetails={{
-          name: booking.guestName,
-          email: booking.guestEmail,
+          name: booking.guestName || '',
+          email: booking.guestEmail || '',
           bookingCode: booking.bookingCode,
-          verificationStatus: booking.verificationStatus === 'APPROVED' ? 'APPROVED' : 
+          verificationStatus: booking.verificationStatus === 'APPROVED' ? 'APPROVED' :
                               booking.verificationStatus === 'REJECTED' ? 'REJECTED' : 'PENDING',
-          approvedAt: booking.reviewedAt,
-          approvedBy: booking.reviewedBy
+          approvedAt: booking.reviewedAt ?? undefined,
+          approvedBy: booking.reviewedBy ?? undefined
         }}
         context="dashboard"
         agreementTracking={{
-          agreedAt: booking.agreementAcceptedAt,
-          ipAddress: booking.bookingIpAddress,
+          agreedAt: booking.agreementAcceptedAt ?? undefined,
+          ipAddress: booking.bookingIpAddress ?? undefined,
           viewedAt: booking.createdAt
         }}
       />

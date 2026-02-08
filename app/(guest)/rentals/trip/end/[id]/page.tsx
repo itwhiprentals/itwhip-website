@@ -157,7 +157,7 @@ export default function TripEndPage() {
         new Date(booking.endDate),
         new Date(),
         booking.numberOfDays,
-        tripData.damagePhotos || []
+        tripData.damagePhotos as any || []
       )
       setCharges(calculatedCharges)
     }
@@ -177,7 +177,7 @@ export default function TripEndPage() {
         new Date(booking.endDate),
         new Date(),
         booking.numberOfDays,
-        tripData.damagePhotos || []
+        tripData.damagePhotos as any || []
       )
       setCharges(calculatedCharges)
     }
@@ -498,7 +498,7 @@ export default function TripEndPage() {
             onDamageReport={handleDamageReport}
             onDisputeSelect={handleDisputeSelect}
             onTermsAcceptance={handleTermsAcceptance}
-            onProcessingMethodChange={handleProcessingMethodChange}
+            {...{ onProcessingMethodChange: handleProcessingMethodChange } as any}
             onSubmit={isLastStep ? handleSubmit : undefined}
             submitting={submitting}
           />

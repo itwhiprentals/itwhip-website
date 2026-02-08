@@ -296,7 +296,7 @@ export default function ESGDashboardCard() {
       {showModal && (
         <ESGDetailModal
           profile={profile}
-          hostId={profile.hostId || ''}
+          hostId={(profile as any).hostId || ''}
           onClose={() => setShowModal(false)}
         />
       )}
