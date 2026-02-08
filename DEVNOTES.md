@@ -57,6 +57,35 @@ Hook (`app/hooks/useCheckout.ts`):
 
 ## Recent Fixes (February 2026)
 
+### Choé Dashboard Deep Audit: Content Moderation + DEFCON Controls - DEPLOYED ✅ (Feb 8)
+**Content moderation, session termination, DEFCON emergency controls, 6 dashboard fixes**
+
+**Security (Phase 1):**
+- Content moderation regex pre-screening (sexual/harassment/threats) — blocks before Claude API call
+- Session terminate API: single (`/conversations/[id]/terminate`) + bulk (`/conversations/terminate-all`)
+- DEFCON emergency panel in Security tab: "Terminate All Sessions" + "Disable Choé + Kill All"
+- Bulk session selection with checkboxes in Conversations tab
+- Terminated sessions blocked in streaming route (admin kill switch)
+- New security event types: `content_moderation`, `session_terminated`
+
+**Dashboard Fixes (Phases 2-3):**
+- 7-Day Usage chart now queries conversations directly (was reading empty ChoeAIDailyStats table)
+- Recent Conversations clickable → cross-tab navigation to Conversations tab with auto-open detail
+- Conversion funnel uses real state-based data (was hardcoded 85%/65%/45% percentages)
+- SettingsTab NaN fix: null-safe number input accessors
+- Message persistence: actual DB count instead of in-memory array length
+- Conversation table refreshes after single-session terminate
+
+**Files Created:**
+- `app/fleet/api/choe/conversations/[id]/terminate/route.ts`
+- `app/fleet/api/choe/conversations/terminate-all/route.ts`
+
+**Files Modified:** 15 files (security.ts, stream/route.ts, stats/route.ts, 5 dashboard components, types, constants, page.tsx, conversation-service.ts, route.ts, test-email)
+
+**Deployment:** Commit `a5e3e22`
+
+---
+
 ### Choé Dashboard Refactor + Security Audit Fixes - DEPLOYED ✅ (Feb 7)
 **Refactored 1457-line monolithic page into modular components + fixed 6 audit issues**
 
