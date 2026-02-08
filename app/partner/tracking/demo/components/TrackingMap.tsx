@@ -78,14 +78,16 @@ export default function TrackingMap({
   const [showGeofences, setShowGeofences] = useState(true)
   const [showTrails, setShowTrails] = useState(true)
   const [show3D, setShow3D] = useState(true)
-  // Start legend collapsed on mobile (< 640px)
-  const [legendExpanded, setLegendExpanded] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return window.innerWidth >= 640
-    }
-    return true
-  })
+  // Start legend expanded (matches server), collapse on mobile after mount
+  const [legendExpanded, setLegendExpanded] = useState(true)
   const [isFullscreen, setIsFullscreen] = useState(false)
+
+  // Collapse legend on mobile after hydration
+  useEffect(() => {
+    if (window.innerWidth < 640) {
+      setLegendExpanded(false)
+    }
+  }, [])
 
   // Trip replay state
   const [tripReplayActive, setTripReplayActive] = useState(false)
@@ -145,7 +147,12 @@ export default function TrackingMap({
     map.addControl(new mapboxgl.NavigationControl(), 'top-right')
     map.addControl(new mapboxgl.ScaleControl({ maxWidth: 100 }), 'bottom-right')
 
+    map.on('error', (e: any) => {
+      console.error('[TrackingMap] Mapbox error:', e?.error?.message || e)
+    })
+
     map.on('load', () => {
+      try {
       // Add 3D buildings layer
       const layers = map.getStyle().layers
       const labelLayerId = layers?.find(
@@ -153,23 +160,27 @@ export default function TrackingMap({
       )?.id
 
       if (mapStyle === 'dark' || mapStyle === 'streets') {
-        map.addLayer(
-          {
-            id: '3d-buildings',
-            source: 'composite',
-            'source-layer': 'building',
-            filter: ['==', 'extrude', 'true'],
-            type: 'fill-extrusion',
-            minzoom: 12,
-            paint: {
-              'fill-extrusion-color': mapStyle === 'dark' ? '#1a1a2e' : '#e5e7eb',
-              'fill-extrusion-height': ['get', 'height'],
-              'fill-extrusion-base': ['get', 'min_height'],
-              'fill-extrusion-opacity': 0.7
-            }
-          },
-          labelLayerId
-        )
+        try {
+          map.addLayer(
+            {
+              id: '3d-buildings',
+              source: 'composite',
+              'source-layer': 'building',
+              filter: ['==', 'extrude', 'true'],
+              type: 'fill-extrusion',
+              minzoom: 12,
+              paint: {
+                'fill-extrusion-color': mapStyle === 'dark' ? '#1a1a2e' : '#e5e7eb',
+                'fill-extrusion-height': ['get', 'height'],
+                'fill-extrusion-base': ['get', 'min_height'],
+                'fill-extrusion-opacity': 0.7
+              }
+            },
+            labelLayerId
+          )
+        } catch (e) {
+          console.warn('[TrackingMap] 3D buildings layer failed:', e)
+        }
       }
 
       // Add trail sources for each vehicle
@@ -335,12 +346,24 @@ export default function TrackingMap({
         }
       })
 
+      } catch (e) {
+        console.error('[TrackingMap] Error in load callback:', e)
+      }
       setMapReady(true)
     })
 
     mapRef.current = map
 
+    // Fallback: if map doesn't load in 10s, show it anyway
+    const timeout = setTimeout(() => {
+      if (!mapReady) {
+        console.warn('[TrackingMap] Map load timeout - showing map anyway')
+        setMapReady(true)
+      }
+    }, 10000)
+
     return () => {
+      clearTimeout(timeout)
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current)
       }

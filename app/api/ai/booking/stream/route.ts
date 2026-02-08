@@ -28,6 +28,7 @@ import {
   getFeatureFlags,
 } from '@/app/lib/ai-booking/choe-settings'
 import { BOOKING_TOOLS, executeTools, getToolsForModel, supportsPTC } from '@/app/lib/ai-booking/tools'
+import { saveMessage } from '@/app/lib/ai-booking/conversation-service'
 import { countAndValidateTokens } from '@/app/lib/ai-booking/token-counting'
 import { calculateCostSimple } from '@/app/lib/ai-booking/cost'
 import {
@@ -416,6 +417,11 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
     session = addMessage(session, 'user', body.message)
     await sse.sendEvent('session', { session })
 
+    // Persist user message to DB
+    if (conversationId) {
+      await saveMessage(conversationId, 'user', body.message)
+    }
+
     // Check query complexity for extended thinking
     const complexity = detectComplexQuery(body.message)
     const modelSupportsThinking = supportsExtendedThinking(modelConfig.modelId)
@@ -482,6 +488,7 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
     let continueLoop = true
     let loopCount = 0
     const MAX_TOOL_LOOPS = 5
+    const toolsUsedNames: string[] = []
     const modelSupportsPTC = supportsPTC(modelConfig.modelId)
     const toolsToUse = getToolsForModel(modelConfig.modelId)
 
@@ -574,6 +581,8 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
         if (ptcToolCalls.length > 0) {
           console.log(`[ai-booking-stream] PTC: ${ptcToolCalls.length} programmatic tool call(s)`)
         }
+
+        toolsUsedNames.push(...completeToolUses.map((t: Anthropic.ToolUseBlock) => t.name))
 
         await sse.sendEvent('tool_use', {
           tools: completeToolUses.map((t: Anthropic.ToolUseBlock & { caller?: { type?: string } }) => ({
@@ -713,6 +722,12 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
 
     // Add only the reply text to session (not raw JSON)
     session = addMessage(session, 'assistant', parsed.reply)
+
+    // Persist assistant message to DB
+    if (conversationId) {
+      const vehiclesReturnedCount = vehicles?.length || 0
+      await saveMessage(conversationId, 'assistant', parsed.reply, totalTokensUsed, undefined, toolsUsedNames, vehiclesReturnedCount)
+    }
 
     // Build booking summary if confirming
     const pricingConfig = await getPricingConfig()
