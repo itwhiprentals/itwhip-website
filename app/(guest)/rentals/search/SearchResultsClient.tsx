@@ -80,20 +80,34 @@ export default function SearchResultsClient({
   const [nearbyCars, setNearbyCars] = useState<any[]>(initialNearbyCars)
   const [searchedCity, setSearchedCity] = useState<string>(initialSearchedCity || initialLocation.split(',')[0].trim())
   const [isLoading, setIsLoading] = useState(false)
-  const [filters, setFilters] = useState({
-    carType: initialNoResultsForType ? [] : (initialCarType ? [initialCarType.toLowerCase()] : [] as string[]),
-    minPrice: 0,
-    maxPrice: 1000,
-    features: [] as string[],
-    instantBook: false,
-    transmission: 'all',
-    seats: 'all',
-    delivery: [] as string[],
-    availability: 'all' // all, available, partial
+  const [filters, setFilters] = useState(() => {
+    // Restore filters from URL params on mount
+    const urlCarType = searchParams.get('carType')
+    const urlPriceMin = searchParams.get('priceMin')
+    const urlPriceMax = searchParams.get('priceMax')
+    const urlFeatures = searchParams.get('features')
+    const urlInstantBook = searchParams.get('instantBook')
+    const urlTransmission = searchParams.get('transmission')
+    const urlSeats = searchParams.get('seats')
+    const urlDelivery = searchParams.get('delivery')
+
+    return {
+      carType: urlCarType
+        ? urlCarType.split(',').map(t => t.toLowerCase())
+        : (initialNoResultsForType ? [] : (initialCarType ? [initialCarType.toLowerCase()] : [] as string[])),
+      minPrice: urlPriceMin ? parseFloat(urlPriceMin) : 0,
+      maxPrice: urlPriceMax ? parseFloat(urlPriceMax) : 1000,
+      features: urlFeatures ? urlFeatures.split(',') : [] as string[],
+      instantBook: urlInstantBook === 'true',
+      transmission: urlTransmission || 'all',
+      seats: urlSeats || 'all',
+      delivery: urlDelivery ? urlDelivery.split(',') : [] as string[],
+      availability: 'all' as string
+    }
   })
   // Track if the requested car type had no results (showing all cars with a banner)
   const [noResultsForType, setNoResultsForType] = useState<string | null>(initialNoResultsForType)
-  const [sortBy, setSortBy] = useState(initialSortBy)
+  const [sortBy, setSortBy] = useState(searchParams.get('sortBy') || initialSortBy)
   const [showFilters, setShowFilters] = useState(false)
   const [showMap, setShowMap] = useState(viewParam === 'map')
   const [totalCount, setTotalCount] = useState(initialTotal)
@@ -172,9 +186,16 @@ export default function SearchResultsClient({
 
   // Only fetch when filters/sort change AFTER initial mount (initial data is from server)
   useEffect(() => {
-    // Skip the very first render - we already have server data
     if (isInitialMount.current) {
       isInitialMount.current = false
+      // If URL had filter params beyond what server used, fetch with those filters
+      const hasUrlFilters = searchParams.has('priceMin') || searchParams.has('priceMax') ||
+        searchParams.has('features') || searchParams.has('instantBook') ||
+        searchParams.has('transmission') || searchParams.has('seats') ||
+        searchParams.has('delivery') || searchParams.has('sortBy')
+      if (hasUrlFilters) {
+        fetchCars()
+      }
       return
     }
 
@@ -193,7 +214,32 @@ export default function SearchResultsClient({
     if (carTypeChanged || sortByChanged || hasOtherFilterChanges) {
       fetchCars()
     }
-  }, [sortBy, filters, fetchCars])
+  }, [sortBy, filters, fetchCars, searchParams])
+
+  // Sync filters to URL so refresh/share preserves state
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString())
+
+    // Update filter params (set or remove)
+    const setOrDelete = (key: string, value: string | undefined) => {
+      if (value) params.set(key, value)
+      else params.delete(key)
+    }
+
+    setOrDelete('sortBy', sortBy !== 'recommended' ? sortBy : undefined)
+    setOrDelete('carType', filters.carType.length > 0 ? filters.carType.join(',') : undefined)
+    setOrDelete('priceMin', filters.minPrice > 0 ? filters.minPrice.toString() : undefined)
+    setOrDelete('priceMax', filters.maxPrice < 1000 ? filters.maxPrice.toString() : undefined)
+    setOrDelete('features', filters.features.length > 0 ? filters.features.join(',') : undefined)
+    setOrDelete('instantBook', filters.instantBook ? 'true' : undefined)
+    setOrDelete('transmission', filters.transmission !== 'all' ? filters.transmission : undefined)
+    setOrDelete('seats', filters.seats !== 'all' ? filters.seats : undefined)
+    setOrDelete('delivery', filters.delivery.length > 0 ? filters.delivery.join(',') : undefined)
+
+    // Replace URL without navigation (shallow update)
+    const newUrl = `${window.location.pathname}?${params.toString()}`
+    window.history.replaceState(null, '', newUrl)
+  }, [sortBy, filters, searchParams])
 
   // Track last fetched params to avoid duplicate fetches
   const lastFetchedRef = useRef({
